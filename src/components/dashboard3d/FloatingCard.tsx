@@ -50,11 +50,13 @@ export function FloatingCard({
       <mesh>
         <boxGeometry args={[2.8, 1.6, 0.1]} />
         <meshPhysicalMaterial
-          color={hovered ? "#2a2a3a" : "#1a1a2e"}
-          metalness={0.1}
-          roughness={0.4}
+          color={hovered ? "#3a3a4a" : "#1a1a2e"}
+          metalness={0.2}
+          roughness={0.1}
+          transmission={0.6}
+          thickness={1}
           transparent
-          opacity={0.95}
+          opacity={0.9}
         />
       </mesh>
 

@@ -107,9 +107,9 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ authState, view, setView
             <nav className="flex-1 flex flex-col items-center gap-2 mt-6 overflow-y-auto w-full">
                 {authState === 'ADMIN' ? (
                     <>
-                        <NavIcon icon="layout-dashboard" label="Início" active={view === ViewMode.DASHBOARD} onClick={() => setView(ViewMode.DASHBOARD)} />
+                        <NavIcon icon="layout-dashboard" label={"In\u00EDcio"} active={view === ViewMode.DASHBOARD} onClick={() => setView(ViewMode.DASHBOARD)} />
                         <NavIcon icon="cube" label="3D" active={view === ViewMode.DASHBOARD_3D} onClick={() => setView(ViewMode.DASHBOARD_3D)} />
-                        <NavIcon icon="file-text" label="Vendas" active={view === ViewMode.CONTRACTS} onClick={() => setView(ViewMode.CONTRACTS)} />
+                        <NavIcon icon="file-text" label={"Or\u00E7amentos"} active={view === ViewMode.CONTRACTS} onClick={() => setView(ViewMode.CONTRACTS)} />
                         <NavIcon icon="building" label="Fornecedores" active={view === ViewMode.SUPPLIERS} onClick={() => setView(ViewMode.SUPPLIERS)} />
                         <NavIcon icon="package" label="Estoque" active={view === ViewMode.PRODUCTS} onClick={() => setView(ViewMode.PRODUCTS)} />
                         <NavIcon icon="clipboard-list" label="OS" active={view === ViewMode.SERVICE_ORDERS} onClick={() => setView(ViewMode.SERVICE_ORDERS)} />
@@ -117,7 +117,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ authState, view, setView
                         <NavIcon icon="trending-down" label="A Pagar" active={view === ViewMode.ACCOUNTS_PAYABLE} onClick={() => setView(ViewMode.ACCOUNTS_PAYABLE)} />
                         <NavIcon icon="trending-up" label="A Receber" active={view === ViewMode.ACCOUNTS_RECEIVABLE} onClick={() => setView(ViewMode.ACCOUNTS_RECEIVABLE)} />
                         <NavIcon icon="file-signature" label="Contratos" active={view === ViewMode.CONTRACTS_MGMT} onClick={() => setView(ViewMode.CONTRACTS_MGMT)} />
-                        <NavIcon icon="users" label="Usuários" active={view === ViewMode.USER_MANAGEMENT} onClick={() => setView(ViewMode.USER_MANAGEMENT)} />
+                        <NavIcon icon="users" label={"Usu\u00E1rios"} active={view === ViewMode.USER_MANAGEMENT} onClick={() => setView(ViewMode.USER_MANAGEMENT)} />
                         <NavIcon icon="clock" label="Ponto" active={view === ViewMode.TIME_TRACKING} onClick={() => setView(ViewMode.TIME_TRACKING)} />
                         <NavIcon icon="navigation" label="Frota" active={view === ViewMode.FLEET} onClick={() => setView(ViewMode.FLEET)} />
                         <NavIcon icon="message-square" label="CRM" active={view === ViewMode.CRM} onClick={() => setView(ViewMode.CRM)} isFab />

@@ -1,11 +1,17 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Sparkles, Heart, Zap, TrendingUp, ChevronRight, Layers, FileText,
-    MessageCircle, Star, Sparkles as SparklesIcon
+    MessageCircle, Star, Sparkles as SparklesIcon, MapPin, Clock,
+    Package, AlertTriangle, ArrowUpRight, Plus, ClipboardList, Wallet,
+    TrendingDown, BarChart3, Users, PlusCircle
 } from 'lucide-react';
 import { Card3D } from '@/components/animations/Card3D';
 import { DashboardStat } from '@/components/ui/dashboard-stat';
 import { ViewMode } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+
+const db = supabase as any;
 
 interface AdminDashboardProps {
     contracts: any[];
@@ -14,268 +20,325 @@ interface AdminDashboardProps {
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
-    contracts,
+    contracts: initialContracts,
     setView,
     handleRender
 }) => {
-    const totalRevenue = contracts.reduce((sum, c) => sum + (c.value || 0), 0);
-    const signedContracts = contracts.filter(c => ['assinado', 'assasinado', 'assassinado', 'producao', 'instalacao', 'concluido'].includes(c.status)).length;
-    const inProduction = contracts.filter(c => c.status === 'producao').length;
+    const [stats, setStats] = useState({
+        revenue: 0,
+        signedCount: 0,
+        inProduction: 0,
+        openOS: 0,
+        lowStock: 0,
+        toReceive: 0,
+        toPay: 0,
+    });
+    const [contracts, setContracts] = useState(initialContracts);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetchDashboardData();
+    }, []);
+
+    const fetchDashboardData = async () => {
+        setLoading(true);
+        try {
+            const [
+                contractsRes,
+                osRes,
+                stockRes,
+                receivableRes,
+                payableRes
+            ] = await Promise.all([
+                db.from('contracts').select('*, clients(name)').order('created_at', { ascending: false }),
+                db.from('service_orders').select('id').eq('status', 'aberta'),
+                db.from('products').select('id').lt('stock_quantity', db.raw('min_stock')),
+                db.from('accounts_receivable').select('amount').eq('received', false),
+                db.from('accounts_payable').select('amount').eq('paid', false),
+            ]);
+
+            const currentContracts = contractsRes.data || [];
+            setContracts(currentContracts);
+
+            const revenue = currentContracts.reduce((sum: number, c: any) => sum + (Number(c.value) || 0), 0);
+            const signed = currentContracts.filter((c: any) => ['assinado', 'assasinado', 'assassinado', 'producao', 'instalacao', 'concluido'].includes(c.status)).length;
+            const production = currentContracts.filter((c: any) => c.status === 'producao').length;
+            
+            const toReceive = (receivableRes.data || []).reduce((sum: number, r: any) => sum + (Number(r.amount) || 0), 0);
+            const toPay = (payableRes.data || []).reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0);
+
+            setStats({
+                revenue,
+                signedCount: signed,
+                inProduction: production,
+                openOS: osRes.data?.length || 0,
+                lowStock: stockRes.data?.length || 0,
+                toReceive,
+                toPay
+            });
+        } catch (error) {
+            console.error('Error fetching dashboard data:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <div
-            className="p-8 space-y-6 overflow-auto h-full relative"
-            style={{ background: 'linear-gradient(135deg, hsl(var(--background)), hsl(var(--muted)))' }}
-            onScroll={(e) => {
-                const target = e.currentTarget;
-                const bg = target.querySelector('[data-parallax-bg]') as HTMLElement;
-                if (bg) bg.style.transform = `translateY(${target.scrollTop * 0.4}px)`;
-                const orb1 = target.querySelector('[data-parallax-orb1]') as HTMLElement;
-                if (orb1) orb1.style.transform = `translate(${-target.scrollTop * 0.15}px, ${target.scrollTop * 0.25}px) scale(1.1)`;
-                const orb2 = target.querySelector('[data-parallax-orb2]') as HTMLElement;
-                if (orb2) orb2.style.transform = `translate(${target.scrollTop * 0.1}px, ${target.scrollTop * 0.2}px)`;
-            }}
+            className="p-8 space-y-8 overflow-auto h-full relative"
+            style={{ background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)' }}
         >
-            {/* Parallax Background Layer */}
-            <div className="absolute inset-0 pointer-events-none overflow-hidden" data-parallax-bg style={{ willChange: 'transform' }}>
-                <div
-                    data-parallax-orb1
-                    className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full opacity-20"
-                    style={{ background: 'radial-gradient(circle, hsl(var(--primary) / 0.4) 0%, transparent 70%)', filter: 'blur(60px)', animation: 'orbFloat1 12s ease-in-out infinite', willChange: 'transform' }}
-                />
-                <div
-                    data-parallax-orb2
-                    className="absolute -bottom-48 -left-32 w-[400px] h-[400px] rounded-full opacity-15"
-                    style={{ background: 'radial-gradient(circle, hsl(var(--accent) / 0.3) 0%, transparent 70%)', filter: 'blur(80px)', animation: 'orbFloat2 15s ease-in-out infinite', willChange: 'transform' }}
-                />
-                <div
-                    className="absolute top-1/2 left-1/3 w-[300px] h-[300px] rounded-full opacity-10"
-                    style={{ background: 'radial-gradient(circle, hsl(var(--gold) / 0.3) 0%, transparent 70%)', filter: 'blur(100px)', animation: 'orbFloat1 18s ease-in-out infinite reverse' }}
-                />
-                <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(hsl(var(--primary) / 0.03) 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
+            {/* Animated Orbs */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                <div className="absolute -top-32 -right-32 w-[600px] h-[600px] bg-amber-500/5 blur-[120px] rounded-full animate-pulse"></div>
+                <div className="absolute -bottom-48 -left-32 w-[500px] h-[500px] bg-blue-500/5 blur-[120px] rounded-full"></div>
             </div>
 
-            <header className="flex justify-between items-start" style={{ opacity: 0, animation: 'fadeIn 0.5s ease-out 0.05s forwards' }}>
+            <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10 animate-in fade-in slide-in-from-top-4 duration-700">
                 <div>
-                    <h1 className="text-4xl font-black text-gray-900 flex items-center gap-3">
-                        <Sparkles className="w-8 h-8 text-amber-500" />
-                        Gestão SD Móveis Projetados
+                    <h1 className="text-4xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+                        <div className="bg-amber-500 p-2 rounded-2xl shadow-lg shadow-amber-200">
+                            <Sparkles className="w-8 h-8 text-white" />
+                        </div>
+                        Gestão Estratégica
                     </h1>
-                    <p className="text-gray-500 mt-1 flex items-center gap-2">
-                        <Heart className="w-4 h-4 text-red-500" />
-                        Gratidão e Performance Comercial
+                    <p className="text-slate-500 mt-2 flex items-center gap-2 font-medium">
+                        <Heart className="w-4 h-4 text-red-500 fill-red-500" />
+                        Bem-vindo ao centro de comando SD Móveis
                     </p>
                 </div>
-                <div className="flex items-center gap-4">
-                    <div className="bg-green-50 border border-green-200 rounded-2xl px-6 py-3 shadow-sm">
-                        <p className="text-xs font-bold text-green-600 uppercase tracking-wider flex items-center gap-1">
-                            <Zap className="w-3 h-3" /> Status IA
-                        </p>
-                        <p className="text-green-700 font-bold flex items-center gap-2">
-                            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                            Sistema 100% Online
+                
+                <div className="grid grid-cols-2 md:flex gap-3">
+                    <div className="bg-white border border-slate-100 rounded-3xl px-5 py-3 shadow-sm flex flex-col items-center min-w-[120px]">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Status Sistema</p>
+                        <p className="text-emerald-600 font-bold flex items-center gap-2 text-sm">
+                            <span className="w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
+                            ONLINE
                         </p>
                     </div>
+                    <Button 
+                        variant="gradient" 
+                        size="lg" 
+                        className="rounded-3xl shadow-xl shadow-amber-200 h-full font-black text-xs tracking-widest"
+                        onClick={() => setView(ViewMode.BUDGET_QUOTE)}
+                    >
+                        <Plus className="w-5 h-5 mr-2" /> NOVO ORÇAMENTO
+                    </Button>
                 </div>
             </header>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-4 gap-4">
-                <div style={{ opacity: 0, animation: 'fadeIn 0.5s ease-out 0.15s forwards' }}>
-                    <Card3D intensity={8} className="rounded-2xl">
-                        <DashboardStat
-                            title="Projetos Ativos"
-                            value={contracts.length.toString()}
-                            icon="📁"
-                            trend="+2 este mês"
-                            color="bg-blue-50"
-                        />
-                    </Card3D>
-                </div>
-                <div style={{ opacity: 0, animation: 'fadeIn 0.5s ease-out 0.25s forwards' }}>
-                    <Card3D intensity={8} className="rounded-2xl">
-                        <DashboardStat
-                            title="Faturamento Total"
-                            value={`R$ ${(totalRevenue / 1000).toFixed(0)}K`}
-                            icon="💰"
-                            trend="+15% vs mês anterior"
-                            color="bg-green-50"
-                        />
-                    </Card3D>
-                </div>
-                <div style={{ opacity: 0, animation: 'fadeIn 0.5s ease-out 0.35s forwards' }}>
-                    <Card3D intensity={8} className="rounded-2xl">
-                        <DashboardStat
-                            title="Em Produção"
-                            value={inProduction.toString()}
-                            icon="🏭"
-                            trend="Meta: 10"
-                            color="bg-amber-50"
-                        />
-                    </Card3D>
-                </div>
-                <div style={{ opacity: 0, animation: 'fadeIn 0.5s ease-out 0.45s forwards' }}>
-                    <Card3D intensity={8} className="rounded-2xl">
-                        <DashboardStat
-                            title="Conversão"
-                            value={`${contracts.length > 0 ? Math.round((signedContracts / contracts.length) * 100) : 0}%`}
-                            icon="📈"
-                            trend="Excelente!"
-                            color="bg-purple-50"
-                        />
-                    </Card3D>
-                </div>
+            {/* Main Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
+                <Card3D intensity={10} className="rounded-[2.5rem] bg-white border border-slate-100 shadow-sm p-1">
+                    <DashboardStat title={"Total Or\u00E7amentos"} value={`R$ ${(stats.revenue / 1000).toFixed(1)}K`} icon="💰" trend="+15% este mês" color="bg-amber-50" />
+                </Card3D>
+                <Card3D intensity={10} className="rounded-[2.5rem] bg-white border border-slate-100 shadow-sm p-1">
+                    <DashboardStat title="Projetos Ativos" value={contracts.length.toString()} icon="📁" trend={`${stats.signedCount} assinados`} color="bg-blue-50" />
+                </Card3D>
+                <Card3D intensity={10} className="rounded-[2.5rem] bg-white border border-slate-100 shadow-sm p-1">
+                    <DashboardStat title="Produção" value={stats.inProduction.toString()} icon="🏭" trend="Crescimento de 8%" color="bg-indigo-50" />
+                </Card3D>
+                <Card3D intensity={10} className="rounded-[2.5rem] bg-white border border-slate-100 shadow-sm p-1">
+                    <DashboardStat title="OS Abertas" value={stats.openOS.toString()} icon="📋" trend="Atenção necessária" color="bg-rose-50" />
+                </Card3D>
             </div>
 
-            {/* Main Content Grid */}
-            <div className="grid grid-cols-3 gap-6">
-                {/* Sabedoria do Dia */}
-                <div style={{ opacity: 0, animation: 'fadeIn 0.6s ease-out 0.55s forwards' }} className="col-span-2">
-                    <Card3D intensity={5} className="rounded-[32px]">
-                        <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-[32px] p-8 text-white relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl" />
-                            <div className="relative z-10">
-                                <div className="flex items-center gap-2 mb-4">
-                                    <Star className="w-5 h-5 text-amber-400" />
-                                    <span className="text-amber-400 text-sm font-bold uppercase tracking-wider">Sabedoria do Dia</span>
+            {/* Middle Section: Insights & Actions */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 relative z-10">
+                {/* Wisdom & Core Actions */}
+                <div className="lg:col-span-2 space-y-6 animate-in fade-in slide-in-from-left-6 duration-1000">
+                    <div className="bg-slate-900 rounded-[3rem] p-10 text-white relative overflow-hidden shadow-2xl">
+                        <div className="absolute top-0 right-0 w-80 h-80 bg-amber-500/10 rounded-full blur-[80px]" />
+                        <div className="relative z-10">
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="p-2 bg-amber-500/20 rounded-xl">
+                                    <Star className="w-6 h-6 text-amber-400 fill-amber-400" />
                                 </div>
-                                <p className="text-gray-300 text-lg mb-8 italic leading-relaxed">
-                                    "Consagre ao Senhor tudo o que você faz, e os seus planos serão bem-sucedidos."
-                                    <span className="block text-amber-400 text-sm mt-2 not-italic">(Provérbios 16:3)</span>
-                                </p>
-                                <div className="flex gap-4">
-                                    <button
-                                        onClick={() => setView(ViewMode.PROMOB)}
-                                        className="bg-amber-600 px-8 py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-amber-500 transition-all duration-300 hover:scale-105 active:scale-95 flex items-center gap-2 shadow-lg hover:shadow-amber-500/30 hover:shadow-xl group/btn"
-                                    >
-                                        <Layers className="w-4 h-4 group-hover/btn:rotate-12 transition-transform duration-300" />
-                                        Novo Projeto 3D
-                                    </button>
-                                    <button
-                                        onClick={() => setView(ViewMode.CONTRACTS)}
-                                        className="bg-white/10 px-8 py-4 rounded-2xl font-bold uppercase text-xs tracking-widest hover:bg-white/20 transition-all duration-300 flex items-center gap-2 active:scale-95 hover:scale-105 backdrop-blur-sm group/btn"
-                                    >
-                                        <FileText className="w-4 h-4 group-hover/btn:rotate-6 transition-transform duration-300" />
-                                        Ver Contratos
-                                    </button>
-                                </div>
+                                <span className="text-amber-400 text-sm font-black uppercase tracking-[0.2em]">Sabedoria do Negócio</span>
                             </div>
-                        </div>
-                    </Card3D>
-                </div>
-
-                {/* Contratos Recentes */}
-                <div style={{ opacity: 0, animation: 'fadeIn 0.6s ease-out 0.65s forwards' }}>
-                    <Card3D intensity={6} className="rounded-[32px]">
-                        <div className="bg-white rounded-[32px] p-6 shadow-xl h-full">
-                            <div className="flex justify-between items-center mb-4">
-                                <h3 className="font-black text-gray-900 flex items-center gap-2">
-                                    <TrendingUp className="w-5 h-5 text-amber-500" />
-                                    Últimos Contratos
-                                </h3>
-                                <button onClick={() => setView(ViewMode.CONTRACTS)} className="text-xs text-amber-600 font-bold hover:underline flex items-center gap-1 hover:gap-2 transition-all duration-300 active:scale-95">
-                                    Ver todos <ChevronRight className="w-3 h-3 hover:translate-x-0.5 transition-transform duration-300" />
+                            <blockquote className="text-2xl md:text-3xl font-black text-slate-100 mb-10 leading-tight italic">
+                                "Consagre ao Senhor tudo o que você faz, e os seus planos serão bem-sucedidos."
+                                <span className="block text-amber-500 text-lg mt-4 not-italic font-bold">Provérbios 16:3</span>
+                            </blockquote>
+                            
+                            <div className="flex flex-wrap gap-4">
+                                <button
+                                    onClick={() => setView(ViewMode.PROMOB)}
+                                    className="bg-amber-500 px-8 py-5 rounded-[2rem] font-black uppercase text-xs tracking-widest hover:bg-amber-400 transition-all duration-300 hover:scale-105 active:scale-95 flex items-center gap-3 shadow-2xl shadow-amber-500/20 group"
+                                >
+                                    <Layers className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                                    NOVO PROJETO 3D
+                                </button>
+                                <button
+                                    onClick={() => setView(ViewMode.CONTRACTS_MGMT)}
+                                    className="bg-white/10 backdrop-blur-md px-8 py-5 rounded-[2rem] font-black uppercase text-xs tracking-widest hover:bg-white/20 transition-all duration-300 flex items-center gap-3 active:scale-95 border border-white/10"
+                                >
+                                    <FileText className="w-5 h-5" />
+                                    GERENCIAR CONTRATOS
                                 </button>
                             </div>
-                            <div className="space-y-3">
-                                {contracts.slice(0, 3).map(c => (
-                                    <div
-                                        key={c.id}
-                                        onClick={() => setView(ViewMode.CONTRACTS)}
-                                        className="flex justify-between items-center p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-all duration-200 cursor-pointer hover:translate-x-1 hover:shadow-md active:scale-[0.98]"
-                                    >
-                                        <div>
-                                            <p className="font-bold text-gray-900">{c.clients?.name || 'Cliente'}</p>
-                                            <p className="text-xs text-gray-500">{c.name}</p>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="font-black text-amber-600">R$ {(c.value || 0).toLocaleString('pt-BR')}</p>
-                                            <span className={`text-xs px-2 py-0.5 rounded-full ${c.status === 'producao' ? 'bg-blue-100 text-blue-700' :
-                                                c.status === 'assinado' ? 'bg-green-100 text-green-700' :
-                                                    c.status === 'instalacao' ? 'bg-purple-100 text-purple-700' :
-                                                        c.status === 'concluido' ? 'bg-emerald-100 text-emerald-700' :
-                                                            'bg-amber-100 text-amber-700'
-                                                }`}>
-                                                {c.status === 'producao' ? 'Produção' : (c.status === 'assinado' || c.status === 'assasinado' || c.status === 'assassinado') ? 'Assinado' : c.status === 'instalacao' ? 'Instalação' : c.status === 'concluido' ? 'Concluído' : c.status === 'em_negociacao' ? 'Em Negociação' : c.status}
-                                            </span>
-                                        </div>
-                                    </div>
-                                ))}
-                                {contracts.length === 0 && <p className="text-sm text-gray-400 text-center py-4">Nenhum projeto ainda</p>}
+                        </div>
+                    </div>
+
+                    {/* Quick Functional Grid */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <button onClick={() => setView(ViewMode.CRM)} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all flex flex-col items-center gap-3 group">
+                            <div className="w-14 h-14 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-all">
+                                <MessageCircle className="w-7 h-7" />
+                            </div>
+                            <span className="font-black text-slate-900 text-xs tracking-tight">CRM WhatsApp</span>
+                        </button>
+                        <button onClick={() => setView(ViewMode.PRODUCTS)} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all flex flex-col items-center gap-3 group">
+                            <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                                <Package className="w-7 h-7" />
+                            </div>
+                            <span className="font-black text-slate-900 text-xs tracking-tight">Estoque Real</span>
+                        </button>
+                        <button onClick={() => setView(ViewMode.CASH_REGISTER)} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all flex flex-col items-center gap-3 group">
+                            <div className="w-14 h-14 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition-all">
+                                <Wallet className="w-7 h-7" />
+                            </div>
+                            <span className="font-black text-slate-900 text-xs tracking-tight">Fluxo de Caixa</span>
+                        </button>
+                        <button onClick={() => setView(ViewMode.FLEET)} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all flex flex-col items-center gap-3 group">
+                            <div className="w-14 h-14 bg-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                                <MapPin className="w-7 h-7" />
+                            </div>
+                            <span className="font-black text-slate-900 text-xs tracking-tight">Frota & Trips</span>
+                        </button>
+                    </div>
+                </div>
+
+                {/* Right Sidebar: Health & Alerts */}
+                <div className="space-y-6 animate-in fade-in slide-in-from-right-6 duration-1000">
+                    {/* Financial Summary */}
+                    <div className="bg-white rounded-[3rem] p-8 border border-slate-100 shadow-sm">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-10 h-10 bg-indigo-500 rounded-2xl flex items-center justify-center text-white">
+                                <BarChart3 className="w-5 h-5" />
+                            </div>
+                            <h3 className="text-xl font-black text-slate-900 tracking-tight">Saúde Financeira</h3>
+                        </div>
+                        
+                        <div className="space-y-5">
+                            <div className="p-5 bg-emerald-50 rounded-3xl border border-emerald-100 flex justify-between items-center group cursor-pointer hover:bg-emerald-100 transition-colors">
+                                <div>
+                                    <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">A Receber</p>
+                                    <p className="text-2xl font-black text-slate-900">R$ {stats.toReceive.toLocaleString('pt-BR')}</p>
+                                </div>
+                                <TrendingUp className="w-8 h-8 text-emerald-500 opacity-40 group-hover:scale-125 transition-transform" />
+                            </div>
+                            
+                            <div className="p-5 bg-rose-50 rounded-3xl border border-rose-100 flex justify-between items-center group cursor-pointer hover:bg-rose-100 transition-colors">
+                                <div>
+                                    <p className="text-[10px] font-black text-rose-600 uppercase tracking-widest mb-1">Contas a Pagar</p>
+                                    <p className="text-2xl font-black text-slate-900">R$ {stats.toPay.toLocaleString('pt-BR')}</p>
+                                </div>
+                                <TrendingDown className="w-8 h-8 text-rose-500 opacity-40 group-hover:scale-125 transition-transform" />
                             </div>
                         </div>
+                    </div>
+
+                    {/* Alerts Section */}
+                    {(stats.lowStock > 0 || stats.openOS > 5) && (
+                        <div className="bg-white rounded-[3rem] p-8 border border-slate-100 shadow-sm">
+                            <h3 className="text-lg font-black text-slate-900 mb-6 flex items-center gap-2">
+                                <AlertTriangle className="w-5 h-5 text-amber-500" />
+                                Atenção do Gestor
+                            </h3>
+                            <div className="space-y-4">
+                                {stats.lowStock > 0 && (
+                                    <div className="flex items-center gap-4 p-4 bg-amber-50 rounded-2xl border border-amber-100">
+                                        <Package className="w-5 h-5 text-amber-600" />
+                                        <p className="text-xs font-bold text-amber-900 leading-tight">
+                                            {stats.lowStock} materiais abaixo do estoque mínimo.
+                                        </p>
+                                    </div>
+                                )}
+                                {stats.openOS > 0 && (
+                                    <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-2xl border border-blue-100">
+                                        <ClipboardList className="w-5 h-5 text-blue-600" />
+                                        <p className="text-xs font-bold text-blue-900 leading-tight">
+                                            {stats.openOS} ordens de serviço pendentes de início.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                    
+                    {/* Render Shortcut */}
+                    <Card3D intensity={15} className="rounded-[3rem]">
+                        <button 
+                            onClick={handleRender}
+                            className="w-full bg-gradient-to-r from-amber-500 to-orange-500 p-8 rounded-[3rem] text-white overflow-hidden group relative"
+                        >
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-700" />
+                            <div className="relative z-10 flex items-center justify-between">
+                                <div>
+                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-1">Inteligência Artificial</p>
+                                    <h4 className="text-2xl font-black">GERAR RENDER</h4>
+                                </div>
+                                <SparklesIcon className="w-10 h-10 group-hover:rotate-45 transition-transform duration-500" />
+                            </div>
+                        </button>
                     </Card3D>
                 </div>
             </div>
 
-            {/* Quick Actions */}
-            <div className="grid grid-cols-5 gap-4">
-                <div style={{ opacity: 0, animation: 'fadeIn 0.5s ease-out 0.75s forwards' }}>
-                    <Card3D intensity={10} className="rounded-2xl">
-                        <button
-                            onClick={() => setView(ViewMode.PROMOB)}
-                            className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-left group w-full active:scale-[0.96] hover:border-blue-200 border border-transparent flex flex-col items-center text-center justify-center h-full"
-                        >
-                            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-6 group-active:scale-90 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-blue-200/50">
-                                <Layers className="w-6 h-6 text-blue-600" />
+            {/* Bottom: Recent Contracts Table */}
+            <section className="relative z-10 animate-in fade-in slide-in-from-bottom-6 duration-1000">
+                <div className="bg-white rounded-[3.5rem] p-10 border border-slate-100 shadow-sm">
+                    <div className="flex justify-between items-center mb-10">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center">
+                                <TrendingUp className="w-6 h-6 text-slate-600" />
                             </div>
-                            <h4 className="font-bold text-gray-900 group-hover:text-blue-700 transition-colors duration-200 text-sm">Editor 3D</h4>
-                        </button>
-                    </Card3D>
-                </div>
-                <div style={{ opacity: 0, animation: 'fadeIn 0.5s ease-out 0.85s forwards' }}>
-                    <Card3D intensity={10} className="rounded-2xl">
-                        <button
-                            onClick={() => setView(ViewMode.CRM)}
-                            className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-left group w-full active:scale-[0.96] hover:border-green-200 border border-transparent flex flex-col items-center text-center justify-center h-full"
-                        >
-                            <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-6 group-active:scale-90 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-green-200/50">
-                                <MessageCircle className="w-6 h-6 text-green-600" />
+                            <div>
+                                <h3 className="text-2xl font-black text-slate-900 tracking-tight">Or\u00E7amentos Recentes</h3>
+                                <p className="text-sm text-slate-400 font-bold uppercase tracking-widest mt-1">Últimos contratos firmados</p>
                             </div>
-                            <h4 className="font-bold text-gray-900 group-hover:text-green-700 transition-colors duration-200 text-sm">CRM Zap</h4>
+                        </div>
+                        <button onClick={() => setView(ViewMode.CONTRACTS_MGMT)} className="bg-slate-50 hover:bg-slate-100 text-slate-600 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2 border border-slate-100">
+                            Ver todos <ArrowUpRight className="w-4 h-4" />
                         </button>
-                    </Card3D>
-                </div>
-                <div style={{ opacity: 0, animation: 'fadeIn 0.5s ease-out 0.95s forwards' }}>
-                    <Card3D intensity={10} className="rounded-2xl">
-                        <button
-                            onClick={() => setView(ViewMode.CONTRACTS)}
-                            className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-left group w-full active:scale-[0.96] hover:border-amber-200 border border-transparent flex flex-col items-center text-center justify-center h-full"
-                        >
-                            <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-6 group-active:scale-90 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-amber-200/50">
-                                <FileText className="w-6 h-6 text-amber-600" />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {contracts.slice(0, 3).map((c, i) => (
+                            <div key={c.id} className="group p-6 bg-slate-50 hover:bg-white hover:shadow-xl hover:border-slate-200 border border-transparent rounded-[2.5rem] transition-all cursor-pointer">
+                                <div className="flex justify-between items-start mb-6">
+                                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center group-hover:bg-amber-50 transition-colors">
+                                        <Users className="w-6 h-6 text-slate-400 group-hover:text-amber-600" />
+                                    </div>
+                                    <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full ${
+                                        c.status === 'concluido' ? 'bg-emerald-100 text-emerald-600' :
+                                        c.status === 'producao' ? 'bg-indigo-100 text-indigo-600' : 'bg-amber-100 text-amber-600'
+                                    }`}>
+                                        {c.status}
+                                    </span>
+                                </div>
+                                <h4 className="text-xl font-black text-slate-900 line-clamp-1">{c.clients?.name || 'Projeto Especial'}</h4>
+                                <p className="text-xs text-slate-400 font-bold mt-1 line-clamp-1">{c.title || c.name}</p>
+                                <div className="mt-8 pt-6 border-t border-slate-200/50 flex justify-between items-center">
+                                    <div className="flex items-center gap-2">
+                                        <Wallet className="w-4 h-4 text-slate-300" />
+                                        <span className="text-lg font-black text-slate-900">R$ {(c.value || 0).toLocaleString('pt-BR')}</span>
+                                    </div>
+                                    <p className="text-[10px] text-slate-400 font-black">{new Date(c.created_at).toLocaleDateString('pt-BR')}</p>
+                                </div>
                             </div>
-                            <h4 className="font-bold text-gray-900 group-hover:text-amber-700 transition-colors duration-200 text-sm">Contratos</h4>
-                        </button>
-                    </Card3D>
-                </div>
-                <div style={{ opacity: 0, animation: 'fadeIn 0.5s ease-out 1.05s forwards' }}>
-                    <Card3D intensity={10} className="rounded-2xl h-full">
-                        <button
-                            onClick={handleRender}
-                            className="bg-gradient-to-br from-amber-500 to-orange-600 p-6 rounded-2xl shadow-lg hover:shadow-xl hover:shadow-amber-500/30 transition-all duration-300 text-left group text-white w-full active:scale-[0.96] hover:from-amber-400 hover:to-orange-500 flex flex-col items-center text-center justify-center h-full"
-                        >
-                            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-12 group-active:scale-90 transition-all duration-300 group-hover:bg-white/30">
-                                <SparklesIcon className="w-6 h-6 text-white group-hover:animate-pulse" />
+                        ))}
+                        {contracts.length === 0 && (
+                            <div className="col-span-3 py-20 text-center bg-slate-50 border-2 border-dashed border-slate-200 rounded-[3rem]">
+                                <PlusCircle className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                                <p className="font-black text-slate-400 uppercase tracking-widest">Nenhum contrato ativo</p>
+                                <Button variant="link" className="mt-2 font-bold" onClick={() => setView(ViewMode.CONTRACTS_MGMT)}>Criar Primeiro Contrato</Button>
                             </div>
-                            <h4 className="font-bold group-hover:tracking-wide transition-all duration-300 text-sm">Render IA</h4>
-                        </button>
-                    </Card3D>
+                        )}
+                    </div>
                 </div>
-                <div style={{ opacity: 0, animation: 'fadeIn 0.5s ease-out 1.15s forwards' }}>
-                    <Card3D intensity={10} className="rounded-2xl">
-                        <button
-                            onClick={() => setView(ViewMode.PROFIT_BI)}
-                            className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-left group w-full active:scale-[0.96] hover:border-indigo-200 border border-transparent flex flex-col items-center text-center justify-center h-full"
-                        >
-                            <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-6 group-active:scale-90 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-indigo-200/50">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-600"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
-                            </div>
-                            <h4 className="font-bold text-gray-900 group-hover:text-indigo-700 transition-colors duration-200 text-sm">Lucro Real (BI)</h4>
-                        </button>
-                    </Card3D>
-                </div>
-            </div>
+            </section>
         </div>
     );
 };

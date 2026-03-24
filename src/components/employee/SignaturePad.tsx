@@ -51,3 +51,4 @@ export default function SignaturePad({ onSave, onClear }: SignaturePadProps) {
     </div>
   );
 }
+

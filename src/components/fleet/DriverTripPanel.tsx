@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase as supabaseClient } from '@/integrations/supabase/client';
 const db = supabaseClient as any;
 import { useToast } from '@/hooks/use-toast';
-import { Navigation, Play, Square, MapPin, Clock, Route, AlertTriangle, Camera, CheckSquare, Send, X, Image, PackageCheck, Fuel, Terminal } from 'lucide-react';
+import { Navigation, Play, Square, MapPin, Clock, Route, AlertTriangle, Camera, CheckSquare, Send, X, Image, PackageCheck, Fuel, Terminal, ClipboardList, User, Star } from 'lucide-react';
 import SignaturePad from '@/components/employee/SignaturePad';
 import ToolInventory from '@/components/employee/ToolInventory';
 import FuelLogForm from '@/components/fleet/FuelLogForm';
@@ -31,6 +31,20 @@ interface Vehicle {
   id: string;
   plate: string;
   model: string;
+}
+
+interface ServiceOrder {
+  id: string;
+  order_number: number;
+  description: string | null;
+  notes: string | null;
+  priority: string;
+  status: string;
+  estimated_date: string | null;
+  completed_at: string | null;
+  created_at: string;
+  total_value: number | null;
+  clients: { name: string; address: string | null } | null;
 }
 
 interface DriverTripPanelProps {
@@ -67,6 +81,11 @@ export default function DriverTripPanel({ employeeId, employeeName }: DriverTrip
   const [loading, setLoading] = useState(true);
   const [locationCount, setLocationCount] = useState(0);
   const [resolvedEmployeeId, setResolvedEmployeeId] = useState(employeeId);
+
+  // Service Orders
+  const [serviceOrders, setServiceOrders] = useState<ServiceOrder[]>([]);
+  const [activeServiceOrder, setActiveServiceOrder] = useState<ServiceOrder | null>(null);
+  const [linkedOrderId, setLinkedOrderId] = useState<string | null>(null);
 
   const [dailyChecklist, setDailyChecklist] = useState<ChecklistItem[]>(
     DAILY_CHECKLIST.map((label, i) => ({
@@ -131,13 +150,30 @@ export default function DriverTripPanel({ employeeId, employeeName }: DriverTrip
     };
   }, [employeeId, employeeName]);
 
+  // Fetch service orders whenever resolvedEmployeeId changes
+  useEffect(() => {
+    if (resolvedEmployeeId) {
+      fetchServiceOrders(resolvedEmployeeId);
+    }
+  }, [resolvedEmployeeId]);
+
+  useEffect(() => {
+    if (!resolvedEmployeeId) return;
+
+    const syncInterval = setInterval(() => {
+      void fetchTrips(resolvedEmployeeId, false);
+    }, 15000);
+
+    return () => clearInterval(syncInterval);
+  }, [resolvedEmployeeId]);
+
   useEffect(() => {
     if (activeTrip && activeTrip.id) {
       Geolocation.requestPermissions()
         .catch(() => { })
         .finally(() => {
           // Start (or reconnect to) GPS tracking via the singleton
-          gpsTracker.start(activeTrip.id, () => setLocationCount(prev => prev + 1));
+          void gpsTracker.start(activeTrip.id, () => setLocationCount(prev => prev + 1));
         });
       fetchChecklists(activeTrip.id);
       fetchPhotos(activeTrip.id);
@@ -156,52 +192,104 @@ export default function DriverTripPanel({ employeeId, employeeName }: DriverTrip
     }
   };
 
-  const fetchEmployeeAndTrips = async () => {
-    setLoading(true);
-    let resolvedId = employeeId;
-    if (!resolvedId) {
-      const { data: empData } = await db
-        .from('employees')
-        .select('id')
-        .eq('name', employeeName)
-        .eq('active', true)
-        .maybeSingle();
-      if (empData) resolvedId = empData.id;
-      else { setLoading(false); return; }
+  const fetchServiceOrders = async (empId: string) => {
+    try {
+      const { data } = await db
+        .from('service_orders')
+        .select('id, order_number, description, notes, priority, status, estimated_date, completed_at, created_at, total_value, clients(name, address)')
+        .eq('assigned_to', empId)
+        .in('status', ['aberta', 'em_andamento'])
+        .order('created_at', { ascending: false })
+        .limit(10);
+      if (data && data.length > 0) {
+        setServiceOrders(data as ServiceOrder[]);
+        // Set the most recent open OS as active
+        const firstOpen = data.find((o: ServiceOrder) => o.status === 'aberta') || data[0];
+        setActiveServiceOrder(firstOpen as ServiceOrder);
+      } else {
+        setServiceOrders([]);
+        setActiveServiceOrder(null);
+      }
+    } catch (err) {
+      console.error('[OS] Error fetching service orders:', err);
     }
-    await fetchTrips(resolvedId);
   };
 
-  const fetchTrips = async (empId: string) => {
-    const { data: active } = await db
+  const fetchEmployeeAndTrips = async (showLoader = true) => {
+    if (showLoader) setLoading(true);
+
+    let resolvedId = employeeId;
+    if (!resolvedId) {
+      const search = employeeName.trim().toLowerCase();
+      if (!search) {
+        if (showLoader) setLoading(false);
+        return;
+      }
+
+      const { data: empData } = await db
+        .from('employees')
+        .select('id, name, email')
+        .eq('active', true)
+        .or(`name.ilike.${search},email.ilike.${search}`);
+
+      const exactMatch = (empData || []).find(
+        (employee: any) => employee?.name?.toLowerCase() === search || employee?.email?.toLowerCase() === search
+      );
+
+      if (exactMatch?.id) {
+        resolvedId = exactMatch.id;
+      } else if (empData?.[0]?.id) {
+        resolvedId = empData[0].id;
+      } else {
+        if (showLoader) setLoading(false);
+        return;
+      }
+    }
+
+    await fetchTrips(resolvedId, showLoader);
+  };
+
+  const fetchTrips = async (empId: string, finishLoading = true) => {
+    const { data: activeTripsData } = await db
       .from('trips')
       .select('*')
       .eq('employee_id', empId)
-      .eq('status', 'active') // Strictly check for active status
-      .maybeSingle();
+      .is('ended_at', null)
+      .order('started_at', { ascending: false })
+      .limit(5);
 
-    if (active) {
-      setActiveTrip(active as Trip);
+    if ((activeTripsData?.length || 0) > 1) {
+      console.warn('[TRIP] Mais de uma viagem ativa encontrada para o funcionário. Retomando a mais recente.');
+    }
+
+    const latestActive = (activeTripsData?.[0] as Trip | undefined) || null;
+
+    if (latestActive) {
+      setActiveTrip(latestActive);
       const { count } = await db
         .from('trip_locations')
         .select('*', { count: 'exact', head: true })
-        .eq('trip_id', active.id);
+        .eq('trip_id', latestActive.id);
       setLocationCount(count || 0);
     } else {
       setActiveTrip(null);
+      setLocationCount(0);
     }
 
     const { data: recent } = await db
       .from('trips')
       .select('*')
       .eq('employee_id', empId)
-      .eq('status', 'completed')
+      .or('status.eq.completed,ended_at.not.is.null')
       .order('started_at', { ascending: false })
       .limit(10);
 
     if (recent) setRecentTrips(recent as Trip[]);
     setResolvedEmployeeId(empId);
-    setLoading(false);
+
+    if (finishLoading) {
+      setLoading(false);
+    }
   };
 
   const fetchChecklists = async (tripId: string) => {
@@ -254,7 +342,7 @@ export default function DriverTripPanel({ employeeId, employeeName }: DriverTrip
 
   const startTracking = useCallback((tripId: string) => {
     // Delegate to the singleton (no-op if already tracking this trip)
-    gpsTracker.start(tripId, () => setLocationCount(prev => prev + 1));
+    void gpsTracker.start(tripId, () => setLocationCount(prev => prev + 1));
   }, []);
 
   const stopTracking = useCallback(() => {
@@ -263,18 +351,20 @@ export default function DriverTripPanel({ employeeId, employeeName }: DriverTrip
   }, []);
 
   const startTrip = async (description?: string) => {
+    // Request GPS permission but NEVER block trip creation
+    let gpsAvailable = true;
     try {
       const permission = await Geolocation.requestPermissions();
       if (permission.location !== 'granted') {
+        gpsAvailable = false;
         toast({
-          title: '❌ Permissão de GPS negada',
-          description: 'Habilite a localização nas configurações do celular.',
-          variant: 'destructive',
+          title: '⚠️ GPS sem permissão',
+          description: 'A viagem será criada, mas o rastreamento pode não funcionar. Habilite a localização nas configurações.',
         });
-        return;
       }
     } catch (e) {
-      console.log('GPS permission error:', e);
+      gpsAvailable = false;
+      console.log('GPS permission error (non-blocking):', e);
     }
 
     if (!selectedVehicleId) {
@@ -288,11 +378,43 @@ export default function DriverTripPanel({ employeeId, employeeName }: DriverTrip
       return;
     }
 
+    const { data: existingActiveTrip } = await db
+      .from('trips')
+      .select('*')
+      .eq('employee_id', finalEmployeeId)
+      .is('ended_at', null)
+      .order('started_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (existingActiveTrip) {
+      setActiveTrip(existingActiveTrip as Trip);
+      const { count } = await db
+        .from('trip_locations')
+        .select('*', { count: 'exact', head: true })
+        .eq('trip_id', existingActiveTrip.id);
+
+      setLocationCount(count || 0);
+      startTracking(existingActiveTrip.id);
+      toast({
+        title: '🔄 Viagem retomada',
+        description: 'Já existe uma viagem ativa para você. Continuando rastreamento automaticamente.',
+      });
+      return;
+    }
+
+    // Build description from active service order if not explicitly provided
+    const osDesc = activeServiceOrder
+      ? `OS #${activeServiceOrder.order_number} — ${activeServiceOrder.clients?.name || 'Cliente'}: ${activeServiceOrder.description || activeServiceOrder.clients?.address || ''}`
+      : description || null;
+
+    console.log('[TRIP] Creating trip:', { finalEmployeeId, selectedVehicleId, gpsAvailable, osDesc });
+
     const { data, error } = await db
       .from('trips')
       .insert({
         employee_id: finalEmployeeId,
-        description: description || null,
+        description: osDesc,
         vehicle_id: selectedVehicleId,
         status: 'active'
       })
@@ -300,14 +422,25 @@ export default function DriverTripPanel({ employeeId, employeeName }: DriverTrip
       .single();
 
     if (error) {
-      toast({ title: '❌ Erro ao iniciar viagem', description: error.message, variant: 'destructive' });
+      console.error('[TRIP] Insert error:', JSON.stringify(error));
+      toast({ title: '❌ Erro ao iniciar viagem', description: `${error.message} (code: ${error.code})`, variant: 'destructive' });
       return;
     }
 
+    // Mark linked OS as em_andamento
+    if (activeServiceOrder) {
+      await db
+        .from('service_orders')
+        .update({ status: 'em_andamento' })
+        .eq('id', activeServiceOrder.id);
+      setLinkedOrderId(activeServiceOrder.id);
+    }
+
+    console.log('[TRIP] Trip created successfully:', data.id);
     setActiveTrip(data as Trip);
     setLocationCount(0);
     startTracking(data.id);
-    toast({ title: '🚗 Viagem iniciada!', description: 'GPS rastreando a cada 30s' });
+    toast({ title: '🚗 Viagem iniciada!', description: gpsAvailable ? 'GPS rastreando a cada 30s' : 'Viagem salva! GPS pode estar limitado.' });
   };
 
   const setMontagemConcluida = async () => {
@@ -345,6 +478,18 @@ export default function DriverTripPanel({ employeeId, employeeName }: DriverTrip
     if (error) {
       toast({ title: '❌ Erro ao finalizar', description: error.message, variant: 'destructive' });
       return;
+    }
+
+    // Mark linked OS as concluida
+    const osId = linkedOrderId || activeServiceOrder?.id;
+    if (osId) {
+      await db
+        .from('service_orders')
+        .update({ status: 'concluida', completed_at: new Date().toISOString() })
+        .eq('id', osId);
+      setLinkedOrderId(null);
+      setActiveServiceOrder(null);
+      setServiceOrders([]);
     }
 
     toast({ title: '✅ Viagem do dia finalizada!' });
@@ -638,7 +783,7 @@ export default function DriverTripPanel({ employeeId, employeeName }: DriverTrip
             )}
           </div>
 
-          <ToolInventory tripId={activeTrip.id} />
+          <ToolInventory employeeId={employeeId} />
 
           <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
             <button
@@ -745,7 +890,90 @@ export default function DriverTripPanel({ employeeId, employeeName }: DriverTrip
           </button>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-4" key="new-trip-form">
+
+          {/* Service Orders Card */}
+          {serviceOrders.length > 0 && (
+            <div className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 rounded-xl p-4">
+              <h3 className="font-bold mb-3 flex items-center gap-2 text-amber-800">
+                <ClipboardList className="w-5 h-5 text-amber-600" />
+                Suas Ordens de Serviço ({serviceOrders.length})
+              </h3>
+              <div className="space-y-3">
+                {serviceOrders.map(os => {
+                  const priorityStyle: Record<string, string> = {
+                    baixa: 'bg-gray-100 text-gray-600',
+                    normal: 'bg-blue-100 text-blue-700',
+                    alta: 'bg-orange-100 text-orange-700',
+                    urgente: 'bg-red-100 text-red-700',
+                  };
+                  const statusStyle: Record<string, string> = {
+                    aberta: 'bg-blue-100 text-blue-700',
+                    em_andamento: 'bg-amber-100 text-amber-700',
+                  };
+                  const isSelected = activeServiceOrder?.id === os.id;
+                  return (
+                    <button
+                      key={os.id}
+                      onClick={() => setActiveServiceOrder(isSelected ? null : os)}
+                      className={`w-full text-left rounded-xl p-4 border-2 transition-all ${
+                        isSelected
+                          ? 'border-amber-500 bg-amber-50 shadow-md'
+                          : 'border-gray-200 bg-white hover:border-amber-300'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-black text-amber-700 text-sm">OS #{os.order_number}</span>
+                          {isSelected && <span className="text-amber-600 text-xs font-bold">✓ Selecionada</span>}
+                        </div>
+                        <div className="flex gap-1">
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${priorityStyle[os.priority] || 'bg-gray-100 text-gray-600'}`}>
+                            {os.priority}
+                          </span>
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${statusStyle[os.status] || 'bg-gray-100 text-gray-600'}`}>
+                            {os.status === 'em_andamento' ? 'Em Andamento' : 'Aberta'}
+                          </span>
+                        </div>
+                      </div>
+                      {os.clients && (
+                        <div className="flex items-center gap-1 text-sm font-semibold text-gray-800 mb-1">
+                          <User className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                          {os.clients.name}
+                        </div>
+                      )}
+                      {os.clients?.address && (
+                        <div className="flex items-center gap-1 text-xs text-gray-500 mb-1">
+                          <MapPin className="w-3 h-3 flex-shrink-0" />
+                          {os.clients.address}
+                        </div>
+                      )}
+                      {os.description && (
+                        <p className="text-sm text-gray-600 mt-1 line-clamp-2">{os.description}</p>
+                      )}
+                      {os.estimated_date && (
+                        <div className="flex items-center gap-1 text-xs text-blue-600 mt-1 font-medium">
+                          <Clock className="w-3 h-3 flex-shrink-0" />
+                          Previsto: {new Date(os.estimated_date).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                      )}
+                      {os.total_value ? (
+                        <div className="text-xs text-green-700 font-bold mt-1">
+                          💰 R$ {os.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </div>
+                      ) : null}
+                    </button>
+                  );
+                })}
+              </div>
+              {activeServiceOrder && (
+                <p className="text-xs text-amber-700 mt-2 font-medium text-center">
+                  ✅ A OS selecionada será vinculada automaticamente à viagem
+                </p>
+              )}
+            </div>
+          )}
+
           <div className="bg-white border border-gray-200 rounded-xl p-4">
             <h3 className="font-semibold mb-3 flex items-center gap-2">
               <Navigation className="w-5 h-5 text-blue-600" />
@@ -754,6 +982,7 @@ export default function DriverTripPanel({ employeeId, employeeName }: DriverTrip
             <div className="mb-3">
               <label className="block text-sm font-medium text-gray-700 mb-1">Veículo</label>
               <select
+                key={`vehicle-select-${vehicles.length}`}
                 value={selectedVehicleId}
                 onChange={e => setSelectedVehicleId(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -856,7 +1085,7 @@ export default function DriverTripPanel({ employeeId, employeeName }: DriverTrip
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <FuelLogForm tripId={activeTrip.id} onClose={() => setShowFuel(false)} />
+            <FuelLogForm employeeId={employeeId} tripId={activeTrip.id} onClose={() => setShowFuel(false)} />
           </div>
         </div>
       )}
@@ -872,8 +1101,7 @@ export default function DriverTripPanel({ employeeId, employeeName }: DriverTrip
             </div>
             <SignaturePad
               onSave={saveSignature}
-              onCancel={() => setShowSignaturePad(false)}
-              saving={savingSignature}
+              onClear={() => setShowSignaturePad(false)}
             />
           </div>
         </div>

@@ -10,22 +10,31 @@ export function ParticleField({ count = 200 }) {
     const colors = new Float32Array(count * 3);
 
     for (let i = 0; i < count; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * 20;
-      positions[i * 3 + 1] = (Math.random() - 0.5) * 12;
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 10 - 3;
+      positions[i * 3] = (Math.random() - 0.5) * 30;
+      positions[i * 3 + 1] = (Math.random() - 0.5) * 20;
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 15 - 5;
 
-      // Subtle blue/purple tones
-      colors[i * 3] = 0.3 + Math.random() * 0.2;
-      colors[i * 3 + 1] = 0.3 + Math.random() * 0.3;
-      colors[i * 3 + 2] = 0.7 + Math.random() * 0.3;
+      // More vibrant blue/purple/cyan tones
+      const type = Math.random();
+      if (type > 0.6) {
+        colors[i * 3] = 0.38; // Cyan-ish
+        colors[i * 3 + 1] = 0.82;
+        colors[i * 3 + 2] = 0.93;
+      } else {
+        colors[i * 3] = 0.45; // Purple-ish
+        colors[i * 3 + 1] = 0.35;
+        colors[i * 3 + 2] = 0.95;
+      }
     }
     return { positions, colors };
   }, [count]);
 
   useFrame((state) => {
     if (!meshRef.current) return;
-    meshRef.current.rotation.y = state.clock.elapsedTime * 0.02;
-    meshRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.05) * 0.05;
+    const t = state.clock.elapsedTime;
+    meshRef.current.rotation.y = t * 0.03;
+    meshRef.current.rotation.x = Math.sin(t * 0.1) * 0.05;
+    meshRef.current.position.y = Math.sin(t * 0.2) * 0.2;
   });
 
   return (

@@ -38,7 +38,7 @@ interface TripLocation {
   longitude: number;
   accuracy: number | null;
   speed: number | null;
-  created_at: string;
+  recorded_at: string;
 }
 
 const VEHICLE_TYPES = ['Carro', 'Van', 'Caminhão', 'Moto', 'Utilitário', 'Outro'];
@@ -55,14 +55,18 @@ export default function FleetAdminPanel() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [tab, setTab] = useState<'live' | 'history' | 'fuel' | 'vehicles'>('live');
   const [loading, setLoading] = useState(true);
+  const [tripPointCounts, setTripPointCounts] = useState<Record<string, number>>({});
 
   // Refs to avoid stale closures inside realtime callbacks
   const activeTripsRef = useRef<Trip[]>([]);
+  const completedTripsRef = useRef<Trip[]>([]);
   const selectedTripIdRef = useRef<string | null>(null);
   const tabRef = useRef<string>('live');
+  const liveSyncInProgressRef = useRef(false);
 
   // Keep refs in sync with state
   useEffect(() => { activeTripsRef.current = activeTrips; }, [activeTrips]);
+  useEffect(() => { completedTripsRef.current = completedTrips; }, [completedTrips]);
   useEffect(() => { selectedTripIdRef.current = selectedTripId; }, [selectedTripId]);
   useEffect(() => { tabRef.current = tab; }, [tab]);
 
@@ -73,6 +77,109 @@ export default function FleetAdminPanel() {
   const [savingVehicle, setSavingVehicle] = useState(false);
   const [showInactive, setShowInactive] = useState(false);
 
+  const mergeLocations = (previous: TripLocation[], incoming: TripLocation[]) => {
+    const uniqueById = new Map<string, TripLocation>();
+    [...previous, ...incoming].forEach((loc) => uniqueById.set(loc.id, loc));
+    return Array.from(uniqueById.values()).sort(
+      (a, b) => new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime()
+    );
+  };
+
+  const fetchData = async () => {
+    setLoading(true);
+    const [empRes, activeRes, completedRes, vehRes] = await Promise.all([
+      db.from('employees').select('id, name, role').eq('active', true),
+      db.from('trips').select('*').or('status.eq.active,ended_at.is.null').order('started_at', { ascending: false }),
+      db.from('trips').select('*').or('status.eq.completed,ended_at.not.is.null').order('ended_at', { ascending: false }).limit(50),
+      db.from('vehicles').select('id, plate, model, year, active').order('model'),
+    ]);
+
+    if (empRes.data) setEmployees(empRes.data);
+
+    if (activeRes.data) {
+      const nextActive = activeRes.data as Trip[];
+      setActiveTrips(nextActive);
+      activeTripsRef.current = nextActive;
+      if (nextActive.length === 0 && tabRef.current === 'live') setTripLocations([]);
+    }
+
+    if (completedRes.data) {
+      const nextCompleted = completedRes.data as Trip[];
+      setCompletedTrips(nextCompleted);
+      completedTripsRef.current = nextCompleted;
+    }
+
+    if (vehRes.data) setVehicles(vehRes.data);
+    setLoading(false);
+  };
+
+  const fetchActiveTrips = async () => {
+    const { data } = await db
+      .from('trips')
+      .select('*')
+      .or('status.eq.active,ended_at.is.null')
+      .order('started_at', { ascending: false });
+
+    const nextActiveTrips = (data || []) as Trip[];
+    setActiveTrips(nextActiveTrips);
+    activeTripsRef.current = nextActiveTrips;
+
+    if (nextActiveTrips.length === 0 && tabRef.current === 'live') {
+      setTripLocations([]);
+    }
+
+    return nextActiveTrips;
+  };
+
+  const fetchCompletedTrips = async () => {
+    const { data } = await db
+      .from('trips')
+      .select('*')
+      .or('status.eq.completed,ended_at.not.is.null')
+      .order('ended_at', { ascending: false })
+      .limit(50);
+
+    const nextCompletedTrips = (data || []) as Trip[];
+    setCompletedTrips(nextCompletedTrips);
+    completedTripsRef.current = nextCompletedTrips;
+    return nextCompletedTrips;
+  };
+
+  const fetchTripLocationsByTripId = async (tripId: string) => {
+    const { data } = await db
+      .from('trip_locations')
+      .select('*')
+      .eq('trip_id', tripId)
+      .order('recorded_at', { ascending: true });
+
+    if (data) {
+      setTripLocations(data as TripLocation[]);
+    }
+  };
+
+  const fetchActiveLocations = async (tripIdsParam?: string[]) => {
+    const tripIds = tripIdsParam ?? (
+      activeTripsRef.current.length > 0
+        ? activeTripsRef.current.map((t) => t.id)
+        : activeTrips.map((t) => t.id)
+    );
+
+    if (tripIds.length === 0) {
+      setTripLocations([]);
+      return;
+    }
+
+    const { data } = await db
+      .from('trip_locations')
+      .select('*')
+      .in('trip_id', tripIds)
+      .order('recorded_at', { ascending: true });
+
+    if (data) {
+      setTripLocations(data as TripLocation[]);
+    }
+  };
+
   useEffect(() => {
     fetchData();
 
@@ -80,28 +187,61 @@ export default function FleetAdminPanel() {
       .channel('fleet-tracking')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'trip_locations' }, (payload: any) => {
         const newLoc = payload.new as TripLocation;
-        // Use refs so we always have the latest state values (no stale closure)
         const curSelectedId = selectedTripIdRef.current;
         const curActiveTrips = activeTripsRef.current;
         const curTab = tabRef.current;
         const isRelevant =
           curSelectedId === newLoc.trip_id ||
-          (curTab === 'live' && curActiveTrips.some(t => t.id === newLoc.trip_id));
+          (curTab === 'live' && curActiveTrips.some((t) => t.id === newLoc.trip_id));
+
         if (isRelevant) {
-          setTripLocations(prev => [...prev, newLoc]);
+          setTripLocations((prev) => mergeLocations(prev, [newLoc]));
         }
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'trips' }, () => {
-        fetchData();
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'trips' }, async () => {
+        const [latestActive, latestCompleted] = await Promise.all([fetchActiveTrips(), fetchCompletedTrips()]);
+        const currentTab = tabRef.current;
+        const currentSelectedId = selectedTripIdRef.current;
+
+        if (currentTab === 'live') {
+          if (currentSelectedId) {
+            await fetchTripLocationsByTripId(currentSelectedId);
+          } else {
+            await fetchActiveLocations(latestActive.map((trip) => trip.id));
+          }
+        }
+
+        if (currentTab === 'history' && currentSelectedId && latestCompleted.some((trip) => trip.id === currentSelectedId)) {
+          await fetchTripLocationsByTripId(currentSelectedId);
+        }
       })
       .subscribe();
 
-    // Polling fallback: refresh live locations every 30s in case realtime misses something
-    const pollInterval = setInterval(() => {
-      if (tabRef.current === 'live' && activeTripsRef.current.length > 0) {
-        fetchActiveLocations();
+    // Polling fallback: keep live + history updated even when realtime drops on mobile
+    const pollInterval = setInterval(async () => {
+      if (liveSyncInProgressRef.current) return;
+
+      liveSyncInProgressRef.current = true;
+      try {
+        const [latestActive, latestCompleted] = await Promise.all([fetchActiveTrips(), fetchCompletedTrips()]);
+        const currentTab = tabRef.current;
+        const currentSelectedId = selectedTripIdRef.current;
+
+        if (currentTab === 'live') {
+          if (currentSelectedId) {
+            await fetchTripLocationsByTripId(currentSelectedId);
+          } else {
+            await fetchActiveLocations(latestActive.map((trip) => trip.id));
+          }
+        }
+
+        if (currentTab === 'history' && currentSelectedId && latestCompleted.some((trip) => trip.id === currentSelectedId)) {
+          await fetchTripLocationsByTripId(currentSelectedId);
+        }
+      } finally {
+        liveSyncInProgressRef.current = false;
       }
-    }, 30000);
+    }, 10000);
 
     return () => {
       db.removeChannel(channel);
@@ -109,50 +249,43 @@ export default function FleetAdminPanel() {
     };
   }, []);
 
-  useEffect(() => {
-    if (tab === 'live' && activeTrips.length > 0) {
-      fetchActiveLocations();
-    }
-  }, [activeTrips, tab]);
-
-  const fetchData = async () => {
-    setLoading(true);
-    const [empRes, activeRes, completedRes, vehRes] = await Promise.all([
-      db.from('employees').select('id, name, role').eq('active', true),
-      db.from('trips').select('*').eq('status', 'active').order('started_at', { ascending: false }),
-      db.from('trips').select('*').eq('status', 'completed').order('ended_at', { ascending: false }).limit(50),
-      db.from('vehicles').select('id, plate, model, type, year, active').order('model'),
-    ]);
-    if (empRes.data) setEmployees(empRes.data);
-    if (activeRes.data) setActiveTrips(activeRes.data);
-    if (completedRes.data) setCompletedTrips(completedRes.data);
-    if (vehRes.data) setVehicles(vehRes.data);
-    setLoading(false);
-  };
-
-  const fetchActiveLocations = async () => {
-    const tripIds = activeTripsRef.current.length > 0 
-      ? activeTripsRef.current.map(t => t.id) 
-      : activeTrips.map(t => t.id);
-      
+  // Fetch GPS point counts for completed trips (for display in history list)
+  const fetchTripPointCounts = async (tripIds: string[]) => {
     if (tripIds.length === 0) return;
-    
-    const { data } = await db
-      .from('trip_locations')
-      .select('*')
-      .in('trip_id', tripIds)
-      .order('created_at', { ascending: true });
-    if (data) setTripLocations(data);
+    const counts: Record<string, number> = {};
+    // Batch query: get counts for each trip
+    for (const id of tripIds) {
+      const { count } = await db
+        .from('trip_locations')
+        .select('*', { count: 'exact', head: true })
+        .eq('trip_id', id);
+      counts[id] = count || 0;
+    }
+    setTripPointCounts(prev => ({ ...prev, ...counts }));
   };
+
+  useEffect(() => {
+    if (tab === 'live') {
+      if (selectedTripId) {
+        fetchTripLocationsByTripId(selectedTripId);
+      } else {
+        fetchActiveLocations();
+      }
+      return;
+    }
+
+    // For history: only auto-select when no trip is selected yet
+    if (tab === 'history' && !selectedTripId && completedTrips.length > 0) {
+      const latestTrip = completedTrips[0];
+      setSelectedTripId(latestTrip.id);
+      fetchTripLocationsByTripId(latestTrip.id);
+      fetchTripPointCounts(completedTrips.map(t => t.id));
+    }
+  }, [completedTrips, selectedTripId, tab]);
 
   const viewTripRoute = async (tripId: string) => {
     setSelectedTripId(tripId);
-    const { data } = await db
-      .from('trip_locations')
-      .select('*')
-      .eq('trip_id', tripId)
-      .order('created_at', { ascending: true });
-    if (data) setTripLocations(data);
+    await fetchTripLocationsByTripId(tripId);
   };
 
   const openNewVehicle = () => {
@@ -174,10 +307,9 @@ export default function FleetAdminPanel() {
     }
     setSavingVehicle(true);
 
-    const payload = {
+    const payload: any = {
       plate: vehicleForm.plate.trim().toUpperCase(),
       model: vehicleForm.model.trim(),
-      type: vehicleForm.type,
       year: vehicleForm.year ? Number(vehicleForm.year) : null,
     };
 
@@ -268,7 +400,24 @@ export default function FleetAdminPanel() {
         <button className={tabClass('live')} onClick={() => { setTab('live'); setSelectedTripId(null); fetchActiveLocations(); }}>
           <MapPin className="w-4 h-4 inline mr-2" />Tempo Real
         </button>
-        <button className={tabClass('history')} onClick={() => { setTab('history'); setSelectedTripId(null); setTripLocations([]); }}>
+        <button
+          className={tabClass('history')}
+          onClick={async () => {
+            setTab('history');
+            setSelectedTripId(null);
+            // Directly fetch completed trips and auto-load the first one's locations
+            const trips = await fetchCompletedTrips();
+            if (trips.length > 0) {
+              setSelectedTripId(trips[0].id);
+              await Promise.all([
+                fetchTripLocationsByTripId(trips[0].id),
+                fetchTripPointCounts(trips.map((t: Trip) => t.id)),
+              ]);
+            } else {
+              setTripLocations([]);
+            }
+          }}
+        >
           <Route className="w-4 h-4 inline mr-2" />Histórico
         </button>
         <button className={tabClass('fuel')} onClick={() => setTab('fuel')}>
@@ -304,7 +453,7 @@ export default function FleetAdminPanel() {
             {activeTrips.map(trip => {
               const lastLoc = tripLocations
                 .filter(l => l.trip_id === trip.id)
-                .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+                .sort((a, b) => new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime())[0];
               return (
                 <div key={trip.id} className="flex items-center justify-between p-4 bg-muted rounded-xl">
                   <div className="flex items-center gap-3">
@@ -320,7 +469,7 @@ export default function FleetAdminPanel() {
                   <div className="flex items-center gap-3">
                     {lastLoc && (
                       <span className="text-xs text-muted-foreground">
-                        Último GPS: {formatTime(lastLoc.created_at)}
+                        Último GPS: {formatTime(lastLoc.recorded_at)}
                       </span>
                     )}
                     <button
@@ -362,6 +511,10 @@ export default function FleetAdminPanel() {
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
+                  <span className="text-xs text-muted-foreground">
+                    <MapPin className="w-3 h-3 inline mr-1" />
+                    {tripPointCounts[trip.id] ?? '…'} pts
+                  </span>
                   <span className="text-sm font-bold text-foreground">
                     <Clock className="w-3 h-3 inline mr-1" />
                     {calcDuration(trip.started_at, trip.ended_at)}

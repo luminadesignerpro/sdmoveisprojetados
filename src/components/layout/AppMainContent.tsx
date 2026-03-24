@@ -25,6 +25,7 @@ import EmployeePortal from '@/components/EmployeePortal';
 import DriverTripPanel from '@/components/fleet/DriverTripPanel';
 import InternalChat from '@/components/chat/InternalChat';
 import SettingsPage from '@/pages/Settings';
+import BudgetQuote from '@/components/budget/BudgetQuote';
 
 interface AppMainContentProps {
     authState: 'ADMIN' | 'CLIENT' | 'EMPLOYEE';
@@ -88,6 +89,7 @@ export const AppMainContent: React.FC<AppMainContentProps> = ({
                     {view === ViewMode.FLEET && <FleetAdminPanel />}
                     {view === ViewMode.CHAT && <InternalChat userName="Administrador" userRole="ADMIN" />}
                     {view === ViewMode.SETTINGS && <div className="h-full overflow-auto"><SettingsPage /></div>}
+                    {view === ViewMode.BUDGET_QUOTE && <BudgetQuote />}
                     {view === ViewMode.QUALITY_CHECK && selectedContract && <QualityCheckPanel projectId={selectedContract.id} projectName={selectedContract.name} />}
                     {view === ViewMode.PROJECT_COSTS && selectedContract && <ProjectCostPanel projectId={selectedContract.id} projectName={selectedContract.name} totalValue={selectedContract.value} />}
                     {view === ViewMode.CRM && (

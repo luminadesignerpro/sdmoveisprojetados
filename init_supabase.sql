@@ -11,7 +11,7 @@ END;
 $$ language 'plpgsql';
 
 -- 3. Core Users & Employees
-CREATE TABLE public.app_users (
+CREATE TABLE IF NOT EXISTS public.app_users (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   full_name TEXT NOT NULL,
   email TEXT NOT NULL,
@@ -21,10 +21,12 @@ CREATE TABLE public.app_users (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.app_users ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all access to app_users" ON public.app_users;
 CREATE POLICY "Allow all access to app_users" ON public.app_users FOR ALL USING (true) WITH CHECK (true);
+DROP TRIGGER IF EXISTS update_app_users_updated_at ON public.app_users;
 CREATE TRIGGER update_app_users_updated_at BEFORE UPDATE ON public.app_users FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TABLE public.employees (
+CREATE TABLE IF NOT EXISTS public.employees (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT NOT NULL,
   role TEXT,
@@ -34,10 +36,11 @@ CREATE TABLE public.employees (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.employees ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all access to employees" ON public.employees;
 CREATE POLICY "Allow all access to employees" ON public.employees FOR ALL USING (true) WITH CHECK (true);
 
 -- 4. Clients and Projects
-CREATE TABLE public.clients (
+CREATE TABLE IF NOT EXISTS public.clients (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT NOT NULL,
   phone TEXT,
@@ -49,10 +52,12 @@ CREATE TABLE public.clients (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.clients ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all access to clients" ON public.clients;
 CREATE POLICY "Allow all access to clients" ON public.clients FOR ALL USING (true) WITH CHECK (true);
+DROP TRIGGER IF EXISTS update_clients_updated_at ON public.clients;
 CREATE TRIGGER update_clients_updated_at BEFORE UPDATE ON public.clients FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TABLE public.client_projects (
+CREATE TABLE IF NOT EXISTS public.client_projects (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   client_id UUID REFERENCES public.clients(id),
   title TEXT NOT NULL,
@@ -63,11 +68,13 @@ CREATE TABLE public.client_projects (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.client_projects ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all access to client_projects" ON public.client_projects;
 CREATE POLICY "Allow all access to client_projects" ON public.client_projects FOR ALL USING (true) WITH CHECK (true);
+DROP TRIGGER IF EXISTS update_client_projects_updated_at ON public.client_projects;
 CREATE TRIGGER update_client_projects_updated_at BEFORE UPDATE ON public.client_projects FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 -- 5. Suppliers and Products
-CREATE TABLE public.suppliers (
+CREATE TABLE IF NOT EXISTS public.suppliers (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT NOT NULL,
   cnpj TEXT,
@@ -81,10 +88,12 @@ CREATE TABLE public.suppliers (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.suppliers ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all access to suppliers" ON public.suppliers;
 CREATE POLICY "Allow all access to suppliers" ON public.suppliers FOR ALL USING (true) WITH CHECK (true);
+DROP TRIGGER IF EXISTS update_suppliers_updated_at ON public.suppliers;
 CREATE TRIGGER update_suppliers_updated_at BEFORE UPDATE ON public.suppliers FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TABLE public.products (
+CREATE TABLE IF NOT EXISTS public.products (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT NOT NULL,
   description TEXT,
@@ -101,11 +110,13 @@ CREATE TABLE public.products (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all access to products" ON public.products;
 CREATE POLICY "Allow all access to products" ON public.products FOR ALL USING (true) WITH CHECK (true);
+DROP TRIGGER IF EXISTS update_products_updated_at ON public.products;
 CREATE TRIGGER update_products_updated_at BEFORE UPDATE ON public.products FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 -- 6. Financial Operations
-CREATE TABLE public.cash_register (
+CREATE TABLE IF NOT EXISTS public.cash_register (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   type TEXT NOT NULL DEFAULT 'entrada',
   category TEXT NOT NULL DEFAULT 'Geral',
@@ -118,9 +129,10 @@ CREATE TABLE public.cash_register (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.cash_register ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all access to cash_register" ON public.cash_register;
 CREATE POLICY "Allow all access to cash_register" ON public.cash_register FOR ALL USING (true) WITH CHECK (true);
 
-CREATE TABLE public.accounts_payable (
+CREATE TABLE IF NOT EXISTS public.accounts_payable (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   supplier_id UUID REFERENCES public.suppliers(id),
   description TEXT NOT NULL,
@@ -133,9 +145,10 @@ CREATE TABLE public.accounts_payable (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.accounts_payable ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all access to accounts_payable" ON public.accounts_payable;
 CREATE POLICY "Allow all access to accounts_payable" ON public.accounts_payable FOR ALL USING (true) WITH CHECK (true);
 
-CREATE TABLE public.accounts_receivable (
+CREATE TABLE IF NOT EXISTS public.accounts_receivable (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   client_id UUID REFERENCES public.clients(id),
   project_id UUID REFERENCES public.client_projects(id),
@@ -149,10 +162,11 @@ CREATE TABLE public.accounts_receivable (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.accounts_receivable ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all access to accounts_receivable" ON public.accounts_receivable;
 CREATE POLICY "Allow all access to accounts_receivable" ON public.accounts_receivable FOR ALL USING (true) WITH CHECK (true);
 
 -- 7. Employee Time Tracking & Requests
-CREATE TABLE public.time_entries (
+CREATE TABLE IF NOT EXISTS public.time_entries (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   employee_id UUID NOT NULL REFERENCES public.employees(id) ON DELETE CASCADE,
   clock_in TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -161,9 +175,10 @@ CREATE TABLE public.time_entries (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.time_entries ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all access to time_entries" ON public.time_entries;
 CREATE POLICY "Allow all access to time_entries" ON public.time_entries FOR ALL USING (true) WITH CHECK (true);
 
-CREATE TABLE public.advance_requests (
+CREATE TABLE IF NOT EXISTS public.advance_requests (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   employee_id UUID NOT NULL REFERENCES public.employees(id) ON DELETE CASCADE,
   amount NUMERIC NOT NULL,
@@ -172,9 +187,10 @@ CREATE TABLE public.advance_requests (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.advance_requests ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all access to advance_requests" ON public.advance_requests;
 CREATE POLICY "Allow all access to advance_requests" ON public.advance_requests FOR ALL USING (true) WITH CHECK (true);
 
-CREATE TABLE public.employee_adjustments (
+CREATE TABLE IF NOT EXISTS public.employee_adjustments (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   employee_id UUID NOT NULL REFERENCES public.employees(id) ON DELETE CASCADE,
   type TEXT NOT NULL DEFAULT 'overtime',
@@ -185,10 +201,11 @@ CREATE TABLE public.employee_adjustments (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.employee_adjustments ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all access to employee_adjustments" ON public.employee_adjustments;
 CREATE POLICY "Allow all access to employee_adjustments" ON public.employee_adjustments FOR ALL USING (true) WITH CHECK (true);
 
 -- 8. Vehicles and Trips
-CREATE TABLE public.vehicles (
+CREATE TABLE IF NOT EXISTS public.vehicles (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   plate TEXT NOT NULL,
   model TEXT,
@@ -196,9 +213,10 @@ CREATE TABLE public.vehicles (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.vehicles ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all access to vehicles" ON public.vehicles;
 CREATE POLICY "Allow all access to vehicles" ON public.vehicles FOR ALL USING (true) WITH CHECK (true);
 
-CREATE TABLE public.trips (
+CREATE TABLE IF NOT EXISTS public.trips (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   vehicle_id UUID REFERENCES public.vehicles(id),
   employee_id UUID REFERENCES public.employees(id),
@@ -210,9 +228,10 @@ CREATE TABLE public.trips (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.trips ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all access to trips" ON public.trips;
 CREATE POLICY "Allow all access to trips" ON public.trips FOR ALL USING (true) WITH CHECK (true);
 
-CREATE TABLE public.trip_locations (
+CREATE TABLE IF NOT EXISTS public.trip_locations (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   trip_id UUID REFERENCES public.trips(id) ON DELETE CASCADE,
   latitude NUMERIC,
@@ -221,9 +240,10 @@ CREATE TABLE public.trip_locations (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.trip_locations ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all access to trip_locations" ON public.trip_locations;
 CREATE POLICY "Allow all access to trip_locations" ON public.trip_locations FOR ALL USING (true) WITH CHECK (true);
 
-CREATE TABLE public.fuel_logs (
+CREATE TABLE IF NOT EXISTS public.fuel_logs (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   employee_id UUID NOT NULL REFERENCES public.employees(id),
   vehicle_id UUID NOT NULL REFERENCES public.vehicles(id),
@@ -236,9 +256,10 @@ CREATE TABLE public.fuel_logs (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.fuel_logs ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all access to fuel_logs" ON public.fuel_logs;
 CREATE POLICY "Allow all access to fuel_logs" ON public.fuel_logs FOR ALL USING (true) WITH CHECK (true);
 
-CREATE TABLE public.trip_checklists (
+CREATE TABLE IF NOT EXISTS public.trip_checklists (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   trip_id UUID REFERENCES public.trips(id),
   item TEXT,
@@ -247,9 +268,10 @@ CREATE TABLE public.trip_checklists (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.trip_checklists ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all access to trip_checklists" ON public.trip_checklists;
 CREATE POLICY "Allow all access to trip_checklists" ON public.trip_checklists FOR ALL USING (true) WITH CHECK (true);
 
-CREATE TABLE public.trip_incidents (
+CREATE TABLE IF NOT EXISTS public.trip_incidents (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   trip_id UUID REFERENCES public.trips(id),
   description TEXT,
@@ -257,9 +279,10 @@ CREATE TABLE public.trip_incidents (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.trip_incidents ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all access to trip_incidents" ON public.trip_incidents;
 CREATE POLICY "Allow all access to trip_incidents" ON public.trip_incidents FOR ALL USING (true) WITH CHECK (true);
 
-CREATE TABLE public.trip_photos (
+CREATE TABLE IF NOT EXISTS public.trip_photos (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   trip_id UUID REFERENCES public.trips(id),
   photo_url TEXT,
@@ -267,10 +290,11 @@ CREATE TABLE public.trip_photos (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.trip_photos ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all access to trip_photos" ON public.trip_photos;
 CREATE POLICY "Allow all access to trip_photos" ON public.trip_photos FOR ALL USING (true) WITH CHECK (true);
 
 -- 9. Other Project Tables
-CREATE TABLE public.project_costs (
+CREATE TABLE IF NOT EXISTS public.project_costs (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   project_id UUID REFERENCES public.client_projects(id),
   description TEXT,
@@ -279,9 +303,10 @@ CREATE TABLE public.project_costs (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.project_costs ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all access to project_costs" ON public.project_costs;
 CREATE POLICY "Allow all access to project_costs" ON public.project_costs FOR ALL USING (true) WITH CHECK (true);
 
-CREATE TABLE public.project_gallery (
+CREATE TABLE IF NOT EXISTS public.project_gallery (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   project_id UUID REFERENCES public.client_projects(id),
   image_url TEXT,
@@ -289,9 +314,10 @@ CREATE TABLE public.project_gallery (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.project_gallery ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all access to project_gallery" ON public.project_gallery;
 CREATE POLICY "Allow all access to project_gallery" ON public.project_gallery FOR ALL USING (true) WITH CHECK (true);
 
-CREATE TABLE public.project_installments (
+CREATE TABLE IF NOT EXISTS public.project_installments (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   project_id UUID REFERENCES public.client_projects(id),
   installment_number INTEGER,
@@ -301,9 +327,10 @@ CREATE TABLE public.project_installments (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.project_installments ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all access to project_installments" ON public.project_installments;
 CREATE POLICY "Allow all access to project_installments" ON public.project_installments FOR ALL USING (true) WITH CHECK (true);
 
-CREATE TABLE public.project_production_steps (
+CREATE TABLE IF NOT EXISTS public.project_production_steps (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   project_id UUID REFERENCES public.client_projects(id),
   step_name TEXT,
@@ -312,9 +339,10 @@ CREATE TABLE public.project_production_steps (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.project_production_steps ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all access to project_production_steps" ON public.project_production_steps;
 CREATE POLICY "Allow all access to project_production_steps" ON public.project_production_steps FOR ALL USING (true) WITH CHECK (true);
 
-CREATE TABLE public.project_timeline (
+CREATE TABLE IF NOT EXISTS public.project_timeline (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   project_id UUID REFERENCES public.client_projects(id),
   event_name TEXT,
@@ -323,10 +351,11 @@ CREATE TABLE public.project_timeline (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.project_timeline ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all access to project_timeline" ON public.project_timeline;
 CREATE POLICY "Allow all access to project_timeline" ON public.project_timeline FOR ALL USING (true) WITH CHECK (true);
 
 -- 10. Orders and Contracts
-CREATE TABLE public.service_orders (
+CREATE TABLE IF NOT EXISTS public.service_orders (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   order_number SERIAL,
   client_id UUID REFERENCES public.clients(id),
@@ -343,10 +372,12 @@ CREATE TABLE public.service_orders (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.service_orders ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all access to service_orders" ON public.service_orders;
 CREATE POLICY "Allow all access to service_orders" ON public.service_orders FOR ALL USING (true) WITH CHECK (true);
+DROP TRIGGER IF EXISTS update_service_orders_updated_at ON public.service_orders;
 CREATE TRIGGER update_service_orders_updated_at BEFORE UPDATE ON public.service_orders FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TABLE public.contracts (
+CREATE TABLE IF NOT EXISTS public.contracts (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   contract_number SERIAL,
   client_id UUID REFERENCES public.clients(id),
@@ -362,10 +393,12 @@ CREATE TABLE public.contracts (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.contracts ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all access to contracts" ON public.contracts;
 CREATE POLICY "Allow all access to contracts" ON public.contracts FOR ALL USING (true) WITH CHECK (true);
+DROP TRIGGER IF EXISTS update_contracts_updated_at ON public.contracts;
 CREATE TRIGGER update_contracts_updated_at BEFORE UPDATE ON public.contracts FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TABLE public.tool_inventory (
+CREATE TABLE IF NOT EXISTS public.tool_inventory (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   employee_id UUID NOT NULL REFERENCES public.employees(id),
   name TEXT NOT NULL,
@@ -376,10 +409,13 @@ CREATE TABLE public.tool_inventory (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.tool_inventory ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all access to tool_inventory" ON public.tool_inventory;
 CREATE POLICY "Allow all access to tool_inventory" ON public.tool_inventory FOR ALL USING (true) WITH CHECK (true);
+DROP TRIGGER IF EXISTS update_tool_inventory_updated_at ON public.tool_inventory;
+CREATE TRIGGER update_tool_inventory_updated_at BEFORE UPDATE ON public.tool_inventory FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 -- 11. Quality Control
-CREATE TABLE public.quality_checklists (
+CREATE TABLE IF NOT EXISTS public.quality_checklists (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   project_id UUID REFERENCES public.client_projects(id),
   inspector_name TEXT,
@@ -387,9 +423,10 @@ CREATE TABLE public.quality_checklists (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.quality_checklists ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all access to quality_checklists" ON public.quality_checklists;
 CREATE POLICY "Allow all access to quality_checklists" ON public.quality_checklists FOR ALL USING (true) WITH CHECK (true);
 
-CREATE TABLE public.quality_check_items (
+CREATE TABLE IF NOT EXISTS public.quality_check_items (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   checklist_id UUID REFERENCES public.quality_checklists(id),
   item_name TEXT,
@@ -398,10 +435,11 @@ CREATE TABLE public.quality_check_items (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.quality_check_items ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all access to quality_check_items" ON public.quality_check_items;
 CREATE POLICY "Allow all access to quality_check_items" ON public.quality_check_items FOR ALL USING (true) WITH CHECK (true);
 
 -- 12. WhatsApp Integrations
-CREATE TABLE public.whatsapp_conversations (
+CREATE TABLE IF NOT EXISTS public.whatsapp_conversations (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   client_phone TEXT NOT NULL UNIQUE,
   client_name TEXT,
@@ -412,9 +450,10 @@ CREATE TABLE public.whatsapp_conversations (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.whatsapp_conversations ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all access to whatsapp_conversations" ON public.whatsapp_conversations;
 CREATE POLICY "Allow all access to whatsapp_conversations" ON public.whatsapp_conversations FOR ALL USING (true) WITH CHECK (true);
 
-CREATE TABLE public.whatsapp_messages (
+CREATE TABLE IF NOT EXISTS public.whatsapp_messages (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   conversation_id UUID REFERENCES public.whatsapp_conversations(id),
   sender TEXT NOT NULL,
@@ -423,4 +462,5 @@ CREATE TABLE public.whatsapp_messages (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.whatsapp_messages ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all access to whatsapp_messages" ON public.whatsapp_messages;
 CREATE POLICY "Allow all access to whatsapp_messages" ON public.whatsapp_messages FOR ALL USING (true) WITH CHECK (true);

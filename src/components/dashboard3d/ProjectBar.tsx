@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import * as THREE from "three";
@@ -22,6 +22,7 @@ export function ProjectBar({
 }: ProjectBarProps) {
   const barRef = useRef<THREE.Mesh>(null!);
   const groupRef = useRef<THREE.Group>(null!);
+  const [hovered, setHovered] = useState(false);
   const targetHeight = (value / maxValue) * 2.5;
 
   useFrame((state) => {
@@ -30,23 +31,35 @@ export function ProjectBar({
 
     const progress = Math.min(1, (t - delay * 0.3) * 0.8);
     const eased = 1 - Math.pow(1 - Math.max(0, progress), 3);
-    barRef.current.scale.y = eased;
+    
+    // Scale pulse and hover
+    const hoverScale = hovered ? 1.2 : 1.0;
+    barRef.current.scale.x = THREE.MathUtils.lerp(barRef.current.scale.x, hoverScale, 0.1);
+    barRef.current.scale.z = THREE.MathUtils.lerp(barRef.current.scale.z, hoverScale, 0.1);
+    barRef.current.scale.y = eased * (hovered ? 1.1 : 1.0);
 
-    groupRef.current.position.y = position[1] + Math.sin(t * 0.6 + delay) * 0.05;
+    groupRef.current.position.y = position[1] + Math.sin(t * 0.6 + delay) * (hovered ? 0.1 : 0.05);
   });
 
   return (
-    <group ref={groupRef} position={position}>
+    <group 
+      ref={groupRef} 
+      position={position}
+      onPointerOver={() => setHovered(true)}
+      onPointerOut={() => setHovered(false)}
+    >
       <mesh ref={barRef} position={[0, targetHeight / 2, 0]}>
         <boxGeometry args={[0.4, targetHeight, 0.4]} />
         <meshPhysicalMaterial
           color={color}
-          metalness={0.3}
-          roughness={0.3}
+          metalness={0.4}
+          roughness={0.2}
+          transmission={0.4}
+          thickness={0.5}
           transparent
-          opacity={0.85}
+          opacity={hovered ? 0.95 : 0.8}
           emissive={color}
-          emissiveIntensity={0.15}
+          emissiveIntensity={hovered ? 0.5 : 0.2}
         />
       </mesh>
 

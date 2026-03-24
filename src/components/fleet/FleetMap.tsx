@@ -25,8 +25,7 @@ interface Location {
   longitude: number;
   accuracy: number | null;
   speed: number | null;
-  created_at: string;
-  created_at: string;
+  recorded_at: string;
 }
 
 export default function FleetMap({ locations = [] }: { locations?: Location[] }) {
@@ -84,24 +83,42 @@ export default function FleetMap({ locations = [] }: { locations?: Location[] })
       const color = colors[idx % colors.length];
       idx++;
 
-      L.polyline(positions, { color, weight: 4, opacity: 0.7 }).addTo(layer);
+      if (positions.length > 1) {
+        L.polyline(positions, { color, weight: 4, opacity: 0.7 }).addTo(layer);
+      }
+
+      // Add start marker
+      if (positions.length > 0) {
+        const startMarker = L.circleMarker([positions[0][0], positions[0][1]], {
+          radius: 6, color: '#22c55e', fillColor: '#22c55e', fillOpacity: 1, weight: 2,
+        }).addTo(layer);
+        startMarker.bindPopup(`<b>🟢 Início</b><br>${new Date(locs[0].recorded_at).toLocaleString('pt-BR')}`);
+      }
 
       const marker = L.marker([lastLoc.latitude, lastLoc.longitude], { icon: activeIcon }).addTo(layer);
       const speedText = lastLoc.speed !== null ? `<p>Vel: ${(lastLoc.speed * 3.6).toFixed(0)} km/h</p>` : '';
       marker.bindPopup(`
         <div style="font-size:13px">
           <p style="font-weight:bold">📍 Última posição</p>
-          <p>${new Date(lastLoc.created_at).toLocaleString('pt-BR')}</p>
+          <p>${new Date(lastLoc.recorded_at).toLocaleString('pt-BR')}</p>
           ${speedText}
           <p style="color:#888;font-size:11px">Pontos: ${locs.length}</p>
         </div>
       `);
     });
 
-    // Fit bounds
+    // Fit bounds — handle single-point or same-coordinate cases
     const allPositions = locations.map(l => [l.latitude, l.longitude] as [number, number]);
-    if (allPositions.length > 0) {
-      map.fitBounds(L.latLngBounds(allPositions), { padding: [50, 50], maxZoom: 15 });
+    if (allPositions.length === 1) {
+      map.setView(allPositions[0], 15);
+    } else {
+      const bounds = L.latLngBounds(allPositions);
+      // If bounds are zero-area (all same coords), just center on them
+      if (bounds.getNorthEast().equals(bounds.getSouthWest())) {
+        map.setView(allPositions[0], 15);
+      } else {
+        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+      }
     }
   }, [locations]);
 

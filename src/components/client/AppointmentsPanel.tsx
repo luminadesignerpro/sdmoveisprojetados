@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, Plus, CheckCircle, AlertCircle, Loader2, Wrench, Users, Shield, X, User, MapPin, Phone } from 'lucide-react';
+import { Clock, Plus, CheckCircle, AlertCircle, Loader2, Wrench, Users, Shield, X, User, MapPin, Phone } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Calendar as CalendarIcon } from 'lucide-react';
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 
 
@@ -53,12 +58,13 @@ const AppointmentsPanel: React.FC<AppointmentsPanelProps> = ({ clientId, clientN
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [editingApt, setEditingApt] = useState<Appointment | null>(null);
 
     // Form state
     const [type, setType] = useState('visita_tecnica');
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
-    const [preferredDate, setPreferredDate] = useState('');
+    const [preferredDate, setPreferredDate] = useState<Date | undefined>(undefined);
     const [preferredTime, setPreferredTime] = useState('09:00');
     const [clientNameInput, setClientNameInput] = useState('');
     const [clientAddress, setClientAddress] = useState('');
@@ -94,71 +100,100 @@ const AppointmentsPanel: React.FC<AppointmentsPanelProps> = ({ clientId, clientN
         }
 
         setSubmitting(true);
+        const dateStr = format(preferredDate, 'yyyy-MM-dd');
 
-        const { error } = await supabase.from('appointments').insert({
+        const payload = {
             client_id: clientId || null,
             project_id: projectId || null,
             type,
             title: title.trim(),
             description: description.trim() || null,
-            preferred_date: preferredDate,
+            preferred_date: dateStr,
             preferred_time: preferredTime,
-            status: 'pendente',
+            status: editingApt ? editingApt.status : 'pendente',
             client_name: clientNameInput.trim() || clientName || null,
             client_address: clientAddress.trim() || null,
             client_phone: clientPhone.trim() || null,
-        });
+        };
+
+        const { error } = editingApt 
+            ? await supabase.from('appointments').update(payload).eq('id', editingApt.id)
+            : await supabase.from('appointments').insert(payload);
 
         if (error) {
-            toast({ title: '❌ Erro ao agendar', description: error.message, variant: 'destructive' });
+            toast({ title: '❌ Erro ao salvar', description: error.message, variant: 'destructive' });
         } else {
-            toast({ title: '✅ Agendamento solicitado!', description: 'Você será notificado quando for confirmado.' });
+            toast({ title: `✅ Agendamento ${editingApt ? 'atualizado' : 'solicitado'}!`, description: 'Você será notificado quando for confirmado.' });
 
-            // Send WhatsApp notification
-            try {
-                await supabase.functions.invoke('whatsapp-send', {
-                    body: {
-                        phone: '5500000000000', // Admin phone - placeholder
-                        message: `📅 *Novo Agendamento*\n\n👤 Cliente: ${clientName || 'N/A'}\n📋 Tipo: ${APPOINTMENT_TYPES.find(t => t.value === type)?.label}\n📝 ${title}\n📅 Data: ${format(new Date(preferredDate + 'T12:00:00'), "dd/MM/yyyy", { locale: ptBR })}\n⏰ Horário: ${preferredTime}\n\n${description ? `📄 Obs: ${description}` : ''}`,
-                    },
-                });
-            } catch (e) {
-                // Silent fail - notification is best-effort
+            if (!editingApt) {
+                // Send WhatsApp notification for new appointments
+                try {
+                    await supabase.functions.invoke('whatsapp-send', {
+                        body: {
+                            phone: '5500000000000', // Admin phone - placeholder
+                            message: `📅 *Novo Agendamento*\n\n👤 Cliente: ${clientName || 'N/A'}\n📋 Tipo: ${APPOINTMENT_TYPES.find(t => t.value === type)?.label}\n📝 ${title}\n📅 Data: ${format(preferredDate, "dd/MM/yyyy", { locale: ptBR })}\n⏰ Horário: ${preferredTime}${description ? `\n\n📄 Obs: ${description}` : ''}`,
+                        },
+                    });
+                } catch (e) {}
             }
 
-            setShowForm(false);
-            setTitle('');
-            setDescription('');
-            setPreferredDate('');
-            setPreferredTime('09:00');
-            setType('visita_tecnica');
-            setClientNameInput('');
-            setClientAddress('');
-            setClientPhone('');
+            resetForm();
         }
-
         setSubmitting(false);
+    };
+
+    const handleEdit = (apt: Appointment) => {
+        setEditingApt(apt);
+        setType(apt.type);
+        setTitle(apt.title);
+        setDescription(apt.description || '');
+        setPreferredDate(new Date(apt.preferred_date + 'T12:00:00'));
+        setPreferredTime(apt.preferred_time);
+        setClientNameInput(apt.client_name || '');
+        setClientAddress(apt.client_address || '');
+        setClientPhone(apt.client_phone || '');
+        setShowForm(true);
+    };
+
+    const handleCancelApt = async (id: string) => {
+        if (!confirm('Deseja realmente cancelar este agendamento?')) return;
+        const { error } = await supabase.from('appointments').update({ status: 'cancelado' }).eq('id', id);
+        if (error) toast({ title: '❌ Erro ao cancelar', description: error.message, variant: 'destructive' });
+        else toast({ title: '✅ Agendamento cancelado' });
+    };
+
+    const resetForm = () => {
+        setShowForm(false);
+        setEditingApt(null);
+        setTitle('');
+        setDescription('');
+        setPreferredDate(undefined);
+        setPreferredTime('09:00');
+        setType('visita_tecnica');
+        setClientNameInput('');
+        setClientAddress('');
+        setClientPhone('');
     };
 
     const today = new Date().toISOString().split('T')[0];
 
     return (
-        <div className="p-4 md:p-8 space-y-6 overflow-auto h-full">
-            {/* Header */}
-            <div className="flex items-center justify-between">
+        <div className="p-4 md:p-8 pt-6 md:pt-10 space-y-6 overflow-auto h-full">
+            {/* Header - Sticky with glass effect to prevent overlap issues */}
+            <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm pb-4 -mx-4 px-4 md:-mx-8 md:px-8 flex items-center justify-between border-b border-border/50 mb-6">
                 <div>
                     <h2 className="text-2xl md:text-3xl font-black text-foreground flex items-center gap-3">
-                        <Calendar className="w-7 h-7 text-primary" />
+                        <CalendarIcon className="w-7 h-7 text-primary" />
                         Agendamentos
                     </h2>
-                    <p className="text-muted-foreground text-sm mt-1">Agende visitas, reuniões e assistência técnica</p>
+                    <p className="text-muted-foreground text-[10px] md:text-xs uppercase font-bold tracking-wider mt-1 opacity-70">Sincronização em tempo real</p>
                 </div>
                 <button
                     onClick={() => setShowForm(true)}
-                    className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2.5 rounded-xl font-bold text-sm hover:opacity-90 transition-all shadow-lg touch-manipulation"
+                    className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2.5 rounded-xl font-black text-xs md:text-sm hover:opacity-90 transition-all shadow-lg shadow-primary/20 active:scale-95 touch-manipulation"
                 >
                     <Plus className="w-4 h-4" />
-                    Novo Agendamento
+                    NOVO AGENDAMENTO
                 </button>
             </div>
 
@@ -167,10 +202,10 @@ const AppointmentsPanel: React.FC<AppointmentsPanelProps> = ({ clientId, clientN
                 <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
                     <div className="bg-card rounded-2xl border border-border p-6 w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl">
                         <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-lg font-bold text-foreground">Novo Agendamento</h3>
-                            <button onClick={() => setShowForm(false)} className="text-muted-foreground hover:text-foreground p-1">
-                                <X className="w-5 h-5" />
-                            </button>
+                        <h3 className="text-lg font-bold text-foreground">{editingApt ? 'Editar' : 'Novo'} Agendamento</h3>
+                        <button onClick={resetForm} className="text-muted-foreground hover:text-foreground p-1">
+                            <X className="w-5 h-5" />
+                        </button>
                         </div>
 
                         {/* Type Selection */}
@@ -254,16 +289,33 @@ const AppointmentsPanel: React.FC<AppointmentsPanelProps> = ({ clientId, clientN
                         </div>
 
                         {/* Date & Time */}
-                        <div className="grid grid-cols-2 gap-3 mb-4">
+                        <div className="grid grid-cols-1 gap-4 mb-4">
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold text-foreground">Data *</label>
-                                <input
-                                    type="date"
-                                    value={preferredDate}
-                                    onChange={(e) => setPreferredDate(e.target.value)}
-                                    min={today}
-                                    className="w-full h-11 bg-background rounded-xl px-3 border border-border text-foreground text-sm focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none transition-all"
-                                />
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant={"outline"}
+                                            className={cn(
+                                                "w-full h-11 justify-start text-left font-normal rounded-xl border-border px-4",
+                                                !preferredDate && "text-muted-foreground"
+                                            )}
+                                        >
+                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            {preferredDate ? format(preferredDate, "PPP", { locale: ptBR }) : <span>Selecione uma data</span>}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar
+                                            mode="single"
+                                            selected={preferredDate}
+                                            onSelect={setPreferredDate}
+                                            initialFocus
+                                            locale={ptBR}
+                                            disabled={(date) => date < new Date(new Date().setHours(0,0,0,0))}
+                                        />
+                                    </PopoverContent>
+                                </Popover>
                             </div>
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold text-foreground">Horário</label>
@@ -298,8 +350,8 @@ const AppointmentsPanel: React.FC<AppointmentsPanelProps> = ({ clientId, clientN
                             disabled={submitting}
                             className="w-full h-12 bg-primary text-primary-foreground rounded-xl font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-all disabled:opacity-50 touch-manipulation"
                         >
-                            {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4" />}
-                            {submitting ? 'Agendando...' : 'Confirmar Agendamento'}
+                            {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : editingApt ? <CheckCircle className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                            {submitting ? 'Salvando...' : editingApt ? 'Salvar Alterações' : 'Confirmar Agendamento'}
                         </button>
                     </div>
                 </div>
@@ -312,7 +364,7 @@ const AppointmentsPanel: React.FC<AppointmentsPanelProps> = ({ clientId, clientN
                 </div>
             ) : appointments.length === 0 ? (
                 <div className="text-center py-16">
-                    <Calendar className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
+                    <CalendarIcon className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
                     <p className="text-muted-foreground font-medium">Nenhum agendamento</p>
                     <p className="text-muted-foreground/60 text-sm mt-1">Clique em "Novo Agendamento" para começar</p>
                 </div>
@@ -331,7 +383,7 @@ const AppointmentsPanel: React.FC<AppointmentsPanelProps> = ({ clientId, clientN
                                 <div className="flex items-start justify-between gap-3">
                                     <div className="flex items-start gap-3 flex-1 min-w-0">
                                         <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                                            {typeInfo ? <typeInfo.icon className="w-5 h-5 text-primary" /> : <Calendar className="w-5 h-5 text-primary" />}
+                                            {typeInfo ? <typeInfo.icon className="w-5 h-5 text-primary" /> : <CalendarIcon className="w-5 h-5 text-primary" />}
                                         </div>
                                         <div className="min-w-0">
                                             <h4 className="font-bold text-foreground text-sm truncate">{apt.title}</h4>
@@ -360,15 +412,27 @@ const AppointmentsPanel: React.FC<AppointmentsPanelProps> = ({ clientId, clientN
                                         </div>
                                     </div>
 
-                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border shrink-0 ${statusInfo.color}`}>
-                                        <StatusIcon className="w-3 h-3" />
-                                        {statusInfo.label}
-                                    </span>
+                                    <div className="flex flex-col items-end gap-2 shrink-0">
+                                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border ${statusInfo.color}`}>
+                                            <StatusIcon className="w-3 h-3" />
+                                            {statusInfo.label}
+                                        </span>
+                                        {apt.status === 'pendente' && (
+                                            <div className="flex gap-1">
+                                                <button onClick={() => handleEdit(apt)} className="p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors" title="Editar">
+                                                    <Plus className="w-3.5 h-3.5 rotate-45" /> {/* Using Plus rotated as a pencil alternative if Pencil is not available */}
+                                                </button>
+                                                <button onClick={() => handleCancelApt(apt.id)} className="p-1.5 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors" title="Cancelar">
+                                                    <X className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
 
                                 <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
                                     <span className="flex items-center gap-1.5">
-                                        <Calendar className="w-3.5 h-3.5" />
+                                        <CalendarIcon className="w-3.5 h-3.5" />
                                         {format(new Date(apt.preferred_date + 'T12:00:00'), "dd/MM/yyyy", { locale: ptBR })}
                                     </span>
                                     <span className="flex items-center gap-1.5">

@@ -303,7 +303,7 @@ const ContractGenerator: React.FC<ContractGeneratorProps> = ({ templateType, cli
         {/* ── Ambientes ── */}
         <div className="bg-gray-50 rounded-2xl p-4 space-y-3">
           <div className="flex justify-between items-center">
-            <p className="text-sm font-black text-gray-700">🏠 Ambientes</p>
+            <p className="text-sm font-black text-gray-700">📦 Ambientes</p>
             <button onClick={addAmbiente} className="text-amber-600 text-xs font-bold flex items-center gap-1 hover:text-amber-700">
               <Plus className="w-3 h-3" /> Adicionar
             </button>

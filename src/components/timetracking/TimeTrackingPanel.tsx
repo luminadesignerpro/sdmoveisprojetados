@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import {
-  Clock, UserPlus, Play, Square, Calendar, DollarSign, Users, Trash2, Edit2, Save, X, Plus, Minus, MessageCircle, Mail, Key, Eye, EyeOff
+  Clock, UserPlus, Play, Square, Calendar, DollarSign, Users, Trash2, Edit2, Save, X, Plus, Minus, MessageCircle, Mail, Key, Eye, EyeOff, CheckCircle
 } from 'lucide-react';
 
 interface Employee {
@@ -33,14 +33,25 @@ interface Adjustment {
   created_at: string;
 }
 
+interface AdvanceRequest {
+  id: string;
+  employee_id: string;
+  amount: number;
+  reason: string | null;
+  status: 'pending' | 'Aprovado' | 'Recusado';
+  created_at: string;
+}
+
 type Period = 'week' | 'biweekly' | 'month';
+type TabType = 'ponto' | 'funcionarios' | 'relatorio' | 'vales';
 
 export default function TimeTrackingPanel() {
   const { toast } = useToast();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
   const [adjustments, setAdjustments] = useState<Adjustment[]>([]);
-  const [tab, setTab] = useState<'ponto' | 'funcionarios' | 'relatorio'>('ponto');
+  const [advanceRequests, setAdvanceRequests] = useState<AdvanceRequest[]>([]);
+  const [tab, setTab] = useState<TabType>('ponto');
   const [newName, setNewName] = useState('');
   const [newRole, setNewRole] = useState('');
   const [newPhone, setNewPhone] = useState('');
@@ -70,14 +81,16 @@ export default function TimeTrackingPanel() {
 
   const fetchData = async () => {
     setLoading(true);
-    const [empRes, teRes, adjRes] = await Promise.all([
+    const [empRes, teRes, adjRes, advRes] = await Promise.all([
       supabase.from('employees').select('*').eq('active', true).order('name'),
       supabase.from('time_entries').select('*').order('clock_in', { ascending: false }).limit(500),
       supabase.from('employee_adjustments').select('*').order('created_at', { ascending: false }).limit(500),
+      supabase.from('advance_requests').select('*').order('created_at', { ascending: false }).limit(200),
     ]);
     if (empRes.data) setEmployees(empRes.data);
     if (teRes.data) setTimeEntries(teRes.data);
     if (adjRes.data) setAdjustments(adjRes.data as Adjustment[]);
+    if (advRes.data) setAdvanceRequests(advRes.data as AdvanceRequest[]);
     setLoading(false);
   };
 
@@ -176,7 +189,7 @@ export default function TimeTrackingPanel() {
     return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
   };
 
-  const tabClass = (t: string) =>
+  const tabClass = (t: TabType) =>
     `px-6 py-3 rounded-xl font-bold text-sm transition-all ${tab === t ? 'bg-amber-500 text-white shadow-lg' : 'bg-white text-gray-600 hover:bg-gray-100'}`;
 
   const getEmployeeAdjustments = (employeeId: string) => {
@@ -227,6 +240,40 @@ export default function TimeTrackingPanel() {
       setAdjHours('');
       fetchData();
     }
+  };
+
+  const handleUpdateAdvanceStatus = async (request: AdvanceRequest, newStatus: 'Aprovado' | 'Recusado') => {
+    // 1. Update the request status
+    const { error: updateError } = await supabase
+      .from('advance_requests')
+      .update({ status: newStatus })
+      .eq('id', request.id);
+
+    if (updateError) {
+      toast({ title: '❌ Erro ao atualizar status', description: updateError.message, variant: 'destructive' });
+      return;
+    }
+
+    // 2. If approved, create an adjustment entry
+    if (newStatus === 'Aprovado') {
+      const { error: adjError } = await supabase.from('employee_adjustments').insert({
+        employee_id: request.employee_id,
+        type: 'advance',
+        description: request.reason ? `Vale: ${request.reason}` : 'Vale solicitado pelo portal',
+        amount: request.amount,
+        reference_date: new Date().toISOString().split('T')[0],
+      });
+
+      if (adjError) {
+        toast({ title: '⚠️ Pedido aprovado, mas erro ao criar desconto', description: adjError.message, variant: 'destructive' });
+      } else {
+        toast({ title: '✅ Vale aprovado e desconto gerado!' });
+      }
+    } else {
+      toast({ title: '❌ Vale recusado' });
+    }
+
+    fetchData();
   };
 
   const deleteAdjustment = async (id: string) => {
@@ -305,6 +352,15 @@ export default function TimeTrackingPanel() {
         </button>
         <button className={`shrink-0 ${tabClass('relatorio')}`} onClick={() => setTab('relatorio')}>
           <DollarSign className="w-4 h-4 inline mr-2" />Relatório / Pagamento
+        </button>
+        <button className={`shrink-0 ${tabClass('vales')}`} onClick={() => setTab('vales')}>
+          <div className="relative inline-block mr-2">
+            <DollarSign className="w-4 h-4" />
+            {advanceRequests.filter(r => r.status === 'pending').length > 0 && (
+              <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+            )}
+          </div>
+          Solicitações de Vale
         </button>
       </div>
 
@@ -455,6 +511,83 @@ export default function TimeTrackingPanel() {
         </div>
       )}
 
+      {/* ===== VALES ===== */}
+      {tab === 'vales' && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-2xl p-6 shadow-lg">
+            <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <DollarSign className="w-5 h-5 text-amber-500" /> Pedidos de Vale Pendentes
+            </h3>
+            <div className="space-y-3">
+              {advanceRequests.filter(r => r.status === 'pending').map(req => {
+                const emp = employees.find(e => e.id === req.employee_id);
+                return (
+                  <div key={req.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-amber-50 border border-amber-100 rounded-2xl gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-amber-200 rounded-full flex items-center justify-center text-amber-700 font-bold">
+                        {emp?.name.substring(0, 2).toUpperCase() || '?'}
+                      </div>
+                      <div>
+                        <p className="font-bold text-gray-900">{emp?.name || 'Funcionário Desconhecido'}</p>
+                        <p className="text-sm text-amber-800 font-black">R$ {Number(req.amount).toFixed(2)}</p>
+                        {req.reason && <p className="text-xs text-gray-500 italic mt-1">"{req.reason}"</p>}
+                        <p className="text-[10px] text-gray-400 mt-1">{new Date(req.created_at).toLocaleString('pt-BR')}</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 w-full sm:w-auto">
+                      <button
+                        onClick={() => handleUpdateAdvanceStatus(req, 'Aprovado')}
+                        className="flex-1 sm:flex-none bg-green-500 hover:bg-green-600 text-white px-5 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2"
+                      >
+                        <CheckCircle className="w-4 h-4" /> Aprovar
+                      </button>
+                      <button
+                        onClick={() => handleUpdateAdvanceStatus(req, 'Recusado')}
+                        className="flex-1 sm:flex-none bg-red-100 hover:bg-red-200 text-red-700 px-5 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2"
+                      >
+                        <X className="w-4 h-4" /> Recusar
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+              {advanceRequests.filter(r => r.status === 'pending').length === 0 && (
+                <div className="text-center py-12 text-gray-400">
+                  <CheckCircle className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                  <p>Nenhuma solicitação pendente.</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-6 shadow-lg">
+            <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-gray-500" /> Histórico de Pedidos
+            </h3>
+            <div className="space-y-2 max-h-[400px] overflow-auto">
+              {advanceRequests.filter(r => r.status !== 'pending').slice(0, 50).map(req => {
+                const emp = employees.find(e => e.id === req.employee_id);
+                const isApproved = req.status === 'Aprovado';
+                return (
+                  <div key={req.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl text-sm">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-2 h-2 rounded-full ${isApproved ? 'bg-green-500' : 'bg-red-500'}`} />
+                      <span className="font-bold text-gray-700">{emp?.name || '...'}</span>
+                      <span className="text-gray-900 font-bold">R$ {Number(req.amount).toFixed(2)}</span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${isApproved ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                        {req.status}
+                      </span>
+                      <span className="text-[10px] text-gray-400">{new Date(req.created_at).toLocaleDateString('pt-BR')}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
       {/* ===== RELATÓRIO ===== */}
       {tab === 'relatorio' && (
         <div className="space-y-6">
