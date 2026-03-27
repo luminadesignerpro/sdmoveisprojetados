@@ -599,6 +599,7 @@ const App: React.FC = () => {
           )}
 
           {/* NEW MODULES */}
+          {view === ViewMode.CONTRACTS && authState === 'ADMIN' && <SalesPage />}
           {view === ViewMode.PROFIT_BI && authState === 'ADMIN' && <ProfitDashboard contracts={contracts} setView={setView} />}
           {view === ViewMode.SUPPLIERS && authState === 'ADMIN' && <SuppliersPage />}
           {view === ViewMode.PRODUCTS && authState === 'ADMIN' && <ProductsPage />}
