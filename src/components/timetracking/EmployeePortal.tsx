@@ -371,31 +371,31 @@ export default function EmployeePortal({ employeeName }: EmployeePortalProps) {
   const total = hours * employee.hourly_rate + overtime + fuelAllowance - deductions;
 
   return (
-    <div className="p-8 space-y-6 overflow-auto h-full bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="p-4 sm:p-8 space-y-6 overflow-auto h-full" style={{ background: '#0f0f0f' }}>
       {/* Header */}
       <header>
-        <h1 className="text-3xl font-black text-gray-900 flex items-center gap-3">
-          <Clock className="w-8 h-8 text-amber-500" />
+        <h1 className="text-3xl font-black flex items-center gap-3" style={{ color: '#D4AF37' }}>
+          <Clock className="w-8 h-8" style={{ color: '#D4AF37' }} />
           Meu Ponto
         </h1>
-        <p className="text-gray-500 mt-1">Olá, <span className="font-bold text-gray-700">{employee.name}</span> • {employee.role || 'Funcionário'}</p>
+        <p className="text-gray-400 mt-1">Olá, <span className="font-bold text-white">{employee.name}</span> • {employee.role || 'Funcionário'}</p>
       </header>
 
       {/* Clock In/Out Card */}
-      <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100 max-w-lg">
+      <div className="rounded-2xl p-8 shadow-lg border max-w-lg" style={{ background: '#1a1a1a', borderColor: 'rgba(212,175,55,0.3)' }}>
         <div className="flex items-center gap-3 mb-6">
-          <span className={`w-4 h-4 rounded-full ${openEntry ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`} />
-          <span className="font-bold text-gray-900 text-lg">
+          <span className={`w-4 h-4 rounded-full ${openEntry ? 'bg-green-400 animate-pulse' : 'bg-gray-600'}`} />
+          <span className="font-bold text-white text-lg">
             {openEntry ? 'Trabalhando agora' : 'Fora do expediente'}
           </span>
         </div>
 
         {openEntry ? (
           <div>
-            <p className="text-sm text-green-600 mb-4">⏱️ Entrada: {formatTime(openEntry.clock_in)}</p>
+            <p className="text-sm text-green-400 mb-4">⏱️ Entrada: {formatTime(openEntry.clock_in)}</p>
             <button
               onClick={() => clockOut(openEntry.id)}
-              className="w-full bg-red-500 hover:bg-red-600 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all text-lg"
+              className="w-full bg-red-600 hover:bg-red-700 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all text-lg"
             >
               <Square className="w-5 h-5" /> Registrar Saída
             </button>
@@ -403,7 +403,8 @@ export default function EmployeePortal({ employeeName }: EmployeePortalProps) {
         ) : (
           <button
             onClick={clockIn}
-            className="w-full bg-green-500 hover:bg-green-600 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all text-lg"
+            className="w-full text-black py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all text-lg"
+            style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583)' }}
           >
             <Play className="w-5 h-5" /> Registrar Entrada
           </button>
@@ -411,9 +412,9 @@ export default function EmployeePortal({ employeeName }: EmployeePortalProps) {
       </div>
 
       {/* Payment Summary */}
-      <div className="bg-white rounded-2xl p-8 shadow-lg">
-        <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-          <DollarSign className="w-5 h-5 text-green-500" /> Resumo de Pagamento
+      <div className="rounded-2xl p-8 shadow-lg" style={{ background: '#1a1a1a' }}>
+        <h3 className="font-bold text-white mb-4 flex items-center gap-2">
+          <DollarSign className="w-5 h-5" style={{ color: '#D4AF37' }} /> Resumo de Pagamento
         </h3>
 
         <div className="flex gap-3 mb-6">
@@ -422,8 +423,9 @@ export default function EmployeePortal({ employeeName }: EmployeePortalProps) {
               key={p}
               onClick={() => setPeriod(p)}
               className={`px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
-                period === p ? 'bg-amber-500 text-white shadow' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                period === p ? 'text-black' : 'text-gray-400 hover:text-white'
               }`}
+              style={period === p ? { background: 'linear-gradient(135deg, #D4AF37, #F5E583)' } : { background: '#2a2a2a' }}
             >
               {p === 'week' ? 'Semana' : p === 'biweekly' ? 'Quinzena' : 'Mês'}
             </button>
@@ -431,116 +433,121 @@ export default function EmployeePortal({ employeeName }: EmployeePortalProps) {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          <div className="bg-blue-50 rounded-xl p-5 text-center">
-            <p className="text-xs text-blue-600 font-bold uppercase mb-1">Horas</p>
-            <p className="text-2xl font-black text-blue-700">{hours.toFixed(1)}h</p>
+          <div className="rounded-xl p-5 text-center" style={{ background: '#111', border: '1px solid rgba(212,175,55,0.3)' }}>
+            <p className="text-xs font-bold uppercase mb-1" style={{ color: '#D4AF37' }}>Horas</p>
+            <p className="text-2xl font-black text-white">{hours.toFixed(1)}h</p>
           </div>
-          <div className="bg-gray-50 rounded-xl p-5 text-center">
+          <div className="rounded-xl p-5 text-center" style={{ background: '#111', border: '1px solid rgba(255,255,255,0.08)' }}>
             <p className="text-xs text-gray-500 font-bold uppercase mb-1">Valor/h</p>
-            <p className="text-2xl font-black text-gray-700">R$ {employee.hourly_rate.toFixed(2)}</p>
+            <p className="text-2xl font-black text-white">R$ {employee.hourly_rate.toFixed(2)}</p>
           </div>
           {overtime > 0 && (
-            <div className="bg-green-50 rounded-xl p-5 text-center">
-              <p className="text-xs text-green-600 font-bold uppercase mb-1">H. Extra</p>
-              <p className="text-2xl font-black text-green-700">+R$ {overtime.toFixed(2)}</p>
+            <div className="rounded-xl p-5 text-center" style={{ background: '#0a1a0a', border: '1px solid rgba(74,222,128,0.3)' }}>
+              <p className="text-xs text-green-400 font-bold uppercase mb-1">H. Extra</p>
+              <p className="text-2xl font-black text-green-400">+R$ {overtime.toFixed(2)}</p>
             </div>
           )}
           {fuelAllowance > 0 && (
-            <div className="bg-orange-50 rounded-xl p-5 text-center">
-              <p className="text-xs text-orange-600 font-bold uppercase mb-1">⛽ V. Combust.</p>
-              <p className="text-2xl font-black text-orange-700">+R$ {fuelAllowance.toFixed(2)}</p>
+            <div className="rounded-xl p-5 text-center" style={{ background: '#1a1000', border: '1px solid rgba(251,191,36,0.3)' }}>
+              <p className="text-xs text-amber-400 font-bold uppercase mb-1">⛽ V. Combust.</p>
+              <p className="text-2xl font-black text-amber-400">+R$ {fuelAllowance.toFixed(2)}</p>
             </div>
           )}
           {deductions > 0 && (
-            <div className="bg-red-50 rounded-xl p-5 text-center">
-              <p className="text-xs text-red-600 font-bold uppercase mb-1">Adiantamentos</p>
-              <p className="text-2xl font-black text-red-700">-R$ {deductions.toFixed(2)}</p>
+            <div className="rounded-xl p-5 text-center" style={{ background: '#1a0a0a', border: '1px solid rgba(248,113,113,0.3)' }}>
+              <p className="text-xs text-red-400 font-bold uppercase mb-1">Adiantamentos</p>
+              <p className="text-2xl font-black text-red-400">-R$ {deductions.toFixed(2)}</p>
             </div>
           )}
-          <div className="bg-green-50 rounded-xl p-5 text-center col-span-full md:col-span-1">
-            <p className="text-xs text-green-600 font-bold uppercase mb-1">Total Líquido</p>
-            <p className="text-2xl font-black text-green-700">R$ {total.toFixed(2)}</p>
+          <div className="rounded-xl p-5 text-center col-span-full md:col-span-1" style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05))', border: '1px solid rgba(212,175,55,0.4)' }}>
+            <p className="text-xs font-bold uppercase mb-1" style={{ color: '#D4AF37' }}>Total Líquido</p>
+            <p className="text-2xl font-black" style={{ color: '#D4AF37' }}>R$ {total.toFixed(2)}</p>
           </div>
         </div>
 
         <button
           onClick={downloadPayslip}
-          className="mt-4 w-full bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all"
+          className="mt-4 w-full text-black py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all"
+          style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583)' }}
         >
           <Download className="w-5 h-5" /> Baixar Contracheque
         </button>
       </div>
 
       {/* Recent Entries */}
-      <div className="bg-white rounded-2xl p-6 shadow-lg">
-        <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-          <Calendar className="w-5 h-5 text-amber-500" /> Meus Registros Recentes
+      <div className="rounded-2xl p-6 shadow-lg" style={{ background: '#1a1a1a' }}>
+        <h3 className="font-bold text-white mb-4 flex items-center gap-2">
+          <Calendar className="w-5 h-5" style={{ color: '#D4AF37' }} /> Meus Registros Recentes
         </h3>
         <div className="space-y-2 max-h-64 overflow-auto">
           {entries.slice(0, 15).map(entry => (
-            <div key={entry.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl text-sm">
+            <div key={entry.id} className="flex items-center justify-between p-3 rounded-xl text-sm" style={{ background: '#111' }}>
               <div className="flex items-center gap-3">
-                <span className={`w-2 h-2 rounded-full ${entry.clock_out ? 'bg-gray-300' : 'bg-green-500 animate-pulse'}`} />
-                <span>🟢 {formatTime(entry.clock_in)}</span>
+                <span className={`w-2 h-2 rounded-full ${entry.clock_out ? 'bg-gray-600' : 'bg-green-400 animate-pulse'}`} />
+                <span className="text-gray-300">🟢 {formatTime(entry.clock_in)}</span>
               </div>
               <div className="text-gray-500">
                 {entry.clock_out ? (
-                  <span>🔴 {formatTime(entry.clock_out)} — <span className="font-bold text-gray-700">
+                  <span>🔴 {formatTime(entry.clock_out)} — <span className="font-bold text-white">
                     {((new Date(entry.clock_out).getTime() - new Date(entry.clock_in).getTime()) / 3600000).toFixed(1)}h
                   </span></span>
                 ) : (
-                  <span className="text-green-600 font-bold">Em andamento...</span>
+                  <span className="text-green-400 font-bold">Em andamento...</span>
                 )}
               </div>
             </div>
           ))}
           {entries.length === 0 && (
-            <p className="text-center text-gray-400 py-6">Nenhum registro ainda</p>
+            <p className="text-center text-gray-600 py-6">Nenhum registro ainda</p>
           )}
         </div>
       </div>
 
       {/* Vale/Adiantamento */}
-      <div className="bg-white rounded-2xl p-6 shadow-lg">
+      <div className="rounded-2xl p-6 shadow-lg" style={{ background: '#1a1a1a' }}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold text-gray-900 flex items-center gap-2">
-            <DollarSign className="w-5 h-5 text-amber-500" /> Solicitar Vale/Adiantamento
+          <h3 className="font-bold text-white flex items-center gap-2">
+            <DollarSign className="w-5 h-5" style={{ color: '#D4AF37' }} /> Solicitar Vale/Adiantamento
           </h3>
           <button
             onClick={() => setShowVale(!showVale)}
-            className="px-4 py-2 bg-amber-500 text-white rounded-xl font-bold text-sm hover:bg-amber-600 transition-colors"
+            className="px-4 py-2 text-black rounded-xl font-bold text-sm transition-colors"
+            style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583)' }}
           >
             {showVale ? 'Cancelar' : 'Nova Solicitação'}
           </button>
         </div>
 
         {showVale && (
-          <div className="bg-amber-50 rounded-xl p-4 space-y-3 border border-amber-200 mb-4">
+          <div className="rounded-xl p-4 space-y-3 border mb-4" style={{ background: '#111', borderColor: 'rgba(212,175,55,0.3)' }}>
             <div>
-              <label className="text-xs font-bold text-gray-600 uppercase">Valor (R$)</label>
+              <label className="text-xs font-bold text-gray-400 uppercase">Valor (R$)</label>
               <input
                 type="number"
                 value={valeAmount}
                 onChange={e => setValeAmount(e.target.value)}
                 placeholder="Ex: 200"
-                className="w-full p-3 rounded-lg border border-amber-200 bg-white text-sm mt-1"
+                className="w-full p-3 rounded-lg text-sm mt-1 text-white"
+                style={{ background: '#2a2a2a', border: '1px solid rgba(212,175,55,0.2)' }}
                 min="1"
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-gray-600 uppercase">Motivo (opcional)</label>
+              <label className="text-xs font-bold text-gray-400 uppercase">Motivo (opcional)</label>
               <input
                 type="text"
                 value={valeReason}
                 onChange={e => setValeReason(e.target.value)}
                 placeholder="Ex: Combustível para entrega"
-                className="w-full p-3 rounded-lg border border-amber-200 bg-white text-sm mt-1"
+                className="w-full p-3 rounded-lg text-sm mt-1 text-white"
+                style={{ background: '#2a2a2a', border: '1px solid rgba(212,175,55,0.2)' }}
               />
             </div>
             <button
               onClick={submitVale}
               disabled={valeSending || !valeAmount}
-              className="w-full bg-amber-500 text-white py-3 rounded-xl font-bold text-sm hover:bg-amber-600 disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full text-black py-3 rounded-xl font-bold text-sm disabled:opacity-50 flex items-center justify-center gap-2"
+              style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583)' }}
             >
               {valeSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               Enviar Solicitação
@@ -550,16 +557,17 @@ export default function EmployeePortal({ employeeName }: EmployeePortalProps) {
 
         <div className="space-y-2 max-h-48 overflow-auto">
           {valeRequests.map(req => (
-            <div key={req.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl text-sm">
+            <div key={req.id} className="flex items-center justify-between p-3 rounded-xl text-sm" style={{ background: '#111' }}>
               <div>
-                <span className="font-bold text-gray-900">R$ {Number(req.amount).toFixed(2)}</span>
+                <span className="font-bold text-white">R$ {Number(req.amount).toFixed(2)}</span>
                 {req.reason && <span className="text-gray-500 ml-2">— {req.reason}</span>}
               </div>
               <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                req.status === 'Aprovado' ? 'bg-green-100 text-green-700' :
-                req.status === 'Recusado' ? 'bg-red-100 text-red-700' :
-                'bg-amber-100 text-amber-700'
-              }`}>
+                req.status === 'Aprovado' ? 'bg-green-900 text-green-300' :
+                req.status === 'Recusado' ? 'bg-red-900 text-red-300' :
+                'text-yellow-300'
+              }`}
+              style={req.status !== 'Aprovado' && req.status !== 'Recusado' ? { background: 'rgba(212,175,55,0.2)', color: '#D4AF37' } : {}}>
                 {req.status === 'Aprovado' && <CheckCircle className="w-3 h-3 inline mr-1" />}
                 {req.status === 'Recusado' && <XCircle className="w-3 h-3 inline mr-1" />}
                 {req.status}
@@ -567,7 +575,7 @@ export default function EmployeePortal({ employeeName }: EmployeePortalProps) {
             </div>
           ))}
           {valeRequests.length === 0 && (
-            <p className="text-center text-gray-400 py-4 text-sm">Nenhuma solicitação ainda</p>
+            <p className="text-center text-gray-600 py-4 text-sm">Nenhuma solicitação ainda</p>
           )}
         </div>
       </div>

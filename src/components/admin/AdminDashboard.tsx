@@ -3,8 +3,9 @@ import {
     Sparkles, Heart, Zap, TrendingUp, ChevronRight, Layers, FileText,
     MessageCircle, Star, Sparkles as SparklesIcon, MapPin, Clock,
     Package, AlertTriangle, ArrowUpRight, Plus, ClipboardList, Wallet,
-    TrendingDown, BarChart3, Users, PlusCircle
+    TrendingDown, BarChart3, Users, PlusCircle, Ruler, Box, Download, Monitor, ExternalLink, FileCode
 } from 'lucide-react';
+import { generatePromobXML, downloadFile, generateDXF } from '@/services/promobService';
 import { Card3D } from '@/components/animations/Card3D';
 import { DashboardStat } from '@/components/ui/dashboard-stat';
 import { ViewMode } from '@/types';
@@ -34,6 +35,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         toPay: 0,
     });
     const [contracts, setContracts] = useState(initialContracts);
+    const [studioMeasurements, setStudioMeasurements] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -48,13 +50,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 osRes,
                 stockRes,
                 receivableRes,
-                payableRes
+                payableRes,
+                studioRes
             ] = await Promise.all([
                 db.from('contracts').select('*, clients(name)').order('created_at', { ascending: false }),
                 db.from('service_orders').select('id').eq('status', 'aberta'),
                 db.from('products').select('id').lt('stock_quantity', db.raw('min_stock')),
                 db.from('accounts_receivable').select('amount').eq('received', false),
                 db.from('accounts_payable').select('amount').eq('paid', false),
+                db.from('studio_measurements').select('*').order('created_at', { ascending: false }).limit(5),
             ]);
 
             const currentContracts = contractsRes.data || [];
@@ -76,6 +80,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 toReceive,
                 toPay
             });
+            setStudioMeasurements(studioRes.data || []);
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
         } finally {
@@ -86,92 +91,97 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     return (
         <div
             className="p-8 space-y-8 overflow-auto h-full relative"
-            style={{ background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)' }}
+            style={{ background: 'linear-gradient(160deg, #0a0a0a 0%, #111111 50%, #0f0f0f 100%)' }}
         >
-            {/* Animated Orbs */}
+            {/* Gold accent orbs */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                <div className="absolute -top-32 -right-32 w-[600px] h-[600px] bg-amber-500/5 blur-[120px] rounded-full animate-pulse"></div>
-                <div className="absolute -bottom-48 -left-32 w-[500px] h-[500px] bg-blue-500/5 blur-[120px] rounded-full"></div>
+                <div className="absolute -top-32 -right-32 w-[600px] h-[600px] bg-amber-500/8 blur-[160px] rounded-full" />
+                <div className="absolute -bottom-48 -left-32 w-[500px] h-[500px] bg-amber-400/5 blur-[120px] rounded-full" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-amber-600/3 blur-[200px] rounded-full" />
             </div>
 
             <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10 animate-in fade-in slide-in-from-top-4 duration-700">
                 <div>
-                    <h1 className="text-4xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-                        <div className="bg-amber-500 p-2 rounded-2xl shadow-lg shadow-amber-200">
-                            <Sparkles className="w-8 h-8 text-white" />
+                    <h1 className="text-4xl font-black tracking-tight flex items-center gap-3" style={{ color: '#ffffff' }}>
+                        <div className="p-2 rounded-2xl shadow-lg" style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583, #b8952a)' }}>
+                            <Sparkles className="w-8 h-8 text-black" />
                         </div>
                         Gestão Estratégica
                     </h1>
-                    <p className="text-slate-500 mt-2 flex items-center gap-2 font-medium">
-                        <Heart className="w-4 h-4 text-red-500 fill-red-500" />
+                    <p className="text-gray-400 mt-2 flex items-center gap-2 font-medium">
+                        <Heart className="w-4 h-4 text-amber-400 fill-amber-400" />
                         Bem-vindo ao centro de comando SD Móveis
                     </p>
                 </div>
                 
                 <div className="grid grid-cols-2 md:flex gap-3">
-                    <div className="bg-white border border-slate-100 rounded-3xl px-5 py-3 shadow-sm flex flex-col items-center min-w-[120px]">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Status Sistema</p>
-                        <p className="text-emerald-600 font-bold flex items-center gap-2 text-sm">
-                            <span className="w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
+                    <div className="border border-white/10 rounded-3xl px-5 py-3 shadow-sm flex flex-col items-center min-w-[120px]" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Status Sistema</p>
+                        <p className="text-amber-400 font-bold flex items-center gap-2 text-sm">
+                            <span className="w-2 h-2 bg-amber-400 rounded-full animate-ping" />
                             ONLINE
                         </p>
                     </div>
-                    <Button 
-                        variant="gradient" 
-                        size="lg" 
-                        className="rounded-3xl shadow-xl shadow-amber-200 h-full font-black text-xs tracking-widest"
+                    <button
                         onClick={() => setView(ViewMode.BUDGET_QUOTE)}
+                        className="px-6 py-3 rounded-3xl font-black text-xs tracking-widest transition-all hover:scale-105 active:scale-95 shadow-xl text-black"
+                        style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583, #b8952a)', boxShadow: '0 8px 32px rgba(212,175,55,0.35)' }}
                     >
-                        <Plus className="w-5 h-5 mr-2" /> NOVO ORÇAMENTO
-                    </Button>
+                        <Plus className="w-5 h-5 mr-2 inline" /> NOVO ORÇAMENTO
+                    </button>
                 </div>
             </header>
 
-            {/* Main Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
-                <Card3D intensity={10} className="rounded-[2.5rem] bg-white border border-slate-100 shadow-sm p-1">
-                    <DashboardStat title={"Total Or\u00E7amentos"} value={`R$ ${(stats.revenue / 1000).toFixed(1)}K`} icon="💰" trend="+15% este mês" color="bg-amber-50" />
-                </Card3D>
-                <Card3D intensity={10} className="rounded-[2.5rem] bg-white border border-slate-100 shadow-sm p-1">
-                    <DashboardStat title="Projetos Ativos" value={contracts.length.toString()} icon="📁" trend={`${stats.signedCount} assinados`} color="bg-blue-50" />
-                </Card3D>
-                <Card3D intensity={10} className="rounded-[2.5rem] bg-white border border-slate-100 shadow-sm p-1">
-                    <DashboardStat title="Produção" value={stats.inProduction.toString()} icon="🏭" trend="Crescimento de 8%" color="bg-indigo-50" />
-                </Card3D>
-                <Card3D intensity={10} className="rounded-[2.5rem] bg-white border border-slate-100 shadow-sm p-1">
-                    <DashboardStat title="OS Abertas" value={stats.openOS.toString()} icon="📋" trend="Atenção necessária" color="bg-rose-50" />
-                </Card3D>
+                {/* Main Stats Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
+                {[
+                    { title: "Total Orçamentos", value: `R$ ${(stats.revenue / 1000).toFixed(1)}K`, icon: "💰", trend: "+15% este mês" },
+                    { title: "Projetos Ativos", value: contracts.length.toString(), icon: "📁", trend: `${stats.signedCount} assinados` },
+                    { title: "Produção", value: stats.inProduction.toString(), icon: "🏭", trend: "Crescimento de 8%" },
+                    { title: "OS Abertas", value: stats.openOS.toString(), icon: "📋", trend: "Atenção necessária" },
+                ].map((stat, i) => (
+                    <div key={i} className="rounded-[2.5rem] p-0.5" style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(255,255,255,0.05))' }}>
+                      <Card3D intensity={10} className="rounded-[2.5rem]">
+                        <div className="rounded-[2.3rem] overflow-hidden" style={{ background: '#111111' }}>
+                            <DashboardStat title={stat.title} value={stat.value} icon={stat.icon} trend={stat.trend} dark />
+                        </div>
+                      </Card3D>
+                    </div>
+                ))}
             </div>
 
-            {/* Middle Section: Insights & Actions */}
+            {/* Middle Section */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 relative z-10">
-                {/* Wisdom & Core Actions */}
+                {/* Left: Wisdom & Core Actions */}
                 <div className="lg:col-span-2 space-y-6 animate-in fade-in slide-in-from-left-6 duration-1000">
-                    <div className="bg-slate-900 rounded-[3rem] p-10 text-white relative overflow-hidden shadow-2xl">
+                    <div className="rounded-[3rem] p-10 text-white relative overflow-hidden shadow-2xl border border-amber-500/20"
+                        style={{ background: 'linear-gradient(135deg, #111111 0%, #1a1a1a 100%)' }}>
                         <div className="absolute top-0 right-0 w-80 h-80 bg-amber-500/10 rounded-full blur-[80px]" />
+                        <div className="absolute inset-0 rounded-[3rem]" style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.05) 0%, transparent 60%)' }} />
                         <div className="relative z-10">
                             <div className="flex items-center gap-3 mb-6">
-                                <div className="p-2 bg-amber-500/20 rounded-xl">
+                                <div className="p-2 rounded-xl" style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)' }}>
                                     <Star className="w-6 h-6 text-amber-400 fill-amber-400" />
                                 </div>
                                 <span className="text-amber-400 text-sm font-black uppercase tracking-[0.2em]">Sabedoria do Negócio</span>
                             </div>
-                            <blockquote className="text-2xl md:text-3xl font-black text-slate-100 mb-10 leading-tight italic">
+                            <blockquote className="text-2xl md:text-3xl font-black text-white mb-10 leading-tight italic">
                                 "Consagre ao Senhor tudo o que você faz, e os seus planos serão bem-sucedidos."
-                                <span className="block text-amber-500 text-lg mt-4 not-italic font-bold">Provérbios 16:3</span>
+                                <span className="block text-amber-400 text-lg mt-4 not-italic font-bold">Provérbios 16:3</span>
                             </blockquote>
                             
                             <div className="flex flex-wrap gap-4">
                                 <button
                                     onClick={() => setView(ViewMode.PROMOB)}
-                                    className="bg-amber-500 px-8 py-5 rounded-[2rem] font-black uppercase text-xs tracking-widest hover:bg-amber-400 transition-all duration-300 hover:scale-105 active:scale-95 flex items-center gap-3 shadow-2xl shadow-amber-500/20 group"
+                                    className="px-8 py-5 rounded-[2rem] font-black uppercase text-xs tracking-widest transition-all duration-300 hover:scale-105 active:scale-95 flex items-center gap-3 shadow-2xl text-black group"
+                                    style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583, #b8952a)', boxShadow: '0 8px 32px rgba(212,175,55,0.4)' }}
                                 >
                                     <Layers className="w-5 h-5 group-hover:rotate-12 transition-transform" />
                                     NOVO PROJETO 3D
                                 </button>
                                 <button
                                     onClick={() => setView(ViewMode.CONTRACTS_MGMT)}
-                                    className="bg-white/10 backdrop-blur-md px-8 py-5 rounded-[2rem] font-black uppercase text-xs tracking-widest hover:bg-white/20 transition-all duration-300 flex items-center gap-3 active:scale-95 border border-white/10"
+                                    className="bg-white/8 backdrop-blur-md px-8 py-5 rounded-[2rem] font-black uppercase text-xs tracking-widest hover:bg-white/15 transition-all duration-300 flex items-center gap-3 active:scale-95 border border-white/15 text-white"
                                 >
                                     <FileText className="w-5 h-5" />
                                     GERENCIAR CONTRATOS
@@ -182,83 +192,90 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                     {/* Quick Functional Grid */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <button onClick={() => setView(ViewMode.CRM)} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all flex flex-col items-center gap-3 group">
-                            <div className="w-14 h-14 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-all">
-                                <MessageCircle className="w-7 h-7" />
-                            </div>
-                            <span className="font-black text-slate-900 text-xs tracking-tight">CRM WhatsApp</span>
-                        </button>
-                        <button onClick={() => setView(ViewMode.PRODUCTS)} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all flex flex-col items-center gap-3 group">
-                            <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all">
-                                <Package className="w-7 h-7" />
-                            </div>
-                            <span className="font-black text-slate-900 text-xs tracking-tight">Estoque Real</span>
-                        </button>
-                        <button onClick={() => setView(ViewMode.CASH_REGISTER)} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all flex flex-col items-center gap-3 group">
-                            <div className="w-14 h-14 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition-all">
-                                <Wallet className="w-7 h-7" />
-                            </div>
-                            <span className="font-black text-slate-900 text-xs tracking-tight">Fluxo de Caixa</span>
-                        </button>
-                        <button onClick={() => setView(ViewMode.FLEET)} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all flex flex-col items-center gap-3 group">
-                            <div className="w-14 h-14 bg-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-all">
-                                <MapPin className="w-7 h-7" />
-                            </div>
-                            <span className="font-black text-slate-900 text-xs tracking-tight">Frota & Trips</span>
-                        </button>
+                        {[
+                            { label: 'CRM WhatsApp', icon: MessageCircle, view: ViewMode.CRM, accent: '#25D366' },
+                            { label: 'Estoque Real', icon: Package, view: ViewMode.PRODUCTS, accent: '#D4AF37' },
+                            { label: 'Fluxo de Caixa', icon: Wallet, view: ViewMode.CASH_REGISTER, accent: '#D4AF37' },
+                            { label: 'Frota & Trips', icon: MapPin, view: ViewMode.FLEET, accent: '#D4AF37' },
+                        ].map(({ label, icon: Icon, view, accent }) => (
+                            <button key={label} onClick={() => setView(view)}
+                                className="p-6 rounded-[2.5rem] border transition-all flex flex-col items-center gap-3 group hover:-translate-y-1"
+                                style={{ background: '#111111', borderColor: 'rgba(255,255,255,0.08)' }}
+                                onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(212,175,55,0.4)')}
+                                onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)')}
+                            >
+                                <div className="w-14 h-14 rounded-2xl flex items-center justify-center transition-all"
+                                    style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)' }}>
+                                    <Icon className="w-7 h-7 text-amber-400" />
+                                </div>
+                                <span className="font-black text-white text-xs tracking-tight text-center">{label}</span>
+                            </button>
+                        ))}
                     </div>
                 </div>
 
-                {/* Right Sidebar: Health & Alerts */}
+                {/* Right: Financial Health */}
                 <div className="space-y-6 animate-in fade-in slide-in-from-right-6 duration-1000">
-                    {/* Financial Summary */}
-                    <div className="bg-white rounded-[3rem] p-8 border border-slate-100 shadow-sm">
+                    <div className="rounded-[3rem] p-8 border border-white/8 shadow-sm"
+                        style={{ background: '#111111' }}>
                         <div className="flex items-center gap-3 mb-6">
-                            <div className="w-10 h-10 bg-indigo-500 rounded-2xl flex items-center justify-center text-white">
+                            <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-black"
+                                style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583)' }}>
                                 <BarChart3 className="w-5 h-5" />
                             </div>
-                            <h3 className="text-xl font-black text-slate-900 tracking-tight">Saúde Financeira</h3>
+                            <h3 className="text-xl font-black text-white tracking-tight">Saúde Financeira</h3>
                         </div>
                         
                         <div className="space-y-5">
-                            <div className="p-5 bg-emerald-50 rounded-3xl border border-emerald-100 flex justify-between items-center group cursor-pointer hover:bg-emerald-100 transition-colors">
+                            <div className="p-5 rounded-3xl border flex justify-between items-center group cursor-pointer transition-all"
+                                style={{ background: 'rgba(212,175,55,0.08)', borderColor: 'rgba(212,175,55,0.2)' }}
+                                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(212,175,55,0.15)')}
+                                onMouseLeave={e => (e.currentTarget.style.background = 'rgba(212,175,55,0.08)')}
+                            >
                                 <div>
-                                    <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">A Receber</p>
-                                    <p className="text-2xl font-black text-slate-900">R$ {stats.toReceive.toLocaleString('pt-BR')}</p>
+                                    <p className="text-[10px] font-black text-amber-400 uppercase tracking-widest mb-1">A Receber</p>
+                                    <p className="text-2xl font-black text-white">R$ {stats.toReceive.toLocaleString('pt-BR')}</p>
                                 </div>
-                                <TrendingUp className="w-8 h-8 text-emerald-500 opacity-40 group-hover:scale-125 transition-transform" />
+                                <TrendingUp className="w-8 h-8 text-amber-400 opacity-40 group-hover:scale-125 transition-transform" />
                             </div>
                             
-                            <div className="p-5 bg-rose-50 rounded-3xl border border-rose-100 flex justify-between items-center group cursor-pointer hover:bg-rose-100 transition-colors">
+                            <div className="p-5 rounded-3xl border flex justify-between items-center group cursor-pointer transition-all"
+                                style={{ background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.1)' }}
+                                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.08)')}
+                                onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.04)')}
+                            >
                                 <div>
-                                    <p className="text-[10px] font-black text-rose-600 uppercase tracking-widest mb-1">Contas a Pagar</p>
-                                    <p className="text-2xl font-black text-slate-900">R$ {stats.toPay.toLocaleString('pt-BR')}</p>
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Contas a Pagar</p>
+                                    <p className="text-2xl font-black text-white">R$ {stats.toPay.toLocaleString('pt-BR')}</p>
                                 </div>
-                                <TrendingDown className="w-8 h-8 text-rose-500 opacity-40 group-hover:scale-125 transition-transform" />
+                                <TrendingDown className="w-8 h-8 text-gray-500 opacity-40 group-hover:scale-125 transition-transform" />
                             </div>
                         </div>
                     </div>
 
-                    {/* Alerts Section */}
+                    {/* Alerts */}
                     {(stats.lowStock > 0 || stats.openOS > 5) && (
-                        <div className="bg-white rounded-[3rem] p-8 border border-slate-100 shadow-sm">
-                            <h3 className="text-lg font-black text-slate-900 mb-6 flex items-center gap-2">
-                                <AlertTriangle className="w-5 h-5 text-amber-500" />
+                        <div className="rounded-[3rem] p-8 border border-amber-500/20 shadow-sm"
+                            style={{ background: '#111111' }}>
+                            <h3 className="text-lg font-black text-white mb-6 flex items-center gap-2">
+                                <AlertTriangle className="w-5 h-5 text-amber-400" />
                                 Atenção do Gestor
                             </h3>
                             <div className="space-y-4">
                                 {stats.lowStock > 0 && (
-                                    <div className="flex items-center gap-4 p-4 bg-amber-50 rounded-2xl border border-amber-100">
-                                        <Package className="w-5 h-5 text-amber-600" />
-                                        <p className="text-xs font-bold text-amber-900 leading-tight">
+                                    <div className="flex items-center gap-4 p-4 rounded-2xl border"
+                                        style={{ background: 'rgba(212,175,55,0.08)', borderColor: 'rgba(212,175,55,0.2)' }}>
+                                        <Package className="w-5 h-5 text-amber-400" />
+                                        <p className="text-xs font-bold text-amber-200 leading-tight">
                                             {stats.lowStock} materiais abaixo do estoque mínimo.
                                         </p>
                                     </div>
                                 )}
                                 {stats.openOS > 0 && (
-                                    <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-2xl border border-blue-100">
-                                        <ClipboardList className="w-5 h-5 text-blue-600" />
-                                        <p className="text-xs font-bold text-blue-900 leading-tight">
+                                    <div className="flex items-center gap-4 p-4 rounded-2xl border"
+                                        style={{ background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.1)' }}>
+                                        <ClipboardList className="w-5 h-5 text-gray-400" />
+                                        <p className="text-xs font-bold text-gray-300 leading-tight">
                                             {stats.openOS} ordens de serviço pendentes de início.
                                         </p>
                                     </div>
@@ -271,69 +288,175 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <Card3D intensity={15} className="rounded-[3rem]">
                         <button 
                             onClick={handleRender}
-                            className="w-full bg-gradient-to-r from-amber-500 to-orange-500 p-8 rounded-[3rem] text-white overflow-hidden group relative"
+                            className="w-full p-8 rounded-[3rem] text-black overflow-hidden group relative"
+                            style={{ background: 'linear-gradient(135deg, #D4AF37 0%, #F5E583 50%, #b8952a 100%)', boxShadow: '0 16px 48px rgba(212,175,55,0.4)' }}
                         >
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-700" />
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-white/20 rounded-full -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-700" />
                             <div className="relative z-10 flex items-center justify-between">
                                 <div>
-                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-1">Inteligência Artificial</p>
-                                    <h4 className="text-2xl font-black">GERAR RENDER</h4>
+                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-1 text-black/70">Inteligência Artificial</p>
+                                    <h4 className="text-2xl font-black text-black">GERAR RENDER</h4>
                                 </div>
-                                <SparklesIcon className="w-10 h-10 group-hover:rotate-45 transition-transform duration-500" />
+                                <SparklesIcon className="w-10 h-10 group-hover:rotate-45 transition-transform duration-500 text-black/80" />
                             </div>
                         </button>
                     </Card3D>
                 </div>
             </div>
 
-            {/* Bottom: Recent Contracts Table */}
+            {/* Bottom: Recent Contracts */}
             <section className="relative z-10 animate-in fade-in slide-in-from-bottom-6 duration-1000">
-                <div className="bg-white rounded-[3.5rem] p-10 border border-slate-100 shadow-sm">
+                <div className="rounded-[3.5rem] p-10 border border-white/8 shadow-sm"
+                    style={{ background: '#111111' }}>
                     <div className="flex justify-between items-center mb-10">
                         <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center">
-                                <TrendingUp className="w-6 h-6 text-slate-600" />
+                            <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-black"
+                                style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583)' }}>
+                                <TrendingUp className="w-6 h-6" />
                             </div>
                             <div>
-                                <h3 className="text-2xl font-black text-slate-900 tracking-tight">Or\u00E7amentos Recentes</h3>
-                                <p className="text-sm text-slate-400 font-bold uppercase tracking-widest mt-1">Últimos contratos firmados</p>
+                                <h3 className="text-2xl font-black text-white tracking-tight">Orçamentos Recentes</h3>
+                                <p className="text-sm text-gray-500 font-bold uppercase tracking-widest mt-1">Últimos contratos firmados</p>
                             </div>
                         </div>
-                        <button onClick={() => setView(ViewMode.CONTRACTS_MGMT)} className="bg-slate-50 hover:bg-slate-100 text-slate-600 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2 border border-slate-100">
+                        <button onClick={() => setView(ViewMode.CONTRACTS_MGMT)}
+                            className="border border-white/10 hover:border-amber-500/40 text-gray-400 hover:text-amber-400 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2"
+                            style={{ background: 'rgba(255,255,255,0.04)' }}>
                             Ver todos <ArrowUpRight className="w-4 h-4" />
                         </button>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {contracts.slice(0, 3).map((c, i) => (
-                            <div key={c.id} className="group p-6 bg-slate-50 hover:bg-white hover:shadow-xl hover:border-slate-200 border border-transparent rounded-[2.5rem] transition-all cursor-pointer">
+                            <div key={c.id} className="group p-6 rounded-[2.5rem] transition-all cursor-pointer border border-white/6 hover:border-amber-500/30"
+                                style={{ background: 'rgba(255,255,255,0.03)' }}
+                                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(212,175,55,0.06)')}
+                                onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
+                            >
                                 <div className="flex justify-between items-start mb-6">
-                                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center group-hover:bg-amber-50 transition-colors">
-                                        <Users className="w-6 h-6 text-slate-400 group-hover:text-amber-600" />
+                                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center border border-white/10 group-hover:border-amber-500/30 transition-colors"
+                                        style={{ background: 'rgba(255,255,255,0.05)' }}>
+                                        <Users className="w-6 h-6 text-gray-500 group-hover:text-amber-400 transition-colors" />
                                     </div>
-                                    <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full ${
-                                        c.status === 'concluido' ? 'bg-emerald-100 text-emerald-600' :
-                                        c.status === 'producao' ? 'bg-indigo-100 text-indigo-600' : 'bg-amber-100 text-amber-600'
+                                    <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border ${
+                                        c.status === 'concluido' 
+                                            ? 'text-amber-400 border-amber-500/30 bg-amber-500/10' 
+                                            : c.status === 'producao' 
+                                                ? 'text-white border-white/20 bg-white/10' 
+                                                : 'text-amber-400/70 border-amber-500/20 bg-amber-500/5'
                                     }`}>
                                         {c.status}
                                     </span>
                                 </div>
-                                <h4 className="text-xl font-black text-slate-900 line-clamp-1">{c.clients?.name || 'Projeto Especial'}</h4>
-                                <p className="text-xs text-slate-400 font-bold mt-1 line-clamp-1">{c.title || c.name}</p>
-                                <div className="mt-8 pt-6 border-t border-slate-200/50 flex justify-between items-center">
+                                <h4 className="text-xl font-black text-white line-clamp-1">{c.clients?.name || 'Projeto Especial'}</h4>
+                                <p className="text-xs text-gray-500 font-bold mt-1 line-clamp-1">{c.title || c.name}</p>
+                                <div className="mt-8 pt-6 border-t border-white/8 flex justify-between items-center">
                                     <div className="flex items-center gap-2">
-                                        <Wallet className="w-4 h-4 text-slate-300" />
-                                        <span className="text-lg font-black text-slate-900">R$ {(c.value || 0).toLocaleString('pt-BR')}</span>
+                                        <Wallet className="w-4 h-4 text-amber-400/50" />
+                                        <span className="text-lg font-black text-white">R$ {(c.value || 0).toLocaleString('pt-BR')}</span>
                                     </div>
-                                    <p className="text-[10px] text-slate-400 font-black">{new Date(c.created_at).toLocaleDateString('pt-BR')}</p>
+                                    <p className="text-[10px] text-gray-600 font-black">{new Date(c.created_at).toLocaleDateString('pt-BR')}</p>
                                 </div>
                             </div>
                         ))}
                         {contracts.length === 0 && (
-                            <div className="col-span-3 py-20 text-center bg-slate-50 border-2 border-dashed border-slate-200 rounded-[3rem]">
-                                <PlusCircle className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                                <p className="font-black text-slate-400 uppercase tracking-widest">Nenhum contrato ativo</p>
-                                <Button variant="link" className="mt-2 font-bold" onClick={() => setView(ViewMode.CONTRACTS_MGMT)}>Criar Primeiro Contrato</Button>
+                            <div className="col-span-3 py-20 text-center border-2 border-dashed border-white/10 rounded-[3rem]">
+                                <PlusCircle className="w-12 h-12 text-gray-700 mx-auto mb-4" />
+                                <p className="font-black text-gray-600 uppercase tracking-widest">Nenhum contrato ativo</p>
+                                <button onClick={() => setView(ViewMode.CONTRACTS_MGMT)} className="mt-3 text-amber-400 font-bold text-sm hover:text-amber-300 transition-colors">
+                                    Criar Primeiro Contrato
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </section>
+
+            {/* NEW: Studio Measurements for Promob */}
+            <section className="relative z-10 animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-200">
+                <div className="rounded-[3.5rem] p-10 border border-blue-500/20 shadow-2xl"
+                    style={{ background: 'linear-gradient(135deg, #0f172a 0%, #111111 100%)' }}>
+                    <div className="flex justify-between items-center mb-10">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-blue-500/20 border border-blue-500/30">
+                                <Monitor className="w-6 h-6 text-blue-400" />
+                            </div>
+                            <div>
+                                <h3 className="text-2xl font-black text-white tracking-tight italic">Centro de Medição Studio AR</h3>
+                                <p className="text-sm text-blue-400/70 font-bold uppercase tracking-widest mt-1">Exportar para Promob Plus (Desktop)</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {studioMeasurements.map((m) => (
+                            <div key={m.id} className="group p-6 rounded-[2.5rem] bg-white/5 border border-white/10 hover:border-blue-500/30 transition-all">
+                                <div className="aspect-video rounded-3xl overflow-hidden mb-6 relative group/img">
+                                    <img src={m.simulation_url || m.image_url} alt="Ambiente" className="w-full h-full object-cover transition-transform group-hover/img:scale-110" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60" />
+                                    <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end">
+                                      <span className="bg-blue-600 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase">{m.ambiente || 'Cozinha'}</span>
+                                    </div>
+                                </div>
+                                <h4 className="text-lg font-black text-white mb-2">{m.client_name}</h4>
+                                <div className="flex gap-4 mb-6">
+                                  <div className="flex flex-col">
+                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Largura</span>
+                                    <span className="text-sm font-black text-blue-400">{m.dimensions?.width?.toFixed(2)}m</span>
+                                  </div>
+                                  <div className="flex flex-col">
+                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Altura</span>
+                                    <span className="text-sm font-black text-blue-400">{m.dimensions?.height?.toFixed(2)}m</span>
+                                  </div>
+                                  <div className="flex flex-col">
+                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Profundidade</span>
+                                    <span className="text-sm font-black text-blue-400">{m.dimensions?.depth?.toFixed(2)}m</span>
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-3 gap-2 mt-4">
+                                  <button
+                                      onClick={() => {
+                                        const xml = generatePromobXML({
+                                          projectName: `Projeto_${m.client_name}`,
+                                          customerName: m.client_name,
+                                          dimensions: m.dimensions,
+                                          items: m.items || [],
+                                          imageUrl: m.image_url
+                                        });
+                                        downloadFile(xml, `promob-${m.client_name}.xml`, 'text/xml');
+                                      }}
+                                      className="bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-black text-[10px] flex flex-col items-center justify-center gap-1 transition-all"
+                                      title="Exportar XML para Promob"
+                                  >
+                                      <Download className="w-3 h-3" /> XML
+                                  </button>
+                                  <button
+                                      onClick={() => {
+                                        const dxf = generateDXF(m.dimensions?.width, m.dimensions?.depth);
+                                        downloadFile(dxf, `planta-${m.client_name}.dxf`, 'image/vnd.dxf');
+                                      }}
+                                      className="bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-black text-[10px] flex flex-col items-center justify-center gap-1 transition-all"
+                                      title="Exportar DXF (AutoCAD/Promob)"
+                                  >
+                                      <FileCode className="w-3 h-3" /> DXF
+                                  </button>
+                                  <button
+                                      onClick={() => {
+                                        const text = `L: ${m.dimensions?.width?.toFixed(2)}m | A: ${m.dimensions?.height?.toFixed(2)}m | P: ${m.dimensions?.depth?.toFixed(2)}m`;
+                                        navigator.clipboard.writeText(text);
+                                      }}
+                                      className="bg-white/10 hover:bg-white/20 text-white py-3 rounded-xl font-black text-[10px] flex flex-col items-center justify-center gap-1 transition-all border border-white/10"
+                                      title="Copiar medidas para o teclado"
+                                  >
+                                      <Monitor className="w-3 h-3 text-blue-400" /> COPIAR
+                                  </button>
+                                </div>
+                            </div>
+                        ))}
+                        {studioMeasurements.length === 0 && (
+                            <div className="col-span-3 py-16 text-center border-2 border-dashed border-white/5 rounded-[3rem] bg-white/2">
+                                <Ruler className="w-12 h-12 text-gray-700 mx-auto mb-4" />
+                                <p className="font-black text-gray-600 uppercase tracking-widest">Nenhuma medição Studio AR recebida</p>
                             </div>
                         )}
                     </div>

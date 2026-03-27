@@ -504,9 +504,8 @@ export default function DriverTripPanel({ employeeId, employeeName }: DriverTrip
   const sendSOS = async () => {
     if (!activeTrip || !sosDesc.trim()) return;
     setSosSending(true);
-    const { error } = await db.from('trip_incidents').insert({
+    const { error } = await (db.from('trip_incidents') as any).insert({
       trip_id: activeTrip.id,
-      employee_id: resolvedEmployeeId || employeeId,
       type: sosType,
       description: sosDesc.trim(),
     });
@@ -650,51 +649,51 @@ export default function DriverTripPanel({ employeeId, employeeName }: DriverTrip
 
   return (
     <div className="space-y-4 p-4 max-w-2xl mx-auto">
-      <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl p-4 text-white">
+      <div className="rounded-xl p-5 shadow-lg border" style={{ background: 'linear-gradient(135deg, #1a1a1a, #000)', borderColor: 'rgba(212,175,55,0.4)' }}>
         <div className="flex items-center gap-3">
-          <Navigation className="w-6 h-6" />
+          <Navigation className="w-6 h-6" style={{ color: '#D4AF37' }} />
           <div>
-            <h2 className="font-bold text-lg">Painel do Motorista</h2>
-            <p className="text-blue-200 text-sm">{employeeName}</p>
+            <h2 className="font-bold text-lg text-white">Painel do Motorista</h2>
+            <p className="text-sm" style={{ color: '#D4AF37' }}>{employeeName}</p>
           </div>
         </div>
       </div>
 
       {activeTrip ? (
         <div className="space-y-4">
-          <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-            <div className="flex items-center justify-between mb-3">
+          <div className="rounded-xl p-5 shadow-inner border" style={{ background: '#111', borderColor: 'green' }}>
+            <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="font-semibold text-green-800">Viagem em Andamento</span>
+                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
+                <span className="font-bold text-green-400">Viagem em Andamento</span>
               </div>
               {isDeliveryMode && (
-                <span className="bg-purple-100 text-purple-700 text-xs font-medium px-2 py-1 rounded-full">
+                <span className="bg-purple-900/30 text-purple-300 text-xs font-bold px-3 py-1 rounded-full border border-purple-500/30">
                   ✅ Montagem Concluída
                 </span>
               )}
             </div>
 
             <div className="grid grid-cols-3 gap-3 text-center">
-              <div className="bg-white rounded-lg p-2">
-                <Clock className="w-4 h-4 text-gray-500 mx-auto mb-1" />
-                <p className="text-xs text-gray-500">Início</p>
-                <p className="text-sm font-medium">{formatTime(activeTrip.started_at)}</p>
+              <div className="rounded-xl p-3 border" style={{ background: '#1a1a1a', borderColor: 'rgba(255,255,255,0.05)' }}>
+                <Clock className="w-5 h-5 text-gray-500 mx-auto mb-1" />
+                <p className="text-[10px] text-gray-500 uppercase font-bold">Início</p>
+                <p className="text-sm font-bold text-white">{formatTime(activeTrip.started_at)}</p>
               </div>
-              <div className="bg-white rounded-lg p-2">
-                <Route className="w-4 h-4 text-gray-500 mx-auto mb-1" />
-                <p className="text-xs text-gray-500">Duração</p>
-                <p className="text-sm font-medium">{calcDuration(activeTrip.started_at, null)}</p>
+              <div className="rounded-xl p-3 border" style={{ background: '#1a1a1a', borderColor: 'rgba(255,255,255,0.05)' }}>
+                <Route className="w-5 h-5 text-gray-500 mx-auto mb-1" />
+                <p className="text-[10px] text-gray-500 uppercase font-bold">Duração</p>
+                <p className="text-sm font-bold text-white">{calcDuration(activeTrip.started_at, null)}</p>
               </div>
-              <div className="bg-white rounded-lg p-2">
-                <MapPin className="w-4 h-4 text-gray-500 mx-auto mb-1" />
-                <p className="text-xs text-gray-500">GPS</p>
-                <p className="text-sm font-medium">{locationCount} pts</p>
+              <div className="rounded-xl p-3 border" style={{ background: '#1a1a1a', borderColor: 'rgba(255,255,255,0.05)' }}>
+                <MapPin className="w-5 h-5 text-gray-500 mx-auto mb-1" />
+                <p className="text-[10px] text-gray-500 uppercase font-bold">GPS</p>
+                <p className="text-sm font-bold text-white">{locationCount} pts</p>
               </div>
             </div>
 
             {activeTrip.description && (
-              <p className="mt-2 text-sm text-gray-600 bg-white rounded-lg p-2">
+              <p className="mt-3 text-sm text-gray-300 rounded-lg p-3 border border-dashed border-gray-800" style={{ background: '#0a0a0a' }}>
                 📍 {activeTrip.description}
               </p>
             )}
@@ -703,7 +702,8 @@ export default function DriverTripPanel({ employeeId, employeeName }: DriverTrip
           <div className="grid grid-cols-2 gap-3">
             <button
               onClick={() => setShowFuel(true)}
-              className="flex items-center justify-center gap-2 bg-orange-50 border border-orange-200 text-orange-700 rounded-xl p-3 font-medium hover:bg-orange-100 transition-colors"
+              className="flex items-center justify-center gap-2 rounded-xl p-4 font-bold border transition-all active:scale-95"
+              style={{ background: '#1a1a1a', borderColor: 'rgba(249,115,22,0.3)', color: '#fdba74' }}
             >
               <Fuel className="w-5 h-5" />
               Abastecimento
@@ -712,7 +712,8 @@ export default function DriverTripPanel({ employeeId, employeeName }: DriverTrip
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
-              className="flex items-center justify-center gap-2 bg-blue-50 border border-blue-200 text-blue-700 rounded-xl p-3 font-medium hover:bg-blue-100 transition-colors"
+              className="flex items-center justify-center gap-2 rounded-xl p-4 font-bold border transition-all active:scale-95 disabled:opacity-50"
+              style={{ background: '#1a1a1a', borderColor: 'rgba(37,99,235,0.3)', color: '#93c5fd' }}
             >
               <Camera className="w-5 h-5" />
               {uploading ? 'Enviando...' : 'Foto'}
@@ -721,7 +722,8 @@ export default function DriverTripPanel({ employeeId, employeeName }: DriverTrip
 
             <button
               onClick={() => setShowSOS(true)}
-              className="flex items-center justify-center gap-2 bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 font-medium hover:bg-red-100 transition-colors"
+              className="flex items-center justify-center gap-2 rounded-xl p-4 font-bold border transition-all active:scale-95"
+              style={{ background: '#1a1a1a', borderColor: 'rgba(220,38,38,0.3)', color: '#fca5a5' }}
             >
               <AlertTriangle className="w-5 h-5" />
               Imprevisto
@@ -730,18 +732,20 @@ export default function DriverTripPanel({ employeeId, employeeName }: DriverTrip
             {!isDeliveryMode ? (
               <button
                 onClick={setMontagemConcluida}
-                className="flex items-center justify-center gap-2 bg-purple-50 border border-purple-200 text-purple-700 rounded-xl p-3 font-medium hover:bg-purple-100 transition-colors"
+                className="flex items-center justify-center gap-2 rounded-xl p-4 font-bold border transition-all active:scale-95"
+                style={{ background: '#1a1a1a', borderColor: 'rgba(147,51,234,0.3)', color: '#d8b4fe' }}
               >
                 <PackageCheck className="w-5 h-5" />
-                Concluir Montagem
+                Montagem
               </button>
             ) : (
               <button
                 onClick={() => setShowSignaturePad(true)}
-                className="flex items-center justify-center gap-2 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-xl p-3 font-medium hover:bg-indigo-100 transition-colors"
+                className="flex items-center justify-center gap-2 rounded-xl p-4 font-bold border transition-all active:scale-95"
+                style={{ background: '#1a1a1a', borderColor: 'rgba(79,70,229,0.3)', color: '#a5b4fc' }}
               >
                 <CheckSquare className="w-5 h-5" />
-                {signatureUrl ? '✅ Assinatura' : 'Coletar Assinatura'}
+                {signatureUrl ? '✅ Assinatura' : 'Assinatura'}
               </button>
             )}
           </div>
@@ -785,32 +789,33 @@ export default function DriverTripPanel({ employeeId, employeeName }: DriverTrip
 
           <ToolInventory employeeId={employeeId} />
 
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+          <div className="rounded-xl overflow-hidden border shadow-sm" style={{ background: '#1a1a1a', borderColor: 'rgba(212,175,55,0.2)' }}>
             <button
               onClick={() => setShowDailyChecklist(!showDailyChecklist)}
-              className="w-full flex items-center justify-between p-4 hover:bg-gray-50"
+              className="w-full flex items-center justify-between p-4 hover:bg-black/20 transition-colors"
             >
               <div className="flex items-center gap-2">
-                <CheckSquare className="w-5 h-5 text-blue-600" />
-                <span className="font-semibold">Checklist Diário</span>
-                <span className="text-sm text-gray-500">
-                  ({dailyChecklist.filter(c => c.checked).length}/{dailyChecklist.length})
+                <CheckSquare className="w-5 h-5" style={{ color: '#D4AF37' }} />
+                <span className="font-bold text-white">Checklist Diário</span>
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: '#D4AF37', color: '#000' }}>
+                  {dailyChecklist.filter(c => c.checked).length}/{dailyChecklist.length}
                 </span>
               </div>
-              <span className="text-gray-400">{showDailyChecklist ? '▲' : '▼'}</span>
+              <span className="text-gray-500">{showDailyChecklist ? '▲' : '▼'}</span>
             </button>
             {showDailyChecklist && (
-              <div className="border-t border-gray-100 divide-y divide-gray-50">
+              <div className="border-t border-gray-800 divide-y divide-gray-800">
                 {dailyChecklist.map(item => (
                   <button
                     key={item.id}
                     onClick={() => toggleCheckItem(item)}
-                    className={`w-full flex items-start gap-3 p-3 text-left hover:bg-gray-50 transition-colors ${item.checked ? 'bg-green-50' : ''}`}
+                    className="w-full flex items-start gap-4 p-4 text-left hover:bg-black/40 transition-colors group"
+                    style={{ background: item.checked ? 'rgba(34,197,94,0.05)' : 'transparent' }}
                   >
-                    <div className={`mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${item.checked ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}>
-                      {item.checked && <span className="text-white text-xs">✓</span>}
+                    <div className={`mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${item.checked ? 'bg-green-500 border-green-500 scale-110' : 'border-gray-700 group-hover:border-gray-500'}`}>
+                      {item.checked && <span className="text-white text-[10px]">✓</span>}
                     </div>
-                    <span className={`text-sm ${item.checked ? 'line-through text-gray-400' : 'text-gray-700'}`}>
+                    <span className={`text-sm font-medium transition-all ${item.checked ? 'line-through text-gray-600' : 'text-gray-300'}`}>
                       {item.label}
                     </span>
                   </button>
@@ -819,32 +824,33 @@ export default function DriverTripPanel({ employeeId, employeeName }: DriverTrip
             )}
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+          <div className="rounded-xl overflow-hidden border shadow-sm" style={{ background: '#1a1a1a', borderColor: 'rgba(212,175,55,0.2)' }}>
             <button
               onClick={() => setShowDeliveryChecklist(!showDeliveryChecklist)}
-              className="w-full flex items-center justify-between p-4 hover:bg-gray-50"
+              className="w-full flex items-center justify-between p-4 hover:bg-black/20 transition-colors"
             >
               <div className="flex items-center gap-2">
-                <PackageCheck className="w-5 h-5 text-purple-600" />
-                <span className="font-semibold">Checklist de Entrega</span>
-                <span className="text-sm text-gray-500">
-                  ({deliveryChecklist.filter(c => c.checked).length}/{deliveryChecklist.length})
+                <PackageCheck className="w-5 h-5" style={{ color: '#D4AF37' }} />
+                <span className="font-bold text-white">Checklist de Entrega</span>
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: '#D4AF37', color: '#000' }}>
+                  {deliveryChecklist.filter(c => c.checked).length}/{deliveryChecklist.length}
                 </span>
               </div>
-              <span className="text-gray-400">{showDeliveryChecklist ? '▲' : '▼'}</span>
+              <span className="text-gray-500">{showDeliveryChecklist ? '▲' : '▼'}</span>
             </button>
             {showDeliveryChecklist && (
-              <div className="border-t border-gray-100 divide-y divide-gray-50">
+              <div className="border-t border-gray-800 divide-y divide-gray-800">
                 {deliveryChecklist.map(item => (
                   <button
                     key={item.id}
                     onClick={() => item.label === 'Assinatura Digital do Cliente' ? setShowSignaturePad(true) : toggleCheckItem(item)}
-                    className={`w-full flex items-start gap-3 p-3 text-left hover:bg-gray-50 transition-colors ${item.checked ? 'bg-green-50' : ''}`}
+                    className="w-full flex items-start gap-4 p-4 text-left hover:bg-black/40 transition-colors group"
+                    style={{ background: item.checked ? 'rgba(34,197,94,0.05)' : 'transparent' }}
                   >
-                    <div className={`mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${item.checked ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}>
-                      {item.checked && <span className="text-white text-xs">✓</span>}
+                    <div className={`mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${item.checked ? 'bg-green-500 border-green-500 scale-110' : 'border-gray-700 group-hover:border-gray-500'}`}>
+                      {item.checked && <span className="text-white text-[10px]">✓</span>}
                     </div>
-                    <span className={`text-sm ${item.checked ? 'line-through text-gray-400' : 'text-gray-700'}`}>
+                    <span className={`text-sm font-medium transition-all ${item.checked ? 'line-through text-gray-600' : 'text-gray-300'}`}>
                       {item.label}
                     </span>
                   </button>
@@ -894,131 +900,134 @@ export default function DriverTripPanel({ employeeId, employeeName }: DriverTrip
 
           {/* Service Orders Card */}
           {serviceOrders.length > 0 && (
-            <div className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 rounded-xl p-4">
-              <h3 className="font-bold mb-3 flex items-center gap-2 text-amber-800">
-                <ClipboardList className="w-5 h-5 text-amber-600" />
+            <div className="rounded-xl p-5 shadow-lg border" style={{ background: '#111', borderColor: 'rgba(212,175,55,0.3)' }}>
+              <h3 className="font-bold mb-4 flex items-center gap-2" style={{ color: '#D4AF37' }}>
+                <ClipboardList className="w-5 h-5" />
                 Suas Ordens de Serviço ({serviceOrders.length})
               </h3>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {serviceOrders.map(os => {
                   const priorityStyle: Record<string, string> = {
-                    baixa: 'bg-gray-100 text-gray-600',
-                    normal: 'bg-blue-100 text-blue-700',
-                    alta: 'bg-orange-100 text-orange-700',
-                    urgente: 'bg-red-100 text-red-700',
-                  };
-                  const statusStyle: Record<string, string> = {
-                    aberta: 'bg-blue-100 text-blue-700',
-                    em_andamento: 'bg-amber-100 text-amber-700',
+                    baixa: 'bg-gray-800 text-gray-400 border-gray-700',
+                    normal: 'bg-blue-900/30 text-blue-300 border-blue-500/30',
+                    alta: 'bg-orange-900/30 text-orange-300 border-orange-500/30',
+                    urgente: 'bg-red-900/30 text-red-300 border-red-500/30',
                   };
                   const isSelected = activeServiceOrder?.id === os.id;
                   return (
                     <button
                       key={os.id}
                       onClick={() => setActiveServiceOrder(isSelected ? null : os)}
-                      className={`w-full text-left rounded-xl p-4 border-2 transition-all ${
+                      className={`w-full text-left rounded-xl p-4 border transition-all active:scale-[0.98] ${
                         isSelected
-                          ? 'border-amber-500 bg-amber-50 shadow-md'
-                          : 'border-gray-200 bg-white hover:border-amber-300'
+                          ? 'shadow-[0_0_15px_rgba(212,175,55,0.15)] bg-black border-[#D4AF37]'
+                          : 'bg-[#1a1a1a] border-gray-800 hover:border-gray-600'
                       }`}
                     >
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="font-black text-amber-700 text-sm">OS #{os.order_number}</span>
-                          {isSelected && <span className="text-amber-600 text-xs font-bold">✓ Selecionada</span>}
+                      <div className="flex items-start justify-between gap-2 mb-3">
+                        <div className="flex flex-col">
+                          <span className={`font-black text-xs uppercase tracking-wider ${isSelected ? 'text-[#D4AF37]' : 'text-gray-500'}`}>
+                            OS #{os.order_number}
+                          </span>
+                          {isSelected && <span className="text-[#D4AF37] text-[10px] font-bold mt-0.5 animate-pulse">✓ ATIVA PARA VIAGEM</span>}
                         </div>
                         <div className="flex gap-1">
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${priorityStyle[os.priority] || 'bg-gray-100 text-gray-600'}`}>
-                            {os.priority}
-                          </span>
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${statusStyle[os.status] || 'bg-gray-100 text-gray-600'}`}>
-                            {os.status === 'em_andamento' ? 'Em Andamento' : 'Aberta'}
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${priorityStyle[os.priority] || 'bg-gray-800 text-gray-400'}`}>
+                            {os.priority.toUpperCase()}
                           </span>
                         </div>
                       </div>
+                      
                       {os.clients && (
-                        <div className="flex items-center gap-1 text-sm font-semibold text-gray-800 mb-1">
-                          <User className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                        <div className="flex items-center gap-2 text-sm font-bold text-white mb-1">
+                          <div className="w-6 h-6 rounded-full bg-gray-800 flex items-center justify-center">
+                            <User className="w-3.5 h-3.5 text-[#D4AF37]" />
+                          </div>
                           {os.clients.name}
                         </div>
                       )}
+                      
                       {os.clients?.address && (
-                        <div className="flex items-center gap-1 text-xs text-gray-500 mb-1">
-                          <MapPin className="w-3 h-3 flex-shrink-0" />
+                        <div className="flex items-center gap-2 text-xs text-gray-500 mb-2 pl-8">
+                          <MapPin className="w-3 h-3" />
                           {os.clients.address}
                         </div>
                       )}
+
                       {os.description && (
-                        <p className="text-sm text-gray-600 mt-1 line-clamp-2">{os.description}</p>
+                        <p className="text-xs text-gray-400 pl-8 mb-3 line-clamp-1 italic">"{os.description}"</p>
                       )}
-                      {os.estimated_date && (
-                        <div className="flex items-center gap-1 text-xs text-blue-600 mt-1 font-medium">
-                          <Clock className="w-3 h-3 flex-shrink-0" />
-                          Previsto: {new Date(os.estimated_date).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                        </div>
-                      )}
-                      {os.total_value ? (
-                        <div className="text-xs text-green-700 font-bold mt-1">
-                          💰 R$ {os.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </div>
-                      ) : null}
+
+                      <div className="flex items-center justify-between pl-8 mt-2 border-t border-gray-800 pt-2">
+                        {os.estimated_date && (
+                          <div className="flex items-center gap-1.5 text-[10px] text-[#D4AF37] font-bold">
+                            <Clock className="w-3 h-3" />
+                            {new Date(os.estimated_date).toLocaleDateString('pt-BR')} {new Date(os.estimated_date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        )}
+                        {os.total_value ? (
+                          <div className="text-[10px] text-green-400 font-black">
+                            R$ {os.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </div>
+                        ) : null}
+                      </div>
                     </button>
                   );
                 })}
               </div>
-              {activeServiceOrder && (
-                <p className="text-xs text-amber-700 mt-2 font-medium text-center">
-                  ✅ A OS selecionada será vinculada automaticamente à viagem
-                </p>
-              )}
             </div>
           )}
 
-          <div className="bg-white border border-gray-200 rounded-xl p-4">
-            <h3 className="font-semibold mb-3 flex items-center gap-2">
-              <Navigation className="w-5 h-5 text-blue-600" />
+          <div className="rounded-xl p-6 border shadow-xl" style={{ background: '#1a1a1a', borderColor: 'rgba(212,175,55,0.4)' }}>
+            <h3 className="font-bold mb-5 flex items-center gap-2 text-white">
+              <Navigation className="w-6 h-6" style={{ color: '#D4AF37' }} />
               Iniciar Nova Viagem
             </h3>
-            <div className="mb-3">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Veículo</label>
-              <select
-                key={`vehicle-select-${vehicles.length}`}
-                value={selectedVehicleId}
-                onChange={e => setSelectedVehicleId(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">Selecione um veículo...</option>
-                {vehicles.map(v => (
-                  <option key={v.id} value={v.id}>{v.model} — {v.plate}</option>
-                ))}
-              </select>
+            <div className="mb-5">
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-2 tracking-widest pl-1">Veículo</label>
+              <div className="relative">
+                <select
+                  key={`vehicle-select-${vehicles.length}`}
+                  value={selectedVehicleId}
+                  onChange={e => setSelectedVehicleId(e.target.value)}
+                  className="w-full rounded-xl p-4 text-sm font-bold appearance-none transition-all focus:ring-2"
+                  style={{ background: '#2a2a2a', border: '1px solid rgba(212,175,55,0.2)', color: '#fff', focusRingColor: '#D4AF37' }}
+                >
+                  <option value="" style={{ background: '#2a2a2a' }}>Selecione um veículo...</option>
+                  {vehicles.map(v => (
+                    <option key={v.id} value={v.id} style={{ background: '#2a2a2a' }}>{v.model} — {v.plate}</option>
+                  ))}
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500 text-xs">▼</div>
+              </div>
             </div>
             <button
               onClick={() => startTrip()}
               disabled={!selectedVehicleId}
-              className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl p-4 font-bold text-lg transition-colors"
+              className="w-full flex items-center justify-center gap-3 text-black rounded-xl p-4 font-black text-lg transition-all active:scale-95 disabled:opacity-30 disabled:grayscale"
+              style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583)' }}
             >
-              <Play className="w-6 h-6" />
-              Iniciar Viagem
+              <Play className="w-6 h-6 fill-black" />
+              INICIAR VIAGEM
             </button>
           </div>
 
           {recentTrips.length > 0 && (
-            <div className="bg-white border border-gray-200 rounded-xl p-4">
-              <h3 className="font-semibold mb-3 flex items-center gap-2">
-                <Clock className="w-5 h-5 text-gray-500" />
+            <div className="rounded-xl p-5 border" style={{ background: '#111', borderColor: 'rgba(255,255,255,0.05)' }}>
+              <h3 className="font-bold mb-4 flex items-center gap-2 text-gray-400">
+                <Clock className="w-5 h-5" />
                 Viagens Recentes
               </h3>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {recentTrips.map(trip => (
-                  <div key={trip.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div key={trip.id} className="flex items-center justify-between p-4 rounded-xl border border-gray-900" style={{ background: '#1a1a1a' }}>
                     <div>
-                      <p className="text-sm font-medium text-gray-700">{formatTime(trip.started_at)}</p>
-                      {trip.description && <p className="text-xs text-gray-500">{trip.description}</p>}
+                      <p className="text-sm font-bold text-white">{formatTime(trip.started_at)}</p>
+                      {trip.description && <p className="text-xs text-gray-500 mt-1">{trip.description}</p>}
                     </div>
                     <div className="text-right">
-                      <p className="text-xs text-gray-500">{calcDuration(trip.started_at, trip.ended_at)}</p>
-                      <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Concluída</span>
+                      <p className="text-xs text-gray-400 font-mono mb-1">{calcDuration(trip.started_at, trip.ended_at)}</p>
+                      <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border" style={{ background: 'rgba(34,197,94,0.1)', color: '#4ade80', borderColor: 'rgba(34,197,94,0.3)' }}>Concluída</span>
                     </div>
                   </div>
                 ))}
@@ -1029,42 +1038,49 @@ export default function DriverTripPanel({ employeeId, employeeName }: DriverTrip
       )}
 
       {showSOS && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md p-4 space-y-3">
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center p-4">
+          <div className="rounded-2xl w-full max-w-md p-5 space-y-4 shadow-2xl" style={{ background: '#1a1a1a', border: '1px solid rgba(212,175,55,0.3)' }}>
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-lg flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-red-600" />
+              <h3 className="font-bold text-lg flex items-center gap-2 text-white">
+                <AlertTriangle className="w-5 h-5 text-red-400" />
                 Reportar Imprevisto
               </h3>
-              <button onClick={() => setShowSOS(false)} className="text-gray-400 hover:text-gray-600">
+              <button onClick={() => setShowSOS(false)} className="text-gray-500 hover:text-white transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
-              <select value={sosType} onChange={e => setSosType(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2.5 text-sm">
-                <option>Peça danificada</option>
-                <option>Acidente</option>
-                <option>Problema com veículo</option>
-                <option>Problema com cliente</option>
-                <option>Atraso</option>
-                <option>Outro</option>
+              <label className="block text-sm font-medium text-gray-300 mb-1">Tipo</label>
+              <select
+                value={sosType}
+                onChange={e => setSosType(e.target.value)}
+                className="w-full rounded-xl p-3 text-sm font-medium appearance-none"
+                style={{ background: '#2a2a2a', border: '1px solid rgba(212,175,55,0.3)', color: '#fff' }}
+              >
+                <option value="Peça danificada" style={{ background: '#2a2a2a' }}>Peça danificada</option>
+                <option value="Acidente" style={{ background: '#2a2a2a' }}>Acidente</option>
+                <option value="Problema com veículo" style={{ background: '#2a2a2a' }}>Problema com veículo</option>
+                <option value="Problema com cliente" style={{ background: '#2a2a2a' }}>Problema com cliente</option>
+                <option value="Atraso" style={{ background: '#2a2a2a' }}>Atraso</option>
+                <option value="Outro" style={{ background: '#2a2a2a' }}>Outro</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
+              <label className="block text-sm font-medium text-gray-300 mb-1">Descrição</label>
               <textarea
                 value={sosDesc}
                 onChange={e => setSosDesc(e.target.value)}
                 placeholder="Descreva o imprevisto..."
                 rows={3}
-                className="w-full border border-gray-300 rounded-lg p-2.5 text-sm resize-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                className="w-full rounded-xl p-3 text-sm resize-none text-white placeholder-gray-600"
+                style={{ background: '#2a2a2a', border: '1px solid rgba(212,175,55,0.3)' }}
               />
             </div>
             <button
               onClick={sendSOS}
               disabled={sosSending || !sosDesc.trim()}
-              className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-300 text-white rounded-xl p-3 font-semibold transition-colors"
+              className="w-full flex items-center justify-center gap-2 disabled:opacity-50 text-white rounded-xl p-3 font-bold transition-colors"
+              style={{ background: sosSending || !sosDesc.trim() ? '#333' : 'linear-gradient(135deg, #dc2626, #991b1b)' }}
             >
               <Send className="w-4 h-4" />
               {sosSending ? 'Enviando...' : 'Enviar Reporte'}
@@ -1073,15 +1089,16 @@ export default function DriverTripPanel({ employeeId, employeeName }: DriverTrip
         </div>
       )}
 
+
       {showFuel && activeTrip && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-lg flex items-center gap-2">
-                <Fuel className="w-5 h-5 text-orange-600" />
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-end sm:items-center justify-center p-4">
+          <div className="rounded-2xl w-full max-w-md p-6 shadow-2xl border" style={{ background: '#1a1a1a', borderColor: 'rgba(212,175,55,0.3)' }}>
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="font-bold text-lg flex items-center gap-2 text-white">
+                <Fuel className="w-5 h-5" style={{ color: '#D4AF37' }} />
                 Registrar Abastecimento
               </h3>
-              <button onClick={() => setShowFuel(false)} className="text-gray-400 hover:text-gray-600">
+              <button onClick={() => setShowFuel(false)} className="text-gray-500 hover:text-white transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1091,21 +1108,25 @@ export default function DriverTripPanel({ employeeId, employeeName }: DriverTrip
       )}
 
       {showSignaturePad && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-lg">Assinatura do Cliente</h3>
-              <button onClick={() => setShowSignaturePad(false)} className="text-gray-400 hover:text-gray-600">
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+          <div className="rounded-2xl w-full max-w-md p-6 shadow-2xl border" style={{ background: '#1a1a1a', borderColor: 'rgba(212,175,55,0.3)' }}>
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="font-bold text-lg text-white">Assinatura do Cliente</h3>
+              <button onClick={() => setShowSignaturePad(false)} className="text-gray-500 hover:text-white transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <SignaturePad
-              onSave={saveSignature}
-              onClear={() => setShowSignaturePad(false)}
-            />
+            <div className="bg-white rounded-lg p-2 overflow-hidden">
+              <SignaturePad
+                onSave={saveSignature}
+                onClear={() => setShowSignaturePad(false)}
+              />
+            </div>
+            <p className="mt-3 text-[10px] text-gray-500 text-center uppercase font-bold tracking-widest">A ASSINATURA SERÁ VINCULADA À VIAGEM ATUAL</p>
           </div>
         </div>
       )}
     </div>
   );
 }
+

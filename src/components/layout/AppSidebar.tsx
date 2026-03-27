@@ -109,7 +109,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ authState, view, setView
                     <>
                         <NavIcon icon="layout-dashboard" label={"In\u00EDcio"} active={view === ViewMode.DASHBOARD} onClick={() => setView(ViewMode.DASHBOARD)} />
                         <NavIcon icon="cube" label="3D" active={view === ViewMode.DASHBOARD_3D} onClick={() => setView(ViewMode.DASHBOARD_3D)} />
-                        <NavIcon icon="file-text" label={"Or\u00E7amentos"} active={view === ViewMode.CONTRACTS} onClick={() => setView(ViewMode.CONTRACTS)} />
+                        <NavIcon icon="file-text" label="Projetagem SD" active={view === ViewMode.CONTRACTS} onClick={() => setView(ViewMode.CONTRACTS)} />
                         <NavIcon icon="building" label="Fornecedores" active={view === ViewMode.SUPPLIERS} onClick={() => setView(ViewMode.SUPPLIERS)} />
                         <NavIcon icon="package" label="Estoque" active={view === ViewMode.PRODUCTS} onClick={() => setView(ViewMode.PRODUCTS)} />
                         <NavIcon icon="clipboard-list" label="OS" active={view === ViewMode.SERVICE_ORDERS} onClick={() => setView(ViewMode.SERVICE_ORDERS)} />

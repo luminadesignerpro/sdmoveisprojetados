@@ -61,7 +61,7 @@ export const NavIcon: React.FC<NavIconProps> = ({ icon, label, active, onClick, 
         "group flex flex-col items-center gap-0.5 sm:gap-1 py-2 sm:py-3 px-1.5 sm:px-2 rounded-xl transition-all duration-300 flex-shrink-0",
         active
           ? "text-primary"
-          : "text-sidebar-foreground/50 hover:text-sidebar-foreground"
+          : "text-sidebar-foreground/75 hover:text-sidebar-foreground"
       )}
       style={{ perspective: "600px" }}
     >
@@ -90,7 +90,7 @@ export const NavIcon: React.FC<NavIconProps> = ({ icon, label, active, onClick, 
       </div>
       <span className={cn(
         "text-[8px] sm:text-[9px] font-bold uppercase tracking-wider transition-all duration-300",
-        active ? "text-primary" : "group-hover:text-sidebar-foreground"
+        active ? "text-primary" : "text-sidebar-foreground/75 group-hover:text-sidebar-foreground"
       )}>
         {label}
       </span>

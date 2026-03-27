@@ -24,6 +24,7 @@ import AccountsPage from '@/components/modules/AccountsPage';
 import ContractsPage from '@/components/modules/ContractsPage';
 import SalesPage from '@/components/modules/SalesPage';
 import ProfitDashboard from '@/components/admin/ProfitDashboard';
+import BudgetQuote from '@/components/budget/BudgetQuote';
 import { Dashboard3DScene } from '@/components/dashboard3d/Dashboard3DScene';
 import { AnimatedBackground } from '@/components/animations/AnimatedBackground';
 import { ViewTransition } from '@/components/animations/ViewTransition';
@@ -456,6 +457,7 @@ const App: React.FC = () => {
             {authState === 'ADMIN' ? (
               <>
                 <NavIcon icon="layout-dashboard" label="Início" active={view === ViewMode.DASHBOARD} onClick={() => setView(ViewMode.DASHBOARD)} />
+                <NavIcon icon="calculator" label="Projetagem SD" active={view === ViewMode.BUDGET_QUOTE} onClick={() => setView(ViewMode.BUDGET_QUOTE)} />
                 <NavIcon icon="cube" label="3D" active={view === ViewMode.DASHBOARD_3D} onClick={() => setView(ViewMode.DASHBOARD_3D)} />
                 <NavIcon icon="file-text" label="Vendas" active={view === ViewMode.CONTRACTS} onClick={() => setView(ViewMode.CONTRACTS)} />
                 <NavIcon icon="building" label="Fornecedores" active={view === ViewMode.SUPPLIERS} onClick={() => setView(ViewMode.SUPPLIERS)} />
@@ -568,7 +570,7 @@ const App: React.FC = () => {
           {view === ViewMode.DASHBOARD && authState === 'ADMIN' && (
             <div
               className="p-4 sm:p-8 space-y-6 overflow-x-hidden overflow-y-auto w-full h-full relative"
-              style={{ background: 'linear-gradient(135deg, hsl(var(--background)), hsl(var(--muted)))' }}
+              style={{ background: '#0f0f0f' }}
               onScroll={(e) => {
                 const target = e.currentTarget;
                 const bg = target.querySelector('[data-parallax-bg]') as HTMLElement;
@@ -599,22 +601,22 @@ const App: React.FC = () => {
               </div>
               <header className="flex justify-between items-start" style={{ opacity: 0, animation: 'fadeIn 0.5s ease-out 0.05s forwards' }}>
                 <div>
-                  <h1 className="text-4xl font-black text-gray-900 flex items-center gap-3">
-                    <Sparkles className="w-8 h-8 text-amber-500" />
-                    Gestão SD Móveis
+                  <h1 className="text-4xl font-black text-white flex items-center gap-3">
+                    <Sparkles className="w-8 h-8 text-amber-400" />
+                    Gestão Estratégica
                   </h1>
-                  <p className="text-gray-500 mt-1 flex items-center gap-2">
-                    <Heart className="w-4 h-4 text-red-500" />
-                    Gratidão e Performance Comercial
+                  <p className="text-gray-400 mt-1 flex items-center gap-2">
+                    <Heart className="w-4 h-4 text-amber-400 fill-amber-400" />
+                    Bem-vindo ao centro de comando SD Móveis
                   </p>
                 </div>
                 <div className="flex items-center gap-4">
-                  <div className="bg-green-50 border border-green-200 rounded-2xl px-6 py-3 shadow-sm">
-                    <p className="text-xs font-bold text-green-600 uppercase tracking-wider flex items-center gap-1">
+                  <div className="rounded-2xl px-6 py-3 shadow-sm border" style={{ background: 'rgba(212,175,55,0.1)', borderColor: 'rgba(212,175,55,0.3)' }}>
+                    <p className="text-xs font-bold uppercase tracking-wider flex items-center gap-1" style={{ color: '#D4AF37' }}>
                       <Zap className="w-3 h-3" /> Status IA
                     </p>
-                    <p className="text-green-700 font-bold flex items-center gap-2">
-                      <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                    <p className="font-bold flex items-center gap-2" style={{ color: '#F5E583' }}>
+                      <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: '#D4AF37' }} />
                       Sistema 100% Online
                     </p>
                   </div>
@@ -624,47 +626,55 @@ const App: React.FC = () => {
               {/* Stats Grid */}
               <div className="grid grid-cols-4 gap-4">
                 <div style={{ opacity: 0, animation: 'fadeIn 0.5s ease-out 0.15s forwards' }}>
-                  <Card3D intensity={8} className="rounded-2xl">
-                    <DashboardStat
-                      title="Projetos Ativos"
-                      value={contracts.length.toString()}
-                      icon="📁"
-                      trend="+2 este mês"
-                      color="bg-blue-50"
-                    />
+                  <Card3D intensity={8} className="rounded-2xl p-0.5" style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(255,255,255,0.05))' }}>
+                    <div className="rounded-[calc(1rem-2px)] overflow-hidden" style={{ background: '#111111' }}>
+                      <DashboardStat
+                        title="Projetos Ativos"
+                        value={contracts.length.toString()}
+                        icon="📁"
+                        trend="+2 este mês"
+                        dark
+                      />
+                    </div>
                   </Card3D>
                 </div>
                 <div style={{ opacity: 0, animation: 'fadeIn 0.5s ease-out 0.25s forwards' }}>
-                  <Card3D intensity={8} className="rounded-2xl">
-                    <DashboardStat
-                      title="Faturamento Total"
-                      value={`R$ ${(totalRevenue / 1000).toFixed(0)}K`}
-                      icon="💰"
-                      trend="+15% vs mês anterior"
-                      color="bg-green-50"
-                    />
+                  <Card3D intensity={8} className="rounded-2xl p-0.5" style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(255,255,255,0.05))' }}>
+                    <div className="rounded-[calc(1rem-2px)] overflow-hidden" style={{ background: '#111111' }}>
+                      <DashboardStat
+                        title="Faturamento Total"
+                        value={`R$ ${(totalRevenue / 1000).toFixed(0)}K`}
+                        icon="💰"
+                        trend="+15% vs mês anterior"
+                        dark
+                      />
+                    </div>
                   </Card3D>
                 </div>
                 <div style={{ opacity: 0, animation: 'fadeIn 0.5s ease-out 0.35s forwards' }}>
-                  <Card3D intensity={8} className="rounded-2xl">
-                    <DashboardStat
-                      title="Em Produção"
-                      value={inProduction.toString()}
-                      icon="🏭"
-                      trend="Meta: 10"
-                      color="bg-amber-50"
-                    />
+                  <Card3D intensity={8} className="rounded-2xl p-0.5" style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(255,255,255,0.05))' }}>
+                    <div className="rounded-[calc(1rem-2px)] overflow-hidden" style={{ background: '#111111' }}>
+                      <DashboardStat
+                        title="Em Produção"
+                        value={inProduction.toString()}
+                        icon="🏭"
+                        trend="Meta: 10"
+                        dark
+                      />
+                    </div>
                   </Card3D>
                 </div>
                 <div style={{ opacity: 0, animation: 'fadeIn 0.5s ease-out 0.45s forwards' }}>
-                  <Card3D intensity={8} className="rounded-2xl">
-                    <DashboardStat
-                      title="Conversão"
-                      value={`${contracts.length > 0 ? Math.round((signedContracts / contracts.length) * 100) : 0}%`}
-                      icon="📈"
-                      trend="Excelente!"
-                      color="bg-purple-50"
-                    />
+                  <Card3D intensity={8} className="rounded-2xl p-0.5" style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(255,255,255,0.05))' }}>
+                    <div className="rounded-[calc(1rem-2px)] overflow-hidden" style={{ background: '#111111' }}>
+                      <DashboardStat
+                        title="Conversão"
+                        value={`${contracts.length > 0 ? Math.round((signedContracts / contracts.length) * 100) : 0}%`}
+                        icon="📈"
+                        trend="Excelente!"
+                        dark
+                      />
+                    </div>
                   </Card3D>
                 </div>
               </div>
@@ -709,13 +719,13 @@ const App: React.FC = () => {
                 {/* Contratos Recentes */}
                 <div style={{ opacity: 0, animation: 'fadeIn 0.6s ease-out 0.65s forwards' }}>
                   <Card3D intensity={6} className="rounded-[32px]">
-                    <div className="bg-white rounded-[32px] p-6 shadow-xl h-full">
+                    <div className="rounded-[32px] p-6 h-full border" style={{ background: '#111111', borderColor: 'rgba(255,255,255,0.08)' }}>
                       <div className="flex justify-between items-center mb-4">
-                        <h3 className="font-black text-gray-900 flex items-center gap-2">
-                          <TrendingUp className="w-5 h-5 text-amber-500" />
+                        <h3 className="font-black text-white flex items-center gap-2">
+                          <TrendingUp className="w-5 h-5 text-amber-400" />
                           Últimos Contratos
                         </h3>
-                        <button onClick={() => setView(ViewMode.CONTRACTS)} className="text-xs text-amber-600 font-bold hover:underline flex items-center gap-1 hover:gap-2 transition-all duration-300 active:scale-95">
+                        <button onClick={() => setView(ViewMode.CONTRACTS)} className="text-xs font-bold hover:underline flex items-center gap-1 hover:gap-2 transition-all duration-300 active:scale-95" style={{ color: '#D4AF37' }}>
                           Ver todos <ChevronRight className="w-3 h-3 hover:translate-x-0.5 transition-transform duration-300" />
                         </button>
                       </div>
@@ -724,26 +734,24 @@ const App: React.FC = () => {
                           <div
                             key={c.id}
                             onClick={() => setView(ViewMode.CONTRACTS)}
-                            className="flex justify-between items-center p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-all duration-200 cursor-pointer hover:translate-x-1 hover:shadow-md active:scale-[0.98]"
+                            className="flex justify-between items-center p-4 rounded-2xl transition-all duration-200 cursor-pointer hover:translate-x-1 active:scale-[0.98] border"
+                            style={{ background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.08)' }}
+                            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(212,175,55,0.08)')}
+                            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.04)')}
                           >
                             <div>
-                              <p className="font-bold text-gray-900">{c.clients?.name || 'Cliente'}</p>
+                              <p className="font-bold text-white">{c.clients?.name || 'Cliente'}</p>
                               <p className="text-xs text-gray-500">{c.name}</p>
                             </div>
                             <div className="text-right">
-                              <p className="font-black text-amber-600">R$ {(c.value || 0).toLocaleString('pt-BR')}</p>
-                              <span className={`text-xs px-2 py-0.5 rounded-full ${c.status === 'producao' ? 'bg-blue-100 text-blue-700' :
-                                c.status === 'assinado' ? 'bg-green-100 text-green-700' :
-                                  c.status === 'instalacao' ? 'bg-purple-100 text-purple-700' :
-                                    c.status === 'concluido' ? 'bg-emerald-100 text-emerald-700' :
-                                      'bg-amber-100 text-amber-700'
-                                }`}>
+                              <p className="font-black" style={{ color: '#D4AF37' }}>R$ {(c.value || 0).toLocaleString('pt-BR')}</p>
+                              <span className="text-xs px-2 py-0.5 rounded-full border" style={{ background: 'rgba(212,175,55,0.1)', borderColor: 'rgba(212,175,55,0.3)', color: '#D4AF37' }}>
                                 {c.status === 'producao' ? 'Produção' : c.status === 'assinado' ? 'Assinado' : c.status === 'instalacao' ? 'Instalação' : c.status === 'concluido' ? 'Concluído' : c.status === 'em_negociacao' ? 'Em Negociação' : c.status}
                               </span>
                             </div>
                           </div>
                         ))}
-                        {contracts.length === 0 && <p className="text-sm text-gray-400 text-center py-4">Nenhum projeto ainda</p>}
+                        {contracts.length === 0 && <p className="text-sm text-gray-600 text-center py-4">Nenhum projeto ainda</p>}
                       </div>
                     </div>
                   </Card3D>
@@ -751,17 +759,20 @@ const App: React.FC = () => {
               </div>
 
               {/* Quick Actions */}
-              <div className="grid grid-cols-5 gap-4">
+              <div className="grid grid-cols-5 gap-4" style={{ background: 'transparent' }}>
                 <div style={{ opacity: 0, animation: 'fadeIn 0.5s ease-out 0.75s forwards' }}>
                   <Card3D intensity={10} className="rounded-2xl">
                     <button
                       onClick={() => setView(ViewMode.PROMOB)}
-                      className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-left group w-full active:scale-[0.96] hover:border-blue-200 border border-transparent h-full flex flex-col items-center justify-center text-center"
+                      className="p-6 rounded-2xl transition-all duration-300 w-full active:scale-[0.96] border h-full flex flex-col items-center justify-center text-center group"
+                      style={{ background: '#111111', borderColor: 'rgba(255,255,255,0.08)' }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(212,175,55,0.4)'; e.currentTarget.style.background = 'rgba(212,175,55,0.08)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.background = '#111111'; }}
                     >
-                      <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-6 group-active:scale-90 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-blue-200/50">
-                        <Layers className="w-6 h-6 text-blue-600" />
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-all duration-300" style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)' }}>
+                        <Layers className="w-6 h-6 text-amber-400" />
                       </div>
-                      <h4 className="font-bold text-gray-900 group-hover:text-blue-700 transition-colors duration-200 text-sm">Editor 3D</h4>
+                      <h4 className="font-bold text-white text-sm">Editor 3D</h4>
                     </button>
                   </Card3D>
                 </div>
@@ -769,12 +780,15 @@ const App: React.FC = () => {
                   <Card3D intensity={10} className="rounded-2xl">
                     <button
                       onClick={() => setView(ViewMode.CRM)}
-                      className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-left group w-full active:scale-[0.96] hover:border-green-200 border border-transparent h-full flex flex-col items-center justify-center text-center"
+                      className="p-6 rounded-2xl transition-all duration-300 w-full active:scale-[0.96] border h-full flex flex-col items-center justify-center text-center group"
+                      style={{ background: '#111111', borderColor: 'rgba(255,255,255,0.08)' }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(212,175,55,0.4)'; e.currentTarget.style.background = 'rgba(212,175,55,0.08)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.background = '#111111'; }}
                     >
-                      <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-6 group-active:scale-90 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-green-200/50">
-                        <MessageCircle className="w-6 h-6 text-green-600" />
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-all duration-300" style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)' }}>
+                        <MessageCircle className="w-6 h-6 text-amber-400" />
                       </div>
-                      <h4 className="font-bold text-gray-900 group-hover:text-green-700 transition-colors duration-200 text-sm">CRM Zap</h4>
+                      <h4 className="font-bold text-white text-sm">CRM Zap</h4>
                     </button>
                   </Card3D>
                 </div>
@@ -782,12 +796,15 @@ const App: React.FC = () => {
                   <Card3D intensity={10} className="rounded-2xl">
                     <button
                       onClick={() => setView(ViewMode.CONTRACTS)}
-                      className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-left group w-full active:scale-[0.96] hover:border-amber-200 border border-transparent h-full flex flex-col items-center justify-center text-center"
+                      className="p-6 rounded-2xl transition-all duration-300 w-full active:scale-[0.96] border h-full flex flex-col items-center justify-center text-center group"
+                      style={{ background: '#111111', borderColor: 'rgba(255,255,255,0.08)' }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(212,175,55,0.4)'; e.currentTarget.style.background = 'rgba(212,175,55,0.08)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.background = '#111111'; }}
                     >
-                      <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-6 group-active:scale-90 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-amber-200/50">
-                        <FileText className="w-6 h-6 text-amber-600" />
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-all duration-300" style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)' }}>
+                        <FileText className="w-6 h-6 text-amber-400" />
                       </div>
-                      <h4 className="font-bold text-gray-900 group-hover:text-amber-700 transition-colors duration-200 text-sm">Contratos</h4>
+                      <h4 className="font-bold text-white text-sm">Contratos</h4>
                     </button>
                   </Card3D>
                 </div>
@@ -795,12 +812,13 @@ const App: React.FC = () => {
                   <Card3D intensity={10} className="rounded-2xl h-full">
                     <button
                       onClick={handleRender}
-                      className="bg-gradient-to-br from-amber-500 to-orange-600 p-6 rounded-2xl shadow-lg hover:shadow-xl hover:shadow-amber-500/30 transition-all duration-300 text-left group text-white w-full active:scale-[0.96] hover:from-amber-400 hover:to-orange-500 h-full flex flex-col items-center justify-center text-center"
+                      className="p-6 rounded-2xl text-black w-full active:scale-[0.96] h-full flex flex-col items-center justify-center text-center group transition-all"
+                      style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583, #b8952a)', boxShadow: '0 8px 32px rgba(212,175,55,0.35)' }}
                     >
-                      <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-12 group-active:scale-90 transition-all duration-300 group-hover:bg-white/30">
-                        <Sparkles className="w-6 h-6 text-white group-hover:animate-pulse" />
+                      <div className="w-12 h-12 bg-black/10 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-all duration-300">
+                        <Sparkles className="w-6 h-6 text-black/80" />
                       </div>
-                      <h4 className="font-bold group-hover:tracking-wide transition-all duration-300 text-sm">Render IA</h4>
+                      <h4 className="font-bold text-black/80 text-sm">Render IA</h4>
                     </button>
                   </Card3D>
                 </div>
@@ -808,12 +826,15 @@ const App: React.FC = () => {
                   <Card3D intensity={10} className="rounded-2xl">
                     <button
                       onClick={() => setView(ViewMode.PROFIT_BI)}
-                      className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-left group w-full active:scale-[0.96] hover:border-indigo-200 border border-transparent h-full flex flex-col items-center justify-center text-center"
+                      className="p-6 rounded-2xl transition-all duration-300 w-full active:scale-[0.96] border h-full flex flex-col items-center justify-center text-center group"
+                      style={{ background: '#111111', borderColor: 'rgba(255,255,255,0.08)' }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(212,175,55,0.4)'; e.currentTarget.style.background = 'rgba(212,175,55,0.08)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.background = '#111111'; }}
                     >
-                      <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-6 group-active:scale-90 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-indigo-200/50">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-600"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-all duration-300" style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)' }}>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-400"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
                       </div>
-                      <h4 className="font-bold text-gray-900 group-hover:text-indigo-700 transition-colors duration-200 text-sm">Lucro Real</h4>
+                      <h4 className="font-bold text-white text-sm">Lucro Real</h4>
                     </button>
                   </Card3D>
                 </div>
@@ -831,6 +852,13 @@ const App: React.FC = () => {
           {/* PROMOB 3D EDITOR */}
           {view === ViewMode.PROMOB && authState === 'ADMIN' && (
             <PromobEditor />
+          )}
+
+          {/* BUDGET AI */}
+          {view === ViewMode.BUDGET_QUOTE && authState === 'ADMIN' && (
+            <div className="h-full w-full overflow-hidden bg-background">
+              <BudgetQuote />
+            </div>
           )}
 
           {/* NEW MODULES */}
@@ -1359,13 +1387,13 @@ const App: React.FC = () => {
                   className="group relative w-full landscape:flex-1 sm:w-64 lg:w-72 h-40 landscape:h-36 md:h-72 rounded-[24px] md:rounded-[32px] p-4 md:p-6 landscape:p-3 flex flex-col items-center justify-center transition-all duration-500 overflow-hidden touch-manipulation select-none"
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-gray-800 via-gray-900 to-gray-950 rounded-[32px]" />
-                  <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 via-transparent to-green-600/5 rounded-[32px]" />
-                  <div className="absolute inset-0 bg-gradient-to-br from-green-400/0 to-transparent group-hover:from-green-400/10 rounded-[32px] transition-all duration-500" />
-                  <div className="absolute inset-0 rounded-[32px] border-2 border-green-500/30 group-hover:border-green-400/60 transition-colors shadow-2xl" />
-                  <div className="absolute -top-20 -right-20 w-40 h-40 bg-green-500/5 rounded-full blur-3xl group-hover:bg-green-400/20 transition-all" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-amber-600/5 rounded-[32px]" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-amber-400/0 to-transparent group-hover:from-amber-400/10 rounded-[32px] transition-all duration-500" />
+                  <div className="absolute inset-0 rounded-[32px] border-2 border-white/20 group-hover:border-amber-400/60 transition-colors shadow-2xl" />
+                  <div className="absolute -top-20 -right-20 w-40 h-40 bg-amber-500/5 rounded-full blur-3xl group-hover:bg-amber-400/20 transition-all" />
 
                   <div className="relative z-10 flex flex-col items-center">
-                    <div className="w-12 h-12 landscape:w-9 landscape:h-9 md:w-20 md:h-20 rounded-2xl border-2 border-green-500/40 flex items-center justify-center mb-2 landscape:mb-0.5 md:mb-5 group-hover:scale-110 transition-transform bg-green-500/10 backdrop-blur-sm shadow-xl overflow-hidden group-hover:border-green-400/60">
+                    <div className="w-12 h-12 landscape:w-9 landscape:h-9 md:w-20 md:h-20 rounded-2xl border-2 border-white/30 flex items-center justify-center mb-2 landscape:mb-0.5 md:mb-5 group-hover:scale-110 transition-transform bg-white/10 backdrop-blur-sm shadow-xl overflow-hidden group-hover:border-amber-400/60">
                       <img src={logoSD} alt="SD" className="w-full h-full object-cover" />
                     </div>
                     <div className="flex items-center gap-2 mb-1 landscape:mb-0">
