@@ -3,7 +3,7 @@ import {
     Sparkles, Heart, Zap, TrendingUp, ChevronRight, Layers, FileText,
     MessageCircle, Star, Sparkles as SparklesIcon, MapPin, Clock,
     Package, AlertTriangle, ArrowUpRight, Plus, ClipboardList, Wallet,
-    TrendingDown, BarChart3, Users, PlusCircle, Ruler, Box, Download, Monitor, ExternalLink, FileCode, Shield
+    TrendingDown, BarChart3, Users, PlusCircle, Ruler, Box, Download, Monitor, ExternalLink, FileCode, Shield, Loader2
 } from 'lucide-react';
 import { generatePromobXML, downloadFile, generateDXF } from '@/services/promobService';
 import { Card3D } from '@/components/animations/Card3D';
