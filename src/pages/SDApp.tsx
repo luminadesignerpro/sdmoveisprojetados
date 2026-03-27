@@ -575,6 +575,7 @@ const App: React.FC = () => {
               contracts={contracts} 
               setView={setView} 
               handleRender={handleRender} 
+              loading={loading}
             />
           )}
 

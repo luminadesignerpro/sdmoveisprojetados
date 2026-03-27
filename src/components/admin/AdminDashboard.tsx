@@ -17,12 +17,14 @@ interface AdminDashboardProps {
     contracts: any[];
     setView: (view: ViewMode) => void;
     handleRender: () => void;
+    loading?: boolean;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     contracts: initialContracts,
     setView,
-    handleRender
+    handleRender,
+    loading: isRendering = false
 }) => {
     const [stats, setStats] = useState({
         revenue: 0,
@@ -115,6 +117,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             SINEWAVE ACTIVE
                         </p>
                     </div>
+                    <button
+                      onClick={handleRender}
+                      disabled={isRendering}
+                      className="px-6 h-20 rounded-[1.8rem] font-black text-[10px] uppercase tracking-widest bg-white/5 text-[#D4AF37] border border-[#D4AF37]/30 hover:bg-white/10 transition-all flex items-center gap-3 shadow-xl active:scale-95 disabled:opacity-50"
+                    >
+                      {isRendering ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-5 h-5" />
+                      )}
+                      INTELIGÊNCIA ARTIFICIAL (8K)
+                    </button>
                     <button
                         onClick={() => setView(ViewMode.BUDGET_QUOTE)}
                         className="px-10 h-20 rounded-[1.8rem] font-black text-xs uppercase tracking-[0.3em] transition-all hover:scale-105 active:scale-95 shadow-2xl text-black flex items-center gap-4 italic bg-gradient-to-r from-[#D4AF37] to-[#b8952a]"
