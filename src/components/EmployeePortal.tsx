@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Clock, Play, Square, DollarSign, Calendar, User, Send, CheckCircle, XCircle, Loader2, Download } from 'lucide-react';
+import { Clock, Play, Square, DollarSign, Calendar, User, Send, CheckCircle, XCircle, Loader2, Download, Zap, Shield, Wallet, Activity } from 'lucide-react';
 import jsPDF from 'jspdf';
 
 interface Employee {
@@ -81,9 +81,9 @@ export default function EmployeePortal({ employeeName }: EmployeePortalProps) {
     if (!employee) return;
     const { error } = await supabase.from('time_entries').insert({ employee_id: employee.id });
     if (error) {
-      toast({ title: '❌ Erro', description: error.message, variant: 'destructive' });
+      toast({ title: '❌ Erro no Sistema', description: error.message, variant: 'destructive' });
     } else {
-      toast({ title: '✅ Entrada registrada!' });
+      toast({ title: '✅ Jornada Iniciada!', description: 'Tenha um ótimo turno de trabalho SD.' });
       fetchEmployee();
     }
   };
@@ -93,9 +93,9 @@ export default function EmployeePortal({ employeeName }: EmployeePortalProps) {
       clock_out: new Date().toISOString(),
     }).eq('id', entryId);
     if (error) {
-      toast({ title: '❌ Erro', description: error.message, variant: 'destructive' });
+      toast({ title: '❌ Erro no Registro', description: error.message, variant: 'destructive' });
     } else {
-      toast({ title: '✅ Saída registrada!' });
+      toast({ title: '✅ Jornada Concluída!', description: 'Registro de saída efetuado com sucesso.' });
       fetchEmployee();
     }
   };
@@ -110,9 +110,9 @@ export default function EmployeePortal({ employeeName }: EmployeePortalProps) {
     });
     setValeSending(false);
     if (error) {
-      toast({ title: '❌ Erro', description: error.message, variant: 'destructive' });
+      toast({ title: '❌ Falha na Requisição', description: error.message, variant: 'destructive' });
     } else {
-      toast({ title: '✅ Solicitação enviada!', description: 'Aguarde a aprovação do administrador.' });
+      toast({ title: '✅ Solicitação Enviada!', description: 'Aguarde a análise do gestor.' });
       setValeAmount('');
       setValeReason('');
       setShowVale(false);
@@ -323,28 +323,28 @@ export default function EmployeePortal({ employeeName }: EmployeePortalProps) {
     doc.setFillColor(...gold);
     doc.rect(0, 293, W, 4, 'F');
 
-    doc.setFontSize(7);
-    doc.setTextColor(150, 150, 150);
-    doc.text('Documento gerado automaticamente pelo sistema SD Móveis Projetados', W / 2, 290, { align: 'center' });
-
     doc.save(`contracheque-${employee.name.toLowerCase().replace(/\s+/g, '-')}-${periodLabel.toLowerCase()}.pdf`);
-    toast({ title: '📄 Contracheque PDF baixado!' });
+    toast({ title: '📄 Contracheque Premium Gerado!' });
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <Clock className="w-8 h-8 text-amber-500 animate-spin" />
+      <div className="flex items-center justify-center h-full bg-[#0a0a0a]">
+        <Loader2 className="w-12 h-12 text-[#D4AF37] animate-spin" />
       </div>
     );
   }
 
   if (!employee) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-4">
-        <User className="w-16 h-16 opacity-50" />
-        <p className="text-lg font-bold">Funcionário "{employeeName}" não encontrado</p>
-        <p className="text-sm">Verifique com o administrador se seu cadastro está ativo.</p>
+      <div className="flex flex-col items-center justify-center h-full bg-[#0a0a0a] text-gray-500 gap-6 p-12 text-center">
+        <div className="w-24 h-24 bg-white/5 rounded-[2.5rem] flex items-center justify-center border border-white/5">
+           <User className="w-12 h-12 opacity-20" />
+        </div>
+        <div className="max-w-xs">
+          <p className="text-2xl font-black text-white italic uppercase tracking-tighter">Acesso Negado</p>
+          <p className="text-sm mt-2 font-medium italic">O perfil "{employeeName}" não foi localizado ou não possui credenciais ativas no SD Neural Core.</p>
+        </div>
       </div>
     );
   }
@@ -356,212 +356,239 @@ export default function EmployeePortal({ employeeName }: EmployeePortalProps) {
   const total = hours * employee.hourly_rate + overtime + fuelAllowance - deductions;
 
   return (
-    <div className="p-4 sm:p-8 space-y-6 overflow-auto h-full" style={{ background: '#0f0f0f' }}>
+    <div className="h-full bg-[#0a0a0a] p-8 sm:p-12 overflow-auto luxury-scroll flex flex-col gap-12">
       {/* Header */}
-      <header>
-        <h1 className="text-3xl font-black flex items-center gap-3" style={{ color: '#D4AF37' }}>
-          <Clock className="w-8 h-8" style={{ color: '#D4AF37' }} />
-          Meu Ponto
-        </h1>
-        <p className="text-gray-400 mt-1">Olá, <span className="font-bold text-white">{employee.name}</span> • {employee.role || 'Funcionário'}</p>
+      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-8">
+        <div>
+          <h1 className="text-4xl sm:text-5xl font-black text-white italic uppercase tracking-tighter flex items-center gap-5">
+            <div className="w-16 h-16 bg-gradient-to-br from-[#D4AF37] to-[#b8952a] rounded-[22px] flex items-center justify-center text-black shadow-2xl">
+               <Clock className="w-8 h-8" />
+            </div>
+            Portal do <span className="text-[#D4AF37]">Time</span>
+          </h1>
+          <p className="text-gray-500 mt-4 flex items-center gap-3 font-medium italic">
+             <Zap className="w-4 h-4 text-[#D4AF37]" /> Bem-vindo, {employee.name} • {employee.role || 'Elite Team'}
+          </p>
+        </div>
+        <div className="flex items-center gap-4 px-6 py-3 bg-white/5 border border-white/5 rounded-2xl shadow-xl">
+           <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+           <span className="text-[10px] font-black text-white uppercase tracking-widest italic">Sistema Integrado</span>
+        </div>
       </header>
 
-      {/* Clock In/Out Card */}
-      <div className="rounded-2xl p-8 shadow-lg border max-w-lg" style={{ background: '#1a1a1a', borderColor: 'rgba(212,175,55,0.3)' }}>
-        <div className="flex items-center gap-3 mb-6">
-          <span className={`w-4 h-4 rounded-full ${openEntry ? 'bg-green-400 animate-pulse' : 'bg-gray-600'}`} />
-          <span className="font-bold text-white text-lg">
-            {openEntry ? 'Trabalhando agora' : 'Fora do expediente'}
-          </span>
-        </div>
-
-        {openEntry ? (
-          <div>
-            <p className="text-sm text-green-400 mb-4">⏱️ Entrada: {formatTime(openEntry.clock_in)}</p>
-            <button
-              onClick={() => clockOut(openEntry.id)}
-              className="w-full bg-red-600 hover:bg-red-700 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all text-lg"
-            >
-              <Square className="w-5 h-5" /> Registrar Saída
-            </button>
-          </div>
-        ) : (
-          <button
-            onClick={clockIn}
-            className="w-full text-black py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all text-lg"
-            style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583)' }}
-          >
-            <Play className="w-5 h-5" /> Registrar Entrada
-          </button>
-        )}
-      </div>
-
-      {/* Payment Summary */}
-      <div className="rounded-2xl p-8 shadow-lg" style={{ background: '#1a1a1a' }}>
-        <h3 className="font-bold text-white mb-4 flex items-center gap-2">
-          <DollarSign className="w-5 h-5" style={{ color: '#D4AF37' }} /> Resumo de Pagamento
-        </h3>
-
-        <div className="flex gap-3 mb-6 flex-wrap">
-          {(['week', 'biweekly', 'month'] as Period[]).map(p => (
-            <button
-              key={p}
-              onClick={() => setPeriod(p)}
-              className="px-5 py-2.5 rounded-xl font-bold text-sm transition-all"
-              style={period === p
-                ? { background: 'linear-gradient(135deg, #D4AF37, #F5E583)', color: '#000' }
-                : { background: '#2a2a2a', color: '#aaa' }
-              }
-            >
-              {p === 'week' ? 'Semana' : p === 'biweekly' ? 'Quinzena' : 'Mês'}
-            </button>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          <div className="rounded-xl p-5 text-center" style={{ background: '#111', border: '1px solid rgba(212,175,55,0.3)' }}>
-            <p className="text-xs font-bold uppercase mb-1" style={{ color: '#D4AF37' }}>Horas</p>
-            <p className="text-2xl font-black text-white">{hours.toFixed(1)}h</p>
-          </div>
-          <div className="rounded-xl p-5 text-center" style={{ background: '#111', border: '1px solid rgba(255,255,255,0.1)' }}>
-            <p className="text-xs text-gray-400 font-bold uppercase mb-1">Valor/h</p>
-            <p className="text-2xl font-black text-white">R$ {employee.hourly_rate.toFixed(2)}</p>
-          </div>
-          {overtime > 0 && (
-            <div className="rounded-xl p-5 text-center" style={{ background: '#0a1a0a', border: '1px solid rgba(74,222,128,0.3)' }}>
-              <p className="text-xs text-green-400 font-bold uppercase mb-1">H. Extra</p>
-              <p className="text-2xl font-black text-green-400">+R$ {overtime.toFixed(2)}</p>
-            </div>
-          )}
-          {fuelAllowance > 0 && (
-            <div className="rounded-xl p-5 text-center" style={{ background: '#1a1000', border: '1px solid rgba(251,191,36,0.3)' }}>
-              <p className="text-xs text-amber-400 font-bold uppercase mb-1">⛽ V.Combust.</p>
-              <p className="text-2xl font-black text-amber-400">+R$ {fuelAllowance.toFixed(2)}</p>
-            </div>
-          )}
-          {deductions > 0 && (
-            <div className="rounded-xl p-5 text-center" style={{ background: '#1a0a0a', border: '1px solid rgba(248,113,113,0.3)' }}>
-              <p className="text-xs text-red-400 font-bold uppercase mb-1">Descontos</p>
-              <p className="text-2xl font-black text-red-400">-R$ {deductions.toFixed(2)}</p>
-            </div>
-          )}
-          <div className="rounded-xl p-5 text-center col-span-full md:col-span-1" style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.5)' }}>
-            <p className="text-xs font-bold uppercase mb-1" style={{ color: '#D4AF37' }}>Total Líquido</p>
-            <p className="text-2xl font-black" style={{ color: '#D4AF37' }}>R$ {total.toFixed(2)}</p>
-          </div>
-        </div>
-
-        <button
-          onClick={downloadPayslip}
-          className="mt-4 w-full text-black py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all"
-          style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583)' }}
-        >
-          <Download className="w-5 h-5" /> Baixar Contracheque
-        </button>
-      </div>
-
-      {/* Recent Entries */}
-      <div className="rounded-2xl p-6 shadow-lg" style={{ background: '#1a1a1a' }}>
-        <h3 className="font-bold text-white mb-4 flex items-center gap-2">
-          <Calendar className="w-5 h-5" style={{ color: '#D4AF37' }} /> Meus Registros Recentes
-        </h3>
-        <div className="space-y-2 max-h-64 overflow-auto">
-          {entries.slice(0, 15).map(entry => (
-            <div key={entry.id} className="flex items-center justify-between p-3 rounded-xl text-sm" style={{ background: '#111' }}>
-              <div className="flex items-center gap-3">
-                <span className={`w-2 h-2 rounded-full ${entry.clock_out ? 'bg-gray-600' : 'bg-green-400 animate-pulse'}`} />
-                <span className="text-gray-300">🟢 {formatTime(entry.clock_in)}</span>
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
+        {/* Main Column */}
+        <div className="xl:col-span-2 space-y-10">
+          {/* Clock Control */}
+          <section className="bg-[#111111] rounded-[3.5rem] p-10 border border-white/5 shadow-2xl relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-[#D4AF37]/5 blur-[80px] rounded-full pointer-events-none" />
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-10">
+              <div className="flex-1 text-center sm:text-left">
+                <div className="flex items-center justify-center sm:justify-start gap-4 mb-4">
+                  <div className={`w-3 h-3 rounded-full ${openEntry ? 'bg-green-500 animate-pulse shadow-[0_0_15px_rgba(34,197,94,0.5)]' : 'bg-red-500'}`} />
+                  <span className="text-lg font-black text-white italic uppercase tracking-tighter">
+                    {openEntry ? 'Jornada em Curso' : 'Offline / Descanso'}
+                  </span>
+                </div>
+                <p className="text-gray-500 italic font-medium mb-2">
+                   {openEntry ? `Entrada registrada em: ${formatTime(openEntry.clock_in)}` : 'Inicie seu registro para contabilizar sua performance de hoje.'}
+                </p>
+                {openEntry && (
+                   <div className="mt-6 flex items-center gap-4 bg-black/40 px-6 py-4 rounded-3xl border border-white/5 w-fit mx-auto sm:mx-0">
+                      <Activity className="w-5 h-5 text-green-500" />
+                      <span className="text-2xl font-black text-white italic tracking-tighter tabular-nums">
+                         {((new Date().getTime() - new Date(openEntry.clock_in).getTime()) / 3600000).toFixed(2)}h decorridas
+                      </span>
+                   </div>
+                )}
               </div>
-              <div className="text-gray-500">
-                {entry.clock_out ? (
-                  <span>🔴 {formatTime(entry.clock_out)} — <span className="font-bold text-white">
-                    {((new Date(entry.clock_out).getTime() - new Date(entry.clock_in).getTime()) / 3600000).toFixed(1)}h
-                  </span></span>
+              
+              <div className="w-full sm:w-auto">
+                {openEntry ? (
+                  <button
+                    onClick={() => clockOut(openEntry.id)}
+                    className="w-full sm:w-64 h-24 bg-red-600 rounded-[2rem] text-white font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-4 hover:bg-red-500 transition-all shadow-2xl shadow-red-900/20 active:scale-95 italic"
+                  >
+                    <Square className="w-6 h-6 fill-white" /> Finalizar Turno
+                  </button>
                 ) : (
-                  <span className="text-green-400 font-bold">Em andamento...</span>
+                  <button
+                    onClick={clockIn}
+                    className="w-full sm:w-64 h-24 bg-[#D4AF37] rounded-[2rem] text-black font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-4 hover:scale-105 transition-all shadow-2xl shadow-amber-500/20 active:scale-95 italic"
+                  >
+                    <Play className="w-6 h-6 fill-black" /> Iniciar Jornada
+                  </button>
                 )}
               </div>
             </div>
-          ))}
-          {entries.length === 0 && (
-            <p className="text-center text-gray-600 py-6">Nenhum registro ainda</p>
-          )}
-        </div>
-      </div>
+          </section>
 
-      {/* Vale/Adiantamento */}
-      <div className="rounded-2xl p-6 shadow-lg" style={{ background: '#1a1a1a' }}>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold text-white flex items-center gap-2">
-            <DollarSign className="w-5 h-5" style={{ color: '#D4AF37' }} /> Solicitar Vale/Adiantamento
-          </h3>
-          <button
-            onClick={() => setShowVale(!showVale)}
-            className="px-4 py-2 text-black rounded-xl font-bold text-sm transition-colors"
-            style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583)' }}
-          >
-            {showVale ? 'Cancelar' : 'Nova Solicitação'}
-          </button>
-        </div>
-
-        {showVale && (
-          <div className="rounded-xl p-4 space-y-3 border mb-4" style={{ background: '#111', borderColor: 'rgba(212,175,55,0.25)' }}>
-            <div>
-              <label className="text-xs font-bold text-gray-400 uppercase">Valor (R$)</label>
-              <input
-                type="number"
-                value={valeAmount}
-                onChange={e => setValeAmount(e.target.value)}
-                placeholder="Ex: 200"
-                className="w-full p-3 rounded-xl text-sm mt-1 text-white"
-                style={{ background: '#2a2a2a', border: '1px solid rgba(212,175,55,0.2)' }}
-                min="1"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-gray-400 uppercase">Motivo (opcional)</label>
-              <input
-                type="text"
-                value={valeReason}
-                onChange={e => setValeReason(e.target.value)}
-                placeholder="Ex: Combustível para entrega"
-                className="w-full p-3 rounded-xl text-sm mt-1 text-white"
-                style={{ background: '#2a2a2a', border: '1px solid rgba(212,175,55,0.2)' }}
-              />
-            </div>
-            <button
-              onClick={submitVale}
-              disabled={valeSending || !valeAmount}
-              className="w-full text-black py-3 rounded-xl font-bold text-sm disabled:opacity-50 flex items-center justify-center gap-2"
-              style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583)' }}
-            >
-              {valeSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              Enviar Solicitação
-            </button>
-          </div>
-        )}
-
-        <div className="space-y-2 max-h-48 overflow-auto">
-          {valeRequests.map(req => (
-            <div key={req.id} className="flex items-center justify-between p-3 rounded-xl text-sm" style={{ background: '#111' }}>
-              <div>
-                <span className="font-bold text-white">R$ {Number(req.amount).toFixed(2)}</span>
-                {req.reason && <span className="text-gray-500 ml-2">— {req.reason}</span>}
+          {/* Performance Summary */}
+          <section className="bg-[#111111] rounded-[3.5rem] p-10 border border-white/5 shadow-2xl">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 mb-10">
+              <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter flex items-center gap-4">
+                <DollarSign className="w-6 h-6 text-[#D4AF37]" /> Extrato de Performance
+              </h3>
+              <div className="flex gap-2 p-1.5 bg-black/60 rounded-[1.5rem] border border-white/5 self-end">
+                {(['week', 'biweekly', 'month'] as Period[]).map(p => (
+                  <button
+                    key={p}
+                    onClick={() => setPeriod(p)}
+                    className={`px-6 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${period === p ? 'bg-[#D4AF37] text-black shadow-lg' : 'text-gray-500 hover:text-white'}`}
+                  >
+                    {p === 'week' ? 'Semana' : p === 'biweekly' ? 'Quinzena' : 'Mês'}
+                  </button>
+                ))}
               </div>
-              <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                req.status === 'Aprovado' ? 'bg-green-900 text-green-300' :
-                req.status === 'Recusado' ? 'bg-red-900 text-red-300' : ''
-              }`}
-              style={req.status !== 'Aprovado' && req.status !== 'Recusado' ? { background: 'rgba(212,175,55,0.2)', color: '#D4AF37' } : {}}>
-                {req.status === 'Aprovado' && <CheckCircle className="w-3 h-3 inline mr-1" />}
-                {req.status === 'Recusado' && <XCircle className="w-3 h-3 inline mr-1" />}
-                {req.status}
-              </span>
             </div>
-          ))}
-          {valeRequests.length === 0 && (
-            <p className="text-center text-gray-600 py-4 text-sm">Nenhuma solicitação ainda</p>
-          )}
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+               <div className="bg-black/40 border border-white/5 rounded-[2.5rem] p-6 text-center hover:border-[#D4AF37]/30 transition-all flex flex-col justify-center min-h-[140px]">
+                  <p className="text-[9px] font-black text-gray-700 uppercase tracking-widest mb-3">Horas Totais</p>
+                  <p className="text-3xl font-black text-white italic tracking-tighter tabular-nums">{hours.toFixed(1)}<span className="text-sm ml-1 text-gray-600">H</span></p>
+               </div>
+               <div className="bg-black/40 border border-white/5 rounded-[2.5rem] p-6 text-center hover:border-[#D4AF37]/30 transition-all flex flex-col justify-center min-h-[140px]">
+                  <p className="text-[9px] font-black text-gray-700 uppercase tracking-widest mb-3">Taxa Horária</p>
+                  <p className="text-3xl font-black text-white italic tracking-tighter tabular-nums">R$ {employee.hourly_rate.toFixed(0)}</p>
+               </div>
+               <div className="bg-black/40 border border-white/5 rounded-[2.5rem] p-6 text-center hover:border-[#D4AF37]/30 transition-all flex flex-col justify-center min-h-[140px]">
+                  <p className="text-[9px] font-black text-green-900 uppercase tracking-widest mb-3">Extras / Bônus</p>
+                  <p className="text-3xl font-black text-green-500 italic tracking-tighter tabular-nums">+{overtime + fuelAllowance > 0 ? (overtime + fuelAllowance).toFixed(0) : '0'}</p>
+               </div>
+               <div className="bg-gradient-to-br from-[#D4AF37]/10 to-transparent border border-[#D4AF37]/30 rounded-[2.5rem] p-6 text-center shadow-lg flex flex-col justify-center min-h-[140px]">
+                  <p className="text-[9px] font-black text-[#D4AF37] uppercase tracking-widest mb-3">Crédito Líquido</p>
+                  <p className="text-3xl font-black text-[#D4AF37] italic tracking-tighter tabular-nums">R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</p>
+               </div>
+            </div>
+
+            <button
+              onClick={downloadPayslip}
+              className="mt-10 w-full h-18 bg-white text-black rounded-2xl font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-[#D4AF37] transition-all shadow-2xl shadow-white/5 italic"
+            >
+              <Download className="w-5 h-5" /> Exportar Contracheque Premium (PDF)
+            </button>
+          </section>
+
+          {/* History */}
+          <section className="bg-[#111111] rounded-[3.5rem] border border-white/5 shadow-2xl overflow-hidden">
+            <div className="p-10 border-b border-white/5 bg-black/40 flex justify-between items-center">
+              <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter flex items-center gap-4">
+                <Calendar className="w-6 h-6 text-[#D4AF37]" /> Registros de Performance
+              </h3>
+            </div>
+            <div className="divide-y divide-white/5">
+              {entries.slice(0, 8).map(entry => (
+                <div key={entry.id} className="p-8 hover:bg-white/[0.02] transition-colors group flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+                  <div className="flex items-center gap-6">
+                    <div className={`w-14 h-14 rounded-2xl border border-white/5 flex items-center justify-center shadow-xl ${entry.clock_out ? 'bg-black text-gray-600' : 'bg-green-500/10 text-green-500'}`}>
+                       <Activity className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <p className="text-lg font-black text-white italic tracking-tight flex items-center gap-3">
+                         {new Date(entry.clock_in).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
+                         {!entry.clock_out && <span className="text-[9px] bg-green-500 text-black px-3 py-1 rounded-full uppercase italic animate-pulse">Ativo</span>}
+                      </p>
+                      <div className="flex gap-4 mt-2 text-[10px] text-gray-500 font-bold uppercase tracking-widest italic">
+                        <span>ENT: {new Date(entry.clock_in).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                        {entry.clock_out && <span>SAI: {new Date(entry.clock_out).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>}
+                      </div>
+                    </div>
+                  </div>
+                  {entry.clock_out && (
+                     <div className="bg-black/60 px-6 py-2.5 rounded-full border border-white/5">
+                        <span className="text-xl font-black text-[#D4AF37] italic tracking-tighter tabular-nums">
+                           {((new Date(entry.clock_out).getTime() - new Date(entry.clock_in).getTime()) / 3600000).toFixed(1)}h
+                        </span>
+                     </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+
+        {/* Sidebar / Vale */}
+        <div className="space-y-10">
+           <section className="bg-[#111111] rounded-[3.5rem] p-10 border border-white/5 shadow-2xl relative overflow-hidden group">
+             <div className="absolute top-0 left-0 w-24 h-24 bg-amber-500/10 blur-2xl rounded-full" />
+             <div className="flex items-center justify-between mb-8">
+               <h3 className="text-xl font-black text-white italic uppercase tracking-tighter flex items-center gap-3">
+                 <Wallet className="w-6 h-6 text-[#D4AF37]" /> Solicitar Vale
+               </h3>
+               <button
+                 onClick={() => setShowVale(!showVale)}
+                 className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all border ${showVale ? 'bg-red-500/10 border-red-500 text-red-500' : 'bg-[#D4AF37] border-transparent text-black'}`}
+               >
+                 {showVale ? <XCircle className="w-6 h-6" /> : <Plus className="w-6 h-6" />}
+               </button>
+             </div>
+
+             {showVale && (
+               <div className="space-y-6 mb-10 animate-in slide-in-from-top duration-500">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest ml-1">Montante (R$)</label>
+                    <input
+                      type="number"
+                      value={valeAmount}
+                      onChange={e => setValeAmount(e.target.value)}
+                      placeholder="0.00"
+                      className="w-full h-14 bg-white/5 border border-white/5 rounded-2xl px-6 outline-none text-white text-lg font-black italic tracking-tighter focus:border-[#D4AF37]/40 transition-all shadow-inner"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest ml-1">Finalidade</label>
+                    <input
+                      type="text"
+                      value={valeReason}
+                      onChange={e => setValeReason(e.target.value)}
+                      placeholder="Ex: Despesa Técnica"
+                      className="w-full h-14 bg-white/5 border border-white/5 rounded-2xl px-6 outline-none text-white text-sm italic font-medium focus:border-[#D4AF37]/40 transition-all shadow-inner"
+                    />
+                  </div>
+                  <button
+                    onClick={submitVale}
+                    disabled={valeSending || !valeAmount}
+                    className="w-full h-16 bg-[#D4AF37] text-black rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 hover:scale-105 transition-all shadow-2xl shadow-amber-500/10 disabled:opacity-50"
+                  >
+                    {valeSending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+                    Confirmar Pedido
+                  </button>
+               </div>
+             )}
+
+             <div className="space-y-4 max-h-[500px] overflow-auto luxury-scroll pr-2">
+               {valeRequests.map(req => (
+                 <div key={req.id} className="bg-black/40 border border-white/5 rounded-[2rem] p-6 hover:border-[#D4AF37]/20 transition-all group">
+                   <div className="flex justify-between items-start mb-4">
+                      <p className="text-xl font-black text-white italic tracking-tighter tabular-nums">R$ {Number(req.amount).toLocaleString('pt-BR')}</p>
+                      <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                        req.status === 'Aprovado' ? 'bg-green-500 text-black' :
+                        req.status === 'Recusado' ? 'bg-red-500 text-white' : 'bg-white/5 text-[#D4AF37] border border-[#D4AF37]/20'
+                      }`}>
+                        {req.status}
+                      </span>
+                   </div>
+                   <p className="text-xs text-gray-600 italic font-medium line-clamp-2">{req.reason || 'Sem descrição informada'}</p>
+                   <div className="mt-4 flex items-center gap-2 text-[8px] text-gray-800 font-black uppercase tracking-tighter">
+                      <Clock className="w-3 h-3" /> Solicitado em {new Date(req.created_at).toLocaleDateString()}
+                   </div>
+                 </div>
+               ))}
+               {valeRequests.length === 0 && (
+                 <div className="text-center py-12 border-2 border-dashed border-white/5 rounded-[2.5rem]">
+                    <Shield className="w-10 h-10 text-gray-800 mx-auto mb-4" />
+                    <p className="text-[10px] text-gray-700 font-black uppercase tracking-widest">Nenhum adiantamento registrado</p>
+                 </div>
+               )}
+             </div>
+           </section>
+
+           <section className="bg-gradient-to-br from-[#111111] to-black rounded-[3.5rem] p-10 border border-[#D4AF37]/20 shadow-2xl relative overflow-hidden text-center group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-[#D4AF37]/5 blur-3xl rounded-full" />
+              <Star className="w-12 h-12 text-[#D4AF37] mx-auto mb-6 group-hover:scale-125 transition-transform" />
+              <h4 className="text-xl font-black text-white italic uppercase tracking-tighter mb-4">Elite SD Móveis</h4>
+              <p className="text-sm text-gray-500 italic font-medium leading-relaxed">Você faz parte da elite do mobiliário projetado. Sua performance é o que constrói nosso legado.</p>
+           </section>
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Fuel, TrendingUp, Droplets, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Fuel, TrendingUp, Droplets, AlertTriangle, CheckCircle, Shield, Zap, ArrowRight, Sparkles, Navigation } from 'lucide-react';
 
 const db = supabase as any;
 
@@ -66,15 +66,9 @@ export default function FuelAdminPanel() {
     if (empRes.data) setEmployees(empRes.data);
     if (logsRes.data) setLogs(logsRes.data);
 
-    // Calculate GPS distances for trips
     if (tripsRes.data) {
       const tripIds = tripsRes.data.map((t: any) => t.id);
-      const { data: allLocs } = await db
-        .from('trip_locations')
-        .select('*')
-        .in('trip_id', tripIds)
-        .order('recorded_at', { ascending: true });
-
+      const { data: allLocs } = await db.from('trip_locations').select('*').in('trip_id', tripIds).order('recorded_at', { ascending: true });
       const locsByTrip = (allLocs || []).reduce((acc: any, loc: any) => {
         if (!acc[loc.trip_id]) acc[loc.trip_id] = [];
         acc[loc.trip_id].push(loc);
@@ -96,13 +90,10 @@ export default function FuelAdminPanel() {
   };
 
   const getEmployeeName = (id: string) => employees.find(e => e.id === id)?.name || '—';
-
   const filteredLogs = filter === 'all' ? logs : logs.filter(l => l.employee_id === filter);
-
   const totalGasto = filteredLogs.reduce((s, l) => s + Number(l.total_cost), 0);
   const totalLitros = filteredLogs.reduce((s, l) => s + Number(l.liters), 0);
 
-  // Calculate avg KM/L from odometer readings
   const sortedLogs = [...filteredLogs].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
   let avgKmL = 0;
   if (sortedLogs.length >= 2) {
@@ -117,137 +108,134 @@ export default function FuelAdminPanel() {
 
   const alerts = trips.filter(t => t.desvio > 15).length;
 
-  if (loading) {
-    return <div className="flex items-center justify-center h-32"><Fuel className="w-6 h-6 text-orange-500 animate-spin" /></div>;
-  }
-
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
+    <div className="space-y-12 animate-in fade-in duration-700">
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 border-b border-white/5 pb-10">
         <div>
-          <h2 className="text-2xl font-black text-foreground flex items-center gap-2">
-            <Fuel className="w-6 h-6 text-orange-500" /> Gestão de Abastecimento
+          <h2 className="text-2xl font-black text-white italic tracking-tighter flex items-center gap-4 uppercase leading-none">
+            <div className="w-12 h-12 bg-[#D4AF37]/10 rounded-xl flex items-center justify-center text-[#D4AF37] border border-[#D4AF37]/20">
+              <Fuel className="w-6 h-6" />
+            </div>
+            Inteligência de <span className="text-[#D4AF37]">Abastecimento</span>
           </h2>
-          <p className="text-muted-foreground text-sm">Controle de combustível e eficiência</p>
+          <p className="text-gray-700 mt-2 font-black uppercase tracking-widest text-[9px] italic flex items-center gap-2">
+            <Shield className="w-3 h-3" /> Monitoramento Analítico de Consumo de Energia
+          </p>
         </div>
         <select
           value={filter}
           onChange={e => setFilter(e.target.value)}
-          className="px-4 py-2 rounded-xl border border-border bg-card text-sm font-bold"
+          className="h-14 bg-white/5 border border-white/10 rounded-2xl px-6 text-white text-[10px] font-black uppercase tracking-widest outline-none focus:border-[#D4AF37]/40 transition-all appearance-none cursor-pointer italic shadow-2xl"
         >
-          <option value="all">Todos Motoristas</option>
-          {employees.map(e => (
-            <option key={e.id} value={e.id}>{e.name}</option>
-          ))}
+          <option value="all" className="bg-[#0a0a0a]">FILTRAR TODOS MOTORISTAS</option>
+          {employees.map(e => (<option key={e.id} value={e.id} className="bg-[#0a0a0a]">{e.name.toUpperCase()}</option>))}
         </select>
+      </header>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-[#111111] border border-red-500/10 rounded-[2.5rem] p-8 shadow-2xl relative group overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-red-500/5 blur-2xl rounded-full" />
+          <p className="text-[10px] text-red-500/60 font-black uppercase tracking-widest mb-6 italic">Investimento Total</p>
+          <p className="text-3xl font-black text-white italic tracking-tighter tabular-nums leading-none">R$ {totalGasto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+        </div>
+        <div className="bg-[#111111] border border-blue-500/10 rounded-[2.5rem] p-8 shadow-2xl relative group overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 blur-2xl rounded-full" />
+          <p className="text-[10px] text-blue-500/60 font-black uppercase tracking-widest mb-6 italic">Litros Adquiridos</p>
+          <p className="text-3xl font-black text-white italic tracking-tighter tabular-nums leading-none">{totalLitros.toFixed(1)} <span className="text-sm">L</span></p>
+        </div>
+        <div className="bg-[#111111] border border-[#D4AF37]/10 rounded-[2.5rem] p-8 shadow-2xl relative group overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-[#D4AF37]/5 blur-2xl rounded-full" />
+          <p className="text-[10px] text-[#D4AF37]/60 font-black uppercase tracking-widest mb-6 italic">Eficiência KM/L</p>
+          <p className="text-3xl font-black text-white italic tracking-tighter tabular-nums leading-none">{avgKmL > 0 ? avgKmL.toFixed(1) : '—'}</p>
+        </div>
+        <div className="bg-[#111111] border border-green-500/10 rounded-[2.5rem] p-8 shadow-2xl relative group overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-green-500/5 blur-2xl rounded-full" />
+          <p className="text-[10px] text-green-500/60 font-black uppercase tracking-widest mb-6 italic">Incidências / Desvios</p>
+          <div className="flex items-center gap-4">
+             <p className="text-3xl font-black text-white italic tracking-tighter tabular-nums leading-none">{alerts}</p>
+             <div className="px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full">
+                <CheckCircle className="w-4 h-4 text-green-500" />
+             </div>
+          </div>
+        </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-4 gap-3">
-        <div className="bg-card border border-red-200 rounded-xl p-4">
-          <p className="text-xs font-bold text-red-600 uppercase">Total Gasto</p>
-          <p className="text-xl font-black text-red-700">R$ {totalGasto.toFixed(2)}</p>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+        <div className="bg-[#111111] border border-white/5 rounded-[3.5rem] p-10 shadow-2xl relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-[#D4AF37]/5 blur-3xl rounded-full" />
+          <h3 className="text-[10px] font-black text-white uppercase tracking-[0.4em] mb-10 flex items-center gap-4 italic leading-none shadow-sm">
+            <TrendingUp className="w-6 h-6 text-[#D4AF37]" /> Log de Transações Financeiras
+          </h3>
+          <div className="luxury-scroll max-h-[500px] overflow-auto pr-6 space-y-4">
+            {filteredLogs.map(log => (
+              <div key={log.id} className="flex items-center justify-between p-6 bg-black/40 border border-white/5 rounded-[2rem] group/item hover:border-[#D4AF37]/30 transition-all duration-500">
+                <div className="flex items-center gap-6">
+                  <div className="text-left font-black italic tracking-tighter">
+                     <p className="text-white uppercase text-lg group-hover/item:text-[#D4AF37] transition-colors">{getEmployeeName(log.employee_id)}</p>
+                     <p className="text-[10px] text-gray-700 tracking-widest">{new Date(log.created_at).toLocaleDateString('pt-BR')}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-10 text-right">
+                   <div>
+                      <p className="text-[9px] text-gray-700 font-bold uppercase italic tracking-widest">Consumo</p>
+                      <p className="text-white font-black italic text-md tabular-nums">{Number(log.liters).toFixed(1)} L</p>
+                   </div>
+                   <div className="min-w-[120px]">
+                      <p className="text-[9px] text-gray-700 font-bold uppercase italic tracking-widest">Vlr Total</p>
+                      <p className="text-[#D4AF37] font-black italic text-xl tabular-nums leading-none">R$ {Number(log.total_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                   </div>
+                </div>
+              </div>
+            ))}
+            {filteredLogs.length === 0 && (
+              <div className="text-center py-20 opacity-20">
+                <Fuel className="w-16 h-16 mx-auto mb-6 text-gray-700" />
+                <p className="font-black uppercase tracking-[0.5em] text-[10px] italic">Sem Registros Ativos</p>
+              </div>
+            )}
+          </div>
         </div>
-        <div className="bg-card border border-blue-200 rounded-xl p-4">
-          <p className="text-xs font-bold text-blue-600 uppercase">Total Litros</p>
-          <p className="text-xl font-black text-blue-700">{totalLitros.toFixed(1)} L</p>
-        </div>
-        <div className="bg-card border border-green-200 rounded-xl p-4">
-          <p className="text-xs font-bold text-green-600 uppercase">Média KM/L</p>
-          <p className="text-xl font-black text-green-700">{avgKmL > 0 ? avgKmL.toFixed(1) : '—'}</p>
-        </div>
-        <div className="bg-card border border-amber-200 rounded-xl p-4">
-          <p className="text-xs font-bold text-amber-600 uppercase">Alertas</p>
-          <p className="text-xl font-black text-amber-700 flex items-center gap-1">
-            <CheckCircle className="w-5 h-5 text-green-500" /> {alerts}
+
+        <div className="bg-[#111111] border border-white/5 rounded-[3.5rem] p-10 shadow-2xl relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-3xl rounded-full" />
+          <h3 className="text-[10px] font-black text-white uppercase tracking-[0.4em] mb-4 flex items-center gap-4 italic leading-none">
+            <Navigation className="w-6 h-6 text-blue-500" /> Real vs Direcionamento Analítico
+          </h3>
+          <p className="text-gray-700 text-[10px] font-bold uppercase tracking-tight italic mb-10 max-w-sm">
+             Alerta de integridade operacional ativado para desvios superiores a 15% do vetor estimado.
           </p>
-        </div>
-      </div>
-
-      {/* Fuel History Table */}
-      <div className="bg-card rounded-xl border border-border overflow-hidden">
-        <div className="p-4 border-b border-border">
-          <h3 className="font-bold text-foreground flex items-center gap-2">
-            <TrendingUp className="w-4 h-4" /> Histórico de Abastecimentos ({filteredLogs.length})
-          </h3>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-muted">
-              <tr>
-                <th className="px-4 py-3 text-left font-bold text-muted-foreground">Data</th>
-                <th className="px-4 py-3 text-left font-bold text-muted-foreground">Motorista</th>
-                <th className="px-4 py-3 text-right font-bold text-muted-foreground">KM</th>
-                <th className="px-4 py-3 text-right font-bold text-muted-foreground">Litros</th>
-                <th className="px-4 py-3 text-right font-bold text-muted-foreground">R$</th>
-                <th className="px-4 py-3 text-right font-bold text-muted-foreground">KM/L</th>
-                <th className="px-4 py-3 text-right font-bold text-muted-foreground">Dist.</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredLogs.map(log => (
-                <tr key={log.id} className="border-b border-border hover:bg-muted/50">
-                  <td className="px-4 py-3">{new Date(log.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })}</td>
-                  <td className="px-4 py-3 font-bold">{getEmployeeName(log.employee_id)}</td>
-                  <td className="px-4 py-3 text-right">{log.odometer ? Number(log.odometer).toLocaleString('pt-BR') : '—'}</td>
-                  <td className="px-4 py-3 text-right">{Number(log.liters).toFixed(1)}</td>
-                  <td className="px-4 py-3 text-right font-bold">R$ {Number(log.total_cost).toFixed(2)}</td>
-                  <td className="px-4 py-3 text-right">—</td>
-                  <td className="px-4 py-3 text-right">—</td>
-                </tr>
-              ))}
-              {filteredLogs.length === 0 && (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Nenhum abastecimento registrado</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Route Comparison */}
-      <div className="bg-card rounded-xl border border-border overflow-hidden">
-        <div className="p-4 border-b border-border flex justify-between items-center">
-          <h3 className="font-bold text-foreground flex items-center gap-2">
-            <Droplets className="w-4 h-4 text-blue-500" /> Comparativo: Rota Real vs Estimada (Sede ↔ Destino)
-          </h3>
-          <span className={`text-xs font-bold px-3 py-1 rounded-full ${alerts === 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-            {alerts === 0 ? '✅ Sem desvios' : `⚠️ ${alerts} desvio(s)`}
-          </span>
-        </div>
-        <p className="px-4 pt-2 text-xs text-muted-foreground">
-          Sede: Rua Jorge Figueiredo 740, Itaitinga-CE · Alerta se rota real {'>'} 15% da estimada
-        </p>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-muted">
-              <tr>
-                <th className="px-4 py-3 text-left font-bold text-muted-foreground">Data</th>
-                <th className="px-4 py-3 text-left font-bold text-muted-foreground">Motorista</th>
-                <th className="px-4 py-3 text-right font-bold text-muted-foreground">GPS (km)</th>
-                <th className="px-4 py-3 text-right font-bold text-muted-foreground">Odômetro</th>
-                <th className="px-4 py-3 text-right font-bold text-muted-foreground">Estimada</th>
-                <th className="px-4 py-3 text-right font-bold text-muted-foreground">Desvio</th>
-              </tr>
-            </thead>
-            <tbody>
-              {trips.map(trip => (
-                <tr key={trip.id} className="border-b border-border hover:bg-muted/50">
-                  <td className="px-4 py-3">{new Date(trip.started_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })}</td>
-                  <td className="px-4 py-3 font-bold">{getEmployeeName(trip.employee_id)}</td>
-                  <td className="px-4 py-3 text-right">{trip.gpsKm.toFixed(1)}</td>
-                  <td className="px-4 py-3 text-right">{trip.odometer ? Number(trip.odometer).toLocaleString('pt-BR') : '—'}</td>
-                  <td className="px-4 py-3 text-right font-bold text-primary">{trip.estimatedKm.toFixed(1)} km</td>
-                  <td className={`px-4 py-3 text-right font-bold ${trip.desvio > 15 ? 'text-red-600' : trip.desvio < -50 ? 'text-red-500' : 'text-green-600'}`}>
-                    {trip.desvio > 0 ? '+' : ''}{trip.desvio.toFixed(0)}%
-                  </td>
-                </tr>
-              ))}
-              {trips.length === 0 && (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">Nenhuma viagem completada</td></tr>
-              )}
-            </tbody>
-          </table>
+          <div className="luxury-scroll max-h-[500px] overflow-auto pr-6 space-y-4">
+            {trips.map(trip => (
+              <div key={trip.id} className="flex flex-col p-6 bg-black/40 border border-white/5 rounded-[2.5rem] group/item hover:border-blue-500/30 transition-all duration-500">
+                <div className="flex justify-between items-center mb-6">
+                  <p className="text-lg font-black text-white italic tracking-tighter uppercase leading-none group-hover/item:text-blue-500 transition-colors">{getEmployeeName(trip.employee_id)}</p>
+                  <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.2em] italic border ${trip.desvio > 15 ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'bg-green-500/10 text-green-500 border-green-500/20'}`}>
+                    {trip.desvio > 0 ? '+' : ''}{trip.desvio.toFixed(0)}% VARIAÇÃO
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-6 pt-6 border-t border-white/5">
+                   <div>
+                      <p className="text-[9px] text-gray-800 font-black uppercase tracking-widest italic mb-1">Trajeto GPS</p>
+                      <p className="text-white font-black italic text-md tabular-nums">{trip.gpsKm.toFixed(1)} km</p>
+                   </div>
+                   <div>
+                      <p className="text-[9px] text-gray-800 font-black uppercase tracking-widest italic mb-1">Estimativa</p>
+                      <p className="text-gray-500 font-black italic text-md tabular-nums">{trip.estimatedKm.toFixed(1)} km</p>
+                   </div>
+                   <div className="text-right">
+                      <p className="text-[9px] text-gray-800 font-black uppercase tracking-widest italic mb-1">Data Log</p>
+                      <p className="text-gray-500 font-black italic text-[11px] tabular-nums">{new Date(trip.started_at).toLocaleDateString('pt-BR')}</p>
+                   </div>
+                </div>
+              </div>
+            ))}
+            {trips.length === 0 && (
+              <div className="text-center py-20 opacity-20">
+                <Route className="w-16 h-16 mx-auto mb-6 text-gray-700" />
+                <p className="font-black uppercase tracking-[0.5em] text-[10px] italic">Sem Malha Rodoviária Logada</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

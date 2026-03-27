@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Sparkles, Send, User, Bot, Lightbulb, Loader2 } from "lucide-react";
+import { Sparkles, Send, User, Bot, Lightbulb, Loader2, Zap, Shield, Star, MessageSquare } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Message {
@@ -27,7 +27,7 @@ export function AIAssistant() {
       id: "1",
       role: "assistant",
       content:
-        "Olá! Sou o assistente IA da SD Móveis. Posso ajudar com design de móveis, sugestões de layout, orçamentos e muito mais. Como posso ajudar?",
+        "Olá! Sou a Inteligência Artificial da SD Móveis. Estou pronta para projetar o seu sonho. Como posso ajudar com seu design premium hoje?",
       timestamp: new Date(),
     },
   ]);
@@ -131,32 +131,14 @@ export function AIAssistant() {
         }
       }
 
-      // Final flush
-      if (textBuffer.trim()) {
-        for (let raw of textBuffer.split("\n")) {
-          if (!raw) continue;
-          if (raw.endsWith("\r")) raw = raw.slice(0, -1);
-          if (raw.startsWith(":") || raw.trim() === "") continue;
-          if (!raw.startsWith("data: ")) continue;
-          const jsonStr = raw.slice(6).trim();
-          if (jsonStr === "[DONE]") continue;
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-            if (content) upsertAssistant(content);
-          } catch { /* ignore */ }
-        }
-      }
-
-      // Replace streaming id with final id
       setMessages((prev) =>
         prev.map((m) => (m.id === "streaming" ? { ...m, id: Date.now().toString() } : m))
       );
     } catch (error: any) {
       console.error("AI error:", error);
       toast({
-        title: "Erro",
-        description: error.message || "Não foi possível gerar resposta.",
+        title: "Erro na Rede Neural",
+        description: "Não foi possível gerar resposta agora.",
         variant: "destructive",
       });
       setMessages((prev) => prev.filter((m) => m.id !== "streaming"));
@@ -166,53 +148,65 @@ export function AIAssistant() {
   };
 
   return (
-    <div className="bg-card rounded-xl border border-border h-[600px] flex flex-col overflow-hidden">
+    <div className="bg-[#111111] border border-white/5 rounded-[2.5rem] h-[600px] flex flex-col overflow-hidden shadow-2xl relative">
+       {/* Luxury background glow */}
+       <div className="absolute top-0 right-0 w-32 h-32 bg-[#D4AF37]/5 blur-3xl rounded-full" />
+       
       {/* Header */}
-      <div className="p-4 border-b border-border flex items-center gap-3 bg-gradient-to-r from-primary/10 to-accent/10">
-        <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
-          <Sparkles className="w-5 h-5 text-primary-foreground" />
+      <div className="p-6 border-b border-white/5 flex items-center justify-between bg-black/40 backdrop-blur-xl relative z-10">
+        <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#D4AF37] to-[#b8952a] flex items-center justify-center shadow-lg group">
+              <Bot className="w-6 h-6 text-black group-hover:rotate-12 transition-transform" />
+            </div>
+            <div>
+              <h3 className="font-black text-white italic uppercase tracking-tighter text-lg">AI Assistant</h3>
+              <p className="text-[9px] text-[#D4AF37] font-black uppercase tracking-[0.3em]">SD Neural Core v4.0</p>
+            </div>
         </div>
-        <div>
-          <h3 className="font-semibold">Assistente IA</h3>
-          <p className="text-xs text-muted-foreground">Desenvolvido por SD Móveis</p>
+        <div className="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/5">
+           <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+           <span className="text-[8px] font-black text-white uppercase tracking-widest">Active</span>
         </div>
       </div>
 
       {/* Messages */}
-      <ScrollArea ref={scrollRef} className="flex-1 p-4">
-        <div className="space-y-4">
+      <ScrollArea ref={scrollRef} className="flex-1 p-6 luxury-scroll">
+        <div className="space-y-6">
           {messages.map((message) => (
             <div
               key={message.id}
-              className={`flex gap-3 ${message.role === "user" ? "flex-row-reverse" : ""}`}
+              className={`flex gap-4 ${message.role === "user" ? "flex-row-reverse" : ""}`}
             >
               <div
-                className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${message.role === "user"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-accent text-accent-foreground"
+                className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-lg border ${message.role === "user"
+                  ? "bg-[#D4AF37] border-[#D4AF37]/20 text-black"
+                  : "bg-[#1a1a1a] border-white/5 text-[#D4AF37]"
                   }`}
               >
-                {message.role === "user" ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+                {message.role === "user" ? <User className="w-5 h-5" /> : <Sparkles className="w-5 h-5" />}
               </div>
               <div
-                className={`rounded-xl p-3 max-w-[80%] ${message.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"
+                className={`rounded-[1.5rem] p-4 max-w-[80%] shadow-xl animate-in ${message.role === "user" 
+                    ? "bg-[#D4AF37] text-black font-black italic slide-in-from-right" 
+                    : "bg-[#0a0a0a] border border-white/5 text-gray-300 font-medium italic slide-in-from-left"
                   }`}
               >
-                <p className="text-sm whitespace-pre-line">{message.content}</p>
+                <p className="text-sm whitespace-pre-line leading-relaxed">{message.content}</p>
+                <p className={`text-[8px] mt-2 font-black uppercase tracking-widest opacity-40 ${message.role === 'user' ? 'text-black' : 'text-gray-500'}`}>
+                   {message.timestamp.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                </p>
               </div>
             </div>
           ))}
 
           {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
-            <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-lg bg-accent text-accent-foreground flex items-center justify-center">
-                <Bot className="w-4 h-4" />
+            <div className="flex gap-4 animate-pulse">
+              <div className="w-10 h-10 rounded-2xl bg-[#1a1a1a] border border-white/5 flex items-center justify-center text-[#D4AF37]">
+                <Bot className="w-5 h-5" />
               </div>
-              <div className="bg-muted rounded-xl p-3">
-                <div className="flex gap-1">
-                  <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" />
-                  <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce delay-100" />
-                  <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce delay-200" />
+              <div className="bg-[#0a0a0a] border border-white/5 rounded-[1.5rem] p-4 w-20">
+                <div className="flex gap-1.5">
+                   {[...Array(3)].map((_, i) => <div key={i} className="w-1.5 h-1.5 bg-[#D4AF37] rounded-full animate-bounce" style={{animationDelay: `${i*0.2}s`}} />)}
                 </div>
               </div>
             </div>
@@ -222,40 +216,43 @@ export function AIAssistant() {
 
       {/* Suggestions */}
       {messages.length === 1 && (
-        <div className="px-4 pb-2">
-          <div className="flex items-center gap-2 mb-2 text-muted-foreground">
-            <Lightbulb className="w-4 h-4" />
-            <span className="text-xs">Sugestões</span>
+        <div className="px-6 pb-4 relative z-10">
+          <div className="flex items-center gap-2 mb-3 text-gray-500">
+            <Lightbulb className="w-3.5 h-3.5 text-[#D4AF37]" />
+            <span className="text-[9px] font-black uppercase tracking-widest leading-none">Sugestões de Projeto</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {suggestions.map((suggestion, index) => (
-              <Button
+              <button
                 key={index}
-                variant="outline"
-                size="sm"
-                className="text-xs"
+                className="bg-white/5 border border-white/5 text-gray-400 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:border-[#D4AF37]/40 hover:text-white transition-all shadow-xl"
                 onClick={() => setInput(suggestion)}
               >
                 {suggestion}
-              </Button>
+              </button>
             ))}
           </div>
         </div>
       )}
 
       {/* Input */}
-      <div className="p-4 border-t border-border">
-        <div className="flex gap-2">
-          <Input
+      <div className="p-6 bg-black/40 backdrop-blur-xl border-t border-white/5 relative z-10">
+        <div className="flex gap-3">
+          <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Digite sua pergunta..."
+            placeholder="Perguntar ao núcleo neural..."
+            className="flex-1 h-14 bg-white/5 border border-white/5 rounded-2xl px-6 text-white text-sm outline-none focus:border-[#D4AF37]/40 transition-all italic font-medium tracking-tight shadow-inner"
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
             disabled={isLoading}
           />
-          <Button onClick={handleSend} disabled={isLoading || !input.trim()}>
-            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-          </Button>
+          <button 
+            onClick={handleSend} 
+            disabled={isLoading || !input.trim()}
+            className="w-14 h-14 bg-[#D4AF37] text-black rounded-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-2xl disabled:opacity-50"
+          >
+            {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Send className="w-6 h-6" />}
+          </button>
         </div>
       </div>
     </div>

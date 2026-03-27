@@ -1,144 +1,251 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Users, Plus, Search, Edit, Trash2, Phone, Mail, MapPin, Building } from 'lucide-react';
+import { Truck, Plus, Search, Edit, Trash2, Phone, Mail, MapPin, X, Shield, Zap, CheckCircle2 } from 'lucide-react';
 
 const db = supabase as any;
 
-interface Supplier {
-  id: string;
-  name: string;
-  cnpj: string | null;
-  phone: string | null;
-  email: string | null;
-  address: string | null;
-  category: string;
-  notes: string | null;
-  active: boolean;
-}
-
 const SuppliersPage: React.FC = () => {
   const { toast } = useToast();
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [suppliers, setSuppliers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: '', cnpj: '', phone: '', email: '', address: '', category: 'Geral', notes: '' });
+  const [form, setForm] = useState({
+    name: '',
+    category: 'Geral',
+    contact_info: '',
+    email: '',
+    phone: '',
+    address: '',
+  });
 
-  const fetchSuppliers = async () => {
+  const fetchData = async () => {
     setLoading(true);
-    const { data } = await db.from('suppliers').select('*').eq('active', true).order('name');
+    const { data } = await db.from('suppliers').select('*').order('name');
     setSuppliers(data || []);
     setLoading(false);
   };
 
-  useEffect(() => { fetchSuppliers(); }, []);
+  useEffect(() => { fetchData(); }, []);
 
   const handleSave = async () => {
-    if (!form.name.trim()) { toast({ title: '⚠️ Nome obrigatório', variant: 'destructive' }); return; }
-
+    if (!form.name) {
+      toast({ title: '⚠️ Razão Social obrigatória', variant: 'destructive' });
+      return;
+    }
     if (editingId) {
       await db.from('suppliers').update(form).eq('id', editingId);
-      toast({ title: '✅ Fornecedor atualizado' });
+      toast({ title: '✅ Cadastro de Parceiro Atualizado' });
     } else {
       await db.from('suppliers').insert(form);
-      toast({ title: '✅ Fornecedor cadastrado' });
+      toast({ title: '✅ Novo Parceiro Homologado' });
     }
-    setForm({ name: '', cnpj: '', phone: '', email: '', address: '', category: 'Geral', notes: '' });
     setShowForm(false);
     setEditingId(null);
-    fetchSuppliers();
+    fetchData();
   };
 
-  const handleEdit = (s: Supplier) => {
-    setForm({ name: s.name, cnpj: s.cnpj || '', phone: s.phone || '', email: s.email || '', address: s.address || '', category: s.category, notes: s.notes || '' });
+  const handleEdit = (s: any) => {
     setEditingId(s.id);
+    setForm({
+      name: s.name,
+      category: s.category || 'Geral',
+      contact_info: s.contact_info || '',
+      email: s.email || '',
+      phone: s.phone || '',
+      address: s.address || '',
+    });
     setShowForm(true);
   };
 
   const handleDelete = async (id: string) => {
-    await db.from('suppliers').update({ active: false }).eq('id', id);
-    toast({ title: '🗑️ Fornecedor removido' });
-    fetchSuppliers();
+    if (confirm('Deseja descontinuar a parceria com este fornecedor?')) {
+      await db.from('suppliers').delete().eq('id', id);
+      toast({ title: '🗑️ Parceiro Removido do Sistema' });
+      fetchData();
+    }
   };
 
-  const filtered = suppliers.filter(s => s.name.toLowerCase().includes(search.toLowerCase()) || (s.cnpj || '').includes(search));
+  const filtered = suppliers.filter(s =>
+    (s.name || '').toLowerCase().includes(search.toLowerCase()) ||
+    (s.category || '').toLowerCase().includes(search.toLowerCase()) ||
+    (s.contact_info || '').toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
-    <div className="p-4 sm:p-8 space-y-6 overflow-auto h-full bg-gradient-to-br from-gray-50 to-gray-100">
-      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="p-8 sm:p-12 space-y-10 overflow-auto h-full bg-[#0a0a0a] relative luxury-scroll flex flex-col">
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-[#D4AF37]/5 blur-[150px] rounded-full translate-x-1/2 -translate-y-1/2" />
+      </div>
+
+      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-8 relative z-10">
         <div>
-          <h1 className="text-3xl sm:text-4xl font-black text-gray-900 flex items-center gap-3">
-            <Building className="w-8 h-8 text-amber-500" />
-            Fornecedores
+          <h1 className="text-4xl sm:text-5xl font-black text-white italic uppercase tracking-tighter flex items-center gap-5">
+            <div className="w-16 h-16 bg-gradient-to-br from-[#D4AF37] to-[#b8952a] rounded-[22px] flex items-center justify-center text-black shadow-2xl">
+              <Truck className="w-8 h-8" />
+            </div>
+            Rede de <span className="text-[#D4AF37]">Suprimentos</span>
           </h1>
-          <p className="text-gray-500 mt-1">Cadastro e gestão de fornecedores</p>
+          <p className="text-gray-500 mt-4 font-medium italic flex items-center gap-3">
+             <Shield className="w-4 h-4 text-[#D4AF37]" /> Gestão de Parcerias e Cadeia Logística SD
+          </p>
         </div>
-        <button onClick={() => { setShowForm(true); setEditingId(null); setForm({ name: '', cnpj: '', phone: '', email: '', address: '', category: 'Geral', notes: '' }); }} className="bg-amber-600 text-white px-6 py-3 rounded-2xl font-bold hover:bg-amber-700 transition-colors flex items-center gap-2 shadow-lg shrink-0 w-full sm:w-auto justify-center">
-          <Plus className="w-5 h-5" /> Novo Fornecedor
+        <button 
+          onClick={() => { setShowForm(true); setEditingId(null); setForm({ name: '', category: 'Geral', contact_info: '', email: '', phone: '', address: '' }); }} 
+          className="px-10 h-20 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.3em] transition-all hover:scale-105 active:scale-95 shadow-2xl text-black flex items-center gap-4 w-full sm:w-auto justify-center italic bg-gradient-to-r from-[#D4AF37] to-[#b8952a]"
+        >
+          <Plus className="w-5 h-5" /> HOMOLOGAR PARCEIRO
         </button>
       </header>
 
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-4 top-3 w-5 h-5 text-gray-400" />
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por nome ou CNPJ..." className="w-full pl-12 pr-4 py-3 rounded-2xl border border-gray-200 bg-white focus:ring-2 focus:ring-amber-500 focus:border-transparent" />
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 relative z-10">
+        <div className="bg-[#111111] border border-white/5 rounded-[2.5rem] p-10 shadow-2xl flex items-center justify-between group hover:border-[#D4AF37]/20 transition-all overflow-hidden relative">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 blur-2xl rounded-full" />
+          <div className="relative z-10">
+            <p className="text-[10px] text-gray-700 font-black uppercase tracking-widest mb-2 italic">Parceiros Ativos</p>
+            <p className="text-4xl font-black text-white italic tracking-tighter tabular-nums">{suppliers.length}</p>
+          </div>
+          <Truck className="w-12 h-12 text-[#D4AF37]/20 transition-colors" />
+        </div>
+        <div className="bg-[#111111] border border-white/5 rounded-[2.5rem] p-10 shadow-2xl flex items-center justify-between group hover:border-[#D4AF37]/20 transition-all overflow-hidden relative">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-[#D4AF37]/5 blur-2xl rounded-full" />
+          <div className="relative z-10">
+            <p className="text-[10px] text-gray-700 font-black uppercase tracking-widest mb-2 italic">Segmentos SD</p>
+            <p className="text-4xl font-black text-[#D4AF37] italic tracking-tighter tabular-nums">{new Set(suppliers.map(s => s.category)).size}</p>
+          </div>
+          <Zap className="w-12 h-12 text-[#D4AF37]/20 transition-colors" />
+        </div>
+        <div className="bg-[#111111] border border-white/5 rounded-[2.5rem] p-10 shadow-2xl flex items-center justify-between group hover:border-green-500/20 transition-all overflow-hidden relative">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-green-500/5 blur-2xl rounded-full" />
+          <div className="relative z-10">
+            <p className="text-[10px] text-gray-700 font-black uppercase tracking-widest mb-2 italic">Status de Integridade</p>
+            <p className="text-4xl font-black text-green-500 italic tracking-tighter tabular-nums">100% <span className="text-xs">OK</span></p>
+          </div>
+          <CheckCircle2 className="w-12 h-12 text-green-500/20 transition-colors" />
+        </div>
       </div>
 
-      {/* Form Modal */}
+      <div className="relative max-w-2xl z-10">
+        <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-[#D4AF37]/40" />
+        <input 
+          value={search} 
+          onChange={e => setSearch(e.target.value)} 
+          placeholder="Localizar parceiro por nome, segmento ou contato..." 
+          className="w-full pl-16 pr-8 py-6 rounded-[2rem] border border-white/5 bg-[#111111] text-white text-sm italic font-medium tracking-tight placeholder:text-gray-700 focus:border-[#D4AF37]/40 transition-all outline-none shadow-2xl" 
+        />
+      </div>
+
       {showForm && (
-        <div className="bg-white rounded-3xl p-6 shadow-xl space-y-4">
-          <h3 className="font-bold text-lg">{editingId ? 'Editar' : 'Novo'} Fornecedor</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Nome *" className="p-3 rounded-xl border border-gray-200" />
-            <input value={form.cnpj} onChange={e => setForm({ ...form, cnpj: e.target.value })} placeholder="CNPJ" className="p-3 rounded-xl border border-gray-200" />
-            <input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="Telefone" className="p-3 rounded-xl border border-gray-200" />
-            <input value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="E-mail" className="p-3 rounded-xl border border-gray-200" />
-            <input value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} placeholder="Endereço" className="p-3 rounded-xl border border-gray-200 col-span-2" />
-            <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} className="p-3 rounded-xl border border-gray-200">
-              <option>Geral</option><option>MDF/MDP</option><option>Ferragens</option><option>Vidros</option><option>Pedras</option><option>Tintas</option><option>Acessórios</option>
-            </select>
-            <input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Observações" className="p-3 rounded-xl border border-gray-200" />
+        <div className="bg-[#111111] border border-[#D4AF37]/20 rounded-[3.5rem] p-12 shadow-2xl space-y-10 relative z-10 animate-in slide-in-from-top duration-500 overflow-hidden">
+          <div className="absolute top-0 left-0 w-64 h-64 bg-[#D4AF37]/5 blur-[100px] rounded-full" />
+          <div className="flex justify-between items-center text-white relative z-10">
+            <h3 className="font-black text-2xl italic uppercase tracking-tighter flex items-center gap-5">
+               <div className="w-12 h-12 rounded-[18px] bg-white text-black flex items-center justify-center">
+                  <Truck className="w-7 h-7" />
+               </div>
+               {editingId ? 'Sincronizar Dados Parceiro' : 'Protocolo de Homologação'}
+            </h3>
+            <button onClick={() => setShowForm(false)} className="w-14 h-14 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-xl text-gray-500 transition-all"><X className="w-8 h-8" /></button>
           </div>
-          <div className="flex gap-3">
-            <button onClick={handleSave} className="bg-amber-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-amber-700">Salvar</button>
-            <button onClick={() => setShowForm(false)} className="bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-bold hover:bg-gray-300">Cancelar</button>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
+            <div className="space-y-3">
+              <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest ml-2 italic">Razão Social / Nome Fantasia</label>
+              <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full h-16 bg-white/5 border border-white/5 rounded-2xl px-6 text-white text-sm italic font-medium tracking-tight outline-none focus:border-[#D4AF37]/40 transition-all shadow-inner" />
+            </div>
+            <div className="space-y-3">
+              <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest ml-2 italic">Segmento de Atuação</label>
+              <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} className="w-full h-16 bg-white/5 border border-white/5 rounded-2xl px-6 text-white text-sm font-bold tracking-tight outline-none focus:border-[#D4AF37]/40 transition-all appearance-none cursor-pointer">
+                <option className="bg-black">Geral</option><option className="bg-black">MDF</option><option className="bg-black">Ferragens</option><option className="bg-black">Vidros</option><option className="bg-black">Pedras</option><option className="bg-black">Tintas</option><option className="bg-black">Comunicação Visual</option>
+              </select>
+            </div>
+            <div className="space-y-3">
+              <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest ml-2 italic">Canal de Voz / WhatsApp</label>
+              <input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} className="w-full h-16 bg-white/5 border border-white/5 rounded-2xl px-6 text-white text-sm font-bold tracking-tight outline-none focus:border-[#D4AF37]/40 transition-all tabular-nums" />
+            </div>
+            <div className="space-y-3">
+              <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest ml-2 italic">Correio Eletrônico Corporativo</label>
+              <input value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className="w-full h-16 bg-white/5 border border-white/5 rounded-2xl px-6 text-white text-sm font-bold tracking-tight outline-none focus:border-[#D4AF37]/40 transition-all" />
+            </div>
+          </div>
+          <div className="space-y-3 relative z-10">
+            <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest ml-2 italic">Localização / Base de Operação</label>
+            <textarea value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} className="w-full p-6 bg-white/5 border border-white/5 rounded-2xl text-white text-sm italic font-medium tracking-tight" rows={2} />
+          </div>
+          <div className="flex gap-6 relative z-10">
+            <button 
+              onClick={handleSave} 
+              className="flex-1 h-20 rounded-[1.8rem] font-black text-xs uppercase tracking-[0.3em] text-black transition-all hover:scale-[1.01] active:scale-95 shadow-2xl italic bg-gradient-to-r from-[#D4AF37] to-[#b8952a]"
+            >
+              EFETIVAR HOMOLOGAÇÃO PARCEIRO
+            </button>
+            <button 
+              onClick={() => setShowForm(false)} 
+              className="px-10 h-20 rounded-[1.8rem] font-black text-[10px] uppercase tracking-[0.3em] bg-white/5 text-gray-600 border border-white/5 hover:bg-white/10 transition-all italic"
+            >
+              CANCELAR
+            </button>
           </div>
         </div>
       )}
 
-      {/* Table */}
-      <div className="bg-white rounded-3xl shadow-xl overflow-x-auto">
-        <table className="w-full min-w-[700px]">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="text-left p-4 text-xs font-black text-gray-500 uppercase">Fornecedor</th>
-              <th className="text-left p-4 text-xs font-black text-gray-500 uppercase">CNPJ</th>
-              <th className="text-left p-4 text-xs font-black text-gray-500 uppercase">Contato</th>
-              <th className="text-left p-4 text-xs font-black text-gray-500 uppercase">Categoria</th>
-              <th className="text-left p-4 text-xs font-black text-gray-500 uppercase">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map(s => (
-              <tr key={s.id} className="border-t hover:bg-gray-50">
-                <td className="p-4 font-bold text-gray-900">{s.name}</td>
-                <td className="p-4 text-gray-600 text-sm">{s.cnpj || '-'}</td>
-                <td className="p-4">
-                  {s.phone && <p className="text-sm text-gray-600 flex items-center gap-1"><Phone className="w-3 h-3" /> {s.phone}</p>}
-                  {s.email && <p className="text-sm text-gray-600 flex items-center gap-1"><Mail className="w-3 h-3" /> {s.email}</p>}
-                </td>
-                <td className="p-4"><span className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-bold">{s.category}</span></td>
-                <td className="p-4 flex gap-2">
-                  <button onClick={() => handleEdit(s)} className="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center hover:bg-blue-50 hover:text-blue-600"><Edit className="w-4 h-4" /></button>
-                  <button onClick={() => handleDelete(s.id)} className="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center hover:bg-red-50 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
-                </td>
+      <div className="bg-[#111111] border border-white/5 rounded-[4rem] shadow-2xl overflow-hidden relative z-10 animate-in fade-in slide-in-from-bottom-6 duration-700">
+        <div className="overflow-x-auto luxury-scroll">
+          <table className="w-full min-w-[1000px]">
+            <thead className="bg-black/60 border-b border-white/5">
+              <tr>
+                <th className="text-left p-10 text-[10px] font-black text-gray-600 uppercase tracking-[0.3em]">Identificação Parceiro</th>
+                <th className="text-left p-10 text-[10px] font-black text-gray-600 uppercase tracking-[0.3em]">Segmento</th>
+                <th className="text-left p-10 text-[10px] font-black text-gray-600 uppercase tracking-[0.3em]">Canais Diretos</th>
+                <th className="text-center p-10 text-[10px] font-black text-gray-600 uppercase tracking-[0.3em]">Ações</th>
               </tr>
-            ))}
-            {filtered.length === 0 && <tr><td colSpan={5} className="p-8 text-center text-gray-400">{loading ? 'Carregando...' : 'Nenhum fornecedor encontrado'}</td></tr>}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {filtered.map(s => (
+                <tr key={s.id} className="group hover:bg-white/[0.02] transition-colors">
+                  <td className="p-10">
+                    <p className="text-xl font-black text-white group-hover:text-[#D4AF37] transition-colors uppercase italic tracking-tighter leading-none">{s.name}</p>
+                    <p className="text-[10px] text-gray-600 font-bold uppercase tracking-widest mt-3 italic flex items-center gap-2">
+                       <MapPin className="w-3.5 h-3.5 opacity-40 text-[#D4AF37]" /> {s.address || 'Sem base física registrada'}
+                    </p>
+                  </td>
+                  <td className="p-10">
+                    <span className="bg-[#D4AF37]/10 text-[#D4AF37] px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-[#D4AF37]/20">
+                      {s.category.toUpperCase()}
+                    </span>
+                  </td>
+                  <td className="p-10">
+                    <div className="space-y-2">
+                      {s.phone && <p className="text-sm text-gray-500 flex items-center gap-3 italic font-medium tabular-nums"><Phone className="w-4 h-4 text-[#D4AF37]/30" /> {s.phone}</p>}
+                      {s.email && <p className="text-[10px] text-gray-700 flex items-center gap-3 font-black tracking-tighter"><Mail className="w-4 h-4 text-[#D4AF37]/30" /> {s.email.toLowerCase()}</p>}
+                    </div>
+                  </td>
+                  <td className="p-10">
+                    <div className="flex justify-center gap-3">
+                      <button onClick={() => handleEdit(s)} className="w-14 h-14 bg-white/5 border border-white/5 rounded-xl flex items-center justify-center text-gray-500 hover:text-[#D4AF37] hover:border-[#D4AF37]/40 transition-all active:scale-95"><Edit className="w-6 h-6" /></button>
+                      <button onClick={() => handleDelete(s.id)} className="w-14 h-14 bg-white/5 border border-white/5 rounded-xl flex items-center justify-center text-gray-500 hover:text-red-500 hover:border-red-500/40 transition-all active:scale-95"><Trash2 className="w-6 h-6" /></button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="p-32 text-center">
+                    <div className="flex flex-col items-center gap-6">
+                      <div className="w-24 h-24 bg-white/5 rounded-[3rem] flex items-center justify-center text-gray-800 animate-pulse">
+                         <Truck className="w-12 h-12" />
+                      </div>
+                      <p className="text-gray-700 font-black uppercase tracking-[0.4em] text-xs">
+                        {loading ? 'Sincronizando Parceiros...' : 'Nenhum Provedor Homologado'}
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

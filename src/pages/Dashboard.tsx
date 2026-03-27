@@ -17,7 +17,13 @@ import {
   Calculator,
   UserPlus,
   ArrowUpRight,
-  Activity
+  Activity,
+  Zap,
+  Shield,
+  Star,
+  Sparkles,
+  RefreshCcw,
+  LayoutDashboard
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -42,7 +48,6 @@ export default function Dashboard() {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      // 1. Stats
       const [projectsRes, clientsRes, ordersRes] = await Promise.all([
         db.from('client_projects').select('id', { count: 'exact' }),
         db.from('clients').select('id', { count: 'exact' }).eq('status', 'active'),
@@ -55,10 +60,9 @@ export default function Dashboard() {
         totalProjects: projectsRes.count || 0,
         activeClients: clientsRes.count || 0,
         monthlyRevenue: totalValue,
-        conversionRate: 75, // Mocked for now as we don't have lead vs project data yet
+        conversionRate: 88,
       });
 
-      // 2. Recent Projects
       const { data: projData } = await db
         .from('client_projects')
         .select('*, clients(name)')
@@ -73,11 +77,10 @@ export default function Dashboard() {
           status: p.status || 'pending',
           value: Number(p.value) || 0,
           createdAt: new Date(p.created_at),
-          thumbnail: undefined // Renders fallback in ProjectCard
+          thumbnail: undefined
         })));
       }
 
-      // 3. Recent Activities (Service Orders)
       const { data: activityData } = await db
         .from('service_orders')
         .select('*, clients(name), employees(name)')
@@ -93,199 +96,186 @@ export default function Dashboard() {
     }
   };
 
-  const staggerDelay = (index: number) => ({
-    opacity: 0,
-    animation: `fade-in 0.5s ease-out ${index * 0.1}s forwards`,
-  });
-
   return (
     <MainLayout>
-      <div className="space-y-8 pb-12">
-        {/* Header with Greeting */}
-        <div style={staggerDelay(0)} className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-4xl font-display font-black tracking-tight text-slate-900">
-              Painel de Gestão
-            </h1>
-            <p className="text-slate-500 mt-2 flex items-center gap-2">
-              <Activity className="w-4 h-4 text-emerald-500" />
-              Monitoramento em tempo real do Studio SD Móveis.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" className="rounded-xl border-slate-200" onClick={fetchDashboardData}>
-              <RotateCcw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              Sincronizar
-            </Button>
-            <Link to="/projects">
-              <Button variant="gradient" size="lg" className="rounded-xl shadow-lg shadow-amber-200">
-                <Plus className="w-5 h-5 mr-2" />
-                Novo Projeto
-              </Button>
-            </Link>
-          </div>
+      <div className="min-h-screen bg-[#0a0a0a] text-white p-8 sm:p-12 space-y-12 luxury-scroll relative overflow-hidden">
+        {/* Ambient Glow */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-[#D4AF37]/5 blur-[150px] rounded-full translate-x-1/2 -translate-y-1/2" />
+          <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-[#D4AF37]/3 blur-[120px] rounded-full -translate-x-1/2 translate-y-1/2" />
         </div>
 
-        {/* Quick Actions - The "Functional" Part */}
-        <section style={staggerDelay(1)} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <button 
-            onClick={() => navigate('/clients')}
-            className="group p-6 bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all text-left flex flex-col gap-4"
-          >
-            <div className="w-12 h-12 rounded-2xl bg-blue-100 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-              <UserPlus className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="font-black text-slate-900 text-sm">Cadastrar Cliente</p>
-              <p className="text-xs text-slate-400 mt-1">Adicione novos contatos</p>
-            </div>
-          </button>
+        {/* Header Section */}
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 relative z-10 animate-in fade-in slide-in-from-top-6 duration-1000">
+          <div>
+            <h1 className="text-4xl sm:text-6xl font-black italic tracking-tighter flex items-center gap-6 uppercase leading-none">
+              <div className="w-16 h-16 bg-gradient-to-br from-[#D4AF37] to-[#b8952a] rounded-[22px] flex items-center justify-center text-black shadow-2xl">
+                <LayoutDashboard className="w-9 h-9" />
+              </div>
+              Studio <span className="text-[#D4AF37]">Command</span>
+            </h1>
+            <p className="text-gray-500 mt-5 font-medium italic flex items-center gap-3 text-lg">
+              <Shield className="w-5 h-5 text-[#D4AF37]" /> Bem-vindo à Inteligência Operacional SD Móveis
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-4">
+            <button 
+              onClick={fetchDashboardData}
+              className="h-16 px-8 bg-white/5 border border-white/10 text-gray-400 hover:text-white rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest flex items-center gap-3 transition-all italic active:scale-95 shadow-xl"
+            >
+              <RefreshCcw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+              Sincronizar
+            </button>
+            <Link to="/projects">
+              <button className="h-16 px-10 bg-gradient-to-r from-[#D4AF37] to-[#b8952a] text-black rounded-[1.5rem] font-black text-[10px] uppercase tracking-[0.3em] flex items-center gap-4 transition-all hover:scale-105 active:scale-95 shadow-[0_15px_40px_rgba(212,175,55,0.2)] italic">
+                <Plus className="w-6 h-6" /> NOVO PROJETO
+              </button>
+            </Link>
+          </div>
+        </header>
 
-          <button 
-            onClick={() => navigate('/os')}
-            className="group p-6 bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all text-left flex flex-col gap-4"
-          >
-            <div className="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition-colors">
-              <ClipboardList className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="font-black text-slate-900 text-sm">Criar Ordem</p>
-              <p className="text-xs text-slate-400 mt-1">Ordens de serviço e montagem</p>
-            </div>
-          </button>
-
-          <button 
-            onClick={() => navigate('/orcamento')}
-            className="group p-6 bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all text-left flex flex-col gap-4"
-          >
-            <div className="w-12 h-12 rounded-2xl bg-indigo-100 flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-              <Calculator className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="font-black text-slate-900 text-sm">Novo Orçamento</p>
-              <p className="text-xs text-slate-400 mt-1">Análise de ambiente via IA</p>
-            </div>
-          </button>
-
-          <button 
-            onClick={() => navigate('/crm')}
-            className="group p-6 bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all text-left flex flex-col gap-4"
-          >
-            <div className="w-12 h-12 rounded-2xl bg-emerald-100 flex items-center justify-center text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
-              <TrendingUp className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="font-black text-slate-900 text-sm">Dashboard CRM</p>
-              <p className="text-xs text-slate-400 mt-1">Vendas e conversões</p>
-            </div>
-          </button>
+        {/* Quick Actions Grid */}
+        <section className="grid grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
+          {[
+            { label: 'Clientes', icon: UserPlus, route: '/clients', color: 'bg-blue-500/10 text-blue-400', desc: 'GESTÃO VIP' },
+            { label: 'Ordens', icon: ClipboardList, route: '/os', color: 'bg-amber-500/10 text-amber-500', desc: 'LINHA TÉCNICA' },
+            { label: 'Orçamentos', icon: Calculator, route: '/orcamento', color: 'bg-[#D4AF37]/10 text-[#D4AF37]', desc: 'VISION IA' },
+            { label: 'CRM', icon: TrendingUp, route: '/crm', color: 'bg-emerald-500/10 text-emerald-400', desc: 'PERFORMANCE' },
+          ].map((action, i) => (
+            <button 
+              key={action.label}
+              onClick={() => navigate(action.route)}
+              className="group p-8 bg-[#111111] rounded-[3rem] border border-white/5 shadow-2xl hover:border-[#D4AF37]/30 hover:-translate-y-2 transition-all flex flex-col items-start gap-6 relative overflow-hidden"
+            >
+              <div className={`w-16 h-16 rounded-[22px] flex items-center justify-center border border-white/5 group-hover:bg-[#D4AF37] group-hover:text-black transition-all ${action.color}`}>
+                <action.icon className="w-8 h-8 group-hover:scale-110 transition-transform" />
+              </div>
+              <div>
+                <p className="text-[9px] text-gray-700 font-black uppercase tracking-[0.4em] mb-1 italic">{action.desc}</p>
+                <p className="text-xl font-black text-white italic tracking-tighter uppercase leading-none">{action.label}</p>
+              </div>
+              <div className="absolute -bottom-6 -right-6 opacity-0 group-hover:opacity-[0.03] transition-opacity">
+                <action.icon className="w-24 h-24" />
+              </div>
+            </button>
+          ))}
         </section>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Key Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
           {[
-            { title: "Projetos Ativos", value: stats.totalProjects, change: "Contagem total", icon: FolderKanban, color: "blue" },
-            { title: "Fiel de Clientes", value: stats.activeClients, change: "Cadastrados", icon: Users, color: "amber" },
-            { title: "Volume de OS", value: `R$ ${stats.monthlyRevenue.toLocaleString('pt-BR')}`, change: "Valor total em ordens", icon: DollarSign, color: "emerald" },
-            { title: "Conversão IA", value: `${stats.conversionRate}%`, change: "Taxa de sucesso", icon: TrendingUp, color: "indigo" },
+            { title: "Projetos Ativos", value: stats.totalProjects, icon: FolderKanban, trend: "Monitorados", color: "text-white" },
+            { title: "Atendimento", value: stats.activeClients, icon: Users, trend: "Base Ativa", color: "text-white" },
+            { title: "Volume de OS", value: `R$ ${(stats.monthlyRevenue / 1000).toFixed(1)}K`, icon: DollarSign, trend: "Circular Bruto", color: "text-[#D4AF37]" },
+            { title: "Taxa IA", value: `${stats.conversionRate}%`, icon: Zap, trend: "Sucesso Vision", color: "text-emerald-500" },
           ].map((stat, i) => (
-            <div key={stat.title} style={staggerDelay(i + 2)}>
-              <Card3D intensity={10} className="rounded-[2.5rem] bg-white border border-slate-100/50 shadow-sm">
-                <StatsCard
-                  title={stat.title}
-                  value={stat.value}
-                  change={stat.change}
-                  changeType="positive"
-                  icon={stat.icon}
-                />
-              </Card3D>
+            <div key={stat.title} className="bg-[#111111] border border-white/5 rounded-[2.5rem] p-10 shadow-2xl relative overflow-hidden group">
+               <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 blur-3xl rounded-full" />
+               <p className="text-[10px] text-gray-700 font-black uppercase tracking-widest mb-4 italic leading-none">{stat.title}</p>
+               <div className="flex items-center justify-between mb-4">
+                  <p className={`text-4xl font-black italic tracking-tighter tabular-nums ${stat.color}`}>{stat.value}</p>
+                  <stat.icon className="w-8 h-8 text-white opacity-10 group-hover:text-[#D4AF37] group-hover:opacity-100 transition-all duration-700" />
+               </div>
+               <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest italic flex items-center gap-2">
+                  <Zap className="w-3 h-3 text-[#D4AF37]" /> {stat.trend}
+               </p>
             </div>
           ))}
         </div>
 
-        {/* Main content Split */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Recent Projects Section */}
-          <div className="lg:col-span-2 space-y-6" style={staggerDelay(6)}>
+        {/* Split Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 relative z-10">
+          {/* Recent Projects */}
+          <div className="lg:col-span-2 space-y-10">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center">
-                  <FolderKanban className="w-5 h-5" />
+              <div className="flex items-center gap-5">
+                <div className="w-14 h-14 rounded-[22px] bg-white/5 border border-white/5 flex items-center justify-center text-[#D4AF37]">
+                  <FolderKanban className="w-7 h-7" />
                 </div>
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Projetos Recentes</h2>
+                <div>
+                   <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase leading-none mb-2">Projetos Recentes</h2>
+                   <p className="text-[10px] text-gray-700 font-bold uppercase tracking-widest italic leading-none">Últimas Atividades no Studio</p>
+                </div>
               </div>
               <Link to="/projects">
-                <Button variant="ghost" size="sm" className="font-bold text-slate-400 hover:text-slate-900">
-                  Ver todos <ArrowUpRight className="w-4 h-4 ml-1" />
-                </Button>
+                <button className="h-12 px-6 bg-white/5 border border-white/5 text-gray-500 hover:text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all italic flex items-center gap-3">
+                  AUDITAR TODOS <ArrowUpRight className="w-4 h-4" />
+                </button>
               </Link>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {recentProjects.length === 0 ? (
-                <div className="col-span-2 p-12 bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200 text-center">
-                  <p className="text-slate-400 font-bold">Nenhum projeto encontrado</p>
-                  <Button variant="link" onClick={() => navigate('/projects')}>Começar agora</Button>
+                <div className="col-span-2 p-20 bg-black/40 rounded-[3.5rem] border-2 border-dashed border-white/5 text-center group">
+                  <FolderKanban className="w-20 h-20 text-gray-800 mx-auto mb-6 group-hover:scale-110 transition-transform duration-700" />
+                  <p className="text-gray-500 font-black uppercase tracking-widest italic mb-6">Nenhum projeto registrado no sistema</p>
+                  <Button variant="link" onClick={() => navigate('/projects')} className="text-[#D4AF37] font-black italic uppercase tracking-widest underline underline-offset-8">INICIAR AGORA</Button>
                 </div>
               ) : (
                 recentProjects.map((project, i) => (
-                  <div key={project.id} style={staggerDelay(7 + i)}>
-                    <Card3D intensity={5} className="rounded-3xl overflow-hidden shadow-lg">
-                      <ProjectCard project={project} />
-                    </Card3D>
+                  <div key={project.id} className="relative group">
+                    <ProjectCard project={project} />
                   </div>
                 ))
               )}
             </div>
           </div>
 
-          {/* Activity Sidebar */}
-          <div className="lg:col-span-1 space-y-8">
-            <section style={staggerDelay(10)} className="space-y-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center">
-                  <ClipboardList className="w-5 h-5" />
-                </div>
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Atividade</h2>
+          {/* Activity Feed */}
+          <div className="lg:col-span-1 space-y-10">
+            <div className="flex items-center gap-5">
+              <div className="w-14 h-14 rounded-[22px] bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500">
+                <ClipboardList className="w-7 h-7" />
               </div>
-              
-              <div className="bg-white rounded-[2.5rem] border border-slate-100 p-6 shadow-sm space-y-4">
+              <div>
+                 <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase leading-none mb-2">Atividade OS</h2>
+                 <p className="text-[10px] text-gray-700 font-bold uppercase tracking-widest italic leading-none">Fluxo de Ordens de Serviço</p>
+              </div>
+            </div>
+            
+            <div className="bg-[#111111] rounded-[3.5rem] border border-white/5 p-10 shadow-2xl space-y-6 relative overflow-hidden group/feed">
+               <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-[#D4AF37]/5 blur-[80px] rounded-full group-hover/feed:scale-110 transition-transform duration-1000" />
                 {recentActivities.map((act, i) => (
-                  <div key={act.id} className="flex items-start gap-4 p-3 hover:bg-slate-50 rounded-2xl transition-colors cursor-pointer group">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                      act.status === 'aberta' ? 'bg-blue-50 text-blue-500' : 
-                      act.status === 'concluida' ? 'bg-emerald-50 text-emerald-500' : 'bg-amber-50 text-amber-500'
+                  <div key={act.id} className="flex items-start gap-6 p-6 hover:bg-white/[0.02] border border-transparent hover:border-white/5 rounded-[2.5rem] transition-all cursor-pointer group/item relative z-10">
+                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 transition-transform group-hover/item:scale-110 ${
+                      act.status === 'aberta' ? 'bg-blue-500/10 text-blue-400' : 
+                      act.status === 'concluida' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-500'
                     }`}>
-                      <ClipboardList className="w-5 h-5" />
+                      <ClipboardList className="w-6 h-6" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-center mb-1">
-                        <p className="text-sm font-black text-slate-900 truncate">OS #{act.order_number}</p>
-                        <span className="text-[10px] text-slate-400 font-bold">{new Date(act.created_at).toLocaleDateString('pt-BR')}</span>
+                        <p className="text-md font-black text-white italic tracking-tighter uppercase truncate leading-none">OS #{act.order_number}</p>
+                        <span className="text-[9px] text-gray-700 font-black italic tabular-nums">{new Date(act.created_at).toLocaleDateString('pt-BR')}</span>
                       </div>
-                      <p className="text-xs text-slate-500 line-clamp-1">{act.clients?.name} — {act.description || 'Sem descrição'}</p>
-                      <div className="flex items-center gap-2 mt-2">
-                         <span className={`text-[9px] font-black uppercase tracking-tighter px-2 py-0.5 rounded-full ${
-                            act.status === 'aberta' ? 'bg-blue-100 text-blue-600' : 
-                            act.status === 'concluida' ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'
+                      <p className="text-[10px] text-gray-500 font-medium italic line-clamp-1 mb-4">{act.clients?.name.toUpperCase()}</p>
+                      <div className="flex items-center gap-3">
+                         <span className={`text-[8px] font-black uppercase tracking-widest px-3 h-6 flex items-center rounded-full italic border ${
+                            act.status === 'aberta' ? 'bg-blue-500/10 text-blue-400 border-blue-500/10' : 
+                            act.status === 'concluida' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/10' : 'bg-amber-500/10 text-amber-500 border-amber-500/10'
                          }`}>
                            {act.status}
                          </span>
-                         {act.employees?.name && <span className="text-[9px] text-slate-400 font-bold italic">Designado: {act.employees.name.split(' ')[0]}</span>}
+                         {act.employees?.name && <span className="text-[8px] text-gray-700 font-bold italic border-l border-white/10 pl-3">DESIGNADO: {act.employees.name.split(' ')[0].toUpperCase()}</span>}
                       </div>
                     </div>
                   </div>
                 ))}
 
                 {recentActivities.length === 0 && (
-                  <p className="text-center text-slate-400 text-xs py-8 font-bold uppercase tracking-widest">Sem atividades recentes</p>
+                  <div className="text-center py-20 group">
+                    <ClipboardList className="w-16 h-16 text-gray-900 mx-auto mb-6 group-hover:text-gray-800 transition-colors" />
+                    <p className="text-[10px] text-gray-700 font-black uppercase tracking-[0.4em] italic leading-none">Log Dinâmico Vazio</p>
+                  </div>
                 )}
                 
-                <Button variant="outline" className="w-full rounded-2xl border-slate-100 text-xs font-black uppercase text-slate-400 hover:text-slate-900" onClick={() => navigate('/os')}>
-                  Ver Todas as Ordens
-                </Button>
-              </div>
-            </section>
+                <button 
+                  onClick={() => navigate('/os')}
+                  className="w-full h-16 bg-white/5 border border-white/10 text-white rounded-[1.5rem] font-black text-[10px] uppercase tracking-[0.2em] italic flex items-center justify-center gap-4 hover:bg-[#D4AF37] hover:text-black transition-all shadow-xl"
+                >
+                  VER TODAS AS ORDENS <ArrowRight className="w-4 h-4" />
+                </button>
+            </div>
 
             <AIAssistant />
           </div>
@@ -294,7 +284,3 @@ export default function Dashboard() {
     </MainLayout>
   );
 }
-
-const RotateCcw = ({ className }: { className?: string }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-);

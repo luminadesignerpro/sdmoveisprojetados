@@ -38,6 +38,9 @@ import DriverTripPanel from '@/components/fleet/DriverTripPanel';
 import { WorshipPlayer } from '@/components/WorshipPlayer';
 import InternalChat from '@/components/chat/InternalChat';
 import AppointmentsPanel from '@/components/client/AppointmentsPanel';
+import { AdminDashboard } from '@/components/admin/AdminDashboard';
+import { ClientPortal } from '@/components/client/ClientPortal';
+import PortfolioGallery from '@/components/PortfolioGallery';
 import { supabase } from '@/integrations/supabase/client';
 const db = supabase as any;
 import {
@@ -568,278 +571,11 @@ const App: React.FC = () => {
         <ViewTransition viewKey={view}>
           {/* DASHBOARD ADMIN */}
           {view === ViewMode.DASHBOARD && authState === 'ADMIN' && (
-            <div
-              className="p-4 sm:p-8 space-y-6 overflow-x-hidden overflow-y-auto w-full h-full relative"
-              style={{ background: '#0f0f0f' }}
-              onScroll={(e) => {
-                const target = e.currentTarget;
-                const bg = target.querySelector('[data-parallax-bg]') as HTMLElement;
-                if (bg) bg.style.transform = `translateY(${target.scrollTop * 0.4}px)`;
-                const orb1 = target.querySelector('[data-parallax-orb1]') as HTMLElement;
-                if (orb1) orb1.style.transform = `translate(${-target.scrollTop * 0.15}px, ${target.scrollTop * 0.25}px) scale(1.1)`;
-                const orb2 = target.querySelector('[data-parallax-orb2]') as HTMLElement;
-                if (orb2) orb2.style.transform = `translate(${target.scrollTop * 0.1}px, ${target.scrollTop * 0.2}px)`;
-              }}
-            >
-              {/* Parallax Background Layer */}
-              <div className="absolute inset-0 pointer-events-none overflow-hidden" data-parallax-bg style={{ willChange: 'transform' }}>
-                <div
-                  data-parallax-orb1
-                  className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full opacity-20"
-                  style={{ background: 'radial-gradient(circle, hsl(var(--primary) / 0.4) 0%, transparent 70%)', filter: 'blur(60px)', animation: 'orbFloat1 12s ease-in-out infinite', willChange: 'transform' }}
-                />
-                <div
-                  data-parallax-orb2
-                  className="absolute -bottom-48 -left-32 w-[400px] h-[400px] rounded-full opacity-15"
-                  style={{ background: 'radial-gradient(circle, hsl(var(--accent) / 0.3) 0%, transparent 70%)', filter: 'blur(80px)', animation: 'orbFloat2 15s ease-in-out infinite', willChange: 'transform' }}
-                />
-                <div
-                  className="absolute top-1/2 left-1/3 w-[300px] h-[300px] rounded-full opacity-10"
-                  style={{ background: 'radial-gradient(circle, hsl(var(--gold) / 0.3) 0%, transparent 70%)', filter: 'blur(100px)', animation: 'orbFloat1 18s ease-in-out infinite reverse' }}
-                />
-                <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(hsl(var(--primary) / 0.03) 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
-              </div>
-              <header className="flex justify-between items-start" style={{ opacity: 0, animation: 'fadeIn 0.5s ease-out 0.05s forwards' }}>
-                <div>
-                  <h1 className="text-4xl font-black text-white flex items-center gap-3">
-                    <Sparkles className="w-8 h-8 text-amber-400" />
-                    Gestão Estratégica
-                  </h1>
-                  <p className="text-gray-400 mt-1 flex items-center gap-2">
-                    <Heart className="w-4 h-4 text-amber-400 fill-amber-400" />
-                    Bem-vindo ao centro de comando SD Móveis
-                  </p>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="rounded-2xl px-6 py-3 shadow-sm border" style={{ background: 'rgba(212,175,55,0.1)', borderColor: 'rgba(212,175,55,0.3)' }}>
-                    <p className="text-xs font-bold uppercase tracking-wider flex items-center gap-1" style={{ color: '#D4AF37' }}>
-                      <Zap className="w-3 h-3" /> Status IA
-                    </p>
-                    <p className="font-bold flex items-center gap-2" style={{ color: '#F5E583' }}>
-                      <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: '#D4AF37' }} />
-                      Sistema 100% Online
-                    </p>
-                  </div>
-                </div>
-              </header>
-
-              {/* Stats Grid */}
-              <div className="grid grid-cols-4 gap-4">
-                <div style={{ opacity: 0, animation: 'fadeIn 0.5s ease-out 0.15s forwards' }}>
-                  <Card3D intensity={8} className="rounded-2xl p-0.5" style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(255,255,255,0.05))' }}>
-                    <div className="rounded-[calc(1rem-2px)] overflow-hidden" style={{ background: '#111111' }}>
-                      <DashboardStat
-                        title="Projetos Ativos"
-                        value={contracts.length.toString()}
-                        icon="📁"
-                        trend="+2 este mês"
-                        dark
-                      />
-                    </div>
-                  </Card3D>
-                </div>
-                <div style={{ opacity: 0, animation: 'fadeIn 0.5s ease-out 0.25s forwards' }}>
-                  <Card3D intensity={8} className="rounded-2xl p-0.5" style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(255,255,255,0.05))' }}>
-                    <div className="rounded-[calc(1rem-2px)] overflow-hidden" style={{ background: '#111111' }}>
-                      <DashboardStat
-                        title="Faturamento Total"
-                        value={`R$ ${(totalRevenue / 1000).toFixed(0)}K`}
-                        icon="💰"
-                        trend="+15% vs mês anterior"
-                        dark
-                      />
-                    </div>
-                  </Card3D>
-                </div>
-                <div style={{ opacity: 0, animation: 'fadeIn 0.5s ease-out 0.35s forwards' }}>
-                  <Card3D intensity={8} className="rounded-2xl p-0.5" style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(255,255,255,0.05))' }}>
-                    <div className="rounded-[calc(1rem-2px)] overflow-hidden" style={{ background: '#111111' }}>
-                      <DashboardStat
-                        title="Em Produção"
-                        value={inProduction.toString()}
-                        icon="🏭"
-                        trend="Meta: 10"
-                        dark
-                      />
-                    </div>
-                  </Card3D>
-                </div>
-                <div style={{ opacity: 0, animation: 'fadeIn 0.5s ease-out 0.45s forwards' }}>
-                  <Card3D intensity={8} className="rounded-2xl p-0.5" style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(255,255,255,0.05))' }}>
-                    <div className="rounded-[calc(1rem-2px)] overflow-hidden" style={{ background: '#111111' }}>
-                      <DashboardStat
-                        title="Conversão"
-                        value={`${contracts.length > 0 ? Math.round((signedContracts / contracts.length) * 100) : 0}%`}
-                        icon="📈"
-                        trend="Excelente!"
-                        dark
-                      />
-                    </div>
-                  </Card3D>
-                </div>
-              </div>
-
-              {/* Main Content Grid */}
-              <div className="grid grid-cols-3 gap-6">
-                {/* Sabedoria do Dia */}
-                <div style={{ opacity: 0, animation: 'fadeIn 0.6s ease-out 0.55s forwards' }} className="col-span-2">
-                  <Card3D intensity={5} className="rounded-[32px]">
-                    <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-[32px] p-8 text-white relative overflow-hidden">
-                      <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl" />
-                      <div className="relative z-10">
-                        <div className="flex items-center gap-2 mb-4">
-                          <Star className="w-5 h-5 text-amber-400" />
-                          <span className="text-amber-400 text-sm font-bold uppercase tracking-wider">Sabedoria do Dia</span>
-                        </div>
-                        <p className="text-gray-300 text-lg mb-8 italic leading-relaxed">
-                          "Consagre ao Senhor tudo o que você faz, e os seus planos serão bem-sucedidos."
-                          <span className="block text-amber-400 text-sm mt-2 not-italic">(Provérbios 16:3)</span>
-                        </p>
-                        <div className="flex gap-4">
-                          <button
-                            onClick={() => setView(ViewMode.PROMOB)}
-                            className="bg-amber-600 px-8 py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-amber-500 transition-all duration-300 hover:scale-105 active:scale-95 flex items-center gap-2 shadow-lg hover:shadow-amber-500/30 hover:shadow-xl group/btn"
-                          >
-                            <Layers className="w-4 h-4 group-hover/btn:rotate-12 transition-transform duration-300" />
-                            Novo Projeto 3D
-                          </button>
-                          <button
-                            onClick={() => setView(ViewMode.CONTRACTS)}
-                            className="bg-white/10 px-8 py-4 rounded-2xl font-bold uppercase text-xs tracking-widest hover:bg-white/20 transition-all duration-300 flex items-center gap-2 active:scale-95 hover:scale-105 backdrop-blur-sm group/btn"
-                          >
-                            <FileText className="w-4 h-4 group-hover/btn:rotate-6 transition-transform duration-300" />
-                            Ver Contratos
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </Card3D>
-                </div>
-
-                {/* Contratos Recentes */}
-                <div style={{ opacity: 0, animation: 'fadeIn 0.6s ease-out 0.65s forwards' }}>
-                  <Card3D intensity={6} className="rounded-[32px]">
-                    <div className="rounded-[32px] p-6 h-full border" style={{ background: '#111111', borderColor: 'rgba(255,255,255,0.08)' }}>
-                      <div className="flex justify-between items-center mb-4">
-                        <h3 className="font-black text-white flex items-center gap-2">
-                          <TrendingUp className="w-5 h-5 text-amber-400" />
-                          Últimos Contratos
-                        </h3>
-                        <button onClick={() => setView(ViewMode.CONTRACTS)} className="text-xs font-bold hover:underline flex items-center gap-1 hover:gap-2 transition-all duration-300 active:scale-95" style={{ color: '#D4AF37' }}>
-                          Ver todos <ChevronRight className="w-3 h-3 hover:translate-x-0.5 transition-transform duration-300" />
-                        </button>
-                      </div>
-                      <div className="space-y-3">
-                        {contracts.slice(0, 3).map(c => (
-                          <div
-                            key={c.id}
-                            onClick={() => setView(ViewMode.CONTRACTS)}
-                            className="flex justify-between items-center p-4 rounded-2xl transition-all duration-200 cursor-pointer hover:translate-x-1 active:scale-[0.98] border"
-                            style={{ background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.08)' }}
-                            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(212,175,55,0.08)')}
-                            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.04)')}
-                          >
-                            <div>
-                              <p className="font-bold text-white">{c.clients?.name || 'Cliente'}</p>
-                              <p className="text-xs text-gray-500">{c.name}</p>
-                            </div>
-                            <div className="text-right">
-                              <p className="font-black" style={{ color: '#D4AF37' }}>R$ {(c.value || 0).toLocaleString('pt-BR')}</p>
-                              <span className="text-xs px-2 py-0.5 rounded-full border" style={{ background: 'rgba(212,175,55,0.1)', borderColor: 'rgba(212,175,55,0.3)', color: '#D4AF37' }}>
-                                {c.status === 'producao' ? 'Produção' : c.status === 'assinado' ? 'Assinado' : c.status === 'instalacao' ? 'Instalação' : c.status === 'concluido' ? 'Concluído' : c.status === 'em_negociacao' ? 'Em Negociação' : c.status}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                        {contracts.length === 0 && <p className="text-sm text-gray-600 text-center py-4">Nenhum projeto ainda</p>}
-                      </div>
-                    </div>
-                  </Card3D>
-                </div>
-              </div>
-
-              {/* Quick Actions */}
-              <div className="grid grid-cols-5 gap-4" style={{ background: 'transparent' }}>
-                <div style={{ opacity: 0, animation: 'fadeIn 0.5s ease-out 0.75s forwards' }}>
-                  <Card3D intensity={10} className="rounded-2xl">
-                    <button
-                      onClick={() => setView(ViewMode.PROMOB)}
-                      className="p-6 rounded-2xl transition-all duration-300 w-full active:scale-[0.96] border h-full flex flex-col items-center justify-center text-center group"
-                      style={{ background: '#111111', borderColor: 'rgba(255,255,255,0.08)' }}
-                      onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(212,175,55,0.4)'; e.currentTarget.style.background = 'rgba(212,175,55,0.08)'; }}
-                      onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.background = '#111111'; }}
-                    >
-                      <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-all duration-300" style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)' }}>
-                        <Layers className="w-6 h-6 text-amber-400" />
-                      </div>
-                      <h4 className="font-bold text-white text-sm">Editor 3D</h4>
-                    </button>
-                  </Card3D>
-                </div>
-                <div style={{ opacity: 0, animation: 'fadeIn 0.5s ease-out 0.85s forwards' }}>
-                  <Card3D intensity={10} className="rounded-2xl">
-                    <button
-                      onClick={() => setView(ViewMode.CRM)}
-                      className="p-6 rounded-2xl transition-all duration-300 w-full active:scale-[0.96] border h-full flex flex-col items-center justify-center text-center group"
-                      style={{ background: '#111111', borderColor: 'rgba(255,255,255,0.08)' }}
-                      onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(212,175,55,0.4)'; e.currentTarget.style.background = 'rgba(212,175,55,0.08)'; }}
-                      onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.background = '#111111'; }}
-                    >
-                      <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-all duration-300" style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)' }}>
-                        <MessageCircle className="w-6 h-6 text-amber-400" />
-                      </div>
-                      <h4 className="font-bold text-white text-sm">CRM Zap</h4>
-                    </button>
-                  </Card3D>
-                </div>
-                <div style={{ opacity: 0, animation: 'fadeIn 0.5s ease-out 0.95s forwards' }}>
-                  <Card3D intensity={10} className="rounded-2xl">
-                    <button
-                      onClick={() => setView(ViewMode.CONTRACTS)}
-                      className="p-6 rounded-2xl transition-all duration-300 w-full active:scale-[0.96] border h-full flex flex-col items-center justify-center text-center group"
-                      style={{ background: '#111111', borderColor: 'rgba(255,255,255,0.08)' }}
-                      onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(212,175,55,0.4)'; e.currentTarget.style.background = 'rgba(212,175,55,0.08)'; }}
-                      onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.background = '#111111'; }}
-                    >
-                      <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-all duration-300" style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)' }}>
-                        <FileText className="w-6 h-6 text-amber-400" />
-                      </div>
-                      <h4 className="font-bold text-white text-sm">Contratos</h4>
-                    </button>
-                  </Card3D>
-                </div>
-                <div style={{ opacity: 0, animation: 'fadeIn 0.5s ease-out 1.05s forwards' }}>
-                  <Card3D intensity={10} className="rounded-2xl h-full">
-                    <button
-                      onClick={handleRender}
-                      className="p-6 rounded-2xl text-black w-full active:scale-[0.96] h-full flex flex-col items-center justify-center text-center group transition-all"
-                      style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583, #b8952a)', boxShadow: '0 8px 32px rgba(212,175,55,0.35)' }}
-                    >
-                      <div className="w-12 h-12 bg-black/10 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-all duration-300">
-                        <Sparkles className="w-6 h-6 text-black/80" />
-                      </div>
-                      <h4 className="font-bold text-black/80 text-sm">Render IA</h4>
-                    </button>
-                  </Card3D>
-                </div>
-                <div style={{ opacity: 0, animation: 'fadeIn 0.5s ease-out 1.15s forwards' }}>
-                  <Card3D intensity={10} className="rounded-2xl">
-                    <button
-                      onClick={() => setView(ViewMode.PROFIT_BI)}
-                      className="p-6 rounded-2xl transition-all duration-300 w-full active:scale-[0.96] border h-full flex flex-col items-center justify-center text-center group"
-                      style={{ background: '#111111', borderColor: 'rgba(255,255,255,0.08)' }}
-                      onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(212,175,55,0.4)'; e.currentTarget.style.background = 'rgba(212,175,55,0.08)'; }}
-                      onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.background = '#111111'; }}
-                    >
-                      <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-all duration-300" style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)' }}>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-400"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
-                      </div>
-                      <h4 className="font-bold text-white text-sm">Lucro Real</h4>
-                    </button>
-                  </Card3D>
-                </div>
-              </div>
-            </div>
+            <AdminDashboard 
+              contracts={contracts} 
+              setView={setView} 
+              handleRender={handleRender} 
+            />
           )}
 
           {/* DASHBOARD 3D */}
@@ -890,32 +626,45 @@ const App: React.FC = () => {
           )}
 
           {view === ViewMode.CRM && (
-            <div className="h-full p-6 overflow-auto bg-gradient-to-br from-gray-50 to-gray-100">
-              <header className="mb-6">
-                <h1 className="text-3xl font-black text-gray-900 flex items-center gap-3">
-                  <MessageCircle className="w-8 h-8 text-green-500" />
-                  CRM WhatsApp
-                </h1>
-                <p className="text-gray-500 mt-1">Gerencie suas conversas e leads</p>
+            <div className="h-full p-4 sm:p-8 overflow-auto bg-[#0f0f0f] relative">
+              <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                <div className="absolute top-0 right-0 w-96 h-96 bg-green-500/5 blur-[100px] rounded-full" />
+              </div>
+              <header className="mb-8 relative z-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <h1 className="text-3xl sm:text-4xl font-black text-white flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg shadow-green-500/20">
+                      <MessageCircle className="w-8 h-8 text-white" />
+                    </div>
+                    CRM WhatsApp
+                  </h1>
+                  <p className="text-gray-400 mt-1 font-medium italic">Gestão Avançada de Relacionamento e Leads</p>
+                </div>
               </header>
-              <Tabs defaultValue="crm" className="w-full">
-                <TabsList className="mb-4">
-                  <TabsTrigger value="crm" className="gap-2">
-                    <MessageCircle className="w-4 h-4" />
-                    Conversas
-                  </TabsTrigger>
-                  <TabsTrigger value="flow" className="gap-2">
-                    <GitBranch className="w-4 h-4" />
-                    Fluxo de Atendimento
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent value="crm">
-                  <WhatsAppCRMReal />
-                </TabsContent>
-                <TabsContent value="flow">
-                  <ChatFlowPanel />
-                </TabsContent>
-              </Tabs>
+              <div className="relative z-10">
+                <Tabs defaultValue="crm" className="w-full">
+                  <TabsList className="mb-6 bg-[#111111] border border-white/5 p-1 rounded-2xl">
+                    <TabsTrigger value="crm" className="gap-2 px-6 py-3 rounded-xl data-[state=active]:bg-green-600 data-[state=active]:text-white transition-all font-black text-[10px] uppercase tracking-widest">
+                      <MessageCircle className="w-4 h-4" />
+                      Conversas
+                    </TabsTrigger>
+                    <TabsTrigger value="flow" className="gap-2 px-6 py-3 rounded-xl data-[state=active]:bg-green-600 data-[state=active]:text-white transition-all font-black text-[10px] uppercase tracking-widest">
+                      <GitBranch className="w-4 h-4" />
+                      Atendimento
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="crm" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="bg-[#111111] border border-white/5 rounded-[2.5rem] p-1 overflow-hidden shadow-2xl">
+                      <WhatsAppCRMReal />
+                    </div>
+                  </TabsContent>
+                  <TabsContent value="flow" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="bg-[#111111] border border-white/5 rounded-[2.5rem] p-8 shadow-2xl">
+                      <ChatFlowPanel />
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </div>
             </div>
           )}
 
@@ -927,298 +676,38 @@ const App: React.FC = () => {
             />
           )}
 
-          {/* CONTRACTS */}
-          {view === ViewMode.CONTRACTS && authState === 'ADMIN' && <SalesPage />}
-
           {/* CLIENT PORTAL */}
           {view === ViewMode.CLIENT_PORTAL && (
-            <div className="p-8 space-y-6 overflow-auto h-full bg-gradient-to-br from-gray-50 to-gray-100">
-              <header className="flex justify-between items-start">
-                <div>
-                  <h1 className="text-4xl font-black text-gray-900 flex items-center gap-3">
-                    <Home className="w-8 h-8 text-amber-500" />
-                    Minha Casa SD
-                  </h1>
-                  <p className="text-gray-500 mt-1 flex items-center gap-2">
-                    <Heart className="w-4 h-4 text-red-500" />
-                    {clientName ? `Olá, ${clientName}! Acompanhando cada detalhe do seu sonho` : 'Acompanhando cada detalhe do seu sonho'}
-                  </p>
-                </div>
-                {clientProject?.estimated_delivery && (
-                  <div className="bg-amber-50 border border-amber-200 rounded-2xl px-6 py-3 shadow-sm">
-                    <p className="text-xs font-bold text-amber-600 uppercase tracking-wider flex items-center gap-1">
-                      <Calendar className="w-3 h-3" /> Previsão de Instalação
-                    </p>
-                    <p className="text-amber-700 font-bold text-lg">
-                      {new Date(clientProject.estimated_delivery + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
-                    </p>
-                    <div className="flex items-center gap-2 mt-2 bg-amber-100 rounded-xl px-3 py-1.5">
-                      <Timer className="w-4 h-4 text-amber-600" />
-                      <p className="text-amber-700 font-black text-sm">
-                        {(() => {
-                          const days = Math.max(0, Math.ceil((new Date(clientProject.estimated_delivery + 'T00:00:00').getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
-                          return days > 0 ? `Faltam ${days} dias para seu sonho! ✨` : 'O grande dia chegou! 🎉';
-                        })()}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </header>
-
-              {/* Status Cards */}
-              <div className="grid grid-cols-2 gap-6">
-                <div className="bg-white rounded-3xl p-8 shadow-xl">
-                  <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center text-3xl mb-4">🏭</div>
-                  <p className="text-lg font-black text-gray-900 mb-4 flex items-center gap-2">
-                    <Package className="w-5 h-5 text-blue-600" />
-                    Status: {clientProject?.status || 'Produção'}
-                  </p>
-                  <div className="space-y-4">
-                    {clientProductionSteps.length > 0 ? clientProductionSteps.map((step) => (
-                      <div key={step.id}>
-                        <div className="flex justify-between text-sm mb-1">
-                          <span className="text-gray-600 flex items-center gap-1">
-                            {step.progress === 100 ? <CheckCircle className="w-4 h-4 text-green-500" /> : step.progress > 0 ? <Wrench className="w-4 h-4 text-blue-500" /> : <Truck className="w-4 h-4 text-gray-400" />}
-                            {step.label}
-                          </span>
-                          <span className={`font-bold ${step.progress === 100 ? 'text-green-600' : step.progress > 0 ? 'text-blue-600' : 'text-gray-400'}`}>
-                            {step.progress === 100 ? 'Concluído ✓' : step.progress > 0 ? `${step.progress}% Pronto` : (step.status || 'Aguardando')}
-                          </span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-3">
-                          <div className={`h-3 rounded-full ${step.progress === 100 ? 'bg-green-500' : step.progress > 0 ? 'bg-blue-500' : 'bg-gray-300'}`} style={{ width: `${step.progress}%` }} />
-                        </div>
-                      </div>
-                    )) : (
-                      <p className="text-gray-400 text-sm">Etapas de produção serão exibidas em breve.</p>
-                    )}
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => setView(ViewMode.PORTFOLIO)}
-                  className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-8 text-white text-left hover:scale-[1.02] transition-transform shadow-xl group"
-                >
-                  <div className="w-16 h-16 bg-amber-500/20 rounded-2xl flex items-center justify-center text-3xl mb-4 group-hover:scale-110 transition-transform">
-                    <Camera className="w-8 h-8 text-amber-400" />
-                  </div>
-                  <h3 className="text-2xl font-black flex items-center gap-2">
-                    <Sparkles className="w-6 h-6 text-amber-400" />
-                    Galeria de Renders 4K
-                  </h3>
-                  <p className="text-gray-400 mt-2 text-sm">Veja como ficará seu ambiente projetado com nossa tecnologia de fotorrealismo.</p>
-                  <span className="inline-flex items-center gap-1 mt-4 text-amber-500 font-bold text-sm group-hover:gap-2 transition-all">
-                    Abrir Portfolio <ArrowRight className="w-4 h-4" />
-                  </span>
-                </button>
-              </div>
-
-              {/* Info Cards */}
-              <div className="grid grid-cols-3 gap-6">
-                <button onClick={() => setShowClientFinanceiro(true)} className="bg-white rounded-3xl p-6 shadow-xl text-center hover:shadow-2xl transition-shadow cursor-pointer w-full">
-                  <span className="text-4xl mb-4 block">💳</span>
-                  <p className="text-xs text-gray-400 uppercase font-bold mb-2">Financeiro</p>
-                  {(() => {
-                    const paid = clientInstallments.filter(i => i.status === 'Pago').length;
-                    const total = clientInstallments.length;
-                    const next = clientInstallments.find(i => i.status === 'Pendente');
-                    return (
-                      <>
-                        <p className="text-xl font-black text-gray-900">{total > 0 ? `${paid}/${total} Parcelas` : clientProject?.payment_status || '—'}</p>
-                        <p className={`text-sm font-bold mt-1 ${paid === total && total > 0 ? 'text-green-600' : 'text-green-600'}`}>
-                          {paid === total && total > 0 ? 'Quitado ✓' : 'Em dia ✓'}
-                        </p>
-                        {next && (
-                          <div className="mt-3 pt-3 border-t border-gray-100">
-                            <p className="text-xs text-gray-400">Próxima parcela</p>
-                            <p className="text-sm font-bold text-amber-600">
-                              {new Date(next.due_date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} — R$ {Number(next.amount).toLocaleString('pt-BR')}
-                            </p>
-                          </div>
-                        )}
-                      </>
-                    );
-                  })()}
-                </button>
-                <div className="bg-white rounded-3xl p-6 shadow-xl text-center hover:shadow-2xl transition-shadow">
-                  <span className="text-4xl mb-4 block">💬</span>
-                  <p className="text-xs text-gray-400 uppercase font-bold mb-2">Suporte</p>
-                  <button onClick={() => setView(ViewMode.CRM)} className="text-xl font-bold text-gray-900 hover:text-amber-600 transition-colors">
-                    Falar com Projetista
-                  </button>
-                  <p className="text-sm text-gray-500 mt-1">Resposta em 2h</p>
-                </div>
-                <button onClick={() => setShowClientContract(true)} className="bg-white rounded-3xl p-6 shadow-xl text-center hover:shadow-2xl transition-shadow cursor-pointer w-full">
-                  <span className="text-4xl mb-4 block">📝</span>
-                  <p className="text-xs text-gray-400 uppercase font-bold mb-2">Contrato</p>
-                  <p className="text-xl font-black text-gray-900">{clientProject?.status || 'Assinado'}</p>
-                  <p className="text-sm text-green-600 font-bold mt-1 flex items-center justify-center gap-1">
-                    <Shield className="w-4 h-4" /> Ver Detalhes
-                  </p>
-                </button>
-              </div>
-
-              {/* Timeline */}
-              <div className="bg-white rounded-3xl p-8 shadow-xl">
-                <h3 className="font-black text-gray-900 mb-6 flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-amber-500" />
-                  Linha do Tempo do Projeto
-                </h3>
-                <div className="flex items-center justify-between relative">
-                  {(() => {
-                    const steps = clientTimeline.length > 0 ? clientTimeline : [
-                      { label: 'Assinatura', step_date: '', done: true, icon: '✍️' },
-                      { label: 'Projeto 3D', step_date: '', done: true, icon: '🖥️' },
-                      { label: 'Produção', step_date: '', done: true, icon: '🏭' },
-                      { label: 'Expedição', step_date: '', done: false, icon: '📦' },
-                      { label: 'Instalação', step_date: '', done: false, icon: '🔧' },
-                    ];
-                    const doneCount = steps.filter(s => s.done).length;
-                    const progressPct = steps.length > 0 ? Math.round((doneCount / steps.length) * 100) : 0;
-                    return (
-                      <>
-                        <div className="absolute top-5 left-0 right-0 h-1 bg-gray-200 z-0">
-                          <div className="h-1 bg-green-500" style={{ width: `${progressPct}%` }} />
-                        </div>
-                        {steps.map((step: any, i: number) => (
-                          <div key={step.id || i} className="flex flex-col items-center relative z-10">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl mb-2 ${step.done ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'
-                              }`}>
-                              {step.done ? '✓' : (step.icon || '📋')}
-                            </div>
-                            <p className={`text-xs font-bold ${step.done ? 'text-green-600' : 'text-gray-500'}`}>{step.label}</p>
-                            <p className="text-xs text-gray-400">{step.step_date || ''}</p>
-                          </div>
-                        ))}
-                      </>
-                    );
-                  })()}
-                </div>
-              </div>
-            </div>
+            <ClientPortal 
+              clientName={clientName}
+              clientProject={clientProject}
+              clientInstallments={clientInstallments}
+              clientProductionSteps={clientProductionSteps}
+              clientTimeline={clientTimeline}
+              galleryItems={galleryItems}
+              projectApproved={projectApproved}
+              setProjectApproved={setProjectApproved}
+              setView={setView}
+              setShowClientContract={setShowClientContract}
+              setShowClientFinanceiro={setShowClientFinanceiro}
+              setGalleryFullscreen={setGalleryFullscreen}
+              toast={toast}
+            />
           )}
 
           {/* PORTFOLIO */}
           {view === ViewMode.PORTFOLIO && (
-            <div className="p-8 space-y-6 overflow-auto h-full bg-gradient-to-br from-gray-50 to-gray-100">
-              <header className="flex justify-between items-center">
-                <div>
-                  <h1 className="text-4xl font-black text-gray-900 flex items-center gap-3">
-                    <Camera className="w-8 h-8 text-amber-500" />
-                    Minha Galeria SD
-                  </h1>
-                  <p className="text-gray-500 mt-1">Arquivos em Ultra-Alta Definição</p>
-                </div>
-                <button
-                  onClick={() => setView(ViewMode.CLIENT_PORTAL)}
-                  className="text-amber-600 font-black uppercase text-xs tracking-widest border-2 border-amber-200 px-8 py-4 rounded-full hover:bg-amber-50 transition-all flex items-center gap-2"
-                >
-                  <ArrowRight className="w-4 h-4 rotate-180" />
-                  Voltar ao Painel
-                </button>
-              </header>
-
-              <div className="grid grid-cols-2 gap-8">
-                {galleryItems.map((item, i) => (
-                  <div key={i} className="bg-white rounded-3xl shadow-xl overflow-hidden group">
-                    <div className="aspect-video overflow-hidden relative">
-                      <img src={item.url} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                        <button
-                          onClick={() => setGalleryFullscreen({ title: item.title, url: item.url })}
-                          className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-gray-900 hover:scale-110 transition-transform"
-                          title="Visualizar Imagem"
-                        >
-                          <Eye className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => setShowArModal({ title: item.title, url: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb' })}
-                          className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-amber-600 hover:scale-110 transition-transform border-2 border-amber-200"
-                          title="Visualizar em AR"
-                        >
-                          <Package className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            const a = document.createElement('a');
-                            a.href = item.url;
-                            a.download = `${item.title.replace(/\s/g, '-')}.jpg`;
-                            a.target = '_blank';
-                            a.click();
-                            toast({ title: "📥 Download iniciado", description: item.title });
-                          }}
-                          className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-gray-900 hover:scale-110 transition-transform"
-                        >
-                          <Download className="w-5 h-5" />
-                        </button>
-                      </div>
-                    </div>
-                    <div className="p-6">
-                      <p className="font-black text-gray-900">{item.title}</p>
-                      <p className="text-sm text-gray-500 mt-1">{item.desc}</p>
-                      <div className="flex gap-3 mt-4">
-                        <button
-                          onClick={() => {
-                            const a = document.createElement('a');
-                            a.href = item.url;
-                            a.download = `${item.title.replace(/\s/g, '-')}-4K.jpg`;
-                            a.target = '_blank';
-                            a.click();
-                            toast({ title: "📥 Download 4K iniciado", description: item.title });
-                          }}
-                          className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-200 transition-colors"
-                        >
-                          <Download className="w-4 h-4" />
-                          Download 4K
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (navigator.share) {
-                              navigator.share({ title: item.title, text: `Veja o render: ${item.title}`, url: item.url });
-                            } else {
-                              navigator.clipboard.writeText(item.url);
-                              toast({ title: "🔗 Link copiado!", description: "Cole onde quiser compartilhar" });
-                            }
-                          }}
-                          className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-200 transition-colors"
-                        >
-                          <Share2 className="w-4 h-4" />
-                          Compartilhar
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Approve Project Button */}
-              {!projectApproved ? (
-                <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-3xl p-8 shadow-lg text-center">
-                  <ThumbsUp className="w-12 h-12 text-green-500 mx-auto mb-4" />
-                  <h3 className="text-xl font-black text-gray-900 mb-2">Aprovar Projeto</h3>
-                  <p className="text-gray-500 text-sm mb-6 max-w-md mx-auto">
-                    Revise todos os renders e, se estiver satisfeito, aprove o projeto para iniciarmos a produção.
-                  </p>
-                  <button
-                    onClick={() => {
-                      setProjectApproved(true);
-                      toast({ title: "✅ Projeto Aprovado!", description: "Obrigado! A produção será iniciada em breve." });
-                    }}
-                    className="bg-green-600 text-white px-10 py-4 rounded-2xl font-black hover:bg-green-500 transition-colors shadow-lg inline-flex items-center gap-2"
-                  >
-                    <ThumbsUp className="w-5 h-5" />
-                    Aprovar Projeto
-                  </button>
-                </div>
-              ) : (
-                <div className="bg-green-50 border border-green-200 rounded-3xl p-6 text-center">
-                  <CheckCircle className="w-10 h-10 text-green-500 mx-auto mb-2" />
-                  <p className="font-black text-green-700">Projeto Aprovado ✓</p>
-                  <p className="text-sm text-green-600 mt-1">Sua produção está em andamento!</p>
-                </div>
-              )}
-            </div>
+            <PortfolioGallery 
+              galleryItems={galleryItems}
+              projectApproved={projectApproved}
+              setProjectApproved={setProjectApproved}
+              setView={setView}
+              setGalleryFullscreen={setGalleryFullscreen}
+              setShowArModal={setShowArModal}
+              toast={toast}
+            />
           )}
+
           {/* AFTER SALES */}
           {view === ViewMode.AFTER_SALES && authState === 'CLIENT' && (
             <AfterSalesPanel />
@@ -1231,28 +720,33 @@ const App: React.FC = () => {
 
           {/* WARRANTY CERTIFICATE */}
           {view === ViewMode.WARRANTY && authState === 'CLIENT' && (
-            <div className="p-8 overflow-auto h-full bg-gradient-to-br from-gray-50 to-gray-100">
-              <WarrantyCertificate
-                projectName={clientProject?.name || 'Projeto SD'}
-                clientName={clientName || 'Cliente'}
-                signedAt={clientProject?.signed_at}
-                warranty={clientProject?.warranty}
-                material={clientProject?.material}
-                projectType={clientProject?.project_type}
-              />
+             <div className="p-4 sm:p-8 overflow-auto h-full bg-[#0f0f0f] luxury-scroll relative">
+               <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                 <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/5 blur-[100px] rounded-full" />
+               </div>
+               <div className="relative z-10 w-full max-w-4xl mx-auto">
+                 <WarrantyCertificate
+                    projectName={clientProject?.name || 'Projeto SD'}
+                    clientName={clientName || 'Cliente'}
+                    signedAt={clientProject?.signed_at}
+                    warranty={clientProject?.warranty}
+                    material={clientProject?.material}
+                    projectType={clientProject?.project_type}
+                  />
+               </div>
             </div>
           )}
 
           {/* QUALITY CHECK - Admin */}
           {view === ViewMode.QUALITY_CHECK && authState === 'ADMIN' && selectedContract && (
-            <div className="p-8 overflow-auto h-full bg-gradient-to-br from-gray-50 to-gray-100">
+            <div className="p-4 sm:p-8 overflow-auto h-full bg-[#0f0f0f] luxury-scroll relative">
               <QualityCheckPanel projectId={selectedContract.id} projectName={selectedContract.name || selectedContract.projectName} />
             </div>
           )}
 
           {/* PROJECT COSTS - Admin */}
           {view === ViewMode.PROJECT_COSTS && authState === 'ADMIN' && selectedContract && (
-            <div className="p-8 overflow-auto h-full bg-gradient-to-br from-gray-50 to-gray-100">
+            <div className="p-4 sm:p-8 overflow-auto h-full bg-[#0f0f0f] luxury-scroll relative">
               <ProjectCostPanel projectId={selectedContract.id} projectName={selectedContract.name || selectedContract.projectName} totalValue={selectedContract.value} />
             </div>
           )}

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase as supabaseClient } from '@/integrations/supabase/client';
 const db = supabaseClient as any;
 import { useToast } from '@/hooks/use-toast';
-import { Navigation, Play, Square, MapPin, Clock, Route, AlertTriangle, Camera, CheckSquare, Send, X, Image, PackageCheck, Fuel, Terminal, ClipboardList, User, Star } from 'lucide-react';
+import { Navigation, Play, Square, MapPin, Clock, Route, AlertTriangle, Camera, CheckSquare, Send, X, Image, PackageCheck, Fuel, Terminal, ClipboardList, User, Star, Shield, Zap, Sparkles, ChevronRight, ChevronDown } from 'lucide-react';
 import SignaturePad from '@/components/employee/SignaturePad';
 import ToolInventory from '@/components/employee/ToolInventory';
 import FuelLogForm from '@/components/fleet/FuelLogForm';
@@ -82,29 +82,12 @@ export default function DriverTripPanel({ employeeId, employeeName }: DriverTrip
   const [locationCount, setLocationCount] = useState(0);
   const [resolvedEmployeeId, setResolvedEmployeeId] = useState(employeeId);
 
-  // Service Orders
   const [serviceOrders, setServiceOrders] = useState<ServiceOrder[]>([]);
   const [activeServiceOrder, setActiveServiceOrder] = useState<ServiceOrder | null>(null);
   const [linkedOrderId, setLinkedOrderId] = useState<string | null>(null);
 
-  const [dailyChecklist, setDailyChecklist] = useState<ChecklistItem[]>(
-    DAILY_CHECKLIST.map((label, i) => ({
-      id: `init-daily-${i}`,
-      label,
-      checked: false,
-      sort_order: i,
-      checklist_type: 'daily',
-    })) as any
-  );
-  const [deliveryChecklist, setDeliveryChecklist] = useState<ChecklistItem[]>(
-    DELIVERY_CHECKLIST.map((label, i) => ({
-      id: `init-del-${i}`,
-      label,
-      checked: false,
-      sort_order: i + 100,
-      checklist_type: 'delivery',
-    })) as any
-  );
+  const [dailyChecklist, setDailyChecklist] = useState<ChecklistItem[]>([]);
+  const [deliveryChecklist, setDeliveryChecklist] = useState<ChecklistItem[]>([]);
   const [showDailyChecklist, setShowDailyChecklist] = useState(true);
   const [showDeliveryChecklist, setShowDeliveryChecklist] = useState(true);
 
@@ -118,7 +101,6 @@ export default function DriverTripPanel({ employeeId, employeeName }: DriverTrip
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [showFuel, setShowFuel] = useState(false);
-
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>('');
   const [showSignaturePad, setShowSignaturePad] = useState(false);
@@ -127,7 +109,6 @@ export default function DriverTripPanel({ employeeId, employeeName }: DriverTrip
   const [showDebug, setShowDebug] = useState(false);
   const [gpsLogs, setGpsLogs] = useState<GpsLogEntry[]>([]);
 
-  // Periodically refresh logs when debug is open
   useEffect(() => {
     if (!showDebug) return;
     const interval = setInterval(() => {
@@ -141,198 +122,84 @@ export default function DriverTripPanel({ employeeId, employeeName }: DriverTrip
   useEffect(() => {
     fetchEmployeeAndTrips();
     fetchVehicles();
-    // When component remounts (user returns to tab), reconnect the GPS callback
-    // so locationCount stays in sync — but DO NOT stop tracking on unmount!
-    return () => {
-      // Only detach callback, do NOT call gpsTracker.stop() here.
-      // Tracking continues in background when user switches tabs.
-      gpsTracker.setCallback(() => { });
-    };
+    return () => { gpsTracker.setCallback(() => { }); };
   }, [employeeId, employeeName]);
 
-  // Fetch service orders whenever resolvedEmployeeId changes
   useEffect(() => {
-    if (resolvedEmployeeId) {
-      fetchServiceOrders(resolvedEmployeeId);
-    }
+    if (resolvedEmployeeId) fetchServiceOrders(resolvedEmployeeId);
   }, [resolvedEmployeeId]);
 
   useEffect(() => {
     if (!resolvedEmployeeId) return;
-
-    const syncInterval = setInterval(() => {
-      void fetchTrips(resolvedEmployeeId, false);
-    }, 15000);
-
+    const syncInterval = setInterval(() => { void fetchTrips(resolvedEmployeeId, false); }, 15000);
     return () => clearInterval(syncInterval);
   }, [resolvedEmployeeId]);
 
   useEffect(() => {
-    if (activeTrip && activeTrip.id) {
-      Geolocation.requestPermissions()
-        .catch(() => { })
-        .finally(() => {
-          // Start (or reconnect to) GPS tracking via the singleton
-          void gpsTracker.start(activeTrip.id, () => setLocationCount(prev => prev + 1));
-        });
-      fetchChecklists(activeTrip.id);
-      fetchPhotos(activeTrip.id);
+    if (activeTrip?.id) {
+       Geolocation.requestPermissions().catch(() => {}).finally(() => {
+         void gpsTracker.start(activeTrip.id, () => setLocationCount(prev => prev + 1));
+       });
+       fetchChecklists(activeTrip.id);
+       fetchPhotos(activeTrip.id);
     }
   }, [activeTrip?.id]);
 
   const fetchVehicles = async () => {
     const { data } = await db.from('vehicles').select('id, plate, model').eq('active', true);
-    if (data) {
-      const uniqueVehicles = data.reduce((acc: Vehicle[], current: Vehicle) => {
-        const x = acc.find(item => item.plate === current.plate);
-        if (!x) return acc.concat([current]);
-        else return acc;
-      }, []);
-      setVehicles(uniqueVehicles);
-    }
+    if (data) setVehicles(data);
   };
 
   const fetchServiceOrders = async (empId: string) => {
     try {
-      const { data } = await db
-        .from('service_orders')
-        .select('id, order_number, description, notes, priority, status, estimated_date, completed_at, created_at, total_value, clients(name, address)')
-        .eq('assigned_to', empId)
-        .in('status', ['aberta', 'em_andamento'])
-        .order('created_at', { ascending: false })
-        .limit(10);
+      const { data } = await db.from('service_orders').select('id, order_number, description, notes, priority, status, estimated_date, completed_at, created_at, total_value, clients(name, address)').eq('assigned_to', empId).in('status', ['aberta', 'em_andamento']).order('created_at', { ascending: false }).limit(5);
       if (data && data.length > 0) {
         setServiceOrders(data as ServiceOrder[]);
-        // Set the most recent open OS as active
         const firstOpen = data.find((o: ServiceOrder) => o.status === 'aberta') || data[0];
         setActiveServiceOrder(firstOpen as ServiceOrder);
-      } else {
-        setServiceOrders([]);
-        setActiveServiceOrder(null);
-      }
-    } catch (err) {
-      console.error('[OS] Error fetching service orders:', err);
-    }
+      } else { setServiceOrders([]); setActiveServiceOrder(null); }
+    } catch (err) { console.error('[OS] Error:', err); }
   };
 
   const fetchEmployeeAndTrips = async (showLoader = true) => {
     if (showLoader) setLoading(true);
-
     let resolvedId = employeeId;
     if (!resolvedId) {
       const search = employeeName.trim().toLowerCase();
-      if (!search) {
-        if (showLoader) setLoading(false);
-        return;
-      }
-
-      const { data: empData } = await db
-        .from('employees')
-        .select('id, name, email')
-        .eq('active', true)
-        .or(`name.ilike.${search},email.ilike.${search}`);
-
-      const exactMatch = (empData || []).find(
-        (employee: any) => employee?.name?.toLowerCase() === search || employee?.email?.toLowerCase() === search
-      );
-
-      if (exactMatch?.id) {
-        resolvedId = exactMatch.id;
-      } else if (empData?.[0]?.id) {
-        resolvedId = empData[0].id;
-      } else {
-        if (showLoader) setLoading(false);
-        return;
-      }
+      if (!search) { if (showLoader) setLoading(false); return; }
+      const { data: empData } = await db.from('employees').select('id, name, email').eq('active', true).or(`name.ilike.${search},email.ilike.${search}`);
+      resolvedId = (empData || []).find((e: any) => e?.name?.toLowerCase() === search || e?.email?.toLowerCase() === search)?.id || empData?.[0]?.id;
+      if (!resolvedId) { if (showLoader) setLoading(false); return; }
     }
-
     await fetchTrips(resolvedId, showLoader);
   };
 
   const fetchTrips = async (empId: string, finishLoading = true) => {
-    const { data: activeTripsData } = await db
-      .from('trips')
-      .select('*')
-      .eq('employee_id', empId)
-      .is('ended_at', null)
-      .order('started_at', { ascending: false })
-      .limit(5);
-
-    if ((activeTripsData?.length || 0) > 1) {
-      console.warn('[TRIP] Mais de uma viagem ativa encontrada para o funcionário. Retomando a mais recente.');
-    }
-
+    const { data: activeTripsData } = await db.from('trips').select('*').eq('employee_id', empId).is('ended_at', null).order('started_at', { ascending: false }).limit(2);
     const latestActive = (activeTripsData?.[0] as Trip | undefined) || null;
-
     if (latestActive) {
       setActiveTrip(latestActive);
-      const { count } = await db
-        .from('trip_locations')
-        .select('*', { count: 'exact', head: true })
-        .eq('trip_id', latestActive.id);
+      const { count } = await db.from('trip_locations').select('*', { count: 'exact', head: true }).eq('trip_id', latestActive.id);
       setLocationCount(count || 0);
-    } else {
-      setActiveTrip(null);
-      setLocationCount(0);
-    }
-
-    const { data: recent } = await db
-      .from('trips')
-      .select('*')
-      .eq('employee_id', empId)
-      .or('status.eq.completed,ended_at.not.is.null')
-      .order('started_at', { ascending: false })
-      .limit(10);
-
+    } else { setActiveTrip(null); setLocationCount(0); }
+    const { data: recent } = await db.from('trips').select('*').eq('employee_id', empId).or('status.eq.completed,ended_at.not.is.null').order('started_at', { ascending: false }).limit(5);
     if (recent) setRecentTrips(recent as Trip[]);
     setResolvedEmployeeId(empId);
-
-    if (finishLoading) {
-      setLoading(false);
-    }
+    if (finishLoading) setLoading(false);
   };
 
   const fetchChecklists = async (tripId: string) => {
-    try {
-      const { data, error } = await db
-        .from('trip_checklists')
-        .select('*')
-        .eq('trip_id', tripId)
-        .order('sort_order');
-
-      if (error) throw error;
-
-      const daily = (data || []).filter((c: any) => c.checklist_type === 'daily');
-      const delivery = (data || []).filter((c: any) => c.checklist_type === 'delivery');
-
-      if (daily.length > 0) setDailyChecklist(daily);
-      else setDailyChecklist(DAILY_CHECKLIST.map((label, i) => ({ id: `temp-daily-${i}`, label, checked: false, sort_order: i, checklist_type: 'daily' })) as any);
-
-      if (delivery.length > 0) setDeliveryChecklist(delivery);
-      else setDeliveryChecklist(DELIVERY_CHECKLIST.map((label, i) => ({ id: `temp-del-${i}`, label, checked: false, sort_order: i + 100, checklist_type: 'delivery' })) as any);
-
-      if (!data || data.length === 0) {
-        const dailyItems = DAILY_CHECKLIST.map((label, i) => ({
-          trip_id: tripId, label, checked: false, sort_order: i, checklist_type: 'daily' as string,
-        }));
-        const deliveryItems = DELIVERY_CHECKLIST.map((label, i) => ({
-          trip_id: tripId, label, checked: false, sort_order: i + 100, checklist_type: 'delivery' as string,
-        }));
-        await db.from('trip_checklists').insert([...dailyItems, ...deliveryItems]);
-      }
-    } catch (error: any) {
-      console.error('CRITICAL Error fetching checklists:', error);
-      setDailyChecklist(DAILY_CHECKLIST.map((label, i) => ({ id: `err-${i}`, label, checked: false, sort_order: i, checklist_type: 'daily' })) as any);
-      setDeliveryChecklist(DELIVERY_CHECKLIST.map((label, i) => ({ id: `err-del-${i}`, label, checked: false, sort_order: i + 100, checklist_type: 'delivery' })) as any);
-    }
+    const { data } = await db.from('trip_checklists').select('*').eq('trip_id', tripId).order('sort_order');
+    const daily = (data || []).filter((c: any) => c.checklist_type === 'daily');
+    const delivery = (data || []).filter((c: any) => c.checklist_type === 'delivery');
+    if (daily.length > 0) setDailyChecklist(daily);
+    else setDailyChecklist(DAILY_CHECKLIST.map((label, i) => ({ id: `temp-daily-${i}`, label, checked: false, sort_order: i, checklist_type: 'daily' })) as any);
+    if (delivery.length > 0) setDeliveryChecklist(delivery);
+    else setDeliveryChecklist(DELIVERY_CHECKLIST.map((label, i) => ({ id: `temp-del-${i}`, label, checked: false, sort_order: i + 100, checklist_type: 'delivery' })) as any);
   };
 
   const fetchPhotos = async (tripId: string) => {
-    const { data } = await db
-      .from('trip_photos')
-      .select('*')
-      .eq('trip_id', tripId)
-      .order('created_at');
+    const { data } = await db.from('trip_photos').select('*').eq('trip_id', tripId).order('created_at');
     if (data) {
       setTripPhotos(data);
       const signature = data.find((p: any) => p.description === 'Assinatura do Cliente');
@@ -340,793 +207,307 @@ export default function DriverTripPanel({ employeeId, employeeName }: DriverTrip
     }
   };
 
-  const startTracking = useCallback((tripId: string) => {
-    // Delegate to the singleton (no-op if already tracking this trip)
-    void gpsTracker.start(tripId, () => setLocationCount(prev => prev + 1));
-  }, []);
+  const startTrip = async () => {
+    if (!selectedVehicleId) return toast({ title: '⚠️ Selecione um veículo', variant: 'destructive' });
+    const finalId = resolvedEmployeeId || employeeId;
+    if (!finalId) return toast({ title: '❌ Funcionário não identificado', variant: 'destructive' });
 
-  const stopTracking = useCallback(() => {
-    // Only used when a trip actually ends
-    gpsTracker.stop();
-  }, []);
+    const osDesc = activeServiceOrder ? `OS #${activeServiceOrder.order_number} — ${activeServiceOrder.clients?.name || 'Cliente'}: ${activeServiceOrder.description || ''}` : null;
+    const { data, error } = await db.from('trips').insert({ employee_id: finalId, description: osDesc, vehicle_id: selectedVehicleId, status: 'active' }).select().single();
 
-  const startTrip = async (description?: string) => {
-    // Request GPS permission but NEVER block trip creation
-    let gpsAvailable = true;
-    try {
-      const permission = await Geolocation.requestPermissions();
-      if (permission.location !== 'granted') {
-        gpsAvailable = false;
-        toast({
-          title: '⚠️ GPS sem permissão',
-          description: 'A viagem será criada, mas o rastreamento pode não funcionar. Habilite a localização nas configurações.',
-        });
-      }
-    } catch (e) {
-      gpsAvailable = false;
-      console.log('GPS permission error (non-blocking):', e);
-    }
+    if (error) return toast({ title: '❌ Erro', description: error.message, variant: 'destructive' });
+    if (activeServiceOrder) await db.from('service_orders').update({ status: 'em_andamento' }).eq('id', activeServiceOrder.id);
 
-    if (!selectedVehicleId) {
-      toast({ title: '⚠️ Selecione um veículo', variant: 'destructive' });
-      return;
-    }
-
-    const finalEmployeeId = resolvedEmployeeId || employeeId;
-    if (!finalEmployeeId) {
-      toast({ title: '❌ Erro ao iniciar viagem', description: 'Funcionário não identificado. Faça login novamente.', variant: 'destructive' });
-      return;
-    }
-
-    const { data: existingActiveTrip } = await db
-      .from('trips')
-      .select('*')
-      .eq('employee_id', finalEmployeeId)
-      .is('ended_at', null)
-      .order('started_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (existingActiveTrip) {
-      setActiveTrip(existingActiveTrip as Trip);
-      const { count } = await db
-        .from('trip_locations')
-        .select('*', { count: 'exact', head: true })
-        .eq('trip_id', existingActiveTrip.id);
-
-      setLocationCount(count || 0);
-      startTracking(existingActiveTrip.id);
-      toast({
-        title: '🔄 Viagem retomada',
-        description: 'Já existe uma viagem ativa para você. Continuando rastreamento automaticamente.',
-      });
-      return;
-    }
-
-    // Build description from active service order if not explicitly provided
-    const osDesc = activeServiceOrder
-      ? `OS #${activeServiceOrder.order_number} — ${activeServiceOrder.clients?.name || 'Cliente'}: ${activeServiceOrder.description || activeServiceOrder.clients?.address || ''}`
-      : description || null;
-
-    console.log('[TRIP] Creating trip:', { finalEmployeeId, selectedVehicleId, gpsAvailable, osDesc });
-
-    const { data, error } = await db
-      .from('trips')
-      .insert({
-        employee_id: finalEmployeeId,
-        description: osDesc,
-        vehicle_id: selectedVehicleId,
-        status: 'active'
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('[TRIP] Insert error:', JSON.stringify(error));
-      toast({ title: '❌ Erro ao iniciar viagem', description: `${error.message} (code: ${error.code})`, variant: 'destructive' });
-      return;
-    }
-
-    // Mark linked OS as em_andamento
-    if (activeServiceOrder) {
-      await db
-        .from('service_orders')
-        .update({ status: 'em_andamento' })
-        .eq('id', activeServiceOrder.id);
-      setLinkedOrderId(activeServiceOrder.id);
-    }
-
-    console.log('[TRIP] Trip created successfully:', data.id);
     setActiveTrip(data as Trip);
     setLocationCount(0);
-    startTracking(data.id);
-    toast({ title: '🚗 Viagem iniciada!', description: gpsAvailable ? 'GPS rastreando a cada 30s' : 'Viagem salva! GPS pode estar limitado.' });
-  };
-
-  const setMontagemConcluida = async () => {
-    if (!activeTrip) return;
-
-    const uncheckedDelivery = deliveryChecklist.filter(c => !c.checked);
-    if (uncheckedDelivery.length > 0) {
-      setShowDeliveryChecklist(true);
-      toast({ title: '⚠️ Complete o checklist de entrega', description: `${uncheckedDelivery.length} item(ns) pendente(s)`, variant: 'destructive' });
-      return;
-    }
-
-    const { error } = await db
-      .from('trips')
-      .update({ montagem_status: 'concluida' })
-      .eq('id', activeTrip.id);
-
-    if (!error) {
-      setActiveTrip(prev => prev ? { ...prev, montagem_status: 'concluida' } : null);
-      toast({ title: '✅ Montagem marcada como concluída!', description: 'Agora colete a assinatura do cliente.' });
-    }
+    gpsTracker.start(data.id, () => setLocationCount(prev => prev + 1));
+    toast({ title: '🚗 Operação Logística Iniciada!', description: 'GPS monitorando em tempo real.' });
   };
 
   const endTrip = async () => {
     if (!activeTrip) return;
-
-    // Stop GPS tracking (trip is done)
     gpsTracker.stop();
-
-    const { error } = await db
-      .from('trips')
-      .update({ status: 'completed', ended_at: new Date().toISOString() })
-      .eq('id', activeTrip.id);
-
-    if (error) {
-      toast({ title: '❌ Erro ao finalizar', description: error.message, variant: 'destructive' });
-      return;
-    }
-
-    // Mark linked OS as concluida
-    const osId = linkedOrderId || activeServiceOrder?.id;
-    if (osId) {
-      await db
-        .from('service_orders')
-        .update({ status: 'concluida', completed_at: new Date().toISOString() })
-        .eq('id', osId);
-      setLinkedOrderId(null);
-      setActiveServiceOrder(null);
-      setServiceOrders([]);
-    }
-
-    toast({ title: '✅ Viagem do dia finalizada!' });
-    setActiveTrip(null);
-    setLocationCount(0);
-    setDailyChecklist([]);
-    setDeliveryChecklist([]);
-    setTripPhotos([]);
-    fetchEmployeeAndTrips();
-  };
-
-  const sendSOS = async () => {
-    if (!activeTrip || !sosDesc.trim()) return;
-    setSosSending(true);
-    const { error } = await (db.from('trip_incidents') as any).insert({
-      trip_id: activeTrip.id,
-      type: sosType,
-      description: sosDesc.trim(),
-    });
-    setSosSending(false);
-    if (error) {
-      toast({ title: '❌ Erro', description: error.message, variant: 'destructive' });
-    } else {
-      toast({ title: '🆘 Imprevisto reportado!', description: 'O administrador será notificado.' });
-      setSosDesc('');
-      setShowSOS(false);
-    }
-  };
-
-  const uploadPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!activeTrip || !e.target.files?.length) return;
-    setUploading(true);
-    const file = e.target.files[0];
-    const ext = file.name.split('.').pop();
-    const path = `${activeTrip.id}/${Date.now()}.${ext}`;
-
-    const { error: uploadErr } = await db.storage.from('trip-photos').upload(path, file);
-    if (uploadErr) {
-      toast({ title: '❌ Erro no upload', description: uploadErr.message, variant: 'destructive' });
-      setUploading(false);
-      return;
-    }
-
-    const { data: urlData } = db.storage.from('trip-photos').getPublicUrl(path);
-    await db.from('trip_photos').insert({
-      trip_id: activeTrip.id,
-      image_url: urlData.publicUrl,
-    });
-
-    await fetchPhotos(activeTrip.id);
-    setUploading(false);
-    toast({ title: '📸 Foto salva!' });
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
-  const saveSignature = async (dataUrl: string) => {
-    if (!activeTrip) return;
-    setSavingSignature(true);
-
-    try {
-      const res = await fetch(dataUrl);
-      const blob = await res.blob();
-      const path = `${activeTrip.id}/signature_${Date.now()}.png`;
-
-      const { error: uploadErr } = await db.storage.from('trip-photos').upload(path, blob);
-      if (uploadErr) throw uploadErr;
-
-      const { data: urlData } = db.storage.from('trip-photos').getPublicUrl(path);
-
-      const { error: dbErr } = await db.from('trip_photos').insert({
-        trip_id: activeTrip.id,
-        image_url: urlData.publicUrl,
-        description: 'Assinatura do Cliente',
-      });
-      if (dbErr) throw dbErr;
-
-      setSignatureUrl(urlData.publicUrl);
-      setShowSignaturePad(false);
-      toast({ title: '✅ Assinatura salva!', description: 'Entrega finalizada com sucesso.' });
-
-      const sigItem = deliveryChecklist.find(c => c.label === 'Assinatura Digital do Cliente');
-      if (sigItem && !sigItem.checked) {
-        toggleCheckItem(sigItem);
-      }
-    } catch (err: any) {
-      console.error('Error saving signature:', err);
-      toast({ title: '❌ Erro ao salvar assinatura', description: err.message, variant: 'destructive' });
-    } finally {
-      setSavingSignature(false);
-    }
-  };
-
-  const formatTime = (iso: string | null | undefined) => {
-    const dateStr = iso || activeTrip?.created_at;
-    if (!dateStr) return '---';
-    try {
-      const date = new Date(dateStr);
-      if (isNaN(date.getTime())) return '---';
-      return date.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-    } catch (e) {
-      return '---';
-    }
-  };
-
-  const calcDuration = (start: string | null | undefined, end: string | null | undefined) => {
-    const dateStr = start || activeTrip?.created_at;
-    if (!dateStr) return '--h --min';
-    try {
-      const startDate = new Date(dateStr);
-      const endDate = end ? new Date(end) : new Date();
-      if (isNaN(startDate.getTime())) return '--h --min';
-      const diffMs = endDate.getTime() - startDate.getTime();
-      if (diffMs < 0) return '--h --min';
-      const hours = Math.floor(diffMs / (1000 * 60 * 60));
-      const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-      return `${hours}h ${String(minutes).padStart(2, '0')}min`;
-    } catch (e) {
-      return '--h --min';
-    }
+    const { error } = await db.from('trips').update({ status: 'completed', ended_at: new Date().toISOString() }).eq('id', activeTrip.id);
+    if (error) return toast({ title: '❌ Erro', description: error.message, variant: 'destructive' });
+    if (activeServiceOrder) await db.from('service_orders').update({ status: 'concluida', completed_at: new Date().toISOString() }).eq('id', activeServiceOrder.id);
+    toast({ title: '✅ Operação Concluída com Sucesso!' });
+    setActiveTrip(null); fetchEmployeeAndTrips();
   };
 
   const toggleCheckItem = async (item: ChecklistItem) => {
     const newChecked = !item.checked;
     const listSetter = item.checklist_type === 'daily' ? setDailyChecklist : setDeliveryChecklist;
-
-    listSetter(prev =>
-      prev.map(c => c.id === item.id ? { ...c, checked: newChecked } : c)
-    );
-
-    if (!item.id.startsWith('init-') && !item.id.startsWith('temp-') && !item.id.startsWith('err-')) {
-      await db.from('trip_checklists').update({ checked: newChecked }).eq('id', item.id);
-    } else if (activeTrip) {
-      const { data: inserted } = await db.from('trip_checklists').insert({
-        trip_id: activeTrip.id,
-        label: item.label,
-        checked: newChecked,
-        sort_order: item.sort_order,
-        checklist_type: item.checklist_type,
-      }).select().single();
-
-      if (inserted) {
-        listSetter(prev =>
-          prev.map(c => c.id === item.id ? { ...c, id: inserted.id, checked: newChecked } : c)
-        );
-      }
-    }
+    listSetter(prev => prev.map(c => c.id === item.id ? { ...c, checked: newChecked } : c));
+    if (!item.id.startsWith('temp-')) await db.from('trip_checklists').update({ checked: newChecked }).eq('id', item.id);
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-3 text-gray-600">Carregando...</span>
-      </div>
-    );
-  }
+  if (loading) return (
+     <div className="flex flex-col items-center justify-center p-20 bg-[#0a0a0a] min-h-screen">
+        <div className="w-16 h-16 border-4 border-[#D4AF37]/20 border-t-[#D4AF37] rounded-full animate-spin mb-6" />
+        <p className="text-[#D4AF37] font-black uppercase text-[10px] tracking-widest italic">Sincronizando Feed de Campo...</p>
+     </div>
+  );
 
   return (
-    <div className="space-y-4 p-4 max-w-2xl mx-auto">
-      <div className="rounded-xl p-5 shadow-lg border" style={{ background: 'linear-gradient(135deg, #1a1a1a, #000)', borderColor: 'rgba(212,175,55,0.4)' }}>
-        <div className="flex items-center gap-3">
-          <Navigation className="w-6 h-6" style={{ color: '#D4AF37' }} />
-          <div>
-            <h2 className="font-bold text-lg text-white">Painel do Motorista</h2>
-            <p className="text-sm" style={{ color: '#D4AF37' }}>{employeeName}</p>
-          </div>
-        </div>
-      </div>
-
-      {activeTrip ? (
-        <div className="space-y-4">
-          <div className="rounded-xl p-5 shadow-inner border" style={{ background: '#111', borderColor: 'green' }}>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
-                <span className="font-bold text-green-400">Viagem em Andamento</span>
-              </div>
-              {isDeliveryMode && (
-                <span className="bg-purple-900/30 text-purple-300 text-xs font-bold px-3 py-1 rounded-full border border-purple-500/30">
-                  ✅ Montagem Concluída
-                </span>
-              )}
+    <div className="space-y-8 p-6 max-w-2xl mx-auto bg-[#0a0a0a] min-h-screen luxury-scroll">
+      <header className="bg-[#111111] border border-[#D4AF37]/30 rounded-[2.5rem] p-10 shadow-2xl relative overflow-hidden animate-in fade-in duration-700">
+         <div className="absolute top-0 right-0 w-32 h-32 bg-[#D4AF37]/5 blur-3xl rounded-full" />
+         <div className="flex items-center gap-6 relative z-10">
+            <div className="w-16 h-16 bg-gradient-to-br from-[#D4AF37] to-[#b8952a] rounded-[22px] flex items-center justify-center text-black shadow-2xl">
+               <Navigation className="w-8 h-8" />
             </div>
-
-            <div className="grid grid-cols-3 gap-3 text-center">
-              <div className="rounded-xl p-3 border" style={{ background: '#1a1a1a', borderColor: 'rgba(255,255,255,0.05)' }}>
-                <Clock className="w-5 h-5 text-gray-500 mx-auto mb-1" />
-                <p className="text-[10px] text-gray-500 uppercase font-bold">Início</p>
-                <p className="text-sm font-bold text-white">{formatTime(activeTrip.started_at)}</p>
-              </div>
-              <div className="rounded-xl p-3 border" style={{ background: '#1a1a1a', borderColor: 'rgba(255,255,255,0.05)' }}>
-                <Route className="w-5 h-5 text-gray-500 mx-auto mb-1" />
-                <p className="text-[10px] text-gray-500 uppercase font-bold">Duração</p>
-                <p className="text-sm font-bold text-white">{calcDuration(activeTrip.started_at, null)}</p>
-              </div>
-              <div className="rounded-xl p-3 border" style={{ background: '#1a1a1a', borderColor: 'rgba(255,255,255,0.05)' }}>
-                <MapPin className="w-5 h-5 text-gray-500 mx-auto mb-1" />
-                <p className="text-[10px] text-gray-500 uppercase font-bold">GPS</p>
-                <p className="text-sm font-bold text-white">{locationCount} pts</p>
-              </div>
+            <div>
+               <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase leading-none mb-2">Terminal do <span className="text-[#D4AF37]">Colaborador</span></h2>
+               <p className="text-[#D4AF37] font-black uppercase tracking-[0.3em] text-[10px] italic flex items-center gap-3">
+                  <Shield className="w-3.5 h-3.5" /> ID: {employeeName.toUpperCase()}
+               </p>
             </div>
+         </div>
+      </header>
 
-            {activeTrip.description && (
-              <p className="mt-3 text-sm text-gray-300 rounded-lg p-3 border border-dashed border-gray-800" style={{ background: '#0a0a0a' }}>
-                📍 {activeTrip.description}
-              </p>
-            )}
-          </div>
+      {!activeTrip && (
+        <div className="bg-[#111111] border border-white/5 rounded-[3.5rem] p-12 shadow-2xl space-y-10 animate-in slide-in-from-bottom-6 duration-700">
+           <header>
+              <h3 className="text-xl font-black text-white italic tracking-tighter uppercase leading-none mb-3">Preparar <span className="text-[#D4AF37]">Nova Rota</span></h3>
+              <p className="text-gray-700 font-black uppercase tracking-widest text-[9px] italic flex items-center gap-2">Selecione o ativo e vincule a ordem de serviço</p>
+           </header>
 
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              onClick={() => setShowFuel(true)}
-              className="flex items-center justify-center gap-2 rounded-xl p-4 font-bold border transition-all active:scale-95"
-              style={{ background: '#1a1a1a', borderColor: 'rgba(249,115,22,0.3)', color: '#fdba74' }}
-            >
-              <Fuel className="w-5 h-5" />
-              Abastecimento
-            </button>
-
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
-              className="flex items-center justify-center gap-2 rounded-xl p-4 font-bold border transition-all active:scale-95 disabled:opacity-50"
-              style={{ background: '#1a1a1a', borderColor: 'rgba(37,99,235,0.3)', color: '#93c5fd' }}
-            >
-              <Camera className="w-5 h-5" />
-              {uploading ? 'Enviando...' : 'Foto'}
-            </button>
-            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={uploadPhoto} />
-
-            <button
-              onClick={() => setShowSOS(true)}
-              className="flex items-center justify-center gap-2 rounded-xl p-4 font-bold border transition-all active:scale-95"
-              style={{ background: '#1a1a1a', borderColor: 'rgba(220,38,38,0.3)', color: '#fca5a5' }}
-            >
-              <AlertTriangle className="w-5 h-5" />
-              Imprevisto
-            </button>
-
-            {!isDeliveryMode ? (
-              <button
-                onClick={setMontagemConcluida}
-                className="flex items-center justify-center gap-2 rounded-xl p-4 font-bold border transition-all active:scale-95"
-                style={{ background: '#1a1a1a', borderColor: 'rgba(147,51,234,0.3)', color: '#d8b4fe' }}
-              >
-                <PackageCheck className="w-5 h-5" />
-                Montagem
-              </button>
-            ) : (
-              <button
-                onClick={() => setShowSignaturePad(true)}
-                className="flex items-center justify-center gap-2 rounded-xl p-4 font-bold border transition-all active:scale-95"
-                style={{ background: '#1a1a1a', borderColor: 'rgba(79,70,229,0.3)', color: '#a5b4fc' }}
-              >
-                <CheckSquare className="w-5 h-5" />
-                {signatureUrl ? '✅ Assinatura' : 'Assinatura'}
-              </button>
-            )}
-          </div>
-
-          {/* Debug GPS Section */}
-          <div className="bg-slate-900 rounded-xl overflow-hidden border border-slate-800">
-            <button
-              onClick={() => setShowDebug(!showDebug)}
-              className="w-full flex items-center justify-between p-3 text-slate-400 hover:text-white transition-colors"
-            >
-              <div className="flex items-center gap-2 text-xs font-mono">
-                <Terminal className="w-4 h-4" />
-                <span>DEBUG GPS: {gpsTracker.isTracking() ? 'ATIVO' : 'PARADO'}</span>
-              </div>
-              <span className="text-[10px]">{showDebug ? 'ESCONDER' : 'MOSTRAR LOGS'}</span>
-            </button>
-            {showDebug && (
-              <div className="p-2 pt-0 max-h-48 overflow-y-auto font-mono text-[10px] space-y-1">
-                {gpsLogs.length === 0 ? (
-                  <p className="text-slate-600 italic p-2">Sem logs registrados ainda...</p>
-                ) : (
-                  gpsLogs.map((log, i) => (
-                    <div key={i} className={`border-l-2 pl-2 py-0.5 ${log.type === 'error' ? 'border-red-500 text-red-400' :
-                      log.type === 'success' ? 'border-green-500 text-green-400' :
-                        'border-blue-500 text-blue-300'
-                      }`}>
-                      <span className="text-slate-500 mr-1">[{log.timestamp}]</span>
-                      {log.message}
-                    </div>
-                  ))
-                )}
-                <button
-                  onClick={() => { gpsTracker.clearLogs(); setGpsLogs([]); }}
-                  className="w-full mt-2 text-slate-500 hover:text-slate-300 underline text-[9px]"
-                >
-                  Limpar Logs
-                </button>
-              </div>
-            )}
-          </div>
-
-          <ToolInventory employeeId={employeeId} />
-
-          <div className="rounded-xl overflow-hidden border shadow-sm" style={{ background: '#1a1a1a', borderColor: 'rgba(212,175,55,0.2)' }}>
-            <button
-              onClick={() => setShowDailyChecklist(!showDailyChecklist)}
-              className="w-full flex items-center justify-between p-4 hover:bg-black/20 transition-colors"
-            >
-              <div className="flex items-center gap-2">
-                <CheckSquare className="w-5 h-5" style={{ color: '#D4AF37' }} />
-                <span className="font-bold text-white">Checklist Diário</span>
-                <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: '#D4AF37', color: '#000' }}>
-                  {dailyChecklist.filter(c => c.checked).length}/{dailyChecklist.length}
-                </span>
-              </div>
-              <span className="text-gray-500">{showDailyChecklist ? '▲' : '▼'}</span>
-            </button>
-            {showDailyChecklist && (
-              <div className="border-t border-gray-800 divide-y divide-gray-800">
-                {dailyChecklist.map(item => (
-                  <button
-                    key={item.id}
-                    onClick={() => toggleCheckItem(item)}
-                    className="w-full flex items-start gap-4 p-4 text-left hover:bg-black/40 transition-colors group"
-                    style={{ background: item.checked ? 'rgba(34,197,94,0.05)' : 'transparent' }}
-                  >
-                    <div className={`mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${item.checked ? 'bg-green-500 border-green-500 scale-110' : 'border-gray-700 group-hover:border-gray-500'}`}>
-                      {item.checked && <span className="text-white text-[10px]">✓</span>}
-                    </div>
-                    <span className={`text-sm font-medium transition-all ${item.checked ? 'line-through text-gray-600' : 'text-gray-300'}`}>
-                      {item.label}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="rounded-xl overflow-hidden border shadow-sm" style={{ background: '#1a1a1a', borderColor: 'rgba(212,175,55,0.2)' }}>
-            <button
-              onClick={() => setShowDeliveryChecklist(!showDeliveryChecklist)}
-              className="w-full flex items-center justify-between p-4 hover:bg-black/20 transition-colors"
-            >
-              <div className="flex items-center gap-2">
-                <PackageCheck className="w-5 h-5" style={{ color: '#D4AF37' }} />
-                <span className="font-bold text-white">Checklist de Entrega</span>
-                <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: '#D4AF37', color: '#000' }}>
-                  {deliveryChecklist.filter(c => c.checked).length}/{deliveryChecklist.length}
-                </span>
-              </div>
-              <span className="text-gray-500">{showDeliveryChecklist ? '▲' : '▼'}</span>
-            </button>
-            {showDeliveryChecklist && (
-              <div className="border-t border-gray-800 divide-y divide-gray-800">
-                {deliveryChecklist.map(item => (
-                  <button
-                    key={item.id}
-                    onClick={() => item.label === 'Assinatura Digital do Cliente' ? setShowSignaturePad(true) : toggleCheckItem(item)}
-                    className="w-full flex items-start gap-4 p-4 text-left hover:bg-black/40 transition-colors group"
-                    style={{ background: item.checked ? 'rgba(34,197,94,0.05)' : 'transparent' }}
-                  >
-                    <div className={`mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${item.checked ? 'bg-green-500 border-green-500 scale-110' : 'border-gray-700 group-hover:border-gray-500'}`}>
-                      {item.checked && <span className="text-white text-[10px]">✓</span>}
-                    </div>
-                    <span className={`text-sm font-medium transition-all ${item.checked ? 'line-through text-gray-600' : 'text-gray-300'}`}>
-                      {item.label}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {tripPhotos.filter(p => p.description !== 'Assinatura do Cliente').length > 0 && (
-            <div className="bg-white border border-gray-200 rounded-xl p-4">
-              <h3 className="font-semibold mb-3 flex items-center gap-2">
-                <Image className="w-5 h-5 text-blue-600" />
-                Fotos da Viagem ({tripPhotos.filter(p => p.description !== 'Assinatura do Cliente').length})
-              </h3>
-              <div className="grid grid-cols-3 gap-2">
-                {tripPhotos
-                  .filter(p => p.description !== 'Assinatura do Cliente')
-                  .map(photo => (
-                    <a key={photo.id} href={photo.image_url} target="_blank" rel="noopener noreferrer">
-                      <img src={photo.image_url} alt="Foto da viagem" className="w-full h-20 object-cover rounded-lg border border-gray-200" />
-                    </a>
-                  ))}
-              </div>
-            </div>
-          )}
-
-          {signatureUrl && (
-            <div className="bg-white border border-gray-200 rounded-xl p-4">
-              <h3 className="font-semibold mb-3 flex items-center gap-2">
-                <CheckSquare className="w-5 h-5 text-green-600" />
-                Assinatura do Cliente
-              </h3>
-              <img src={signatureUrl} alt="Assinatura do cliente" className="max-h-24 border border-gray-200 rounded-lg bg-gray-50 p-2" />
-            </div>
-          )}
-
-          <button
-            onClick={() => { if (window.confirm('Finalizar a viagem do dia?')) endTrip(); }}
-            className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white rounded-xl p-4 font-bold text-lg transition-colors"
-          >
-            <Square className="w-6 h-6" />
-            Finalizar Viagem
-          </button>
-        </div>
-      ) : (
-        <div className="space-y-4" key="new-trip-form">
-
-          {/* Service Orders Card */}
-          {serviceOrders.length > 0 && (
-            <div className="rounded-xl p-5 shadow-lg border" style={{ background: '#111', borderColor: 'rgba(212,175,55,0.3)' }}>
-              <h3 className="font-bold mb-4 flex items-center gap-2" style={{ color: '#D4AF37' }}>
-                <ClipboardList className="w-5 h-5" />
-                Suas Ordens de Serviço ({serviceOrders.length})
-              </h3>
-              <div className="space-y-4">
-                {serviceOrders.map(os => {
-                  const priorityStyle: Record<string, string> = {
-                    baixa: 'bg-gray-800 text-gray-400 border-gray-700',
-                    normal: 'bg-blue-900/30 text-blue-300 border-blue-500/30',
-                    alta: 'bg-orange-900/30 text-orange-300 border-orange-500/30',
-                    urgente: 'bg-red-900/30 text-red-300 border-red-500/30',
-                  };
-                  const isSelected = activeServiceOrder?.id === os.id;
-                  return (
-                    <button
-                      key={os.id}
-                      onClick={() => setActiveServiceOrder(isSelected ? null : os)}
-                      className={`w-full text-left rounded-xl p-4 border transition-all active:scale-[0.98] ${
-                        isSelected
-                          ? 'shadow-[0_0_15px_rgba(212,175,55,0.15)] bg-black border-[#D4AF37]'
-                          : 'bg-[#1a1a1a] border-gray-800 hover:border-gray-600'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-2 mb-3">
-                        <div className="flex flex-col">
-                          <span className={`font-black text-xs uppercase tracking-wider ${isSelected ? 'text-[#D4AF37]' : 'text-gray-500'}`}>
-                            OS #{os.order_number}
-                          </span>
-                          {isSelected && <span className="text-[#D4AF37] text-[10px] font-bold mt-0.5 animate-pulse">✓ ATIVA PARA VIAGEM</span>}
-                        </div>
-                        <div className="flex gap-1">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${priorityStyle[os.priority] || 'bg-gray-800 text-gray-400'}`}>
-                            {os.priority.toUpperCase()}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      {os.clients && (
-                        <div className="flex items-center gap-2 text-sm font-bold text-white mb-1">
-                          <div className="w-6 h-6 rounded-full bg-gray-800 flex items-center justify-center">
-                            <User className="w-3.5 h-3.5 text-[#D4AF37]" />
-                          </div>
-                          {os.clients.name}
-                        </div>
-                      )}
-                      
-                      {os.clients?.address && (
-                        <div className="flex items-center gap-2 text-xs text-gray-500 mb-2 pl-8">
-                          <MapPin className="w-3 h-3" />
-                          {os.clients.address}
-                        </div>
-                      )}
-
-                      {os.description && (
-                        <p className="text-xs text-gray-400 pl-8 mb-3 line-clamp-1 italic">"{os.description}"</p>
-                      )}
-
-                      <div className="flex items-center justify-between pl-8 mt-2 border-t border-gray-800 pt-2">
-                        {os.estimated_date && (
-                          <div className="flex items-center gap-1.5 text-[10px] text-[#D4AF37] font-bold">
-                            <Clock className="w-3 h-3" />
-                            {new Date(os.estimated_date).toLocaleDateString('pt-BR')} {new Date(os.estimated_date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                          </div>
-                        )}
-                        {os.total_value ? (
-                          <div className="text-[10px] text-green-400 font-black">
-                            R$ {os.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                          </div>
-                        ) : null}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          <div className="rounded-xl p-6 border shadow-xl" style={{ background: '#1a1a1a', borderColor: 'rgba(212,175,55,0.4)' }}>
-            <h3 className="font-bold mb-5 flex items-center gap-2 text-white">
-              <Navigation className="w-6 h-6" style={{ color: '#D4AF37' }} />
-              Iniciar Nova Viagem
-            </h3>
-            <div className="mb-5">
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-2 tracking-widest pl-1">Veículo</label>
-              <div className="relative">
-                <select
-                  key={`vehicle-select-${vehicles.length}`}
-                  value={selectedVehicleId}
-                  onChange={e => setSelectedVehicleId(e.target.value)}
-                  className="w-full rounded-xl p-4 text-sm font-bold appearance-none transition-all focus:ring-2"
-                  style={{ background: '#2a2a2a', border: '1px solid rgba(212,175,55,0.2)', color: '#fff', focusRingColor: '#D4AF37' }}
-                >
-                  <option value="" style={{ background: '#2a2a2a' }}>Selecione um veículo...</option>
-                  {vehicles.map(v => (
-                    <option key={v.id} value={v.id} style={{ background: '#2a2a2a' }}>{v.model} — {v.plate}</option>
-                  ))}
-                </select>
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500 text-xs">▼</div>
-              </div>
-            </div>
-            <button
-              onClick={() => startTrip()}
-              disabled={!selectedVehicleId}
-              className="w-full flex items-center justify-center gap-3 text-black rounded-xl p-4 font-black text-lg transition-all active:scale-95 disabled:opacity-30 disabled:grayscale"
-              style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583)' }}
-            >
-              <Play className="w-6 h-6 fill-black" />
-              INICIAR VIAGEM
-            </button>
-          </div>
-
-          {recentTrips.length > 0 && (
-            <div className="rounded-xl p-5 border" style={{ background: '#111', borderColor: 'rgba(255,255,255,0.05)' }}>
-              <h3 className="font-bold mb-4 flex items-center gap-2 text-gray-400">
-                <Clock className="w-5 h-5" />
-                Viagens Recentes
-              </h3>
+           <div className="space-y-8">
               <div className="space-y-3">
-                {recentTrips.map(trip => (
-                  <div key={trip.id} className="flex items-center justify-between p-4 rounded-xl border border-gray-900" style={{ background: '#1a1a1a' }}>
-                    <div>
-                      <p className="text-sm font-bold text-white">{formatTime(trip.started_at)}</p>
-                      {trip.description && <p className="text-xs text-gray-500 mt-1">{trip.description}</p>}
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-gray-400 font-mono mb-1">{calcDuration(trip.started_at, trip.ended_at)}</p>
-                      <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border" style={{ background: 'rgba(34,197,94,0.1)', color: '#4ade80', borderColor: 'rgba(34,197,94,0.3)' }}>Concluída</span>
-                    </div>
-                  </div>
-                ))}
+                 <label className="text-[10px] font-black text-gray-700 uppercase tracking-widest ml-1 italic">Vetor Logístico (Veículo)</label>
+                 <select
+                   value={selectedVehicleId}
+                   onChange={e => setSelectedVehicleId(e.target.value)}
+                   className="w-full h-16 bg-black border border-white/10 rounded-2xl px-6 text-white text-xs font-black italic tracking-widest outline-none focus:border-[#D4AF37]/40 transition-all appearance-none cursor-pointer"
+                 >
+                   <option value="" className="bg-black">SELECIONE O VEÍCULO...</option>
+                   {vehicles.map(v => (<option key={v.id} value={v.id} className="bg-black">{v.plate} — {v.model.toUpperCase()}</option>))}
+                 </select>
               </div>
-            </div>
-          )}
-        </div>
-      )}
 
-      {showSOS && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center p-4">
-          <div className="rounded-2xl w-full max-w-md p-5 space-y-4 shadow-2xl" style={{ background: '#1a1a1a', border: '1px solid rgba(212,175,55,0.3)' }}>
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-lg flex items-center gap-2 text-white">
-                <AlertTriangle className="w-5 h-5 text-red-400" />
-                Reportar Imprevisto
-              </h3>
-              <button onClick={() => setShowSOS(false)} className="text-gray-500 hover:text-white transition-colors">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">Tipo</label>
-              <select
-                value={sosType}
-                onChange={e => setSosType(e.target.value)}
-                className="w-full rounded-xl p-3 text-sm font-medium appearance-none"
-                style={{ background: '#2a2a2a', border: '1px solid rgba(212,175,55,0.3)', color: '#fff' }}
+              {serviceOrders.length > 0 && (
+                <div className="space-y-3">
+                   <label className="text-[10px] font-black text-gray-700 uppercase tracking-widest ml-1 italic">Ordem de Serviço Proativa</label>
+                   <div className="space-y-4">
+                      {serviceOrders.map(os => (
+                        <button
+                          key={os.id}
+                          onClick={() => setActiveServiceOrder(os)}
+                          className={`w-full p-8 rounded-[2rem] border transition-all text-left relative overflow-hidden group ${activeServiceOrder?.id === os.id ? 'bg-[#D4AF37]/5 border-[#D4AF37]/30' : 'bg-black/40 border-white/5 hover:border-white/20'}`}
+                        >
+                           <div className="flex justify-between items-start mb-4">
+                              <span className="text-[9px] font-black uppercase tracking-widest text-gray-600 italic">OS #{os.order_number}</span>
+                              <div className={`w-3 h-3 rounded-full ${os.priority === 'alta' ? 'bg-red-500 animate-pulse' : 'bg-[#D4AF37]'}`} />
+                           </div>
+                           <p className="text-lg font-black text-white italic tracking-tighter uppercase leading-tight group-hover:text-[#D4AF37] transition-colors mb-2">{os.clients?.name || 'Cliente de Campo'}</p>
+                           <p className="text-[10px] text-gray-700 font-bold italic line-clamp-1">{os.clients?.address || 'Endereço não informado'}</p>
+                           {activeServiceOrder?.id === os.id && <div className="absolute right-6 top-1/2 -translate-y-1/2 text-[#D4AF37]"><CheckSquare className="w-8 h-8 opacity-20" /></div>}
+                        </button>
+                      ))}
+                   </div>
+                </div>
+              )}
+
+              <button
+                onClick={startTrip}
+                className="w-full h-24 bg-gradient-to-r from-[#D4AF37] to-[#b8952a] text-black rounded-[2.5rem] font-black text-[12px] uppercase tracking-[0.4em] hover:scale-105 active:scale-95 transition-all shadow-2xl italic flex items-center justify-center gap-5"
               >
-                <option value="Peça danificada" style={{ background: '#2a2a2a' }}>Peça danificada</option>
-                <option value="Acidente" style={{ background: '#2a2a2a' }}>Acidente</option>
-                <option value="Problema com veículo" style={{ background: '#2a2a2a' }}>Problema com veículo</option>
-                <option value="Problema com cliente" style={{ background: '#2a2a2a' }}>Problema com cliente</option>
-                <option value="Atraso" style={{ background: '#2a2a2a' }}>Atraso</option>
-                <option value="Outro" style={{ background: '#2a2a2a' }}>Outro</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">Descrição</label>
-              <textarea
-                value={sosDesc}
-                onChange={e => setSosDesc(e.target.value)}
-                placeholder="Descreva o imprevisto..."
-                rows={3}
-                className="w-full rounded-xl p-3 text-sm resize-none text-white placeholder-gray-600"
-                style={{ background: '#2a2a2a', border: '1px solid rgba(212,175,55,0.3)' }}
-              />
-            </div>
-            <button
-              onClick={sendSOS}
-              disabled={sosSending || !sosDesc.trim()}
-              className="w-full flex items-center justify-center gap-2 disabled:opacity-50 text-white rounded-xl p-3 font-bold transition-colors"
-              style={{ background: sosSending || !sosDesc.trim() ? '#333' : 'linear-gradient(135deg, #dc2626, #991b1b)' }}
-            >
-              <Send className="w-4 h-4" />
-              {sosSending ? 'Enviando...' : 'Enviar Reporte'}
-            </button>
-          </div>
+                <Play className="w-8 h-8" /> EFETIVAR INÍCIO DE ROTA
+              </button>
+           </div>
         </div>
       )}
 
+      {activeTrip && (
+        <div className="space-y-8 animate-in slide-in-from-bottom-8 duration-700">
+           <div className="bg-[#111111] border border-green-500/30 rounded-[3.5rem] p-10 shadow-2xl relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/5 blur-3xl rounded-full" />
+              <div className="flex justify-between items-start mb-10">
+                 <div className="flex items-center gap-4">
+                    <div className="w-4 h-4 bg-green-500 rounded-full animate-pulse shadow-[0_0_15px_#22c55e]" />
+                    <span className="text-[11px] font-black text-white uppercase tracking-widest italic">Rastreamento Ativo</span>
+                 </div>
+                 <div className="text-right">
+                    <p className="text-[9px] text-gray-700 font-black uppercase italic tracking-widest mb-1">Status Montagem</p>
+                    <span className={`text-[10px] font-black uppercase tracking-widest italic px-4 py-1 rounded-full border ${isDeliveryMode ? 'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/20' : 'bg-blue-500/10 text-blue-500 border-blue-500/20'}`}>
+                       {isDeliveryMode ? 'MASTER CONCLUÍDO' : 'EM EXECUÇÃO'}
+                    </span>
+                 </div>
+              </div>
 
-      {showFuel && activeTrip && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-end sm:items-center justify-center p-4">
-          <div className="rounded-2xl w-full max-w-md p-6 shadow-2xl border" style={{ background: '#1a1a1a', borderColor: 'rgba(212,175,55,0.3)' }}>
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="font-bold text-lg flex items-center gap-2 text-white">
-                <Fuel className="w-5 h-5" style={{ color: '#D4AF37' }} />
-                Registrar Abastecimento
-              </h3>
-              <button onClick={() => setShowFuel(false)} className="text-gray-500 hover:text-white transition-colors">
-                <X className="w-5 h-5" />
+              <div className="grid grid-cols-3 gap-6 mb-10">
+                 <div className="bg-black/40 border border-white/5 p-6 rounded-[2rem] text-center">
+                    <Clock className="w-6 h-6 text-gray-700 mx-auto mb-3" />
+                    <p className="text-[9px] text-gray-800 font-black uppercase italic mb-1">Início</p>
+                    <p className="text-sm font-black text-white italic tabular-nums">{formatTime(activeTrip.started_at)}</p>
+                 </div>
+                 <div className="bg-black/40 border border-white/5 p-6 rounded-[2rem] text-center">
+                    <Route className="w-6 h-6 text-gray-700 mx-auto mb-3" />
+                    <p className="text-[9px] text-gray-800 font-black uppercase italic mb-1">Voo</p>
+                    <p className="text-sm font-black text-white italic tabular-nums">{calcDuration(activeTrip.started_at, null)}</p>
+                 </div>
+                 <div className="bg-black/40 border border-white/5 p-6 rounded-[2rem] text-center">
+                    <MapPin className="w-6 h-6 text-gray-700 mx-auto mb-3" />
+                    <p className="text-[9px] text-gray-800 font-black uppercase italic mb-1">Sinais</p>
+                    <p className="text-sm font-black text-[#D4AF37] italic tabular-nums">{locationCount}</p>
+                 </div>
+              </div>
+
+              {activeTrip.description && (
+                <div className="p-8 bg-black/80 border border-white/5 rounded-[2rem] relative overflow-hidden">
+                   <div className="absolute top-0 right-0 p-4 opacity-10"><Shield className="w-12 h-12" /></div>
+                   <p className="text-[9px] text-[#D4AF37] font-black uppercase tracking-widest italic mb-3">Detalhes Alistados</p>
+                   <p className="text-sm text-gray-300 font-medium italic leading-relaxed">{activeTrip.description}</p>
+                </div>
+              )}
+           </div>
+
+           <div className="grid grid-cols-2 gap-4">
+              <button onClick={() => setShowFuel(true)} className="h-24 bg-[#111111] border border-[#D4AF37]/20 rounded-3xl flex flex-col items-center justify-center gap-2 group hover:border-[#D4AF37] transition-all">
+                 <Fuel className="w-7 h-7 text-[#D4AF37]" />
+                 <span className="text-[10px] font-black text-white uppercase italic tracking-widest">ENERGIA</span>
               </button>
-            </div>
-            <FuelLogForm employeeId={employeeId} tripId={activeTrip.id} onClose={() => setShowFuel(false)} />
-          </div>
+              <button onClick={() => fileInputRef.current?.click()} className="h-24 bg-[#111111] border border-blue-500/20 rounded-3xl flex flex-col items-center justify-center gap-2 group hover:border-blue-500 transition-all">
+                 <Camera className="w-7 h-7 text-blue-500" />
+                 <span className="text-[10px] font-black text-white uppercase italic tracking-widest">SENSOR</span>
+              </button>
+              <button onClick={() => setShowSOS(true)} className="h-24 bg-[#111111] border border-red-500/20 rounded-3xl flex flex-col items-center justify-center gap-2 group hover:border-red-500 transition-all">
+                 <AlertTriangle className="w-7 h-7 text-red-500" />
+                 <span className="text-[10px] font-black text-white uppercase italic tracking-widest">ALERTA</span>
+              </button>
+              <button onClick={isDeliveryMode ? () => setShowSignaturePad(true) : () => setMontagemConcluida()} className={`h-24 bg-[#111111] border rounded-3xl flex flex-col items-center justify-center gap-2 group transition-all ${isDeliveryMode ? 'border-purple-500/20 hover:border-purple-500' : 'border-[#D4AF37]/20 hover:border-[#D4AF37]'}`}>
+                 {isDeliveryMode ? <PackageCheck className="w-7 h-7 text-purple-500" /> : <Shield className="w-7 h-7 text-[#D4AF37]" />}
+                 <span className="text-[10px] font-black text-white uppercase italic tracking-widest">{isDeliveryMode ? 'ASSINAR' : 'EFETIVAR'}</span>
+              </button>
+              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={uploadPhoto} />
+           </div>
+
+           {/* Checklist Sections */}
+           <div className="bg-[#111111] border border-white/5 rounded-[3rem] overflow-hidden shadow-2xl">
+              <button onClick={() => setShowDailyChecklist(!showDailyChecklist)} className="w-full h-20 px-10 flex items-center justify-between group hover:bg-white/5 transition-all">
+                 <div className="flex items-center gap-5">
+                    <CheckSquare className="w-6 h-6 text-[#D4AF37]" />
+                    <span className="text-sm font-black text-white uppercase italic tracking-widest">Protocolo Diário de Qualidade</span>
+                 </div>
+                 <ChevronDown className={`w-6 h-6 text-gray-700 transition-transform duration-500 ${showDailyChecklist ? '' : '-rotate-90'}`} />
+              </button>
+              {showDailyChecklist && (
+                <div className="p-10 pt-0 space-y-4 animate-in slide-in-from-top-6 duration-500">
+                   {dailyChecklist.map(item => (
+                     <button key={item.id} onClick={() => toggleCheckItem(item)} className="w-full flex items-center gap-6 p-6 bg-black/40 border border-white/5 rounded-[1.8rem] transition-all group/check hover:border-[#D4AF37]/30 text-left">
+                        <div className={`w-8 h-8 rounded-xl border-2 flex items-center justify-center transition-all duration-300 ${item.checked ? 'bg-[#D4AF37] border-[#D4AF37] text-black shadow-[0_0_15px_#D4AF37]' : 'border-white/10 text-transparent'}`}><CheckSquare className="w-5 h-5" /></div>
+                        <span className={`text-[11px] font-bold italic transition-colors ${item.checked ? 'text-gray-500' : 'text-white'}`}>{item.label}</span>
+                     </button>
+                   ))}
+                </div>
+              )}
+           </div>
+
+           <div className="bg-[#111111] border border-white/5 rounded-[3rem] overflow-hidden shadow-2xl">
+              <button onClick={() => setShowDeliveryChecklist(!showDeliveryChecklist)} className="w-full h-20 px-10 flex items-center justify-between group hover:bg-white/5 transition-all">
+                 <div className="flex items-center gap-5">
+                    <Zap className="w-6 h-6 text-purple-500" />
+                    <span className="text-sm font-black text-white uppercase italic tracking-widest">Standard de Entrega Premium</span>
+                 </div>
+                 <ChevronDown className={`w-6 h-6 text-gray-700 transition-transform duration-500 ${showDeliveryChecklist ? '' : '-rotate-90'}`} />
+              </button>
+              {showDeliveryChecklist && (
+                <div className="p-10 pt-0 space-y-4 animate-in slide-in-from-top-6 duration-500">
+                   {deliveryChecklist.map(item => (
+                     <button key={item.id} onClick={() => toggleCheckItem(item)} className="w-full flex items-center gap-6 p-6 bg-black/40 border border-white/5 rounded-[1.8rem] transition-all group/check hover:border-purple-500/30 text-left">
+                        <div className={`w-8 h-8 rounded-xl border-2 flex items-center justify-center transition-all duration-300 ${item.checked ? 'bg-purple-500 border-purple-500 text-white shadow-[0_0_15px_#a855f7]' : 'border-white/10 text-transparent'}`}><CheckSquare className="w-5 h-5" /></div>
+                        <span className={`text-[11px] font-bold italic transition-colors ${item.checked ? 'text-gray-500' : 'text-white'}`}>{item.label}</span>
+                     </button>
+                   ))}
+                </div>
+              )}
+           </div>
+
+           <button
+             onClick={endTrip}
+             className="w-full h-24 bg-red-600 hover:bg-red-700 text-white rounded-[2.5rem] font-black text-[12px] uppercase tracking-[0.4em] transition-all shadow-2xl italic flex items-center justify-center gap-5"
+           >
+             <Square className="w-8 h-8 fill-current" /> FINALIZAR OPERAÇÃO DO DIA
+           </button>
+        </div>
+      )}
+
+      {/* Modals with premium styling */}
+      {showFuel && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[100] flex items-center justify-center p-6 animate-in fade-in duration-500">
+           <div className="w-full max-w-xl max-h-[90vh] overflow-y-auto luxury-scroll relative bg-[#0a0a0a] rounded-[4rem] border border-white/5 p-4 shadow-2xl">
+              <button onClick={() => setShowFuel(false)} className="absolute top-10 right-10 w-12 h-12 bg-white/5 rounded-full flex items-center justify-center text-gray-600 hover:text-white transition-all z-20"><X className="w-6 h-6" /></button>
+              <div className="p-8">
+                <FuelLogForm employeeId={resolvedEmployeeId} tripId={activeTrip?.id} vehicleId={activeTrip?.vehicle_id} onClose={() => setShowFuel(false)} />
+              </div>
+           </div>
         </div>
       )}
 
       {showSignaturePad && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-          <div className="rounded-2xl w-full max-w-md p-6 shadow-2xl border" style={{ background: '#1a1a1a', borderColor: 'rgba(212,175,55,0.3)' }}>
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="font-bold text-lg text-white">Assinatura do Cliente</h3>
-              <button onClick={() => setShowSignaturePad(false)} className="text-gray-500 hover:text-white transition-colors">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="bg-white rounded-lg p-2 overflow-hidden">
-              <SignaturePad
-                onSave={saveSignature}
-                onClear={() => setShowSignaturePad(false)}
-              />
-            </div>
-            <p className="mt-3 text-[10px] text-gray-500 text-center uppercase font-bold tracking-widest">A ASSINATURA SERÁ VINCULADA À VIAGEM ATUAL</p>
-          </div>
+        <div className="fixed inset-0 bg-black/95 backdrop-blur-3xl z-[100] flex flex-col items-center justify-center p-6 animate-in fade-in duration-500">
+           <div className="w-full max-w-2xl bg-[#111111] border border-[#D4AF37]/30 rounded-[4rem] p-12 shadow-2xl relative">
+              <button onClick={() => setShowSignaturePad(false)} className="absolute -top-6 -right-6 w-16 h-16 bg-[#D4AF37] text-black rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-all z-20"><X className="w-8 h-8" /></button>
+              <header className="mb-10 text-center">
+                 <p className="text-[10px] text-[#D4AF37] font-black uppercase tracking-[0.5em] italic mb-4">Autenticação Biográfica</p>
+                 <h3 className="text-3xl font-black text-white italic tracking-tighter uppercase leading-none">Coleta de Assinatura</h3>
+              </header>
+              <div className="bg-white rounded-[2rem] p-4 overflow-hidden shadow-inner">
+                <SignaturePad onSave={saveSignature} />
+              </div>
+           </div>
+        </div>
+      )}
+
+      {showSOS && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[100] flex items-center justify-center p-6 animate-in fade-in duration-500">
+           <div className="w-full max-w-xl bg-[#111111] border border-red-500/30 rounded-[3.5rem] p-12 shadow-2xl relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-red-500/5 blur-[100px] rounded-full translate-x-1/2 -translate-y-1/2" />
+              <div className="flex items-center justify-between mb-12">
+                <h3 className="text-2xl font-black text-white italic tracking-tighter uppercase flex items-center gap-5">
+                  <div className="w-12 h-12 rounded-[18px] bg-red-600 text-white flex items-center justify-center shadow-lg animate-pulse"><AlertTriangle className="w-7 h-7 fill-current" /></div>
+                  Relatório de Crise
+                </h3>
+                <button onClick={() => setShowSOS(false)} className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center text-gray-600 hover:text-white transition-all"><X className="w-6 h-6" /></button>
+              </div>
+
+              <div className="space-y-8">
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-gray-700 uppercase tracking-widest ml-1 italic">Natureza da Ocorrência</label>
+                  <select
+                    value={sosType}
+                    onChange={e => setSosType(e.target.value)}
+                    className="w-full h-16 bg-black border border-white/5 rounded-2xl px-6 text-white text-[10px] font-black italic tracking-widest outline-none focus:border-red-500/40 transition-all appearance-none cursor-pointer"
+                  >
+                    <option className="bg-black">PEÇA DANIFICADA</option>
+                    <option className="bg-black">ATRASO LOGÍSTICO</option>
+                    <option className="bg-black">PENDÊNCIA TÉCNICA</option>
+                    <option className="bg-black">SINISTRO VEICULAR</option>
+                    <option className="bg-black">OUTROS</option>
+                  </select>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-gray-700 uppercase tracking-widest ml-1 italic">Memorial Descritivo</label>
+                  <textarea
+                    value={sosDesc}
+                    onChange={e => setSosDesc(e.target.value)}
+                    placeholder="DESCREVA DETALHADAMENTE A SITUAÇÃO PARA O COMANDO CENTRAL..."
+                    className="w-full h-40 bg-black border border-white/5 rounded-3xl p-6 text-white text-xs font-medium italic outline-none focus:border-red-500/40 transition-all shadow-inner uppercase resize-none"
+                  />
+                </div>
+
+                <button
+                  onClick={sendSOS}
+                  disabled={sosSending || !sosDesc.trim()}
+                  className="w-full h-20 bg-red-600 text-white rounded-[2rem] font-black text-xs uppercase tracking-[0.4em] hover:scale-105 active:scale-95 transition-all shadow-2xl italic mt-6 flex items-center justify-center gap-4 disabled:opacity-50"
+                >
+                  {sosSending ? 'PROCESSANDO...' : 'TRANSMITIR ALERTA'}
+                </button>
+              </div>
+           </div>
         </div>
       )}
     </div>
   );
 }
-

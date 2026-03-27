@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import {
-  Clock, UserPlus, Play, Square, Calendar, DollarSign, Users, Trash2, Edit2, Save, X, Plus, Minus, MessageCircle, Mail, Key, Eye, EyeOff
+  Clock, UserPlus, Play, Square, Calendar, DollarSign, Users, Trash2, Edit2, Save, X, Plus, Minus, MessageCircle, Mail, Key, Eye, EyeOff, Shield, Zap, TrendingUp, Activity, Search
 } from 'lucide-react';
 
 interface Employee {
@@ -50,13 +50,11 @@ export default function TimeTrackingPanel() {
   const [period, setPeriod] = useState<Period>('month');
   const [loading, setLoading] = useState(true);
 
-  // Change password modal
   const [passwordEmp, setPasswordEmp] = useState<Employee | null>(null);
   const [changePassword, setChangePassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
 
-  // Adjustment form
   const [showAdjForm, setShowAdjForm] = useState(false);
   const [adjEmployeeId, setAdjEmployeeId] = useState('');
   const [adjType, setAdjType] = useState<'overtime' | 'advance' | 'fuel_allowance' | 'meal_allowance'>('overtime');
@@ -64,9 +62,7 @@ export default function TimeTrackingPanel() {
   const [adjAmount, setAdjAmount] = useState('');
   const [adjHours, setAdjHours] = useState('');
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
     setLoading(true);
@@ -84,76 +80,37 @@ export default function TimeTrackingPanel() {
   const addEmployee = async () => {
     if (!newName.trim()) return;
     const { error } = await supabase.from('employees').insert({
-      name: newName.trim(),
-      role: newRole.trim() || null,
-      phone: newPhone.trim() || null,
-      hourly_rate: parseFloat(hourlyRate) || 15,
-      email: newEmail.trim() || null,
-      password: newPassword.trim() || null,
+      name: newName.trim(), role: newRole.trim() || null, phone: newPhone.trim() || null,
+      hourly_rate: parseFloat(hourlyRate) || 15, email: newEmail.trim() || null, password: newPassword.trim() || null,
     });
-    if (error) {
-      toast({ title: '❌ Erro', description: error.message, variant: 'destructive' });
-    } else {
-      toast({ title: '✅ Funcionário adicionado' });
-      setNewName(''); setNewRole(''); setNewPhone(''); setNewEmail(''); setNewPassword('');
-      fetchData();
-    }
-  };
-
-  const removeEmployee = async (id: string) => {
-    await supabase.from('employees').update({ active: false }).eq('id', id);
-    toast({ title: '🗑️ Funcionário desativado' });
-    fetchData();
+    if (error) toast({ title: '❌ Erro', description: error.message, variant: 'destructive' });
+    else { toast({ title: '✅ Sucesso!' }); setNewName(''); setNewRole(''); setNewPhone(''); setNewEmail(''); setNewPassword(''); fetchData(); }
   };
 
   const handleChangePassword = async () => {
-    if (!passwordEmp || changePassword.length < 4) {
-      toast({ title: '⚠️ Senha deve ter pelo menos 4 caracteres', variant: 'destructive' });
-      return;
-    }
+    if (!passwordEmp || changePassword.length < 4) return toast({ title: '⚠️ Mínimo 4 caracteres', variant: 'destructive' });
     setSavingPassword(true);
     const { error } = await supabase.from('employees').update({ password: changePassword }).eq('id', passwordEmp.id);
     setSavingPassword(false);
-    if (error) {
-      toast({ title: '❌ Erro ao alterar senha', description: error.message, variant: 'destructive' });
-    } else {
-      toast({ title: '✅ Senha alterada!', description: `Senha de ${passwordEmp.name} atualizada.` });
-      setPasswordEmp(null);
-      setChangePassword('');
-    }
+    if (error) toast({ title: '❌ Erro', description: error.message, variant: 'destructive' });
+    else { toast({ title: '✅ Senha Atualizada!' }); setPasswordEmp(null); setChangePassword(''); }
   };
 
   const clockIn = async (employeeId: string) => {
-    const { error } = await supabase.from('time_entries').insert({
-      employee_id: employeeId,
-    });
-    if (error) {
-      toast({ title: '❌ Erro', description: error.message, variant: 'destructive' });
-    } else {
-      toast({ title: '✅ Entrada registrada!' });
-      fetchData();
-    }
+    const { error } = await supabase.from('time_entries').insert({ employee_id: employeeId });
+    if (error) toast({ title: '❌ Erro', description: error.message, variant: 'destructive' });
+    else { toast({ title: '✅ Entrada Registrada!' }); fetchData(); }
   };
 
   const clockOut = async (entryId: string) => {
-    const { error } = await supabase.from('time_entries').update({
-      clock_out: new Date().toISOString(),
-    }).eq('id', entryId);
-    if (error) {
-      toast({ title: '❌ Erro', description: error.message, variant: 'destructive' });
-    } else {
-      toast({ title: '✅ Saída registrada!' });
-      fetchData();
-    }
+    const { error } = await supabase.from('time_entries').update({ clock_out: new Date().toISOString() }).eq('id', entryId);
+    if (error) toast({ title: '❌ Erro', description: error.message, variant: 'destructive' });
+    else { toast({ title: '✅ Saída Registrada!' }); fetchData(); }
   };
 
-  const getOpenEntry = (employeeId: string) =>
-    timeEntries.find(e => e.employee_id === employeeId && !e.clock_out);
-
+  const getOpenEntry = (employeeId: string) => timeEntries.find(e => e.employee_id === employeeId && !e.clock_out);
   const getPeriodDates = (): { start: Date; end: Date } => {
-    const now = new Date();
-    const end = new Date(now);
-    const start = new Date(now);
+    const now = new Date(); const end = new Date(now); const start = new Date(now);
     if (period === 'week') start.setDate(now.getDate() - 7);
     else if (period === 'biweekly') start.setDate(now.getDate() - 15);
     else start.setDate(now.getDate() - 30);
@@ -162,548 +119,336 @@ export default function TimeTrackingPanel() {
 
   const calcHours = (employeeId: string): number => {
     const { start, end } = getPeriodDates();
-    return timeEntries
-      .filter(e => e.employee_id === employeeId && e.clock_out)
-      .filter(e => new Date(e.clock_in) >= start && new Date(e.clock_in) <= end)
-      .reduce((sum, e) => {
-        const diff = (new Date(e.clock_out!).getTime() - new Date(e.clock_in).getTime()) / 3600000;
-        return sum + diff;
-      }, 0);
+    return timeEntries.filter(e => e.employee_id === employeeId && e.clock_out && new Date(e.clock_in) >= start && new Date(e.clock_in) <= end)
+      .reduce((sum, e) => sum + (new Date(e.clock_out!).getTime() - new Date(e.clock_in).getTime()) / 3600000, 0);
   };
-
-  const formatTime = (iso: string) => {
-    const d = new Date(iso);
-    return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-  };
-
-  const tabClass = (t: string) =>
-    `px-6 py-3 rounded-xl font-bold text-sm transition-all ${tab === t ? 'bg-amber-500 text-white shadow-lg' : 'bg-white text-gray-600 hover:bg-gray-100'}`;
 
   const getEmployeeAdjustments = (employeeId: string) => {
     const { start, end } = getPeriodDates();
-    return adjustments.filter(a =>
-      a.employee_id === employeeId &&
-      new Date(a.reference_date) >= start &&
-      new Date(a.reference_date) <= end
-    );
+    return adjustments.filter(a => a.employee_id === employeeId && new Date(a.reference_date) >= start && new Date(a.reference_date) <= end);
   };
 
-  const calcOvertime = (employeeId: string) => {
-    return getEmployeeAdjustments(employeeId).filter(a => a.type === 'overtime').reduce((sum, a) => sum + Number(a.amount), 0);
-  };
-
-  const calcDeductions = (employeeId: string) => {
-    return getEmployeeAdjustments(employeeId).filter(a => a.type === 'advance').reduce((sum, a) => sum + Number(a.amount), 0);
-  };
-
-  const calcFuelAllowance = (employeeId: string) => {
-    return getEmployeeAdjustments(employeeId).filter(a => a.type === 'fuel_allowance').reduce((sum, a) => sum + Number(a.amount), 0);
-  };
-
-  const calcMealAllowance = (employeeId: string) => {
-    return getEmployeeAdjustments(employeeId).filter(a => a.type === 'meal_allowance').reduce((sum, a) => sum + Number(a.amount), 0);
-  };
+  const calcAdjValue = (employeeId: string, type: string) => getEmployeeAdjustments(employeeId).filter(a => a.type === type).reduce((sum, a) => sum + Number(a.amount), 0);
 
   const addAdjustment = async () => {
-    if (!adjEmployeeId || !adjAmount) {
-      toast({ title: '⚠️ Preencha os campos', variant: 'destructive' });
-      return;
-    }
+    if (!adjEmployeeId || !adjAmount) return toast({ title: '⚠️ Preencha os campos', variant: 'destructive' });
     const { error } = await supabase.from('employee_adjustments').insert({
-      employee_id: adjEmployeeId,
-      type: adjType,
-      description: adjDescription.trim() || null,
-      amount: parseFloat(adjAmount) || 0,
-      hours: parseFloat(adjHours) || 0,
-      reference_date: new Date().toISOString().split('T')[0],
+      employee_id: adjEmployeeId, type: adjType, description: adjDescription.trim() || null,
+      amount: parseFloat(adjAmount) || 0, hours: parseFloat(adjHours) || 0, reference_date: new Date().toISOString().split('T')[0],
     });
-    if (error) {
-      toast({ title: '❌ Erro', description: error.message, variant: 'destructive' });
-    } else {
-      toast({ title: '✅ Lançamento adicionado!' });
-      setShowAdjForm(false);
-      setAdjDescription('');
-      setAdjAmount('');
-      setAdjHours('');
-      fetchData();
-    }
+    if (error) toast({ title: '❌ Erro', description: error.message, variant: 'destructive' });
+    else { toast({ title: '✅ Lançamento Efetivado!' }); setShowAdjForm(false); setAdjDescription(''); setAdjAmount(''); setAdjHours(''); fetchData(); }
   };
 
-  const deleteAdjustment = async (id: string) => {
-    await supabase.from('employee_adjustments').delete().eq('id', id);
-    toast({ title: '🗑️ Lançamento removido' });
-    fetchData();
-  };
+  const formatTime = (iso: string) => new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 
-  const buildPayslipText = (emp: Employee) => {
-    const hours = calcHours(emp.id);
-    const base = hours * emp.hourly_rate;
-    const overtime = calcOvertime(emp.id);
-    const fuelAllowance = calcFuelAllowance(emp.id);
-    const deductions = calcDeductions(emp.id);
-    const total = base + overtime + fuelAllowance - deductions;
-    const periodLabel = period === 'week' ? 'Semana' : period === 'biweekly' ? 'Quinzena' : 'Mês';
-    return `*SD Móveis Projetados - Contracheque*\n\n` +
-      `👤 *${emp.name}*\n` +
-      `📋 Cargo: ${emp.role || '-'}\n` +
-      `📅 Período: ${periodLabel}\n\n` +
-      `⏱ Horas trabalhadas: ${hours.toFixed(1)}h\n` +
-      `💰 Valor/hora: R$ ${emp.hourly_rate.toFixed(2)}\n` +
-      `💵 Base: R$ ${base.toFixed(2)}\n` +
-      (overtime > 0 ? `✅ Horas Extra: +R$ ${overtime.toFixed(2)}\n` : '') +
-      (fuelAllowance > 0 ? `⛽ Vale Combustível: +R$ ${fuelAllowance.toFixed(2)}\n` : '') +
-      (deductions > 0 ? `❌ Adiantamentos: -R$ ${deductions.toFixed(2)}\n` : '') +
-      `\n*💰 Total Líquido: R$ ${total.toFixed(2)}*`;
-  };
-
-  const sendViaWhatsApp = (emp: Employee) => {
-    if (!emp.phone) {
-      toast({ title: '⚠️ Sem telefone', description: `${emp.name} não tem telefone cadastrado.`, variant: 'destructive' });
-      return;
-    }
-    const phone = emp.phone.replace(/\D/g, '');
-    const fullPhone = phone.startsWith('55') ? phone : `55${phone}`;
-    const text = encodeURIComponent(buildPayslipText(emp));
-    window.open(`https://wa.me/${fullPhone}?text=${text}`, '_blank');
-  };
-
-  const sendViaEmail = (emp: Employee) => {
-    const periodLabel = period === 'week' ? 'Semana' : period === 'biweekly' ? 'Quinzena' : 'Mês';
-    const subject = encodeURIComponent(`Contracheque - ${periodLabel} - SD Móveis Projetados`);
-    const body = encodeURIComponent(buildPayslipText(emp).replace(/\*/g, ''));
-    window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
-    toast({ title: '📧 Email', description: 'Cliente de e-mail aberto. Adicione o destinatário.' });
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <Clock className="w-8 h-8 text-amber-500 animate-spin" />
-      </div>
-    );
-  }
+  if (loading) return (
+     <div className="flex flex-col items-center justify-center p-20 bg-[#0a0a0a] min-h-screen">
+        <div className="w-16 h-16 border-4 border-[#D4AF37]/20 border-t-[#D4AF37] rounded-full animate-spin mb-6" />
+        <p className="text-[#D4AF37] font-black uppercase text-[10px] tracking-widest italic">Iniciando Sincronização SD Temporal...</p>
+     </div>
+  );
 
   return (
-    <div className="p-4 sm:p-8 space-y-6 overflow-y-auto overflow-x-hidden h-full bg-gradient-to-br from-gray-50 to-gray-100 w-full">
-      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="p-8 sm:p-12 space-y-12 overflow-auto h-full bg-[#0a0a0a] relative luxury-scroll flex flex-col rounded-[3.5rem] border border-white/5">
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#D4AF37]/5 blur-[120px] rounded-full translate-x-1/2 -translate-y-1/2" />
+      </div>
+
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 relative z-10 animate-in fade-in slide-in-from-top-6 duration-700">
         <div>
-          <h1 className="text-3xl font-black text-gray-900 flex items-center gap-3">
-            <Clock className="w-8 h-8 text-amber-500" />
-            Ponto Eletrônico
+          <h1 className="text-4xl sm:text-5xl font-black text-white italic tracking-tighter flex items-center gap-5 uppercase leading-none">
+            <div className="w-16 h-16 bg-gradient-to-br from-[#D4AF37] to-[#b8952a] rounded-[22px] flex items-center justify-center text-black shadow-2xl">
+              <Clock className="w-8 h-8" />
+            </div>
+            Gestão <span className="text-[#D4AF37]">Temporal</span>
           </h1>
-          <p className="text-gray-500 mt-1">Controle de jornada dos funcionários</p>
+          <p className="text-gray-500 mt-4 font-medium italic flex items-center gap-3">
+             <Shield className="w-4 h-4 text-[#D4AF37]" /> Auditoria de Jornada e Performance de Colaboradores
+          </p>
+        </div>
+        <div className="flex items-center gap-4 bg-[#111111] border border-white/5 p-6 rounded-[2rem] shadow-2xl overflow-hidden group">
+           <div className="text-right">
+              <p className="text-[10px] text-gray-700 font-black uppercase tracking-widest italic leading-none mb-2">Engajamento Total</p>
+              <p className="text-3xl font-black text-white italic tracking-tighter tabular-nums leading-none">{employees.length} <span className="text-xs text-[#D4AF37]">ATIVOS</span></p>
+           </div>
+           <Users className="w-8 h-8 text-[#D4AF37] opacity-20 group-hover:opacity-100 transition-all duration-700" />
         </div>
       </header>
 
-      {/* Tabs */}
-      <div className="flex overflow-x-auto gap-3 pb-2 w-full">
-        <button className={`shrink-0 ${tabClass('ponto')}`} onClick={() => setTab('ponto')}>
-          <Play className="w-4 h-4 inline mr-2" />Registrar Ponto
-        </button>
-        <button className={`shrink-0 ${tabClass('funcionarios')}`} onClick={() => setTab('funcionarios')}>
-          <Users className="w-4 h-4 inline mr-2" />Funcionários
-        </button>
-        <button className={`shrink-0 ${tabClass('relatorio')}`} onClick={() => setTab('relatorio')}>
-          <DollarSign className="w-4 h-4 inline mr-2" />Relatório / Pagamento
-        </button>
-      </div>
+      <nav className="flex flex-wrap gap-3 p-1.5 bg-[#111111] border border-white/5 rounded-[2.2rem] w-fit shadow-2xl relative z-10">
+        {[
+          { id: 'ponto', icon: Play, label: 'REGISTRAR PONTO' },
+          { id: 'funcionarios', icon: Users, label: 'COLABORADORES' },
+          { id: 'relatorio', icon: DollarSign, label: 'FINANCEIRO / PERFORMANCE' }
+        ].map(t => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id as any)}
+            className={`flex items-center gap-3 px-8 py-4 rounded-[1.8rem] font-black text-[10px] uppercase tracking-widest transition-all duration-500 italic ${tab === t.id ? 'bg-[#D4AF37] text-black shadow-xl scale-105' : 'text-gray-500 hover:text-white hover:bg-white/5'}`}
+          >
+            <t.icon className="w-4 h-4" />
+            {t.label}
+          </button>
+        ))}
+      </nav>
 
       {/* ===== PONTO ===== */}
       {tab === 'ponto' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-in slide-in-from-bottom-8 duration-700 relative z-10">
           {employees.map(emp => {
             const openEntry = getOpenEntry(emp.id);
             return (
-              <div key={emp.id} className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="font-bold text-gray-900 text-lg">{emp.name}</h3>
-                    {emp.role && <p className="text-sm text-gray-500">{emp.role}</p>}
-                  </div>
-                  <span className={`w-3 h-3 rounded-full ${openEntry ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`} />
+              <div key={emp.id} className="bg-[#111111] border border-white/5 rounded-[2.5rem] p-8 shadow-2xl group hover:border-[#D4AF37]/30 transition-all duration-500 relative overflow-hidden">
+                <div className="flex justify-between items-start mb-10">
+                   <div>
+                      <h3 className="text-xl font-black text-white italic tracking-tighter uppercase leading-none mb-2 group-hover:text-[#D4AF37] transition-colors">{emp.name}</h3>
+                      <p className="text-[10px] text-gray-700 font-bold uppercase tracking-widest italic">{emp.role || 'ESPECIALISTA'}</p>
+                   </div>
+                   <div className={`w-4 h-4 rounded-full border-4 border-black ${openEntry ? 'bg-green-500 animate-pulse shadow-[0_0_15px_#22c55e]' : 'bg-white/10'}`} />
                 </div>
+                
                 {openEntry ? (
-                  <div>
-                    <p className="text-xs text-green-600 mb-3">⏱️ Entrada: {formatTime(openEntry.clock_in)}</p>
-                    <button onClick={() => clockOut(openEntry.id)} className="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
-                      <Square className="w-4 h-4" /> Registrar Saída
+                  <div className="space-y-6">
+                    <div className="bg-black/60 p-5 rounded-2xl border border-white/5 text-center">
+                       <p className="text-[9px] text-gray-700 font-black uppercase tracking-widest italic mb-1">Início do Turno</p>
+                       <p className="text-sm font-black text-white italic tracking-tighter tabular-nums">{formatTime(openEntry.clock_in)}</p>
+                    </div>
+                    <button onClick={() => clockOut(openEntry.id)} className="w-full h-16 bg-red-600 rounded-2xl text-white font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-red-500 transition-all shadow-2xl italic">
+                       <Square className="w-5 h-5 fill-white" /> FECHAR JORNADA
                     </button>
                   </div>
                 ) : (
-                  <button onClick={() => clockIn(emp.id)} className="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
-                    <Play className="w-4 h-4" /> Registrar Entrada
+                  <button onClick={() => clockIn(emp.id)} className="w-full h-16 bg-white/5 border border-white/10 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-[#D4AF37] hover:text-black transition-all shadow-2xl italic group/btn">
+                    <Play className="w-5 h-5 group-hover/btn:fill-black" /> ABRIR JORNADA
                   </button>
                 )}
+                <div className="absolute -bottom-10 -right-10 opacity-5 group-hover:opacity-10 transition-opacity"><Clock className="w-32 h-32" /></div>
               </div>
             );
           })}
-          {employees.length === 0 && (
-            <div className="col-span-full text-center py-12 text-gray-400">
-              <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p>Nenhum funcionário cadastrado. Vá na aba "Funcionários" para adicionar.</p>
-            </div>
-          )}
         </div>
       )}
 
       {/* ===== FUNCIONÁRIOS ===== */}
       {tab === 'funcionarios' && (
-        <div className="space-y-6">
-          <div className="bg-white rounded-2xl p-6 shadow-lg">
-            <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <UserPlus className="w-5 h-5 text-amber-500" /> Adicionar Funcionário
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <input
-                placeholder="Nome *"
-                value={newName}
-                onChange={e => setNewName(e.target.value)}
-                className="border rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none"
-              />
-              <input
-                placeholder="Cargo"
-                value={newRole}
-                onChange={e => setNewRole(e.target.value)}
-                className="border rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none"
-              />
-              <input
-                placeholder="Telefone"
-                value={newPhone}
-                onChange={e => setNewPhone(e.target.value)}
-                className="border rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none"
-              />
-              <input
-                placeholder="E-mail (login)"
-                value={newEmail}
-                onChange={e => setNewEmail(e.target.value)}
-                className="border rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none"
-              />
-              <input
-                placeholder="Senha de acesso *"
-                value={newPassword}
-                onChange={e => setNewPassword(e.target.value)}
-                className="border rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none"
-              />
-              <button
-                onClick={addEmployee}
-                disabled={!newName.trim()}
-                className="bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2 py-3"
-              >
-                <UserPlus className="w-4 h-4" /> Adicionar
-              </button>
-            </div>
-          </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 animate-in slide-in-from-bottom-8 duration-700 relative z-10">
+           <div className="bg-[#111111] border border-white/5 rounded-[3.5rem] p-12 shadow-2xl relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-48 h-48 bg-[#D4AF37]/5 blur-[80px] rounded-full translate-x-1/2 -translate-y-1/2" />
+              <h3 className="text-2xl font-black text-white italic tracking-tighter uppercase mb-12 flex items-center gap-5">
+                 <UserPlus className="w-8 h-8 text-[#D4AF37]" /> Alistamento Colaborador
+              </h3>
+              <div className="space-y-8">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black text-gray-700 uppercase tracking-widest ml-1 italic">Nome Identificador *</label>
+                       <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="NOME DO AGENTE" className="w-full h-16 bg-black border border-white/5 rounded-2xl px-6 text-white text-xs font-black italic tracking-widest outline-none focus:border-[#D4AF37]/40 transition-all uppercase" />
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black text-gray-700 uppercase tracking-widest ml-1 italic">Designação / Cargo</label>
+                       <input value={newRole} onChange={e => setNewRole(e.target.value)} placeholder="EX: MONTADOR ELITE" className="w-full h-16 bg-black border border-white/5 rounded-2xl px-6 text-white text-xs font-black italic tracking-widest outline-none focus:border-[#D4AF37]/40 transition-all uppercase" />
+                    </div>
+                 </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black text-gray-700 uppercase tracking-widest ml-1 italic">Vetor de Contato (Tel)</label>
+                       <input value={newPhone} onChange={e => setNewPhone(e.target.value)} placeholder="99 99999-9999" className="w-full h-16 bg-black border border-white/5 rounded-2xl px-6 text-white text-xs font-black italic tracking-widest outline-none focus:border-[#D4AF37]/40 transition-all" />
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black text-gray-700 uppercase tracking-widest ml-1 italic">Ventrículo Neural (Taxa/h)</label>
+                       <input type="number" value={hourlyRate} onChange={e => setHourlyRate(e.target.value)} className="w-full h-16 bg-black border border-white/5 rounded-2xl px-6 text-white text-lg font-black italic outline-none focus:border-[#D4AF37]/40 transition-all tabular-nums" />
+                    </div>
+                 </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black text-gray-700 uppercase tracking-widest ml-1 italic">Login / E-mail</label>
+                       <input value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="login@sdmoveis.com" className="w-full h-16 bg-black border border-white/5 rounded-2xl px-6 text-white text-xs font-black italic tracking-widest outline-none focus:border-[#D4AF37]/40 transition-all" />
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black text-gray-700 uppercase tracking-widest ml-1 italic">Senha de Acesso *</label>
+                       <input value={newPassword} onChange={e => setNewPassword(e.target.value)} type="password" placeholder="••••••••" className="w-full h-16 bg-black border border-white/5 rounded-2xl px-6 text-white text-xs font-black italic tracking-widest outline-none focus:border-[#D4AF37]/40 transition-all" />
+                    </div>
+                 </div>
+                 <button onClick={addEmployee} disabled={!newName.trim()} className="w-full h-20 bg-gradient-to-r from-[#D4AF37] to-[#b8952a] text-black rounded-[2rem] font-black text-[11px] uppercase tracking-[0.4em] hover:scale-105 active:scale-95 transition-all shadow-2xl italic flex items-center justify-center gap-4">
+                    <UserPlus className="w-6 h-6" /> EFETIVAR ALISTAMENTO
+                 </button>
+              </div>
+           </div>
 
-          {/* Valor/hora global */}
-          <div className="bg-white rounded-2xl p-6 shadow-lg">
-            <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-green-500" /> Valor da Hora (todos)
-            </h3>
-            <div className="flex items-center gap-3">
-              <span className="text-gray-500">R$</span>
-              <input
-                type="number"
-                value={hourlyRate}
-                onChange={e => setHourlyRate(e.target.value)}
-                className="border rounded-xl px-4 py-3 text-sm w-32 focus:ring-2 focus:ring-amber-500 focus:outline-none"
-                step="0.50"
-              />
-              <button
-                onClick={async () => {
-                  const rate = parseFloat(hourlyRate) || 15;
-                  await supabase.from('employees').update({ hourly_rate: rate }).eq('active', true);
-                  toast({ title: '✅ Valor/hora atualizado para todos' });
-                  fetchData();
-                }}
-                className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-bold text-sm transition-all"
-              >
-                Aplicar a Todos
-              </button>
-            </div>
-          </div>
-
-          {/* Lista */}
-          <div className="bg-white rounded-2xl p-6 shadow-lg">
-            <h3 className="font-bold text-gray-900 mb-4">Funcionários Ativos</h3>
-            <div className="space-y-3">
-              {employees.map(emp => (
-                <div key={emp.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                  <div>
-                    <p className="font-bold text-gray-900">{emp.name}</p>
-                    <p className="text-xs text-gray-500">{emp.role || 'Sem cargo'} • {emp.phone || 'Sem telefone'}</p>
+           <div className="bg-[#111111] border border-white/5 rounded-[3.5rem] p-12 shadow-2xl relative overflow-hidden flex flex-col">
+              <h3 className="text-2xl font-black text-white italic tracking-tighter uppercase mb-12 flex items-center gap-5">
+                 <Users className="w-8 h-8 text-[#D4AF37]" /> Elenco Ativo
+              </h3>
+              <div className="space-y-4 luxury-scroll max-h-[600px] overflow-auto pr-4">
+                {employees.map(emp => (
+                  <div key={emp.id} className="flex items-center justify-between p-8 bg-black/40 border border-white/5 rounded-[2.5rem] group hover:border-[#D4AF37]/30 transition-all">
+                    <div className="flex items-center gap-6">
+                       <div className="w-16 h-16 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-center group-hover:text-[#D4AF37] transition-colors"><User className="w-8 h-8" /></div>
+                       <div>
+                          <p className="text-xl font-black text-white italic tracking-tighter uppercase leading-none mb-2">{emp.name}</p>
+                          <p className="text-[10px] text-gray-700 font-bold uppercase tracking-widest italic">{emp.role || 'SEM DESIGNAÇÃO'}</p>
+                       </div>
+                    </div>
+                    <div className="flex items-center gap-6">
+                       <div className="text-right">
+                          <p className="text-[9px] text-gray-800 font-black uppercase mb-1 italic">Remuneração</p>
+                          <p className="text-lg font-black text-[#D4AF37] italic tabular-nums">R$ {emp.hourly_rate.toFixed(0)}/h</p>
+                       </div>
+                       <div className="flex gap-2">
+                          <button onClick={() => { setPasswordEmp(emp); setChangePassword(''); setShowPassword(false); }} className="w-12 h-12 bg-white/5 rounded-xl border border-white/5 flex items-center justify-center text-gray-500 hover:text-white transition-all"><Key className="w-5 h-5" /></button>
+                          <button onClick={() => removeEmployee(emp.id)} className="w-12 h-12 bg-red-500/10 rounded-xl border border-red-500/10 flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition-all"><Trash2 className="w-5 h-5" /></button>
+                       </div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-bold text-green-600">R$ {emp.hourly_rate}/h</span>
-                    <button
-                      onClick={() => { setPasswordEmp(emp); setChangePassword(''); setShowPassword(false); }}
-                      className="text-blue-400 hover:text-blue-600 transition-colors"
-                      title="Trocar senha"
-                    >
-                      <Key className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => removeEmployee(emp.id)} className="text-red-400 hover:text-red-600 transition-colors">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-              {employees.length === 0 && (
-                <p className="text-center text-gray-400 py-6">Nenhum funcionário cadastrado</p>
-              )}
-            </div>
-          </div>
+                ))}
+              </div>
+           </div>
         </div>
       )}
 
-      {/* ===== RELATÓRIO ===== */}
+      {/* ===== RELATÓRIO / PERFORMANCE ===== */}
       {tab === 'relatorio' && (
-        <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-              {(['week', 'biweekly', 'month'] as Period[]).map(p => (
-                <button
-                  key={p}
-                  onClick={() => setPeriod(p)}
-                  className={`flex-1 sm:flex-none px-4 sm:px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${period === p ? 'bg-amber-500 text-white shadow' : 'bg-white text-gray-600 hover:bg-gray-100'}`}
-                >
-                  {p === 'week' ? 'Semana' : p === 'biweekly' ? 'Quinzena' : 'Mês'}
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={() => { setShowAdjForm(!showAdjForm); if (!adjEmployeeId && employees.length) setAdjEmployeeId(employees[0].id); }}
-              className="bg-amber-500 hover:bg-amber-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 w-full sm:w-auto"
-            >
-              <Plus className="w-4 h-4" /> Lançar Extra / Desconto
-            </button>
-          </div>
-
-          {/* Adjustment Form */}
-          {showAdjForm && (
-            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 shadow-lg">
-              <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <DollarSign className="w-5 h-5 text-amber-500" /> Novo Lançamento
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-                <div>
-                  <label className="text-xs font-bold text-gray-600 block mb-1">Funcionário</label>
-                  <select value={adjEmployeeId} onChange={e => setAdjEmployeeId(e.target.value)} className="border rounded-xl px-4 py-3 text-sm w-full focus:ring-2 focus:ring-amber-500 focus:outline-none">
-                    {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-gray-600 block mb-1">Tipo</label>
-                  <select value={adjType} onChange={e => setAdjType(e.target.value as any)} className="border rounded-xl px-4 py-3 text-sm w-full focus:ring-2 focus:ring-amber-500 focus:outline-none">
-                    <option value="overtime">⏰ Hora Extra</option>
-                    <option value="fuel_allowance">⛽ Vale Combustível</option>
-                    <option value="meal_allowance">🍽️ Vale Refeição</option>
-                    <option value="advance">💵 Adiantamento / Desconto</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-gray-600 block mb-1">
-                    {adjType === 'overtime' ? 'Horas Extras' : 'Descrição'}
-                  </label>
-                  {adjType === 'overtime' ? (
-                    <input type="number" placeholder="Qtd horas" value={adjHours} onChange={e => setAdjHours(e.target.value)} className="border rounded-xl px-4 py-3 text-sm w-full focus:ring-2 focus:ring-amber-500 focus:outline-none" step="0.5" />
-                  ) : (
-                    <input placeholder="Ex: Vale, Adiantamento..." value={adjDescription} onChange={e => setAdjDescription(e.target.value)} className="border rounded-xl px-4 py-3 text-sm w-full focus:ring-2 focus:ring-amber-500 focus:outline-none" />
-                  )}
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-gray-600 block mb-1">Valor (R$)</label>
-                  <input type="number" placeholder="0.00" value={adjAmount} onChange={e => setAdjAmount(e.target.value)} className="border rounded-xl px-4 py-3 text-sm w-full focus:ring-2 focus:ring-amber-500 focus:outline-none" step="0.01" />
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={addAdjustment} className="bg-green-500 hover:bg-green-600 text-white px-5 py-3 rounded-xl font-bold text-sm transition-all flex items-center gap-1">
-                    <Save className="w-4 h-4" /> Salvar
+        <div className="space-y-12 animate-in slide-in-from-bottom-8 duration-700 relative z-10 w-full">
+           <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-8">
+              <div className="flex gap-3 p-1.5 bg-[#111111] border border-white/5 rounded-[2rem] shadow-2xl">
+                {(['week', 'biweekly', 'month'] as Period[]).map(p => (
+                  <button key={p} onClick={() => setPeriod(p)} className={`px-8 py-4 rounded-[1.6rem] font-black text-[10px] uppercase tracking-widest transition-all italic ${period === p ? 'bg-[#D4AF37] text-black shadow-xl' : 'text-gray-500 hover:text-white'}`}>
+                    {p === 'week' ? 'SEMANA' : p === 'biweekly' ? 'QUINZENA' : 'MÊS'}
                   </button>
-                  <button onClick={() => setShowAdjForm(false)} className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-3 rounded-xl font-bold text-sm transition-all">
-                    <X className="w-4 h-4" />
-                  </button>
+                ))}
+              </div>
+              <button onClick={() => { setShowAdjForm(!showAdjForm); if (!adjEmployeeId && employees.length) setAdjEmployeeId(employees[0].id); }} className="h-18 px-10 bg-white/5 border border-white/10 text-white rounded-[1.8rem] font-black text-[10px] uppercase tracking-widest flex items-center gap-4 hover:bg-[#D4AF37] hover:text-black transition-all shadow-2xl italic">
+                <Plus className="w-6 h-6" /> LANÇAR VARIAÇÃO FINANCEIRA
+              </button>
+           </div>
+
+           {showAdjForm && (
+             <div className="bg-[#111111] border border-[#D4AF37]/30 rounded-[3rem] p-10 shadow-2xl relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-[#D4AF37]/5 blur-3xl rounded-full" />
+                <h3 className="text-xl font-black text-white italic tracking-tighter uppercase mb-10 flex items-center gap-4"><DollarSign className="w-6 h-6 text-[#D4AF37]" /> Registro de Ajuste Periódico</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 items-end">
+                   <div className="space-y-2">
+                      <label className="text-[9px] font-black text-gray-700 uppercase tracking-widest ml-1 italic">Alvo</label>
+                      <select value={adjEmployeeId} onChange={e => setAdjEmployeeId(e.target.value)} className="w-full h-14 bg-black border border-white/5 rounded-xl px-4 text-white text-[10px] font-black italic tracking-widest outline-none focus:border-[#D4AF37]/40 transition-all uppercase appearance-none"><option value="">SELECIONE...</option>{employees.map(e => <option key={e.id} value={e.id}>{e.name.toUpperCase()}</option>)}</select>
+                   </div>
+                   <div className="space-y-2">
+                      <label className="text-[9px] font-black text-gray-700 uppercase tracking-widest ml-1 italic">Natureza</label>
+                      <select value={adjType} onChange={e => setAdjType(e.target.value as any)} className="w-full h-14 bg-black border border-white/5 rounded-xl px-4 text-white text-[10px] font-black italic tracking-widest outline-none focus:border-[#D4AF37]/40 transition-all appearance-none">
+                         <option value="overtime">HORA EXTRA</option>
+                         <option value="fuel_allowance">VALE COMBUSTÍVEL</option>
+                         <option value="meal_allowance">VALE REFEIÇÃO</option>
+                         <option value="advance">ADIANTAMENTO / DESCONTO</option>
+                      </select>
+                   </div>
+                   <div className="space-y-2 lg:col-span-1">
+                      <label className="text-[9px] font-black text-gray-700 uppercase tracking-widest ml-1 italic">{adjType === 'overtime' ? 'QUANTIDADE (H)' : 'DESCRIÇÃO'}</label>
+                      {adjType === 'overtime' ? (
+                        <input type="number" value={adjHours} onChange={e => setAdjHours(e.target.value)} className="w-full h-14 bg-black border border-white/5 rounded-xl px-4 text-white text-md font-black italic tracking-tighter outline-none focus:border-[#D4AF37]/40 transition-all shadow-inner" />
+                      ) : (
+                        <input value={adjDescription} onChange={e => setAdjDescription(e.target.value)} placeholder="MOTIVO DOCUM." className="w-full h-14 bg-black border border-white/5 rounded-xl px-4 text-white text-[10px] font-black italic tracking-widest outline-none focus:border-[#D4AF37]/40 transition-all uppercase" />
+                      )}
+                   </div>
+                   <div className="space-y-2">
+                      <label className="text-[9px] font-black text-gray-700 uppercase tracking-widest ml-1 italic">Ajuste (R$)</label>
+                      <input type="number" value={adjAmount} onChange={e => setAdjAmount(e.target.value)} placeholder="0.00" className="w-full h-14 bg-black border border-white/5 rounded-xl px-4 text-white text-md font-black italic tracking-tighter outline-none focus:border-[#D4AF37]/40 transition-all shadow-inner" />
+                   </div>
+                   <div className="flex gap-2">
+                      <button onClick={addAdjustment} className="flex-1 h-14 bg-[#D4AF37] text-black font-black text-[10px] uppercase tracking-widest italic rounded-xl flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-2xl"><Save className="w-4 h-4" /> SALVAR</button>
+                      <button onClick={() => setShowAdjForm(false)} className="w-14 h-14 bg-white/5 border border-white/5 text-gray-700 hover:text-white rounded-xl flex items-center justify-center transition-all"><X className="w-5 h-5" /></button>
+                   </div>
                 </div>
+             </div>
+           )}
+
+           <div className="bg-[#111111] border border-white/5 rounded-[3.5rem] shadow-2xl relative overflow-hidden group w-full">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-[#D4AF37]/5 blur-[120px] rounded-full translate-x-1/2 -translate-y-1/2" />
+              <div className="p-10 border-b border-white/5 bg-black/40">
+                 <h3 className="text-2xl font-black text-white italic tracking-tighter uppercase flex items-center gap-5"><TrendingUp className="w-8 h-8 text-[#D4AF37]" /> Matriz de Performance Acumulativa</h3>
               </div>
-            </div>
-          )}
-
-          {/* Report Table */}
-          <div className="bg-white rounded-2xl shadow-lg w-full max-w-[calc(100vw-2rem)] sm:max-w-full overflow-x-auto">
-            <table className="w-full min-w-[900px]">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="text-left px-6 py-4 text-sm font-bold text-gray-600">Funcionário</th>
-                  <th className="text-left px-6 py-4 text-sm font-bold text-gray-600">Cargo</th>
-                  <th className="text-right px-6 py-4 text-sm font-bold text-gray-600">Horas</th>
-                  <th className="text-right px-6 py-4 text-sm font-bold text-gray-600">Valor/h</th>
-                  <th className="text-right px-6 py-4 text-sm font-bold text-green-600">+ H.Extra</th>
-                  <th className="text-right px-6 py-4 text-sm font-bold text-orange-600">⛽ V.Combustível</th>
-                  <th className="text-right px-6 py-4 text-sm font-bold text-purple-600">🍽️ V.Refeição</th>
-                  <th className="text-right px-6 py-4 text-sm font-bold text-red-600">- Adiantamentos</th>
-                  <th className="text-right px-6 py-4 text-sm font-bold text-gray-600">Total Líquido</th>
-                  <th className="text-center px-6 py-4 text-sm font-bold text-gray-600">Enviar</th>
-                </tr>
-              </thead>
-              <tbody>
-                {employees.map(emp => {
-                  const hours = calcHours(emp.id);
-                  const base = hours * emp.hourly_rate;
-                  const overtime = calcOvertime(emp.id);
-                  const fuelAllowance = calcFuelAllowance(emp.id);
-                  const mealAllowance = calcMealAllowance(emp.id);
-                  const deductions = calcDeductions(emp.id);
-                  const total = base + overtime + fuelAllowance - deductions;
-                  return (
-                    <tr key={emp.id} className="border-t border-gray-100 hover:bg-gray-50">
-                      <td className="px-6 py-4 font-bold text-gray-900">{emp.name}</td>
-                      <td className="px-6 py-4 text-gray-500 text-sm">{emp.role || '-'}</td>
-                      <td className="px-6 py-4 text-right font-mono text-gray-700">{hours.toFixed(1)}h</td>
-                      <td className="px-6 py-4 text-right text-gray-500">R$ {emp.hourly_rate.toFixed(2)}</td>
-                      <td className="px-6 py-4 text-right font-bold text-green-600">{overtime > 0 ? `+R$ ${overtime.toFixed(2)}` : '-'}</td>
-                      <td className="px-6 py-4 text-right font-bold text-orange-600">{fuelAllowance > 0 ? `+R$ ${fuelAllowance.toFixed(2)}` : '-'}</td>
-                      <td className="px-6 py-4 text-right font-bold text-purple-600">{mealAllowance > 0 ? `+R$ ${mealAllowance.toFixed(2)}` : '-'}</td>
-                      <td className="px-6 py-4 text-right font-bold text-red-600">{deductions > 0 ? `-R$ ${deductions.toFixed(2)}` : '-'}</td>
-                      <td className="px-6 py-4 text-right font-black text-lg" style={{ color: total >= 0 ? '#16a34a' : '#dc2626' }}>R$ {total.toFixed(2)}</td>
-                      <td className="px-6 py-4 text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          <button onClick={() => sendViaWhatsApp(emp)} className="p-2 rounded-lg bg-green-100 hover:bg-green-200 text-green-700 transition-colors" title="Enviar por WhatsApp">
-                            <MessageCircle className="w-4 h-4" />
-                          </button>
-                          <button onClick={() => sendViaEmail(emp)} className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors" title="Enviar por Email">
-                            <Mail className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-              <tfoot className="bg-gray-900 text-white">
-                <tr>
-                  <td colSpan={2} className="px-6 py-4 font-bold">TOTAL</td>
-                  <td className="px-6 py-4 text-right font-mono">{employees.reduce((s, e) => s + calcHours(e.id), 0).toFixed(1)}h</td>
-                  <td className="px-6 py-4"></td>
-                  <td className="px-6 py-4 text-right font-bold text-green-400">+R$ {employees.reduce((s, e) => s + calcOvertime(e.id), 0).toFixed(2)}</td>
-                  <td className="px-6 py-4 text-right font-bold text-orange-400">+R$ {employees.reduce((s, e) => s + calcFuelAllowance(e.id), 0).toFixed(2)}</td>
-                  <td className="px-6 py-4 text-right font-bold text-purple-400">+R$ {employees.reduce((s, e) => s + calcMealAllowance(e.id), 0).toFixed(2)}</td>
-                  <td className="px-6 py-4 text-right font-bold text-red-400">-R$ {employees.reduce((s, e) => s + calcDeductions(e.id), 0).toFixed(2)}</td>
-                  <td className="px-6 py-4 text-right font-black text-amber-400 text-xl">
-                    R$ {employees.reduce((s, e) => {
-                      const h = calcHours(e.id);
-                      return s + (h * e.hourly_rate) + calcOvertime(e.id) + calcFuelAllowance(e.id) - calcDeductions(e.id);
-                    }, 0).toFixed(2)}
-                  </td>
-                  <td className="px-6 py-4"></td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-
-          {/* Recent Adjustments */}
-          {adjustments.length > 0 && (
-            <div className="bg-white rounded-2xl p-6 shadow-lg">
-              <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <DollarSign className="w-5 h-5 text-amber-500" /> Lançamentos Recentes
-              </h3>
-              <div className="space-y-2 max-h-64 overflow-auto">
-                {adjustments.slice(0, 20).map(adj => {
-                  const emp = employees.find(e => e.id === adj.employee_id);
-                  const isPositive = adj.type === 'overtime' || adj.type === 'fuel_allowance' || adj.type === 'meal_allowance';
-                  return (
-                    <div key={adj.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl text-sm">
-                      <div className="flex items-center gap-3">
-                        <span className={`w-2 h-2 rounded-full ${isPositive ? 'bg-green-500' : 'bg-red-500'}`} />
-                        <span className="font-bold text-gray-900">{emp?.name || 'Desconhecido'}</span>
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${adj.type === 'overtime' ? 'bg-green-100 text-green-700' : adj.type === 'fuel_allowance' ? 'bg-orange-100 text-orange-700' : adj.type === 'meal_allowance' ? 'bg-purple-100 text-purple-700' : 'bg-red-100 text-red-700'}`}>
-                          {adj.type === 'overtime' ? '⏰ Hora Extra' : adj.type === 'fuel_allowance' ? '⛽ Vale Combustível' : adj.type === 'meal_allowance' ? '🍽️ Vale Refeição' : '💵 Adiantamento'}
-                        </span>
-                        {adj.description && <span className="text-gray-400">{adj.description}</span>}
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className={`font-bold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                          {isPositive ? '+' : '-'}R$ {Number(adj.amount).toFixed(2)}
-                        </span>
-                        <span className="text-xs text-gray-400">{new Date(adj.reference_date).toLocaleDateString('pt-BR')}</span>
-                        <button onClick={() => deleteAdjustment(adj.id)} className="text-red-400 hover:text-red-600 transition-colors">
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="overflow-x-auto luxury-scroll w-full">
+                 <table className="w-full text-left min-w-[1200px]">
+                    <thead className="bg-black/60 border-b border-white/5">
+                       <tr className="text-[9px] font-black text-gray-700 uppercase tracking-widest italic">
+                          <th className="px-10 py-6">Operador</th>
+                          <th className="px-6 py-6 text-right">Horas</th>
+                          <th className="px-6 py-6 text-right">Taxa (UND)</th>
+                          <th className="px-6 py-6 text-right text-green-500">Extras</th>
+                          <th className="px-6 py-6 text-right text-orange-500">Energia</th>
+                          <th className="px-6 py-6 text-right text-purple-500">Refeição</th>
+                          <th className="px-6 py-6 text-right text-red-500">Retiradas</th>
+                          <th className="px-10 py-6 text-right">Débito Líquido</th>
+                          <th className="px-10 py-6 text-center">Transmissão</th>
+                       </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5 bg-black/20">
+                       {employees.map(emp => {
+                          const h = calcHours(emp.id); const base = h * emp.hourly_rate;
+                          const ot = calcAdjValue(emp.id, 'overtime'); const fa = calcAdjValue(emp.id, 'fuel_allowance');
+                          const ma = calcAdjValue(emp.id, 'meal_allowance'); const dec = calcAdjValue(emp.id, 'advance');
+                          const total = base + ot + fa + ma - dec;
+                          return (
+                             <tr key={emp.id} className="hover:bg-white/[0.02] transition-colors group/row">
+                                <td className="px-10 py-8">
+                                   <p className="text-lg font-black text-white italic tracking-tighter uppercase leading-none mb-1 group-hover/row:text-[#D4AF37] transition-colors">{emp.name}</p>
+                                   <p className="text-[9px] text-gray-700 font-bold uppercase italic tracking-widest">{emp.role || '-'}</p>
+                                </td>
+                                <td className="px-6 py-8 text-right font-black italic text-white tabular-nums tracking-tighter">{h.toFixed(1)}H</td>
+                                <td className="px-6 py-8 text-right text-gray-600 font-bold text-sm tracking-tight">R$ {emp.hourly_rate.toFixed(1)}</td>
+                                <td className="px-6 py-8 text-right font-black italic tabular-nums text-green-500">{ot > 0 ? `+${ot.toFixed(0)}` : '—'}</td>
+                                <td className="px-6 py-8 text-right font-black italic tabular-nums text-orange-500">{fa > 0 ? `+${fa.toFixed(0)}` : '—'}</td>
+                                <td className="px-6 py-8 text-right font-black italic tabular-nums text-purple-500">{ma > 0 ? `+${ma.toFixed(0)}` : '—'}</td>
+                                <td className="px-6 py-8 text-right font-black italic tabular-nums text-red-500">{dec > 0 ? `-${dec.toFixed(0)}` : '—'}</td>
+                                <td className="px-10 py-8 text-right font-black italic text-2xl tracking-tighter tabular-nums" style={{ color: total >= 0 ? '#D4AF37' : '#dc2626' }}>R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</td>
+                                <td className="px-10 py-8">
+                                   <div className="flex items-center justify-center gap-3">
+                                      <button onClick={() => sendViaWhatsApp(emp)} className="w-12 h-12 bg-green-500/10 border border-green-500/10 text-green-500 rounded-2xl flex items-center justify-center hover:bg-green-500 hover:text-black transition-all shadow-xl"><MessageCircle className="w-5 h-5" /></button>
+                                      <button onClick={() => sendViaEmail(emp)} className="w-12 h-12 bg-blue-500/10 border border-blue-500/10 text-blue-500 rounded-2xl flex items-center justify-center hover:bg-blue-500 hover:text-white transition-all shadow-xl"><Mail className="w-5 h-5" /></button>
+                                   </div>
+                                </td>
+                             </tr>
+                          );
+                       })}
+                    </tbody>
+                    <tfoot className="bg-black/80 font-black italic text-md text-white border-t-2 border-[#D4AF37]/50">
+                       <tr className="tabular-nums">
+                          <td className="px-10 py-10 uppercase tracking-widest text-sm">Escopo Consolidado</td>
+                          <td className="px-6 py-10 text-right">{employees.reduce((s, e) => s + calcHours(e.id), 0).toFixed(1)}H</td>
+                          <td className="px-6 py-10"></td>
+                          <td className="px-6 py-10 text-right text-green-500">+{employees.reduce((s, e) => s + calcAdjValue(e.id, 'overtime'), 0).toFixed(0)}</td>
+                          <td className="px-6 py-10 text-right text-orange-500">+{employees.reduce((s, e) => s + calcAdjValue(e.id, 'fuel_allowance'), 0).toFixed(0)}</td>
+                          <td className="px-6 py-10 text-right text-purple-500">+{employees.reduce((s, e) => s + calcAdjValue(e.id, 'meal_allowance'), 0).toFixed(0)}</td>
+                          <td className="px-6 py-10 text-right text-red-500">-{employees.reduce((s, e) => s + calcAdjValue(e.id, 'advance'), 0).toFixed(0)}</td>
+                          <td className="px-10 py-10 text-right text-3xl font-black text-[#D4AF37] tracking-tighter">R$ {employees.reduce((s, e) => s + (calcHours(e.id) * e.hourly_rate) + calcAdjValue(e.id, 'overtime') + calcAdjValue(e.id, 'fuel_allowance') + calcAdjValue(e.id, 'meal_allowance') - calcAdjValue(e.id, 'advance'), 0).toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</td>
+                          <td className="px-10 py-10"></td>
+                       </tr>
+                    </tfoot>
+                 </table>
               </div>
-            </div>
-          )}
-
-          {/* Histórico recente */}
-          <div className="bg-white rounded-2xl p-6 shadow-lg">
-            <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-amber-500" /> Registros Recentes
-            </h3>
-            <div className="space-y-2 max-h-64 overflow-auto">
-              {timeEntries.slice(0, 20).map(entry => {
-                const emp = employees.find(e => e.id === entry.employee_id);
-                return (
-                  <div key={entry.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl text-sm">
-                    <div className="flex items-center gap-3">
-                      <span className={`w-2 h-2 rounded-full ${entry.clock_out ? 'bg-gray-300' : 'bg-green-500 animate-pulse'}`} />
-                      <span className="font-bold text-gray-900">{emp?.name || 'Desconhecido'}</span>
-                    </div>
-                    <div className="flex items-center gap-4 text-gray-500">
-                      <span>🟢 {formatTime(entry.clock_in)}</span>
-                      {entry.clock_out ? <span>🔴 {formatTime(entry.clock_out)}</span> : <span className="text-green-600 font-bold">Em andamento...</span>}
-                    </div>
-                  </div>
-                );
-              })}
-              {timeEntries.length === 0 && <p className="text-center text-gray-400 py-6">Nenhum registro ainda</p>}
-            </div>
-          </div>
+           </div>
         </div>
       )}
 
-      {/* Modal Trocar Senha */}
+      {/* Trocar Senha Modal */}
       {passwordEmp && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-lg flex items-center gap-2">
-                <Key className="w-5 h-5 text-blue-500" />
-                Trocar Senha
-              </h3>
-              <button onClick={() => setPasswordEmp(null)} className="text-gray-400 hover:text-gray-600">
-                <X className="w-5 h-5" />
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[100] flex items-center justify-center p-6 animate-in fade-in duration-500">
+           <div className="bg-[#111111] border border-white/10 rounded-[3.5rem] w-full max-w-sm p-12 shadow-[0_0_100px_rgba(0,0,0,0.8)] relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 blur-[100px] rounded-full translate-x-1/2 -translate-y-1/2" />
+              <div className="flex items-center justify-between mb-12">
+                <h3 className="text-2xl font-black text-white italic tracking-tighter uppercase flex items-center gap-5">
+                  <div className="w-12 h-12 rounded-[18px] bg-white text-black flex items-center justify-center"><Key className="w-7 h-7" /></div>
+                  Auditoria de Acesso
+                </h3>
+                <button onClick={() => setPasswordEmp(null)} className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center text-gray-600 hover:text-white transition-all"><X className="w-6 h-6" /></button>
+              </div>
+              <p className="text-[10px] text-gray-700 font-black uppercase tracking-widest mb-8 italic text-center">Reescrevendo Credenciais para: <span className="text-white">{passwordEmp.name.toUpperCase()}</span></p>
+              <div className="relative mb-10">
+                 <input value={changePassword} onChange={e => setChangePassword(e.target.value)} type={showPassword ? 'text' : 'password'} placeholder="NOVAS CREDENCIAIS" className="w-full h-20 bg-black border border-white/5 rounded-[2rem] px-8 text-white text-sm font-black italic tracking-widest outline-none focus:border-blue-500/40 transition-all shadow-inner" />
+                 <button onClick={() => setShowPassword(!showPassword)} className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-600 hover:text-white transition-all">{showPassword ? <EyeOff className="w-6 h-6" /> : <Eye className="w-6 h-6" />}</button>
+              </div>
+              <button onClick={handleChangePassword} disabled={savingPassword || changePassword.length < 4} className="w-full h-20 bg-blue-600 text-white rounded-[2rem] font-black text-xs uppercase tracking-[0.4em] hover:scale-105 active:scale-95 transition-all shadow-2xl italic flex items-center justify-center gap-4">
+                 {savingPassword ? <Activity className="w-6 h-6 animate-spin" /> : <Shield className="w-6 h-6" />} EFETUAR RESET
               </button>
-            </div>
-            <p className="text-sm text-gray-500">
-              Nova senha para <span className="font-bold text-gray-800">{passwordEmp.name}</span>
-            </p>
-            <div className="relative">
-              <input
-                value={changePassword}
-                onChange={e => setChangePassword(e.target.value)}
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Digite a nova senha..."
-                className="w-full p-3 pr-12 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <button onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600">
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
-            </div>
-            <p className="text-xs text-gray-400">Mínimo de 4 caracteres.</p>
-            <div className="flex gap-3">
-              <button onClick={() => setPasswordEmp(null)} className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-300">
-                Cancelar
-              </button>
-              <button
-                onClick={handleChangePassword}
-                disabled={savingPassword || changePassword.length < 4}
-                className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 disabled:opacity-50"
-              >
-                <Key className="w-4 h-4" />
-                {savingPassword ? 'Salvando...' : 'Alterar'}
-              </button>
-            </div>
-          </div>
+           </div>
         </div>
       )}
     </div>

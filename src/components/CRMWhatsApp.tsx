@@ -3,6 +3,7 @@ import {
   MessageCircle, Search, Send, Phone, Video, MoreVertical,
   Star, Clock, CheckCircle, User, Plus, Filter, Tag,
   Paperclip, Smile, Mic, Image, ChevronRight, Circle,
+  Layout, Shield, Target, Zap
 } from 'lucide-react';
 
 interface Contact {
@@ -49,11 +50,11 @@ const MESSAGES: Record<string, Message[]> = {
   ],
 };
 
-const statusColors: Record<string, { bg: string; text: string; label: string }> = {
-  lead: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Lead' },
-  negotiation: { bg: 'bg-amber-100', text: 'text-amber-700', label: 'Negociação' },
-  client: { bg: 'bg-green-100', text: 'text-green-700', label: 'Cliente' },
-  after_sales: { bg: 'bg-purple-100', text: 'text-purple-700', label: 'Pós-Venda' },
+const statusColors: Record<string, { bg: string; text: string; label: string; icon: any }> = {
+  lead: { bg: 'bg-[#D4AF37]/10', text: 'text-[#D4AF37]', label: 'Lead', icon: Zap },
+  negotiation: { bg: 'bg-blue-500/10', text: 'text-blue-400', label: 'Negociação', icon: Clock },
+  client: { bg: 'bg-green-500/10', text: 'text-green-400', label: 'Cliente', icon: Shield },
+  after_sales: { bg: 'bg-purple-500/10', text: 'text-purple-400', label: 'Pós-Venda', icon: Star },
 };
 
 interface CRMWhatsAppProps {
@@ -93,51 +94,62 @@ const CRMWhatsApp: React.FC<CRMWhatsAppProps> = ({ isClient = false }) => {
 
   if (isClient) {
     return (
-      <div className="h-full p-6 overflow-auto bg-gradient-to-br from-gray-50 to-gray-100">
-        <h1 className="text-3xl font-black text-gray-900 mb-6 flex items-center gap-3">
-          <MessageCircle className="w-8 h-8 text-green-500" /> Chat com Projetista
-        </h1>
-        <div className="bg-white rounded-3xl shadow-xl overflow-hidden h-[calc(100%-5rem)]">
-          <div className="bg-gradient-to-r from-gray-900 to-gray-800 text-white p-4 flex items-center gap-4">
-            <div className="w-10 h-10 bg-amber-500/20 rounded-full flex items-center justify-center text-xl">👨‍🎨</div>
+      <div className="h-full p-8 bg-[#0a0a0a] flex flex-col luxury-scroll">
+        <header className="flex justify-between items-center mb-8">
+            <h1 className="text-4xl font-black text-white italic uppercase tracking-tighter flex items-center gap-4">
+               <div className="w-12 h-12 bg-green-500/20 rounded-2xl flex items-center justify-center text-green-500 shadow-lg">
+                  <MessageCircle className="w-6 h-6" />
+               </div>
+               Chat <span className="text-[#D4AF37]">Premium</span>
+            </h1>
+            <div className="flex items-center gap-4 px-6 py-3 bg-white/5 border border-white/5 rounded-2xl shadow-xl">
+               <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+               <span className="text-[10px] font-black text-white uppercase tracking-widest italic">Designer SD Ativo</span>
+            </div>
+        </header>
+
+        <div className="flex-1 bg-[#111111] rounded-[3rem] border border-white/5 shadow-2xl overflow-hidden flex flex-col">
+          <div className="bg-[#0a0a0a] px-8 py-5 border-b border-white/5 flex items-center gap-6">
+            <div className="w-14 h-14 bg-gradient-to-br from-[#D4AF37] to-[#b8952a] rounded-[18px] flex items-center justify-center text-2xl shadow-xl">👨‍🎨</div>
             <div className="flex-1">
-              <p className="font-bold">Projetista SD Móveis</p>
-              <p className="text-xs text-green-400 flex items-center gap-1"><Circle className="w-2 h-2 fill-green-400" /> Online</p>
+              <p className="font-black text-white italic uppercase tracking-tighter">Projetista Elite SD</p>
+              <p className="text-[10px] text-green-500 font-bold flex items-center gap-2 uppercase tracking-widest mt-1">
+                 <Circle className="w-2 h-2 fill-green-500" /> Online agora
+              </p>
             </div>
-            <Phone className="w-5 h-5 text-gray-400 cursor-pointer hover:text-white" />
-          </div>
-          <div className="flex-1 p-6 space-y-4 overflow-auto" style={{ height: 'calc(100% - 8rem)' }}>
-            <div className="flex justify-start">
-              <div className="bg-gray-100 rounded-2xl rounded-tl-sm px-4 py-3 max-w-[70%]">
-                <p className="text-sm text-gray-800">Olá! Sou seu projetista na SD Móveis. Como posso ajudar?</p>
-                <p className="text-[10px] text-gray-400 mt-1">10:00</p>
-              </div>
-            </div>
-            <div className="flex justify-end">
-              <div className="bg-green-600 text-white rounded-2xl rounded-tr-sm px-4 py-3 max-w-[70%]">
-                <p className="text-sm">Gostaria de saber como está o andamento do meu projeto</p>
-                <p className="text-[10px] text-green-200 mt-1">10:05</p>
-              </div>
-            </div>
-            <div className="flex justify-start">
-              <div className="bg-gray-100 rounded-2xl rounded-tl-sm px-4 py-3 max-w-[70%]">
-                <p className="text-sm text-gray-800">Seu projeto está na fase de fitamento de bordas, 85% concluído! Previsão de conclusão da produção em 5 dias úteis. 🏭✨</p>
-                <p className="text-[10px] text-gray-400 mt-1">10:08</p>
-              </div>
+            <div className="flex gap-4">
+               <button className="w-12 h-12 bg-white/5 rounded-[15px] flex items-center justify-center text-gray-500 hover:text-white transition-all"><Phone className="w-5 h-5" /></button>
+               <button className="w-12 h-12 bg-white/5 rounded-[15px] flex items-center justify-center text-gray-500 hover:text-white transition-all"><MoreVertical className="w-5 h-5" /></button>
             </div>
           </div>
-          <div className="p-4 border-t flex items-center gap-3">
-            <Paperclip className="w-5 h-5 text-gray-400 cursor-pointer hover:text-gray-600" />
+
+          <div className="flex-1 p-8 space-y-6 overflow-auto luxury-scroll" style={{ background: 'linear-gradient(to bottom, transparent, rgba(0,0,0,0.2))' }}>
+              <div className="flex justify-start animate-in slide-in-from-left duration-500">
+                <div className="bg-[#1a1a1a] border border-white/5 rounded-[2rem] rounded-tl-sm px-6 py-4 max-w-[70%] shadow-xl">
+                  <p className="text-sm text-gray-300 italic font-medium leading-relaxed">Olá! Sou seu projetista elite na SD Móveis. Como posso transformar seu sonho em realidade hoje?</p>
+                  <p className="text-[9px] text-gray-600 font-black uppercase tracking-widest mt-3">10:00</p>
+                </div>
+              </div>
+              <div className="flex justify-end animate-in slide-in-from-right duration-500">
+                <div className="bg-gradient-to-br from-[#D4AF37] to-[#b8952a] text-black rounded-[2rem] rounded-tr-sm px-6 py-4 max-w-[70%] shadow-2xl">
+                  <p className="text-sm font-black italic">Boa tarde! O projeto da cozinha já entrou em produção?</p>
+                  <p className="text-[9px] text-black/40 font-black uppercase tracking-widest mt-3">14:32</p>
+                </div>
+              </div>
+          </div>
+
+          <div className="p-6 bg-[#0a0a0a] border-t border-white/5 flex items-center gap-4">
+            <button className="w-12 h-12 text-gray-600 hover:text-[#D4AF37] transition-all"><Paperclip className="w-6 h-6" /></button>
             <input
               type="text"
-              placeholder="Digite sua mensagem..."
-              className="flex-1 h-12 bg-gray-100 rounded-xl px-4 outline-none text-sm"
+              placeholder="Sua mensagem premium..."
+              className="flex-1 h-16 bg-white/5 border border-white/5 rounded-[20px] px-6 outline-none text-white text-sm italic font-medium tracking-tight"
               value={messageInput}
               onChange={(e) => setMessageInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
             />
-            <button onClick={sendMessage} className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center text-white hover:bg-green-700 transition-colors">
-              <Send className="w-5 h-5" />
+            <button onClick={sendMessage} className="w-16 h-16 bg-[#D4AF37] rounded-[22px] flex items-center justify-center text-black shadow-2xl hover:scale-105 active:scale-95 transition-all">
+              <Send className="w-7 h-7" />
             </button>
           </div>
         </div>
@@ -146,50 +158,73 @@ const CRMWhatsApp: React.FC<CRMWhatsAppProps> = ({ isClient = false }) => {
   }
 
   return (
-    <div className="h-full flex bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="h-full flex bg-[#0a0a0a] overflow-hidden">
       {/* Contact List */}
-      <div className="w-96 bg-white border-r flex flex-col">
-        <div className="p-4 border-b">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-black text-gray-900 flex items-center gap-2">
-              <MessageCircle className="w-6 h-6 text-green-500" /> CRM WhatsApp
+      <div className="w-[420px] bg-[#111111] border-r border-white/5 flex flex-col luxury-scroll">
+        <div className="p-10 space-y-8">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter flex items-center gap-4">
+              <MessageCircle className="w-7 h-7 text-[#D4AF37]" /> CRM <span className="text-[#D4AF37]">WhatsApp</span>
             </h2>
-            <button className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center text-green-600 hover:bg-green-200 transition-colors">
-              <Plus className="w-5 h-5" />
+            <button className="w-12 h-12 bg-[#D4AF37] rounded-[18px] flex items-center justify-center text-black hover:scale-105 transition-all shadow-xl">
+              <Plus className="w-6 h-6" />
             </button>
           </div>
-          <div className="relative mb-3">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input type="text" placeholder="Buscar contato..." className="w-full h-10 bg-gray-100 rounded-xl pl-10 pr-4 text-sm outline-none" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+          
+          <div className="relative group">
+            <Search className="w-5 h-5 absolute left-5 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-[#D4AF37] transition-colors" />
+            <input 
+              type="text" 
+              placeholder="Explorar contatos..." 
+              className="w-full h-14 bg-white/5 border border-white/5 rounded-2xl pl-14 pr-6 text-sm text-gray-300 outline-none focus:border-[#D4AF37]/40 transition-all font-medium italic" 
+              value={searchTerm} 
+              onChange={(e) => setSearchTerm(e.target.value)} 
+            />
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {['all', 'lead', 'negotiation', 'client', 'after_sales'].map(s => (
-              <button key={s} onClick={() => setFilterStatus(s)} className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${filterStatus === s ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
-                {s === 'all' ? 'Todos' : statusColors[s]?.label}
-              </button>
-            ))}
+
+          <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+            {['all', 'lead', 'negotiation', 'client', 'after_sales'].map(s => {
+               const StatusIcon = statusColors[s]?.icon || Circle;
+               return (
+                  <button 
+                    key={s} 
+                    onClick={() => setFilterStatus(s)} 
+                    className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] whitespace-nowrap transition-all border flex items-center gap-2 ${filterStatus === s ? 'bg-[#D4AF37] border-[#D4AF37] text-black shadow-lg shadow-amber-500/20' : 'bg-white/5 border-white/5 text-gray-600 hover:text-white'}`}
+                  >
+                    <StatusIcon className="w-3.5 h-3.5" />
+                    {s === 'all' ? 'Ver Todos' : statusColors[s]?.label}
+                  </button>
+               );
+            })}
           </div>
         </div>
-        <div className="flex-1 overflow-auto">
+
+        <div className="flex-1 overflow-auto px-6 pb-10 luxury-scroll space-y-4">
           {filteredContacts.map(contact => (
-            <button key={contact.id} onClick={() => setSelectedContact(contact)} className={`w-full flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors text-left border-b ${selectedContact?.id === contact.id ? 'bg-green-50' : ''}`}>
+            <button 
+              key={contact.id} 
+              onClick={() => setSelectedContact(contact)} 
+              className={`w-full flex items-center gap-5 p-6 rounded-[2rem] transition-all text-left border relative group ${selectedContact?.id === contact.id ? 'bg-white/5 border-[#D4AF37]/30 shadow-2xl' : 'bg-transparent border-transparent hover:bg-white/[0.02]'}`}
+            >
               <div className="relative">
-                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-2xl">{contact.avatar}</div>
-                {contact.online && <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white" />}
+                <div className="w-16 h-16 bg-[#1a1a1a] border border-white/5 rounded-[22px] flex items-center justify-center text-3xl group-hover:scale-105 transition-transform">{contact.avatar}</div>
+                {contact.online && <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-[3px] border-[#111111]" />}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-center">
-                  <p className="font-bold text-gray-900 text-sm truncate">{contact.name}</p>
-                  <span className="text-[10px] text-gray-400 whitespace-nowrap">{contact.time}</span>
+                <div className="flex justify-between items-center mb-1">
+                  <p className="font-black text-white italic uppercase tracking-tighter text-base truncate">{contact.name}</p>
+                  <span className="text-[9px] text-gray-600 font-black uppercase tracking-widest">{contact.time}</span>
                 </div>
-                <p className="text-xs text-gray-500 truncate">{contact.lastMessage}</p>
-                <p className="text-xs text-gray-500">Especialistas em Projetados</p>
-                <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${statusColors[contact.status].bg} ${statusColors[contact.status].text}`}>
-                  {statusColors[contact.status].label}
-                </span>
+                <p className="text-xs text-gray-500 italic font-medium truncate mb-3">{contact.lastMessage}</p>
+                <div className="flex items-center gap-2">
+                   <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${statusColors[contact.status].bg} ${statusColors[contact.status].text}`}>
+                     <div className="w-1 h-1 rounded-full bg-current opacity-60" />
+                     {statusColors[contact.status].label}
+                   </span>
+                </div>
               </div>
               {contact.unread > 0 && (
-                <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center text-white text-[10px] font-bold">{contact.unread}</div>
+                <div className="w-6 h-6 bg-[#D4AF37] rounded-full flex items-center justify-center text-black text-[10px] font-black shadow-lg animate-pulse">{contact.unread}</div>
               )}
             </button>
           ))}
@@ -198,68 +233,75 @@ const CRMWhatsApp: React.FC<CRMWhatsAppProps> = ({ isClient = false }) => {
 
       {/* Chat Area */}
       {selectedContact ? (
-        <div className="flex-1 flex flex-col">
-          <div className="bg-white border-b p-4 flex items-center gap-4">
+        <div className="flex-1 flex flex-col bg-[#0a0a0a] relative">
+           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-[0.03] pointer-events-none" />
+           
+           <header className="bg-black/40 backdrop-blur-3xl border-b border-white/5 p-8 flex items-center gap-6 relative z-10">
             <div className="relative">
-              <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-xl">{selectedContact.avatar}</div>
-              {selectedContact.online && <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />}
+              <div className="w-16 h-16 bg-[#1a1a1a] border border-white/5 rounded-[22px] flex items-center justify-center text-3xl shadow-2xl">{selectedContact.avatar}</div>
+              {selectedContact.online && <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-[3px] border-black" />}
             </div>
             <div className="flex-1">
-              <p className="font-bold text-gray-900">{selectedContact.name}</p>
-              <p className="text-xs text-gray-500">{selectedContact.online ? '🟢 Online' : `📱 ${selectedContact.phone}`}</p>
+              <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter">{selectedContact.name}</h3>
+              <p className="text-[10px] text-gray-600 font-bold flex items-center gap-2 uppercase tracking-widest mt-1">
+                 {selectedContact.online ? (
+                    <><span className="w-2 h-2 bg-green-500 rounded-full animate-ping" /> Conectado agora</>
+                 ) : (
+                    <><Clock className="w-3 h-3" /> Visto por último hoje</>
+                 )}
+              </p>
             </div>
-            <div className="flex gap-2">
-              <span className={`px-3 py-1 rounded-full text-xs font-bold ${statusColors[selectedContact.status].bg} ${statusColors[selectedContact.status].text}`}>
-                {statusColors[selectedContact.status].label}
-              </span>
-              <button className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-gray-500 hover:text-green-600 hover:bg-green-50 transition-colors"><Phone className="w-4 h-4" /></button>
-              <button className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"><Video className="w-4 h-4" /></button>
-              <button className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-gray-500 hover:text-gray-700 transition-colors"><MoreVertical className="w-4 h-4" /></button>
+            <div className="flex gap-4">
+              <button className="w-14 h-14 bg-white/5 border border-white/5 rounded-[20px] flex items-center justify-center text-gray-500 hover:text-[#D4AF37] transition-all hover:scale-105 shadow-xl"><Phone className="w-6 h-6" /></button>
+              <button className="w-14 h-14 bg-white/5 border border-white/5 rounded-[20px] flex items-center justify-center text-gray-500 hover:text-blue-400 transition-all hover:scale-105 shadow-xl"><Video className="w-6 h-6" /></button>
+              <button className="w-14 h-14 bg-white/5 border border-white/5 rounded-[20px] flex items-center justify-center text-gray-500 hover:text-white transition-all shadow-xl"><MoreVertical className="w-6 h-6" /></button>
             </div>
-          </div>
+          </header>
 
-          <div className="flex-1 overflow-auto p-6 space-y-4 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmMGYwZjAiIGZpbGwtb3BhY2l0eT0iMC40Ij48cGF0aCBkPSJNMzYgMzRjLTIuMjEgMC00LTEuNzktNC00czEuNzktNCA0LTQgNCAxLjc5IDQgNC0xLjc5IDQtNCA0eiIvPjwvZz48L2c+PC9zdmc+')] bg-gray-50">
+          <div className="flex-1 overflow-auto p-12 luxury-scroll relative z-10 flex flex-col gap-6">
             {contactMessages.map(msg => (
-              <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[70%] rounded-2xl px-4 py-3 shadow-sm ${msg.sender === 'user' ? 'bg-green-600 text-white rounded-tr-sm' : 'bg-white text-gray-800 rounded-tl-sm'}`}>
-                  <p className="text-sm">{msg.text}</p>
-                  <div className={`flex items-center gap-1 mt-1 ${msg.sender === 'user' ? 'justify-end' : ''}`}>
-                    <p className={`text-[10px] ${msg.sender === 'user' ? 'text-green-200' : 'text-gray-400'}`}>{msg.time}</p>
-                    {msg.sender === 'user' && <CheckCircle className={`w-3 h-3 ${msg.status === 'read' ? 'text-blue-300' : 'text-green-200'}`} />}
+               <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'} group`}>
+                  <div className={`max-w-[65%] p-6 rounded-[2.5rem] shadow-2xl relative animate-in ${msg.sender === 'user' ? 'bg-gradient-to-br from-[#D4AF37] to-[#b8952a] text-black rounded-tr-sm slide-in-from-right' : 'bg-[#111111] border border-white/5 text-gray-300 rounded-tl-sm slide-in-from-left'}`}>
+                     <p className={`text-base italic font-medium leading-relaxed ${msg.sender === 'user' ? 'font-black' : ''}`}>{msg.text}</p>
+                     <div className={`flex items-center gap-2 mt-4 opacity-40 group-hover:opacity-100 transition-opacity ${msg.sender === 'user' ? 'justify-end' : ''}`}>
+                        <p className={`text-[9px] font-black uppercase tracking-widest ${msg.sender === 'user' ? 'text-black' : 'text-gray-500'}`}>{msg.time}</p>
+                        {msg.sender === 'user' && <CheckCircle className={`w-3.5 h-3.5 ${msg.status === 'read' ? 'text-blue-700' : 'text-black/40'}`} />}
+                     </div>
                   </div>
-                </div>
-              </div>
+               </div>
             ))}
-            {contactMessages.length === 0 && (
-              <div className="text-center text-gray-400 py-20">
-                <MessageCircle className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                <p className="text-sm">Nenhuma mensagem ainda. Inicie a conversa!</p>
-              </div>
-            )}
           </div>
 
-          <div className="bg-white border-t p-4 flex items-center gap-3">
-            <button className="w-10 h-10 text-gray-400 hover:text-gray-600"><Smile className="w-5 h-5" /></button>
-            <button className="w-10 h-10 text-gray-400 hover:text-gray-600"><Paperclip className="w-5 h-5" /></button>
-            <input
-              type="text"
-              placeholder="Digite uma mensagem..."
-              className="flex-1 h-12 bg-gray-100 rounded-xl px-4 outline-none text-sm"
-              value={messageInput}
-              onChange={(e) => setMessageInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-            />
-            <button onClick={sendMessage} className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center text-white hover:bg-green-700 transition-colors shadow-lg">
-              <Send className="w-5 h-5" />
-            </button>
+          <div className="p-10 bg-black/40 backdrop-blur-3xl border-t border-white/5 relative z-10">
+            <div className="flex items-center gap-6 max-w-6xl mx-auto">
+               <div className="flex gap-4">
+                  <button className="w-14 h-14 bg-white/5 rounded-[20px] flex items-center justify-center text-gray-600 hover:text-[#D4AF37] transition-all"><Smile className="w-7 h-7" /></button>
+                  <button className="w-14 h-14 bg-white/5 rounded-[20px] flex items-center justify-center text-gray-600 hover:text-[#D4AF37] transition-all"><Paperclip className="w-7 h-7" /></button>
+               </div>
+               <input
+                 type="text"
+                 placeholder="Sua resposta de elite..."
+                 className="flex-1 h-18 bg-white/5 border border-white/5 rounded-[24px] px-8 outline-none text-white italic font-medium tracking-tight text-lg shadow-inner focus:border-[#D4AF37]/40 transition-all"
+                 value={messageInput}
+                 onChange={(e) => setMessageInput(e.target.value)}
+                 onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+               />
+               <button onClick={sendMessage} className="w-18 h-18 bg-[#D4AF37] rounded-[24px] flex items-center justify-center text-black shadow-2xl hover:scale-105 active:scale-95 transition-all shadow-amber-500/20">
+                 <Send className="w-8 h-8" />
+               </button>
+            </div>
           </div>
         </div>
       ) : (
-        <div className="flex-1 flex items-center justify-center bg-gray-50">
-          <div className="text-center">
-            <MessageCircle className="w-20 h-20 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 font-bold">Selecione uma conversa</p>
-          </div>
+        <div className="flex-1 flex items-center justify-center bg-[#0a0a0a] relative">
+           <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/5 to-transparent blur-3xl rounded-full w-[600px] h-[600px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-20" />
+           <div className="text-center relative z-10 animate-in zoom-in duration-1000">
+             <div className="w-24 h-24 bg-white/5 border border-white/5 rounded-[2.5rem] flex items-center justify-center text-gray-700 mx-auto mb-8 shadow-2xl">
+                <MessageCircle className="w-12 h-12" />
+             </div>
+             <h3 className="text-3xl font-black text-gray-600 italic uppercase tracking-tighter">Selecione um Cliente SD</h3>
+             <p className="text-gray-700 text-sm font-bold uppercase tracking-[0.4em] mt-4">Comunicação Premium Ininterrupta</p>
+           </div>
         </div>
       )}
     </div>
