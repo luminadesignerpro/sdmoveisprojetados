@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Clock, Play, Square, DollarSign, Calendar, User, Send, CheckCircle, XCircle, Loader2, Download, Zap, Shield, Wallet, Activity } from 'lucide-react';
+import { Clock, Play, Square, DollarSign, Calendar, User, Send, CheckCircle, XCircle, Loader2, Download, Zap, Shield, Wallet, Activity, Star, Plus } from 'lucide-react';
 import jsPDF from 'jspdf';
 
 interface Employee {

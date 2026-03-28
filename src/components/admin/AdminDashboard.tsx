@@ -56,7 +56,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             ] = await Promise.all([
                 db.from('contracts').select('*, clients(name)').order('created_at', { ascending: false }),
                 db.from('service_orders').select('id').eq('status', 'aberta'),
-                db.from('products').select('id').lt('stock_quantity', db.raw('min_stock')),
+                db.from('products').select('id, stock_quantity, min_stock'),
                 db.from('accounts_receivable').select('amount').eq('received', false),
                 db.from('accounts_payable').select('amount').eq('paid', false),
                 db.from('studio_measurements').select('*').order('created_at', { ascending: false }).limit(5),
@@ -72,12 +72,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             const toReceive = (receivableRes.data || []).reduce((sum: number, r: any) => sum + (Number(r.amount) || 0), 0);
             const toPay = (payableRes.data || []).reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0);
 
+            const lowStockCount = (stockRes.data || []).filter((p: any) => 
+                (p.stock_quantity || 0) < (p.min_stock || 0)
+            ).length;
+
             setStats({
                 revenue,
                 signedCount: signed,
                 inProduction: production,
                 openOS: osRes.data?.length || 0,
-                lowStock: stockRes.data?.length || 0,
+                lowStock: lowStockCount,
                 toReceive,
                 toPay
             });
@@ -90,29 +94,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     };
 
     return (
-        <div className="p-8 sm:p-12 space-y-12 overflow-auto h-full bg-[#0a0a0a] relative luxury-scroll">
+        <div className="p-4 sm:p-6 space-y-6 overflow-auto h-full bg-[#0a0a0a] relative luxury-scroll">
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                <div className="absolute top-0 right-0 w-[1000px] h-[1000px] bg-[#D4AF37]/5 blur-[200px] rounded-full translate-x-1/2 -translate-y-1/2" />
-                <div className="absolute bottom-0 left-0 w-[800px] h-[800px] bg-[#D4AF37]/3 blur-[180px] rounded-full -translate-x-1/2 translate-y-1/2" />
+                <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#D4AF37]/5 blur-[120px] rounded-full translate-x-1/2 -translate-y-1/2" />
+                <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-[#D4AF37]/3 blur-[100px] rounded-full -translate-x-1/2 translate-y-1/2" />
             </div>
 
-            <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-10 relative z-10 animate-in fade-in slide-in-from-top-6 duration-1000">
+            <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10 animate-in fade-in slide-in-from-top-4 duration-700">
                 <div>
-                  <h1 className="text-4xl sm:text-6xl font-black text-white italic uppercase tracking-tighter flex items-center gap-6">
-                        <div className="w-20 h-20 bg-gradient-to-br from-[#D4AF37] to-[#b8952a] rounded-[28px] flex items-center justify-center text-black shadow-[0_0_50px_rgba(212,175,55,0.2)]">
-                            <Sparkles className="w-10 h-10" />
+                  <h1 className="text-3xl sm:text-4xl font-black text-white italic uppercase tracking-tighter flex items-center gap-4">
+                        <div className="w-14 h-14 bg-gradient-to-br from-[#D4AF37] to-[#b8952a] rounded-[20px] flex items-center justify-center text-black shadow-lg">
+                            <Sparkles className="w-7 h-7" />
                         </div>
                         Gestão <span className="text-[#D4AF37]">Estratégica</span>
                     </h1>
-                    <p className="text-gray-500 mt-5 font-medium italic flex items-center gap-3 text-lg">
-                        <Shield className="w-5 h-5 text-[#D4AF37]" /> Bem-vindo à Central de Comando SD Móveis Premium
+                    <p className="text-gray-500 mt-3 font-medium italic flex items-center gap-2 text-sm">
+                        <Shield className="w-4 h-4 text-[#D4AF37]" /> Central de Comando SD Móveis Premium
                     </p>
                 </div>
                 
-                <div className="flex flex-wrap gap-5">
-                    <div className="bg-[#111111] border border-white/5 rounded-[2rem] px-8 py-4 flex flex-col items-center justify-center min-w-[160px] shadow-2xl">
-                        <p className="text-[10px] font-black text-gray-700 uppercase tracking-widest mb-1 italic">Status Rede</p>
-                        <p className="text-[#D4AF37] font-black flex items-center gap-3 text-sm">
+                <div className="flex flex-wrap gap-4">
+                    <div className="bg-[#111111] border border-white/5 rounded-2xl px-6 py-3 flex flex-col items-center justify-center min-w-[140px] shadow-2xl">
+                        <p className="text-[9px] font-black text-gray-700 uppercase tracking-widest mb-1 italic">Status Rede</p>
+                        <p className="text-[#D4AF37] font-black flex items-center gap-2 text-xs">
                             <span className="w-2 h-2 bg-[#D4AF37] rounded-full animate-pulse" />
                             SINEWAVE ACTIVE
                         </p>
@@ -120,40 +124,40 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <button
                       onClick={handleRender}
                       disabled={isRendering}
-                      className="px-6 h-20 rounded-[1.8rem] font-black text-[10px] uppercase tracking-widest bg-white/5 text-[#D4AF37] border border-[#D4AF37]/30 hover:bg-white/10 transition-all flex items-center gap-3 shadow-xl active:scale-95 disabled:opacity-50"
+                      className="px-6 h-14 rounded-2xl font-black text-[9px] uppercase tracking-widest bg-white/5 text-[#D4AF37] border border-[#D4AF37]/30 hover:bg-white/10 transition-all flex items-center gap-3 shadow-xl active:scale-95 disabled:opacity-50"
                     >
                       {isRendering ? (
-                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
-                        <Sparkles className="w-5 h-5" />
+                        <Sparkles className="w-4 h-4" />
                       )}
-                      INTELIGÊNCIA ARTIFICIAL (8K)
+                      IA (8K)
                     </button>
                     <button
                         onClick={() => setView(ViewMode.BUDGET_QUOTE)}
-                        className="px-10 h-20 rounded-[1.8rem] font-black text-xs uppercase tracking-[0.3em] transition-all hover:scale-105 active:scale-95 shadow-2xl text-black flex items-center gap-4 italic bg-gradient-to-r from-[#D4AF37] to-[#b8952a]"
+                        className="px-8 h-14 rounded-2xl font-black text-[9px] uppercase tracking-[0.2em] transition-all hover:scale-105 active:scale-95 shadow-2xl text-black flex items-center gap-3 italic bg-gradient-to-r from-[#D4AF37] to-[#b8952a]"
                     >
-                        <Plus className="w-5 h-5" /> NOVO ORÇAMENTO
+                        <Plus className="w-4 h-4" /> NOVO ORÇAMENTO
                     </button>
                 </div>
             </header>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 relative z-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
                 {[
                     { title: "Volume Orçamentado", value: `R$ ${(stats.revenue / 1000).toFixed(1)}K`, icon: "💰", trend: "Fluxo Global Bruto", color: "text-[#D4AF37]" },
                     { title: "Portfolio Ativo", value: contracts.length.toString(), icon: "📁", trend: `${stats.signedCount} Assinados`, color: "text-white" },
                     { title: "Linha de Produção", value: stats.inProduction.toString(), icon: "🏭", trend: "Alta Performance", color: "text-white" },
                     { title: "Ordens de Serviço", value: stats.openOS.toString(), icon: "📋", trend: "Pendências Técnicas", color: "text-red-500" },
                 ].map((stat, i) => (
-                    <Card3D key={i} intensity={10} className="rounded-[3rem]">
-                        <div className="bg-[#111111] border border-white/5 rounded-[3rem] p-10 shadow-2xl group hover:border-[#D4AF37]/20 transition-all flex flex-col relative overflow-hidden">
+                    <Card3D key={i} intensity={10} className="rounded-3xl">
+                        <div className="bg-[#111111] border border-white/5 rounded-3xl p-6 shadow-2xl group hover:border-[#D4AF37]/20 transition-all flex flex-col relative overflow-hidden">
                              <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 blur-3xl rounded-full" />
-                             <p className="text-[10px] text-gray-700 font-black uppercase tracking-widest mb-4 italic">{stat.title}</p>
-                             <div className="flex items-center justify-between mb-4">
-                                <p className={`text-4xl font-black italic tracking-tighter tabular-nums ${stat.color}`}>{stat.value}</p>
-                                <span className="text-3xl opacity-20 filter grayscale group-hover:grayscale-0 transition-all">{stat.icon}</span>
+                             <p className="text-[9px] text-gray-700 font-black uppercase tracking-widest mb-3 italic">{stat.title}</p>
+                             <div className="flex items-center justify-between mb-3">
+                                <p className={`text-2xl font-black italic tracking-tighter tabular-nums ${stat.color}`}>{stat.value}</p>
+                                <span className="text-xl opacity-20 filter grayscale group-hover:grayscale-0 transition-all">{stat.icon}</span>
                              </div>
-                             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest italic flex items-center gap-2">
+                             <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest italic flex items-center gap-2">
                                 <Zap className="w-3 h-3 text-[#D4AF37]" /> {stat.trend}
                              </p>
                         </div>
@@ -161,34 +165,34 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 ))}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 relative z-10">
-                <div className="lg:col-span-2 space-y-10">
-                    <div className="rounded-[4rem] p-12 text-white relative overflow-hidden shadow-2xl border border-white/5 bg-gradient-to-br from-[#111111] to-black">
-                        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[#D4AF37]/5 rounded-full blur-[100px]" />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 relative z-10">
+                <div className="lg:col-span-2 space-y-6">
+                    <div className="rounded-3xl p-8 text-white relative overflow-hidden shadow-2xl border border-white/5 bg-gradient-to-br from-[#111111] to-black">
+                        <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-[#D4AF37]/5 rounded-full blur-[80px]" />
                         <div className="relative z-10">
-                            <div className="flex items-center gap-5 mb-10">
-                                <div className="p-4 rounded-[20px] bg-[#D4AF37]/10 border border-[#D4AF37]/20">
-                                    <Star className="w-8 h-8 text-[#D4AF37] fill-[#D4AF37]" />
+                            <div className="flex items-center gap-4 mb-6">
+                                <div className="p-3 rounded-xl bg-[#D4AF37]/10 border border-[#D4AF37]/20">
+                                    <Star className="w-6 h-6 text-[#D4AF37] fill-[#D4AF37]" />
                                 </div>
-                                <span className="text-[#D4AF37] text-sm font-black uppercase tracking-[0.4em] italic leading-none">Diretriz Dominante</span>
+                                <span className="text-[#D4AF37] text-xs font-black uppercase tracking-[0.3em] italic leading-none">Diretriz Dominante</span>
                             </div>
-                            <blockquote className="text-3xl md:text-4xl font-black text-white mb-12 leading-tight italic tracking-tighter">
+                            <blockquote className="text-2xl md:text-3xl font-black text-white mb-8 leading-tight italic tracking-tighter">
                                 "Consagre ao Senhor tudo o que você faz, e os seus planos serão bem-sucedidos."
-                                <span className="block text-[#D4AF37] text-xl mt-6 not-italic font-bold tracking-widest opacity-60">PROVÉRBIOS 16:3</span>
+                                <span className="block text-[#D4AF37] text-lg mt-4 not-italic font-bold tracking-widest opacity-60">PROVÉRBIOS 16:3</span>
                             </blockquote>
                             
-                            <div className="flex flex-wrap gap-6">
+                            <div className="flex flex-wrap gap-4">
                                 <button
                                     onClick={() => setView(ViewMode.PROMOB)}
-                                    className="px-10 h-20 rounded-[2rem] font-black uppercase text-xs tracking-[0.3em] transition-all duration-300 hover:scale-105 active:scale-95 flex items-center gap-4 shadow-2xl text-black bg-gradient-to-r from-[#D4AF37] to-[#b8952a] italic"
+                                    className="px-8 h-14 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] transition-all duration-300 hover:scale-105 active:scale-95 flex items-center gap-3 shadow-2xl text-black bg-gradient-to-r from-[#D4AF37] to-[#b8952a] italic"
                                 >
-                                    <Layers className="w-6 h-6" /> NOVO PROJETO 3D
+                                    <Layers className="w-5 h-5" /> PROJETO 3D
                                 </button>
                                 <button
                                     onClick={() => setView(ViewMode.CONTRACTS_MGMT)}
-                                    className="px-10 h-20 rounded-[2rem] font-black uppercase text-xs tracking-[0.3em] bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all active:scale-95 italic"
+                                    className="px-8 h-14 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all active:scale-95 italic"
                                 >
-                                    <FileText className="w-6 h-6 mr-3" /> GESTÃO CONTRATUAL
+                                    <FileText className="w-5 h-5 mr-2" /> GESTÃO CONTRATUAL
                                 </button>
                             </div>
                         </div>

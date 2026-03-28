@@ -2,7 +2,7 @@ import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { supabase as supabaseClient } from '@/integrations/supabase/client';
 const db = supabaseClient as any;
 import { useToast } from '@/hooks/use-toast';
-import { MapPin, Navigation, Route, Clock, Users, Eye, Fuel, Car, Plus, Pencil, ToggleLeft, ToggleRight, X, Save, RefreshCw, Shield, Zap, TrendingUp } from 'lucide-react';
+import { MapPin, Navigation, Route, Clock, Users, Eye, Fuel, Car, Plus, Pencil, ToggleLeft, ToggleRight, X, Save, RefreshCw, Shield, Zap, TrendingUp, User } from 'lucide-react';
 import FleetMap from './FleetMap';
 import FuelAdminPanel from './FuelAdminPanel';
 
@@ -73,6 +73,8 @@ export default function FleetAdminPanel() {
   const [vehicleForm, setVehicleForm] = useState(emptyVehicle);
   const [savingVehicle, setSavingVehicle] = useState(false);
   const [showInactive, setShowInactive] = useState(false);
+
+  const filteredVehicles = vehicles.filter(v => showInactive || v.active);
 
   const mergeLocations = (previous: TripLocation[], incoming: TripLocation[]) => {
     const uniqueById = new Map<string, TripLocation>();
@@ -214,115 +216,107 @@ export default function FleetAdminPanel() {
   );
 
   return (
-    <div className="p-8 sm:p-12 space-y-12 overflow-auto h-full bg-[#0a0a0a] relative luxury-scroll flex flex-col rounded-[3.5rem] border border-white/5">
+    <div className="p-4 sm:p-6 space-y-6 overflow-auto h-full bg-[#0a0a0a] relative luxury-scroll flex flex-col rounded-3xl border border-white/5">
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#D4AF37]/5 blur-[120px] rounded-full translate-x-1/2 -translate-y-1/2" />
       </div>
 
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 relative z-10 animate-in fade-in slide-in-from-top-6 duration-700">
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10 animate-in fade-in slide-in-from-top-6 duration-700">
         <div>
-          <h1 className="text-4xl sm:text-5xl font-black text-white italic tracking-tighter flex items-center gap-5 uppercase leading-none">
-            <div className="w-16 h-16 bg-gradient-to-br from-[#D4AF37] to-[#b8952a] rounded-[22px] flex items-center justify-center text-black shadow-2xl">
-              <Navigation className="w-8 h-8" />
+          <h1 className="text-2xl sm:text-3xl font-black text-white italic tracking-tighter flex items-center gap-4 uppercase leading-none">
+            <div className="w-10 h-10 bg-gradient-to-br from-[#D4AF37] to-[#b8952a] rounded-xl flex items-center justify-center text-black shadow-lg">
+              <Navigation className="w-5 h-5" />
             </div>
             Gestão <span className="text-[#D4AF37]">Logística</span>
           </h1>
-          <p className="text-gray-500 mt-4 font-medium italic flex items-center gap-3">
-             <Shield className="w-4 h-4 text-[#D4AF37]" /> Monitoramento de Frota SD Intelligence em Tempo Real
+          <p className="text-gray-500 mt-2 text-[10px] font-medium italic flex items-center gap-2">
+             <Shield className="w-3.5 h-3.5 text-[#D4AF37]" /> Monitoramento SD Intelligence
           </p>
         </div>
-        <div className="flex items-center gap-4 bg-[#111111] border border-white/5 p-6 rounded-[2rem] shadow-2xl group overflow-hidden">
-           <div className="absolute top-0 right-0 w-20 h-20 bg-[#D4AF37]/5 blur-2xl rounded-full" />
+        <div className="flex items-center gap-4 bg-[#111111] border border-white/5 p-4 rounded-2xl shadow-xl group overflow-hidden">
            <div className="text-right">
-              <p className="text-[10px] text-gray-700 font-black uppercase tracking-widest italic leading-none mb-2">Monitorando Agora</p>
-              <p className="text-3xl font-black text-white italic tracking-tighter tabular-nums leading-none">{activeTrips.length} <span className="text-xs text-[#D4AF37]">UNID</span></p>
+              <p className="text-[8px] text-gray-700 font-black uppercase tracking-widest italic mb-1">Monitorando</p>
+              <p className="text-2xl font-black text-white italic tracking-tighter tabular-nums leading-none">{activeTrips.length} <span className="text-[10px] text-[#D4AF37]">UNID</span></p>
            </div>
-           <Zap className="w-8 h-8 text-[#D4AF37] opacity-20 group-hover:opacity-100 transition-all duration-700 group-hover:scale-110" />
+           <Zap className="w-6 h-6 text-[#D4AF37] opacity-20 group-hover:opacity-100 transition-all duration-700 group-hover:scale-110" />
         </div>
       </header>
 
-      <nav className="flex flex-wrap gap-3 p-1.5 bg-[#111111] border border-white/5 rounded-[2.2rem] w-fit relative z-10 shadow-2xl">
+      <nav className="flex flex-wrap gap-2 p-1 bg-[#111111] border border-white/5 rounded-2xl w-fit relative z-10 shadow-xl">
         {[
-          { id: 'live', icon: MapPin, label: 'TEMPO REAL' },
+          { id: 'live', icon: MapPin, label: 'AO VIVO' },
           { id: 'history', icon: Route, label: 'HISTÓRICO' },
-          { id: 'fuel', icon: Fuel, label: 'OPERACIONAL' },
+          { id: 'fuel', icon: Fuel, label: 'OPERAÇÕES' },
           { id: 'vehicles', icon: Car, label: 'ATIVOS' }
         ].map(t => (
           <button
             key={t.id}
             onClick={() => { setTab(t.id as any); if (t.id === 'live') fetchActiveLocations(); }}
-            className={`flex items-center gap-3 px-8 py-4 rounded-[1.8rem] font-black text-[10px] uppercase tracking-widest transition-all duration-500 italic ${
-              tab === t.id ? 'bg-[#D4AF37] text-black shadow-xl scale-105 active:scale-95' : 'text-gray-500 hover:text-white hover:bg-white/5'
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all duration-500 italic ${
+              tab === t.id ? 'bg-[#D4AF37] text-black shadow-lg scale-105 active:scale-95' : 'text-gray-500 hover:text-white hover:bg-white/5'
             }`}
           >
-            <t.icon className="w-4 h-4" />
+            <t.icon className="w-3.5 h-3.5" />
             {t.label}
           </button>
         ))}
         <button
           onClick={fetchData}
-          className="ml-4 px-6 py-4 flex items-center gap-3 text-gray-700 hover:text-[#D4AF37] transition-all bg-black/40 rounded-full border border-white/5"
+          className="ml-2 px-4 py-2 flex items-center gap-2 text-gray-700 hover:text-[#D4AF37] transition-all bg-black/40 rounded-full border border-white/5"
         >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          <span className="text-[9px] font-black uppercase tracking-widest italic">{loading ? 'SYNCING...' : 'FORCE SYNC'}</span>
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+          <span className="text-[8px] font-black uppercase tracking-widest italic">{loading ? 'SYNC...' : 'FORCE'}</span>
         </button>
       </nav>
 
       {tab !== 'fuel' && tab !== 'vehicles' && (
-        <div className="bg-[#111111] border border-white/5 rounded-[3.5rem] shadow-2xl overflow-hidden relative z-10 group" style={{ height: '600px' }}>
-          <div className="absolute top-8 left-8 z-10 flex items-center gap-4 bg-black/80 backdrop-blur-md px-6 py-3 rounded-full border border-white/10 shadow-2xl italic">
-             <div className="w-3 h-3 bg-[#D4AF37] rounded-full animate-pulse shadow-[0_0_15px_#D4AF37]" />
-             <p className="text-[10px] text-white font-black uppercase tracking-widest">Master Telemetry Feed Live</p>
+        <div className="bg-[#111111] border border-white/5 rounded-3xl shadow-xl overflow-hidden relative z-10 group" style={{ height: '600px' }}>
+          <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-black/80 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 shadow-xl italic">
+             <div className="w-2 h-2 bg-[#D4AF37] rounded-full animate-pulse shadow-[0_0_10px_#D4AF37]" />
+             <p className="text-[8px] text-white font-black uppercase tracking-widest">Feed Live</p>
           </div>
-          <Suspense fallback={<div className="flex items-center justify-center h-full"><Navigation className="w-12 h-12 text-[#D4AF37] animate-spin opacity-20" /></div>}>
+          <Suspense fallback={<div className="flex items-center justify-center h-full"><Navigation className="w-8 h-8 text-[#D4AF37] animate-spin opacity-20" /></div>}>
             <FleetMap locations={tripLocations} />
           </Suspense>
         </div>
       )}
 
       {tab === 'live' && (
-        <div className="bg-[#111111] border border-white/5 rounded-[3.5rem] p-10 shadow-2xl relative z-10 group animate-in slide-in-from-bottom-6 duration-700">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-[#D4AF37]/5 blur-3xl rounded-full" />
-          <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] mb-10 flex items-center gap-4 italic leading-none">
-            <Users className="w-6 h-6 text-[#D4AF37]" /> Motoristas em Operação Crítica
+        <div className="bg-[#111111] border border-white/5 rounded-3xl p-6 shadow-xl relative z-10 group animate-in slide-in-from-bottom-6 duration-700">
+          <h3 className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-6 flex items-center gap-3 italic leading-none">
+            <Users className="w-4 h-4 text-[#D4AF37]" /> Motoristas em Operação
           </h3>
-          <div className="space-y-4 luxury-scroll max-h-[500px] overflow-auto pr-4">
+          <div className="space-y-3 luxury-scroll max-h-[400px] overflow-auto pr-2">
             {activeTrips.map(trip => {
               const lastLoc = tripLocations.filter(l => l.trip_id === trip.id).sort((a,b) => new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime())[0];
               return (
-                <div key={trip.id} className="flex flex-col md:flex-row items-center justify-between p-8 bg-black/40 border border-white/5 rounded-[2.5rem] group/item hover:border-[#D4AF37]/30 transition-all duration-500 gap-6">
-                  <div className="flex items-center gap-8">
+                <div key={trip.id} className="flex flex-col md:flex-row items-center justify-between p-4 bg-black/40 border border-white/5 rounded-2xl group/item hover:border-[#D4AF37]/30 transition-all duration-500 gap-4">
+                  <div className="flex items-center gap-6">
                     <div className="relative">
-                      <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center border border-white/5">
-                        <User className="w-8 h-8 text-gray-700 group-hover/item:text-white transition-colors" />
+                      <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center border border-white/5">
+                        <User className="w-6 h-6 text-gray-700 group-hover/item:text-white transition-colors" />
                       </div>
-                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-4 border-black animate-pulse" />
+                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-black animate-pulse" />
                     </div>
                     <div>
-                      <p className="text-xl font-black text-white italic tracking-tighter uppercase leading-none mb-3 group-hover/item:text-[#D4AF37] transition-colors">{getEmployeeName(trip.employee_id)}</p>
-                      <div className="flex flex-wrap items-center gap-5">
-                         <div className="bg-[#D4AF37]/10 px-4 py-1.5 rounded-lg border border-[#D4AF37]/20 flex items-center gap-2">
-                           <Car className="w-3 h-3 text-[#D4AF37]" />
-                           <span className="text-[10px] text-white font-black italic">{getVehiclePlate(trip.vehicle_id) || 'NÃO ATRIBUÍDO'}</span>
+                      <p className="text-lg font-black text-white italic tracking-tighter uppercase leading-none mb-2 group-hover/item:text-[#D4AF37] transition-colors">{getEmployeeName(trip.employee_id)}</p>
+                      <div className="flex flex-wrap items-center gap-3">
+                         <div className="bg-[#D4AF37]/10 px-3 py-1 rounded-md border border-[#D4AF37]/20 flex items-center gap-1.5">
+                           <Car className="w-2.5 h-2.5 text-[#D4AF37]" />
+                           <span className="text-[9px] text-white font-black italic">{getVehiclePlate(trip.vehicle_id) || 'N/A'}</span>
                          </div>
-                         <div className="flex items-center gap-2 text-gray-600 italic font-black text-[10px] tracking-widest">
-                            <Clock className="w-3 h-3" /> {formatTime(trip.started_at)} • {calcDuration(trip.started_at, null)}
+                         <div className="flex items-center gap-1.5 text-gray-600 italic font-black text-[9px] tracking-widest">
+                            <Clock className="w-2.5 h-2.5" /> {calcDuration(trip.started_at, null)}
                          </div>
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-8">
-                    {lastLoc && (
-                      <div className="text-right">
-                         <p className="text-[9px] text-gray-700 font-black uppercase tracking-widest italic mb-1">Última Transmissão</p>
-                         <p className="text-xs text-gray-400 font-black italic tracking-tight">{formatTime(lastLoc.recorded_at)}</p>
-                      </div>
-                    )}
+                  <div className="flex items-center gap-6">
                     <button
                       onClick={() => viewTripRoute(trip.id)}
-                      className="px-8 h-12 bg-white/5 border border-white/10 text-white rounded-xl font-black text-[9px] uppercase tracking-[0.2em] hover:bg-[#D4AF37] hover:text-black transition-all flex items-center gap-3 shadow-2xl italic group/btn"
+                      className="px-6 h-10 bg-white/5 border border-white/10 text-white rounded-lg font-black text-[8px] uppercase tracking-widest hover:bg-[#D4AF37] hover:text-black transition-all flex items-center gap-2 shadow-xl italic group/btn"
                     >
-                      <Eye className="w-4 h-4 transition-transform group-hover/btn:scale-125" /> FOCUS ROTA
+                      <Eye className="w-3.5 h-3.5 transition-transform group-hover/btn:scale-125" /> ROTA
                     </button>
                   </div>
                 </div>
@@ -349,28 +343,28 @@ export default function FleetAdminPanel() {
               <button
                 key={trip.id}
                 onClick={() => viewTripRoute(trip.id)}
-                className={`flex flex-col p-8 rounded-[2.5rem] border transition-all text-left group/item relative overflow-hidden ${
-                  selectedTripId === trip.id ? 'bg-[#D4AF37]/5 border-[#D4AF37]/30 shadow-[0_0_50px_rgba(212,175,55,0.05)]' : 'bg-black/30 border-white/5 hover:border-white/20'
+                className={`flex flex-col p-6 rounded-3xl border transition-all text-left group/item relative overflow-hidden ${
+                  selectedTripId === trip.id ? 'bg-[#D4AF37]/5 border-[#D4AF37]/30 shadow-xl' : 'bg-black/30 border-white/5 hover:border-white/20'
                 }`}
               >
-                <div className="flex justify-between items-start mb-8">
-                   <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 ${selectedTripId === trip.id ? 'bg-[#D4AF37] text-black' : 'bg-white/5 text-gray-800'}`}>
-                      <MapPin className="w-6 h-6" />
+                <div className="flex justify-between items-start mb-6">
+                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-500 ${selectedTripId === trip.id ? 'bg-[#D4AF37] text-black' : 'bg-white/5 text-gray-800'}`}>
+                      <MapPin className="w-5 h-5" />
                    </div>
                    <div className="text-right">
-                      <p className="text-[9px] text-gray-700 font-black uppercase mb-1 tracking-widest italic">Pontos GPS</p>
+                      <p className="text-[8px] text-gray-700 font-black uppercase mb-1 tracking-widest italic">Pontos</p>
                       <p className="text-lg font-black text-white italic tracking-tighter tabular-nums leading-none">{tripPointCounts[trip.id] ?? '—'}</p>
                    </div>
                 </div>
-                <div className="space-y-4 mb-8">
+                <div className="space-y-2 mb-6">
                    <p className="text-lg font-black text-white italic tracking-tighter uppercase leading-tight group-hover/item:text-[#D4AF37] transition-colors">{getEmployeeName(trip.employee_id)}</p>
-                   <p className="text-[10px] text-gray-600 font-black uppercase tracking-widest italic line-clamp-1">{getVehiclePlate(trip.vehicle_id) || 'SEM VEÍCULO'}</p>
+                   <p className="text-[9px] text-gray-600 font-black uppercase tracking-widest italic line-clamp-1">{getVehiclePlate(trip.vehicle_id) || 'SEM VEÍCULO'}</p>
                 </div>
-                <div className="pt-6 border-t border-white/5 flex items-center justify-between">
-                   <div className="flex items-center gap-2 text-[10px] text-gray-500 italic font-medium uppercase">
-                      <Clock className="w-3.5 h-3.5 opacity-40" /> {calcDuration(trip.started_at, trip.ended_at)}
+                <div className="pt-4 border-t border-white/5 flex items-center justify-between">
+                   <div className="flex items-center gap-2 text-[9px] text-gray-500 italic font-medium uppercase">
+                      <Clock className="w-3 h-3 opacity-40" /> {calcDuration(trip.started_at, trip.ended_at)}
                    </div>
-                   <span className="text-[9px] text-gray-700 font-black uppercase tracking-widest italic">{formatTime(trip.started_at)}</span>
+                   <span className="text-[8px] text-gray-700 font-black uppercase tracking-widest italic">{formatTime(trip.started_at)}</span>
                 </div>
                 {selectedTripId === trip.id && <div className="absolute bottom-0 left-0 h-1 bg-[#D4AF37] w-full" />}
               </button>

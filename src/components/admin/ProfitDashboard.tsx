@@ -40,28 +40,28 @@ export const ProfitDashboard: React.FC<ProfitDashboardProps> = ({ contracts, set
     };
 
     return (
-        <div className="p-8 sm:p-12 space-y-12 overflow-auto h-full bg-[#0a0a0a] relative luxury-scroll flex flex-col">
+        <div className="p-6 sm:p-8 space-y-8 overflow-auto h-full bg-[#0a0a0a] relative luxury-scroll flex flex-col">
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
                 <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-[#D4AF37]/5 blur-[150px] rounded-full translate-x-1/2 -translate-y-1/2" />
             </div>
 
-            <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-8 relative z-10 animate-in fade-in slide-in-from-top-6 duration-700">
+            <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 relative z-10">
                 <div>
-                   <h1 className="text-4xl sm:text-5xl font-black text-white italic uppercase tracking-tighter flex items-center gap-5">
-                        <div className="w-16 h-16 bg-gradient-to-br from-[#D4AF37] to-[#b8952a] rounded-[22px] flex items-center justify-center text-black shadow-2xl">
-                            <BarChart3 className="w-8 h-8" />
+                   <h1 className="text-3xl sm:text-4xl font-black text-white italic uppercase tracking-tighter flex items-center gap-4">
+                        <div className="w-12 h-12 bg-gradient-to-br from-[#D4AF37] to-[#b8952a] rounded-[18px] flex items-center justify-center text-black shadow-2xl">
+                            <BarChart3 className="w-6 h-6" />
                         </div>
                         Executive <span className="text-[#D4AF37]">BI</span>
                     </h1>
-                    <p className="text-gray-500 mt-4 font-medium italic flex items-center gap-3">
-                         <Shield className="w-4 h-4 text-[#D4AF37]" /> Análise Preditiva de Margem e Lucratividade SD
+                    <p className="text-gray-500 mt-2 text-xs font-medium italic flex items-center gap-2">
+                         <Shield className="w-3.5 h-3.5 text-[#D4AF37]" /> Análise Preditiva de Margem e Lucratividade SD
                     </p>
                 </div>
                 <button
                     onClick={() => setView(ViewMode.DASHBOARD)}
-                    className="flex items-center gap-4 px-10 h-20 rounded-[1.5rem] bg-white/5 border border-white/5 font-black text-[10px] uppercase tracking-[0.3em] text-gray-500 hover:text-[#D4AF37] hover:border-[#D4AF37]/30 transition-all shadow-2xl italic active:scale-95"
+                    className="flex items-center gap-3 px-8 h-14 rounded-2xl bg-white/5 border border-white/5 font-black text-[9px] uppercase tracking-[0.2em] text-gray-500 hover:text-[#D4AF37] hover:border-[#D4AF37]/30 transition-all shadow-2xl italic active:scale-95"
                 >
-                    <ArrowLeft className="w-5 h-5" /> CONSOLE COMANDO
+                    <ArrowLeft className="w-4 h-4" /> CONSOLE COMANDO
                 </button>
             </header>
 
