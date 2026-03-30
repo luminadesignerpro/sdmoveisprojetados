@@ -890,7 +890,7 @@ const App: React.FC = () => {
           )}
 
           {view === ViewMode.CRM && (
-            <div className="h-full p-6 overflow-auto bg-gradient-to-br from-gray-50 to-gray-100">
+            <div className="h-full p-6 overflow-auto bg-background">
               <header className="mb-6">
                 <h1 className="text-3xl font-black text-gray-900 flex items-center gap-3">
                   <MessageCircle className="w-8 h-8 text-green-500" />
@@ -932,7 +932,7 @@ const App: React.FC = () => {
 
           {/* CLIENT PORTAL */}
           {view === ViewMode.CLIENT_PORTAL && (
-            <div className="p-8 space-y-6 overflow-auto h-full bg-gradient-to-br from-gray-50 to-gray-100">
+            <div className="p-8 space-y-6 overflow-auto h-full bg-background">
               <header className="flex justify-between items-start">
                 <div>
                   <h1 className="text-4xl font-black text-gray-900 flex items-center gap-3">

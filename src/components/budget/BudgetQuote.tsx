@@ -22,6 +22,8 @@ interface AnalysisResult {
     metrosLineares: number;
     metrosQuadrados: number;
   };
+  estoqueCalculado?: string;
+  blenderScript?: string;
   descricao: string;
   simulacao: string;
   complexidade: 'simples' | 'media' | 'complexa';
@@ -160,20 +162,24 @@ export default function BudgetQuote() {
     try {
       const stockContext = stockProducts.length > 0 ? `\nMateriais em estoque: ${stockProducts.slice(0, 15).map(p => p.name).join(', ')}.` : '';
       const knownDimContext = arMeasuredDim ? `\nDIMENSÃO REAL MEDIDA PELA TRENA AR: ${arMeasuredDim.toFixed(2)} metros (use exatamente este valor como largura ou metros lineares — não estime).` : '';
-      const prompt = `Você é um especialista em marcenaria e design brasileiro. Analise esta foto de um ambiente e responda com um JSON válido contendo a análise técnica para um projeto de móveis projetados.
+      const prompt = `Você é o Agente Antigravity, especialista em marcenaria e design brasileiro. Analise esta foto de um ambiente e responda com um JSON válido contendo a análise técnica para um projeto de móveis projetados.
 ${stockContext}${knownDimContext}
 
-REGRAS CRÍTICAS DE PRECISÃO:
+REGRAS CRÍTICAS DE PRECISÃO E VALIDAÇÃO:
 1. Identifique o tipo de ambiente (cozinha, dormitorio, sala ou banheiro).
-2. Dimensões: Use incrementos de 10cm (ex: 2.10, 3.50). SEJA DETERMINÍSTICO.
+2. Dimensões: Sempre que receber medidas da Trena AR, execute uma validação de integridade. Verifique se as paredes formam ângulos de 90°. Se a medida for 595mm a 605mm, assuma 600mm para fins de modulação padrão, mas mantenha o desconto de 5mm para folga de montagem no orçamento.
 3. Se houver uma DIMENSÃO REAL fornecida acima, use-a como prioridade absoluta (NÃO ESTIME SE JÁ EXISTIR).
-4. Itens: Liste em ordem horária a partir da esquerda. Forneça bounding box (0-1000).
-5. RESPONDA APENAS O JSON, sem textos explicativos.
+4. Do Ponto ao Orçamento: Calcule o consumo de material baseando-se no aproveitamento de chapa (Nesting). Seja específico. Exemplo: "Isso requer 1 chapa de MDF 15mm cortada, 4m de fita de borda e 8 parafusos". Consulte os valores unitários e disponibilidade.
+5. O Script de Projeção (Blender): Gere um script Python conciso usando \`bpy.ops.mesh.primitive_cube_add\` passando as dimensões exatas que vieram da trena. Configure o "Pivô" do móvel no ponto inicial do clique da câmera.
+6. Itens: Liste em ordem horária a partir da esquerda. Forneça bounding box (ymin,xmin,ymax,xmax entre 0-1000).
+7. RESPONDA APENAS O JSON, sem textos explicativos.
 
 Estrutura do JSON:
 {
   "ambiente": "cozinha|dormitorio|sala|banheiro",
   "dimensoes": {"largura": n, "altura": n, "profundidade": n, "metrosLineares": n, "metrosQuadrados": n},
+  "estoqueCalculado": "Ex: 2 chapas MDF 15mm, 10m fita de borda, 15 parafusos...",
+  "blenderScript": "import bpy\\n# Script de projecao...",
   "descricao": "breve descrição técnica",
   "simulacao": "descrição da proposta",
   "complexidade": "simples|media|complexa",
@@ -734,9 +740,36 @@ Estrutura do JSON:
                   </button>
 
                   {stockProducts.length > 0 && (
-                    <div className="bg-emerald-50 p-4 rounded-2xl flex items-center gap-3 border border-emerald-100">
-                      <Package className="w-5 h-5 text-emerald-600" />
-                      <p className="text-[10px] font-bold text-emerald-700 uppercase leading-tight">Preços sincronizados com estoque real</p>
+                    <div className="bg-emerald-50 p-4 rounded-2xl flex flex-col gap-2 border border-emerald-100">
+                      <div className="flex items-center gap-3">
+                        <Package className="w-5 h-5 text-emerald-600" />
+                        <p className="text-[10px] font-bold text-emerald-700 uppercase leading-tight">Cálculo de Estoque Real</p>
+                      </div>
+                      {analysis.estoqueCalculado && (
+                        <p className="text-xs text-emerald-800 bg-emerald-100/50 p-3 rounded-xl border border-emerald-200/50 italic">
+                          "{analysis.estoqueCalculado}"
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {analysis.blenderScript && (
+                    <div className="bg-blue-50 p-4 rounded-2xl flex flex-col gap-3 border border-blue-100">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-blue-700">
+                          <Box className="w-4 h-4" />
+                          <span className="text-[10px] font-black uppercase tracking-widest">Script Blender</span>
+                        </div>
+                        <button 
+                          onClick={() => downloadFile('projecao.py', analysis.blenderScript || '')}
+                          className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-700 transition"
+                        >
+                          BAIXAR SCRIPT
+                        </button>
+                      </div>
+                      <p className="text-xs text-blue-800/80 leading-relaxed">
+                        Execute este script no Blender para gerar a malha primitiva (primitive_cube_add) exatamente na dimensão medida pela Trena AR.
+                      </p>
                     </div>
                   )}
 
@@ -972,20 +1005,57 @@ Estrutura do JSON:
       {showARTool && (
         <ARMeasureTool
           onClose={() => setShowARTool(false)}
-          onConfirmMeasurement={(val) => {
+          onConfirmMeasurement={(val, dims) => {
             setArMeasuredDim(val);
             if (analysis) {
+              const largura = dims ? dims.width : val;
+              const profundidade = dims ? dims.depth : analysis.dimensoes.profundidade;
+              const altura = dims ? dims.height : analysis.dimensoes.altura;
+
+              let scriptPython = analysis.blenderScript;
+              let novoEstoque = analysis.estoqueCalculado;
+
+              if (dims) {
+                scriptPython = `import bpy\n# Script AR SD Moveis\nbpy.ops.mesh.primitive_cube_add(size=1)\nobj = bpy.context.active_object\nobj.scale = (${largura}, ${profundidade}, ${altura})\nobj.location = (${largura/2}, ${profundidade/2}, ${altura/2})`;
+                const areaFrontal = largura * altura;
+                const qtdChapas = Math.ceil(((areaFrontal * 2.5) * 1.15) / 5.04);
+                const qtdCorredicas = Math.ceil(altura / 0.5);
+                novoEstoque = `AR Detectado: ${qtdChapas} chapas (MDF + 15% sobra), ${qtdCorredicas} par(es) de corrediça, dobradiças incluídas.`;
+              }
+
               setAnalysis({
                 ...analysis,
                 dimensoes: {
                   ...analysis.dimensoes,
-                  largura: val,
-                  metrosLineares: val
-                }
+                  largura: largura,
+                  profundidade: profundidade,
+                  altura: altura,
+                  metrosLineares: largura
+                },
+                blenderScript: scriptPython,
+                estoqueCalculado: novoEstoque
               });
+
+              if (orcamento && dims) {
+                const newOrc = { ...orcamento };
+                const mdfPreco = stockProducts.find((p: any) => p.name.toUpperCase().includes('MDF'))?.price || 280;
+                const areaFrontal = largura * altura;
+                const qtdChapas = Math.ceil(((areaFrontal * 2.5) * 1.15) / 5.04);
+                const custoBasico = (qtdChapas * mdfPreco) + (Math.ceil(altura / 0.5) * 45) + (4 * 15);
+                const valorFinal = custoBasico * 1.4;
+
+                newOrc.opcoes[0].valor = valorFinal;
+                newOrc.opcoes[1].valor = valorFinal * 1.25;
+                newOrc.opcoes[2].valor = valorFinal * 1.5;
+                setOrcamento(newOrc);
+              }
             }
             setShowARTool(false);
-            toast({ title: `✅ Medida salva: ${val.toFixed(2)}m`, description: 'A dimensão real foi aplicada ao projeto.' });
+            if (dims) {
+              toast({ title: `🎯 Projeto Confirmado!`, description: `L: ${(dims.width*1000).toFixed(0)}mm | A: ${(dims.height*1000).toFixed(0)}mm | P: ${(dims.depth*1000).toFixed(0)}mm. Orçamento recalculado.` });
+            } else {
+              toast({ title: `✅ Medida salva: ${val.toFixed(2)}m`, description: 'A dimensão real foi aplicada ao projeto.' });
+            }
           }}
         />
       )}

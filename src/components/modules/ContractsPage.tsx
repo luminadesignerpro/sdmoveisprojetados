@@ -68,13 +68,13 @@ const ContractsPage: React.FC = () => {
   };
 
   const statusColors: Record<string, string> = {
-    rascunho: 'bg-gray-100 text-gray-600',
-    ativo: 'bg-green-100 text-green-700',
-    assinado: 'bg-blue-100 text-blue-700',
-    assassinado: 'bg-blue-100 text-blue-700',
-    assasinado: 'bg-blue-100 text-blue-700',
-    cancelado: 'bg-red-100 text-red-700',
-    finalizado: 'bg-purple-100 text-purple-700',
+    rascunho: 'bg-white/10 text-gray-400 border border-white/20',
+    ativo: 'bg-green-900/50 text-green-400 border border-green-500/30',
+    assinado: 'bg-blue-900/50 text-blue-400 border border-blue-500/30',
+    assassinado: 'bg-blue-900/50 text-blue-400 border border-blue-500/30',
+    assasinado: 'bg-blue-900/50 text-blue-400 border border-blue-500/30',
+    cancelado: 'bg-red-900/50 text-red-500 border border-red-500/30',
+    finalizado: 'bg-purple-900/50 text-purple-400 border border-purple-500/30',
   };
 
   const generateClientLogin = async (contract: any) => {
@@ -126,23 +126,23 @@ const ContractsPage: React.FC = () => {
   };
 
   return (
-    <div className="p-4 sm:p-8 space-y-6 overflow-auto h-full bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="p-4 sm:p-8 space-y-6 overflow-auto h-full bg-[#0f0f0f] w-full text-white">
       <header className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
         <div>
-          <h1 className="text-3xl sm:text-4xl font-black text-gray-900 flex items-center gap-3">
+          <h1 className="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-500 flex items-center gap-3">
             <FileSignature className="w-8 h-8 text-amber-500" />
             Contratos
           </h1>
-          <p className="text-gray-500 mt-1">Gestão de contratos e ordens de serviço</p>
+          <p className="text-gray-400 mt-1">Gestão de contratos e ordens de serviço</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
-          <button onClick={() => openGenerator('contrato_servico')} className="bg-gradient-to-r from-amber-500 to-amber-600 text-white px-5 py-3 rounded-2xl font-bold hover:from-amber-600 hover:to-amber-700 flex items-center justify-center gap-2 shadow-lg w-full sm:w-auto">
+          <button onClick={() => openGenerator('contrato_servico')} className="bg-[#1a1a1a] border border-amber-500/30 text-amber-500 px-5 py-3 rounded-2xl font-bold hover:bg-amber-500/10 flex items-center justify-center gap-2 shadow-lg w-full sm:w-auto transition-colors">
             <Sparkles className="w-5 h-5" /> Gerar Contrato (IA)
           </button>
-          <button onClick={() => openGenerator('ordem_servico')} className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-5 py-3 rounded-2xl font-bold hover:from-blue-600 hover:to-blue-700 flex items-center justify-center gap-2 shadow-lg w-full sm:w-auto">
+          <button onClick={() => openGenerator('ordem_servico')} className="bg-[#1a1a1a] border border-blue-500/30 text-blue-400 px-5 py-3 rounded-2xl font-bold hover:bg-blue-500/10 flex items-center justify-center gap-2 shadow-lg w-full sm:w-auto transition-colors">
             <Sparkles className="w-5 h-5" /> Gerar OS (IA)
           </button>
-          <button onClick={() => { setShowForm(true); setEditingId(null); setForm({ client_id: '', client_name: '', title: '', content: '', value: 0, status: 'rascunho', notes: '' }); }} className="bg-gray-800 text-white px-5 py-3 rounded-2xl font-bold hover:bg-gray-900 flex items-center justify-center gap-2 shadow-lg w-full sm:w-auto">
+          <button onClick={() => { setShowForm(true); setEditingId(null); setForm({ client_id: '', client_name: '', title: '', content: '', value: 0, status: 'rascunho', notes: '' }); }} className="text-black px-5 py-3 rounded-2xl font-bold hover:opacity-90 flex items-center justify-center gap-2 shadow-lg w-full sm:w-auto transition-opacity" style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583)' }}>
             <Plus className="w-5 h-5" /> Manual
           </button>
         </div>
@@ -160,30 +160,30 @@ const ContractsPage: React.FC = () => {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {['rascunho', 'ativo', 'assinado', 'finalizado'].map(st => (
-          <div key={st} className="bg-white rounded-2xl p-4 shadow-lg shrink-0">
-            <p className="text-xs text-gray-500 uppercase font-bold">{st.charAt(0).toUpperCase() + st.slice(1)}s</p>
-            <p className="text-2xl font-black text-gray-900 mt-1">{contracts.filter(c => c.status === st).length}</p>
+          <div key={st} className="bg-[#111111] border border-white/10 rounded-2xl p-4 shadow-lg shrink-0 hover:border-amber-500/30 transition-colors">
+            <p className="text-xs text-gray-400 uppercase font-bold">{st.charAt(0).toUpperCase() + st.slice(1)}s</p>
+            <p className="text-2xl font-black text-white mt-1">{contracts.filter(c => c.status === st).length}</p>
           </div>
         ))}
       </div>
 
       <div className="relative max-w-md">
-        <Search className="absolute left-4 top-3 w-5 h-5 text-gray-400" />
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar contrato..." className="w-full pl-12 pr-4 py-3 rounded-2xl border border-gray-200 bg-white focus:ring-2 focus:ring-amber-500 focus:border-transparent" />
+        <Search className="absolute left-4 top-3 w-5 h-5 text-gray-500" />
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar contrato..." className="w-full pl-12 pr-4 py-3 rounded-2xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder-gray-600" />
       </div>
 
       {showForm && (
-        <div className="bg-white rounded-3xl p-6 shadow-xl space-y-4">
-          <h3 className="font-bold text-lg">{editingId ? 'Editar' : 'Novo'} Contrato</h3>
+        <div className="bg-[#111111] border border-amber-500/20 rounded-3xl p-6 shadow-xl space-y-4">
+          <h3 className="font-bold text-lg text-white">{editingId ? 'Editar' : 'Novo'} Contrato</h3>
           <div className="grid grid-cols-2 gap-4">
-            <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Título *" className="p-3 rounded-xl border border-gray-200" />
-            <select value={form.client_id} onChange={e => setForm({ ...form, client_id: e.target.value })} className="p-3 rounded-xl border border-gray-200">
+            <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Título *" className="p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder-gray-500" />
+            <select value={form.client_id} onChange={e => setForm({ ...form, client_id: e.target.value })} className="p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none flex-1">
               <option value="">Selecionar Cliente</option>
               {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
-            <input value={form.client_name} onChange={e => setForm({ ...form, client_name: e.target.value })} placeholder="Nome do cliente (manual)" className="p-3 rounded-xl border border-gray-200" />
-            <input type="number" value={form.value} onChange={e => setForm({ ...form, value: +e.target.value })} placeholder="Valor (R$)" className="p-3 rounded-xl border border-gray-200" />
-            <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })} className="p-3 rounded-xl border border-gray-200">
+            <input value={form.client_name} onChange={e => setForm({ ...form, client_name: e.target.value })} placeholder="Nome do cliente (manual)" className="p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder-gray-500" />
+            <input type="number" value={form.value} onChange={e => setForm({ ...form, value: +e.target.value })} placeholder="Valor (R$)" className="p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder-gray-500" />
+            <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })} className="p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none">
               <option value="rascunho">Rascunho</option>
               <option value="ativo">Ativo</option>
               <option value="assinado">Assinado</option>
@@ -193,44 +193,44 @@ const ContractsPage: React.FC = () => {
               <option value="finalizado">Finalizado</option>
             </select>
           </div>
-          <textarea value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} placeholder="Conteúdo do contrato" className="w-full p-3 rounded-xl border border-gray-200" rows={4} />
-          <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Observações" className="w-full p-3 rounded-xl border border-gray-200" rows={2} />
+          <textarea value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} placeholder="Conteúdo do contrato" className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder-gray-500" rows={4} />
+          <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Observações" className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder-gray-500" rows={2} />
           <div className="flex gap-3">
-            <button onClick={handleSave} className="bg-amber-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-amber-700">Salvar</button>
-            <button onClick={() => setShowForm(false)} className="bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-bold hover:bg-gray-300">Cancelar</button>
+            <button onClick={handleSave} className="text-black px-6 py-3 rounded-xl font-bold transition-transform hover:scale-105" style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583)' }}>Salvar</button>
+            <button onClick={() => setShowForm(false)} className="bg-white/10 border border-white/10 text-white px-6 py-3 rounded-xl font-bold hover:bg-white/20 transition-all">Cancelar</button>
           </div>
         </div>
       )}
 
-      <div className="bg-white rounded-3xl shadow-xl overflow-x-auto">
+      <div className="bg-[#111111] border border-white/10 rounded-3xl shadow-xl overflow-x-auto text-white">
         <table className="w-full min-w-[800px]">
-          <thead className="bg-gray-50">
+          <thead className="bg-[#1a1a1a] border-b border-white/10">
             <tr>
-              <th className="text-left p-4 text-xs font-black text-gray-500 uppercase">#</th>
-              <th className="text-left p-4 text-xs font-black text-gray-500 uppercase">Título</th>
-              <th className="text-left p-4 text-xs font-black text-gray-500 uppercase">Cliente</th>
-              <th className="text-left p-4 text-xs font-black text-gray-500 uppercase">Valor</th>
-              <th className="text-left p-4 text-xs font-black text-gray-500 uppercase">Status</th>
-              <th className="text-left p-4 text-xs font-black text-gray-500 uppercase">Data</th>
-              <th className="text-left p-4 text-xs font-black text-gray-500 uppercase">Ações</th>
+              <th className="text-left p-4 text-xs font-black text-gray-400 uppercase">#</th>
+              <th className="text-left p-4 text-xs font-black text-gray-400 uppercase">Título</th>
+              <th className="text-left p-4 text-xs font-black text-gray-400 uppercase">Cliente</th>
+              <th className="text-left p-4 text-xs font-black text-gray-400 uppercase">Valor</th>
+              <th className="text-left p-4 text-xs font-black text-gray-400 uppercase">Status</th>
+              <th className="text-left p-4 text-xs font-black text-gray-400 uppercase">Data</th>
+              <th className="text-left p-4 text-xs font-black text-gray-400 uppercase">Ações</th>
             </tr>
           </thead>
           <tbody>
             {filtered.map(c => (
-              <tr key={c.id} className="border-t hover:bg-gray-50">
-                <td className="p-4 font-bold text-gray-400">#{c.contract_number}</td>
-                <td className="p-4 font-bold text-gray-900">{c.title}</td>
-                <td className="p-4 text-gray-600">{c.clients?.name || '-'}</td>
-                <td className="p-4 font-bold text-amber-600">R$ {(c.value || 0).toLocaleString('pt-BR')}</td>
-                <td className="p-4"><span className={`px-3 py-1 rounded-full text-xs font-bold ${statusColors[c.status] || ''}`}>{c.status === 'assassinado' || c.status === 'assasinado' ? 'Assinado' : c.status}</span></td>
-                <td className="p-4 text-sm text-gray-600">{format(new Date(c.created_at), 'dd/MM/yyyy')}</td>
+              <tr key={c.id} className="border-t border-white/5 hover:bg-white/5 transition-colors">
+                <td className="p-4 font-bold text-gray-500">#{c.contract_number}</td>
+                <td className="p-4 font-bold text-white">{c.title}</td>
+                <td className="p-4 text-gray-400">{c.clients?.name || '-'}</td>
+                <td className="p-4 font-bold text-amber-500">R$ {(c.value || 0).toLocaleString('pt-BR')}</td>
+                <td className="p-4"><span className={`px-3 py-1 rounded-full text-[10px] tracking-wider font-bold uppercase ${statusColors[c.status] || ''}`}>{c.status === 'assassinado' || c.status === 'assasinado' ? 'Assinado' : c.status}</span></td>
+                <td className="p-4 text-sm text-gray-400">{format(new Date(c.created_at), 'dd/MM/yyyy')}</td>
                 <td className="p-4 flex gap-2">
-                  <button onClick={() => generateClientLogin(c)} title="Gerar Acesso do Cliente" className="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center hover:bg-amber-50 hover:text-amber-600"><Key className="w-4 h-4" /></button>
-                  <button onClick={() => { setEditingId(c.id); setForm({ client_id: c.client_id || '', client_name: '', title: c.title, content: c.content || '', value: c.value || 0, status: c.status, notes: c.notes || '' }); setShowForm(true); }} className="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center hover:bg-blue-50 hover:text-blue-600"><Edit className="w-4 h-4" /></button>
+                  <button onClick={() => generateClientLogin(c)} title="Gerar Acesso do Cliente" className="w-9 h-9 bg-white/5 border border-white/5 rounded-xl flex items-center justify-center hover:bg-amber-900/40 hover:text-amber-500 transition-all"><Key className="w-4 h-4" /></button>
+                  <button onClick={() => { setEditingId(c.id); setForm({ client_id: c.client_id || '', client_name: '', title: c.title, content: c.content || '', value: c.value || 0, status: c.status, notes: c.notes || '' }); setShowForm(true); }} className="w-9 h-9 bg-white/5 border border-white/5 rounded-xl flex items-center justify-center hover:bg-white/10 hover:border-amber-500/30 transition-all"><Edit className="w-4 h-4 text-gray-300" /></button>
                 </td>
               </tr>
             ))}
-            {filtered.length === 0 && <tr><td colSpan={7} className="p-8 text-center text-gray-400">{loading ? 'Carregando...' : 'Nenhum contrato encontrado'}</td></tr>}
+            {filtered.length === 0 && <tr><td colSpan={7} className="p-8 text-center text-gray-500">{loading ? 'Carregando...' : 'Nenhum contrato encontrado'}</td></tr>}
           </tbody>
         </table>
       </div>

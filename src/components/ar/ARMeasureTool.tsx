@@ -9,7 +9,7 @@ import { X, Ruler, MousePointerClick, RefreshCcw, Check, Sparkles, Smartphone, C
 
 interface ARMeasureToolProps {
   onClose: () => void;
-  onConfirmMeasurement: (meters: number) => void;
+  onConfirmMeasurement: (meters: number, dims?: {width: number, depth: number, height: number}) => void;
 }
 
 type Point3D = { x: number; y: number; z: number };
@@ -24,16 +24,17 @@ const isWebXRAvailable = () =>
 export default function ARMeasureTool({ onClose, onConfirmMeasurement }: ARMeasureToolProps) {
   const [phase, setPhase] = useState<Phase>('INTRO');
   const [distance, setDistance] = useState<number>(0);
+  const [dim3D, setDim3D] = useState<{width: number, depth: number, height: number} | null>(null);
   const [manualInput, setManualInput] = useState('');
   const [reticlePos, setReticlePos] = useState<{ x: number; y: number } | null>(null);
-  const [pointA, setPointA] = useState<Point3D | null>(null);
-  const [pointB, setPointB] = useState<Point3D | null>(null);
-  const [markerA, setMarkerA] = useState<{ x: number; y: number } | null>(null);
-  const [markerB, setMarkerB] = useState<{ x: number; y: number } | null>(null);
+  
+  const [points3D, setPoints3D] = useState<Point3D[]>([]);
+  const [points2D, setPoints2D] = useState<{x: number, y: number}[]>([]);
   const [showMagnifier, setShowMagnifier] = useState(false);
   const [magnifierPos, setMagnifierPos] = useState({ x: 0, y: 0 });
   const [calibrationMode, setCalibrationMode] = useState(false);
-  const [calibrationValue, setCalibrationValue] = useState(0.21); // A4 width in meters
+  const [calibrationValue, setCalibrationValue] = useState(0.297); // A4 length in meters (29.7cm)
+  const [pixelPerMeter, setPixelPerMeter] = useState<number>(typeof window !== 'undefined' ? window.innerHeight / 2.5 : 800);
   const [sessionError, setSessionError] = useState<string | null>(null);
   const [surfaceDetected, setSurfaceDetected] = useState(false);
 
@@ -69,10 +70,8 @@ export default function ARMeasureTool({ onClose, onConfirmMeasurement }: ARMeasu
 
       setPhase('SCANNING');
       setSurfaceDetected(false);
-      setPointA(null);
-      setPointB(null);
-      setMarkerA(null);
-      setMarkerB(null);
+      setPoints3D([]);
+      setPoints2D([]);
       setDistance(0);
 
       const session: XRSession = await (navigator as any).xr.requestSession('immersive-ar', {
@@ -119,6 +118,20 @@ export default function ARMeasureTool({ onClose, onConfirmMeasurement }: ARMeasu
     }
   };
 
+  const snapToModule = (rawDist: number) => {
+    const standardModules = [300, 400, 450, 500, 600, 700, 750, 800, 900, 1000, 1200, 1500, 1800, 2000, 2500, 3000];
+    let adjustedDist = rawDist;
+    const distMM = rawDist * 1000;
+    
+    for (const mod of standardModules) {
+      if (Math.abs(distMM - mod) / mod <= 0.02) {
+        adjustedDist = mod / 1000;
+        break;
+      }
+    }
+    return adjustedDist;
+  };
+
   const handleCamera2DTap = (e: React.MouseEvent | React.TouchEvent) => {
     let clientX, clientY;
     if ('touches' in e) {
@@ -133,22 +146,39 @@ export default function ARMeasureTool({ onClose, onConfirmMeasurement }: ARMeasu
     setShowMagnifier(true);
     setTimeout(() => setShowMagnifier(false), 800);
 
-    if (!markerA) {
-      setMarkerA(pos);
-    } else if (!markerB) {
-      setMarkerB(pos);
-      if (calibrationMode) {
-         // If calibrating, calculate the ratio
-         const dx = clientX - markerA.x;
-         const dy = clientY - markerA.y;
+    const newPoints = [...points2D, pos];
+    setPoints2D(newPoints);
+    
+    if (calibrationMode) {
+      if (newPoints.length === 2) {
+         const dx = newPoints[1].x - newPoints[0].x;
+         const dy = newPoints[1].y - newPoints[0].y;
          const pixels = Math.sqrt(dx*dx + dy*dy);
-         // For now, we just set the distance to the calibration value
-         // In a real app, you'd use 'pixels' to derive a scale factor for future measurements
-         setDistance(calibrationValue);
-         setPhase('RESULT');
-      } else {
-         setDistance(1.2); 
-         setPhase('RESULT');
+         const newRatio = pixels / calibrationValue;
+         setPixelPerMeter(newRatio);
+         setTimeout(() => {
+           setPoints2D([]);
+           setCalibrationMode(false);
+           alert("Calibração A4 registrada! Agora vamos medir: clique no Canto Esquerdo(1), Canto Direito(2), Fundo(3) e Teto(4).");
+         }, 500);
+      }
+    } else {
+      if (newPoints.length === 4) {
+         const distPx = (p1: any, p2: any) => Math.sqrt((p2.x-p1.x)**2 + (p2.y-p1.y)**2);
+         const rawW = distPx(newPoints[0], newPoints[1]) / pixelPerMeter;
+         const rawD = distPx(newPoints[1], newPoints[2]) / pixelPerMeter;
+         const rawH = distPx(newPoints[0], newPoints[3]) / pixelPerMeter;
+         
+         const w = snapToModule(rawW);
+         const d = snapToModule(rawD);
+         const h = snapToModule(rawH);
+         
+         setDim3D({width: w, depth: d, height: h});
+         setDistance(w); // Default for old compatibility
+         
+         setTimeout(() => {
+            setPhase('RESULT');
+         }, 800);
       }
     }
   };
@@ -224,28 +254,42 @@ export default function ARMeasureTool({ onClose, onConfirmMeasurement }: ARMeasu
     if (!hit) return;
     const screen = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
 
-    if (phase === 'POINT_A' || phase === 'SCANNING') {
-      setPointA(hit);
-      setMarkerA(screen);
-      setPhase('POINT_B');
-    } else if (phase === 'POINT_B' && pointA) {
-      setPointB(hit);
-      setMarkerB(screen);
-      setDistance(dist3D(pointA, hit));
-      setPhase('RESULT');
-      stopSession(false);
+    if (phase === 'INTRO' || phase === 'SCANNING' || phase === 'POINT_A' || phase === 'POINT_B') {
+      const newPoints = [...points3D, hit];
+      setPoints3D([...points3D, hit]);
+      
+      if (newPoints.length === 4) {
+        const w = snapToModule(dist3D(newPoints[0], newPoints[1]));
+        const d = snapToModule(dist3D(newPoints[1], newPoints[2]));
+        const h = snapToModule(dist3D(newPoints[0], newPoints[3]));
+        
+        // Verifica esquadro na base (P1 e P2)
+        const dy = Math.abs(newPoints[0].y - newPoints[1].y);
+        if (dy > 0.005) {
+          alert(`Aviso de Esquadro: A diferença de altura na base é de ${(dy * 1000).toFixed(1)}mm (tolerância: 5mm). Considere manter o dispositivo mais estável.`);
+        }
+
+        setDim3D({width: w, depth: d, height: h});
+        setDistance(w);
+        setPhase('RESULT');
+        stopSession(false);
+      } else {
+        // Avance para os próximos passos visualmente
+        if (newPoints.length === 1) setPhase('POINT_A'); // Temos P1
+        if (newPoints.length === 2) setPhase('POINT_B'); // Temos P2
+      }
     }
-  }, [phase, pointA, stopSession]);
+  }, [phase, points3D, stopSession]);
 
   const restart = () => {
-    setPointA(null); setPointB(null); setMarkerA(null); setMarkerB(null); setDistance(0);
+    setPoints3D([]); setPoints2D([]); setDistance(0); setDim3D(null);
     startARSession();
   };
 
   const confirm = () => {
     const val = phase === 'MANUAL' ? parseFloat(manualInput.replace(',', '.')) : distance;
     if (!val || val <= 0) return;
-    onConfirmMeasurement(val);
+    onConfirmMeasurement(val, dim3D || undefined);
   };
 
   /* ─── Render Logic ─── */
@@ -290,7 +334,7 @@ export default function ARMeasureTool({ onClose, onConfirmMeasurement }: ARMeasu
             style={{ touchAction: 'none', pointerEvents: 'auto' }}
             onClick={handleCamera2DTap}
           >
-            {!markerA && !markerB && (
+            {points2D.length === 0 && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="w-16 h-16 border-2 border-amber-400/50 rounded-full flex items-center justify-center">
                   <div className="w-1 h-1 bg-amber-400 rounded-full" />
@@ -312,7 +356,7 @@ export default function ARMeasureTool({ onClose, onConfirmMeasurement }: ARMeasu
             )}
 
             {/* A4 CALIBRATION GHOST FRAME */}
-            {calibrationMode && !markerA && (
+            {calibrationMode && points2D.length === 0 && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                  <div className="w-48 h-64 border-2 border-dashed border-amber-400/40 rounded-lg flex flex-col items-center justify-center gap-2">
                     <Smartphone className="w-8 h-8 text-amber-500/30" />
@@ -320,30 +364,25 @@ export default function ARMeasureTool({ onClose, onConfirmMeasurement }: ARMeasu
                  </div>
               </div>
             )}
-            {markerA && (
-              <div 
-                className="absolute w-6 h-6 border-2 border-blue-500 rounded-full flex items-center justify-center pointer-events-none -translate-x-1/2 -translate-y-1/2" 
-                style={{ left: markerA.x, top: markerA.y }}
-              >
-                <div className="w-1 h-1 bg-blue-500 rounded-full" />
+            
+            {/* Draw 2D Points */}
+            {points2D.map((pt, i) => (
+              <div key={i} className="absolute w-6 h-6 border-2 border-amber-500 rounded-full flex items-center justify-center pointer-events-none -translate-x-1/2 -translate-y-1/2" style={{ left: pt.x, top: pt.y }}>
+                <span className="text-[8px] text-white font-black">{i + 1}</span>
               </div>
-            )}
-            {markerB && (
-              <div 
-                className="absolute w-6 h-6 border-2 border-emerald-500 rounded-full flex items-center justify-center pointer-events-none -translate-x-1/2 -translate-y-1/2" 
-                style={{ left: markerB.x, top: markerB.y }}
-              >
-                <div className="w-1 h-1 bg-emerald-500 rounded-full" />
-              </div>
-            )}
-            {markerA && !markerB && (
+            ))}
+            
+            {/* Draw Lines */}
+            {points2D.length >= 2 && (
                <svg className="absolute inset-0 w-full h-full pointer-events-none">
-                  <line x1={markerA.x} y1={markerA.y} x2="50%" y2="50%" stroke="rgba(255,255,255,0.5)" strokeDasharray="4 4" />
+                  <line x1={points2D[0].x} y1={points2D[0].y} x2={points2D[1].x} y2={points2D[1].y} stroke="rgba(255,255,255,0.8)" strokeWidth="2" strokeDasharray="4 4" />
+                  {points2D.length >= 3 && <line x1={points2D[1].x} y1={points2D[1].y} x2={points2D[2].x} y2={points2D[2].y} stroke="rgba(255,255,255,0.8)" strokeWidth="2" strokeDasharray="4 4" />}
+                  {points2D.length >= 4 && <line x1={points2D[0].x} y1={points2D[0].y} x2={points2D[3].x} y2={points2D[3].y} stroke="rgba(255,255,255,0.8)" strokeWidth="2" strokeDasharray="4 4" />}
                </svg>
             )}
           </div>
             <div className="flex flex-col items-center gap-4">
-               {!markerA && (
+               {points2D.length === 0 && (
                   <button 
                     onClick={() => setCalibrationMode(!calibrationMode)}
                     className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all ${calibrationMode ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/30 ring-2 ring-white/20' : 'bg-white/10 text-white hover:bg-white/20'}`}
@@ -351,20 +390,20 @@ export default function ARMeasureTool({ onClose, onConfirmMeasurement }: ARMeasu
                     <RefreshCcw className="w-3 h-3" /> {calibrationMode ? 'MODO CALIBRAÇÃO ATIVO' : 'ATIVAR CALIBRAÇÃO (PAPEL A4)'}
                   </button>
                )}
-               <p className="text-gray-300 text-sm font-medium mb-2 px-4">
+               <p className="text-gray-300 text-sm font-medium mb-2 px-4 shadow-black drop-shadow-lg text-center bg-black/50 p-2 rounded-xl">
                  {calibrationMode 
-                   ? '1. Marque as duas pontas de uma folha A4 (21cm) no chão' 
-                   : !markerA ? '1. Toque no início (no chão) para marcar' : '2. Toque no final para calcular'}
+                   ? `Calibração: Marque as pontas do papel (${points2D.length}/2)`
+                   : `Mapeamento 3D:\n${points2D.length === 0 ? '1. Canto Esquerdo' : points2D.length === 1 ? '2. Canto Direito (Largura)' : points2D.length === 2 ? '3. Fundo (Profundidade)' : '4. Teto (Altura)'}`}
                </p>
             </div>
             <div className="flex gap-3">
-               <button onClick={() => { setMarkerA(null); setMarkerB(null); }} className="px-5 bg-white/5 text-white rounded-2xl"><RefreshCcw className="w-5 h-5" /></button>
+               <button onClick={() => setPoints2D([])} className="px-5 bg-white/5 text-white rounded-2xl"><RefreshCcw className="w-5 h-5" /></button>
                <button
-                  className={`flex-1 py-5 rounded-2xl font-black text-white shadow-2xl flex items-center justify-center gap-3 ${!markerA ? 'bg-blue-600/50' : 'bg-emerald-600/50'}`}
+                  className={`flex-1 py-5 rounded-2xl font-black text-white shadow-2xl flex items-center justify-center gap-3 ${points2D.length < 4 && (!calibrationMode || points2D.length < 2) ? 'bg-blue-600/50' : 'bg-emerald-600/50'}`}
                   disabled
                >
                   <Camera className="w-5 h-5" />
-                  {!markerA ? 'TOQUE NA TELA' : 'TOQUE NO FIM'}
+                  CAPTURAR PONTOS
                </button>
             </div>
         </div>
@@ -378,11 +417,19 @@ export default function ARMeasureTool({ onClose, onConfirmMeasurement }: ARMeasu
         <div className="w-24 h-24 bg-emerald-500/15 rounded-[32px] flex items-center justify-center mb-6 ring-2 ring-emerald-500/30">
           <Check className="w-12 h-12 text-emerald-400" />
         </div>
-        <p className="text-[10px] uppercase font-black text-gray-500 tracking-widest mb-1">Medida Registrada</p>
-        <div className="flex items-baseline gap-2 mb-8">
-          <span className="text-7xl font-black text-white">{distance.toFixed(2)}</span>
-          <span className="text-3xl font-bold text-amber-400">m</span>
-        </div>
+        <p className="text-[10px] uppercase font-black text-gray-500 tracking-widest mb-1">Medidas Extraídas (L x P x A)</p>
+        {dim3D ? (
+           <div className="flex flex-col items-center gap-2 mb-8 mt-4">
+             <div className="bg-white/10 px-4 py-2 rounded-xl text-white font-black text-xl">L: {dim3D.width.toFixed(2)}m</div>
+             <div className="bg-white/10 px-4 py-2 rounded-xl text-white font-black text-xl">P: {dim3D.depth.toFixed(2)}m</div>
+             <div className="bg-white/10 px-4 py-2 rounded-xl text-white font-black text-xl">A: {dim3D.height.toFixed(2)}m</div>
+           </div>
+        ) : (
+           <div className="flex items-baseline gap-2 mb-8">
+             <span className="text-7xl font-black text-white">{distance.toFixed(2)}</span>
+             <span className="text-3xl font-bold text-amber-400">m</span>
+           </div>
+        )}
         <div className="w-full max-w-xs space-y-3">
           <button onClick={confirm} className="w-full bg-amber-500 text-white py-5 rounded-2xl font-black">USAR NO PROJETO</button>
           <button onClick={restart} className="w-full bg-white/5 text-gray-400 py-3 rounded-2xl font-bold text-sm">Medir novamente</button>
@@ -445,7 +492,9 @@ export default function ARMeasureTool({ onClose, onConfirmMeasurement }: ARMeasu
         </div>
         <div className="mt-auto bg-gradient-to-t from-black/90 to-transparent px-6 pb-12 pt-16 flex flex-col items-center gap-4">
            {surfaceDetected ? (
-             <button onClick={handleARTap} className="pointer-events-auto w-full max-w-xs bg-amber-500 text-white font-black py-5 rounded-2xl shadow-xl">{phase === 'POINT_B' ? 'MARCAR FIM' : 'MARCAR INÍCIO'}</button>
+             <button onClick={handleARTap} className="pointer-events-auto w-full max-w-xs bg-amber-500 text-white font-black py-5 rounded-2xl shadow-xl">
+               {points3D.length === 0 ? 'MARCAR CANTO ESQUERDO' : points3D.length === 1 ? 'MARCAR CANTO DIREITO (L)' : points3D.length === 2 ? 'MARCAR FUNDO (P)' : 'MARCAR TETO (A)'}
+             </button>
            ) : (
              <p className="text-white text-sm font-bold animate-pulse">Aponte para o chão...</p>
            )}

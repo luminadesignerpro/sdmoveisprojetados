@@ -240,23 +240,23 @@ const ContractGenerator: React.FC<ContractGeneratorProps> = ({ templateType, cli
   };
 
   const isOS = templateType === 'ordem_servico';
-  const inputClass = "w-full p-3 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-amber-500 focus:border-transparent";
-  const labelClass = "text-xs font-bold text-gray-500 uppercase mb-1 block";
+  const inputClass = "w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder-gray-600";
+  const labelClass = "text-xs font-bold text-gray-400 uppercase mb-1 block";
 
   return (
-    <div className="bg-white rounded-3xl shadow-xl overflow-hidden">
-      <div className="bg-gradient-to-r from-amber-500 to-amber-600 p-4 flex justify-between items-center">
-        <h3 className="text-white font-bold text-lg flex items-center gap-2">
-          <FileSignature className="w-5 h-5" />
+    <div className="bg-[#111111] border border-amber-500/20 rounded-3xl shadow-2xl overflow-hidden">
+      <div className="bg-gradient-to-r from-amber-500 to-amber-600 p-4 flex justify-between items-center text-black">
+        <h3 className="font-black text-lg flex items-center gap-2" style={{ color: '#000' }}>
+          <FileSignature className="w-5 h-5 text-black" />
           {isOS ? 'Gerar Ordem de Serviço' : 'Gerar Contrato de Serviço'}
         </h3>
-        <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
+        <button onClick={onClose} className="text-black/70 hover:text-black transition-colors"><X className="w-5 h-5" /></button>
       </div>
 
-      <div className="p-6 space-y-5 max-h-[80vh] overflow-auto">
+      <div className="p-6 space-y-5 max-h-[80vh] overflow-auto custom-scrollbar">
         {/* ── Cliente ── */}
-        <div className="bg-gray-50 rounded-2xl p-4 space-y-3">
-          <p className="text-sm font-black text-gray-700">📋 Dados do Cliente</p>
+        <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-4 space-y-3">
+          <p className="text-sm font-black text-white flex items-center gap-2">📋 Dados do Cliente</p>
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
               <label className={labelClass}>Cliente cadastrado</label>
@@ -301,11 +301,11 @@ const ContractGenerator: React.FC<ContractGeneratorProps> = ({ templateType, cli
         </div>
 
         {/* ── Ambientes ── */}
-        <div className="bg-gray-50 rounded-2xl p-4 space-y-3">
+        <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-4 space-y-3">
           <div className="flex justify-between items-center">
-            <p className="text-sm font-black text-gray-700">📦 Ambientes</p>
-            <button onClick={addAmbiente} className="text-amber-600 text-xs font-bold flex items-center gap-1 hover:text-amber-700">
-              <Plus className="w-3 h-3" /> Adicionar
+            <p className="text-sm font-black text-white flex items-center gap-2">📦 Ambientes</p>
+            <button onClick={addAmbiente} className="text-amber-500 text-xs font-bold flex items-center gap-1 hover:text-amber-400 transition-colors">
+              <Plus className="w-4 h-4" /> Adicionar
             </button>
           </div>
           {ambientes.map((amb, i) => (
@@ -326,8 +326,8 @@ const ContractGenerator: React.FC<ContractGeneratorProps> = ({ templateType, cli
         </div>
 
         {/* ── Valores ── */}
-        <div className="bg-gray-50 rounded-2xl p-4 space-y-3">
-          <p className="text-sm font-black text-gray-700">💰 Valores e Pagamento</p>
+        <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-4 space-y-3">
+          <p className="text-sm font-black text-white flex items-center gap-2">💰 Valores e Pagamento</p>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={labelClass}>Valor Total (R$)</label>
@@ -365,8 +365,8 @@ const ContractGenerator: React.FC<ContractGeneratorProps> = ({ templateType, cli
         </div>
 
         {/* ── Observações ── */}
-        <div className="bg-gray-50 rounded-2xl p-4 space-y-3">
-          <p className="text-sm font-black text-gray-700">📝 Observações e Instruções</p>
+        <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-4 space-y-3">
+          <p className="text-sm font-black text-white flex items-center gap-2">📝 Observações e Instruções</p>
           <textarea value={observacoes} onChange={e => setObservacoes(e.target.value)} placeholder="Observações gerais do contrato..." className={inputClass} rows={2} />
           <textarea value={customInstructions} onChange={e => setCustomInstructions(e.target.value)} placeholder="Instruções adicionais para a IA (opcional)..." className={inputClass} rows={2} />
         </div>
@@ -375,7 +375,8 @@ const ContractGenerator: React.FC<ContractGeneratorProps> = ({ templateType, cli
         <button
           onClick={generateContract}
           disabled={loading}
-          className="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-white py-4 rounded-xl font-bold hover:from-amber-600 hover:to-amber-700 disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg text-lg"
+          className="w-full text-black py-4 rounded-xl font-bold transition-transform hover:scale-105 disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg text-lg"
+          style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583)' }}
         >
           {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
           {loading ? 'Gerando com IA...' : '✨ Gerar Contrato Preenchido com IA'}
@@ -383,34 +384,34 @@ const ContractGenerator: React.FC<ContractGeneratorProps> = ({ templateType, cli
 
         {/* Preview */}
         {(generatedContent || editableContent) && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-bold text-gray-500 uppercase flex items-center gap-2">
+          <div className="space-y-3 mt-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <p className="text-xs font-black text-amber-500 uppercase flex items-center gap-2">
                 <Eye className="w-4 h-4" /> Pré-visualização (editável)
               </p>
-              <div className="flex gap-2">
-                <button onClick={saveContract} disabled={saving} className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-700 flex items-center gap-2 disabled:opacity-50">
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Salvar no Sistema
+              <div className="flex gap-2 w-full sm:w-auto">
+                <button onClick={saveContract} disabled={saving} className="flex-1 sm:flex-none border border-amber-500/50 bg-amber-500/10 text-amber-500 px-4 py-2 rounded-xl text-sm font-bold hover:bg-amber-500 hover:text-black transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Salvar
                 </button>
-                <button onClick={downloadPDF} className="bg-green-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-green-700 flex items-center gap-2">
-                  <Download className="w-4 h-4" /> Baixar PDF
+                <button onClick={downloadPDF} className="flex-1 sm:flex-none bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-black hover:bg-emerald-500 transition-colors flex items-center justify-center gap-2">
+                  <Download className="w-4 h-4" /> PDF
                 </button>
               </div>
             </div>
 
-            <div ref={previewRef} className="border border-gray-200 rounded-2xl p-6 bg-white max-h-[500px] overflow-auto shadow-inner">
-              <div className="flex items-center gap-4 mb-4 pb-4 border-b-2 border-amber-400">
+            <div ref={previewRef} className="border border-white/10 rounded-2xl p-6 bg-white max-h-[500px] overflow-auto shadow-2xl">
+              <div className="flex items-center gap-4 mb-4 pb-4 border-b-2 border-gray-200">
                 <img src={logoSrc} alt="SD Móveis" className="w-16 h-16 object-contain rounded-lg" />
                 <div>
                   <h2 className="font-black text-xl text-gray-900">SD MÓVEIS</h2>
-                  <p className="text-xs text-gray-500">RUA JORGE FIGUEREDO 740 - BARROCÃO - ITAITINGA-CE</p>
-                  <p className="text-xs text-gray-500">(85) 98574-9686 | CNPJ: 49.228.811/0001-33</p>
+                  <p className="text-xs text-gray-500 font-bold">RUA JORGE FIGUEREDO 740 - BARROCÃO - ITAITINGA-CE</p>
+                  <p className="text-xs text-gray-500 font-bold">(85) 98574-9686 | CNPJ: 49.228.811/0001-33</p>
                 </div>
               </div>
               <textarea
                 value={editableContent}
                 onChange={e => setEditableContent(e.target.value)}
-                className="w-full min-h-[300px] text-sm font-mono leading-relaxed border-none outline-none resize-none bg-transparent"
+                className="w-full min-h-[300px] text-sm font-mono leading-relaxed border-none outline-none resize-none bg-transparent text-gray-900"
                 style={{ whiteSpace: 'pre-wrap' }}
               />
             </div>
