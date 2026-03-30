@@ -154,9 +154,42 @@ const CRMWhatsApp: React.FC<CRMWhatsAppProps> = ({ isClient = false }) => {
             <h2 className="text-xl font-black text-gray-900 flex items-center gap-2">
               <MessageCircle className="w-6 h-6 text-green-500" /> CRM WhatsApp
             </h2>
-            <button className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center text-green-600 hover:bg-green-200 transition-colors">
-              <Plus className="w-5 h-5" />
-            </button>
+            <div className="flex gap-2">
+              <button 
+                onClick={async () => {
+                  try {
+                    const res = await fetch('https://api-whatsapp-sdmoveis.onrender.com/instance/connect/SD-Moveis', {
+                      headers: { 'apikey': 'Mv06061991' }
+                    });
+                    const data = await res.json();
+                    if (data.base64) {
+                      const newWindow = window.open('', '_blank');
+                      newWindow?.document.write(`
+                        <html style="display:flex;justify-content:center;align-items:center;height:100vh;background:#f0f2f5;font-family:sans-serif;">
+                          <div style="background:white;padding:40px;border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,0.1);text-align:center;">
+                            <h1 style="color:#25D366;margin-bottom:20px;">Ligar SD Móveis ao WhatsApp</h1>
+                            <img src="${data.base64}" style="width:300px;height:300px;border:2px solid #eee;border-radius:10px;padding:10px;" />
+                            <p style="margin-top:20px;color:#666;">Abra seu WhatsApp > Dispositivos Vinculados > Escanear QR Code</p>
+                          </div>
+                        </html>
+                      `);
+                    } else if (data.instance?.state === 'open' || data.error === 'Instance already connected') {
+                      alert('Seu WhatsApp já está conectado e pronto para uso!');
+                    } else {
+                      alert('API em carregamento, aguarde 30 segundos e tente de novo.');
+                    }
+                  } catch (err) {
+                    alert('Erro ao conectar na API. Verifique se ela está Live no Render.');
+                  }
+                }}
+                className="px-3 py-2 bg-green-600 text-white rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-green-700 transition"
+              >
+                Conectar Oficial
+              </button>
+              <button className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center text-green-600 hover:bg-green-200 transition-colors">
+                <Plus className="w-5 h-5" />
+              </button>
+            </div>
           </div>
           <div className="relative mb-3">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />

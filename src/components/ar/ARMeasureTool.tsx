@@ -317,112 +317,27 @@ export default function ARMeasureTool({ onClose, onConfirmMeasurement }: ARMeasu
     );
   }
 
-  if (phase === 'CAMERA_2D') {
-    return (
-      <div className="fixed inset-0 z-[9999] bg-black">
-        <video ref={videoRef} className="absolute inset-0 w-full h-full object-cover" autoPlay playsInline muted />
-        <div className="absolute inset-0 flex flex-col">
-          <div className="p-8 flex justify-between items-start bg-gradient-to-b from-black/80 to-transparent">
-             <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-amber-400">Modo de Segurança (2D)</p>
-                <h2 className="text-white font-black text-2xl">Mova para Medir</h2>
-             </div>
-             <button onClick={onClose} className="p-3 bg-white/10 rounded-full text-white pointer-events-auto"><X /></button>
-          </div>
-          <div 
-            className="flex-1 relative cursor-crosshair" 
-            style={{ touchAction: 'none', pointerEvents: 'auto' }}
-            onClick={handleCamera2DTap}
-          >
-            {points2D.length === 0 && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="w-16 h-16 border-2 border-amber-400/50 rounded-full flex items-center justify-center">
-                  <div className="w-1 h-1 bg-amber-400 rounded-full" />
-                </div>
-              </div>
-            )}
-            
-            {showMagnifier && (
-               <div 
-                 className="absolute w-32 h-32 rounded-full border-4 border-white shadow-2xl overflow-hidden pointer-events-none z-[60] -translate-x-1/2 -ml-2 -mt-44 flex items-center justify-center bg-black"
-                 style={{ left: magnifierPos.x, top: magnifierPos.y }}
-               >
-                  <canvas ref={zoomCanvasRef} width={128} height={128} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                     <div className="w-1.5 h-1.5 bg-red-500 rounded-full shadow-sm" />
-                     <div className="w-12 h-12 border border-red-500/30 rounded-full" />
-                  </div>
-               </div>
-            )}
-
-            {/* A4 CALIBRATION GHOST FRAME */}
-            {calibrationMode && points2D.length === 0 && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                 <div className="w-48 h-64 border-2 border-dashed border-amber-400/40 rounded-lg flex flex-col items-center justify-center gap-2">
-                    <Smartphone className="w-8 h-8 text-amber-500/30" />
-                    <p className="text-[8px] font-black text-amber-500/40 uppercase tracking-widest">Alinhe com o Papel A4</p>
-                 </div>
-              </div>
-            )}
-            
-            {/* Draw 2D Points */}
-            {points2D.map((pt, i) => (
-              <div key={i} className="absolute w-6 h-6 border-2 border-amber-500 rounded-full flex items-center justify-center pointer-events-none -translate-x-1/2 -translate-y-1/2" style={{ left: pt.x, top: pt.y }}>
-                <span className="text-[8px] text-white font-black">{i + 1}</span>
-              </div>
-            ))}
-            
-            {/* Draw Lines */}
-            {points2D.length >= 2 && (
-               <svg className="absolute inset-0 w-full h-full pointer-events-none">
-                  <line x1={points2D[0].x} y1={points2D[0].y} x2={points2D[1].x} y2={points2D[1].y} stroke="rgba(255,255,255,0.8)" strokeWidth="2" strokeDasharray="4 4" />
-                  {points2D.length >= 3 && <line x1={points2D[1].x} y1={points2D[1].y} x2={points2D[2].x} y2={points2D[2].y} stroke="rgba(255,255,255,0.8)" strokeWidth="2" strokeDasharray="4 4" />}
-                  {points2D.length >= 4 && <line x1={points2D[0].x} y1={points2D[0].y} x2={points2D[3].x} y2={points2D[3].y} stroke="rgba(255,255,255,0.8)" strokeWidth="2" strokeDasharray="4 4" />}
-               </svg>
-            )}
-          </div>
-            <div className="flex flex-col items-center gap-4">
-               {points2D.length === 0 && (
-                  <button 
-                    onClick={() => setCalibrationMode(!calibrationMode)}
-                    className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all ${calibrationMode ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/30 ring-2 ring-white/20' : 'bg-white/10 text-white hover:bg-white/20'}`}
-                  >
-                    <RefreshCcw className="w-3 h-3" /> {calibrationMode ? 'MODO CALIBRAÇÃO ATIVO' : 'ATIVAR CALIBRAÇÃO (PAPEL A4)'}
-                  </button>
-               )}
-               <p className="text-gray-300 text-sm font-medium mb-2 px-4 shadow-black drop-shadow-lg text-center bg-black/50 p-2 rounded-xl">
-                 {calibrationMode 
-                   ? `Calibração: Marque as pontas do papel (${points2D.length}/2)`
-                   : `Mapeamento 3D:\n${points2D.length === 0 ? '1. Canto Esquerdo' : points2D.length === 1 ? '2. Canto Direito (Largura)' : points2D.length === 2 ? '3. Fundo (Profundidade)' : '4. Teto (Altura)'}`}
-               </p>
-            </div>
-            <div className="flex gap-3">
-               <button onClick={() => setPoints2D([])} className="px-5 bg-white/5 text-white rounded-2xl"><RefreshCcw className="w-5 h-5" /></button>
-               <button
-                  className={`flex-1 py-5 rounded-2xl font-black text-white shadow-2xl flex items-center justify-center gap-3 ${points2D.length < 4 && (!calibrationMode || points2D.length < 2) ? 'bg-blue-600/50' : 'bg-emerald-600/50'}`}
-                  disabled
-               >
-                  <Camera className="w-5 h-5" />
-                  CAPTURAR PONTOS
-               </button>
-            </div>
-        </div>
-      </div>
-    );
-  }
-
   if (phase === 'RESULT') {
     return (
       <div className="fixed inset-0 z-[9999] bg-gray-950 flex flex-col items-center justify-center p-6 text-center">
         <div className="w-24 h-24 bg-emerald-500/15 rounded-[32px] flex items-center justify-center mb-6 ring-2 ring-emerald-500/30">
           <Check className="w-12 h-12 text-emerald-400" />
         </div>
-        <p className="text-[10px] uppercase font-black text-gray-500 tracking-widest mb-1">Medidas Extraídas (L x P x A)</p>
+        <p className="text-[10px] uppercase font-black text-gray-500 tracking-widest mb-1">Medidas do Projeto 3D (Metros)</p>
         {dim3D ? (
-           <div className="flex flex-col items-center gap-2 mb-8 mt-4">
-             <div className="bg-white/10 px-4 py-2 rounded-xl text-white font-black text-xl">L: {dim3D.width.toFixed(2)}m</div>
-             <div className="bg-white/10 px-4 py-2 rounded-xl text-white font-black text-xl">P: {dim3D.depth.toFixed(2)}m</div>
-             <div className="bg-white/10 px-4 py-2 rounded-xl text-white font-black text-xl">A: {dim3D.height.toFixed(2)}m</div>
+           <div className="flex flex-col items-center gap-3 mb-8 mt-4 w-full max-w-xs">
+             <div className="flex justify-between w-full bg-white/10 px-6 py-4 rounded-xl">
+               <span className="text-gray-400 font-bold">Largura (L):</span>
+               <span className="text-white font-black text-xl">{dim3D.width.toFixed(2)}m</span>
+             </div>
+             <div className="flex justify-between w-full bg-white/10 px-6 py-4 rounded-xl">
+               <span className="text-gray-400 font-bold">Profund. (P):</span>
+               <span className="text-white font-black text-xl">{dim3D.depth.toFixed(2)}m</span>
+             </div>
+             <div className="flex justify-between w-full bg-white/10 px-6 py-4 rounded-xl">
+               <span className="text-gray-400 font-bold">Altura (A):</span>
+               <span className="text-white font-black text-xl">{dim3D.height.toFixed(2)}m</span>
+             </div>
            </div>
         ) : (
            <div className="flex items-baseline gap-2 mb-8">
@@ -431,7 +346,7 @@ export default function ARMeasureTool({ onClose, onConfirmMeasurement }: ARMeasu
            </div>
         )}
         <div className="w-full max-w-xs space-y-3">
-          <button onClick={confirm} className="w-full bg-amber-500 text-white py-5 rounded-2xl font-black">USAR NO PROJETO</button>
+          <button onClick={() => onConfirmMeasurement(dim3D ? dim3D.width : distance, dim3D || undefined)} className="w-full bg-amber-500 text-white py-5 rounded-2xl font-black">GERAR ORÇAMENTO E 3D</button>
           <button onClick={restart} className="w-full bg-white/5 text-gray-400 py-3 rounded-2xl font-bold text-sm">Medir novamente</button>
         </div>
       </div>
@@ -440,31 +355,61 @@ export default function ARMeasureTool({ onClose, onConfirmMeasurement }: ARMeasu
 
   if (phase === 'MANUAL') {
     return (
-      <div className="fixed inset-0 z-[9999] bg-gray-950 flex flex-col items-center justify-center p-6 text-center">
-        <h2 className="text-2xl font-black text-white mb-6">Medida Manual</h2>
-        <div className="w-full max-w-xs space-y-4">
-          <div className="relative">
-            <input type="number" inputMode="decimal" value={manualInput} onChange={e => setManualInput(e.target.value)} className="w-full bg-white/10 border border-white/20 text-white text-3xl font-black text-center py-5 rounded-2xl outline-none" placeholder="0.00" autoFocus />
-            <span className="absolute right-5 top-1/2 -translate-y-1/2 text-amber-400 font-black text-xl">m</span>
+      <div className="fixed inset-0 z-[9999] bg-gray-950 flex flex-col items-center justify-center p-6 text-center overflow-auto">
+        <div className="w-16 h-16 bg-amber-500/15 rounded-2xl flex items-center justify-center mb-4 ring-2 ring-amber-500/30">
+          <Ruler className="w-8 h-8 text-amber-400" />
+        </div>
+        <h2 className="text-2xl font-black text-white mb-2">Medidas Exatas</h2>
+        <p className="text-gray-400 text-sm mb-6 max-w-xs mx-auto">Insira as medidas em metros (ex: 2.50) usando sua Trena a Laser/Fita.</p>
+        
+        <div className="w-full max-w-xs space-y-3 mb-8">
+          <div className="text-left w-full">
+             <label className="text-[10px] font-black uppercase text-amber-500 tracking-widest ml-4 mb-1 block">Largura (m)</label>
+             <input type="number" inputMode="decimal" onChange={e => {
+                const val = parseFloat(e.target.value.replace(',', '.')) || 0;
+                setDim3D(prev => ({ width: val, depth: prev?.depth || 0.5, height: prev?.height || 2.7 }));
+             }} className="w-full bg-white/10 border border-white/10 text-white text-2xl font-black text-center py-4 rounded-2xl outline-none focus:border-amber-500" placeholder="0.00" />
           </div>
-          <button onClick={confirm} className="w-full bg-amber-500 text-white py-5 rounded-2xl font-black">CONFIRMAR</button>
-          <button onClick={() => setPhase('INTRO')} className="w-full text-gray-400 text-sm">Voltar</button>
+          
+          <div className="text-left w-full">
+             <label className="text-[10px] font-black uppercase text-amber-500 tracking-widest ml-4 mb-1 block">Profundidade (m) (padrão 0.50)</label>
+             <input type="number" inputMode="decimal" onChange={e => {
+                const val = parseFloat(e.target.value.replace(',', '.')) || 0.5;
+                setDim3D(prev => ({ width: prev?.width || 0, depth: val, height: prev?.height || 2.7 }));
+             }} className="w-full bg-white/10 border border-white/10 text-white text-2xl font-black text-center py-4 rounded-2xl outline-none focus:border-amber-500" placeholder="0.50" />
+          </div>
+          
+          <div className="text-left w-full">
+             <label className="text-[10px] font-black uppercase text-amber-500 tracking-widest ml-4 mb-1 block">Altura (m) (padrão 2.70)</label>
+             <input type="number" inputMode="decimal" onChange={e => {
+                const val = parseFloat(e.target.value.replace(',', '.')) || 2.7;
+                setDim3D(prev => ({ width: prev?.width || 0, depth: prev?.depth || 0.5, height: val }));
+             }} className="w-full bg-white/10 border border-white/10 text-white text-2xl font-black text-center py-4 rounded-2xl outline-none focus:border-amber-500" placeholder="2.70" />
+          </div>
+        </div>
+        
+        <div className="w-full max-w-xs space-y-3">
+          <button onClick={() => {
+             if (!dim3D || dim3D.width <= 0) { alert('Insira pelo menos a largura!'); return; }
+             onConfirmMeasurement(dim3D.width, dim3D);
+          }} className="w-full bg-amber-500 text-white py-5 rounded-2xl font-black shadow-lg shadow-amber-500/20">CONFIRMAR PROJETO</button>
+          <button onClick={() => setPhase('INTRO')} className="w-full text-gray-400 text-sm py-4">Voltar</button>
         </div>
       </div>
     );
   }
 
-  if (phase === 'UNSUPPORTED') {
+  if (phase === 'UNSUPPORTED' || phase === 'CAMERA_2D') {
     return (
       <div className="fixed inset-0 z-[9999] bg-gray-950 flex flex-col items-center justify-center p-6 text-center">
         <ZapOff className="w-12 h-12 text-orange-400 mb-4" />
-        <h2 className="text-xl font-black text-white mb-2">AR Não Suportado</h2>
-        <p className="text-gray-400 text-sm mb-8">Seu dispositivo não suporta AR nativo, mas podemos usar a câmera comum para medir.</p>
+        <h2 className="text-xl font-black text-white mb-2">Laser Exigido para Precisão</h2>
+        <p className="text-gray-400 text-sm mb-8 leading-relaxed max-w-xs mx-auto">Seu aparelho não possui sensor <b>LiDAR 3D/ARCore</b> (Apple/Google). Como medir 2D por foto não entrega as medidas exatas de marcenaria que você exige, habilitamos apenas o modo profissional.</p>
         <div className="w-full max-w-xs space-y-3">
-          <button onClick={startCamera2DSession} className="w-full bg-amber-500 text-white py-4 rounded-2xl font-black flex items-center justify-center gap-2">
-            <Camera className="w-4 h-4" /> USAR CÂMERA 2D
+          <button onClick={() => setPhase('MANUAL')} className="w-full bg-amber-500 text-white py-5 rounded-2xl font-black flex items-center justify-center gap-2">
+            <Ruler className="w-5 h-5" /> INJETAR MEDIDA MANUALMENTE
           </button>
-          <button onClick={() => setPhase('MANUAL')} className="w-full bg-white/5 text-gray-400 py-3 rounded-2xl font-bold text-sm">Digitar Manualmente</button>
+          <button onClick={onClose} className="w-full bg-white/5 text-gray-400 py-3 rounded-2xl font-bold text-sm border border-white/10">Sair</button>
         </div>
       </div>
     );

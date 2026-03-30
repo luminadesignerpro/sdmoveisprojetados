@@ -157,11 +157,43 @@ export function WhatsAppCRMReal() {
             </Button>
           </div>
           
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center justify-between mb-3">
             <Badge variant="outline" className="text-xs flex items-center gap-1">
               <WifiOff className="w-3 h-3" />
-              Aguardando Evolution API
+              Aguardando API
             </Badge>
+            <Button
+              size="sm"
+              className="bg-green-600 hover:bg-green-700 text-white font-bold text-xs h-7"
+              onClick={async () => {
+                try {
+                  const res = await fetch('https://api-whatsapp-sdmoveis.onrender.com/instance/connect/SD-Moveis', {
+                    headers: { 'apikey': 'Mv06061991' }
+                  });
+                  const data = await res.json();
+                  if (data.base64) {
+                    const newWindow = window.open('', '_blank');
+                    newWindow?.document.write(`
+                      <html style="display:flex;justify-content:center;align-items:center;height:100vh;background:#111;font-family:sans-serif;">
+                        <div style="background:#222;padding:40px;border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,0.5);text-align:center;">
+                          <h1 style="color:#25D366;margin-bottom:20px;">Ligar SD Móveis ao WhatsApp</h1>
+                          <img src="${data.base64}" style="width:300px;height:300px;border:2px solid #333;border-radius:10px;padding:10px;background:white;" />
+                          <p style="margin-top:20px;color:#aaa;">Abra seu WhatsApp > Dispositivos Vinculados > Escanear QR Code</p>
+                        </div>
+                      </html>
+                    `);
+                  } else if (data.instance?.state === 'open' || data.error?.includes('already')) {
+                    alert('Seu WhatsApp já está conectado e pronto para uso!');
+                  } else {
+                    alert('API carregando o QR Code, aguarde 15 segundos e clique de novo...');
+                  }
+                } catch (err) {
+                  alert('Erro ao conectar na API. Verifique se ela está Live no Render.');
+                }
+              }}
+            >
+              Exibir QR Code
+            </Button>
           </div>
 
           <div className="relative">

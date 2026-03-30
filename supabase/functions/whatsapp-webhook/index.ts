@@ -104,6 +104,66 @@ serve(async (req) => {
         .update({ last_message_at: new Date().toISOString() })
         .eq("id", conversation.id);
 
+      // ============================================
+      // AI VIRTUAL ASSISTANT LOGIC (AUTO-RESPONDER)
+      // ============================================
+      if (!fromMe) {
+        try {
+           const geminiKey = Deno.env.get("GEMINI_API_KEY");
+           const evolutionUrl = Deno.env.get("EVOLUTION_API_URL") || "https://api-whatsapp-sdmoveis.onrender.com";
+           const evolutionKey = Deno.env.get("EVOLUTION_API_KEY") || "Mv06061991";
+
+           if (geminiKey) {
+              // 1. Ask Gemini for an answer
+              const systemPrompt = "Você é a Assistente Virtual Inteligente da SD Móveis Projetados. Seu objetivo é atender os clientes pelo WhatsApp de forma super educada, humanizada, curta e direta. NUNCA invente preços ou valores. O objetivo do atendimento é recolher o que o cliente quer fazer (Cozinha, Guarda-Roupa), pedir uma noção das medidas e agendar uma Visita Técnica gratuita ou orientar que ele pode usar o nosso App 3D pelo link. Seja breve. Aja como um humano prestativo, use emojis com moderação.";
+              
+              const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
+                 method: 'POST',
+                 headers: { 'Content-Type': 'application/json' },
+                 body: JSON.stringify({
+                    contents: [{ parts: [{ text: `${systemPrompt}\n\nCliente diz: ${messageContent}` }] }]
+                 })
+              });
+              
+              const geminiData = await geminiRes.json();
+              const aiReply = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+
+              if (aiReply) {
+                  console.log("AI reply generated:", aiReply.substring(0, 50));
+                  
+                  // 2. Send via Evolution API
+                  const sendRes = await fetch(`${evolutionUrl}/message/sendText/SD-Moveis`, {
+                      method: 'POST',
+                      headers: {
+                          'Content-Type': 'application/json',
+                          'apikey': evolutionKey
+                      },
+                      body: JSON.stringify({
+                          number: remoteJid,
+                          options: { delay: 1500, presence: "composing" },
+                          textMessage: { text: aiReply }
+                      })
+                  });
+                  
+                  if (sendRes.ok) {
+                      // Save AI reply to DB
+                      await supabase.from("whatsapp_messages").insert({
+                          conversation_id: conversation.id,
+                          direction: "outbound",
+                          content: aiReply,
+                          status: "sent",
+                          message_type: "text",
+                      });
+                  } else {
+                      console.error("Failed to send Evolution API message", await sendRes.text());
+                  }
+              }
+           }
+        } catch (aiError) {
+           console.error("AI Assistant Error:", aiError);
+        }
+      }
+
       console.log(`Message saved: ${fromMe ? "outbound" : "inbound"} from ${phoneNumber}`);
 
       return new Response(JSON.stringify({ ok: true, saved: true }), {
