@@ -18,6 +18,7 @@ import {
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import ARProfessionalXR from "@/components/ar/ARProfessionalXR";
 
 interface RenderSettings {
   quality: "preview" | "standard" | "high";
@@ -37,6 +38,7 @@ export function RenderView() {
   });
   const [aiPrompt, setAiPrompt] = useState("");
   const [roomType, setRoomType] = useState("cozinha");
+  const [showAR, setShowAR] = useState(false);
 
   const qualityOptions = [
     { id: "preview", label: "Preview", time: "~30s" },
@@ -137,6 +139,21 @@ export function RenderView() {
       link.click();
     }
   };
+
+  if (showAR) {
+    return (
+      <ARProfessionalXR 
+        onClose={() => setShowAR(false)} 
+        onExportBudget={(data) => {
+          toast({
+            title: "✅ Orçamento WebXR Fechado!",
+            description: `Móveis gerados. Total estimado: R$ ${data.estimatedTotal.toFixed(2)}`
+          });
+          setShowAR(false);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -284,6 +301,17 @@ export function RenderView() {
                 Gerar com IA
               </>
             )}
+          </Button>
+
+          {/* AR Studio PRO XR Button */}
+          <Button
+            variant="outline"
+            size="lg"
+            className="w-full mt-2 font-black border-amber-500 text-amber-500 hover:bg-amber-500/10"
+            onClick={() => setShowAR(true)}
+          >
+            <Sparkles className="w-5 h-5 mr-2" />
+            ABRIR STUDIO AR ELITE (WebXR)
           </Button>
 
           {isRendering && (

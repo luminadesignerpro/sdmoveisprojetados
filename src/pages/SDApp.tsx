@@ -922,8 +922,8 @@ const App: React.FC = () => {
           {/* INTERNAL CHAT */}
           {view === ViewMode.INTERNAL_CHAT && (
             <InternalChat
-              currentUserName={authState === 'ADMIN' ? 'Administrador' : authState === 'EMPLOYEE' ? employeeName : clientName || 'Cliente'}
-              currentUserRole={authState === 'ADMIN' ? 'admin' : authState === 'EMPLOYEE' ? 'employee' : 'client'}
+              userName={authState === 'ADMIN' ? 'Administrador' : authState === 'EMPLOYEE' ? employeeName : clientName || 'Cliente'}
+              userRole={authState === 'ADMIN' ? 'ADMIN' : authState === 'EMPLOYEE' ? 'EMPLOYEE' : 'CLIENT'}
             />
           )}
 

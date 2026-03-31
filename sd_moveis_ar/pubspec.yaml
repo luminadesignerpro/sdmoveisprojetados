@@ -1,0 +1,33 @@
+name: sd_moveis_ar
+description: "A new Flutter project for SD Móveis AR Studio"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # The native cross-platform AR plugin (ARCore/ARKit)
+  ar_flutter_plugin: ^0.6.2
+  
+  # Standard math dependency for 3D matrices & distance calculation
+  vector_math: ^2.1.4
+
+  # Icons for Material UI
+  cupertino_icons: ^1.0.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+
+  # As assets em .glb que o projeto irá referenciar internamente (Exemplo)
+  # assets:
+  #   - assets/models/sofa.glb
+  #   - assets/models/table.glb

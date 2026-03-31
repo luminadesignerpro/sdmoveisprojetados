@@ -15,6 +15,7 @@ import {
   Sparkles,
   Loader2,
   WifiOff,
+  Wifi,
   RefreshCw,
   Bot,
 } from "lucide-react";
@@ -46,7 +47,31 @@ export function WhatsAppCRMReal() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [aiAutoReply, setAiAutoReply] = useState(false);
+  const [apiStatus, setApiStatus] = useState<"checking" | "connected" | "disconnected">("checking");
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const checkApiStatus = async () => {
+    try {
+      const res = await fetch('https://api-whatsapp-sdmoveis.onrender.com/instance/connectionState/SD-Moveis', {
+        headers: { 'apikey': 'Mv06061991' },
+        cache: 'no-store'
+      });
+      const stateData = await res.json();
+      if (stateData.instance?.state === 'open') {
+        setApiStatus("connected");
+      } else {
+        setApiStatus("disconnected");
+      }
+    } catch {
+      setApiStatus("disconnected");
+    }
+  };
+
+  useEffect(() => {
+    checkApiStatus();
+    const interval = setInterval(checkApiStatus, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     fetchConversations();
@@ -158,9 +183,22 @@ export function WhatsAppCRMReal() {
           </div>
           
           <div className="flex items-center justify-between mb-3">
-            <Badge variant="outline" className="text-xs flex items-center gap-1">
-              <WifiOff className="w-3 h-3" />
-              Aguardando API
+            <Badge 
+              variant="outline" 
+              className={cn(
+                "text-xs flex items-center gap-1 transition-colors",
+                apiStatus === "connected" ? "bg-success/20 text-success border-success/30" : "",
+                apiStatus === "checking" ? "text-muted-foreground" : ""
+              )}
+            >
+              {apiStatus === "checking" ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : apiStatus === "connected" ? (
+                <Wifi className="w-3 h-3" />
+              ) : (
+                <WifiOff className="w-3 h-3" />
+              )}
+              {apiStatus === "checking" ? "Verificando..." : apiStatus === "connected" ? "Conectado à API" : "Desconectado da API"}
             </Badge>
             <Button
               size="sm"
@@ -171,7 +209,7 @@ export function WhatsAppCRMReal() {
                   let phoneForPairing = '';
                   
                   if (!usePairingCode) {
-                    phoneForPairing = window.prompt("Digite seu número do WhatsApp com Código do País (55) e DDD. Exemplo: 5581999999999", "55") || '';
+                    phoneForPairing = window.prompt("Digite seu número WhatsApp (55 + DDD + Número).\n\n⚠️ IMPORTANTE: Se o celular der 'Código Inválido' ou falhar, tente novamente COM ou SEM o dígito 9! Ex: 5581999999999 ou 558199999999", "55") || '';
                     if (!phoneForPairing || phoneForPairing.length < 12) {
                       alert("Número inválido. Operação cancelada.");
                       return;
@@ -246,7 +284,10 @@ export function WhatsAppCRMReal() {
                           <div style="background:white;padding:20px 40px;border-radius:10px;display:inline-block;">
                             <h2 style="color:black;font-size:3rem;letter-spacing:10px;margin:0;">${pairingCode}</h2>
                           </div>
-                          <p style="margin-top:20px;color:#aaa;">Digite esse código exato lá no seu WhatsApp!</p>
+                          <p style="margin-top:20px;color:#aaa;">Digite esse código lá no seu WhatsApp!</p>
+                          <p style="margin-top:15px;color:#eab308;font-size:0.9rem;max-width:500px;margin-left:auto;margin-right:auto;background:rgba(234, 179, 8, 0.1);padding:15px;border-radius:10px;">
+                            ⚠️ <b>ATENÇÃO:</b> Se o WhatsApp disser "Código Inválido" ou der erro na conexão, o problema é o dígito 9! <br/><br/>Nesse caso, feche essa tela, clique em "Exibir QR Code" novamente e digite o número testando a outra variação (com o 9 ou sem o 9).
+                          </p>
                         </div>
                       </html>
                     `);
