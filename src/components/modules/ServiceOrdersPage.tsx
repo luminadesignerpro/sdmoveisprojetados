@@ -139,8 +139,8 @@ const ServiceOrdersPage: React.FC = () => {
     setShowForm(true);
   };
 
-  const inputCls = "w-full h-11 bg-gray-50 rounded-xl px-4 border border-gray-200 text-gray-900 placeholder:text-gray-400 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 outline-none transition-all";
-  const labelCls = "text-sm font-semibold text-gray-700 flex items-center gap-2 mb-1";
+  const inputCls = "w-full h-11 bg-[#1a1a1a] rounded-xl px-4 border border-white/10 text-white placeholder:text-gray-600 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500/40 outline-none transition-all";
+  const labelCls = "text-sm font-semibold text-gray-300 flex items-center gap-2 mb-1";
 
   return (
     <div className="p-4 sm:p-8 space-y-6 overflow-auto h-full bg-[#0f0f0f] w-full text-white">
@@ -179,13 +179,13 @@ const ServiceOrdersPage: React.FC = () => {
       {/* Form Modal */}
       {showForm && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 w-full max-w-lg max-h-[92vh] overflow-y-auto shadow-2xl text-gray-900">
+          <div className="bg-[#111111] rounded-2xl border border-amber-500/30 p-6 w-full max-w-lg max-h-[92vh] overflow-y-auto shadow-2xl text-white">
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <h3 className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-500 flex items-center gap-2">
                 <ClipboardList className="w-5 h-5 text-amber-500" />
                 {editingId ? 'Editar' : 'Nova'} Ordem de Serviço
               </h3>
-              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-900 p-1 rounded-lg hover:bg-gray-100 transition-all">
+              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-all">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -226,7 +226,7 @@ const ServiceOrdersPage: React.FC = () => {
                   <div className="relative">
                     <Calendar className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
                     <input type="date" value={form.estimated_date} onChange={e => setForm({ ...form, estimated_date: e.target.value })}
-                      className="w-full h-11 bg-gray-50 rounded-xl pl-10 pr-3 border border-gray-200 text-gray-900 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 outline-none transition-all" />
+                      className="w-full h-11 bg-[#1a1a1a] rounded-xl pl-10 pr-3 border border-white/10 text-white text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500/40 outline-none transition-all" />
                   </div>
                 </div>
                 <div>
@@ -234,7 +234,7 @@ const ServiceOrdersPage: React.FC = () => {
                   <div className="relative">
                     <Clock className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
                     <select value={form.meeting_time} onChange={e => setForm({ ...form, meeting_time: e.target.value })}
-                      className="w-full h-11 bg-gray-50 rounded-xl pl-10 pr-3 border border-gray-200 text-gray-900 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 outline-none transition-all appearance-none">
+                      className="w-full h-11 bg-[#1a1a1a] rounded-xl pl-10 pr-3 border border-white/10 text-white text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500/40 outline-none transition-all appearance-none">
                       {['07:00','07:30','08:00','08:30','09:00','09:30','10:00','10:30','11:00','11:30','12:00','12:30','13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00','18:30','19:00','19:30','20:00'].map(t => (
                         <option key={t} value={t}>{t}</option>
                       ))}
@@ -246,9 +246,9 @@ const ServiceOrdersPage: React.FC = () => {
               {/* Responsável + Prioridade */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className={labelCls}><User className="w-4 h-4 text-gray-500" /> Responsável</label>
+                  <label className={labelCls}><User className="w-4 h-4 text-gray-400" /> Responsável</label>
                   <select value={form.assigned_to} onChange={e => setForm({ ...form, assigned_to: e.target.value })}
-                    className="w-full h-11 bg-gray-50 rounded-xl px-3 border border-gray-200 text-gray-900 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 outline-none transition-all">
+                    className="w-full h-11 bg-[#1a1a1a] rounded-xl px-3 border border-white/10 text-white text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500/40 outline-none transition-all">
                     <option value="">Selecionar funcionário</option>
                     {employees.map(em => <option key={em.id} value={em.id}>{em.name}</option>)}
                   </select>
@@ -256,7 +256,7 @@ const ServiceOrdersPage: React.FC = () => {
                 <div>
                   <label className={labelCls}> Prioridade</label>
                   <select value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value })}
-                    className="w-full h-11 bg-gray-50 rounded-xl px-3 border border-gray-200 text-gray-900 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 outline-none transition-all">
+                    className="w-full h-11 bg-[#1a1a1a] rounded-xl px-3 border border-white/10 text-white text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500/40 outline-none transition-all">
                     <option value="baixa">Baixa</option>
                     <option value="normal">Normal</option>
                     <option value="alta">Alta</option>
@@ -275,7 +275,7 @@ const ServiceOrdersPage: React.FC = () => {
                 <div>
                   <label className={labelCls}> Status</label>
                   <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}
-                    className="w-full h-11 bg-gray-50 rounded-xl px-3 border border-gray-200 text-gray-900 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 outline-none transition-all">
+                    className="w-full h-11 bg-[#1a1a1a] rounded-xl px-3 border border-white/10 text-white text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500/40 outline-none transition-all">
                     <option value="aberta">Aberta</option>
                     <option value="em_andamento">Em Andamento</option>
                     <option value="concluida">Concluída</option>
@@ -289,7 +289,7 @@ const ServiceOrdersPage: React.FC = () => {
                 <label className={labelCls}><MessageCircle className="w-4 h-4 text-gray-500" /> Observações</label>
                 <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })}
                   placeholder="Detalhes adicionais..." rows={3}
-                  className="w-full bg-gray-50 rounded-xl px-4 py-3 border border-gray-200 text-gray-900 placeholder:text-gray-400 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 outline-none transition-all resize-none" />
+                  className="w-full bg-[#1a1a1a] rounded-xl px-4 py-3 border border-white/10 text-white placeholder:text-gray-600 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500/40 outline-none transition-all resize-none" />
               </div>
             </div>
 
@@ -301,7 +301,7 @@ const ServiceOrdersPage: React.FC = () => {
                 {editingId ? 'Salvar Alterações' : 'Criar Ordem de Serviço'}
               </button>
               <button onClick={() => setShowForm(false)}
-                className="h-12 px-5 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-all">
+                className="h-12 px-5 bg-white/10 border border-white/10 text-white rounded-xl font-bold hover:bg-white/20 transition-all">
                 Cancelar
               </button>
             </div>
