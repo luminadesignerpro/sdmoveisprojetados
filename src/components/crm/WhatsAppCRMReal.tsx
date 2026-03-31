@@ -167,6 +167,17 @@ export function WhatsAppCRMReal() {
               className="bg-green-600 hover:bg-green-700 text-white font-bold text-xs h-7"
               onClick={async () => {
                 try {
+                  const usePairingCode = window.confirm("Você quer tentar pelo QR Code de novo? \n\n(Se o celular rejeitar com 'Verifique a internet', clique em CANCELAR para usar o pareamento por Código Numérico seguro!)");
+                  let phoneForPairing = '';
+                  
+                  if (!usePairingCode) {
+                    phoneForPairing = window.prompt("Digite seu número do WhatsApp com Código do País (55) e DDD. Exemplo: 5581999999999", "55") || '';
+                    if (!phoneForPairing || phoneForPairing.length < 12) {
+                      alert("Número inválido. Operação cancelada.");
+                      return;
+                    }
+                  }
+
                   // 1. Verificar estado atual primeiro
                   let res = await fetch('https://api-whatsapp-sdmoveis.onrender.com/instance/connectionState/SD-Moveis', {
                     headers: { 'apikey': 'Mv06061991' },
@@ -179,7 +190,7 @@ export function WhatsAppCRMReal() {
                     return;
                   }
 
-                  // 2. Limpar qualquer sessão travada/expirada na API (Isso previne o erro de 'Verifique a internet' no celular)
+                  // 2. Limpar qualquer sessão travada/expirada na API
                   await fetch('https://api-whatsapp-sdmoveis.onrender.com/instance/logout/SD-Moveis', {
                      method: 'DELETE', headers: { 'apikey': 'Mv06061991' }, cache: 'no-store'
                   }).catch(()=>{});
@@ -188,34 +199,58 @@ export function WhatsAppCRMReal() {
                      method: 'DELETE', headers: { 'apikey': 'Mv06061991' }, cache: 'no-store'
                   }).catch(()=>{});
 
-                  // 3. Criar uma do zero e pegar o código puro
+                  // 3. Criar uma do zero
                   res = await fetch('https://api-whatsapp-sdmoveis.onrender.com/instance/create', {
                     method: 'POST',
                     headers: { 
                       'apikey': 'Mv06061991',
                       'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ instanceName: "SD-Moveis", qrcode: true }),
+                    body: JSON.stringify({ 
+                      instanceName: "SD-Moveis", 
+                      qrcode: usePairingCode,
+                      number: !usePairingCode ? phoneForPairing.replace(/\D/g, '') : undefined
+                    }),
                     cache: 'no-store'
                   });
                   let data = await res.json();
 
                   let qrCodeBase64 = data.base64 || data.qrcode?.base64;
+                  let pairingCode = data.pairingCode || data.code;
                   let retries = 5;
 
-                  // Se ainda não tiver QR Code, faz tentativas por até 10 segundos
-                  while (!qrCodeBase64 && retries > 0) {
+                  const checkUrl = usePairingCode 
+                    ? 'https://api-whatsapp-sdmoveis.onrender.com/instance/connect/SD-Moveis?t=' + Date.now()
+                    : 'https://api-whatsapp-sdmoveis.onrender.com/instance/connect/SD-Moveis?t=' + Date.now() + '&number=' + phoneForPairing.replace(/\D/g, '');
+
+                  // Se ainda não tiver os dados
+                  while (!qrCodeBase64 && !pairingCode && retries > 0) {
                     await new Promise(r => setTimeout(r, 2000));
-                    res = await fetch('https://api-whatsapp-sdmoveis.onrender.com/instance/connect/SD-Moveis?t=' + Date.now(), {
+                    res = await fetch(checkUrl, {
                       headers: { 'apikey': 'Mv06061991' },
                       cache: 'no-store'
                     });
                     data = await res.json();
                     qrCodeBase64 = data.base64 || data.qrcode?.base64;
+                    pairingCode = data.pairingCode || data.code;
                     retries--;
                   }
 
-                  if (qrCodeBase64) {
+                  if (!usePairingCode && pairingCode) {
+                    const newWindow = window.open('', '_blank');
+                    newWindow?.document.write(`
+                      <html style="display:flex;justify-content:center;align-items:center;height:100vh;background:#111;font-family:sans-serif;text-align:center;">
+                        <div style="background:#222;padding:40px;border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,0.5);">
+                          <h1 style="color:#25D366;margin-bottom:10px;">Ligar SD Móveis ao WhatsApp</h1>
+                          <p style="color:#aaa;margin-bottom:30px;">Vá no seu WhatsApp > Dispositivos Vinculados > <br><b>"Conectar com Número de Telefone"</b></p>
+                          <div style="background:white;padding:20px 40px;border-radius:10px;display:inline-block;">
+                            <h2 style="color:black;font-size:3rem;letter-spacing:10px;margin:0;">${pairingCode}</h2>
+                          </div>
+                          <p style="margin-top:20px;color:#aaa;">Digite esse código exato lá no seu WhatsApp!</p>
+                        </div>
+                      </html>
+                    `);
+                  } else if (usePairingCode && qrCodeBase64) {
                     const newWindow = window.open('', '_blank');
                     newWindow?.document.write(`
                       <html style="display:flex;justify-content:center;align-items:center;height:100vh;background:#111;font-family:sans-serif;">
@@ -227,7 +262,7 @@ export function WhatsAppCRMReal() {
                       </html>
                     `);
                   } else {
-                    alert('A API está demorando muito para gerar o QR Code Limpo. Tente novamente em alguns instantes.');
+                    alert('A API está demorando muito para gerar o acesso. Tente novamente em alguns instantes.');
                   }
                 } catch (err) {
                   alert('Erro ao conectar na API. Verifique se ela está Live no Render.');
