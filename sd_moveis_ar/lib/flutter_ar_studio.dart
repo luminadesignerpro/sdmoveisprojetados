@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:ar_flutter_plugin/ar_flutter_plugin.dart';
 import 'package:ar_flutter_plugin/datatypes/config_planedetection.dart';
@@ -7,8 +6,8 @@ import 'package:ar_flutter_plugin/managers/ar_anchor_manager.dart';
 import 'package:ar_flutter_plugin/managers/ar_location_manager.dart';
 import 'package:ar_flutter_plugin/managers/ar_object_manager.dart';
 import 'package:ar_flutter_plugin/managers/ar_session_manager.dart';
-import 'package:ar_flutter_plugin/models/ar_anchor.dart';
 import 'package:ar_flutter_plugin/models/ar_node.dart';
+import 'package:ar_flutter_plugin/models/ar_hittest_result.dart';
 import 'package:vector_math/vector_math_64.dart' as math;
 import 'package:model_viewer_plus/model_viewer_plus.dart';
 
@@ -17,23 +16,20 @@ enum ARMode { measure, furniture, color }
 class ARStudioWidget extends StatefulWidget {
   final Function(double totalBudget)? onBudgetUpdate;
 
-  const ARStudioWidget({Key? key, this.onBudgetUpdate}) : super(key: key);
+  const ARStudioWidget({super.key, this.onBudgetUpdate});
 
   @override
-  _ARStudioWidgetState createState() => _ARStudioWidgetState();
+  ARStudioWidgetState createState() => ARStudioWidgetState();
 }
 
-class _ARStudioWidgetState extends State<ARStudioWidget> {
-  // Configurações do Gerenciador AR
+class ARStudioWidgetState extends State<ARStudioWidget> {
   ARSessionManager? arSessionManager;
   ARObjectManager? arObjectManager;
   ARAnchorManager? arAnchorManager;
 
-  // Modos de Aplicação e Lógica
   ARMode currentMode = ARMode.measure;
   
-  // Catálogo de Móveis Dinâmico (MDF)
-  List<Map<String, dynamic>> furnitureLibrary = [
+  final List<Map<String, dynamic>> furnitureLibrary = [
     {
       "name": "Armário MDF",
       "file": "https://modelviewer.dev/shared-assets/models/Cabinet.glb",
@@ -55,25 +51,21 @@ class _ARStudioWidgetState extends State<ARStudioWidget> {
   ];
   int activeFurnitureIndex = 0;
 
-  // Catálogo de Cores de Parede/MDF (Painéis Verticais)
-  List<Map<String, dynamic>> wallColors = [
+  final List<Map<String, dynamic>> wallColors = [
     {"name": "Branco TX", "uri": "https://github.com/KhronosGroup/glTF-Sample-Models/raw/master/2.0/Box/glTF-Binary/Box.glb", "price": 100.0, "color": Colors.white},
     {"name": "Freijó Ouro", "uri": "https://github.com/KhronosGroup/glTF-Sample-Models/raw/master/2.0/Box/glTF-Binary/Box.glb", "price": 180.0, "color": Colors.brown},
     {"name": "Grafite Premium", "uri": "https://github.com/KhronosGroup/glTF-Sample-Models/raw/master/2.0/Box/glTF-Binary/Box.glb", "price": 150.0, "color": Colors.blueGrey},
   ];
   int activeColorIndex = 0;
 
-  // Estados - Trena Profissional
   List<ARNode> measureNodes = [];
   String measureDistanceStr = "0 mm";
-
-  // Estados - Orçamento em tempo real
   double currentBudget = 0.0;
 
   @override
   void dispose() {
-    super.dispose();
     arSessionManager?.dispose();
+    super.dispose();
   }
 
   void onARViewCreated(
@@ -125,7 +117,7 @@ class _ARStudioWidgetState extends State<ARStudioWidget> {
     var newNode = ARNode(
       type: NodeType.webGLB,
       uri: "https://github.com/KhronosGroup/glTF-Sample-Models/raw/master/2.0/Sphere/glTF/Sphere.gltf", 
-      scale: math.Vector3(0.04, 0.04, 0.04), // Esfera indicadora pequena
+      scale: math.Vector3(0.04, 0.04, 0.04),
       position: math.Vector3(pose.getColumn(3).x, pose.getColumn(3).y, pose.getColumn(3).z),
     );
 
@@ -135,15 +127,14 @@ class _ARStudioWidgetState extends State<ARStudioWidget> {
     if (measureNodes.length == 2) {
       var p1 = measureNodes[0].position;
       var p2 = measureNodes[1].position;
-      // Cálculo direto em 3D de distância EUCLIDEANA milimétrica (Sem limite de escala)
       double distanceInMeters = p1.distanceTo(p2); 
       setState(() {
         measureDistanceStr = "${(distanceInMeters * 1000).toStringAsFixed(0)} mm";
       });
-      // Envia notificação ao "Orçamentista"
       _updateBudget(0.0);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Nova metragem exportada: \$measureDistanceStr!'),
+        content: Text('Nova metragem exportada: $measureDistanceStr!'),
         backgroundColor: Colors.green.shade800,
       ));
     }
@@ -159,24 +150,24 @@ class _ARStudioWidgetState extends State<ARStudioWidget> {
     );
     await arObjectManager!.addNode(newNode);
     
-    // Alimentar lógica do orçamentista com estoque simulado
     _updateBudget(activeItem["price"]);
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Móvel inserido: \${activeItem["name"]} | R\$ \${activeItem["price"]}')));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Móvel inserido: ${activeItem["name"]} | R\$ ${activeItem["price"]}')));
   }
 
   Future<void> _handleWallColorMode(math.Matrix4 pose) async {
     var activeItem = wallColors[activeColorIndex];
-    // Adiciona painel virtual de amostra na parede com a cor respectiva
     var planeNode = ARNode(
       type: NodeType.webGLB,
       uri: activeItem["uri"],
-      scale: math.Vector3(1.0, 2.7, 0.05), // Painel fixo de 2.70m projetado
+      scale: math.Vector3(1.0, 2.7, 0.05),
        position: math.Vector3(pose.getColumn(3).x, pose.getColumn(3).y, pose.getColumn(3).z),
     );
     await arObjectManager!.addNode(planeNode);
     
     _updateBudget(activeItem["price"]);
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Revestimento aplicado: \${activeItem["name"]} | R\$ \${activeItem["price"]}')));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Revestimento aplicado: ${activeItem["name"]} | R\$ ${activeItem["price"]}')));
   }
 
   void _updateBudget(double value) {
@@ -188,7 +179,6 @@ class _ARStudioWidgetState extends State<ARStudioWidget> {
     }
   }
 
-  // WIDGET DE VISUALIZAÇÃO 3D PRÉVIA DO MÓVEL (Dica de Ouro)
   void _show3DPreview(String modelUri, String title) {
     showDialog(
       context: context,
@@ -196,7 +186,7 @@ class _ARStudioWidgetState extends State<ARStudioWidget> {
         return AlertDialog(
           backgroundColor: Colors.black87,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text("Visualizador 3D: \$title", style: TextStyle(color: Colors.white, fontSize: 16)),
+          title: Text("Visualizador 3D: $title", style: const TextStyle(color: Colors.white, fontSize: 16)),
           content: Container(
             height: 350,
             width: double.infinity,
@@ -208,15 +198,14 @@ class _ARStudioWidgetState extends State<ARStudioWidget> {
               backgroundColor: Colors.transparent,
               src: modelUri,
               alt: "Visualização 3D do móvel selecionado",
-              ar: false, // Visualização em giro 3D (Não AR)
               autoRotate: true,
-              cameraControls: true, // Habilita Pinch e Zoom para ver detalhes do móvel
+              cameraControls: true,
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text("Fechar", style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold)),
+              child: const Text("Fechar", style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold)),
             )
           ],
         );
@@ -230,13 +219,11 @@ class _ARStudioWidgetState extends State<ARStudioWidget> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // 1. Câmera AR
           ARView(
             onARViewCreated: onARViewCreated,
             planeDetectionConfig: PlaneDetectionConfig.horizontalAndVertical,
           ),
           
-          // 2. Trena Flutuante no centro da tela para indicar medida real
           if (measureNodes.length == 2)
             Positioned(
               top: MediaQuery.of(context).size.height / 2 - 20,
@@ -244,22 +231,22 @@ class _ARStudioWidgetState extends State<ARStudioWidget> {
               right: 40,
               child: Center(
                 child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 25, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 12),
                   decoration: BoxDecoration(
                     color: Colors.amber.shade600,
                     borderRadius: BorderRadius.circular(30),
-                    boxShadow: [
+                    boxShadow: const [
                       BoxShadow(color: Colors.black54, blurRadius: 10, offset: Offset(0, 5))
                     ],
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.architecture, color: Colors.black, size: 28),
-                      SizedBox(width: 10),
+                      const Icon(Icons.architecture, color: Colors.black, size: 28),
+                      const SizedBox(width: 10),
                       Text(
                         measureDistanceStr,
-                        style: TextStyle(color: Colors.black, fontWeight: FontWeight.w900, fontSize: 26, letterSpacing: 1.2),
+                        style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w900, fontSize: 26, letterSpacing: 1.2),
                       ),
                     ],
                   ),
@@ -267,7 +254,6 @@ class _ARStudioWidgetState extends State<ARStudioWidget> {
               ),
             ),
 
-          // 3. Orçamentista de MDF Fixado ao Topo
           Positioned(
             top: 50,
             left: 20,
@@ -275,7 +261,7 @@ class _ARStudioWidgetState extends State<ARStudioWidget> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
+                const Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                      Text('STUDIO AR PRO', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 18, shadows: [Shadow(color: Colors.black, blurRadius: 10)])),
@@ -283,33 +269,31 @@ class _ARStudioWidgetState extends State<ARStudioWidget> {
                   ],
                 ),
                 Container(
-                  padding: EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: Colors.black87, 
                     borderRadius: BorderRadius.circular(15),
-                    border: Border.all(color: Colors.greenAccent.withOpacity(0.5))
+                    border: Border.all(color: Colors.greenAccent.withAlpha(128))
                   ),
                   child: Text(
                     'Total: R$ ${currentBudget.toStringAsFixed(2)}',
-                    style: TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.w900, fontSize: 15),
+                    style: const TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.w900, fontSize: 15),
                   ),
                 ),
-                // Botão de Finalizar adicionado aqui
                 IconButton(
                   onPressed: () {
                     Navigator.pop(context, currentBudget);
                   },
-                  icon: Icon(Icons.check_circle, color: Colors.greenAccent, size: 35),
+                  icon: const Icon(Icons.check_circle, color: Colors.greenAccent, size: 35),
                 )
               ],
             ),
           ),
 
-          // 4. Seletor de Biblioteca de Móveis
           if (currentMode == ARMode.furniture)
             Positioned(
               bottom: 120, left: 0, right: 0,
-              child: Container(
+              child: SizedBox(
                 height: 110,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
@@ -321,8 +305,8 @@ class _ARStudioWidgetState extends State<ARStudioWidget> {
                       onTap: () => setState(() => activeFurnitureIndex = index),
                       child: Container(
                         width: 130,
-                        margin: EdgeInsets.symmetric(horizontal: 10),
-                        padding: EdgeInsets.all(10),
+                        margin: const EdgeInsets.symmetric(horizontal: 10),
+                        padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
                           color: isSelected ? Colors.amber : Colors.black87,
                           borderRadius: BorderRadius.circular(15),
@@ -335,14 +319,13 @@ class _ARStudioWidgetState extends State<ARStudioWidget> {
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
                                 Icon(item["icon"], color: isSelected ? Colors.black : Colors.white70, size: 30),
-                                // Botão Olho da Dica de Ouro
                                 InkWell(
                                   onTap: () => _show3DPreview(item["file"], item["name"]),
                                   child: Icon(Icons.remove_red_eye_rounded, color: isSelected ? Colors.black54 : Colors.amber, size: 24),
                                 )
                               ],
                             ),
-                            SizedBox(height: 8),
+                            const SizedBox(height: 8),
                             Text(item["name"], textAlign: TextAlign.center, style: TextStyle(color: isSelected ? Colors.black : Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
                           ],
                         ),
@@ -353,15 +336,14 @@ class _ARStudioWidgetState extends State<ARStudioWidget> {
               ),
             ),
 
-          // 5. Seletor de Cores / Revestimentos
           if (currentMode == ARMode.color)
             Positioned(
               bottom: 120, left: 0, right: 0,
-              child: Container(
+              child: SizedBox(
                 height: 80,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
-                  padding: EdgeInsets.symmetric(horizontal: 20),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   itemCount: wallColors.length,
                   itemBuilder: (context, index) {
                     var item = wallColors[index];
@@ -369,14 +351,14 @@ class _ARStudioWidgetState extends State<ARStudioWidget> {
                     return GestureDetector(
                       onTap: () => setState(() => activeColorIndex = index),
                       child: Container(
-                        margin: EdgeInsets.only(right: 15),
+                        margin: const EdgeInsets.only(right: 15),
                         width: 60,
                         decoration: BoxDecoration(
                           color: item["color"],
                           shape: BoxShape.circle,
                           border: Border.all(color: isSelected ? Colors.amber : Colors.white24, width: isSelected ? 4 : 1),
                           boxShadow: [
-                            if (isSelected) BoxShadow(color: Colors.amber.withOpacity(0.5), blurRadius: 10, spreadRadius: 2)
+                            if (isSelected) BoxShadow(color: Colors.amber.withAlpha(128), blurRadius: 10, spreadRadius: 2)
                           ]
                         ),
                       ),
@@ -386,13 +368,12 @@ class _ARStudioWidgetState extends State<ARStudioWidget> {
               ),
             ),
 
-          // Menu Inferior Master
           Positioned(
             bottom: 30, left: 20, right: 20,
             child: Container(
-               padding: EdgeInsets.all(15),
+               padding: const EdgeInsets.all(15),
                decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.95), 
+                color: Colors.black.withAlpha(242), 
                 borderRadius: BorderRadius.circular(30),
                 border: Border.all(color: Colors.white10)
                ),
@@ -416,8 +397,8 @@ class _ARStudioWidgetState extends State<ARStudioWidget> {
     return GestureDetector(
       onTap: () => setState(() => currentMode = mode),
       child: AnimatedContainer(
-        duration: Duration(milliseconds: 200),
-        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
           color: isSelected ? Colors.white10 : Colors.transparent,
           borderRadius: BorderRadius.circular(15)
@@ -426,16 +407,10 @@ class _ARStudioWidgetState extends State<ARStudioWidget> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon, color: isSelected ? Colors.amber : Colors.white54, size: 30),
-            SizedBox(height: 5),
+            const SizedBox(height: 5),
             Text(label, style: TextStyle(color: isSelected ? Colors.amber : Colors.white54, fontSize: 11, fontWeight: FontWeight.bold)),
           ],
         ),
-      ),
-    );
-  }
-}
-d)),
-        ],
       ),
     );
   }

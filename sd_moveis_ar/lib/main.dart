@@ -7,7 +7,7 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +25,7 @@ class MyApp extends StatelessWidget {
 }
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({Key? key}) : super(key: key);
+  const MainScreen({super.key});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -59,7 +59,7 @@ class _MainScreenState extends State<MainScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.view_in_ar, size: 80, color: Colors.amber),
+            const Icon(Icons.view_in_ar, size: 80, color: Colors.amber),
             const SizedBox(height: 20),
             const Text(
               'Bem-vindo ao Studio AR Elite',
@@ -82,11 +82,7 @@ class _MainScreenState extends State<MainScreen> {
               onPressed: () async {
                 final double? result = await Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => ARStudioWidget(
-                    onBudgetUpdate: (value) {
-                      // Callback de atualização opcional se quiser tratar em tempo real fora da tela
-                    },
-                  )),
+                  MaterialPageRoute(builder: (context) => const ARStudioWidget()),
                 );
                 
                 if (result != null) {
@@ -109,4 +105,3 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 }
-
