@@ -1,451 +1,538 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { X, Ruler, MousePointerClick, RefreshCcw, Check, Sparkles, Smartphone, Camera, ZapOff, Loader2 } from 'lucide-react';
+import { X, Camera, Ruler, Check, RefreshCcw, ChevronRight, Info, AlertTriangle } from 'lucide-react';
 
-/* ────────────────────────────────────────────────────────────
-   ARMeasureTool  —  Trena de câmera via WebXR Hit-Test (ARCore)
-   Fallback inteligente: se WebXR não estiver disponível abre
-   câmera 2D simples para marcação visual.
-──────────────────────────────────────────────────────────────*/
+/* ─────────────────────────────────────────────────────────────────────────────
+   ARMeasureTool v3 — Medição por Perspectiva de Câmera
+   Fluxo: Câmera → Foto → 4 cantos do chão → Referência → Cálculo automático
+   Sem LiDAR, funciona em qualquer celular com câmera traseira.
+───────────────────────────────────────────────────────────────────────────── */
 
 interface ARMeasureToolProps {
   onClose: () => void;
-  onConfirmMeasurement: (meters: number, dims?: {width: number, depth: number, height: number}) => void;
+  onConfirmMeasurement: (meters: number, dims?: { width: number; depth: number; height: number }) => void;
 }
 
-type Point3D = { x: number; y: number; z: number };
-type Phase = 'INTRO' | 'SCANNING' | 'POINT_A' | 'POINT_B' | 'RESULT' | 'MANUAL' | 'UNSUPPORTED' | 'CAMERA_2D';
+type Phase = 'INTRO' | 'CAMERA' | 'CORNERS' | 'REFERENCE' | 'HEIGHT' | 'RESULT' | 'ERROR';
+type Corner = { x: number; y: number };
 
-const dist3D = (a: Point3D, b: Point3D) =>
-  Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2);
+// ─── Homografia: 4 pontos na foto → retângulo real ───────────────────────────
 
-const isWebXRAvailable = () =>
-  typeof navigator !== 'undefined' && 'xr' in navigator;
+function gaussElim(A: number[][], b: number[]): number[] {
+  const n = b.length;
+  const M = A.map((row, i) => [...row, b[i]]);
+  for (let col = 0; col < n; col++) {
+    let maxRow = col;
+    for (let row = col + 1; row < n; row++) if (Math.abs(M[row][col]) > Math.abs(M[maxRow][col])) maxRow = row;
+    [M[col], M[maxRow]] = [M[maxRow], M[col]];
+    for (let row = col + 1; row < n; row++) {
+      const f = M[row][col] / M[col][col];
+      for (let j = col; j <= n; j++) M[row][j] -= f * M[col][j];
+    }
+  }
+  const x = new Array(n).fill(0);
+  for (let i = n - 1; i >= 0; i--) {
+    x[i] = M[i][n] / M[i][i];
+    for (let j = i + 1; j < n; j++) x[i] -= (M[i][j] / M[i][i]) * x[j];
+  }
+  return x;
+}
+
+function computeHomography(src: Corner[], dst: Corner[]): number[] {
+  const A: number[][] = [];
+  const b: number[] = [];
+  for (let i = 0; i < 4; i++) {
+    const { x: sx, y: sy } = src[i];
+    const { x: dx, y: dy } = dst[i];
+    A.push([-sx, -sy, -1, 0, 0, 0, sx * dx, sy * dx]);
+    b.push(-dx);
+    A.push([0, 0, 0, -sx, -sy, -1, sx * dy, sy * dy]);
+    b.push(-dy);
+  }
+  const h = gaussElim(A, b);
+  return [...h, 1];
+}
+
+function applyH(H: number[], x: number, y: number): Corner {
+  const w = H[6] * x + H[7] * y + H[8];
+  return { x: (H[0] * x + H[1] * y + H[2]) / w, y: (H[3] * x + H[4] * y + H[5]) / w };
+}
+
+function dist(a: Corner, b: Corner) {
+  return Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2);
+}
+
+// Dado 4 cantos no sentido horário: TL, TR, BR, BL (perspectiva)
+// Retorna proporção {w, h} do retângulo real (em pixels normalizados)
+function getPerspectiveDims(corners: Corner[]): { w: number; h: number } {
+  const [tl, tr, br, bl] = corners;
+  const wTop = dist(tl, tr);
+  const wBot = dist(bl, br);
+  const hLeft = dist(tl, bl);
+  const hRight = dist(tr, br);
+  const W = Math.max(wTop, wBot);
+  const H = Math.max(hLeft, hRight);
+  return { w: W, h: H };
+}
+
+// ─── Referências de escala ────────────────────────────────────────────────────
+
+const REFERENCES = [
+  { label: 'Porta padrão (80cm)', value: 0.80, emoji: '🚪' },
+  { label: 'Piso 60×60cm', value: 0.60, emoji: '⬛' },
+  { label: 'Piso 30×30cm', value: 0.30, emoji: '◾' },
+  { label: 'Folha A4 (29.7cm)', value: 0.297, emoji: '📄' },
+  { label: 'Personalizado...', value: -1, emoji: '✏️' },
+];
+
+// ─── Componente Principal ─────────────────────────────────────────────────────
 
 export default function ARMeasureTool({ onClose, onConfirmMeasurement }: ARMeasureToolProps) {
   const [phase, setPhase] = useState<Phase>('INTRO');
-  const [distance, setDistance] = useState<number>(0);
-  const [dim3D, setDim3D] = useState<{width: number, depth: number, height: number} | null>(null);
-  const [manualInput, setManualInput] = useState('');
-  const [reticlePos, setReticlePos] = useState<{ x: number; y: number } | null>(null);
-  
-  const [points3D, setPoints3D] = useState<Point3D[]>([]);
-  const [points2D, setPoints2D] = useState<{x: number, y: number}[]>([]);
-  const [showMagnifier, setShowMagnifier] = useState(false);
-  const [magnifierPos, setMagnifierPos] = useState({ x: 0, y: 0 });
-  const [calibrationMode, setCalibrationMode] = useState(false);
-  const [calibrationValue, setCalibrationValue] = useState(0.297); // A4 length in meters (29.7cm)
-  const [pixelPerMeter, setPixelPerMeter] = useState<number>(typeof window !== 'undefined' ? window.innerHeight / 2.5 : 800);
-  const [sessionError, setSessionError] = useState<string | null>(null);
-  const [surfaceDetected, setSurfaceDetected] = useState(false);
+  const [corners, setCorners] = useState<Corner[]>([]);
+  const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
+  const [selectedRef, setSelectedRef] = useState<number>(0.80);
+  const [customRef, setCustomRef] = useState('');
+  const [isCustomRef, setIsCustomRef] = useState(false);
+  const [refPixels, setRefPixels] = useState<Corner[]>([]);
+  const [dims, setDims] = useState<{ width: number; depth: number; height: number } | null>(null);
+  const [heightInput, setHeightInput] = useState('2.70');
+  const [imgSize, setImgSize] = useState({ w: 1, h: 1 });
+  const [naturalSize, setNaturalSize] = useState({ w: 1, h: 1 });
+  const [errorMsg, setErrorMsg] = useState('');
 
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const xrSessionRef = useRef<XRSession | null>(null);
-  const xrRefSpaceRef = useRef<XRReferenceSpace | null>(null);
-  const hitTestSourceRef = useRef<XRHitTestSource | null>(null);
-  const rafIdRef = useRef<number>(0);
-  const currentHitRef = useRef<Point3D | null>(null);
-  const currentHitScreenRef = useRef<{ x: number; y: number } | null>(null);
-  const zoomCanvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    return () => {
-      stopSession();
-    };
-  }, []);
-
-  /* ─── Session Management ─── */
-  const startARSession = useCallback(async () => {
-    if (!isWebXRAvailable()) {
-      startCamera2DSession();
-      return;
-    }
-
+  // Iniciar câmera
+  const startCamera = useCallback(async () => {
     try {
-      const supported = await (navigator as any).xr.isSessionSupported('immersive-ar');
-      if (!supported) {
-        startCamera2DSession();
-        return;
-      }
-
-      setPhase('SCANNING');
-      setSurfaceDetected(false);
-      setPoints3D([]);
-      setPoints2D([]);
-      setDistance(0);
-
-      const session: XRSession = await (navigator as any).xr.requestSession('immersive-ar', {
-        requiredFeatures: ['hit-test', 'local-floor'],
-        optionalFeatures: ['dom-overlay'],
-        domOverlay: { root: document.getElementById('ar-overlay-root') || document.body },
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
       });
-
-      xrSessionRef.current = session;
-      const canvas = canvasRef.current!;
-      const gl = canvas.getContext('webgl2', { xrCompatible: true }) as WebGL2RenderingContext;
-      await (gl as any).makeXRCompatible?.();
-      const layer = new (window as any).XRWebGLLayer(session, gl);
-      await session.updateRenderState({ baseLayer: layer });
-
-      const refSpace = await session.requestReferenceSpace('local-floor');
-      xrRefSpaceRef.current = refSpace as XRReferenceSpace;
-      const viewerSpace = await session.requestReferenceSpace('viewer');
-      hitTestSourceRef.current = await (session as any).requestHitTestSource({ space: viewerSpace });
-
-      session.addEventListener('end', () => {
-        stopSession(false);
-        setPhase('INTRO');
-      });
-
-      session.requestAnimationFrame(onXRFrame);
-    } catch (err: any) {
-      console.error('[AR] startARSession error:', err);
-      startCamera2DSession();
+      streamRef.current = stream;
+      if (videoRef.current) { videoRef.current.srcObject = stream; videoRef.current.play(); }
+      setPhase('CAMERA');
+    } catch {
+      setErrorMsg('Câmera não acessível. Verifique as permissões do navegador.');
+      setPhase('ERROR');
     }
   }, []);
 
-  const startCamera2DSession = async () => {
-    try {
-      setPhase('CAMERA_2D');
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play();
-      }
-    } catch (err) {
-      console.error('[CAMERA_2D] error:', err);
-      setPhase('UNSUPPORTED');
-    }
-  };
-
-  const snapToModule = (rawDist: number) => {
-    const standardModules = [300, 400, 450, 500, 600, 700, 750, 800, 900, 1000, 1200, 1500, 1800, 2000, 2500, 3000];
-    let adjustedDist = rawDist;
-    const distMM = rawDist * 1000;
-    
-    for (const mod of standardModules) {
-      if (Math.abs(distMM - mod) / mod <= 0.02) {
-        adjustedDist = mod / 1000;
-        break;
-      }
-    }
-    return adjustedDist;
-  };
-
-  const handleCamera2DTap = (e: React.MouseEvent | React.TouchEvent) => {
-    let clientX, clientY;
-    if ('touches' in e) {
-      clientX = e.touches[0].clientX;
-      clientY = e.touches[0].clientY;
-    } else {
-      clientX = e.clientX;
-      clientY = e.clientY;
-    }
-    const pos = { x: clientX, y: clientY };
-    setMagnifierPos(pos);
-    setShowMagnifier(true);
-    setTimeout(() => setShowMagnifier(false), 800);
-
-    const newPoints = [...points2D, pos];
-    setPoints2D(newPoints);
-    
-    if (calibrationMode) {
-      if (newPoints.length === 2) {
-         const dx = newPoints[1].x - newPoints[0].x;
-         const dy = newPoints[1].y - newPoints[0].y;
-         const pixels = Math.sqrt(dx*dx + dy*dy);
-         const newRatio = pixels / calibrationValue;
-         setPixelPerMeter(newRatio);
-         setTimeout(() => {
-           setPoints2D([]);
-           setCalibrationMode(false);
-           alert("Calibração A4 registrada! Agora vamos medir: clique no Canto Esquerdo(1), Canto Direito(2), Fundo(3) e Teto(4).");
-         }, 500);
-      }
-    } else {
-      if (newPoints.length === 4) {
-         const distPx = (p1: any, p2: any) => Math.sqrt((p2.x-p1.x)**2 + (p2.y-p1.y)**2);
-         const rawW = distPx(newPoints[0], newPoints[1]) / pixelPerMeter;
-         const rawD = distPx(newPoints[1], newPoints[2]) / pixelPerMeter;
-         const rawH = distPx(newPoints[0], newPoints[3]) / pixelPerMeter;
-         
-         const w = snapToModule(rawW);
-         const d = snapToModule(rawD);
-         const h = snapToModule(rawH);
-         
-         setDim3D({width: w, depth: d, height: h});
-         setDistance(w); // Default for old compatibility
-         
-         setTimeout(() => {
-            setPhase('RESULT');
-         }, 800);
-      }
-    }
-  };
-
-  // Update Magnifier Canvas
-  useEffect(() => {
-    if (showMagnifier && zoomCanvasRef.current && videoRef.current) {
-      const canvas = zoomCanvasRef.current;
-      const ctx = canvas.getContext('2d');
-      const video = videoRef.current;
-      if (!ctx || video.videoWidth === 0) return;
-
-      const size = 128;
-      const zoom = 2.5;
-      
-      const rect = video.getBoundingClientRect();
-      const xRatio = (magnifierPos.x - rect.left) / rect.width;
-      const yRatio = (magnifierPos.y - rect.top) / rect.height;
-      
-      const sourceX = xRatio * video.videoWidth;
-      const sourceY = yRatio * video.videoHeight;
-      const sourceW = (size / zoom) * (video.videoWidth / rect.width);
-      const sourceH = (size / zoom) * (video.videoHeight / rect.height);
-
-      ctx.drawImage(
-        video,
-        sourceX - sourceW / 2, sourceY - sourceH / 2, sourceW, sourceH,
-        0, 0, size, size
-      );
-    }
-  }, [showMagnifier, magnifierPos]);
-
-  const stopSession = useCallback((resetPhase = true) => {
-    cancelAnimationFrame(rafIdRef.current);
-    hitTestSourceRef.current?.cancel();
-    hitTestSourceRef.current = null;
-    if (xrSessionRef.current) {
-      xrSessionRef.current.end().catch(() => {});
-      xrSessionRef.current = null;
-    }
-    if (videoRef.current?.srcObject) {
-      (videoRef.current.srcObject as MediaStream).getTracks().forEach(track => track.stop());
-      videoRef.current.srcObject = null;
-    }
-    if (resetPhase) setPhase('INTRO');
+  // Parar câmera
+  const stopCamera = useCallback(() => {
+    streamRef.current?.getTracks().forEach(t => t.stop());
+    streamRef.current = null;
   }, []);
 
-  const onXRFrame = useCallback((time: number, frame: XRFrame) => {
-    const session = xrSessionRef.current;
-    if (!session) return;
-    rafIdRef.current = session.requestAnimationFrame(onXRFrame);
+  useEffect(() => () => stopCamera(), [stopCamera]);
 
-    const refSpace = xrRefSpaceRef.current;
-    const hitSource = hitTestSourceRef.current;
-    if (!refSpace || !hitSource) return;
+  // Capturar foto
+  const capturePhoto = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d')!.drawImage(video, 0, 0);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+    setPhotoDataUrl(dataUrl);
+    setNaturalSize({ w: video.videoWidth, h: video.videoHeight });
+    stopCamera();
+    setCorners([]);
+    setRefPixels([]);
+    setPhase('CORNERS');
+  };
 
-    const hits = frame.getHitTestResults(hitSource as any);
-    if (hits.length > 0) {
-      setSurfaceDetected(true);
-      const pose = hits[0].getPose(refSpace);
-      if (pose) {
-        const m = pose.transform.matrix;
-        currentHitRef.current = { x: m[12], y: m[13], z: m[14] };
-        setReticlePos({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
-      }
-    } else {
-      setSurfaceDetected(false);
-    }
-  }, []);
+  // Tap na imagem para marcar cantos
+  const handleImageTap = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    const img = imgRef.current;
+    if (!img) return;
+    const rect = img.getBoundingClientRect();
+    let clientX: number, clientY: number;
+    if ('touches' in e) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; }
+    else { clientX = (e as React.MouseEvent).clientX; clientY = (e as React.MouseEvent).clientY; }
 
-  const handleARTap = useCallback(() => {
-    const hit = currentHitRef.current;
-    if (!hit) return;
-    const screen = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+    // Posição relativa à imagem exibida
+    const px = (clientX - rect.left) / rect.width;
+    const py = (clientY - rect.top) / rect.height;
+    // Converter para coordenadas naturais da foto
+    const nx = px * naturalSize.w;
+    const ny = py * naturalSize.h;
 
-    if (phase === 'INTRO' || phase === 'SCANNING' || phase === 'POINT_A' || phase === 'POINT_B') {
-      const newPoints = [...points3D, hit];
-      setPoints3D([...points3D, hit]);
-      
-      if (newPoints.length === 4) {
-        const w = snapToModule(dist3D(newPoints[0], newPoints[1]));
-        const d = snapToModule(dist3D(newPoints[1], newPoints[2]));
-        const h = snapToModule(dist3D(newPoints[0], newPoints[3]));
-        
-        // Verifica esquadro na base (P1 e P2)
-        const dy = Math.abs(newPoints[0].y - newPoints[1].y);
-        if (dy > 0.005) {
-          alert(`Aviso de Esquadro: A diferença de altura na base é de ${(dy * 1000).toFixed(1)}mm (tolerância: 5mm). Considere manter o dispositivo mais estável.`);
+    setImgSize({ w: rect.width, h: rect.height });
+
+    if (phase === 'CORNERS') {
+      if (corners.length < 4) {
+        const newCorners = [...corners, { x: nx, y: ny }];
+        setCorners(newCorners);
+        if (newCorners.length === 4) {
+          // Avançar para referência
+          setPhase('REFERENCE');
         }
-
-        setDim3D({width: w, depth: d, height: h});
-        setDistance(w);
-        setPhase('RESULT');
-        stopSession(false);
-      } else {
-        // Avance para os próximos passos visualmente
-        if (newPoints.length === 1) setPhase('POINT_A'); // Temos P1
-        if (newPoints.length === 2) setPhase('POINT_B'); // Temos P2
       }
     }
-  }, [phase, points3D, stopSession]);
-
-  const restart = () => {
-    setPoints3D([]); setPoints2D([]); setDistance(0); setDim3D(null);
-    startARSession();
   };
 
-  const confirm = () => {
-    const val = phase === 'MANUAL' ? parseFloat(manualInput.replace(',', '.')) : distance;
-    if (!val || val <= 0) return;
-    onConfirmMeasurement(val, dim3D || undefined);
+  // Marcar 2 pontos de referência na foto
+  const handleRefTap = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    const img = imgRef.current;
+    if (!img) return;
+    const rect = img.getBoundingClientRect();
+    let clientX: number, clientY: number;
+    if ('touches' in e) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; }
+    else { clientX = (e as React.MouseEvent).clientX; clientY = (e as React.MouseEvent).clientY; }
+
+    const px = (clientX - rect.left) / rect.width;
+    const py = (clientY - rect.top) / rect.height;
+    const nx = px * naturalSize.w;
+    const ny = py * naturalSize.h;
+
+    const newRef = [...refPixels, { x: nx, y: ny }];
+    setRefPixels(newRef);
+
+    if (newRef.length === 2) {
+      // Calcular tudo
+      calculateDimensions(corners, newRef, selectedRef);
+    }
   };
 
-  /* ─── Render Logic ─── */
+  const calculateDimensions = (
+    corners4: Corner[],
+    refPts: Corner[],
+    refMeters: number,
+  ) => {
+    // 1. Proporção do chão via perspectiva
+    const { w: propW, h: propD } = getPerspectiveDims(corners4);
 
-  if (phase === 'INTRO') {
-    return (
-      <div className="fixed inset-0 z-[9999] bg-gray-950 flex flex-col items-center justify-center p-6 text-center animate-in fade-in">
-        <div className="w-24 h-24 rounded-[32px] bg-amber-500/15 flex items-center justify-center mb-6 ring-2 ring-amber-500/30">
-          <Ruler className="w-12 h-12 text-amber-400" />
-        </div>
-        <h2 className="text-3xl font-black text-white mb-2 tracking-tight">Trena de Ambiente</h2>
-        <p className="text-gray-400 max-w-xs text-sm mb-8 leading-relaxed">
-          Meça seu ambiente em tempo real para um projeto perfeitamente ajustado.
-        </p>
-        <div className="w-full max-w-xs space-y-3">
-          <button onClick={startARSession} className="w-full bg-amber-500 text-white py-5 rounded-2xl font-black text-base shadow-xl flex items-center justify-center gap-3">
-            <Camera className="w-5 h-5" /> INICIAR CÂMERA
-          </button>
-          <button onClick={() => setPhase('MANUAL')} className="w-full bg-white/5 text-gray-400 py-3 rounded-2xl font-bold text-sm border border-white/10">
-            Digitar Manualmente
-          </button>
-        </div>
-        <button onClick={onClose} className="absolute top-5 right-5 p-3 text-gray-500 hover:text-white"><X /></button>
+    // 2. Pixels por metro usando referência
+    const refPx = dist(refPts[0], refPts[1]);
+    const ppm = refPx / refMeters;
+
+    // 3. Medidas absolutas (em metros)
+    const W = propW / ppm;
+    const D = propD / ppm;
+    const H = 2.70; // default, ajustado depois
+
+    setDims({ width: parseFloat(W.toFixed(2)), depth: parseFloat(D.toFixed(2)), height: H });
+    setPhase('HEIGHT');
+  };
+
+  const confirmHeight = () => {
+    if (!dims) return;
+    const h = parseFloat(heightInput.replace(',', '.')) || 2.70;
+    const finalDims = { ...dims, height: h };
+    setDims(finalDims);
+    setPhase('RESULT');
+  };
+
+  // Converter coordenadas naturais → exibidas na tela
+  const toDisplay = (pt: Corner): Corner => {
+    const img = imgRef.current;
+    if (!img) return { x: 0, y: 0 };
+    const rect = img.getBoundingClientRect();
+    return {
+      x: (pt.x / naturalSize.w) * rect.width + rect.left - (containerRef.current?.getBoundingClientRect().left || 0),
+      y: (pt.y / naturalSize.h) * rect.height + rect.top - (containerRef.current?.getBoundingClientRect().top || 0),
+    };
+  };
+
+  const cornerLabels = ['1 – Canto Esq. Frente', '2 – Canto Dir. Frente', '3 – Canto Dir. Fundo', '4 – Canto Esq. Fundo'];
+  const cornerColors = ['#F5A823', '#22c55e', '#3b82f6', '#a855f7'];
+
+  // ── INTRO ────────────────────────────────────────────────────────────────────
+  if (phase === 'INTRO') return (
+    <div className="fixed inset-0 z-[9999] bg-[#0a0a0a] flex flex-col items-center justify-center p-6 text-center">
+      <div className="w-24 h-24 rounded-[32px] bg-amber-500/15 flex items-center justify-center mb-6 ring-2 ring-amber-500/30">
+        <Camera className="w-12 h-12 text-amber-400" />
       </div>
-    );
-  }
-
-  if (phase === 'RESULT') {
-    return (
-      <div className="fixed inset-0 z-[9999] bg-gray-950 flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-24 h-24 bg-emerald-500/15 rounded-[32px] flex items-center justify-center mb-6 ring-2 ring-emerald-500/30">
-          <Check className="w-12 h-12 text-emerald-400" />
-        </div>
-        <p className="text-[10px] uppercase font-black text-gray-500 tracking-widest mb-1">Medidas do Projeto 3D (Metros)</p>
-        {dim3D ? (
-           <div className="flex flex-col items-center gap-3 mb-8 mt-4 w-full max-w-xs">
-             <div className="flex justify-between w-full bg-white/10 px-6 py-4 rounded-xl">
-               <span className="text-gray-400 font-bold">Largura (L):</span>
-               <span className="text-white font-black text-xl">{dim3D.width.toFixed(2)}m</span>
-             </div>
-             <div className="flex justify-between w-full bg-white/10 px-6 py-4 rounded-xl">
-               <span className="text-gray-400 font-bold">Profund. (P):</span>
-               <span className="text-white font-black text-xl">{dim3D.depth.toFixed(2)}m</span>
-             </div>
-             <div className="flex justify-between w-full bg-white/10 px-6 py-4 rounded-xl">
-               <span className="text-gray-400 font-bold">Altura (A):</span>
-               <span className="text-white font-black text-xl">{dim3D.height.toFixed(2)}m</span>
-             </div>
-           </div>
-        ) : (
-           <div className="flex items-baseline gap-2 mb-8">
-             <span className="text-7xl font-black text-white">{distance.toFixed(2)}</span>
-             <span className="text-3xl font-bold text-amber-400">m</span>
-           </div>
-        )}
-        <div className="w-full max-w-xs space-y-3">
-          <button onClick={() => onConfirmMeasurement(dim3D ? dim3D.width : distance, dim3D || undefined)} className="w-full bg-amber-500 text-white py-5 rounded-2xl font-black">GERAR ORÇAMENTO E 3D</button>
-          <button onClick={restart} className="w-full bg-white/5 text-gray-400 py-3 rounded-2xl font-bold text-sm">Medir novamente</button>
-        </div>
+      <h2 className="text-3xl font-black text-white mb-3 tracking-tight">Medição por Câmera</h2>
+      <p className="text-gray-400 text-sm mb-2 max-w-xs leading-relaxed">
+        Fotografe o chão do ambiente e marque os <strong className="text-white">4 cantos</strong>. O app calcula as medidas automaticamente.
+      </p>
+      <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl px-4 py-3 mb-8 max-w-xs text-left space-y-2">
+        {['📸 Foto do chão do ambiente', '👆 Marque os 4 cantos', '📏 Indique 1 medida de referência', '✅ Medições calculadas!'].map((s, i) => (
+          <p key={i} className="text-amber-200 text-xs font-medium">{s}</p>
+        ))}
       </div>
-    );
-  }
-
-  if (phase === 'MANUAL') {
-    return (
-      <div className="fixed inset-0 z-[9999] bg-gray-950 flex flex-col items-center justify-center p-6 text-center overflow-auto">
-        <div className="w-16 h-16 bg-amber-500/15 rounded-2xl flex items-center justify-center mb-4 ring-2 ring-amber-500/30">
-          <Ruler className="w-8 h-8 text-amber-400" />
-        </div>
-        <h2 className="text-2xl font-black text-white mb-2">Medidas Exatas</h2>
-        <p className="text-gray-400 text-sm mb-6 max-w-xs mx-auto">Insira as medidas em metros (ex: 2.50) usando sua Trena a Laser/Fita.</p>
-        
-        <div className="w-full max-w-xs space-y-3 mb-8">
-          <div className="text-left w-full">
-             <label className="text-[10px] font-black uppercase text-amber-500 tracking-widest ml-4 mb-1 block">Largura (m)</label>
-             <input type="number" inputMode="decimal" onChange={e => {
-                const val = parseFloat(e.target.value.replace(',', '.')) || 0;
-                setDim3D(prev => ({ width: val, depth: prev?.depth || 0.5, height: prev?.height || 2.7 }));
-             }} className="w-full bg-white/10 border border-white/10 text-white text-2xl font-black text-center py-4 rounded-2xl outline-none focus:border-amber-500" placeholder="0.00" />
-          </div>
-          
-          <div className="text-left w-full">
-             <label className="text-[10px] font-black uppercase text-amber-500 tracking-widest ml-4 mb-1 block">Profundidade (m) (padrão 0.50)</label>
-             <input type="number" inputMode="decimal" onChange={e => {
-                const val = parseFloat(e.target.value.replace(',', '.')) || 0.5;
-                setDim3D(prev => ({ width: prev?.width || 0, depth: val, height: prev?.height || 2.7 }));
-             }} className="w-full bg-white/10 border border-white/10 text-white text-2xl font-black text-center py-4 rounded-2xl outline-none focus:border-amber-500" placeholder="0.50" />
-          </div>
-          
-          <div className="text-left w-full">
-             <label className="text-[10px] font-black uppercase text-amber-500 tracking-widest ml-4 mb-1 block">Altura (m) (padrão 2.70)</label>
-             <input type="number" inputMode="decimal" onChange={e => {
-                const val = parseFloat(e.target.value.replace(',', '.')) || 2.7;
-                setDim3D(prev => ({ width: prev?.width || 0, depth: prev?.depth || 0.5, height: val }));
-             }} className="w-full bg-white/10 border border-white/10 text-white text-2xl font-black text-center py-4 rounded-2xl outline-none focus:border-amber-500" placeholder="2.70" />
-          </div>
-        </div>
-        
-        <div className="w-full max-w-xs space-y-3">
-          <button onClick={() => {
-             if (!dim3D || dim3D.width <= 0) { alert('Insira pelo menos a largura!'); return; }
-             onConfirmMeasurement(dim3D.width, dim3D);
-          }} className="w-full bg-amber-500 text-white py-5 rounded-2xl font-black shadow-lg shadow-amber-500/20">CONFIRMAR PROJETO</button>
-          <button onClick={() => setPhase('INTRO')} className="w-full text-gray-400 text-sm py-4">Voltar</button>
-        </div>
+      <div className="w-full max-w-xs space-y-3">
+        <button onClick={startCamera} className="w-full py-5 rounded-2xl font-black text-black text-base shadow-xl flex items-center justify-center gap-2" style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583)' }}>
+          <Camera className="w-5 h-5" /> ABRIR CÂMERA
+        </button>
       </div>
-    );
-  }
+      <button onClick={onClose} className="absolute top-5 right-5 p-3 text-gray-500 hover:text-white"><X className="w-5 h-5" /></button>
+    </div>
+  );
 
-  if (phase === 'UNSUPPORTED' || phase === 'CAMERA_2D') {
-    return (
-      <div className="fixed inset-0 z-[9999] bg-gray-950 flex flex-col items-center justify-center p-6 text-center">
-        <ZapOff className="w-12 h-12 text-orange-400 mb-4" />
-        <h2 className="text-xl font-black text-white mb-2">Laser Exigido para Precisão</h2>
-        <p className="text-gray-400 text-sm mb-8 leading-relaxed max-w-xs mx-auto">Seu aparelho não possui sensor <b>LiDAR 3D/ARCore</b> (Apple/Google). Como medir 2D por foto não entrega as medidas exatas de marcenaria que você exige, habilitamos apenas o modo profissional.</p>
-        <div className="w-full max-w-xs space-y-3">
-          <button onClick={() => setPhase('MANUAL')} className="w-full bg-amber-500 text-white py-5 rounded-2xl font-black flex items-center justify-center gap-2">
-            <Ruler className="w-5 h-5" /> INJETAR MEDIDA MANUALMENTE
-          </button>
-          <button onClick={onClose} className="w-full bg-white/5 text-gray-400 py-3 rounded-2xl font-bold text-sm border border-white/10">Sair</button>
-        </div>
-      </div>
-    );
-  }
-
-  /* Default AR Render (SCANNING, POINT_A, POINT_B) */
-  return (
-    <div className="fixed inset-0 z-[9999] bg-black" id="ar-overlay-root">
-      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
-      <div className="absolute inset-0 flex flex-col pointer-events-none select-none">
-        <div className="bg-gradient-to-b from-black/80 to-transparent pt-12 pb-8 px-6 flex justify-between items-start">
+  // ── CAMERA ───────────────────────────────────────────────────────────────────
+  if (phase === 'CAMERA') return (
+    <div className="fixed inset-0 z-[9999] bg-black flex flex-col">
+      <video ref={videoRef} className="absolute inset-0 w-full h-full object-cover" playsInline muted />
+      {/* Grid overlay */}
+      <div className="absolute inset-0 pointer-events-none" style={{
+        backgroundImage: 'linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px)',
+        backgroundSize: '25% 25%',
+      }} />
+      <div className="absolute inset-0 flex flex-col">
+        <div className="bg-gradient-to-b from-black/80 to-transparent pt-10 pb-6 px-5 flex justify-between items-center">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">{phase === 'SCANNING' ? 'Aguardando superfície...' : 'Medição AR Ativa'}</p>
-            <div className="flex items-baseline gap-1 text-white">
-              <span className="text-5xl font-black">{distance.toFixed(2)}</span>
-              <span className="text-2xl font-bold text-amber-400">m</span>
-            </div>
+            <p className="text-amber-400 font-black text-sm uppercase tracking-widest">Fotografar Ambiente</p>
+            <p className="text-gray-300 text-xs mt-1">Enquadre TODO o chão do ambiente</p>
           </div>
-          <button onClick={onClose} className="pointer-events-auto p-4 bg-red-500/80 rounded-2xl text-white"><X /></button>
+          <button onClick={() => { stopCamera(); setPhase('INTRO'); }} className="p-3 bg-red-500/80 rounded-2xl text-white"><X className="w-5 h-5" /></button>
         </div>
-        <div className="flex-1 flex items-center justify-center">
-           <div className={`w-20 h-20 rounded-full border-2 ${surfaceDetected ? 'border-amber-400' : 'border-gray-500'} flex items-center justify-center transition-all duration-300`}>
-              <div className={`w-3 h-3 rounded-full ${surfaceDetected ? 'bg-amber-400' : 'bg-gray-500'}`} />
-           </div>
+        <div className="flex-1 flex items-center justify-center pointer-events-none">
+          <div className="w-64 h-40 border-2 border-amber-400/50 rounded-lg relative">
+            {['tl','tr','bl','br'].map(pos => (
+              <div key={pos} className={`absolute w-5 h-5 border-amber-400 ${pos.includes('t') ? 'top-0' : 'bottom-0'} ${pos.includes('l') ? 'left-0' : 'right-0'} ${pos.includes('t') ? (pos.includes('l') ? 'border-t-2 border-l-2' : 'border-t-2 border-r-2') : (pos.includes('l') ? 'border-b-2 border-l-2' : 'border-b-2 border-r-2')}`} />
+            ))}
+          </div>
         </div>
-        <div className="mt-auto bg-gradient-to-t from-black/90 to-transparent px-6 pb-12 pt-16 flex flex-col items-center gap-4">
-           {surfaceDetected ? (
-             <button onClick={handleARTap} className="pointer-events-auto w-full max-w-xs bg-amber-500 text-white font-black py-5 rounded-2xl shadow-xl">
-               {points3D.length === 0 ? 'MARCAR CANTO ESQUERDO' : points3D.length === 1 ? 'MARCAR CANTO DIREITO (L)' : points3D.length === 2 ? 'MARCAR FUNDO (P)' : 'MARCAR TETO (A)'}
-             </button>
-           ) : (
-             <p className="text-white text-sm font-bold animate-pulse">Aponte para o chão...</p>
-           )}
-           <button onClick={() => setPhase('MANUAL')} className="pointer-events-auto text-gray-400 text-xs">Digitar manualmente</button>
+        <div className="bg-gradient-to-t from-black/90 to-transparent px-5 pb-12 pt-8 flex flex-col items-center gap-4">
+          <button onClick={capturePhoto} className="w-20 h-20 rounded-full bg-white flex items-center justify-center shadow-2xl active:scale-95 transition-transform">
+            <div className="w-16 h-16 rounded-full bg-white border-4 border-gray-300" />
+          </button>
+          <p className="text-gray-400 text-xs">Toque para fotografar</p>
         </div>
       </div>
     </div>
   );
+
+  // ── CORNERS + REFERENCE ───────────────────────────────────────────────────────
+  if ((phase === 'CORNERS' || phase === 'REFERENCE') && photoDataUrl) {
+    const isRefPhase = phase === 'REFERENCE';
+    const ptsDone = isRefPhase ? corners.length : corners.length;
+    const refsTotal = refPixels.length;
+
+    const displayedCorners = corners.map(c => toDisplay(c));
+    const displayedRef = refPixels.map(c => toDisplay(c));
+
+    return (
+      <div ref={containerRef} className="fixed inset-0 z-[9999] bg-black flex flex-col select-none">
+        {/* Photo */}
+        <div className="relative flex-1 overflow-hidden flex items-center justify-center">
+          <img
+            ref={imgRef}
+            src={photoDataUrl}
+            alt="foto"
+            className="max-w-full max-h-full object-contain cursor-crosshair"
+            draggable={false}
+            onTouchStart={isRefPhase ? handleRefTap : handleImageTap}
+            onClick={isRefPhase ? handleRefTap : handleImageTap}
+          />
+
+          {/* SVG overlay */}
+          <svg className="absolute inset-0 w-full h-full pointer-events-none">
+            {/* Polígono dos cantos */}
+            {displayedCorners.length >= 2 && (
+              <polyline
+                points={displayedCorners.map(p => `${p.x},${p.y}`).join(' ')}
+                fill={displayedCorners.length === 4 ? 'rgba(245,168,35,0.15)' : 'none'}
+                stroke="#F5A823" strokeWidth="2" strokeDasharray={displayedCorners.length < 4 ? '6 4' : '0'}
+              />
+            )}
+            {displayedCorners.length === 4 && (
+              <line x1={displayedCorners[3].x} y1={displayedCorners[3].y} x2={displayedCorners[0].x} y2={displayedCorners[0].y} stroke="#F5A823" strokeWidth="2" />
+            )}
+            {/* Marcadores dos cantos */}
+            {displayedCorners.map((p, i) => (
+              <g key={i}>
+                <circle cx={p.x} cy={p.y} r={18} fill={cornerColors[i] + '33'} stroke={cornerColors[i]} strokeWidth="2" />
+                <text x={p.x} y={p.y + 5} textAnchor="middle" fill={cornerColors[i]} fontSize="13" fontWeight="bold">{i + 1}</text>
+              </g>
+            ))}
+            {/* Linha de referência */}
+            {isRefPhase && displayedRef.map((p, i) => (
+              <g key={`ref-${i}`}>
+                <circle cx={p.x} cy={p.y} r={16} fill="rgba(59,130,246,0.3)" stroke="#3b82f6" strokeWidth="2" />
+                <text x={p.x} y={p.y + 5} textAnchor="middle" fill="#3b82f6" fontSize="11" fontWeight="bold">{i === 0 ? 'A' : 'B'}</text>
+              </g>
+            ))}
+            {isRefPhase && displayedRef.length === 2 && (
+              <line x1={displayedRef[0].x} y1={displayedRef[0].y} x2={displayedRef[1].x} y2={displayedRef[1].y} stroke="#3b82f6" strokeWidth="2" strokeDasharray="6 3" />
+            )}
+          </svg>
+        </div>
+
+        {/* Bottom HUD */}
+        <div className="bg-[#0f0f0f] border-t border-white/10 px-5 pt-4 pb-8 space-y-3">
+          {!isRefPhase ? (
+            <>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-white font-black text-sm">Marque os 4 cantos do chão</p>
+                  <p className="text-gray-500 text-xs mt-0.5">{corners.length}/4 marcados</p>
+                </div>
+                <button onClick={() => setCorners([])} className="text-gray-500 text-xs flex items-center gap-1 hover:text-red-400">
+                  <RefreshCcw className="w-3 h-3" /> Limpar
+                </button>
+              </div>
+              <div className="grid grid-cols-4 gap-1">
+                {cornerLabels.map((label, i) => (
+                  <div key={i} className={`rounded-xl px-2 py-2 text-center transition-all ${i < corners.length ? 'opacity-100' : 'opacity-30'}`} style={{ background: cornerColors[i] + '22', border: `1px solid ${cornerColors[i]}44` }}>
+                    <div className="w-5 h-5 rounded-full mx-auto flex items-center justify-center mb-1" style={{ background: i < corners.length ? cornerColors[i] : 'transparent', border: `1.5px solid ${cornerColors[i]}` }}>
+                      <span className="text-[9px] font-black text-white">{i + 1}</span>
+                    </div>
+                    <p className="text-[8px] text-gray-400 leading-tight">{['Esq.Frente', 'Dir.Frente', 'Dir.Fundo', 'Esq.Fundo'][i]}</p>
+                  </div>
+                ))}
+              </div>
+              <button onClick={() => { stopCamera(); setPhase('INTRO'); setCorners([]); setPhotoDataUrl(null); }} className="w-full py-3 rounded-xl text-gray-500 text-xs border border-white/10 hover:border-red-500/30 hover:text-red-400 transition-all">
+                ← Nova foto
+              </button>
+            </>
+          ) : (
+            <>
+              <div>
+                <p className="text-white font-black text-sm">Marque 1 referência de medida</p>
+                <p className="text-gray-500 text-xs mt-0.5">Toque em 2 pontos com distância conhecida</p>
+              </div>
+              {/* Seletor de referência */}
+              <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                {REFERENCES.map(r => (
+                  <button
+                    key={r.label}
+                    onClick={() => {
+                      if (r.value === -1) { setIsCustomRef(true); }
+                      else { setSelectedRef(r.value); setIsCustomRef(false); }
+                      setRefPixels([]);
+                    }}
+                    className={`flex-shrink-0 px-3 py-2 rounded-xl text-xs font-bold border transition-all whitespace-nowrap ${(isCustomRef ? r.value === -1 : selectedRef === r.value) ? 'bg-blue-500/20 border-blue-400 text-blue-300' : 'bg-white/5 border-white/10 text-gray-400'}`}
+                  >
+                    {r.emoji} {r.label}
+                  </button>
+                ))}
+              </div>
+              {isCustomRef && (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number" inputMode="decimal"
+                    value={customRef}
+                    onChange={e => { setCustomRef(e.target.value); setSelectedRef(parseFloat(e.target.value.replace(',', '.')) || 0); }}
+                    placeholder="Ex: 0.90"
+                    className="flex-1 bg-[#1a1a1a] border border-white/10 text-white text-center py-2 rounded-xl outline-none focus:border-blue-400 text-sm"
+                  />
+                  <span className="text-gray-400 text-sm">metros</span>
+                </div>
+              )}
+              <p className="text-center text-blue-400 text-xs font-bold">
+                {refPixels.length === 0 ? 'Toque no ponto A →' : refPixels.length === 1 ? 'Toque no ponto B →' : 'Calculando...'}
+              </p>
+              <div className="flex gap-2">
+                <button onClick={() => { setRefPixels([]); }} className="flex-1 py-2 rounded-xl text-gray-500 text-xs border border-white/10 hover:text-white transition-all">
+                  <RefreshCcw className="w-3 h-3 inline mr-1" /> Limpar ref.
+                </button>
+                <button onClick={() => setPhase('CORNERS')} className="flex-1 py-2 rounded-xl text-gray-500 text-xs border border-white/10 hover:text-white transition-all">
+                  ← Remarcar cantos
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ── HEIGHT ────────────────────────────────────────────────────────────────────
+  if (phase === 'HEIGHT') return (
+    <div className="fixed inset-0 z-[9999] bg-[#0a0a0a] flex flex-col items-center justify-center p-6 text-center">
+      <div className="w-16 h-16 bg-green-500/15 rounded-2xl flex items-center justify-center mb-4 ring-2 ring-green-500/30">
+        <Check className="w-8 h-8 text-green-400" />
+      </div>
+      <h2 className="text-2xl font-black text-white mb-1">Largura e Profundidade calculadas!</h2>
+      <p className="text-gray-500 text-sm mb-6">Só falta a altura do teto</p>
+
+      {dims && (
+        <div className="w-full max-w-xs bg-[#111] border border-white/10 rounded-2xl p-4 mb-6 space-y-2">
+          <div className="flex justify-between">
+            <span className="text-gray-400 text-sm">Largura calculada:</span>
+            <span className="text-amber-400 font-black">{dims.width.toFixed(2)} m</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-400 text-sm">Profundidade calculada:</span>
+            <span className="text-amber-400 font-black">{dims.depth.toFixed(2)} m</span>
+          </div>
+        </div>
+      )}
+
+      <div className="w-full max-w-xs mb-6">
+        <label className="text-[10px] font-black uppercase text-amber-500 tracking-widest mb-2 block text-left">Altura do Teto (metros)</label>
+        <input
+          type="number" inputMode="decimal"
+          value={heightInput}
+          onChange={e => setHeightInput(e.target.value)}
+          placeholder="2.70"
+          className="w-full bg-[#1a1a1a] border border-white/10 text-white text-3xl font-black text-center py-4 rounded-2xl outline-none focus:border-amber-500"
+        />
+        <div className="flex gap-2 mt-2">
+          {['2.50', '2.70', '2.80', '3.00'].map(h => (
+            <button key={h} onClick={() => setHeightInput(h)}
+              className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-all ${heightInput === h ? 'bg-amber-500/20 border-amber-500 text-amber-300' : 'bg-white/5 border-white/10 text-gray-400'}`}>
+              {h}m
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="w-full max-w-xs space-y-3">
+        <button onClick={confirmHeight}
+          className="w-full py-5 rounded-2xl font-black text-black text-base shadow-xl"
+          style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583)' }}>
+          CONFIRMAR E VER RESULTADO
+        </button>
+        <button onClick={() => setPhase('INTRO')} className="w-full text-gray-500 text-sm py-3">← Medir novamente</button>
+      </div>
+      <button onClick={onClose} className="absolute top-5 right-5 p-3 text-gray-500 hover:text-white"><X className="w-5 h-5" /></button>
+    </div>
+  );
+
+  // ── RESULT ────────────────────────────────────────────────────────────────────
+  if (phase === 'RESULT' && dims) return (
+    <div className="fixed inset-0 z-[9999] bg-[#0a0a0a] flex flex-col items-center justify-center p-6 text-center">
+      <div className="w-24 h-24 bg-emerald-500/15 rounded-[32px] flex items-center justify-center mb-6 ring-2 ring-emerald-500/30">
+        <Ruler className="w-12 h-12 text-emerald-400" />
+      </div>
+      <p className="text-[10px] uppercase font-black text-gray-500 tracking-widest mb-2">Medidas do Ambiente</p>
+      <div className="w-full max-w-xs space-y-3 mb-8">
+        {[
+          { label: '↔ Largura', value: dims.width, color: 'text-amber-400' },
+          { label: '↕ Profundidade', value: dims.depth, color: 'text-blue-400' },
+          { label: '↑ Altura', value: dims.height, color: 'text-green-400' },
+        ].map(({ label, value, color }) => (
+          <div key={label} className="flex justify-between items-center bg-[#111] border border-white/10 rounded-2xl px-6 py-4">
+            <span className="text-gray-400 font-bold text-sm">{label}</span>
+            <span className={`${color} font-black text-2xl`}>{value.toFixed(2)} m</span>
+          </div>
+        ))}
+      </div>
+      <div className="w-full max-w-xs space-y-3">
+        <button onClick={() => onConfirmMeasurement(dims.width, dims)}
+          className="w-full py-5 rounded-2xl font-black text-black text-base shadow-xl"
+          style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583)' }}>
+          ✓ GERAR ORÇAMENTO E PROJETO
+        </button>
+        <button onClick={() => { setPhase('INTRO'); setCorners([]); setPhotoDataUrl(null); setRefPixels([]); setDims(null); }}
+          className="w-full bg-white/5 text-gray-400 py-3 rounded-2xl text-sm border border-white/10">
+          Medir novamente
+        </button>
+      </div>
+      <button onClick={onClose} className="absolute top-5 right-5 p-3 text-gray-500 hover:text-white"><X className="w-5 h-5" /></button>
+    </div>
+  );
+
+  // ── ERROR ─────────────────────────────────────────────────────────────────────
+  if (phase === 'ERROR') return (
+    <div className="fixed inset-0 z-[9999] bg-[#0a0a0a] flex flex-col items-center justify-center p-6 text-center">
+      <AlertTriangle className="w-12 h-12 text-red-400 mb-4" />
+      <h2 className="text-xl font-black text-white mb-2">Erro de Câmera</h2>
+      <p className="text-gray-400 text-sm mb-8 max-w-xs">{errorMsg}</p>
+      <button onClick={onClose} className="w-full max-w-xs bg-white/10 text-white py-4 rounded-2xl font-bold">Fechar</button>
+    </div>
+  );
+
+  return null;
 }
