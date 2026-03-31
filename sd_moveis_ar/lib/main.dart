@@ -24,8 +24,15 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class MainScreen extends StatelessWidget {
+class MainScreen extends StatefulWidget {
   const MainScreen({Key? key}) : super(key: key);
+
+  @override
+  State<MainScreen> createState() => _MainScreenState();
+}
+
+class _MainScreenState extends State<MainScreen> {
+  double totalBudget = 0.0;
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +41,19 @@ class MainScreen extends StatelessWidget {
         title: const Text('SD Móveis AR', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
         backgroundColor: Colors.amber,
         centerTitle: true,
+        actions: [
+          if (totalBudget > 0)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(color: Colors.black12, borderRadius: BorderRadius.circular(10)),
+                  child: Text("R$ ${totalBudget.toStringAsFixed(2)}", style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            )
+        ],
       ),
       body: Center(
         child: Column(
@@ -50,13 +70,30 @@ class MainScreen extends StatelessWidget {
               'Tire medidas e simule móveis em milímetros.',
               style: TextStyle(color: Colors.white70),
             ),
+            if (totalBudget > 0) ...[
+               const SizedBox(height: 20),
+               Text(
+                 'Orçamento Atual: R$ ${totalBudget.toStringAsFixed(2)}',
+                 style: const TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold, fontSize: 18),
+               ),
+            ],
             const SizedBox(height: 40),
             ElevatedButton.icon(
-              onPressed: () {
-                Navigator.push(
+              onPressed: () async {
+                final double? result = await Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const ARStudioWidget()),
+                  MaterialPageRoute(builder: (context) => ARStudioWidget(
+                    onBudgetUpdate: (value) {
+                      // Callback de atualização opcional se quiser tratar em tempo real fora da tela
+                    },
+                  )),
                 );
+                
+                if (result != null) {
+                   setState(() {
+                      totalBudget = result;
+                   });
+                }
               },
               icon: const Icon(Icons.camera_alt, color: Colors.black),
               label: const Text('ABRIR CÂMERA 3D', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
@@ -72,3 +109,4 @@ class MainScreen extends StatelessWidget {
     );
   }
 }
+
