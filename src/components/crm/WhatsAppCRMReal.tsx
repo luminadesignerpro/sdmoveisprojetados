@@ -167,25 +167,67 @@ export function WhatsAppCRMReal() {
               className="bg-green-600 hover:bg-green-700 text-white font-bold text-xs h-7"
               onClick={async () => {
                 try {
-                  const res = await fetch('https://api-whatsapp-sdmoveis.onrender.com/instance/connect/SD-Moveis', {
-                    headers: { 'apikey': 'Mv06061991' }
+                  // 1. Verificar estado atual primeiro
+                  let res = await fetch('https://api-whatsapp-sdmoveis.onrender.com/instance/connectionState/SD-Moveis', {
+                    headers: { 'apikey': 'Mv06061991' },
+                    cache: 'no-store'
                   });
-                  const data = await res.json();
-                  if (data.base64) {
+                  let stateData = await res.json();
+                  
+                  if (stateData.instance?.state === 'open') {
+                    alert('Seu WhatsApp já está conectado e pronto para uso!');
+                    return;
+                  }
+
+                  // 2. Limpar qualquer sessão travada/expirada na API (Isso previne o erro de 'Verifique a internet' no celular)
+                  await fetch('https://api-whatsapp-sdmoveis.onrender.com/instance/logout/SD-Moveis', {
+                     method: 'DELETE', headers: { 'apikey': 'Mv06061991' }, cache: 'no-store'
+                  }).catch(()=>{});
+
+                  await fetch('https://api-whatsapp-sdmoveis.onrender.com/instance/delete/SD-Moveis', {
+                     method: 'DELETE', headers: { 'apikey': 'Mv06061991' }, cache: 'no-store'
+                  }).catch(()=>{});
+
+                  // 3. Criar uma do zero e pegar o código puro
+                  res = await fetch('https://api-whatsapp-sdmoveis.onrender.com/instance/create', {
+                    method: 'POST',
+                    headers: { 
+                      'apikey': 'Mv06061991',
+                      'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ instanceName: "SD-Moveis", qrcode: true }),
+                    cache: 'no-store'
+                  });
+                  let data = await res.json();
+
+                  let qrCodeBase64 = data.base64 || data.qrcode?.base64;
+                  let retries = 5;
+
+                  // Se ainda não tiver QR Code, faz tentativas por até 10 segundos
+                  while (!qrCodeBase64 && retries > 0) {
+                    await new Promise(r => setTimeout(r, 2000));
+                    res = await fetch('https://api-whatsapp-sdmoveis.onrender.com/instance/connect/SD-Moveis?t=' + Date.now(), {
+                      headers: { 'apikey': 'Mv06061991' },
+                      cache: 'no-store'
+                    });
+                    data = await res.json();
+                    qrCodeBase64 = data.base64 || data.qrcode?.base64;
+                    retries--;
+                  }
+
+                  if (qrCodeBase64) {
                     const newWindow = window.open('', '_blank');
                     newWindow?.document.write(`
                       <html style="display:flex;justify-content:center;align-items:center;height:100vh;background:#111;font-family:sans-serif;">
                         <div style="background:#222;padding:40px;border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,0.5);text-align:center;">
                           <h1 style="color:#25D366;margin-bottom:20px;">Ligar SD Móveis ao WhatsApp</h1>
-                          <img src="${data.base64}" style="width:300px;height:300px;border:2px solid #333;border-radius:10px;padding:10px;background:white;" />
+                          <img src="${qrCodeBase64}" style="width:300px;height:300px;border:2px solid #333;border-radius:10px;padding:10px;background:white;" />
                           <p style="margin-top:20px;color:#aaa;">Abra seu WhatsApp > Dispositivos Vinculados > Escanear QR Code</p>
                         </div>
                       </html>
                     `);
-                  } else if (data.instance?.state === 'open' || data.error?.includes('already')) {
-                    alert('Seu WhatsApp já está conectado e pronto para uso!');
                   } else {
-                    alert('API carregando o QR Code, aguarde 15 segundos e clique de novo...');
+                    alert('A API está demorando muito para gerar o QR Code Limpo. Tente novamente em alguns instantes.');
                   }
                 } catch (err) {
                   alert('Erro ao conectar na API. Verifique se ela está Live no Render.');
