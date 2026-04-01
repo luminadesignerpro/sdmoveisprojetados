@@ -147,6 +147,63 @@ export function ChatFlowPanel() {
   const [customPrompt, setCustomPrompt] = useState("");
   const { toast } = useToast();
 
+  // 1. Carregar configurações do banco de dados na inicialização
+  useEffect(() => {
+    const fetchConfig = async () => {
+      const { data, error } = await supabase
+        .from('atendimento_config')
+        .select('*')
+        .eq('chave', 'menu_principal')
+        .single();
+      
+      if (data && data.conteudo) {
+        const config = data.conteudo;
+        setTemplates(prev => {
+           const updated = [...prev];
+           updated[0].greeting = config.greeting;
+           // Mapear respostas do banco para as opções do template
+           if (config.responses) {
+             updated[0].options = updated[0].options.map(opt => {
+                const key = opt.id === "orcamento" ? "1" : 
+                            opt.id === "acompanhar" ? "2" : 
+                            opt.id === "posvenda" ? "3" : 
+                            opt.id === "atendente" ? "4" : 
+                            opt.id === "horario" ? "5" : "";
+                return { ...opt, response: config.responses[key] || opt.response };
+             });
+           }
+           setActiveTemplate(updated[0]);
+           return updated;
+        });
+      }
+    };
+    fetchConfig();
+  }, []);
+
+  // 2. Salvar Alterações no Banco de Dados (Sincronização com WhatsApp)
+  const saveToDB = async (updatedTemplate: FlowTemplate) => {
+     const config = {
+       greeting: updatedTemplate.greeting,
+       responses: {
+         "1": updatedTemplate.options.find(o => o.id === "orcamento")?.response,
+         "2": updatedTemplate.options.find(o => o.id === "acompanhar")?.response,
+         "3": updatedTemplate.options.find(o => o.id === "posvenda")?.response,
+         "4": updatedTemplate.options.find(o => o.id === "atendente")?.response,
+         "5": updatedTemplate.options.find(o => o.id === "horario")?.response,
+       }
+     };
+
+     const { error } = await supabase
+       .from('atendimento_config')
+       .upsert({ chave: 'menu_principal', conteudo: config });
+
+     if (error) {
+       toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
+     } else {
+       toast({ title: "✅ Sincronizado com WhatsApp", description: "O seu robô já aprendeu as novas informações!" });
+     }
+  };
+
   const startFlow = () => {
     setChatHistory([{ role: "bot", content: activeTemplate.greeting }]);
     setCurrentOptions(activeTemplate.options);
@@ -244,7 +301,7 @@ export function ChatFlowPanel() {
     setTemplates((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
     setEditingOption(null);
     setEditResponse("");
-    toast({ title: "Salvo!", description: "Resposta atualizada com sucesso." });
+    saveToDB(updated); // ✅ Salva no banco de dados para o WhatsApp ler
   };
 
   const copyFullFlow = async () => {
@@ -314,8 +371,10 @@ export function ChatFlowPanel() {
                     <Badge variant="outline">Saudação</Badge>
                     {editingOption === "greeting" ? (
                       <Button size="sm" variant="ghost" onClick={() => {
-                        setActiveTemplate(prev => ({ ...prev, greeting: editResponse }));
+                        const updated = { ...activeTemplate, greeting: editResponse };
+                        setActiveTemplate(updated);
                         setEditingOption(null);
+                        saveToDB(updated);
                       }}>
                         <Save className="w-3 h-3" />
                       </Button>

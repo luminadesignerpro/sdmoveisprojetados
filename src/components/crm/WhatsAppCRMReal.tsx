@@ -204,109 +204,64 @@ export function WhatsAppCRMReal() {
               size="sm"
               className="bg-green-600 hover:bg-green-700 text-white font-bold text-xs h-7"
               onClick={async () => {
+                const btn = document.activeElement as HTMLButtonElement;
+                if (btn) btn.disabled = true;
+                
                 try {
-                  const usePairingCode = window.confirm("Você quer tentar pelo QR Code de novo? \n\n(Se o celular rejeitar com 'Verifique a internet', clique em CANCELAR para usar o pareamento por Código Numérico seguro!)");
-                  let phoneForPairing = '';
-                  
-                  if (!usePairingCode) {
-                    phoneForPairing = window.prompt("Digite seu número WhatsApp (55 + DDD + Número).\n\n⚠️ IMPORTANTE: Se o celular der 'Código Inválido' ou falhar, tente novamente COM ou SEM o dígito 9! Ex: 5581999999999 ou 558199999999", "55") || '';
-                    if (!phoneForPairing || phoneForPairing.length < 12) {
-                      alert("Número inválido. Operação cancelada.");
-                      return;
-                    }
-                  }
-
-                  // 1. Verificar estado atual primeiro
-                  let res = await fetch('https://api-whatsapp-sdmoveis.onrender.com/instance/connectionState/SD-Moveis', {
-                    headers: { 'apikey': 'Mv06061991' },
-                    cache: 'no-store'
+                  toast({
+                    title: "⏳ Gerando QR Code",
+                    description: "Preparando conexão segura com persistência no banco de dados...",
                   });
-                  let stateData = await res.json();
-                  
-                  if (stateData.instance?.state === 'open') {
-                    alert('Seu WhatsApp já está conectado e pronto para uso!');
-                    return;
-                  }
 
-                  // 2. Limpar qualquer sessão travada/expirada na API
-                  await fetch('https://api-whatsapp-sdmoveis.onrender.com/instance/logout/SD-Moveis', {
-                     method: 'DELETE', headers: { 'apikey': 'Mv06061991' }, cache: 'no-store'
-                  }).catch(()=>{});
-
-                  await fetch('https://api-whatsapp-sdmoveis.onrender.com/instance/delete/SD-Moveis', {
-                     method: 'DELETE', headers: { 'apikey': 'Mv06061991' }, cache: 'no-store'
-                  }).catch(()=>{});
-
-                  // 3. Criar uma do zero
-                  res = await fetch('https://api-whatsapp-sdmoveis.onrender.com/instance/create', {
-                    method: 'POST',
-                    headers: { 
-                      'apikey': 'Mv06061991',
-                      'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ 
-                      instanceName: "SD-Moveis", 
-                      qrcode: usePairingCode,
-                      number: !usePairingCode ? phoneForPairing.replace(/\D/g, '') : undefined
-                    }),
-                    cache: 'no-store'
+                  // 1. Chamar a nossa nova função segura (Ponte)
+                  const { data, error } = await supabase.functions.invoke('whatsapp-connect', {
+                    body: { action: "connect" }
                   });
-                  let data = await res.json();
 
-                  let qrCodeBase64 = data.base64 || data.qrcode?.base64;
-                  let pairingCode = data.pairingCode || data.code;
-                  let retries = 5;
+                  if (error) throw error;
 
-                  const checkUrl = usePairingCode 
-                    ? 'https://api-whatsapp-sdmoveis.onrender.com/instance/connect/SD-Moveis?t=' + Date.now()
-                    : 'https://api-whatsapp-sdmoveis.onrender.com/instance/connect/SD-Moveis?t=' + Date.now() + '&number=' + phoneForPairing.replace(/\D/g, '');
-
-                  // Se ainda não tiver os dados
-                  while (!qrCodeBase64 && !pairingCode && retries > 0) {
-                    await new Promise(r => setTimeout(r, 2000));
-                    res = await fetch(checkUrl, {
-                      headers: { 'apikey': 'Mv06061991' },
-                      cache: 'no-store'
-                    });
-                    data = await res.json();
-                    qrCodeBase64 = data.base64 || data.qrcode?.base64;
-                    pairingCode = data.pairingCode || data.code;
-                    retries--;
-                  }
-
-                  if (!usePairingCode && pairingCode) {
-                    const newWindow = window.open('', '_blank');
+                  const qrCodeBase64 = data.base64 || data.qrcode?.base64;
+                  
+                  if (qrCodeBase64) {
+                    // Abrir em uma janela bonita
+                    const newWindow = window.open('', '_blank', 'width=500,height=600');
                     newWindow?.document.write(`
-                      <html style="display:flex;justify-content:center;align-items:center;height:100vh;background:#111;font-family:sans-serif;text-align:center;">
-                        <div style="background:#222;padding:40px;border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,0.5);">
-                          <h1 style="color:#25D366;margin-bottom:10px;">Ligar SD Móveis ao WhatsApp</h1>
-                          <p style="color:#aaa;margin-bottom:30px;">Vá no seu WhatsApp > Dispositivos Vinculados > <br><b>"Conectar com Número de Telefone"</b></p>
-                          <div style="background:white;padding:20px 40px;border-radius:10px;display:inline-block;">
-                            <h2 style="color:black;font-size:3rem;letter-spacing:10px;margin:0;">${pairingCode}</h2>
+                      <html style="display:flex;justify-content:center;align-items:center;height:100vh;background:#111;font-family:sans-serif;text-align:center;color:white;">
+                        <div style="background:#222;padding:40px;border-radius:25px;box-shadow:0 10px 50px rgba(0,0,0,0.8);max-width:400px;margin:20px;">
+                          <h1 style="color:#25D366;font-size:24px;margin-bottom:10px;">Conectar WhatsApp SD</h1>
+                          <p style="color:#888;font-size:14px;margin-bottom:25px;">Escaneie o código abaixo. O login ficará salvo automaticamente no banco de dados.</p>
+                          <div style="background:white;padding:15px;border-radius:15px;display:inline-block;box-shadow:0 0 20px rgba(37,211,102,0.3);">
+                            <img src="${qrCodeBase64}" style="width:250px;height:250px;display:block;" />
                           </div>
-                          <p style="margin-top:20px;color:#aaa;">Digite esse código lá no seu WhatsApp!</p>
-                          <p style="margin-top:15px;color:#eab308;font-size:0.9rem;max-width:500px;margin-left:auto;margin-right:auto;background:rgba(234, 179, 8, 0.1);padding:15px;border-radius:10px;">
-                            ⚠️ <b>ATENÇÃO:</b> Se o WhatsApp disser "Código Inválido" ou der erro na conexão, o problema é o dígito 9! <br/><br/>Nesse caso, feche essa tela, clique em "Exibir QR Code" novamente e digite o número testando a outra variação (com o 9 ou sem o 9).
-                          </p>
+                          <div style="margin-top:25px;padding:15px;background:rgba(37,211,102,0.1);border-radius:12px;border:1px solid rgba(37,211,102,0.2);">
+                            <p style="font-size:12px;color:#25D366;margin:0;">✓ Persistência em Banco de Dados Ativa</p>
+                            <p style="font-size:12px;color:#25D366;margin:5px 0 0 0;">✓ Fluxo AI Ativado</p>
+                          </div>
                         </div>
                       </html>
                     `);
-                  } else if (usePairingCode && qrCodeBase64) {
-                    const newWindow = window.open('', '_blank');
-                    newWindow?.document.write(`
-                      <html style="display:flex;justify-content:center;align-items:center;height:100vh;background:#111;font-family:sans-serif;">
-                        <div style="background:#222;padding:40px;border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,0.5);text-align:center;">
-                          <h1 style="color:#25D366;margin-bottom:20px;">Ligar SD Móveis ao WhatsApp</h1>
-                          <img src="${qrCodeBase64}" style="width:300px;height:300px;border:2px solid #333;border-radius:10px;padding:10px;background:white;" />
-                          <p style="margin-top:20px;color:#aaa;">Abra seu WhatsApp > Dispositivos Vinculados > Escanear QR Code</p>
-                        </div>
-                      </html>
-                    `);
+                    
+                    toast({
+                      title: "✅ QR Code Gerado",
+                      description: "Escaneie na janela que abriu para conectar.",
+                    });
+                  } else if (data.instance?.state === 'open') {
+                    toast({
+                      title: "✅ Já Conectado",
+                      description: "Seu WhatsApp já está ativo e pronto para uso!",
+                    });
                   } else {
-                    alert('A API está demorando muito para gerar o acesso. Tente novamente em alguns instantes.');
+                    throw new Error("Não foi possível obter o QR Code.");
                   }
                 } catch (err) {
-                  alert('Erro ao conectar na API. Verifique se ela está Live no Render.');
+                  console.error("Connect error:", err);
+                  toast({
+                    title: "❌ Erro na Conexão",
+                    description: "Verifique se a API está online ou tente novamente.",
+                    variant: "destructive"
+                  });
+                } finally {
+                  if (btn) btn.disabled = false;
                 }
               }}
             >

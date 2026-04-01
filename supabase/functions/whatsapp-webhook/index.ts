@@ -20,10 +20,10 @@ serve(async (req) => {
     const payload = await req.json();
     console.log("Webhook received:", JSON.stringify(payload).slice(0, 500));
 
-    // Evolution API v2 webhook format
-    const event = payload.event;
+    // Evolution API webhook format (can be v1 or v2)
+    const event = (payload.event || "").toUpperCase();
 
-    if (event === "messages.upsert") {
+    if (event === "MESSAGES.UPSERT" || event === "MESSAGES_UPSERT") {
       const messageData = payload.data;
       if (!messageData) {
         return new Response(JSON.stringify({ ok: true, skipped: "no data" }), {
@@ -34,28 +34,33 @@ serve(async (req) => {
       const key = messageData.key;
       const fromMe = key?.fromMe || false;
       const remoteJid = key?.remoteJid || "";
+      
+      // Handle different message structures in v2
       const messageContent =
         messageData.message?.conversation ||
         messageData.message?.extendedTextMessage?.text ||
         messageData.message?.imageMessage?.caption ||
+        messageData.message?.videoMessage?.caption ||
+        payload.data?.message?.conversation || // Fallback
         "";
 
       if (!messageContent || !remoteJid) {
+        console.log("Skipping message: no content or jid", { remoteJid, content: !!messageContent });
         return new Response(JSON.stringify({ ok: true, skipped: "no content or jid" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
-      // Extract phone number from JID (format: 5511999991234@s.whatsapp.net)
+      // Extract phone number from JID
       const phoneNumber = remoteJid.split("@")[0];
-      const pushName = messageData.pushName || null;
+      const pushName = messageData.pushName || payload.data?.pushName || null;
 
       // Find or create conversation
       let { data: conversation } = await supabase
         .from("whatsapp_conversations")
         .select("id")
         .eq("phone_number", phoneNumber)
-        .single();
+        .maybeSingle();
 
       if (!conversation) {
         const { data: newConv, error: convError } = await supabase
@@ -75,14 +80,13 @@ serve(async (req) => {
         }
         conversation = newConv;
       } else if (pushName) {
-        // Update contact name if we got a new pushName
         await supabase
           .from("whatsapp_conversations")
           .update({ contact_name: pushName })
           .eq("id", conversation.id);
       }
 
-      // Save the message
+      // Save the message to database
       const { error: msgError } = await supabase
         .from("whatsapp_messages")
         .insert({
@@ -95,70 +99,91 @@ serve(async (req) => {
 
       if (msgError) {
         console.error("Error saving message:", msgError);
-        throw msgError;
       }
 
-      // Update last_message_at
       await supabase
         .from("whatsapp_conversations")
         .update({ last_message_at: new Date().toISOString() })
         .eq("id", conversation.id);
 
       // ============================================
-      // AI VIRTUAL ASSISTANT LOGIC (AUTO-RESPONDER)
+      // DYNAMIC ATTENDANCE FLOW (Synced with App)
       // ============================================
+      const { data: configData } = await supabase
+        .from('atendimento_config')
+        .select('conteudo')
+        .eq('chave', 'menu_principal')
+        .single();
+      
+      const config = configData?.conteudo || {
+        greeting: "Olá! 👋 Bem-vindo à *SD Móveis*!\nComo posso te ajudar hoje?\n\n1️⃣ Orçamento\n2️⃣ Acompanhar projeto\n3️⃣ Pós-venda\n4️⃣ Atendente\n5️⃣ Horário",
+        responses: {}
+      };
+
+      const cleanMessage = messageContent.trim().toLowerCase();
+      let responseText = "";
+      let usedFlow = false;
+
+      // 1. Better Greeting Detection (No gaps)
+      const isGreeting = /^(oi|ola|olá|bom dia|boa tarde|boa noite|bomdia|boatarde|boanoite|inicio|menu|ola|opa|oie)$/i.test(cleanMessage);
+
+      // 2. Check for menu numbers OR greetings
+      if (config.responses && config.responses[cleanMessage]) {
+        responseText = config.responses[cleanMessage];
+        usedFlow = true;
+      } else if (isGreeting) {
+        responseText = config.greeting;
+        usedFlow = true;
+      }
+
+      // AI VIRTUAL ASSISTANT LOGIC (Fallback or Humanized Support)
       if (!fromMe) {
         try {
-           const geminiKey = Deno.env.get("GEMINI_API_KEY");
-           const evolutionUrl = Deno.env.get("EVOLUTION_API_URL") || "https://api-whatsapp-sdmoveis.onrender.com";
-           const evolutionKey = Deno.env.get("EVOLUTION_API_KEY") || "Mv06061991";
+            const geminiKey = Deno.env.get("GEMINI_API_KEY");
+            const evolutionUrl = Deno.env.get("EVOLUTION_API_URL") || "https://api-whatsapp-sdmoveis.onrender.com";
+            const evolutionKey = Deno.env.get("EVOLUTION_API_KEY") || "Mv06061991";
 
-           if (geminiKey) {
-              // 1. Ask Gemini for an answer
-              const systemPrompt = "Você é a Assistente Virtual Inteligente da SD Móveis Projetados. Seu objetivo é atender os clientes pelo WhatsApp de forma super educada, humanizada, curta e direta. NUNCA invente preços ou valores. O objetivo do atendimento é recolher o que o cliente quer fazer (Cozinha, Guarda-Roupa), pedir uma noção das medidas e agendar uma Visita Técnica gratuita ou orientar que ele pode usar o nosso App 3D pelo link. Seja breve. Aja como um humano prestativo, use emojis com moderação.";
-              
-              const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
-                 method: 'POST',
-                 headers: { 'Content-Type': 'application/json' },
-                 body: JSON.stringify({
-                    contents: [{ parts: [{ text: `${systemPrompt}\n\nCliente diz: ${messageContent}` }] }]
-                 })
-              });
-              
-              const geminiData = await geminiRes.json();
-              const aiReply = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!usedFlow && geminiKey) {
+               console.log("Using Gemini for humanized response...");
+               const systemPrompt = `Você é a Assistente Virtual da SD Móveis Projetados.
+               Seu objetivo: ajudar o cliente de forma educada e guiá-lo para as opções do menu.
+               Menu atual: 1. Orçamento, 2. Acompanhar Projeto, 3. Pós-venda, 4. Atendente, 5. Horário.
+               Dica: Se ele for novo, apresente o menu. Se ele tiver dúvida, responda e cite o menu.
+               Informação importante: ${config.responses["5"] || "Consulte o menu para horários."}`;
+               
+               const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                     contents: [{ parts: [{ text: `${systemPrompt}\n\nCliente: ${messageContent}` }] }]
+                  })
+               });
+               
+               const geminiData = await geminiRes.json();
+               responseText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "";
+            }
 
-              if (aiReply) {
-                  console.log("AI reply generated:", aiReply.substring(0, 50));
-                  
-                  // 2. Send via Evolution API
-                  const sendRes = await fetch(`${evolutionUrl}/message/sendText/SD-Moveis`, {
-                      method: 'POST',
-                      headers: {
-                          'Content-Type': 'application/json',
-                          'apikey': evolutionKey
-                      },
-                      body: JSON.stringify({
-                          number: remoteJid,
-                          options: { delay: 1500, presence: "composing" },
-                          textMessage: { text: aiReply }
-                      })
-                  });
-                  
-                  if (sendRes.ok) {
-                      // Save AI reply to DB
-                      await supabase.from("whatsapp_messages").insert({
-                          conversation_id: conversation.id,
-                          direction: "outbound",
-                          content: aiReply,
-                          status: "sent",
-                          message_type: "text",
-                      });
-                  } else {
-                      console.error("Failed to send Evolution API message", await sendRes.text());
-                  }
-              }
-           }
+            if (responseText) {
+                const sendRes = await fetch(`${evolutionUrl}/message/sendText/SD-Moveis`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'apikey': evolutionKey },
+                    body: JSON.stringify({
+                        number: remoteJid,
+                        text: responseText,
+                        options: { delay: usedFlow ? 500 : 1500, presence: "composing" }
+                    })
+                });
+                
+                if (sendRes.ok) {
+                    await supabase.from("whatsapp_messages").insert({
+                        conversation_id: conversation.id,
+                        direction: "outbound",
+                        content: responseText,
+                        status: "sent",
+                        message_type: usedFlow ? "text" : "ai",
+                    });
+                }
+            }
         } catch (aiError) {
            console.error("AI Assistant Error:", aiError);
         }
