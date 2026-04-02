@@ -17,6 +17,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 enum ARMode { measure, furniture, color }
+enum MeasurementUnit { mm, cm, m }
 
 class ARStudioWidget extends StatefulWidget {
   final Function(double totalBudget)? onBudgetUpdate;
@@ -42,7 +43,6 @@ class ARStudioWidgetState extends State<ARStudioWidget> {
   String? selectedClientId;
   String? selectedProjectId;
 
-  enum MeasurementUnit { mm, cm, m }
   MeasurementUnit activeUnit = MeasurementUnit.mm;
   
   final List<Map<String, dynamic>> furnitureLibrary = [
@@ -179,7 +179,7 @@ O que achou do projeto? Podemos prosseguir com o pedido?
         context: context,
         builder: (context) => AlertDialog(
           backgroundColor: Colors.black87,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.amber.withOpacity(0.5))),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: Colors.amber.withOpacity(0.5))),
           title: const Text("🚀 Projeto Sincronizado!", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           content: Column(
             mainAxisSize: MainAxisSize.min,

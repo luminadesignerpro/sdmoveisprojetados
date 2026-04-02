@@ -121,7 +121,7 @@ const LOUVORES = [
   {
     title: "Meu Sonho Ganha Forma",
     artist: "SD Móveis Projetados",
-    audioUrl: "/audio/meu-sonho-ganha-forma.mp3",
+    audioUrl: "/audio/SD Móveis Projetados (Meu Sonho Ganha Forma).mp3",
     verse: "Jeremias 29:11 - Porque eu bem sei os pensamentos que tenho a vosso respeito, diz o Senhor; pensamentos de paz e não de mal."
   },
 ];
@@ -460,7 +460,6 @@ const App: React.FC = () => {
               <>
                 <NavIcon icon="layout-dashboard" label="Início" active={view === ViewMode.DASHBOARD} onClick={() => setView(ViewMode.DASHBOARD)} />
                 <NavIcon icon="calculator" label="Projetagem SD" active={view === ViewMode.BUDGET_QUOTE} onClick={() => setView(ViewMode.BUDGET_QUOTE)} />
-                <NavIcon icon="cube" label="3D" active={view === ViewMode.DASHBOARD_3D} onClick={() => setView(ViewMode.DASHBOARD_3D)} />
                 <NavIcon icon="file-text" label="Vendas" active={view === ViewMode.CONTRACTS} onClick={() => setView(ViewMode.CONTRACTS)} />
                 <NavIcon icon="building" label="Fornecedores" active={view === ViewMode.SUPPLIERS} onClick={() => setView(ViewMode.SUPPLIERS)} />
                 <NavIcon icon="package" label="Estoque" active={view === ViewMode.PRODUCTS} onClick={() => setView(ViewMode.PRODUCTS)} />
@@ -701,15 +700,8 @@ const App: React.FC = () => {
                         </p>
                         <div className="flex gap-4">
                           <button
-                            onClick={() => setView(ViewMode.PROMOB)}
-                            className="bg-amber-600 px-8 py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-amber-500 transition-all duration-300 hover:scale-105 active:scale-95 flex items-center gap-2 shadow-lg hover:shadow-amber-500/30 hover:shadow-xl group/btn"
-                          >
-                            <Layers className="w-4 h-4 group-hover/btn:rotate-12 transition-transform duration-300" />
-                            Novo Projeto 3D
-                          </button>
-                          <button
                             onClick={() => setView(ViewMode.CONTRACTS)}
-                            className="bg-white/10 px-8 py-4 rounded-2xl font-bold uppercase text-xs tracking-widest hover:bg-white/20 transition-all duration-300 flex items-center gap-2 active:scale-95 hover:scale-105 backdrop-blur-sm group/btn"
+                            className="bg-amber-600 px-8 py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-amber-500 transition-all duration-300 hover:scale-105 active:scale-95 flex items-center gap-2 shadow-lg hover:shadow-amber-500/30 hover:shadow-xl group/btn"
                           >
                             <FileText className="w-4 h-4 group-hover/btn:rotate-6 transition-transform duration-300" />
                             Ver Contratos
@@ -763,23 +755,7 @@ const App: React.FC = () => {
               </div>
 
               {/* Quick Actions */}
-              <div className="grid grid-cols-5 gap-4" style={{ background: 'transparent' }}>
-                <div style={{ opacity: 0, animation: 'fadeIn 0.5s ease-out 0.75s forwards' }}>
-                  <Card3D intensity={10} className="rounded-2xl">
-                    <button
-                      onClick={() => setView(ViewMode.PROMOB)}
-                      className="p-6 rounded-2xl transition-all duration-300 w-full active:scale-[0.96] border h-full flex flex-col items-center justify-center text-center group"
-                      style={{ background: '#111111', borderColor: 'rgba(255,255,255,0.08)' }}
-                      onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(212,175,55,0.4)'; e.currentTarget.style.background = 'rgba(212,175,55,0.08)'; }}
-                      onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.background = '#111111'; }}
-                    >
-                      <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-all duration-300" style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)' }}>
-                        <Layers className="w-6 h-6 text-amber-400" />
-                      </div>
-                      <h4 className="font-bold text-white text-sm">Editor 3D</h4>
-                    </button>
-                  </Card3D>
-                </div>
+              <div className="grid grid-cols-3 gap-4" style={{ background: 'transparent' }}>
                 <div style={{ opacity: 0, animation: 'fadeIn 0.5s ease-out 0.85s forwards' }}>
                   <Card3D intensity={10} className="rounded-2xl">
                     <button
@@ -809,20 +785,6 @@ const App: React.FC = () => {
                         <FileText className="w-6 h-6 text-amber-400" />
                       </div>
                       <h4 className="font-bold text-white text-sm">Contratos</h4>
-                    </button>
-                  </Card3D>
-                </div>
-                <div style={{ opacity: 0, animation: 'fadeIn 0.5s ease-out 1.05s forwards' }}>
-                  <Card3D intensity={10} className="rounded-2xl h-full">
-                    <button
-                      onClick={handleRender}
-                      className="p-6 rounded-2xl text-black w-full active:scale-[0.96] h-full flex flex-col items-center justify-center text-center group transition-all"
-                      style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583, #b8952a)', boxShadow: '0 8px 32px rgba(212,175,55,0.35)' }}
-                    >
-                      <div className="w-12 h-12 bg-black/10 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-all duration-300">
-                        <Sparkles className="w-6 h-6 text-black/80" />
-                      </div>
-                      <h4 className="font-bold text-black/80 text-sm">Render IA</h4>
                     </button>
                   </Card3D>
                 </div>
