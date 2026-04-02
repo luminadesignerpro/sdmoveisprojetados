@@ -19,6 +19,13 @@ dependencies:
   # Icons for Material UI
   cupertino_icons: ^1.0.2
   model_viewer_plus: ^1.10.0
+  
+  # Database & Screenshot integration
+  supabase_flutter: ^2.0.2
+  screenshot: ^3.0.0
+  path_provider: ^2.1.2
+  image_picker: ^1.0.7
+  url_launcher: ^6.2.2
 
 dev_dependencies:
   flutter_test:

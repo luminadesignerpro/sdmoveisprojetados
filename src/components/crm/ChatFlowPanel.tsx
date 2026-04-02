@@ -53,28 +53,28 @@ const DEFAULT_TEMPLATES: FlowTemplate[] = [
         emoji: "1️⃣",
         label: "Orçamento de móveis projetados",
         response:
-          "Ótima escolha! 🎉\n\nPara preparar seu orçamento, preciso de algumas informações:\n\n📐 *Qual ambiente?* (cozinha, quarto, sala, banheiro, etc.)\n📏 *Medidas aproximadas?*\n🎨 *Tem preferência de cor ou material?*\n📸 *Se possível, envie fotos do ambiente*\n\nNossos projetos incluem:\n✅ Projeto 3D gratuito\n✅ Visita técnica sem compromisso\n✅ Garantia de 5 anos\n✅ Parcelamento em até 12x\n\nPode me enviar os detalhes? 😊",
+          "Ótima escolha! 🎉\n\nNós usamos uma tecnologia exclusiva de *Realidade Aumentada* para orçar seu projeto sem precisar ir na sua casa agora!\n\n📐 *Quer medir seu ambiente sozinho?* Use nosso Studio AR: https://sdmoveis.com.br/studio-ar\n\nOu me informe aqui:\n✅ Qual o ambiente?\n✅ Medidas aproximadas?\n\nO que você prefere? 😊",
         subOptions: [
           {
             id: "cozinha",
             emoji: "🍳",
             label: "Cozinha projetada",
             response:
-              "Excelente! Cozinhas são nossa especialidade! 🍳\n\nPreços a partir de *R$ 8.000* para cozinhas compactas.\n\nPreciso saber:\n- Metragem linear da cozinha\n- Se terá ilha/bancada\n- Tipo de acabamento preferido (MDF, MDP, laca)\n\nPosso agendar uma visita técnica gratuita! 📅",
+              "Excelente! Cozinhas são nossa especialidade! 🍳\n\nNós trabalhamos com projetos totalmente personalizados. Para que o nosso CEO possa analisar seu espaço e te passar o melhor valor, preciso de:\n- Metragem linear da cozinha\n- Se terá ilha/bancada\n- Tipo de acabamento preferido\n\nPosso agendar uma visita técnica gratuita! 📅",
           },
           {
             id: "quarto",
             emoji: "🛏️",
             label: "Quarto/Closet",
             response:
-              "Quartos planejados trazem muito mais organização! 🛏️\n\nPreços a partir de *R$ 5.000*.\n\nO que você precisa?\n- Guarda-roupa / Closet\n- Cabeceira com painel\n- Bancada de estudo\n- Cômoda\n\nMe conte suas necessidades! 😊",
+              "Quartos planejados trazem muito mais organização! 🛏️\n\nCada projeto é único. O que você precisa?\n- Guarda-roupa / Closet\n- Cabeceira com painel\n- Bancada de estudo\n- Cômoda\n\nMe conte suas necessidades para enviarmos para análise técnica! 😊",
           },
           {
             id: "banheiro",
             emoji: "🚿",
             label: "Banheiro",
             response:
-              "Banheiros planejados ficam incríveis! 🚿\n\nPreços a partir de *R$ 3.000*.\n\nOpções disponíveis:\n- Gabinete sob medida\n- Espelheira com iluminação LED\n- Nicho para box\n\nQual o tamanho do seu banheiro? 📏",
+              "Banheiros planejados ficam incríveis! 🚿\n\nOpções disponíveis:\n- Gabinete sob medida\n- Espelheira com iluminação LED\n- Nicho para box\n\nMe envie o tamanho aproximado para iniciarmos o seu estudo de design! 📏",
           },
         ],
       },

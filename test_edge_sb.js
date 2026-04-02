@@ -1,14 +1,15 @@
 const SU_URL = "https://nglwscakhhdhelhbqkyb.supabase.co";
 const BAD_KEY = "sb_publishable_3fJ0EGv8wuNn1J95sj1G1A_21WFWOR2";
 
-async function testQuery() {
+async function testEdge() {
   try {
-    const res = await fetch(`${SU_URL}/rest/v1/conversations?select=*`, {
-      method: 'GET',
+    const res = await fetch(`${SU_URL}/functions/v1/whatsapp-connect`, {
+      method: 'POST',
       headers: {
-        'apikey': BAD_KEY,
+        'Content-Type': 'application/json',
         'Authorization': `Bearer ${BAD_KEY}`
-      }
+      },
+      body: JSON.stringify({ action: 'connect' })
     });
     console.log('STATUS:', res.status);
     const text = await res.text();
@@ -17,4 +18,4 @@ async function testQuery() {
     console.error(e);
   }
 }
-testQuery();
+testEdge();

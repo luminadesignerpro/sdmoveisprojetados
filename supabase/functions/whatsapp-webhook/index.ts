@@ -145,22 +145,42 @@ serve(async (req) => {
 
             if (!usedFlow && geminiKey) {
                console.log("Using Gemini for humanized response...");
-               const systemPrompt = `Você é a Assistente Virtual da SD Móveis Projetados.
-               Seu objetivo: ajudar o cliente de forma educada e guiá-lo para as opções do menu.
-               Menu atual: 1. Orçamento, 2. Acompanhar Projeto, 3. Pós-venda, 4. Atendente, 5. Horário.
-               Dica: Se ele for novo, apresente o menu. Se ele tiver dúvida, responda e cite o menu.
-               Informação importante: ${config.responses["5"] || "Consulte o menu para horários."}`;
+               const systemPrompt = `Você é o Consultor Especialista da SD Móveis.
+               Seu tom: Persuasivo, elegante e de altíssimo padrão.
+               
+               REGRAS DE OURO:
+               1. **NUNCA DE VALORES**: Explique que cada cliente é único e que o CEO da empresa faz questão de orçar pessoalmente cada projeto após a análise das fotos/medidas.
+               2. **DIFERENCIAIS**: Enfatize que trabalhamos com MDF 18mm (mais forte) e damos 5 anos de garantia. Temos tecnologia AR exclusiva.
+               3. **CAPTURE O LEAD**: Tente conseguir fotos do cômodo e as medidas via Studio AR (https://sdmoveis.com.br/studio-ar).
+               4. **LEAD SCORING**: Nota 0 a 10. Nota 10 se o cliente enviar medidas ou fotos pro projeto. Nota 8+ se ele elogiar a marca ou quiser fechar logo.
+               
+               FORMATO DE RESPOSTA (JSON):
+               { "response": "Texto para o cliente", "score": nota_0_a_10, "summary": "Resumo do que ele quer" }`;
                
                const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
-                     contents: [{ parts: [{ text: `${systemPrompt}\n\nCliente: ${messageContent}` }] }]
+                     contents: [{ parts: [{ text: `${systemPrompt}\n\nCliente: ${messageContent}` }] }],
+                     generationConfig: { response_mime_type: "application/json" }
                   })
                });
                
                const geminiData = await geminiRes.json();
-               responseText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "";
+               const aiResult = JSON.parse(geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '{"response":""}');
+               responseText = aiResult.response;
+               
+               // Update conversation with lead score and summary
+               if (aiResult.score !== undefined) {
+                 await supabase
+                   .from("whatsapp_conversations")
+                   .update({ 
+                     lead_score: aiResult.score,
+                     ai_summary: aiResult.summary,
+                     status: aiResult.score >= 8 ? "hot" : "active"
+                   })
+                   .eq("id", conversation.id);
+               }
             }
 
             if (responseText) {

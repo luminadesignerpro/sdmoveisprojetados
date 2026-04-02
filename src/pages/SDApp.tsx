@@ -39,6 +39,8 @@ import { WorshipPlayer } from '@/components/WorshipPlayer';
 import InternalChat from '@/components/chat/InternalChat';
 import AppointmentsPanel from '@/components/client/AppointmentsPanel';
 import { supabase } from '@/integrations/supabase/client';
+import ARProjectList from '@/components/ar/ARProjectList';
+import AINegotiationDashboard from '@/components/crm/AINegotiationDashboard';
 const db = supabase as any;
 import {
   LogOut,
@@ -472,6 +474,8 @@ const App: React.FC = () => {
                 <NavIcon icon="message-square" label="CRM" active={view === ViewMode.CRM} onClick={() => setView(ViewMode.CRM)} isFab />
                 <NavIcon icon="message-circle" label="Chat" active={view === ViewMode.INTERNAL_CHAT} onClick={() => setView(ViewMode.INTERNAL_CHAT)} />
                 <NavIcon icon="calendar" label="Agenda" active={view === ViewMode.APPOINTMENTS} onClick={() => setView(ViewMode.APPOINTMENTS)} />
+                <NavIcon icon="camera" label="Projetos AR" active={view === ViewMode.AR_STUDIO} onClick={() => setView(ViewMode.AR_STUDIO)} />
+                <NavIcon icon="bot" label="Vendedor IA" active={view === ViewMode.AI_SALES} onClick={() => setView(ViewMode.AI_SALES)} />
               </>
             ) : authState === 'EMPLOYEE' ? (
               <>
@@ -1254,6 +1258,20 @@ const App: React.FC = () => {
           {view === ViewMode.PROJECT_COSTS && authState === 'ADMIN' && selectedContract && (
             <div className="p-8 overflow-auto h-full bg-gradient-to-br from-gray-50 to-gray-100">
               <ProjectCostPanel projectId={selectedContract.id} projectName={selectedContract.name || selectedContract.projectName} totalValue={selectedContract.value} />
+            </div>
+          )}
+
+          {/* AR STUDIO - Admin */}
+          {view === ViewMode.AR_STUDIO && authState === 'ADMIN' && (
+            <div className="p-0 overflow-auto h-full bg-[#0f0f0f]">
+              <ARProjectList />
+            </div>
+          )}
+
+          {/* AI SALES - Admin */}
+          {view === ViewMode.AI_SALES && authState === 'ADMIN' && (
+            <div className="p-0 overflow-auto h-full bg-[#0f0f0f]">
+              <AINegotiationDashboard />
             </div>
           )}
         </ViewTransition>

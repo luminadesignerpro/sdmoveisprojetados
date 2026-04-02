@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'flutter_ar_studio.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  await Supabase.initialize(
+    url: 'https://nglwscakhhdhelhbqkyb.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5nbHdzY2FiaGhkaGVsaGJxa3liIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1NDYzNjgsImV4cCI6MjA4NzEyMjM2OH0.MidIwMPLT17szfNnG9VRTnisoPzDAFnEw7IVLpqJj6A',
+  );
+
   runApp(const MyApp());
 }
 
@@ -49,7 +57,7 @@ class _MainScreenState extends State<MainScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(color: Colors.black12, borderRadius: BorderRadius.circular(10)),
-                  child: Text("R$ ${totalBudget.toStringAsFixed(2)}", style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                  child: Text("R\$ ${totalBudget.toStringAsFixed(2)}", style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
                 ),
               ),
             )
@@ -73,13 +81,19 @@ class _MainScreenState extends State<MainScreen> {
             if (totalBudget > 0) ...[
                const SizedBox(height: 20),
                Text(
-                 'Orçamento Atual: R$ ${totalBudget.toStringAsFixed(2)}',
+                 'Orçamento Atual: R\$ ${totalBudget.toStringAsFixed(2)}',
                  style: const TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold, fontSize: 18),
                ),
             ],
             const SizedBox(height: 40),
             ElevatedButton.icon(
               onPressed: () async {
+                if (kIsWeb) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("AR Studio Profissional precisa de Android/iOS (Web não suportado)")),
+                  );
+                  return;
+                }
                 final double? result = await Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const ARStudioWidget()),
