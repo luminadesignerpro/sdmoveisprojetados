@@ -37,3 +37,5 @@ android/app/build
 android/local.properties
 android/captures
 android/app/libs
+
+.vercel

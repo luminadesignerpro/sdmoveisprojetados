@@ -48,6 +48,8 @@ export function WhatsAppCRMReal() {
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [aiAutoReply, setAiAutoReply] = useState(false);
   const [apiStatus, setApiStatus] = useState<"checking" | "connected" | "disconnected">("checking");
+  const [qrCodeData, setQrCodeData] = useState<string | null>(null);
+  const [isLoadingQR, setIsLoadingQR] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const checkApiStatus = async () => {
@@ -202,72 +204,97 @@ export function WhatsAppCRMReal() {
             </Badge>
             <Button
               size="sm"
+              disabled={isLoadingQR}
               className="bg-green-600 hover:bg-green-700 text-white font-bold text-xs h-7"
               onClick={async () => {
-                const btn = document.activeElement as HTMLButtonElement;
-                if (btn) btn.disabled = true;
-                
+                setIsLoadingQR(true);
+                setQrCodeData(null);
                 try {
-                  toast({
-                    title: "⏳ Gerando QR Code",
-                    description: "Preparando conexão segura com persistência no banco de dados...",
-                  });
+                  const EVOLUTION_API_URL = "https://api-whatsapp-sdmoveis.onrender.com";
+                  const EVOLUTION_API_KEY = "Mv06061991";
+                  const instanceName = "SD-Moveis";
 
-                  // 1. Chamar a nossa nova função segura (Ponte)
-                  const { data, error } = await supabase.functions.invoke('whatsapp-connect', {
-                    body: { action: "connect" }
-                  });
-
-                  if (error) throw error;
-
-                  const qrCodeBase64 = data.base64 || data.qrcode?.base64;
+                  // 1. Acordar o servidor Render (cold start pode demorar até 60s)
+                  toast({ title: "⏳ Iniciando servidor...", description: "Aguarde, isso pode levar alguns segundos." });
                   
-                  if (qrCodeBase64) {
-                    // Abrir em uma janela bonita
-                    const newWindow = window.open('', '_blank', 'width=500,height=600');
-                    newWindow?.document.write(`
-                      <html style="display:flex;justify-content:center;align-items:center;height:100vh;background:#111;font-family:sans-serif;text-align:center;color:white;">
-                        <div style="background:#222;padding:40px;border-radius:25px;box-shadow:0 10px 50px rgba(0,0,0,0.8);max-width:400px;margin:20px;">
-                          <h1 style="color:#25D366;font-size:24px;margin-bottom:10px;">Conectar WhatsApp SD</h1>
-                          <p style="color:#888;font-size:14px;margin-bottom:25px;">Escaneie o código abaixo. O login ficará salvo automaticamente no banco de dados.</p>
-                          <div style="background:white;padding:15px;border-radius:15px;display:inline-block;box-shadow:0 0 20px rgba(37,211,102,0.3);">
-                            <img src="${qrCodeBase64}" style="width:250px;height:250px;display:block;" />
-                          </div>
-                          <div style="margin-top:25px;padding:15px;background:rgba(37,211,102,0.1);border-radius:12px;border:1px solid rgba(37,211,102,0.2);">
-                            <p style="font-size:12px;color:#25D366;margin:0;">✓ Persistência em Banco de Dados Ativa</p>
-                            <p style="font-size:12px;color:#25D366;margin:5px 0 0 0;">✓ Fluxo AI Ativado</p>
-                          </div>
-                        </div>
-                      </html>
-                    `);
-                    
-                    toast({
-                      title: "✅ QR Code Gerado",
-                      description: "Escaneie na janela que abriu para conectar.",
+                  // Tenta acordar o servidor com um ping simples
+                  try {
+                    await fetch(`${EVOLUTION_API_URL}/`, { method: 'GET', signal: AbortSignal.timeout(8000) });
+                  } catch { /* ignora erros de ping, só acorda o servidor */ }
+
+                  // 2. Deletar instância antiga (caso esteja travada/desconectada)
+                  try {
+                    await fetch(`${EVOLUTION_API_URL}/instance/delete/${instanceName}`, {
+                      method: "DELETE",
+                      headers: { "apikey": EVOLUTION_API_KEY }
                     });
-                  } else if (data.instance?.state === 'open') {
-                    toast({
-                      title: "✅ Já Conectado",
-                      description: "Seu WhatsApp já está ativo e pronto para uso!",
-                    });
+                  } catch { /* ignora erro se não existir */ }
+
+                  // Aguarda um momento para garantir a deleção
+                  await new Promise(r => setTimeout(r, 2000));
+
+                  // 3. Recriar a instância fresh
+                  await fetch(`${EVOLUTION_API_URL}/instance/create`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "apikey": EVOLUTION_API_KEY },
+                    body: JSON.stringify({
+                      instanceName,
+                      qrcode: true,
+                      integration: "WHATSAPP-BAILEYS"
+                    })
+                  });
+
+                  // Aguarda a instância ser criada
+                  await new Promise(r => setTimeout(r, 2000));
+
+                  // 4. Buscar o QR Code
+                  const qrRes = await fetch(`${EVOLUTION_API_URL}/instance/connect/${instanceName}`, {
+                    headers: { "apikey": EVOLUTION_API_KEY },
+                    cache: "no-store"
+                  });
+
+                  const data = await qrRes.json();
+
+                  if (data.base64) {
+                    setQrCodeData(data.base64);
+                  } else if (data.instance?.state === "open") {
+                    toast({ title: "✅ Já Conectado", description: "WhatsApp já está ativo!" });
+                    checkApiStatus();
                   } else {
-                    throw new Error("Não foi possível obter o QR Code.");
+                    throw new Error("Resposta inesperada: " + JSON.stringify(data).substring(0, 300));
                   }
-                } catch (err) {
-                  console.error("Connect error:", err);
+                } catch (err: unknown) {
+                  const msg = err instanceof Error ? err.message : String(err);
                   toast({
                     title: "❌ Erro na Conexão",
-                    description: "Verifique se a API está online ou tente novamente.",
+                    description: msg.includes("timeout") 
+                      ? "O servidor demorou para responder. Tente novamente em 30 segundos."
+                      : msg,
                     variant: "destructive"
                   });
                 } finally {
-                  if (btn) btn.disabled = false;
+                  setIsLoadingQR(false);
                 }
               }}
             >
-              Exibir QR Code
+              {isLoadingQR ? <Loader2 className="w-3 h-3 animate-spin" /> : "Exibir QR Code"}
             </Button>
           </div>
+
+          {/* QR Code Modal Inline */}
+          {qrCodeData && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80" onClick={() => setQrCodeData(null)}>
+              <div className="bg-zinc-900 rounded-2xl p-8 flex flex-col items-center gap-4 shadow-2xl max-w-sm w-full mx-4" onClick={e => e.stopPropagation()}>
+                <h2 className="text-green-400 text-xl font-bold">Conectar WhatsApp SD</h2>
+                <p className="text-zinc-400 text-sm text-center">Escaneie o QR Code com seu WhatsApp</p>
+                <div className="bg-white p-3 rounded-xl">
+                  <img src={qrCodeData} alt="QR Code WhatsApp" className="w-56 h-56" />
+                </div>
+                <p className="text-green-400 text-xs">✓ Sessão salva automaticamente no banco de dados</p>
+                <Button variant="outline" size="sm" onClick={() => setQrCodeData(null)}>Fechar</Button>
+              </div>
+            </div>
+          )}
 
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
