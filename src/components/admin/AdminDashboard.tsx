@@ -33,7 +33,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         lowStock: 0,
         toReceive: 0,
         toPay: 0,
+        assistancePending: 0,
     });
+    const [assistanceTickets, setAssistanceTickets] = useState<any[]>([]);
     const [contracts, setContracts] = useState(initialContracts);
     const [studioMeasurements, setStudioMeasurements] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -59,6 +61,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 db.from('accounts_receivable').select('amount').eq('received', false),
                 db.from('accounts_payable').select('amount').eq('paid', false),
                 db.from('studio_measurements').select('*').order('created_at', { ascending: false }).limit(5),
+                db.from('assistance_tickets').select('*').eq('status', 'pendente').order('created_at', { ascending: false }),
             ]);
 
             const currentContracts = contractsRes.data || [];
@@ -78,9 +81,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 openOS: osRes.data?.length || 0,
                 lowStock: stockRes.data?.length || 0,
                 toReceive,
-                toPay
+                toPay,
+                assistancePending: (arguments[0][6]?.data || []).length
             });
             setStudioMeasurements(studioRes.data || []);
+            setAssistanceTickets(arguments[0][6]?.data || []);
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
         } finally {
@@ -138,7 +143,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     { title: "Total Orçamentos", value: `R$ ${(stats.revenue / 1000).toFixed(1)}K`, icon: "💰", trend: "+15% este mês" },
                     { title: "Projetos Ativos", value: contracts.length.toString(), icon: "📁", trend: `${stats.signedCount} assinados` },
                     { title: "Produção", value: stats.inProduction.toString(), icon: "🏭", trend: "Crescimento de 8%" },
-                    { title: "OS Abertas", value: stats.openOS.toString(), icon: "📋", trend: "Atenção necessária" },
+                    { title: "Chamados", value: (assistanceTickets.length || 0).toString(), icon: "🔧", trend: "Assistência Técnica" },
                 ].map((stat, i) => (
                     <div key={i} className="rounded-[2.5rem] p-0.5" style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(255,255,255,0.05))' }}>
                       <Card3D intensity={10} className="rounded-[2.5rem]">
@@ -280,6 +285,35 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                         </p>
                                     </div>
                                 )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Assistance Tickets */}
+                    {assistanceTickets.length > 0 && (
+                        <div className="rounded-[3rem] p-8 border border-red-500/20 shadow-sm"
+                            style={{ background: '#111111' }}>
+                            <h3 className="text-lg font-black text-white mb-6 flex items-center gap-2">
+                                <Wrench className="w-5 h-5 text-red-500" />
+                                Pedidos de Assistência
+                            </h3>
+                            <div className="space-y-4">
+                                {assistanceTickets.slice(0, 3).map(ticket => (
+                                    <div key={ticket.id} className="p-4 rounded-2xl border bg-white/5 border-white/10">
+                                        <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-1">{ticket.client_name}</p>
+                                        <p className="text-xs font-bold text-white leading-tight mb-2">{ticket.subject.replace('_', ' ')}</p>
+                                        <p className="text-[9px] text-gray-500 line-clamp-2">{ticket.description}</p>
+                                        <button 
+                                          onClick={async () => {
+                                            await db.from('assistance_tickets').update({ status: 'concluido' }).eq('id', ticket.id);
+                                            fetchDashboardData();
+                                          }}
+                                          className="mt-3 text-[9px] font-black uppercase tracking-widest text-green-500 hover:text-green-400"
+                                        >
+                                          Marcar Resolvido ✓
+                                        </button>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     )}
