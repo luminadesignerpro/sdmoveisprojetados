@@ -81,18 +81,32 @@ export default function TimeTrackingPanel() {
 
   const fetchData = async () => {
     setLoading(true);
+    const twoMonthsAgo = new Date();
+    twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
+    const twoMonthsIso = twoMonthsAgo.toISOString();
+
     const [empRes, teRes, adjRes, advRes] = await Promise.all([
       supabase.from('employees').select('*').order('name'),
-      supabase.from('time_entries').select('*').order('clock_in', { ascending: false }).limit(500),
-      supabase.from('employee_adjustments').select('*').order('created_at', { ascending: false }).limit(500),
-      supabase.from('advance_requests').select('*').order('created_at', { ascending: false }).limit(200),
+      supabase.from('time_entries')
+        .select('*')
+        .gte('clock_in', twoMonthsIso)
+        .order('clock_in', { ascending: false })
+        .limit(2000),
+      supabase.from('employee_adjustments')
+        .select('*')
+        .gte('reference_date', twoMonthsIso)
+        .order('created_at', { ascending: false })
+        .limit(1000),
+      supabase.from('advance_requests')
+        .select('*')
+        .gte('created_at', twoMonthsIso)
+        .order('created_at', { ascending: false })
+        .limit(200),
     ]);
     
     if (empRes.error) console.error("Error fetching employees:", empRes.error);
-    if (teRes.error) console.error("Error fetching time entries:", teRes.error);
-
+    
     if (empRes.data) {
-      console.log("Employees found:", empRes.data.length);
       setEmployees(empRes.data);
     }
     if (teRes.data) setTimeEntries(teRes.data);
@@ -173,10 +187,21 @@ export default function TimeTrackingPanel() {
   const getPeriodDates = (): { start: Date; end: Date } => {
     const now = new Date();
     const end = new Date(now);
+    end.setHours(23, 59, 59, 999);
+    
     const start = new Date(now);
-    if (period === 'week') start.setDate(now.getDate() - 7);
-    else if (period === 'biweekly') start.setDate(now.getDate() - 15);
-    else start.setDate(now.getDate() - 30);
+    if (period === 'week') {
+      // Last 7 full days
+      start.setDate(now.getDate() - 7);
+    } else if (period === 'biweekly') {
+      // Last 15 full days
+      start.setDate(now.getDate() - 15);
+    } else {
+      // Current Month (from day 1)
+      start.setDate(1);
+    }
+    
+    start.setHours(0, 0, 0, 0);
     return { start, end };
   };
 
