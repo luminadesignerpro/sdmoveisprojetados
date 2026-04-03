@@ -290,33 +290,41 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     )}
 
                     {/* Assistance Tickets */}
-                    {assistanceTickets.length > 0 && (
-                        <div className="rounded-[3rem] p-8 border border-red-500/20 shadow-sm"
-                            style={{ background: '#111111' }}>
-                            <h3 className="text-lg font-black text-white mb-6 flex items-center gap-2">
-                                <Wrench className="w-5 h-5 text-red-500" />
-                                Pedidos de Assistência
-                            </h3>
-                            <div className="space-y-4">
-                                {assistanceTickets.slice(0, 3).map(ticket => (
-                                    <div key={ticket.id} className="p-4 rounded-2xl border bg-white/5 border-white/10">
-                                        <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-1">{ticket.client_name}</p>
-                                        <p className="text-xs font-bold text-white leading-tight mb-2">{ticket.subject.replace('_', ' ')}</p>
-                                        <p className="text-[9px] text-gray-500 line-clamp-2">{ticket.description}</p>
+                    <div className="rounded-[3rem] p-8 border border-white/5 shadow-sm"
+                        style={{ background: '#111111' }}>
+                        <h3 className="text-lg font-black text-white mb-6 flex items-center gap-2">
+                            <Wrench className="w-5 h-5 text-amber-500" />
+                            Assistência Técnica
+                        </h3>
+                        <div className="space-y-4">
+                            {assistanceTickets.length > 0 ? (
+                                assistanceTickets.slice(0, 5).map(ticket => (
+                                    <div key={ticket.id} className="p-4 rounded-2xl border bg-white/5 border-white/10 hover:border-amber-500/30 transition-all">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest">{ticket.client_name}</p>
+                                            <span className="text-[8px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full font-black uppercase">Novo</span>
+                                        </div>
+                                        <p className="text-xs font-bold text-white leading-tight mb-2">{ticket.subject?.replace(/_/g, ' ')}</p>
+                                        <p className="text-[9px] text-gray-500 line-clamp-2 italic mb-4">"{ticket.description}"</p>
                                         <button 
                                           onClick={async () => {
                                             await db.from('assistance_tickets').update({ status: 'concluido' }).eq('id', ticket.id);
                                             fetchDashboardData();
                                           }}
-                                          className="mt-3 text-[9px] font-black uppercase tracking-widest text-green-500 hover:text-green-400"
+                                          className="w-full py-2 rounded-xl bg-white/5 hover:bg-green-500 hover:text-black transition-all text-[9px] font-black uppercase tracking-widest text-green-500 border border-green-500/20"
                                         >
                                           Marcar Resolvido ✓
                                         </button>
                                     </div>
-                                ))}
-                            </div>
+                                ))
+                            ) : (
+                                <div className="py-8 text-center border border-dashed border-white/5 rounded-2xl">
+                                    <CheckCircle className="w-8 h-8 text-white/10 mx-auto mb-2" />
+                                    <p className="text-[10px] font-black text-white/20 uppercase tracking-tighter">Nenhum chamado pendente</p>
+                                </div>
+                            )}
                         </div>
-                    )}
+                    </div>
                     
                     {/* Render Shortcut */}
                     <Card3D intensity={15} className="rounded-[3rem]">
