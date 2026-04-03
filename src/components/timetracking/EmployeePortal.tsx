@@ -176,9 +176,8 @@ export default function EmployeePortal({ employeeName }: EmployeePortalProps) {
     const contentW = W - margin * 2;
 
     // Load logo
-    let logoData: string | null = null;
     try {
-      const resp = await fetch('/images/logo-sd-payslip.jpeg');
+      const resp = await fetch('/images/logo-sd-gold.png');
       const blob = await resp.blob();
       logoData = await new Promise<string>((resolve) => {
         const reader = new FileReader();
@@ -209,8 +208,8 @@ export default function EmployeePortal({ employeeName }: EmployeePortalProps) {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(100, 100, 100);
-    doc.text('CNPJ: 27.693.081/0001-09', logoData ? margin + 26 : margin, 25);
-    doc.text('Rua Jorge Figueiredo, 740 • Caucaia - CE • CEP 61880-000', logoData ? margin + 26 : margin, 30);
+    doc.text('CNPJ: 27.693.081/0001-09', logoData ? margin + 26 : margin, 24);
+    doc.text('Rua Jorge Figueiredo, 740 • Itaitinga - CE • CEP 61880-000', logoData ? margin + 26 : margin, 28);
 
     // Title bar
     doc.setFillColor(...darkGray);
@@ -230,22 +229,22 @@ export default function EmployeePortal({ employeeName }: EmployeePortalProps) {
     doc.setTextColor(...darkGray);
     doc.text('Funcionário:', margin + 3, y + 1);
     doc.setFont('helvetica', 'normal');
-    doc.text(employee.name.toUpperCase(), margin + 30, y + 1);
+    doc.text(employee.name.toUpperCase(), margin + 27, y + 1);
 
     doc.setFont('helvetica', 'bold');
     doc.text('Cargo:', margin + 3, y + 7);
     doc.setFont('helvetica', 'normal');
-    doc.text(employee.role || '-', margin + 30, y + 7);
+    doc.text(employee.role || '-', margin + 27, y + 7);
 
     doc.setFont('helvetica', 'bold');
-    doc.text('Período:', contentW / 2 + margin, y + 1);
+    doc.text('Período:', margin + contentW - 55, y + 1);
     doc.setFont('helvetica', 'normal');
-    doc.text(periodLabel, contentW / 2 + margin + 20, y + 1);
+    doc.text(periodLabel, margin + contentW - 35, y + 1);
 
     doc.setFont('helvetica', 'bold');
-    doc.text('Data:', contentW / 2 + margin, y + 7);
+    doc.text('Data:', margin + contentW - 55, y + 7);
     doc.setFont('helvetica', 'normal');
-    doc.text(today, contentW / 2 + margin + 20, y + 7);
+    doc.text(today, margin + contentW - 35, y + 7);
 
     // ── TABLE: PROVENTOS ──
     y = 80;
