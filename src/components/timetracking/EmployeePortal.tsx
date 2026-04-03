@@ -176,6 +176,7 @@ export default function EmployeePortal({ employeeName }: EmployeePortalProps) {
     const contentW = W - margin * 2;
 
     // Load logo
+    let logoData: string | null = null;
     try {
       const resp = await fetch('/images/logo-sd-gold.png');
       const blob = await resp.blob();
