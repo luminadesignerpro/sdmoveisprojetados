@@ -86,7 +86,7 @@ export default function TimeTrackingPanel() {
     const twoMonthsIso = twoMonthsAgo.toISOString();
 
     const [empRes, teRes, adjRes, advRes] = await Promise.all([
-      supabase.from('employees').select('*').order('name'),
+      supabase.from('employees').select('*').eq('active', true).order('name'),
       supabase.from('time_entries')
         .select('*')
         .gte('clock_in', twoMonthsIso)
