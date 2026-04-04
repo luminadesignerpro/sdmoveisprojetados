@@ -32,13 +32,13 @@ interface Location {
 async function getRoutedPath(positions: [number, number][]): Promise<[number, number][]> {
   if (positions.length < 2) return positions;
 
-  // For tracks with many points, use the 'match' service (snaps to roads)
-  // For simple routes or single segments, use 'route' (finds path between A and B)
+  // We'll try 'match' for high-point traces (snaps to roads)
+  // and 'route' for simple paths (finds best road path between A and B)
   const isTrace = positions.length > 5;
-  const service = isTrace ? 'match' : 'route';
-  
-  // Sample to max 45 waypoints (OSRM demo server limit is 100, but high loads fail)
-  const maxPoints = 40;
+  const services = isTrace ? (['match', 'route'] as const) : (['route'] as const);
+
+  // Sample points to fit OSRM limits if needed
+  const maxPoints = 50;
   const step = Math.max(1, Math.floor(positions.length / maxPoints));
   const sampled: [number, number][] = [];
   for (let i = 0; i < positions.length; i++) {
@@ -47,30 +47,57 @@ async function getRoutedPath(positions: [number, number][]): Promise<[number, nu
     }
   }
 
-  // OSRM expects lon,lat order
+  // OSRM expects [lon, lat] semicolon-separated
   const coords = sampled.map(([lat, lon]) => `${lon},${lat}`).join(';');
-  const params = isTrace ? 'overview=full&geometries=geojson&tidy=true' : 'overview=full&geometries=geojson';
-  const url = `https://router.project-osrm.org/${service}/v1/driving/${coords}?${params}`;
 
-  try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
-    if (!res.ok) throw new Error(`OSRM ${res.status}`);
-    const data = await res.json();
-    
-    // OSRM match returns 'matchings', OSRM route returns 'routes'
-    const pathSource = isTrace ? data.matchings?.[0] : data.routes?.[0];
-    
-    if (data.code === 'Ok' && pathSource?.geometry?.coordinates) {
-      // OSRM returns [lon, lat] — convert back to [lat, lon] for Leaflet
-      return pathSource.geometry.coordinates.map(([lon, lat]: [number, number]) => [lat, lon]);
-    } else {
-        console.warn('OSRM retornou OK mas sem geometria:', data.code);
+  for (const service of services) {
+    const params = service === 'match' 
+      ? 'overview=full&geometries=geojson&tidy=true' 
+      : 'overview=full&geometries=geojson&alternatives=false';
+    const url = `https://router.project-osrm.org/${service}/v1/driving/${coords}?${params}`;
+
+    try {
+      console.log(`[OSRM] Requesting ${service} for ${sampled.length} points...`);
+      const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
+      if (!res.ok) {
+          console.warn(`[OSRM] ${service} failed with status ${res.status}`);
+          continue;
+      }
+      const data = await res.json();
+      
+      if (data.code !== 'Ok') {
+          console.warn(`[OSRM] ${service} returned code:`, data.code);
+          continue;
+      }
+
+      let allCoords: [number, number][] = [];
+
+      if (service === 'match' && data.matchings) {
+        // Concatenate ALL matching segments (OSRM might return multiple if there are large gaps)
+        data.matchings.forEach((m: any) => {
+          if (m.geometry?.coordinates) {
+             m.geometry.coordinates.forEach((c: [number, number]) => {
+               allCoords.push([c[1], c[0]]); // lon,lat -> lat,lon
+             });
+          }
+        });
+      } else if (service === 'route' && data.routes?.[0]?.geometry?.coordinates) {
+        data.routes[0].geometry.coordinates.forEach((c: [number, number]) => {
+          allCoords.push([c[1], c[0]]);
+        });
+      }
+
+      if (allCoords.length > 0) {
+        console.log(`[OSRM] ${service} success! Generated ${allCoords.length} points.`);
+        return allCoords;
+      }
+    } catch (e) {
+      console.error(`[OSRM] ${service} error:`, e);
     }
-  } catch (e) {
-    console.error('OSRM routine erro:', e);
   }
 
-  return positions; // fallback to raw points (better than nothing)
+  console.warn('[OSRM] All services failed. Falling back to raw GPS points.');
+  return positions; 
 }
 
 export default function FleetMap({ locations = [] }: { locations?: Location[] }) {
