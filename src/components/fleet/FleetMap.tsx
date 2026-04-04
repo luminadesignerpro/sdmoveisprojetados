@@ -32,32 +32,45 @@ interface Location {
 async function getRoutedPath(positions: [number, number][]): Promise<[number, number][]> {
   if (positions.length < 2) return positions;
 
-  // Sample to max 50 waypoints to respect OSRM limits
-  const step = Math.max(1, Math.floor(positions.length / 50));
+  // For tracks with many points, use the 'match' service (snaps to roads)
+  // For simple routes or single segments, use 'route' (finds path between A and B)
+  const isTrace = positions.length > 5;
+  const service = isTrace ? 'match' : 'route';
+  
+  // Sample to max 45 waypoints (OSRM demo server limit is 100, but high loads fail)
+  const maxPoints = 40;
+  const step = Math.max(1, Math.floor(positions.length / maxPoints));
   const sampled: [number, number][] = [];
   for (let i = 0; i < positions.length; i++) {
-    if (i === 0 || i === positions.length - 1 || i % step === 0) {
+    if (i === 0 || i === positions.length - 1 || (i % step === 0 && sampled.length < maxPoints)) {
       sampled.push(positions[i]);
     }
   }
 
   // OSRM expects lon,lat order
   const coords = sampled.map(([lat, lon]) => `${lon},${lat}`).join(';');
-  const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`;
+  const params = isTrace ? 'overview=full&geometries=geojson&tidy=true' : 'overview=full&geometries=geojson';
+  const url = `https://router.project-osrm.org/${service}/v1/driving/${coords}?${params}`;
 
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
     if (!res.ok) throw new Error(`OSRM ${res.status}`);
     const data = await res.json();
-    if (data.code === 'Ok' && data.routes?.[0]?.geometry?.coordinates) {
+    
+    // OSRM match returns 'matchings', OSRM route returns 'routes'
+    const pathSource = isTrace ? data.matchings?.[0] : data.routes?.[0];
+    
+    if (data.code === 'Ok' && pathSource?.geometry?.coordinates) {
       // OSRM returns [lon, lat] — convert back to [lat, lon] for Leaflet
-      return data.routes[0].geometry.coordinates.map(([lon, lat]: [number, number]) => [lat, lon]);
+      return pathSource.geometry.coordinates.map(([lon, lat]: [number, number]) => [lat, lon]);
+    } else {
+        console.warn('OSRM retornou OK mas sem geometria:', data.code);
     }
   } catch (e) {
-    console.warn('OSRM routing falhou, usando linha reta como fallback:', e);
+    console.error('OSRM routine erro:', e);
   }
 
-  return positions; // fallback to straight line
+  return positions; // fallback to raw points (better than nothing)
 }
 
 export default function FleetMap({ locations = [] }: { locations?: Location[] }) {
@@ -120,7 +133,14 @@ export default function FleetMap({ locations = [] }: { locations?: Location[] })
         if (rawPositions.length > 1) {
           // 🗺️ Get route following actual roads via OSRM
           const routedPositions = await getRoutedPath(rawPositions);
-          L.polyline(routedPositions, { color, weight: 4, opacity: 0.8 }).addTo(layer);
+          
+          // Se o roteamento retornou a mesma quantidade de pontos que o bruto (falhou),
+          // desenha uma linha tracejada cinza por baixo para mostrar a intenção
+          if (routedPositions.length === rawPositions.length) {
+            L.polyline(rawPositions, { color: '#888', weight: 2, dashArray: '5, 10', opacity: 0.5 }).addTo(layer);
+          }
+
+          L.polyline(routedPositions, { color, weight: 5, opacity: 0.85, lineJoin: 'round' }).addTo(layer);
         }
 
         // Start marker (green dot)

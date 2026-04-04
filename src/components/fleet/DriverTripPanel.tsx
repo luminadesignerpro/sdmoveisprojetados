@@ -468,6 +468,7 @@ export default function DriverTripPanel({ employeeId, employeeName }: DriverTrip
     if (!activeTrip) return;
 
     // Stop GPS tracking (trip is done)
+    gpsTracker.forceSyncPending();
     gpsTracker.stop();
 
     const { error: endError } = await db
