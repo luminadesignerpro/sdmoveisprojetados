@@ -72,22 +72,36 @@ const SalesPage: React.FC = () => {
       deadline: form.deadline || null,
       notes: form.notes || null,
     };
+    
+    let error;
     if (editingId) {
-      await db.from('client_projects').update(payload).eq('id', editingId);
-      toast({ title: '✅ Projeto atualizado' });
+      const res = await db.from('client_projects').update(payload).eq('id', editingId);
+      error = res.error;
+      if (!error) toast({ title: '✅ Projeto atualizado' });
     } else {
-      await db.from('client_projects').insert(payload);
-      toast({ title: '✅ Novo projeto/venda criado' });
+      const res = await db.from('client_projects').insert(payload);
+      error = res.error;
+      if (!error) toast({ title: '✅ Novo projeto/venda criado' });
     }
+
+    if (error) {
+      toast({ title: '❌ Erro ao salvar projeto', description: error.message, variant: 'destructive' });
+      return;
+    }
+
     setShowForm(false);
     setEditingId(null);
     fetchData();
   };
 
   const updateStatus = async (id: string, status: string) => {
-    await db.from('client_projects').update({ status }).eq('id', id);
-    toast({ title: '✅ Status atualizado' });
-    fetchData();
+    const { error } = await db.from('client_projects').update({ status }).eq('id', id);
+    if (error) {
+      toast({ title: '❌ Erro ao atualizar status', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: '✅ Status atualizado' });
+      fetchData();
+    }
   };
 
   const statusColors: Record<string, string> = {

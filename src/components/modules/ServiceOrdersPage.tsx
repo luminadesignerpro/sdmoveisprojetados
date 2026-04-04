@@ -71,13 +71,46 @@ const ServiceOrdersPage: React.FC = () => {
       notes: form.notes || null,
       estimated_date: form.estimated_date || null,
     };
+
+    let error;
     if (editingId) {
-      await db.from('service_orders').update(payload).eq('id', editingId);
-      toast({ title: '✅ OS atualizada' });
+      const res = await db.from('service_orders').update(payload).eq('id', editingId);
+      error = res.error;
+      if (!error) toast({ title: '✅ OS atualizada' });
     } else {
-      await db.from('service_orders').insert(payload);
-      toast({ title: '✅ OS criada com sucesso' });
+      const res = await db.from('service_orders').insert(payload);
+      error = res.error;
+      if (!error) toast({ title: '✅ OS criada com sucesso' });
     }
+
+    if (error) {
+      toast({ title: '❌ Erro ao salvar OS', description: error.message, variant: 'destructive' });
+      return;
+    }
+
+    // Se concluiu a OS, finalizar qualquer viagem ativa do funcionário
+    if (form.status === 'concluida' && form.assigned_to) {
+      try {
+        const { data: activeTrips } = await db
+          .from('trips')
+          .select('id')
+          .eq('employee_id', form.assigned_to)
+          .eq('status', 'active');
+        
+        if (activeTrips && activeTrips.length > 0) {
+          for (const trip of activeTrips) {
+            await db
+              .from('trips')
+              .update({ status: 'completed', ended_at: new Date().toISOString() })
+              .eq('id', trip.id);
+          }
+          toast({ title: '🏁 Viagem associada finalizada automaticamente' });
+        }
+      } catch (e) {
+        console.error('Erro ao finalizar viagem:', e);
+      }
+    }
+
     setShowForm(false);
     setEditingId(null);
     fetchData();

@@ -470,10 +470,20 @@ export default function DriverTripPanel({ employeeId, employeeName }: DriverTrip
     // Stop GPS tracking (trip is done)
     gpsTracker.stop();
 
-    const { error } = await db
+    const { error: endError } = await db
       .from('trips')
-      .update({ status: 'completed', ended_at: new Date().toISOString() })
+      .update({ 
+        status: 'completed', 
+        ended_at: new Date().toISOString(),
+        end_time: new Date().toISOString() // Ensure BOTH columns are updated for compatibility
+      })
       .eq('id', activeTrip.id);
+
+    if (endError) {
+      toast({ title: "❌ Erro ao finalizar viagem", description: endError.message, variant: "destructive" });
+      setLoading(false);
+      return;
+    }
 
     if (error) {
       toast({ title: '❌ Erro ao finalizar', description: error.message, variant: 'destructive' });

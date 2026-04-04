@@ -197,7 +197,7 @@ export default function EmployeePortal({ employeeName }: EmployeePortalProps) {
 
     // Logo
     if (logoData) {
-      doc.addImage(logoData, 'JPEG', margin, 10, 22, 22);
+      doc.addImage(logoData, 'PNG', margin, 10, 22, 22);
     }
 
     // Company info
