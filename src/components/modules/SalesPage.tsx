@@ -58,12 +58,34 @@ const SalesPage: React.FC = () => {
       toast({ title: '⚠️ Preencha nome do projeto e cliente', variant: 'destructive' });
       return;
     }
+
+    let clientId = form.client_id;
+
+    // Se digitou nome manual e não selecionou cliente existente, cria um novo
+    if (!clientId && form.client_name.trim()) {
+      const { data: newClient, error: clientErr } = await db.from('clients').insert({ 
+        name: form.client_name.trim(),
+        phone: form.client_phone.trim() || null,
+        email: form.client_email.trim() || null,
+        address: form.client_address.trim() || null,
+        status: 'active'
+      }).select('id').single();
+
+      if (clientErr) {
+        toast({ title: '❌ Erro ao criar cliente', description: clientErr.message, variant: 'destructive' });
+        return;
+      }
+      clientId = newClient.id;
+    }
+
+    if (!clientId) {
+      toast({ title: '❌ Erro: Cliente não identificado', variant: 'destructive' });
+      return;
+    }
+
     const payload = {
-      client_id: form.client_id || null,
-      client_name: form.client_name || null,
-      client_phone: form.client_phone || null,
-      client_address: form.client_address || null,
-      name: form.name,
+      client_id: clientId,
+      title: form.name, // Usando 'title' em vez de 'name' para coincidir com o banco
       description: form.description || null,
       value: form.value,
       status: form.status,
@@ -85,6 +107,7 @@ const SalesPage: React.FC = () => {
     }
 
     if (error) {
+      console.error('Save error:', error);
       toast({ title: '❌ Erro ao salvar projeto', description: error.message, variant: 'destructive' });
       return;
     }
@@ -330,7 +353,7 @@ const SalesPage: React.FC = () => {
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={() => setSelectedProject(null)}>
           <div className="bg-[#111111] border border-amber-500/30 rounded-3xl p-8 max-w-lg w-full mx-4 shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-start mb-6">
-              <h2 className="text-2xl font-black text-white">{selectedProject.name}</h2>
+              <h2 className="text-2xl font-black text-white">{selectedProject.title || selectedProject.name}</h2>
               <button onClick={() => setSelectedProject(null)} className="p-2 hover:bg-white/10 rounded-xl text-gray-400 hover:text-white transition-colors"><X className="w-5 h-5" /></button>
             </div>
             <div className="space-y-3 text-sm">
@@ -376,7 +399,7 @@ const SalesPage: React.FC = () => {
               <tr key={p.id} className="border-t border-white/5 hover:bg-white/5 transition-colors">
                 <td className="p-5">
                   <p className="font-bold text-white">{p.clients?.name || p.client_name || '-'}</p>
-                  <p className="text-sm text-gray-400">{p.name}</p>
+                  <p className="text-sm text-gray-400">{p.title || p.name}</p>
                   <p className="text-xs text-gray-500 mt-1">{format(new Date(p.created_at), 'dd/MM/yyyy')}</p>
                 </td>
                 <td className="p-5">
@@ -413,11 +436,11 @@ const SalesPage: React.FC = () => {
                       setEditingId(p.id);
                       setForm(resetForm({
                         client_id: p.client_id || '',
-                        client_name: p.client_name || p.clients?.name || '',
-                        client_phone: p.client_phone || p.clients?.phone || '',
+                        client_name: p.clients?.name || p.client_name || '',
+                        client_phone: p.clients?.phone || p.client_phone || '',
                         client_email: p.clients?.email || '',
-                        client_address: p.client_address || p.clients?.address || '',
-                        name: p.name,
+                        client_address: p.clients?.address || p.client_address || '',
+                        name: p.title || p.name,
                         description: p.description || '',
                         value: p.value || 0,
                         status: p.status,

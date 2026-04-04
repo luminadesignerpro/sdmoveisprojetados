@@ -737,7 +737,7 @@ const App: React.FC = () => {
                           >
                             <div>
                               <p className="font-bold text-white">{c.clients?.name || 'Cliente'}</p>
-                              <p className="text-xs text-gray-500">{c.name}</p>
+                              <p className="text-xs text-gray-500">{c.title || c.name}</p>
                             </div>
                             <div className="text-right">
                               <p className="font-black" style={{ color: '#D4AF37' }}>R$ {(c.value || 0).toLocaleString('pt-BR')}</p>
