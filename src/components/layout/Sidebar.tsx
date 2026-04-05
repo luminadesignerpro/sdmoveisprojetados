@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Users, FolderOpen, MessageSquare, Sparkles,
-  Image, Settings, Clock, Truck, Wrench
+  Image, Settings, Clock, Truck, Wrench, Camera
 } from "lucide-react";
 import logoSd from "@/assets/logo-sd.jpeg";
 
@@ -43,6 +43,28 @@ export function Sidebar() {
             </NavLink>
           );
         })}
+        
+        {/* Deep Link to Native AR App */}
+        <button
+          onClick={() => {
+            // Tentativa de abrir o APK nativo via Deep Link
+            window.location.href = "sdmoveisar://open";
+            
+            // Fallback para caso o app não esteja instalado (opcional)
+            setTimeout(() => {
+              if (document.hasFocus()) {
+                console.log("App AR não detectado ou não instalado.");
+                // Aqui poderíamos sugerir o download
+              }
+            }, 1500);
+          }}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-black transition-all bg-amber-500/10 text-amber-500 border border-amber-500/20 hover:bg-amber-500 hover:text-black mt-4 group"
+        >
+          <div className="p-1 bg-amber-500 rounded-md group-hover:bg-black transition-colors">
+            <Camera className="w-3.5 h-3.5 text-black group-hover:text-amber-500" />
+          </div>
+          Câmera AR Pro
+        </button>
       </nav>
     </aside>
   );

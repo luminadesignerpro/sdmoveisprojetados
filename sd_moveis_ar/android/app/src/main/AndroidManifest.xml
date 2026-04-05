@@ -2,15 +2,15 @@
           xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-feature android:name="android.hardware.camera.ar" android:required="true" />
+    <uses-feature android:name="android.hardware.camera.ar" android:required="false" />
 
     <application
-        android:label="sd_moveis_ar"
+        android:label="SD Móveis AR"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <meta-data 
             android:name="com.google.ar.core" 
-            android:value="required" 
+            android:value="optional" 
             tools:replace="android:value"
             />
         <activity
@@ -33,6 +33,14 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            
+            <!-- Deep Link integration -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="sdmoveisar" android:host="open" />
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.

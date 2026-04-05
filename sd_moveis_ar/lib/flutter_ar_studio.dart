@@ -38,6 +38,8 @@ class ARStudioWidgetState extends State<ARStudioWidget> {
 
   ARMode currentMode = ARMode.measure;
   bool isSaving = false;
+  bool useAR = true; 
+  bool arInitializationError = false;
   
   List<Map<String, dynamic>> clients = [];
   String? selectedClientId;
@@ -233,16 +235,23 @@ O que achou do projeto? Podemos prosseguir com o pedido?
     this.arObjectManager = arObjectManager;
     this.arAnchorManager = arAnchorManager;
 
-    this.arSessionManager!.onInitialize(
-          showFeaturePoints: false,
-          showPlanes: true, 
-          customPlaneTexturePath: "Images/triangle.png",
-          showWorldOrigin: false,
-          handleTaps: true,
-        );
-    this.arObjectManager!.onInitialize();
-
-    this.arSessionManager!.onPlaneOrPointTap = onPlaneOrPointTapped;
+    try {
+      this.arSessionManager!.onInitialize(
+            showFeaturePoints: false,
+            showPlanes: true, 
+            customPlaneTexturePath: "Images/triangle.png",
+            showWorldOrigin: false,
+            handleTaps: true,
+          );
+      this.arObjectManager!.onInitialize();
+      this.arSessionManager!.onPlaneOrPointTap = onPlaneOrPointTapped;
+    } catch (e) {
+      debugPrint("AR Initialization error: $e");
+      setState(() {
+        arInitializationError = true;
+        useAR = false;
+      });
+    }
   }
 
   Future<void> onPlaneOrPointTapped(List<ARHitTestResult> hitTestResults) async {
@@ -398,10 +407,12 @@ O que achou do projeto? Podemos prosseguir com o pedido?
         children: [
           Screenshot(
             controller: screenshotController,
-            child: ARView(
-              onARViewCreated: onARViewCreated,
-              planeDetectionConfig: PlaneDetectionConfig.horizontalAndVertical,
-            ),
+            child: useAR 
+              ? ARView(
+                  onARViewCreated: onARViewCreated,
+                  planeDetectionConfig: PlaneDetectionConfig.horizontalAndVertical,
+                )
+              : _build3DOnlyFallback(),
           ),
           
           if (measureNodes.length == 2)
@@ -608,6 +619,29 @@ O que achou do projeto? Podemos prosseguir com o pedido?
                     _buildMenuButton(Icons.chair, 'Móveis 3D', ARMode.furniture),
                     _buildMenuButton(Icons.format_paint, 'Revestimento', ARMode.color),
                     const VerticalDivider(color: Colors.white24, indent: 5, endIndent: 5),
+                    
+                    // AR Toggle Button
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          useAR = !useAR;
+                        });
+                        if (useAR) {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Ativando Câmera AR...")));
+                        }
+                      },
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(useAR ? Icons.videocam : Icons.blur_on, color: useAR ? Colors.amber : Colors.white54, size: 30),
+                          const SizedBox(height: 5),
+                          Text(useAR ? 'AR On' : '3D Only', style: TextStyle(color: useAR ? Colors.amber : Colors.white54, fontSize: 11, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
+
+                    const VerticalDivider(color: Colors.white24, indent: 5, endIndent: 5),
+
                     GestureDetector(
                       onTap: _saveProject,
                       child: Column(
@@ -623,6 +657,75 @@ O que achou do projeto? Podemos prosseguir com o pedido?
                 ),
             ),
           )
+        ],
+      ),
+    );
+  }
+
+  Widget _build3DOnlyFallback() {
+    var activeItem = furnitureLibrary[activeFurnitureIndex];
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF1a1a1a), Color(0xFF000000)],
+        ),
+      ),
+      child: Stack(
+        children: [
+          Center(
+            child: ModelViewer(
+              backgroundColor: Colors.transparent,
+              src: activeItem["file"],
+              alt: "Visualização 3D do móvel selecionado",
+              autoRotate: true,
+              cameraControls: true,
+              autoPlay: true,
+            ),
+          ),
+          if (arInitializationError)
+            Positioned(
+              top: 150,
+              left: 20,
+              right: 20,
+              child: Container(
+                padding: const EdgeInsets.all(15),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.8),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: const Column(
+                  children: [
+                    Icon(Icons.warning_amber_rounded, color: Colors.white, size: 40),
+                    SizedBox(height: 10),
+                    Text(
+                      "Hardware incompatível com AR",
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 5),
+                    Text(
+                      "Seu dispositivo não suporta os sensores necessários para Realidade Aumentada (Google ARCore). Você entrou no modo de Visualização 3D Studio.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          Positioned(
+            bottom: 220,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Text(
+                activeItem["name"],
+                style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 1.5),
+              ),
+            ),
+          ),
         ],
       ),
     );
