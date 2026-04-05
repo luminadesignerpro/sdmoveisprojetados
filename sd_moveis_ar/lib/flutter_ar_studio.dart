@@ -70,9 +70,9 @@ class ARStudioWidgetState extends State<ARStudioWidget> {
   int activeFurnitureIndex = 0;
 
   final List<Map<String, dynamic>> wallColors = [
-    {"name": "Branco TX", "uri": "https://github.com/KhronosGroup/glTF-Sample-Models/raw/master/2.0/Box/glTF-Binary/Box.glb", "price": 100.0, "color": Colors.white},
-    {"name": "Freijó Ouro", "uri": "https://github.com/KhronosGroup/glTF-Sample-Models/raw/master/2.0/Box/glTF-Binary/Box.glb", "price": 180.0, "color": Colors.brown},
-    {"name": "Grafite Premium", "uri": "https://github.com/KhronosGroup/glTF-Sample-Models/raw/master/2.0/Box/glTF-Binary/Box.glb", "price": 150.0, "color": Colors.blueGrey},
+    {"name": "Branco TX", "uri": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Box/glTF-Binary/Box.glb", "price": 100.0, "color": Colors.white},
+    {"name": "Freijó Ouro", "uri": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Box/glTF-Binary/Box.glb", "price": 180.0, "color": Colors.brown},
+    {"name": "Grafite Premium", "uri": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Box/glTF-Binary/Box.glb", "price": 150.0, "color": Colors.blueGrey},
   ];
   int activeColorIndex = 0;
 
@@ -280,7 +280,7 @@ O que achou do projeto? Podemos prosseguir com o pedido?
 
     var newNode = ARNode(
       type: NodeType.webGLB,
-      uri: "https://github.com/KhronosGroup/glTF-Sample-Models/raw/master/2.0/Sphere/glTF/Sphere.gltf", 
+      uri: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Sphere/glTF-Binary/Sphere.glb", 
       scale: math.Vector3(0.04, 0.04, 0.04),
       position: math.Vector3(pose.getColumn(3).x, pose.getColumn(3).y, pose.getColumn(3).z),
     );

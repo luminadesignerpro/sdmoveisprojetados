@@ -1,0 +1,15 @@
+INSTRUCOES PARA INSTALACAO - SD MOVEIS PROJETADOS
+--------------------------------------------------
+
+1. INSTALE O FIREBIRD 2.5:
+   Link: https://github.com/FirebirdSQL/firebird/releases/download/R2_5_9/Firebird-2.5.9.27139_0_Win32.exe
+   (Marque as opcoes padrao, garantindo que "Rodar como Servico" esteja ativo).
+
+2. CONFIGURACAO (.env):
+   Se o banco de dados do FPQ System estiver em uma pasta diferente, abra o arquivo 
+   .env com o Bloco de Notas e altere o caminho em FIREBIRD_DATABASE.
+
+3. RODAR O AGENTE:
+   Clique duas vezes em FPQSync.exe. Uma janela preta deve abrir e ficar ativa.
+
+OBS: Nao mude o nome dos arquivos e mantenha o FPQSync.exe e o .env na mesma pasta.

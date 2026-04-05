@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Users, FolderOpen, MessageSquare, Sparkles,
-  Image, Settings, Clock, Truck, Wrench, Camera
+  Image, Settings, Clock, Truck, Wrench, Camera, Monitor
 } from "lucide-react";
 import logoSd from "@/assets/logo-sd.jpeg";
 
@@ -64,6 +64,16 @@ export function Sidebar() {
             <Camera className="w-3.5 h-3.5 text-black group-hover:text-amber-500" />
           </div>
           Câmera AR Pro
+        </button>
+
+        <button
+          onClick={() => {
+            window.location.href = "fpqsystem://open";
+          }}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-black transition-all bg-green-500/10 text-green-500 border border-green-500/20 hover:bg-green-100 mt-2 group"
+        >
+          <Monitor className="w-5 h-5" />
+          Abrir FPQ Desktop
         </button>
       </nav>
     </aside>
