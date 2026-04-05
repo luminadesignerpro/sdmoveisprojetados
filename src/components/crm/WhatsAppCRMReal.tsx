@@ -59,7 +59,7 @@ export function WhatsAppCRMReal() {
         cache: 'no-store'
       });
       const stateData = await res.json();
-      if (stateData.instance?.state === 'open') {
+      if (stateData.instance?.state === 'open' || stateData.state === 'open') {
         setApiStatus("connected");
       } else {
         setApiStatus("disconnected");
@@ -213,63 +213,62 @@ export function WhatsAppCRMReal() {
                   const EVOLUTION_API_URL = "https://api-whatsapp-sdmoveis.onrender.com";
                   const EVOLUTION_API_KEY = "Mv06061991";
                   const instanceName = "SD-Moveis";
+                  const SUPABASE_URL = "https://nglwscakhhdhelhbqkyb.supabase.co";
 
                   // 1. Acordar o servidor Render (cold start pode demorar até 60s)
                   toast({ title: "⏳ Iniciando servidor...", description: "Aguarde, isso pode levar alguns segundos." });
                   
                   // Tenta acordar o servidor com um ping simples
                   try {
-                    await fetch(`${EVOLUTION_API_URL}/`, { method: 'GET', signal: AbortSignal.timeout(8000) });
-                  } catch { /* ignora erros de ping, só acorda o servidor */ }
+                    await fetch(`${EVOLUTION_API_URL}/`, { method: 'GET' });
+                  } catch { /* ignora */ }
 
-                  // 2. Deletar instância antiga (caso esteja travada/desconectada)
-                  try {
-                    await fetch(`${EVOLUTION_API_URL}/instance/delete/${instanceName}`, {
-                      method: "DELETE",
-                      headers: { "apikey": EVOLUTION_API_KEY }
-                    });
-                  } catch { /* ignora erro se não existir */ }
-
-                  // Aguarda um momento para garantir a deleção
-                  await new Promise(r => setTimeout(r, 2000));
-
-                  // 3. Recriar a instância fresh
-                  await fetch(`${EVOLUTION_API_URL}/instance/create`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json", "apikey": EVOLUTION_API_KEY },
-                    body: JSON.stringify({
-                      instanceName,
-                      qrcode: true,
-                      integration: "WHATSAPP-BAILEYS"
-                    })
+                  // 2. Tenta conectar ou criar fresh 
+                  const connRes = await fetch(`${EVOLUTION_API_URL}/instance/connect/${instanceName}`, {
+                     headers: { "apikey": EVOLUTION_API_KEY }
                   });
+                  const connData = await connRes.json();
 
-                  // Aguarda a instância ser criada
-                  await new Promise(r => setTimeout(r, 2000));
-
-                  // 4. Buscar o QR Code
-                  const qrRes = await fetch(`${EVOLUTION_API_URL}/instance/connect/${instanceName}`, {
-                    headers: { "apikey": EVOLUTION_API_KEY },
-                    cache: "no-store"
-                  });
-
-                  const data = await qrRes.json();
-
-                  if (data.base64) {
-                    setQrCodeData(data.base64);
-                  } else if (data.instance?.state === "open") {
+                  if (connData.base64) {
+                    setQrCodeData(connData.base64);
+                    // Configura o webhook já sabendo que o usuário vai ler o QR Code
+                  } else if (connData.instance?.state === "open") {
                     toast({ title: "✅ Já Conectado", description: "WhatsApp já está ativo!" });
                     checkApiStatus();
                   } else {
-                    throw new Error("Resposta inesperada: " + JSON.stringify(data).substring(0, 300));
+                     // Se não deu certo, tenta criar do zero
+                     await fetch(`${EVOLUTION_API_URL}/instance/create`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json", "apikey": EVOLUTION_API_KEY },
+                        body: JSON.stringify({ instanceName, qrcode: true, integration: "WHATSAPP-BAILEYS" })
+                     });
+                     
+                     const newConnRes = await fetch(`${EVOLUTION_API_URL}/instance/connect/${instanceName}`, {
+                        headers: { "apikey": EVOLUTION_API_KEY }
+                     });
+                     const newConnData = await newConnRes.json();
+                     if (newConnData.base64) setQrCodeData(newConnData.base64);
                   }
+
+                  // 3. SEMPRE CONFIGURA O WEBHOOK PARA GARANTIR QUE OS EVENTOS CHEGUEM NO SUPABASE
+                  console.log("Configurando webhook...");
+                  await fetch(`${EVOLUTION_API_URL}/webhook/set/${instanceName}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'apikey': EVOLUTION_API_KEY },
+                    body: JSON.stringify({
+                       enabled: true,
+                       url: `${SUPABASE_URL}/functions/v1/whatsapp-webhook`,
+                       webhook_by_events: false,
+                       base64: false,
+                       events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE", "MESSAGES_UPDATE", "SEND_MESSAGE"]
+                    })
+                  });
+
                 } catch (err: unknown) {
                   const msg = err instanceof Error ? err.message : String(err);
                   toast({
                     title: "❌ Erro na Conexão",
-                    description: msg.includes("timeout") 
-                      ? "O servidor demorou para responder. Tente novamente em 30 segundos."
-                      : msg,
+                    description: msg,
                     variant: "destructive"
                   });
                 } finally {
