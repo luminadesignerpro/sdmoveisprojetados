@@ -130,6 +130,17 @@ const ServiceOrdersPage: React.FC = () => {
     cancelada: 'Cancelada',
   };
 
+  const handleWhatsAppShare = (o: any) => {
+    const phone = o.clients?.phone || o.client_phone;
+    if (!phone) {
+      toast({ title: '⚠️ Cliente sem telefone cadastrado', variant: 'destructive' });
+      return;
+    }
+    const cleanPhone = phone.replace(/\D/g, '');
+    const message = `Olá *${o.clients?.name || o.client_name || 'Cliente'}*! 🛠️\n\nSou da *SD Móveis Projetados*. Gostaria de falar sobre a sua *Ordem de Serviço (OS #${o.order_number})*.\n\n📝 Serviço: ${o.description}\n📍 Status: ${statusLabels[o.status] || o.status}\n📅 Previsão: ${o.estimated_date ? format(new Date(o.estimated_date), 'dd/MM/yyyy') : 'A definir'}`;
+    window.open(`https://wa.me/55${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
   const priorityColors: Record<string, string> = {
     baixa: 'bg-white/10 text-gray-400 border border-white/20',
     normal: 'bg-blue-900/50 text-blue-400 border border-blue-500/30',
@@ -420,6 +431,10 @@ const ServiceOrdersPage: React.FC = () => {
                     <button onClick={() => setSelectedOrder(o)}
                       className="w-9 h-9 bg-white/5 border border-white/5 rounded-xl flex items-center justify-center text-gray-400 hover:text-amber-500 hover:bg-amber-900/20 transition-all" title="Ver detalhes">
                       <Eye className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => handleWhatsAppShare(o)}
+                      className="w-9 h-9 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all shadow-lg shadow-emerald-500/10" title="Mandar via WhatsApp">
+                      <MessageCircle className="w-4 h-4" />
                     </button>
                     <button onClick={() => openForm(o)}
                       className="w-9 h-9 bg-white/5 border border-white/5 rounded-xl flex items-center justify-center hover:bg-white/10 hover:border-amber-500/30 transition-all text-gray-400 hover:text-blue-400" title="Editar">

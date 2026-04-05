@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { FileSignature, Plus, Search, Edit, Sparkles, Key } from 'lucide-react';
+import { FileSignature, Plus, Search, Edit, Sparkles, Key, MessageCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import ContractGenerator from './ContractGenerator';
 
@@ -75,6 +75,17 @@ const ContractsPage: React.FC = () => {
     assasinado: 'bg-blue-900/50 text-blue-400 border border-blue-500/30',
     cancelado: 'bg-red-900/50 text-red-500 border border-red-500/30',
     finalizado: 'bg-purple-900/50 text-purple-400 border border-purple-500/30',
+  };
+
+  const handleWhatsAppShare = (c: any) => {
+    const phone = c.clients?.phone;
+    if (!phone) {
+      toast({ title: '⚠️ Cliente sem telefone cadastrado', variant: 'destructive' });
+      return;
+    }
+    const cleanPhone = phone.replace(/\D/g, '');
+    const message = `Olá *${c.clients?.name || 'Cliente'}*! 📄\n\nSou da *SD Móveis Projetados*. Gostaria de tratar sobre o *Contrato #${c.contract_number}*: *${c.title}*.\n\n💰 Valor: R$ ${(c.value || 0).toLocaleString('pt-BR')}\n📍 Status: ${c.status.toUpperCase()}\n\nFavor entrar em contato para próximos passos!`;
+    window.open(`https://wa.me/55${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const generateClientLogin = async (contract: any) => {
@@ -226,6 +237,10 @@ const ContractsPage: React.FC = () => {
                 <td className="p-4 text-sm text-gray-400">{format(new Date(c.created_at), 'dd/MM/yyyy')}</td>
                 <td className="p-4 flex gap-2">
                   <button onClick={() => generateClientLogin(c)} title="Gerar Acesso do Cliente" className="w-9 h-9 bg-white/5 border border-white/5 rounded-xl flex items-center justify-center hover:bg-amber-900/40 hover:text-amber-500 transition-all"><Key className="w-4 h-4" /></button>
+                  <button onClick={() => handleWhatsAppShare(c)}
+                    className="w-9 h-9 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all shadow-lg shadow-emerald-500/10" title="Mandar via WhatsApp">
+                    <MessageCircle className="w-4 h-4" />
+                  </button>
                   <button onClick={() => { setEditingId(c.id); setForm({ client_id: c.client_id || '', client_name: '', title: c.title, content: c.content || '', value: c.value || 0, status: c.status, notes: c.notes || '' }); setShowForm(true); }} className="w-9 h-9 bg-white/5 border border-white/5 rounded-xl flex items-center justify-center hover:bg-white/10 hover:border-amber-500/30 transition-all"><Edit className="w-4 h-4 text-gray-300" /></button>
                 </td>
               </tr>

@@ -146,6 +146,17 @@ const SalesPage: React.FC = () => {
     concluido: 'Concluído',
   };
 
+  const handleWhatsAppShare = (p: any) => {
+    const phone = p.clients?.phone || p.client_phone;
+    if (!phone) {
+      toast({ title: '⚠️ Cliente sem telefone cadastrado', variant: 'destructive' });
+      return;
+    }
+    const cleanPhone = phone.replace(/\D/g, '');
+    const message = `Olá *${p.clients?.name || p.client_name || 'Cliente'}*! 🏠\n\nSou da *SD Móveis Projetados*. Gostaria de falar sobre o projeto: *${p.title || p.name}*.\n\n💰 Valor: R$ ${(p.value || 0).toLocaleString('pt-BR')}\n📍 Status: ${statusLabels[p.status] || p.status}\n\nPodemos conversar?`;
+    window.open(`https://wa.me/55${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
   const totalRevenue = projects.reduce((sum, p) => sum + (p.value || 0), 0);
   const signedCount = projects.filter(p => ['assinado', 'producao', 'instalacao', 'concluido'].includes(p.status)).length;
   const inProduction = projects.filter(p => p.status === 'producao').length;
@@ -431,6 +442,10 @@ const SalesPage: React.FC = () => {
                     <button onClick={() => setSelectedProject(p)}
                       className="w-9 h-9 bg-white/5 border border-white/5 rounded-xl flex items-center justify-center text-gray-400 hover:text-amber-500 hover:bg-amber-900/20 transition-all" title="Ver detalhes">
                       <Eye className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => handleWhatsAppShare(p)}
+                      className="w-9 h-9 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all shadow-lg shadow-emerald-500/10" title="Mandar via WhatsApp">
+                      <MessageCircle className="w-4 h-4" />
                     </button>
                     <button onClick={() => {
                       setEditingId(p.id);
