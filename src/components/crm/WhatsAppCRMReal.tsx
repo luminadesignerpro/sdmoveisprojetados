@@ -223,46 +223,62 @@ export function WhatsAppCRMReal() {
                     await fetch(`${EVOLUTION_API_URL}/`, { method: 'GET' });
                   } catch { /* ignora */ }
 
-                  // 2. Tenta conectar ou criar fresh 
-                  const connRes = await fetch(`${EVOLUTION_API_URL}/instance/connect/${instanceName}`, {
-                     headers: { "apikey": EVOLUTION_API_KEY }
-                  });
-                  const connData = await connRes.json();
+                  // 2. Tenta deletar se já existir (reset total)
+                  try {
+                    await fetch(`${EVOLUTION_API_URL}/instance/delete/${instanceName}`, {
+                      method: "DELETE",
+                      headers: { "apikey": EVOLUTION_API_KEY }
+                    });
+                  } catch { /* ignora se já não existe */ }
 
-                  if (connData.base64) {
-                    setQrCodeData(connData.base64);
-                    // Configura o webhook já sabendo que o usuário vai ler o QR Code
-                  } else if (connData.instance?.state === "open") {
+                  // Aguarda um momento para garantir a deleção
+                  await new Promise(r => setTimeout(r, 2000));
+
+                  // 3. Criar nova instância
+                  await fetch(`${EVOLUTION_API_URL}/instance/create`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "apikey": EVOLUTION_API_KEY },
+                    body: JSON.stringify({
+                      instanceName,
+                      qrcode: true,
+                      integration: "WHATSAPP-BAILEYS"
+                    })
+                  });
+
+                  // Aguarda a instância ser criada
+                  await new Promise(r => setTimeout(r, 1500));
+
+                  // 4. Buscar o QR Code
+                  const qrRes = await fetch(`${EVOLUTION_API_URL}/instance/connect/${instanceName}`, {
+                    headers: { "apikey": EVOLUTION_API_KEY },
+                    cache: "no-store"
+                  });
+
+                  const data = await qrRes.json();
+                  const finalQR = data.base64 || data.qrcode?.base64;
+
+                  if (finalQR) {
+                    setQrCodeData(finalQR);
+                    
+                    // 5. CONFIGURAR O WEBHOOK PARA GARANTIR QUE OS EVENTOS CHEGUEM NO SUPABASE
+                    console.log("Configurando webhook...");
+                    await fetch(`${EVOLUTION_API_URL}/webhook/set/${instanceName}`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json', 'apikey': EVOLUTION_API_KEY },
+                      body: JSON.stringify({
+                         enabled: true,
+                         url: `${SUPABASE_URL}/functions/v1/whatsapp-webhook`,
+                         webhook_by_events: false,
+                         base64: false,
+                         events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE", "MESSAGES_UPDATE", "SEND_MESSAGE"]
+                      })
+                    });
+                  } else if (data.instance?.state === "open") {
                     toast({ title: "✅ Já Conectado", description: "WhatsApp já está ativo!" });
                     checkApiStatus();
                   } else {
-                     // Se não deu certo, tenta criar do zero
-                     await fetch(`${EVOLUTION_API_URL}/instance/create`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json", "apikey": EVOLUTION_API_KEY },
-                        body: JSON.stringify({ instanceName, qrcode: true, integration: "WHATSAPP-BAILEYS" })
-                     });
-                     
-                     const newConnRes = await fetch(`${EVOLUTION_API_URL}/instance/connect/${instanceName}`, {
-                        headers: { "apikey": EVOLUTION_API_KEY }
-                     });
-                     const newConnData = await newConnRes.json();
-                     if (newConnData.base64) setQrCodeData(newConnData.base64);
+                    throw new Error("Erro ao gerar QR Code. Tente novamente em 20 segundos.");
                   }
-
-                  // 3. SEMPRE CONFIGURA O WEBHOOK PARA GARANTIR QUE OS EVENTOS CHEGUEM NO SUPABASE
-                  console.log("Configurando webhook...");
-                  await fetch(`${EVOLUTION_API_URL}/webhook/set/${instanceName}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'apikey': EVOLUTION_API_KEY },
-                    body: JSON.stringify({
-                       enabled: true,
-                       url: `${SUPABASE_URL}/functions/v1/whatsapp-webhook`,
-                       webhook_by_events: false,
-                       base64: false,
-                       events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE", "MESSAGES_UPDATE", "SEND_MESSAGE"]
-                    })
-                  });
 
                 } catch (err: unknown) {
                   const msg = err instanceof Error ? err.message : String(err);
