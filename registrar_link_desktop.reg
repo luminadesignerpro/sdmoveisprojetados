@@ -10,3 +10,14 @@ Windows Registry Editor Version 5.00
 
 [HKEY_CLASSES_ROOT\fpqsystem\shell\open\command]
 @="\"C:\\FpqSystem\\FpqSystem.exe\""
+
+[HKEY_CLASSES_ROOT\promobsystem]
+@="URL:Promob Protocol"
+"URL Protocol"=""
+
+[HKEY_CLASSES_ROOT\promobsystem\shell]
+
+[HKEY_CLASSES_ROOT\promobsystem\shell\open]
+
+[HKEY_CLASSES_ROOT\promobsystem\shell\open\command]
+@="\"C:\\Program Files\\Promob\\Promob Plus\\Program\\bin\\Promob.exe\""

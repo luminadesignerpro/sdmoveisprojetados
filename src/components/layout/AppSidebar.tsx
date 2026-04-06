@@ -61,6 +61,7 @@ export const AppSidebar = ({ authState, view, setView, setAuthState }) => {
                             <Monitor className="w-5 h-5" />
                             <span className="text-[10px] font-bold">FPQ PC</span>
                         </button>
+                        <NavIcon icon="monitor" label="Promob Web" active={view === ViewMode.PROMOB} onClick={() => setView(ViewMode.PROMOB)} />
                         <button onClick={() => window.location.href = 'promobsystem://open'} className="flex flex-col items-center gap-1 p-2 rounded-xl text-red-500 hover:bg-red-500/10 transition-all border border-red-500/20 mt-2">
                             <Monitor className="w-5 h-5" />
                             <span className="text-[10px] font-bold">Promob PC</span>

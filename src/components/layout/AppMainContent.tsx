@@ -26,6 +26,7 @@ import DriverTripPanel from '@/components/fleet/DriverTripPanel';
 import InternalChat from '@/components/chat/InternalChat';
 import SettingsPage from '@/pages/Settings';
 import BudgetQuote from '@/components/budget/BudgetQuote';
+import PromobEditor from '@/components/promob/PromobEditor';
 
 interface AppMainContentProps {
     authState: 'ADMIN' | 'CLIENT' | 'EMPLOYEE';
@@ -92,6 +93,7 @@ export const AppMainContent: React.FC<AppMainContentProps> = ({
                     {view === ViewMode.BUDGET_QUOTE && <BudgetQuote />}
                     {view === ViewMode.QUALITY_CHECK && selectedContract && <QualityCheckPanel projectId={selectedContract.id} projectName={selectedContract.name} />}
                     {view === ViewMode.PROJECT_COSTS && selectedContract && <ProjectCostPanel projectId={selectedContract.id} projectName={selectedContract.name} totalValue={selectedContract.value} />}
+                    {view === ViewMode.PROMOB && <div className="h-full p-6 overflow-auto bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen"><PromobEditor /></div>}
                     {view === ViewMode.CRM && (
                         <div className="h-full p-6 overflow-auto bg-gradient-to-br from-gray-50 to-gray-100">
                             <header className="mb-6">
