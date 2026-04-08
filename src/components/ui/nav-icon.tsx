@@ -42,7 +42,6 @@ const iconMap: Record<string, React.ElementType> = {
   "bot": Bot,
   "camera": Camera,
   "calendar": Calendar,
-  "message-circle": MessageCircle,
 };
 
 export const NavIcon: React.FC<NavIconProps> = ({ icon, label, active, onClick, isFab }) => {
