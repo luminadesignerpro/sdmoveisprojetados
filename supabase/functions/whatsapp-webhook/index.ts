@@ -41,7 +41,11 @@ serve(async (req) => {
         messageData.message?.extendedTextMessage?.text ||
         messageData.message?.imageMessage?.caption ||
         messageData.message?.videoMessage?.caption ||
-        payload.data?.message?.conversation || // Fallback
+        messageData.message?.documentWithCaptionMessage?.message?.documentMessage?.caption ||
+        messageData.message?.ephemeralMessage?.message?.extendedTextMessage?.text ||
+        messageData.message?.ephemeralMessage?.message?.conversation ||
+        messageData.conversation || // Fallback 1
+        payload.data?.message?.conversation || // Fallback 2
         "";
 
       if (!remoteJid || remoteJid.includes('@g.us')) {

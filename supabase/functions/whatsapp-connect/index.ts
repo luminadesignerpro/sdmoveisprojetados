@@ -32,6 +32,8 @@ serve(async (req) => {
     if (action === "connect") {
        // 1. Tentar criar ou garantir que existe com banco de dados
        console.log("Creating/Updating instance with DB persistence...");
+       const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || `https://${SUPABASE_PROJECT_ID}.supabase.co`;
+       
        await fetch(`${EVOLUTION_API_URL}/instance/create`, {
          method: "POST",
          headers: { "Content-Type": "application/json", "apikey": EVOLUTION_API_KEY },
@@ -52,7 +54,20 @@ serve(async (req) => {
          })
        });
 
-       // 2. Pedir o QR Code
+       // 2. Registrar o Webhook
+       console.log("Registering webhook...");
+       await fetch(`${EVOLUTION_API_URL}/webhook/set/${instanceName}`, {
+         method: "POST",
+         headers: { "Content-Type": "application/json", "apikey": EVOLUTION_API_KEY },
+         body: JSON.stringify({
+           enabled: true,
+           url: `${SUPABASE_URL}/functions/v1/whatsapp-webhook`,
+           webhook_by_events: false,
+           events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE", "MESSAGES_UPDATE", "SEND_MESSAGE"]
+         })
+       });
+
+       // 3. Pedir o QR Code
        const res = await fetch(`${EVOLUTION_API_URL}/instance/connect/${instanceName}`, {
          headers: { "apikey": EVOLUTION_API_KEY }
        });

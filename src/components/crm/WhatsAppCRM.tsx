@@ -74,31 +74,35 @@ export function WhatsAppCRM() {
   const handleConnectQR = async () => {
     setConnectingQR(true);
     try {
-      const res = await fetch(`${EVOLUTION_URL}/instance/connect/${INSTANCE}`, {
-        headers: { apikey: EVOLUTION_KEY },
+      const { data, error } = await supabase.functions.invoke("whatsapp-connect", {
+        body: { action: "connect", instanceName: INSTANCE },
       });
-      const data = await res.json();
-      if (data.base64) {
+
+      if (error) throw error;
+
+      if (data.base64 || data.qrcode?.base64) {
+        const qrBase64 = data.base64 || data.qrcode?.base64;
         const win = window.open('', '_blank', 'width=500,height=600');
         win?.document.write(`
           <html style="font-family:sans-serif;background:#f0f2f5;display:flex;justify-content:center;align-items:center;height:100vh;margin:0">
             <div style="background:white;padding:40px;border-radius:20px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.15)">
               <h2 style="color:#25D366;margin-bottom:16px">📲 Conectar SD Móveis</h2>
-              <img src="${data.base64}" style="width:280px;height:280px;border:1px solid #eee;border-radius:10px" />
+              <img src="${qrBase64}" style="width:280px;height:280px;border:1px solid #eee;border-radius:10px" />
               <p style="color:#666;margin-top:16px;font-size:14px">Abra o WhatsApp → Dispositivos Vinculados → Escanear QR Code</p>
             </div>
           </html>
         `);
         toast({ title: 'QR Code gerado!', description: 'Escaneie com seu WhatsApp para conectar.' });
         setTimeout(checkApiStatus, 15000);
-      } else if (data.instance?.state === 'open') {
+      } else if (data.instance?.state === 'open' || data.state === 'open') {
         toast({ title: '✅ Já conectado!', description: 'WhatsApp já está ativo.' });
         setApiStatus('connected');
       } else {
         toast({ title: '⏳ API iniciando', description: 'Aguarde 30s e tente novamente (Render cold start).', variant: 'destructive' });
       }
-    } catch {
-      toast({ title: 'Erro de conexão', description: 'Verifique se a API está no ar no Render.', variant: 'destructive' });
+    } catch (error: any) {
+      console.error("Connection error:", error);
+      toast({ title: 'Erro de conexão', description: error.message || 'Verifique se a API está no ar no Render.', variant: 'destructive' });
     } finally {
       setConnectingQR(false);
     }

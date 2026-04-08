@@ -54,12 +54,21 @@ O nome do cliente é: ${contactName || "Cliente"}`;
     const data = await response.json();
     const aiContent = data.candidates?.[0]?.content?.parts?.[0]?.text || "Desculpe, não consegui processar. Tente novamente.";
 
-    // Save the AI response as an outbound message
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     if (conversationId) {
+      // 1. Get phone number
+      const { data: conv } = await supabase
+        .from("whatsapp_conversations")
+        .select("phone_number")
+        .eq("id", conversationId)
+        .single();
+      
+      const targetPhone = conv?.phone_number;
+
+      // 2. Save the AI response as an outbound message
       await supabase.from("whatsapp_messages").insert({
         conversation_id: conversationId,
         direction: "outbound",
@@ -72,6 +81,26 @@ O nome do cliente é: ${contactName || "Cliente"}`;
         .from("whatsapp_conversations")
         .update({ last_message_at: new Date().toISOString() })
         .eq("id", conversationId);
+
+      // 3. Send via Evolution API if phone is available
+      if (targetPhone) {
+        const evolutionUrl = Deno.env.get("EVOLUTION_API_URL") || "https://api-whatsapp-sdmoveis.onrender.com";
+        const evolutionKey = Deno.env.get("EVOLUTION_API_KEY") || "Mv06061991";
+        
+        try {
+          await fetch(`${evolutionUrl}/message/sendText/SD-Moveis`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", apikey: evolutionKey },
+            body: JSON.stringify({
+              number: targetPhone,
+              text: aiContent,
+              options: { delay: 1000, presence: 'composing' }
+            }),
+          });
+        } catch (sendError) {
+          console.error("Error sending AI response to WhatsApp:", sendError);
+        }
+      }
     }
 
     return new Response(JSON.stringify({ content: aiContent }), {
