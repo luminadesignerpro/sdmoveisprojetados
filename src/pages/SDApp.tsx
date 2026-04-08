@@ -460,6 +460,7 @@ const App: React.FC = () => {
             {authState === 'ADMIN' ? (
               <>
                 <NavIcon icon="layout-dashboard" label="Início" active={view === ViewMode.DASHBOARD} onClick={() => setView(ViewMode.DASHBOARD)} />
+                <NavIcon icon="settings" label="Integração PC" active={view === ViewMode.INTEGRATION} onClick={() => setView(ViewMode.INTEGRATION)} />
                 <NavIcon icon="camera" label="Câmera AR Pro" active={view === ViewMode.BUDGET_QUOTE} onClick={() => setView(ViewMode.BUDGET_QUOTE)} />
                 <NavIcon icon="file-text" label="Vendas" active={view === ViewMode.CONTRACTS} onClick={() => setView(ViewMode.CONTRACTS)} />
                 <NavIcon icon="building" label="Fornecedores" active={view === ViewMode.SUPPLIERS} onClick={() => setView(ViewMode.SUPPLIERS)} />
@@ -476,7 +477,6 @@ const App: React.FC = () => {
                 <NavIcon icon="calendar" label="Agenda" active={view === ViewMode.APPOINTMENTS} onClick={() => setView(ViewMode.APPOINTMENTS)} />
                 <NavIcon icon="camera" label="Projetos AR" active={view === ViewMode.AR_STUDIO} onClick={() => setView(ViewMode.AR_STUDIO)} />
                 <NavIcon icon="bot" label="Vendedor IA" active={view === ViewMode.AI_SALES} onClick={() => setView(ViewMode.AI_SALES)} />
-                <NavIcon icon="settings" label="Integração" active={view === ViewMode.INTEGRATION} onClick={() => setView(ViewMode.INTEGRATION)} />
               </>
             ) : authState === 'EMPLOYEE' ? (
               <>

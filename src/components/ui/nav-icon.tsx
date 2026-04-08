@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Box, FileText, MessageSquare, MessageCircle, Home, Image, Plus, Clock,
   Navigation, BookOpen, Shield, Fuel, Wrench, Building, Package, ClipboardList,
-  Banknote, TrendingDown, TrendingUp, FileSignature,
+  Banknote, TrendingDown, TrendingUp, FileSignature, Monitor, Settings, Bot, Camera, Calendar,
 } from "lucide-react";
 
 interface NavIconProps {
@@ -37,6 +37,12 @@ const iconMap: Record<string, React.ElementType> = {
   "trending-down": TrendingDown,
   "trending-up": TrendingUp,
   "file-signature": FileSignature,
+  "monitor": Monitor,
+  "settings": Settings,
+  "bot": Bot,
+  "camera": Camera,
+  "calendar": Calendar,
+  "message-circle": MessageCircle,
 };
 
 export const NavIcon: React.FC<NavIconProps> = ({ icon, label, active, onClick, isFab }) => {
