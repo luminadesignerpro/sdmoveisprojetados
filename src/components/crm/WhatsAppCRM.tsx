@@ -197,9 +197,32 @@ export function WhatsAppCRM() {
             <h3 className="font-semibold flex-1">CRM WhatsApp</h3>
             {/* API Status + Connect Button */}
             {apiStatus === 'connected' ? (
-              <Badge className="bg-green-500/20 text-green-500 border-green-500/30 gap-1 text-xs">
-                <Wifi className="w-3 h-3" /> Online
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge className="bg-green-500/20 text-green-500 border-green-500/30 gap-1 text-xs">
+                  <Wifi className="w-3 h-3" /> Online
+                </Badge>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-7 px-2 text-[10px] text-red-500 hover:bg-red-500/10"
+                  onClick={async () => {
+                    if (confirm('Deseja desconectar o WhatsApp atual?')) {
+                      try {
+                        await fetch(`${EVOLUTION_URL}/instance/logout/${INSTANCE}`, {
+                          method: 'DELETE',
+                          headers: { apikey: EVOLUTION_KEY }
+                        });
+                        checkApiStatus();
+                        toast({ title: 'Desconectado', description: 'WhatsApp desconectado com sucesso.' });
+                      } catch (e) {
+                        toast({ title: 'Erro ao desconectar', variant: 'destructive' });
+                      }
+                    }
+                  }}
+                >
+                  Sair
+                </Button>
+              </div>
             ) : apiStatus === 'checking' ? (
               <Badge variant="outline" className="gap-1 text-xs">
                 <Loader2 className="w-3 h-3 animate-spin" /> Verificando
