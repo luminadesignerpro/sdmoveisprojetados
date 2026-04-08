@@ -27,6 +27,7 @@ export enum ViewMode {
   BUDGET_QUOTE = 'BUDGET_QUOTE',
   AR_STUDIO = 'AR_STUDIO',
   AI_SALES = 'AI_SALES',
+  INTEGRATION = 'INTEGRATION',
 }
 
 export enum ToolMode {

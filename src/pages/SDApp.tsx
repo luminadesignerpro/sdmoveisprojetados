@@ -41,6 +41,7 @@ import AppointmentsPanel from '@/components/client/AppointmentsPanel';
 import { supabase } from '@/integrations/supabase/client';
 import ARProjectList from '@/components/ar/ARProjectList';
 import AINegotiationDashboard from '@/components/crm/AINegotiationDashboard';
+import LocalIntegrationPanel from '@/components/admin/LocalIntegrationPanel';
 const db = supabase as any;
 import {
   LogOut,
@@ -1235,6 +1236,11 @@ const App: React.FC = () => {
             <div className="p-0 overflow-auto h-full bg-[#0f0f0f]">
               <AINegotiationDashboard />
             </div>
+          )}
+
+          {/* LOCAL INTEGRATION - Admin */}
+          {view === ViewMode.INTEGRATION && authState === 'ADMIN' && (
+            <LocalIntegrationPanel />
           )}
         </ViewTransition>
       </main>

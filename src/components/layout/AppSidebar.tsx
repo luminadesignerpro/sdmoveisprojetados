@@ -66,6 +66,7 @@ export const AppSidebar = ({ authState, view, setView, setAuthState }) => {
                             <Monitor className="w-5 h-5" />
                             <span className="text-[10px] font-bold">Promob PC</span>
                         </button>
+                        <NavIcon icon="settings-2" label="Integração" active={view === ViewMode.INTEGRATION} onClick={() => setView(ViewMode.INTEGRATION)} />
                     </>
                 ) : (
                     <NavIcon icon="home" label="Painel" active={view === ViewMode.CLIENT_PORTAL} onClick={() => setView(ViewMode.CLIENT_PORTAL)} />

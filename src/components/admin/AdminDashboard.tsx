@@ -3,7 +3,7 @@ import {
     Sparkles, Heart, Zap, TrendingUp, ChevronRight, Layers, FileText,
     MessageCircle, Star, Sparkles as SparklesIcon, MapPin, Clock,
     Package, AlertTriangle, ArrowUpRight, Plus, ClipboardList, Wallet,
-    TrendingDown, BarChart3, Users, PlusCircle, Ruler, Box, Download, Monitor, ExternalLink, FileCode
+    TrendingDown, BarChart3, Users, PlusCircle, Ruler, Box, Download, Monitor, ExternalLink, FileCode, Wrench, CheckCircle
 } from 'lucide-react';
 import { generatePromobXML, downloadFile, generateDXF } from '@/services/promobService';
 import { Card3D } from '@/components/animations/Card3D';
@@ -201,6 +201,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             { label: 'CRM WhatsApp', icon: MessageCircle, view: ViewMode.CRM, accent: '#25D366' },
                             { label: 'Estoque Real', icon: Package, view: ViewMode.PRODUCTS, accent: '#D4AF37' },
                             { label: 'Fluxo de Caixa', icon: Wallet, view: ViewMode.CASH_REGISTER, accent: '#D4AF37' },
+                            { label: 'Integração PC', icon: Monitor, view: ViewMode.INTEGRATION, accent: '#D4AF37' },
                             { label: 'Frota & Trips', icon: MapPin, view: ViewMode.FLEET, accent: '#D4AF37' },
                         ].map(({ label, icon: Icon, view, accent }) => (
                             <button key={label} onClick={() => setView(view)}
