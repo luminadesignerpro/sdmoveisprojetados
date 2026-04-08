@@ -44,10 +44,18 @@ serve(async (req) => {
         payload.data?.message?.conversation || // Fallback
         "";
 
-      if (!messageContent || !remoteJid) {
-        console.log("Skipping message: no content or jid", { remoteJid, content: !!messageContent });
-        return new Response(JSON.stringify({ ok: true, skipped: "no content or jid" }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+      if (!remoteJid || remoteJid.includes('@g.us')) {
+        // Skip group messages and empty JIDs
+        console.log('Skipping: group or empty jid', remoteJid);
+        return new Response(JSON.stringify({ ok: true, skipped: 'group or empty jid' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      if (!messageContent) {
+        console.log('Skipping message: no content', { remoteJid });
+        return new Response(JSON.stringify({ ok: true, skipped: 'no content' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
 
@@ -86,19 +94,36 @@ serve(async (req) => {
           .eq("id", conversation.id);
       }
 
+      // Deduplicate: avoid saving the same message twice if the webhook fires twice
+      const msgId = key?.id;
+      if (msgId) {
+        const { data: existing } = await supabase
+          .from('whatsapp_messages')
+          .select('id')
+          .eq('external_id', msgId)
+          .maybeSingle();
+        if (existing) {
+          console.log('Duplicate message skipped:', msgId);
+          return new Response(JSON.stringify({ ok: true, skipped: 'duplicate' }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+      }
+
       // Save the message to database
       const { error: msgError } = await supabase
-        .from("whatsapp_messages")
+        .from('whatsapp_messages')
         .insert({
           conversation_id: conversation.id,
-          direction: fromMe ? "outbound" : "inbound",
+          direction: fromMe ? 'outbound' : 'inbound',
           content: messageContent,
-          status: fromMe ? "delivered" : "received",
-          message_type: "text",
+          status: fromMe ? 'delivered' : 'received',
+          message_type: 'text',
+          external_id: msgId || null,
         });
 
       if (msgError) {
-        console.error("Error saving message:", msgError);
+        console.error('Error saving message:', msgError);
       }
 
       await supabase
@@ -107,105 +132,125 @@ serve(async (req) => {
         .eq("id", conversation.id);
 
       // ============================================
-      // DYNAMIC ATTENDANCE FLOW (Synced with App)
+      // AUTO-RESPONSE LOGIC (Flow Menu + AI Fallback)
       // ============================================
-      const { data: configData } = await supabase
-        .from('atendimento_config')
-        .select('conteudo')
-        .eq('chave', 'menu_principal')
-        .single();
-      
-      const config = configData?.conteudo || {
-        greeting: "Olá! 👋 Bem-vindo à *SD Móveis*!\nComo posso te ajudar hoje?\n\n1️⃣ Orçamento\n2️⃣ Acompanhar projeto\n3️⃣ Pós-venda\n4️⃣ Atendente\n5️⃣ Horário",
-        responses: {}
-      };
-
-      const cleanMessage = messageContent.trim().toLowerCase();
-      let responseText = "";
-      let usedFlow = false;
-
-      // 1. Better Greeting Detection (No gaps)
-      const isGreeting = /^(oi|ola|olá|bom dia|boa tarde|boa noite|bomdia|boatarde|boanoite|inicio|menu|ola|opa|oie)$/i.test(cleanMessage);
-
-      // 2. Check for menu numbers OR greetings
-      if (config.responses && config.responses[cleanMessage]) {
-        responseText = config.responses[cleanMessage];
-        usedFlow = true;
-      } else if (isGreeting) {
-        responseText = config.greeting;
-        usedFlow = true;
-      }
-
-      // AI VIRTUAL ASSISTANT LOGIC (Fallback or Humanized Support)
       if (!fromMe) {
         try {
-            const geminiKey = Deno.env.get("GEMINI_API_KEY");
-            const evolutionUrl = Deno.env.get("EVOLUTION_API_URL") || "https://api-whatsapp-sdmoveis.onrender.com";
-            const evolutionKey = Deno.env.get("EVOLUTION_API_KEY") || "Mv06061991";
+          const geminiKey = Deno.env.get('GEMINI_API_KEY');
+          const evolutionUrl = Deno.env.get('EVOLUTION_API_URL') || 'https://api-whatsapp-sdmoveis.onrender.com';
+          const evolutionKey = Deno.env.get('EVOLUTION_API_KEY') || 'Mv06061991';
 
-            if (!usedFlow && geminiKey) {
-               console.log("Using Gemini for humanized response...");
-               const systemPrompt = `Você é o Consultor Especialista da SD Móveis.
-               Seu tom: Persuasivo, elegante e de altíssimo padrão.
-               
-               REGRAS DE OURO:
-               1. **NUNCA DE VALORES**: Explique que cada cliente é único e que o CEO da empresa faz questão de orçar pessoalmente cada projeto após a análise das fotos/medidas.
-               2. **DIFERENCIAIS**: Enfatize que trabalhamos com MDF 18mm (mais forte) e damos 5 anos de garantia. Temos tecnologia AR exclusiva.
-               3. **CAPTURE O LEAD**: Tente conseguir fotos do cômodo e as medidas via Studio AR (https://sdmoveis.com.br/studio-ar).
-               4. **LEAD SCORING**: Nota 0 a 10. Nota 10 se o cliente enviar medidas ou fotos pro projeto. Nota 8+ se ele elogiar a marca ou quiser fechar logo.
-               
-               FORMATO DE RESPOSTA (JSON):
-               { "response": "Texto para o cliente", "score": nota_0_a_10, "summary": "Resumo do que ele quer" }`;
-               
-               const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                     contents: [{ parts: [{ text: `${systemPrompt}\n\nCliente: ${messageContent}` }] }],
-                     generationConfig: { response_mime_type: "application/json" }
-                  })
-               });
-               
-               const geminiData = await geminiRes.json();
-               const aiResult = JSON.parse(geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '{"response":""}');
-               responseText = aiResult.response;
-               
-               // Update conversation with lead score and summary
-               if (aiResult.score !== undefined) {
-                 await supabase
-                   .from("whatsapp_conversations")
-                   .update({ 
-                     lead_score: aiResult.score,
-                     ai_summary: aiResult.summary,
-                     status: aiResult.score >= 8 ? "hot" : "active"
-                   })
-                   .eq("id", conversation.id);
-               }
-            }
+          const cleanMessage = messageContent.trim().toLowerCase();
+          let responseText = '';
+          let messageTypeOut = 'text';
 
-            if (responseText) {
-                const sendRes = await fetch(`${evolutionUrl}/message/sendText/SD-Moveis`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'apikey': evolutionKey },
-                    body: JSON.stringify({
-                        number: remoteJid,
-                        text: responseText,
-                        options: { delay: usedFlow ? 500 : 1500, presence: "composing" }
-                    })
-                });
-                
-                if (sendRes.ok) {
-                    await supabase.from("whatsapp_messages").insert({
-                        conversation_id: conversation.id,
-                        direction: "outbound",
-                        content: responseText,
-                        status: "sent",
-                        message_type: usedFlow ? "text" : "ai",
-                    });
-                }
+          // --- Step 1: Check dynamic flow menu from atendimento_config ---
+          const { data: configData } = await supabase
+            .from('atendimento_config')
+            .select('conteudo')
+            .eq('chave', 'menu_principal')
+            .maybeSingle();
+
+          const config = configData?.conteudo || {
+            greeting: 'Olá! 👋 Bem-vindo à *SD Móveis*!\nComo posso te ajudar?\n\n1️⃣ Orçamento\n2️⃣ Acompanhar projeto\n3️⃣ Pós-venda\n4️⃣ Falar com atendente',
+            responses: {},
+          };
+
+          const isGreeting = /^(oi|ola|olá|bom dia|boa tarde|boa noite|bomdia|boatarde|boanoite|inicio|menu|opa|oie|hey|hi|hello)$/i.test(cleanMessage);
+
+          // Normalização de números com emoji para as chaves do menu (1️⃣ -> 1)
+          const normalizedMessage = cleanMessage
+            .replace(/1️⃣|1/g, '1')
+            .replace(/2️⃣|2/g, '2')
+            .replace(/3️⃣|3/g, '3')
+            .replace(/4️⃣|4/g, '4')
+            .replace(/5️⃣|5/g, '5')
+            .trim();
+
+          if (isGreeting) {
+            responseText = config.greeting;
+          } else if (config.responses && config.responses[normalizedMessage]) {
+            responseText = config.responses[normalizedMessage];
+          }
+
+          // --- Step 2: AI Gemini for all other messages (no flow matched OR always) ---
+          if (!responseText && geminiKey) {
+            console.log('Using Gemini for humanized AI response...');
+
+            const systemPrompt = `Você é o Consultor Especialista da SD Móveis Projetados.
+Seu tom: Persuasivo, elegante, caloroso e de altíssimo padrão.
+
+REGRAS DE OURO:
+1. NUNCA dê preços ou valores. Explique que o CEO orça pessoalmente após análise de fotos e medidas.
+2. Mencione diferenciais: MDF 18mm, 5 anos de garantia, tecnologia AR exclusiva.
+3. Tente capturar o lead: peça fotos do cômodo via Studio AR (https://sdmoveis.com.br/studio-ar).
+4. Responda de forma natural, como um consultor humano no WhatsApp.
+5. Respostas curtas e diretas. Máximo 3 parágrafos.
+
+FORMATO DE RESPOSTA (JSON obrigatório):
+{ "response": "Texto para o cliente", "score": nota_0_a_10, "summary": "Resumo do interesse" }`;
+
+            const geminiRes = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  contents: [{ parts: [{ text: `${systemPrompt}\n\nMensagem do cliente: ${messageContent}` }] }],
+                  generationConfig: { response_mime_type: 'application/json' },
+                }),
+              }
+            );
+
+            const geminiData = await geminiRes.json();
+            const rawText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+            let aiResult: any = {};
+            try { aiResult = JSON.parse(rawText); } catch { aiResult = { response: '' }; }
+
+            responseText = aiResult.response || '';
+            messageTypeOut = 'ai';
+
+            // Update lead score and summary
+            if (aiResult.score !== undefined) {
+              await supabase
+                .from('whatsapp_conversations')
+                .update({
+                  lead_score: aiResult.score,
+                  ai_summary: aiResult.summary,
+                  status: aiResult.score >= 8 ? 'hot' : 'active',
+                })
+                .eq('id', conversation.id);
             }
+          }
+
+          // --- Step 3: Send the response via Evolution API ---
+          if (responseText) {
+            const sendRes = await fetch(`${evolutionUrl}/message/sendText/SD-Moveis`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', apikey: evolutionKey },
+              body: JSON.stringify({
+                number: remoteJid,
+                text: responseText,
+                options: { delay: messageTypeOut === 'ai' ? 2000 : 500, presence: 'composing' },
+              }),
+            });
+
+            if (sendRes.ok) {
+              await supabase.from('whatsapp_messages').insert({
+                conversation_id: conversation.id,
+                direction: 'outbound',
+                content: responseText,
+                status: 'sent',
+                message_type: messageTypeOut,
+              });
+              console.log(`Auto-response sent (${messageTypeOut}) to ${phoneNumber}`);
+            } else {
+              const errBody = await sendRes.text();
+              console.error('Evolution send error:', sendRes.status, errBody);
+            }
+          }
         } catch (aiError) {
-           console.error("AI Assistant Error:", aiError);
+          console.error('Auto-response error:', aiError);
         }
       }
 

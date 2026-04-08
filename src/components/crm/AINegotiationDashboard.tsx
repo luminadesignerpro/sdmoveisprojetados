@@ -60,16 +60,16 @@ const AINegotiationDashboard: React.FC = () => {
 
       if (error) throw error;
 
-      // Map to our Negotiation interface (mocking AI parts if not in DB)
+      // Map to our Negotiation interface using real database fields
       const mapped: Negotiation[] = (data || []).map(conv => ({
         id: conv.id,
         contact_name: conv.contact_name || 'Visitante',
         status: conv.status || 'active',
-        interest_score: Math.floor(Math.random() * 60) + 30, // Mocked score
-        ai_summary: "Cliente interessado em cozinha planejada. Já enviou as medidas iniciais.", // Mocked summary
-        last_message: conv.last_message_preview || 'Iniciando conversa...',
+        interest_score: conv.lead_score || 0,
+        ai_summary: conv.ai_summary || "Buscando informações...",
+        last_message: conv.last_message_at ? new Date(conv.last_message_at).toLocaleString() : 'Iniciando conversa...',
         created_at: conv.created_at,
-        phone: conv.contact_phone || ''
+        phone: conv.phone_number || ''
       }));
 
       setNegotiations(mapped);

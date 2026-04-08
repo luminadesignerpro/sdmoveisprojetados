@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -32,6 +32,8 @@ export function useWhatsApp() {
   const [loading, setLoading] = useState(false);
   const [sendingMessage, setSendingMessage] = useState(false);
   const { toast } = useToast();
+  // Ref to track which conversation is currently open (for realtime updates)
+  const activeConversationId = useRef<string | null>(null);
 
   const fetchConversations = useCallback(async () => {
     setLoading(true);
@@ -144,7 +146,7 @@ export function useWhatsApp() {
 
   useEffect(() => {
     const channel = supabase
-      .channel('whatsapp-messages')
+      .channel('whatsapp-realtime')
       .on(
         'postgres_changes',
         {
@@ -152,8 +154,30 @@ export function useWhatsApp() {
           schema: 'public',
           table: 'whatsapp_messages',
         },
-        (payload) => {
-          console.log('New message:', payload);
+        (payload: any) => {
+          console.log('New message realtime:', payload);
+          // Always refresh conversation list (unread count, last message)
+          fetchConversations();
+          // Also refresh messages if the incoming message belongs to the open conversation
+          const newMsg = payload.new as WhatsAppMessage;
+          if (newMsg?.conversation_id && newMsg.conversation_id === activeConversationId.current) {
+            setMessages((prev) => {
+              // Deduplicate by id
+              const exists = prev.some((m) => m.id === newMsg.id);
+              if (exists) return prev;
+              return [...prev, newMsg];
+            });
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'whatsapp_conversations',
+        },
+        () => {
           fetchConversations();
         }
       )
@@ -164,6 +188,11 @@ export function useWhatsApp() {
     };
   }, [fetchConversations]);
 
+  // Call this whenever the selected conversation changes so realtime knows where to append
+  const setActiveConversation = useCallback((id: string | null) => {
+    activeConversationId.current = id;
+  }, []);
+
   return {
     conversations,
     messages,
@@ -172,5 +201,6 @@ export function useWhatsApp() {
     fetchConversations,
     fetchMessages,
     sendMessage,
+    setActiveConversation,
   };
 }

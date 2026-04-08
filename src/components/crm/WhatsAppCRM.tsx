@@ -15,6 +15,9 @@ import {
   Sparkles,
   Bot,
   Loader2,
+  Wifi,
+  WifiOff,
+  QrCode,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useWhatsApp, WhatsAppConversation, WhatsAppMessage } from "@/hooks/useWhatsApp";
@@ -28,14 +31,78 @@ const statusConfig: Record<string, { label: string; className: string }> = {
 };
 
 export function WhatsAppCRM() {
-  const { conversations, messages, loading, sendingMessage, fetchConversations, fetchMessages, sendMessage } = useWhatsApp();
+  const { conversations, messages, loading, sendingMessage, fetchConversations, fetchMessages, sendMessage, setActiveConversation } = useWhatsApp();
   const [selectedConversation, setSelectedConversation] = useState<WhatsAppConversation | null>(null);
   const [message, setMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [aiAutoReply, setAiAutoReply] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
+  const [apiStatus, setApiStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking');
+  const [connectingQR, setConnectingQR] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
+  const EVOLUTION_URL = 'https://api-whatsapp-sdmoveis.onrender.com';
+  const EVOLUTION_KEY = 'Mv06061991';
+  const INSTANCE = 'SD-Moveis';
+
+  // Check Evolution API connection status
+  const checkApiStatus = async () => {
+    try {
+      const res = await fetch(`${EVOLUTION_URL}/instance/connectionState/${INSTANCE}`, {
+        headers: { apikey: EVOLUTION_KEY },
+        signal: AbortSignal.timeout(8000),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const state = data?.instance?.state || data?.state || '';
+        setApiStatus(state === 'open' ? 'connected' : 'disconnected');
+      } else {
+        setApiStatus('disconnected');
+      }
+    } catch {
+      setApiStatus('disconnected');
+    }
+  };
+
+  useEffect(() => {
+    checkApiStatus();
+    const interval = setInterval(checkApiStatus, 30000); // check every 30s
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleConnectQR = async () => {
+    setConnectingQR(true);
+    try {
+      const res = await fetch(`${EVOLUTION_URL}/instance/connect/${INSTANCE}`, {
+        headers: { apikey: EVOLUTION_KEY },
+      });
+      const data = await res.json();
+      if (data.base64) {
+        const win = window.open('', '_blank', 'width=500,height=600');
+        win?.document.write(`
+          <html style="font-family:sans-serif;background:#f0f2f5;display:flex;justify-content:center;align-items:center;height:100vh;margin:0">
+            <div style="background:white;padding:40px;border-radius:20px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.15)">
+              <h2 style="color:#25D366;margin-bottom:16px">📲 Conectar SD Móveis</h2>
+              <img src="${data.base64}" style="width:280px;height:280px;border:1px solid #eee;border-radius:10px" />
+              <p style="color:#666;margin-top:16px;font-size:14px">Abra o WhatsApp → Dispositivos Vinculados → Escanear QR Code</p>
+            </div>
+          </html>
+        `);
+        toast({ title: 'QR Code gerado!', description: 'Escaneie com seu WhatsApp para conectar.' });
+        setTimeout(checkApiStatus, 15000);
+      } else if (data.instance?.state === 'open') {
+        toast({ title: '✅ Já conectado!', description: 'WhatsApp já está ativo.' });
+        setApiStatus('connected');
+      } else {
+        toast({ title: '⏳ API iniciando', description: 'Aguarde 30s e tente novamente (Render cold start).', variant: 'destructive' });
+      }
+    } catch {
+      toast({ title: 'Erro de conexão', description: 'Verifique se a API está no ar no Render.', variant: 'destructive' });
+    } finally {
+      setConnectingQR(false);
+    }
+  };
 
   useEffect(() => {
     fetchConversations();
@@ -43,9 +110,12 @@ export function WhatsAppCRM() {
 
   useEffect(() => {
     if (selectedConversation) {
+      setActiveConversation(selectedConversation.id);
       fetchMessages(selectedConversation.id);
+    } else {
+      setActiveConversation(null);
     }
-  }, [selectedConversation, fetchMessages]);
+  }, [selectedConversation, fetchMessages, setActiveConversation]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -124,7 +194,28 @@ export function WhatsAppCRM() {
         <div className="p-4 border-b border-border">
           <div className="flex items-center gap-2 mb-3">
             <MessageSquare className="w-5 h-5 text-success" />
-            <h3 className="font-semibold">CRM WhatsApp</h3>
+            <h3 className="font-semibold flex-1">CRM WhatsApp</h3>
+            {/* API Status + Connect Button */}
+            {apiStatus === 'connected' ? (
+              <Badge className="bg-green-500/20 text-green-500 border-green-500/30 gap-1 text-xs">
+                <Wifi className="w-3 h-3" /> Online
+              </Badge>
+            ) : apiStatus === 'checking' ? (
+              <Badge variant="outline" className="gap-1 text-xs">
+                <Loader2 className="w-3 h-3 animate-spin" /> Verificando
+              </Badge>
+            ) : (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs gap-1 border-red-500/40 text-red-400 hover:bg-red-500/10"
+                onClick={handleConnectQR}
+                disabled={connectingQR}
+              >
+                {connectingQR ? <Loader2 className="w-3 h-3 animate-spin" /> : <QrCode className="w-3 h-3" />}
+                {connectingQR ? 'Aguarde...' : 'Conectar'}
+              </Button>
+            )}
           </div>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

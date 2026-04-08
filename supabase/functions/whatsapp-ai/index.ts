@@ -13,8 +13,8 @@ serve(async (req) => {
   }
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    const geminiKey = Deno.env.get("GEMINI_API_KEY");
+    if (!geminiKey) throw new Error("GEMINI_API_KEY is not configured");
 
     const { conversationId, contactName, messageHistory } = await req.json();
 
@@ -32,51 +32,27 @@ Tente sempre conseguir a medição via AR ou as fotos. Quando o cliente enviar, 
 
 O nome do cliente é: ${contactName || "Cliente"}`;
 
-    // Build messages array from history
-    const messages = [
-      { role: "system", content: systemPrompt },
-      ...(messageHistory || []).map((msg: { direction: string; content: string }) => ({
-        role: msg.direction === "inbound" ? "user" : "assistant",
-        content: msg.content,
-      })),
-    ];
-
     const response = await fetch(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
-          messages,
-          stream: false,
+          contents: [{ parts: [{ text: `${systemPrompt}\n\nHistórico:\n${(messageHistory || []).map((m: any) => `${m.direction}: ${m.content}`).join('\n')}\n\nAssistente:` }] }],
         }),
       }
     );
 
     if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Rate limit excedido. Tente novamente em instantes." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Créditos insuficientes. Adicione créditos ao workspace." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
       const text = await response.text();
-      console.error("AI gateway error:", response.status, text);
-      throw new Error("AI gateway error");
+      console.error("Gemini API error:", response.status, text);
+      throw new Error("Gemini API error");
     }
 
     const data = await response.json();
-    const aiContent = data.choices?.[0]?.message?.content || "Desculpe, não consegui processar. Tente novamente.";
+    const aiContent = data.candidates?.[0]?.content?.parts?.[0]?.text || "Desculpe, não consegui processar. Tente novamente.";
 
     // Save the AI response as an outbound message
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
