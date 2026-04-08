@@ -476,6 +476,7 @@ const App: React.FC = () => {
                 <NavIcon icon="calendar" label="Agenda" active={view === ViewMode.APPOINTMENTS} onClick={() => setView(ViewMode.APPOINTMENTS)} />
                 <NavIcon icon="camera" label="Projetos AR" active={view === ViewMode.AR_STUDIO} onClick={() => setView(ViewMode.AR_STUDIO)} />
                 <NavIcon icon="bot" label="Vendedor IA" active={view === ViewMode.AI_SALES} onClick={() => setView(ViewMode.AI_SALES)} />
+                <NavIcon icon="settings" label="Integração" active={view === ViewMode.INTEGRATION} onClick={() => setView(ViewMode.INTEGRATION)} />
               </>
             ) : authState === 'EMPLOYEE' ? (
               <>
@@ -756,7 +757,7 @@ const App: React.FC = () => {
               </div>
 
               {/* Quick Actions */}
-              <div className="grid grid-cols-3 gap-4" style={{ background: 'transparent' }}>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4" style={{ background: 'transparent' }}>
                 <div style={{ opacity: 0, animation: 'fadeIn 0.5s ease-out 0.85s forwards' }}>
                   <Card3D intensity={10} className="rounded-2xl">
                     <button
@@ -802,6 +803,22 @@ const App: React.FC = () => {
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-400"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
                       </div>
                       <h4 className="font-bold text-white text-sm">Lucro Real</h4>
+                    </button>
+                  </Card3D>
+                </div>
+                <div style={{ opacity: 0, animation: 'fadeIn 0.5s ease-out 1.25s forwards' }}>
+                  <Card3D intensity={10} className="rounded-2xl">
+                    <button
+                      onClick={() => setView(ViewMode.INTEGRATION)}
+                      className="p-6 rounded-2xl transition-all duration-300 w-full active:scale-[0.96] border h-full flex flex-col items-center justify-center text-center group"
+                      style={{ background: '#111111', borderColor: 'rgba(255,255,255,0.08)' }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(212,175,55,0.4)'; e.currentTarget.style.background = 'rgba(212,175,55,0.08)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.background = '#111111'; }}
+                    >
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-all duration-300" style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)' }}>
+                        <Monitor className="w-6 h-6 text-amber-400" />
+                      </div>
+                      <h4 className="font-bold text-white text-sm">Integração PC</h4>
                     </button>
                   </Card3D>
                 </div>
