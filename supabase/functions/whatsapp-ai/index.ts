@@ -33,7 +33,7 @@ Tente sempre conseguir a medição via AR ou as fotos. Quando o cliente enviar, 
 O nome do cliente é: ${contactName || "Cliente"}`;
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${geminiKey}`,
       {
         method: "POST",
         headers: {

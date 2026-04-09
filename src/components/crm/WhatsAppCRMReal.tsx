@@ -54,12 +54,14 @@ export function WhatsAppCRMReal() {
 
   const checkApiStatus = async () => {
     try {
-      const res = await fetch('https://api-whatsapp-sdmoveis.onrender.com/instance/connectionState/SD-Moveis', {
+      const res = await fetch('https://api-whatsapp-sdmoveis.onrender.com/instance/fetchInstances', {
         headers: { 'apikey': 'Mv06061991' },
         cache: 'no-store'
       });
-      const stateData = await res.json();
-      if (stateData.instance?.state === 'open' || stateData.state === 'open') {
+      const data = await res.json();
+      const instance = Array.isArray(data) ? data.find((i: any) => i.instanceName === 'SD-Moveis') : null;
+      
+      if (instance?.status === 'open' || instance?.state === 'open') {
         setApiStatus("connected");
       } else {
         setApiStatus("disconnected");
@@ -234,14 +236,28 @@ export function WhatsAppCRMReal() {
                   // Aguarda um momento para garantir a deleção
                   await new Promise(r => setTimeout(r, 2000));
 
-                  // 3. Criar nova instância
+                  // 3. Criar nova instância COM PERSISTÊNCIA (Banco de Dados)
+                  const SUPABASE_PROJECT_ID = "nglwscakhhdhelhbqkyb";
+                  const DB_PASSWORD = "Mv@1307202031011985";
+
                   await fetch(`${EVOLUTION_API_URL}/instance/create`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json", "apikey": EVOLUTION_API_KEY },
                     body: JSON.stringify({
                       instanceName,
                       qrcode: true,
-                      integration: "WHATSAPP-BAILEYS"
+                      integration: "WHATSAPP-BAILEYS",
+                      chatPersistence: true,
+                      database: {
+                        enabled: true,
+                        type: 'postgres',
+                        host: `db.${SUPABASE_PROJECT_ID}.supabase.co`,
+                        port: 5432,
+                        user: 'postgres',
+                        password: DB_PASSWORD,
+                        database: 'postgres',
+                        ssl: true
+                      }
                     })
                   });
 
