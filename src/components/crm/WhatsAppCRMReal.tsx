@@ -58,20 +58,33 @@ export function WhatsAppCRMReal() {
         headers: { 'apikey': 'Mv06061991' },
         cache: 'no-store'
       });
-      const data = await res.json();
-      const instance = Array.isArray(data) ? data.find((i: any) => i.instanceName === 'SD-Moveis') : null;
       
-      if (instance?.status === 'open' || instance?.state === 'open') {
+      if (!res.ok) {
+        // Se a API der erro 500/404, não mudamos o status para desconectado imediatamente
+        // para evitar "piscar" o status caso o servidor Render esteja instável
+        return;
+      }
+      
+      const data = await res.json();
+      const instance = Array.isArray(data) 
+        ? data.find((i: any) => i.instanceName.toLowerCase() === 'sd-moveis') 
+        : null;
+      
+      if (instance?.status === 'open' || instance?.state === 'open' || instance?.connectionStatus === 'open') {
         setApiStatus("connected");
       } else {
         setApiStatus("disconnected");
       }
-    } catch {
-      setApiStatus("disconnected");
+    } catch (err) {
+      console.warn("Retrying status check...", err);
+      // Mantém o status atual em caso de erro de rede transiente
     }
   };
 
   useEffect(() => {
+    // Dá um "puxão de orelha" na API do Render para ela acordar mais rápido
+    fetch('https://api-whatsapp-sdmoveis.onrender.com/').catch(() => {});
+    
     checkApiStatus();
     const interval = setInterval(checkApiStatus, 5000);
     return () => clearInterval(interval);
