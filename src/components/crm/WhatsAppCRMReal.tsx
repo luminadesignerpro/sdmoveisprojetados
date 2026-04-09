@@ -69,21 +69,27 @@ export function WhatsAppCRMReal() {
       const data = await res.json();
       const instances = Array.isArray(data) ? data : (data.instances || []);
       
-      // Log detalhado para matarmos a charada
-      if (instances.length > 0) {
-        console.log("LOG CRÍTICO - Primeira instância encontrada:", {
-          id: instances[0].id,
-          name: instances[0].instanceName || instances[0].name,
-          status: instances[0].status || instances[0].state || instances[0].connectionStatus,
-          full: instances[0]
-        });
+      // Busca Inteligente (Deep Search)
+      const instance = instances.find((i: any) => {
+        const name = (i?.instanceName || i?.name || i?.instance?.instanceName || i?.instance?.name || "").toLowerCase();
+        const status = (i?.status || i?.state || i?.connectionStatus || i?.instance?.status || i?.instance?.state || "").toLowerCase();
+        
+        console.log(`Verificando: ${name} | Status: ${status}`);
+        
+        return name.includes('sd-moveis') && (status === 'open' || status === 'connected');
+      });
+      
+      if (instance) {
+        setApiStatus("connected");
+      } else {
+        // Se não achou pelo nome mas só tem UMA instância e ela tá aberta, confia nela
+        const anyOpen = instances.find((i: any) => 
+          (i?.status || i?.instance?.status) === 'open' || 
+          (i?.state || i?.instance?.state) === 'open'
+        );
+        if (anyOpen) setApiStatus("connected");
+        else setApiStatus("disconnected");
       }
-
-      const instance = instances.find((i: any) => 
-        i?.instanceName?.toLowerCase() === 'sd-moveis' || 
-        i?.name?.toLowerCase() === 'sd-moveis' ||
-        (instances.length === 1 && (i?.status === 'open' || i?.state === 'open')) // Se só tiver uma e estiver aberta, aceita
-      );
       
       if (instance?.status === 'open' || instance?.state === 'open' || instance?.connectionStatus === 'open') {
         setApiStatus("connected");
