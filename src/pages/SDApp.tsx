@@ -152,6 +152,7 @@ const App: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [showClientContract, setShowClientContract] = useState(false);
+  const [payWithPix, setPayWithPix] = useState<{ id: string, amount: number } | null>(null);
   const [showClientFinanceiro, setShowClientFinanceiro] = useState(false);
   const [galleryFullscreen, setGalleryFullscreen] = useState<{ title: string; url: string } | null>(null);
   const [galleryItems, setGalleryItems] = useState<{ title: string; desc: string; url: string }[]>([]);
@@ -1015,10 +1016,24 @@ const App: React.FC = () => {
                         <p className="text-sm font-bold mt-1 text-green-400">Em dia ✓</p>
                         {next && (
                           <div className="mt-4 pt-4 border-t border-white/5">
-                            <p className="text-[9px] text-white/20 uppercase font-bold tracking-widest mb-1">Próximo Vencimento</p>
-                            <p className="text-sm font-black text-amber-500">
-                              {new Date(next.due_date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} — R$ {Number(next.amount).toLocaleString('pt-BR')}
-                            </p>
+                            <p className="text-[9px] text-white/20 uppercase font-bold tracking-widest mb-1">Próxima Parcela</p>
+                            <div className="flex items-center justify-between gap-2 mt-1">
+                              <div>
+                                <p className="text-sm font-black text-amber-500">
+                                  {new Date(next.due_date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                                </p>
+                                <p className="text-[10px] text-white/60">R$ {Number(next.amount).toLocaleString('pt-BR')}</p>
+                              </div>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setPayWithPix({ id: next.id, amount: Number(next.amount) });
+                                }}
+                                className="bg-amber-500 text-black px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-amber-400 transition-all shadow-lg active:scale-95"
+                              >
+                                Pagar com Pix
+                              </button>
+                            </div>
                           </div>
                         )}
                       </>
@@ -1276,7 +1291,76 @@ const App: React.FC = () => {
         </ViewTransition>
       </main>
 
-      {/* LOGIN SCREENS */}
+          {/* PIX PAYMENT MODAL */}
+          {payWithPix && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+              <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setPayWithPix(null)} />
+              <div className="bg-[#111111] border border-amber-500/30 rounded-[32px] w-full max-w-md p-8 relative z-10 animate-slide-up shadow-[0_0_50px_rgba(245,158,11,0.2)]">
+                <button
+                  onClick={() => setPayWithPix(null)}
+                  className="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/40 hover:text-white transition-colors"
+                >
+                  <Plus className="w-5 h-5 rotate-45" />
+                </button>
+
+                <div className="text-center mb-8">
+                  <div className="w-16 h-16 bg-amber-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-amber-500/20">
+                    <Banknote className="w-8 h-8 text-amber-500" />
+                  </div>
+                  <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Pagamento via Pix</h3>
+                  <p className="text-white/40 text-xs mt-1">Valor da Parcela: <span className="text-white font-bold">R$ {payWithPix.amount.toLocaleString('pt-BR')}</span></p>
+                </div>
+
+                <div className="bg-white p-6 rounded-[24px] shadow-inner mb-6 relative overflow-hidden group">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=SD-MOVEIS-PIX-SIMULATION-${payWithPix.id}-${payWithPix.amount}`}
+                    alt="QR Code Pix"
+                    className="w-48 h-48 mx-auto relative z-10"
+                  />
+                  <div className="absolute inset-0 bg-amber-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                </div>
+
+                <div className="space-y-4">
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                    <p className="text-[10px] text-white/40 uppercase font-black tracking-widest mb-2">Pix Copia e Cola</p>
+                    <div className="flex items-center gap-3">
+                      <code className="flex-1 text-[10px] text-amber-500 font-mono break-all line-clamp-1">
+                        00020126580014BR.GOV.BCB.PIX0136sdmoveisprojetados-pix-gateway-test-31011985
+                      </code>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText("00020126580014BR.GOV.BCB.PIX0136sdmoveisprojetados-pix-gateway-test-31011985");
+                          toast({ title: "🔗 Pix copiado!", description: "Cole no app do seu banco para pagar" });
+                        }}
+                        className="w-10 h-10 rounded-xl bg-amber-500 text-black flex items-center justify-center hover:bg-white transition-all shrink-0"
+                      >
+                        <ClipboardList className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <p className="text-[9px] text-center text-white/20 uppercase font-bold tracking-[0.2em]">
+                    <Shield className="w-3 h-3 inline mr-1 mb-0.5" /> Pagamento 100% Seguro via SD Pay
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => {
+                    toast({ title: "⏳ Validando pagamento...", description: "Aguardando confirmação do banco" });
+                    setTimeout(() => {
+                      setPayWithPix(null);
+                      toast({ title: "✅ Pagamento Confirmado!", description: "Sua produção segue a todo vapor!", variant: "default" });
+                    }, 3000);
+                  }}
+                  className="w-full mt-6 bg-white/5 border border-white/10 text-white p-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-amber-500 hover:text-black transition-all"
+                >
+                  Já realizei o pagamento
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* LOGIN SCREENS */}
       {authState === 'SELECT' && (
         <div className="fixed inset-0 z-50 isolate bg-gradient-to-br from-gray-950 via-gray-900 to-black flex flex-col items-center justify-start md:justify-center overflow-y-auto overflow-x-hidden">
           {/* Animated particle background */}
