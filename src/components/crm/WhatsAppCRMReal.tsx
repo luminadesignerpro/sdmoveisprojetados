@@ -66,13 +66,22 @@ export function WhatsAppCRMReal() {
       }
       
       const data = await res.json();
-      console.log("DEBUG - Instâncias Evolution:", data); // Isso vai aparecer no seu console (F12)
-      
       const instances = Array.isArray(data) ? data : (data.instances || []);
+      
+      // Log detalhado para matarmos a charada
+      if (instances.length > 0) {
+        console.log("LOG CRÍTICO - Primeira instância encontrada:", {
+          id: instances[0].id,
+          name: instances[0].instanceName || instances[0].name,
+          status: instances[0].status || instances[0].state || instances[0].connectionStatus,
+          full: instances[0]
+        });
+      }
+
       const instance = instances.find((i: any) => 
         i?.instanceName?.toLowerCase() === 'sd-moveis' || 
         i?.name?.toLowerCase() === 'sd-moveis' ||
-        i?.status === 'open' // Tenta pegar qualquer uma aberta se o nome oscilar
+        (instances.length === 1 && (i?.status === 'open' || i?.state === 'open')) // Se só tiver uma e estiver aberta, aceita
       );
       
       if (instance?.status === 'open' || instance?.state === 'open' || instance?.connectionStatus === 'open') {
