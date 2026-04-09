@@ -276,6 +276,16 @@ export function WhatsAppCRMReal() {
                       qrcode: true,
                       integration: "WHATSAPP-BAILEYS",
                       chatPersistence: true,
+                      webhook: "https://nglwscakhhdhelhbqkyb.supabase.co/functions/v1/whatsapp-webhook",
+                      webhookByEvents: true,
+                      events: [
+                        "MESSAGES_UPSERT",
+                        "MESSAGES_UPDATE",
+                        "MESSAGES_DELETE",
+                        "SEND_MESSAGE",
+                        "CONNECTION_UPDATE",
+                        "TYPEING_START"
+                      ],
                       database: {
                         enabled: true,
                         type: 'postgres',
