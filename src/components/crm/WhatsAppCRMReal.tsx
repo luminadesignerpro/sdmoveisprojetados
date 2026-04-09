@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+// Version: 1.0.5 - Connection Stability Fix
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
