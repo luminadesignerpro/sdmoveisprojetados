@@ -874,7 +874,7 @@ const App: React.FC = () => {
             <DriverTripPanel employeeId={employeeId || ''} employeeName={employeeName} />
           )}
 
-          {view === ViewMode.CRM && (
+          {view === ViewMode.CRM && authState === 'ADMIN' && (
             <div className="h-full p-6 overflow-auto bg-[#0f0f0f] text-white">
               <header className="mb-6">
                 <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-500 flex items-center gap-3">
@@ -1044,7 +1044,7 @@ const App: React.FC = () => {
                 <div className="bg-white/5 border border-white/5 rounded-3xl p-6 shadow-xl text-center hover:border-amber-500/30 transition-all group">
                   <span className="text-4xl mb-4 block group-hover:scale-110 transition-transform">💬</span>
                   <p className="text-[10px] text-white/40 uppercase font-black tracking-widest mb-2">Suporte</p>
-                  <button onClick={() => setView(ViewMode.CRM)} className="text-xl font-black text-white hover:text-amber-500 transition-colors">
+                  <button onClick={() => setView(ViewMode.INTERNAL_CHAT)} className="text-xl font-black text-white hover:text-amber-500 transition-colors">
                     Falar com Projetista
                   </button>
                   <p className="text-[10px] text-amber-500/60 font-bold uppercase mt-2">Resposta em até 2h</p>
