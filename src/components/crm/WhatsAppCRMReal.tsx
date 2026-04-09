@@ -274,28 +274,7 @@ export function WhatsAppCRMReal() {
                     body: JSON.stringify({
                       instanceName,
                       qrcode: true,
-                      integration: "WHATSAPP-BAILEYS",
-                      chatPersistence: true,
-                      webhook: "https://nglwscakhhdhelhbqkyb.supabase.co/functions/v1/whatsapp-webhook",
-                      webhookByEvents: true,
-                      events: [
-                        "MESSAGES_UPSERT",
-                        "MESSAGES_UPDATE",
-                        "MESSAGES_DELETE",
-                        "SEND_MESSAGE",
-                        "CONNECTION_UPDATE",
-                        "TYPEING_START"
-                      ],
-                      database: {
-                        enabled: true,
-                        type: 'postgres',
-                        host: `db.${SUPABASE_PROJECT_ID}.supabase.co`,
-                        port: 5432,
-                        user: 'postgres',
-                        password: DB_PASSWORD,
-                        database: 'postgres',
-                        ssl: true
-                      }
+                      integration: "WHATSAPP-BAILEYS"
                     })
                   });
 
