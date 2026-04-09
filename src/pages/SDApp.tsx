@@ -874,13 +874,13 @@ const App: React.FC = () => {
           )}
 
           {view === ViewMode.CRM && (
-            <div className="h-full p-6 overflow-auto bg-background">
+            <div className="h-full p-6 overflow-auto bg-[#0f0f0f] text-white">
               <header className="mb-6">
-                <h1 className="text-3xl font-black text-gray-900 flex items-center gap-3">
-                  <MessageCircle className="w-8 h-8 text-green-500" />
+                <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-500 flex items-center gap-3">
+                  <MessageCircle className="w-8 h-8 text-amber-500" />
                   CRM WhatsApp
                 </h1>
-                <p className="text-gray-500 mt-1">Gerencie suas conversas e leads</p>
+                <p className="text-white/40 mt-1 font-bold uppercase text-[10px] tracking-widest">Gerencie suas conversas e leads com IA</p>
               </header>
               <Tabs defaultValue="crm" className="w-full">
                 <TabsList className="mb-4">
@@ -911,37 +911,34 @@ const App: React.FC = () => {
             />
           )}
 
-          {/* CONTRACTS */}
-          {view === ViewMode.CONTRACTS && authState === 'ADMIN' && <SalesPage />}
-
           {/* CLIENT PORTAL */}
           {view === ViewMode.CLIENT_PORTAL && (
-            <div className="p-8 space-y-6 overflow-auto h-full bg-background">
-              <header className="flex justify-between items-start">
+            <div className="p-8 space-y-6 overflow-auto h-full bg-[#0a0a0a] text-white">
+              <header className="flex flex-col md:flex-row justify-between items-start gap-6">
                 <div>
-                  <h1 className="text-4xl font-black text-gray-900 flex items-center gap-3">
+                  <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-500 flex items-center gap-3">
                     <Home className="w-8 h-8 text-amber-500" />
                     Minha Casa SD
                   </h1>
-                  <p className="text-gray-500 mt-1 flex items-center gap-2">
-                    <Heart className="w-4 h-4 text-red-500" />
-                    {clientName ? `Olá, ${clientName}! Acompanhando cada detalhe do seu sonho` : 'Acompanhando cada detalhe do seu sonho'}
+                  <p className="text-white/40 mt-1 flex items-center gap-2 font-bold uppercase text-[10px] tracking-widest">
+                    <Heart className="w-3 h-3 text-red-500" />
+                    {clientName ? `Olá, ${clientName}! Acompanhando seu sonho` : 'Acompanhando cada detalhe do seu sonho'}
                   </p>
                 </div>
                 {clientProject?.estimated_delivery && (
-                  <div className="bg-amber-50 border border-amber-200 rounded-2xl px-6 py-3 shadow-sm">
-                    <p className="text-xs font-bold text-amber-600 uppercase tracking-wider flex items-center gap-1">
+                  <div className="bg-white/5 border border-amber-500/20 rounded-2xl px-6 py-3 shadow-2xl backdrop-blur-md">
+                    <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest flex items-center gap-1 mb-1">
                       <Calendar className="w-3 h-3" /> Previsão de Instalação
                     </p>
-                    <p className="text-amber-700 font-bold text-lg">
+                    <p className="text-white font-black text-lg">
                       {new Date(clientProject.estimated_delivery + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
                     </p>
-                    <div className="flex items-center gap-2 mt-2 bg-amber-100 rounded-xl px-3 py-1.5">
-                      <Timer className="w-4 h-4 text-amber-600" />
-                      <p className="text-amber-700 font-black text-sm">
+                    <div className="flex items-center gap-2 mt-2 bg-amber-500/10 rounded-xl px-3 py-1.5 border border-amber-500/10">
+                      <Timer className="w-4 h-4 text-amber-500" />
+                      <p className="text-amber-400 font-black text-xs uppercase tracking-tighter">
                         {(() => {
                           const days = Math.max(0, Math.ceil((new Date(clientProject.estimated_delivery + 'T00:00:00').getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
-                          return days > 0 ? `Faltam ${days} dias para seu sonho! ✨` : 'O grande dia chegou! 🎉';
+                          return days > 0 ? `Faltam ${days} dias! ✨` : 'O grande dia chegou! 🎉';
                         })()}
                       </p>
                     </div>
@@ -950,72 +947,76 @@ const App: React.FC = () => {
               </header>
 
               {/* Status Cards */}
-              <div className="grid grid-cols-2 gap-6">
-                <div className="bg-white rounded-3xl p-8 shadow-xl">
-                  <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center text-3xl mb-4">🏭</div>
-                  <p className="text-lg font-black text-gray-900 mb-4 flex items-center gap-2">
-                    <Package className="w-5 h-5 text-blue-600" />
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-white/5 border border-white/5 rounded-3xl p-8 shadow-xl backdrop-blur-sm">
+                  <div className="w-16 h-16 bg-blue-500/10 rounded-2xl flex items-center justify-center text-3xl mb-4 border border-blue-500/20">🏭</div>
+                  <p className="text-lg font-black text-white mb-6 flex items-center gap-2">
+                    <Package className="w-5 h-5 text-blue-400" />
                     Status: {clientProject?.status || 'Produção'}
                   </p>
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     {clientProductionSteps.length > 0 ? clientProductionSteps.map((step) => (
                       <div key={step.id}>
-                        <div className="flex justify-between text-sm mb-1">
-                          <span className="text-gray-600 flex items-center gap-1">
-                            {step.progress === 100 ? <CheckCircle className="w-4 h-4 text-green-500" /> : step.progress > 0 ? <Wrench className="w-4 h-4 text-blue-500" /> : <Truck className="w-4 h-4 text-gray-400" />}
+                        <div className="flex justify-between text-[11px] font-black uppercase tracking-widest mb-2">
+                          <span className="text-white/40 flex items-center gap-2">
+                            {step.progress === 100 ? <CheckCircle className="w-4 h-4 text-green-500" /> : step.progress > 0 ? <Wrench className="w-4 h-4 text-blue-400" /> : <Truck className="w-4 h-4 text-white/20" />}
                             {step.label}
                           </span>
-                          <span className={`font-bold ${step.progress === 100 ? 'text-green-600' : step.progress > 0 ? 'text-blue-600' : 'text-gray-400'}`}>
-                            {step.progress === 100 ? 'Concluído ✓' : step.progress > 0 ? `${step.progress}% Pronto` : (step.status || 'Aguardando')}
+                          <span className={step.progress === 100 ? 'text-green-400' : step.progress > 0 ? 'text-blue-400' : 'text-white/20'}>
+                            {step.progress === 100 ? 'Concluído' : step.progress > 0 ? `${step.progress}%` : (step.status || 'Aguardando')}
                           </span>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-3">
-                          <div className={`h-3 rounded-full ${step.progress === 100 ? 'bg-green-500' : step.progress > 0 ? 'bg-blue-500' : 'bg-gray-300'}`} style={{ width: `${step.progress}%` }} />
+                        <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden border border-white/5">
+                          <div className={`h-1.5 rounded-full transition-all duration-1000 ${step.progress === 100 ? 'bg-green-500' : step.progress > 0 ? 'bg-blue-500' : 'bg-white/5'}`} style={{ width: `${step.progress}%` }} />
                         </div>
                       </div>
                     )) : (
-                      <p className="text-gray-400 text-sm">Etapas de produção serão exibidas em breve.</p>
+                      <p className="text-white/20 text-sm italic py-4">Etapas de produção serão exibidas em breve.</p>
                     )}
                   </div>
                 </div>
 
                 <button
                   onClick={() => setView(ViewMode.PORTFOLIO)}
-                  className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-8 text-white text-left hover:scale-[1.02] transition-transform shadow-xl group"
+                  className="relative overflow-hidden bg-gradient-to-br from-neutral-900 to-black border border-white/10 rounded-3xl p-8 text-white text-left hover:border-amber-500/40 transition-all shadow-2xl group"
                 >
-                  <div className="w-16 h-16 bg-amber-500/20 rounded-2xl flex items-center justify-center text-3xl mb-4 group-hover:scale-110 transition-transform">
-                    <Camera className="w-8 h-8 text-amber-400" />
+                  <div className="absolute top-0 right-0 p-12 opacity-5 scale-150 rotate-12">
+                    <Camera className="w-32 h-32 text-amber-500" />
                   </div>
-                  <h3 className="text-2xl font-black flex items-center gap-2">
-                    <Sparkles className="w-6 h-6 text-amber-400" />
+                  <div className="w-16 h-16 bg-amber-500/10 rounded-2xl flex items-center justify-center text-3xl mb-4 group-hover:scale-110 transition-transform border border-amber-500/20">
+                    <Camera className="w-8 h-8 text-amber-500" />
+                  </div>
+                  <h3 className="text-2xl font-black flex items-center gap-2 group-hover:text-amber-400 transition-colors">
+                    <Sparkles className="w-6 h-6 text-amber-500 animate-pulse" />
                     Galeria de Renders 4K
                   </h3>
-                  <p className="text-gray-400 mt-2 text-sm">Veja como ficará seu ambiente projetado com nossa tecnologia de fotorrealismo.</p>
-                  <span className="inline-flex items-center gap-1 mt-4 text-amber-500 font-bold text-sm group-hover:gap-2 transition-all">
+                  <p className="text-white/40 mt-2 text-sm leading-relaxed max-w-sm">Veja o seu sonho materializado com nossa tecnologia de fotorrealismo ultra-HD.</p>
+                  <span className="inline-flex items-center gap-1 mt-6 text-amber-500 font-black uppercase text-[10px] tracking-widest group-hover:gap-3 transition-all">
                     Abrir Portfolio <ArrowRight className="w-4 h-4" />
                   </span>
                 </button>
               </div>
 
               {/* Info Cards */}
-              <div className="grid grid-cols-3 gap-6">
-                <button onClick={() => setShowClientFinanceiro(true)} className="bg-white rounded-3xl p-6 shadow-xl text-center hover:shadow-2xl transition-shadow cursor-pointer w-full">
-                  <span className="text-4xl mb-4 block">💳</span>
-                  <p className="text-xs text-gray-400 uppercase font-bold mb-2">Financeiro</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <button onClick={() => setShowClientFinanceiro(true)} className="bg-white/5 border border-white/5 rounded-3xl p-6 shadow-xl text-center hover:border-amber-500/30 transition-all group overflow-hidden relative">
+                  <div className="absolute -top-4 -right-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <Package className="w-20 h-20" />
+                  </div>
+                  <span className="text-4xl mb-4 block group-hover:scale-110 transition-transform">💳</span>
+                  <p className="text-[10px] text-white/40 uppercase font-black tracking-widest mb-2">Financeiro</p>
                   {(() => {
                     const paid = clientInstallments.filter(i => i.status === 'Pago').length;
                     const total = clientInstallments.length;
                     const next = clientInstallments.find(i => i.status === 'Pendente');
                     return (
                       <>
-                        <p className="text-xl font-black text-gray-900">{total > 0 ? `${paid}/${total} Parcelas` : clientProject?.payment_status || '—'}</p>
-                        <p className={`text-sm font-bold mt-1 ${paid === total && total > 0 ? 'text-green-600' : 'text-green-600'}`}>
-                          {paid === total && total > 0 ? 'Quitado ✓' : 'Em dia ✓'}
-                        </p>
+                        <p className="text-xl font-black text-white">{total > 0 ? `${paid}/${total} Parcelas` : clientProject?.payment_status || '—'}</p>
+                        <p className="text-sm font-bold mt-1 text-green-400">Em dia ✓</p>
                         {next && (
-                          <div className="mt-3 pt-3 border-t border-gray-100">
-                            <p className="text-xs text-gray-400">Próxima parcela</p>
-                            <p className="text-sm font-bold text-amber-600">
+                          <div className="mt-4 pt-4 border-t border-white/5">
+                            <p className="text-[9px] text-white/20 uppercase font-bold tracking-widest mb-1">Próximo Vencimento</p>
+                            <p className="text-sm font-black text-amber-500">
                               {new Date(next.due_date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} — R$ {Number(next.amount).toLocaleString('pt-BR')}
                             </p>
                           </div>
@@ -1024,31 +1025,33 @@ const App: React.FC = () => {
                     );
                   })()}
                 </button>
-                <div className="bg-white rounded-3xl p-6 shadow-xl text-center hover:shadow-2xl transition-shadow">
-                  <span className="text-4xl mb-4 block">💬</span>
-                  <p className="text-xs text-gray-400 uppercase font-bold mb-2">Suporte</p>
-                  <button onClick={() => setView(ViewMode.CRM)} className="text-xl font-bold text-gray-900 hover:text-amber-600 transition-colors">
+
+                <div className="bg-white/5 border border-white/5 rounded-3xl p-6 shadow-xl text-center hover:border-amber-500/30 transition-all group">
+                  <span className="text-4xl mb-4 block group-hover:scale-110 transition-transform">💬</span>
+                  <p className="text-[10px] text-white/40 uppercase font-black tracking-widest mb-2">Suporte</p>
+                  <button onClick={() => setView(ViewMode.CRM)} className="text-xl font-black text-white hover:text-amber-500 transition-colors">
                     Falar com Projetista
                   </button>
-                  <p className="text-sm text-gray-500 mt-1">Resposta em 2h</p>
+                  <p className="text-[10px] text-amber-500/60 font-bold uppercase mt-2">Resposta em até 2h</p>
                 </div>
-                <button onClick={() => setShowClientContract(true)} className="bg-white rounded-3xl p-6 shadow-xl text-center hover:shadow-2xl transition-shadow cursor-pointer w-full">
-                  <span className="text-4xl mb-4 block">📝</span>
-                  <p className="text-xs text-gray-400 uppercase font-bold mb-2">Contrato</p>
-                  <p className="text-xl font-black text-gray-900">{clientProject?.status || 'Assinado'}</p>
-                  <p className="text-sm text-green-600 font-bold mt-1 flex items-center justify-center gap-1">
-                    <Shield className="w-4 h-4" /> Ver Detalhes
+
+                <button onClick={() => setShowClientContract(true)} className="bg-white/5 border border-white/5 rounded-3xl p-6 shadow-xl text-center hover:border-amber-500/30 transition-all group">
+                  <span className="text-4xl mb-4 block group-hover:scale-110 transition-transform">📝</span>
+                  <p className="text-[10px] text-white/40 uppercase font-black tracking-widest mb-2">Contrato</p>
+                  <p className="text-xl font-black text-white">{clientProject?.status || 'Assinado'}</p>
+                  <p className="text-sm text-green-400 font-bold mt-1 flex items-center justify-center gap-1">
+                    <Shield className="w-4 h-4" /> Detalhes Jurídicos
                   </p>
                 </button>
               </div>
 
               {/* Timeline */}
-              <div className="bg-white rounded-3xl p-8 shadow-xl">
-                <h3 className="font-black text-gray-900 mb-6 flex items-center gap-2">
+              <div className="bg-white/5 border border-white/5 rounded-3xl p-8 shadow-xl">
+                <h3 className="font-black text-white mb-8 flex items-center gap-3">
                   <Clock className="w-5 h-5 text-amber-500" />
-                  Linha do Tempo do Projeto
+                  Jornada do Projeto
                 </h3>
-                <div className="flex items-center justify-between relative">
+                <div className="flex items-center justify-between relative px-4">
                   {(() => {
                     const steps = clientTimeline.length > 0 ? clientTimeline : [
                       { label: 'Assinatura', step_date: '', done: true, icon: '✍️' },
@@ -1058,20 +1061,22 @@ const App: React.FC = () => {
                       { label: 'Instalação', step_date: '', done: false, icon: '🔧' },
                     ];
                     const doneCount = steps.filter(s => s.done).length;
-                    const progressPct = steps.length > 0 ? Math.round((doneCount / steps.length) * 100) : 0;
+                    const progressPct = steps.length > 0 ? Math.round(((doneCount - 1) / (steps.length - 1)) * 100) : 0;
                     return (
                       <>
-                        <div className="absolute top-5 left-0 right-0 h-1 bg-gray-200 z-0">
-                          <div className="h-1 bg-green-500" style={{ width: `${progressPct}%` }} />
+                        <div className="absolute top-5 left-10 right-10 h-0.5 bg-white/5 z-0">
+                          <div className="h-0.5 bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)] transition-all duration-1000" style={{ width: `${progressPct}%` }} />
                         </div>
                         {steps.map((step: any, i: number) => (
-                          <div key={step.id || i} className="flex flex-col items-center relative z-10">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl mb-2 ${step.done ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'
+                          <div key={step.id || i} className="flex flex-col items-center relative z-10 w-20">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm mb-3 border-2 transition-all duration-500 ${step.done
+                              ? 'bg-amber-500 border-amber-600 text-black font-black'
+                              : 'bg-black border-white/10 text-white/20'
                               }`}>
-                              {step.done ? '✓' : (step.icon || '📋')}
+                              {step.done ? '✓' : (i + 1)}
                             </div>
-                            <p className={`text-xs font-bold ${step.done ? 'text-green-600' : 'text-gray-500'}`}>{step.label}</p>
-                            <p className="text-xs text-gray-400">{step.step_date || ''}</p>
+                            <p className={`text-[10px] font-black uppercase tracking-tighter text-center h-4 ${step.done ? 'text-white' : 'text-white/20'}`}>{step.label}</p>
+                            <p className="text-[9px] text-amber-500/50 font-bold mt-1">{step.step_date || ''}</p>
                           </div>
                         ))}
                       </>
@@ -1084,43 +1089,43 @@ const App: React.FC = () => {
 
           {/* PORTFOLIO */}
           {view === ViewMode.PORTFOLIO && (
-            <div className="p-8 space-y-6 overflow-auto h-full bg-gradient-to-br from-gray-50 to-gray-100">
-              <header className="flex justify-between items-center">
+            <div className="p-8 space-y-6 overflow-auto h-full bg-[#0a0a0a] text-white">
+              <header className="flex flex-col md:flex-row justify-between items-center gap-6">
                 <div>
-                  <h1 className="text-4xl font-black text-gray-900 flex items-center gap-3">
+                  <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-500 flex items-center gap-3 text-center md:text-left">
                     <Camera className="w-8 h-8 text-amber-500" />
                     Minha Galeria SD
                   </h1>
-                  <p className="text-gray-500 mt-1">Arquivos em Ultra-Alta Definição</p>
+                  <p className="text-white/40 mt-1 font-bold uppercase text-[10px] tracking-widest text-center md:text-left">Arquivos em Ultra-Alta Definição</p>
                 </div>
                 <button
                   onClick={() => setView(ViewMode.CLIENT_PORTAL)}
-                  className="text-amber-600 font-black uppercase text-xs tracking-widest border-2 border-amber-200 px-8 py-4 rounded-full hover:bg-amber-50 transition-all flex items-center gap-2"
+                  className="bg-black/40 text-amber-500 font-black uppercase text-[10px] tracking-widest border-2 border-amber-500/20 px-8 py-4 rounded-full hover:bg-amber-500/10 transition-all flex items-center gap-2 shadow-xl backdrop-blur-md group"
                 >
-                  <ArrowRight className="w-4 h-4 rotate-180" />
+                  <ArrowRight className="w-4 h-4 rotate-180 group-hover:-translate-x-1 transition-transform" />
                   Voltar ao Painel
                 </button>
               </header>
 
-              <div className="grid grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {galleryItems.map((item, i) => (
-                  <div key={i} className="bg-white rounded-3xl shadow-xl overflow-hidden group">
+                  <div key={i} className="bg-white/5 border border-white/5 rounded-[32px] shadow-2xl overflow-hidden group hover:border-amber-500/20 transition-all backdrop-blur-sm">
                     <div className="aspect-video overflow-hidden relative">
-                      <img src={item.url} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                      <img src={item.url} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4 backdrop-blur-sm">
                         <button
                           onClick={() => setGalleryFullscreen({ title: item.title, url: item.url })}
-                          className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-gray-900 hover:scale-110 transition-transform"
+                          className="w-14 h-14 bg-white/10 rounded-full flex items-center justify-center text-white hover:bg-white hover:text-black hover:scale-110 transition-all border border-white/20"
                           title="Visualizar Imagem"
                         >
-                          <Eye className="w-5 h-5" />
+                          <Eye className="w-6 h-6" />
                         </button>
                         <button
                           onClick={() => setShowArModal({ title: item.title, url: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb' })}
-                          className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-amber-600 hover:scale-110 transition-transform border-2 border-amber-200"
+                          className="w-14 h-14 bg-amber-500/20 rounded-full flex items-center justify-center text-amber-500 hover:bg-amber-500 hover:text-black hover:scale-110 transition-all border border-amber-500/20"
                           title="Visualizar em AR"
                         >
-                          <Package className="w-5 h-5" />
+                          <Package className="w-6 h-6" />
                         </button>
                         <button
                           onClick={() => {
@@ -1131,16 +1136,16 @@ const App: React.FC = () => {
                             a.click();
                             toast({ title: "📥 Download iniciado", description: item.title });
                           }}
-                          className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-gray-900 hover:scale-110 transition-transform"
+                          className="w-14 h-14 bg-white/10 rounded-full flex items-center justify-center text-white hover:bg-white hover:text-black hover:scale-110 transition-all border border-white/20"
                         >
-                          <Download className="w-5 h-5" />
+                          <Download className="w-6 h-6" />
                         </button>
                       </div>
                     </div>
-                    <div className="p-6">
-                      <p className="font-black text-gray-900">{item.title}</p>
-                      <p className="text-sm text-gray-500 mt-1">{item.desc}</p>
-                      <div className="flex gap-3 mt-4">
+                    <div className="p-8">
+                      <p className="text-xl font-black text-white group-hover:text-amber-400 transition-colors uppercase tracking-tight">{item.title}</p>
+                      <p className="text-sm text-white/40 mt-1 font-medium">{item.desc}</p>
+                      <div className="flex gap-3 mt-6">
                         <button
                           onClick={() => {
                             const a = document.createElement('a');
@@ -1150,7 +1155,7 @@ const App: React.FC = () => {
                             a.click();
                             toast({ title: "📥 Download 4K iniciado", description: item.title });
                           }}
-                          className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-200 transition-colors"
+                          className="flex items-center gap-2 px-6 py-2.5 bg-white/5 rounded-xl text-[10px] font-black uppercase tracking-widest text-white/60 hover:bg-white hover:text-black transition-all border border-white/5"
                         >
                           <Download className="w-4 h-4" />
                           Download 4K
@@ -1164,7 +1169,7 @@ const App: React.FC = () => {
                               toast({ title: "🔗 Link copiado!", description: "Cole onde quiser compartilhar" });
                             }
                           }}
-                          className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-200 transition-colors"
+                          className="flex items-center gap-2 px-6 py-2.5 bg-white/5 rounded-xl text-[10px] font-black uppercase tracking-widest text-white/60 hover:bg-white hover:text-black transition-all border border-white/5"
                         >
                           <Share2 className="w-4 h-4" />
                           Compartilhar
@@ -1177,28 +1182,37 @@ const App: React.FC = () => {
 
               {/* Approve Project Button */}
               {!projectApproved ? (
-                <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-3xl p-8 shadow-lg text-center">
-                  <ThumbsUp className="w-12 h-12 text-green-500 mx-auto mb-4" />
-                  <h3 className="text-xl font-black text-gray-900 mb-2">Aprovar Projeto</h3>
-                  <p className="text-gray-500 text-sm mb-6 max-w-md mx-auto">
-                    Revise todos os renders e, se estiver satisfeito, aprove o projeto para iniciarmos a produção.
-                  </p>
-                  <button
-                    onClick={() => {
-                      setProjectApproved(true);
-                      toast({ title: "✅ Projeto Aprovado!", description: "Obrigado! A produção será iniciada em breve." });
-                    }}
-                    className="bg-green-600 text-white px-10 py-4 rounded-2xl font-black hover:bg-green-500 transition-colors shadow-lg inline-flex items-center gap-2"
-                  >
-                    <ThumbsUp className="w-5 h-5" />
-                    Aprovar Projeto
-                  </button>
+                <div className="bg-white/5 border border-amber-500/20 rounded-[40px] p-12 shadow-2xl text-center relative overflow-hidden backdrop-blur-md">
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full blur-[100px] -mr-32 -mt-32" />
+                  <div className="absolute bottom-0 left-0 w-64 h-64 bg-amber-500/5 rounded-full blur-[100px] -ml-32 -mb-32" />
+                  
+                  <div className="relative z-10">
+                    <div className="w-20 h-20 bg-amber-500/10 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-amber-500/20">
+                      <ThumbsUp className="w-10 h-10 text-amber-500" />
+                    </div>
+                    <h3 className="text-3xl font-black text-white mb-3 uppercase tracking-tighter">Aprovar Projeto</h3>
+                    <p className="text-white/40 text-sm mb-10 max-w-lg mx-auto font-medium leading-relaxed">
+                      Revise todos os renders e detalhes. Se estiver tudo como você sonhou, clique abaixo para dar o sinal verde para o início da produção.
+                    </p>
+                    <button
+                      onClick={() => {
+                        setProjectApproved(true);
+                        toast({ title: "✅ Projeto Aprovado!", description: "Obrigado! A produção será iniciada em breve." });
+                      }}
+                      className="bg-amber-500 text-black px-12 py-5 rounded-[20px] font-black uppercase tracking-widest text-xs hover:bg-amber-400 hover:scale-105 active:scale-95 transition-all shadow-[0_10px_40px_rgba(245,158,11,0.3)] inline-flex items-center gap-3"
+                    >
+                      <ThumbsUp className="w-5 h-5" />
+                      Aprovar Projeto Principal
+                    </button>
+                  </div>
                 </div>
               ) : (
-                <div className="bg-green-50 border border-green-200 rounded-3xl p-6 text-center">
-                  <CheckCircle className="w-10 h-10 text-green-500 mx-auto mb-2" />
-                  <p className="font-black text-green-700">Projeto Aprovado ✓</p>
-                  <p className="text-sm text-green-600 mt-1">Sua produção está em andamento!</p>
+                <div className="bg-amber-500/10 border border-green-500/30 rounded-[30px] p-8 text-center backdrop-blur-md">
+                  <div className="w-16 h-16 bg-green-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-green-500/20">
+                    <CheckCircle className="w-8 h-8 text-green-500" />
+                  </div>
+                  <p className="font-black text-2xl text-white uppercase tracking-tighter">Projeto Aprovado ✓</p>
+                  <p className="text-green-400/60 font-bold text-sm mt-1 uppercase tracking-widest">Sua produção está em andamento!</p>
                 </div>
               )}
             </div>
