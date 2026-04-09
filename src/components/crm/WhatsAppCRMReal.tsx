@@ -66,9 +66,11 @@ export function WhatsAppCRMReal() {
       }
       
       const data = await res.json();
-      const instance = Array.isArray(data) 
-        ? data.find((i: any) => i.instanceName.toLowerCase() === 'sd-moveis') 
-        : null;
+      const instances = Array.isArray(data) ? data : (data.instances || []);
+      const instance = instances.find((i: any) => 
+        i?.instanceName?.toLowerCase() === 'sd-moveis' || 
+        i?.name?.toLowerCase() === 'sd-moveis'
+      );
       
       if (instance?.status === 'open' || instance?.state === 'open' || instance?.connectionStatus === 'open') {
         setApiStatus("connected");
