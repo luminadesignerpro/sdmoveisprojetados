@@ -90,12 +90,6 @@ export function WhatsAppCRMReal() {
         if (anyOpen) setApiStatus("connected");
         else setApiStatus("disconnected");
       }
-      
-      if (instance?.status === 'open' || instance?.state === 'open' || instance?.connectionStatus === 'open') {
-        setApiStatus("connected");
-      } else {
-        setApiStatus("disconnected");
-      }
     } catch (err) {
       console.warn("Retrying status check...", err);
       // Mantém o status atual em caso de erro de rede transiente
