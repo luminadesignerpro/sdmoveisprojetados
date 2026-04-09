@@ -311,10 +311,11 @@ export function WhatsAppCRMReal() {
                   const data = await qrRes.json();
                   const finalQR = data.base64 || data.qrcode?.base64;
 
-                  if (finalQR) {
-                    setQrCodeData(finalQR);
-                    
-                    // 5. CONFIGURAR O WEBHOOK PARA GARANTIR QUE OS EVENTOS CHEGUEM NO SUPABASE
+                  if (finalQR || data.instance?.state === "open") {
+                    if (finalQR) setQrCodeData(finalQR);
+                    if (data.instance?.state === "open") toast({ title: "✅ Já Conectado", description: "WhatsApp já está ativo!" });
+
+                    // CONFIGURAR O WEBHOOK PARA GARANTIR QUE OS EVENTOS CHEGUEM NO SUPABASE
                     console.log("Configurando webhook...");
                     await fetch(`${EVOLUTION_API_URL}/webhook/set/${instanceName}`, {
                       method: 'POST',
@@ -327,8 +328,7 @@ export function WhatsAppCRMReal() {
                          events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE", "MESSAGES_UPDATE", "SEND_MESSAGE"]
                       })
                     });
-                  } else if (data.instance?.state === "open") {
-                    toast({ title: "✅ Já Conectado", description: "WhatsApp já está ativo!" });
+                    
                     checkApiStatus();
                   } else {
                     throw new Error("Erro ao gerar QR Code. Tente novamente em 20 segundos.");
