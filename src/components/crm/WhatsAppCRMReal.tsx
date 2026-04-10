@@ -232,17 +232,60 @@ export function WhatsAppCRMReal() {
               )}
               {apiStatus === "checking" ? "Verificando..." : apiStatus === "connected" ? "Conectado à API" : "Desconectado da API"}
             </Badge>
-            <Button
-              size="sm"
-              disabled={isLoadingQR}
-              className="bg-green-600 hover:bg-green-700 text-white font-bold text-xs h-7"
-              onClick={async () => {
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-xs h-7 border-blue-500 text-blue-500 hover:bg-blue-500/10"
+                onClick={async () => {
+                  try {
+                    const EVOLUTION_API_URL = "https://api-whatsapp-sdmoveis.onrender.com";
+                    const EVOLUTION_API_KEY = "Mv06061991";
+                    const instanceName = "SD-Oficial";
+                    const SUPABASE_URL = "https://nglwscakhhdhelhbqkyb.supabase.co";
+                    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5nbHdzY2FiaGhkaGVsaGJxa3liIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1NDYzNjgsImV4cCI6MjA4NzEyMjM2OH0.MidIwMPLT17szfNnG9VRTnisoPzDAFnEw7IVLpqJj6A";
+
+                    toast({ title: "📡 Sincronizando...", description: "Forçando registro do carteiro..." });
+
+                    const res = await fetch(`${EVOLUTION_API_URL}/webhook/set/${instanceName}`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json', 'apikey': EVOLUTION_API_KEY },
+                      body: JSON.stringify({
+                         enabled: true,
+                         url: `${SUPABASE_URL}/functions/v1/whatsapp-webhook`,
+                         webhookByEvents: false,
+                         events: ["messages.upsert", "MESSAGES_UPSERT", "connection.update", "SEND_MESSAGE"],
+                         headers: {
+                           "apikey": SUPABASE_ANON_KEY,
+                           "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
+                         }
+                      })
+                    });
+
+                    if (res.ok) {
+                      toast({ title: "✅ Sincronizado!", description: "Webhook ativo. Aguardando mensagens." });
+                    } else {
+                      const err = await res.json();
+                      throw new Error(err.message || "Erro desconhecido na API");
+                    }
+                  } catch (err: any) {
+                    toast({ title: "❌ Erro na Sincronização", description: err.message, variant: "destructive" });
+                  }
+                }}
+              >
+                Sincronizar Carteiro
+              </Button>
+              <Button
+                size="sm"
+                disabled={isLoadingQR}
+                className="bg-green-600 hover:bg-green-700 text-white font-bold text-xs h-7"
+                onClick={async () => {
                 setIsLoadingQR(true);
                 setQrCodeData(null);
                 try {
                   const EVOLUTION_API_URL = "https://api-whatsapp-sdmoveis.onrender.com";
                   const EVOLUTION_API_KEY = "Mv06061991";
-                  const instanceName = "SD-Moveis";
+                  const instanceName = "SD-Oficial";
                   const SUPABASE_URL = "https://nglwscakhhdhelhbqkyb.supabase.co";
 
                   // 1. Acordar o servidor Render (cold start pode demorar até 60s)
@@ -304,7 +347,7 @@ export function WhatsAppCRMReal() {
                          url: `${SUPABASE_URL}/functions/v1/whatsapp-webhook`,
                          webhook_by_events: false,
                          base64: false,
-                         events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE", "MESSAGES_UPDATE", "SEND_MESSAGE"],
+                         events: ["messages.upsert", "connection.update", "messages.update", "send.message"],
                          headers: {
                            "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5nbHdzY2FiaGhkaGVsaGJxa3liIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1NDYzNjgsImV4cCI6MjA4NzEyMjM2OH0.MidIwMPLT17szfNnG9VRTnisoPzDAFnEw7IVLpqJj6A"
                          }

@@ -15,7 +15,19 @@ const ContractsPage: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ client_id: '', client_name: '', title: '', content: '', value: 0, status: 'rascunho', notes: '' });
+  const [form, setForm] = useState({
+    client_id: '',
+    client_name: '',
+    client_phone: '',
+    client_address: '',
+    title: '',
+    content: '',
+    value: 0,
+    status: 'rascunho',
+    notes: '',
+    payment_terms: '',
+    delivery_deadline: ''
+  });
   const [showGenerator, setShowGenerator] = useState<'contrato_servico' | 'ordem_servico' | null>(null);
   const [selectedClient, setSelectedClient] = useState<any>(null);
 
@@ -48,7 +60,18 @@ const ContractsPage: React.FC = () => {
       fetchData(); // refresh clients list
     }
 
-    const payload = { client_id: clientId, title: form.title, content: form.content, value: form.value, status: form.status, notes: form.notes };
+    const payload = {
+      client_id: clientId,
+      title: form.title,
+      content: form.content,
+      value: form.value,
+      status: form.status,
+      notes: form.notes,
+      client_phone: form.client_phone,
+      client_address: form.client_address,
+      payment_terms: form.payment_terms,
+      delivery_deadline: form.delivery_deadline
+    };
     let result;
     if (editingId) {
       result = await db.from('contracts').update(payload).eq('id', editingId);
@@ -63,7 +86,19 @@ const ContractsPage: React.FC = () => {
     toast({ title: editingId ? '✅ Contrato atualizado' : '✅ Contrato criado' });
     setShowForm(false);
     setEditingId(null);
-    setForm({ client_id: '', client_name: '', title: '', content: '', value: 0, status: 'rascunho', notes: '' });
+    setForm({
+      client_id: '',
+      client_name: '',
+      client_phone: '',
+      client_address: '',
+      title: '',
+      content: '',
+      value: 0,
+      status: 'rascunho',
+      notes: '',
+      payment_terms: '',
+      delivery_deadline: ''
+    });
     fetchData();
   };
 
@@ -78,13 +113,22 @@ const ContractsPage: React.FC = () => {
   };
 
   const handleWhatsAppShare = (c: any) => {
-    const phone = c.clients?.phone;
+    const phone = c.client_phone || c.clients?.phone;
     if (!phone) {
       toast({ title: '⚠️ Cliente sem telefone cadastrado', variant: 'destructive' });
       return;
     }
     const cleanPhone = phone.replace(/\D/g, '');
-    const message = `Olá *${c.clients?.name || 'Cliente'}*! 📄\n\nSou da *SD Móveis Projetados*. Gostaria de tratar sobre o *Contrato #${c.contract_number}*: *${c.title}*.\n\n💰 Valor: R$ ${(c.value || 0).toLocaleString('pt-BR')}\n📍 Status: ${c.status.toUpperCase()}\n\nFavor entrar em contato para próximos passos!`;
+    const message = `Olá *${c.clients?.name || c.client_name || 'Cliente'}*! 📄\n\n` +
+      `Sou da *SD Móveis Projetados*. Gostaria de tratar sobre o *Contrato #${c.contract_number}*: *${c.title}*.\n\n` +
+      `💰 *Valor:* R$ ${(c.value || 0).toLocaleString('pt-BR')}\n` +
+      `📅 *Prazo:* ${c.delivery_deadline || 'A combinar'}\n` +
+      `💳 *Pagamento:* ${c.payment_terms || 'A combinar'}\n` +
+      `📍 *Status:* ${c.status.toUpperCase()}\n\n` +
+      `🔑 *Chaves PIX para pagamento:*\n` +
+      `• *Infinitypay (CNPJ):* 49228811000133\n` +
+      `• *Itaú (Celular):* 85997602237\n\n` +
+      `Favor entrar em contato para próximos passos!`;
     window.open(`https://wa.me/55${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
@@ -153,7 +197,7 @@ const ContractsPage: React.FC = () => {
           <button onClick={() => openGenerator('ordem_servico')} className="bg-[#1a1a1a] border border-blue-500/30 text-blue-400 px-5 py-3 rounded-2xl font-bold hover:bg-blue-500/10 flex items-center justify-center gap-2 shadow-lg w-full sm:w-auto transition-colors">
             <Sparkles className="w-5 h-5" /> Gerar OS (IA)
           </button>
-          <button onClick={() => { setShowForm(true); setEditingId(null); setForm({ client_id: '', client_name: '', title: '', content: '', value: 0, status: 'rascunho', notes: '' }); }} className="text-black px-5 py-3 rounded-2xl font-bold hover:opacity-90 flex items-center justify-center gap-2 shadow-lg w-full sm:w-auto transition-opacity" style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583)' }}>
+          <button onClick={() => { setShowForm(true); setEditingId(null); setForm({ client_id: '', client_name: '', client_phone: '', client_address: '', title: '', content: '', value: 0, status: 'rascunho', notes: '', payment_terms: '', delivery_deadline: '' }); }} className="text-black px-5 py-3 rounded-2xl font-bold hover:opacity-90 flex items-center justify-center gap-2 shadow-lg w-full sm:w-auto transition-opacity" style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583)' }}>
             <Plus className="w-5 h-5" /> Manual
           </button>
         </div>
@@ -185,29 +229,58 @@ const ContractsPage: React.FC = () => {
 
       {showForm && (
         <div className="bg-[#111111] border border-amber-500/20 rounded-3xl p-6 shadow-xl space-y-4">
-          <h3 className="font-bold text-lg text-white">{editingId ? 'Editar' : 'Novo'} Contrato</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Título *" className="p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder-gray-500" />
-            <select value={form.client_id} onChange={e => setForm({ ...form, client_id: e.target.value })} className="p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none flex-1">
-              <option value="">Selecionar Cliente</option>
-              {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-            <input value={form.client_name} onChange={e => setForm({ ...form, client_name: e.target.value })} placeholder="Nome do cliente (manual)" className="p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder-gray-500" />
-            <input type="number" value={form.value} onChange={e => setForm({ ...form, value: +e.target.value })} placeholder="Valor (R$)" className="p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder-gray-500" />
-            <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })} className="p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none">
-              <option value="rascunho">Rascunho</option>
-              <option value="ativo">Ativo</option>
-              <option value="assinado">Assinado</option>
-              <option value="assassinado">Assinado (Correção)</option>
-              <option value="assasinado">Assinado (Correção)</option>
-              <option value="cancelado">Cancelado</option>
-              <option value="finalizado">Finalizado</option>
-            </select>
+          <header className="flex justify-between items-center mb-2">
+            <h3 className="font-bold text-lg text-white">{editingId ? 'Editar' : 'Novo'} Contrato</h3>
+            <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-white transition-colors">Fechar</button>
+          </header>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-4">
+              <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Título do Contrato/Projeto *" className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder-gray-500" />
+              
+              <div className="grid grid-cols-2 gap-3">
+                <select value={form.client_id} onChange={e => {
+                  const c = clients.find(cl => cl.id === e.target.value);
+                  setForm({ ...form, client_id: e.target.value, client_name: c?.name || '', client_phone: c?.phone || '', client_address: c?.address || '' });
+                }} className="p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                  <option value="">Cliente Cadastrado</option>
+                  {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+                <input value={form.client_name} onChange={e => setForm({ ...form, client_name: e.target.value })} placeholder="Nome Cliente (manual)" className="p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder-gray-500" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <input value={form.client_phone} onChange={e => setForm({ ...form, client_phone: e.target.value })} placeholder="Telefone / WhatsApp" className="p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder-gray-500" />
+                <input type="number" value={form.value} onChange={e => setForm({ ...form, value: +e.target.value })} placeholder="Valor Total (R$)" className="p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder-gray-500" />
+              </div>
+
+              <input value={form.client_address} onChange={e => setForm({ ...form, client_address: e.target.value })} placeholder="Endereço Completo" className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder-gray-500" />
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <input value={form.payment_terms} onChange={e => setForm({ ...form, payment_terms: e.target.value })} placeholder="Forma de Pagamento (ex: 50/50)" className="p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder-gray-500" />
+                <input value={form.delivery_deadline} onChange={e => setForm({ ...form, delivery_deadline: e.target.value })} placeholder="Prazo Entrega (ex: 45 dias)" className="p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder-gray-500" />
+              </div>
+
+              <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })} className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                <option value="rascunho">Rascunho</option>
+                <option value="ativo">Ativo</option>
+                <option value="assinado">Assinado</option>
+                <option value="cancelado">Cancelado</option>
+                <option value="finalizado">Finalizado</option>
+              </select>
+
+              <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Observações Adicionais" className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder-gray-500" rows={2} />
+            </div>
           </div>
-          <textarea value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} placeholder="Conteúdo do contrato" className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder-gray-500" rows={4} />
-          <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Observações" className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder-gray-500" rows={2} />
+
+          <textarea value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} placeholder="Conteúdo do Contrato / Descrição do Projeto" className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder-gray-500" rows={4} />
+
           <div className="flex gap-3">
-            <button onClick={handleSave} className="text-black px-6 py-3 rounded-xl font-bold transition-transform hover:scale-105" style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583)' }}>Salvar</button>
+            <button onClick={handleSave} className="flex-1 text-black px-6 py-3 rounded-xl font-bold transition-transform hover:scale-[1.02]" style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583)' }}>
+              {editingId ? 'Atualizar' : 'Salvar'} Contrato
+            </button>
             <button onClick={() => setShowForm(false)} className="bg-white/10 border border-white/10 text-white px-6 py-3 rounded-xl font-bold hover:bg-white/20 transition-all">Cancelar</button>
           </div>
         </div>
@@ -241,7 +314,23 @@ const ContractsPage: React.FC = () => {
                     className="w-9 h-9 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all shadow-lg shadow-emerald-500/10" title="Mandar via WhatsApp">
                     <MessageCircle className="w-4 h-4" />
                   </button>
-                  <button onClick={() => { setEditingId(c.id); setForm({ client_id: c.client_id || '', client_name: '', title: c.title, content: c.content || '', value: c.value || 0, status: c.status, notes: c.notes || '' }); setShowForm(true); }} className="w-9 h-9 bg-white/5 border border-white/5 rounded-xl flex items-center justify-center hover:bg-white/10 hover:border-amber-500/30 transition-all"><Edit className="w-4 h-4 text-gray-300" /></button>
+                  <button onClick={() => {
+                    setEditingId(c.id);
+                    setForm({
+                      client_id: c.client_id || '',
+                      client_name: c.client_name || c.clients?.name || '',
+                      client_phone: c.client_phone || c.clients?.phone || '',
+                      client_address: c.client_address || c.clients?.address || '',
+                      title: c.title,
+                      content: c.content || '',
+                      value: c.value || 0,
+                      status: c.status,
+                      notes: c.notes || '',
+                      payment_terms: c.payment_terms || '',
+                      delivery_deadline: c.delivery_deadline || ''
+                    });
+                    setShowForm(true);
+                  }} className="w-9 h-9 bg-white/5 border border-white/5 rounded-xl flex items-center justify-center hover:bg-white/10 hover:border-amber-500/30 transition-all"><Edit className="w-4 h-4 text-gray-300" /></button>
                 </td>
               </tr>
             ))}

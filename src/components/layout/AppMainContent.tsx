@@ -93,9 +93,9 @@ export const AppMainContent: React.FC<AppMainContentProps> = ({
                     {view === ViewMode.BUDGET_QUOTE && <BudgetQuote />}
                     {view === ViewMode.QUALITY_CHECK && selectedContract && <QualityCheckPanel projectId={selectedContract.id} projectName={selectedContract.name} />}
                     {view === ViewMode.PROJECT_COSTS && selectedContract && <ProjectCostPanel projectId={selectedContract.id} projectName={selectedContract.name} totalValue={selectedContract.value} />}
-                    {view === ViewMode.PROMOB && <div className="h-full p-6 overflow-auto bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen"><PromobEditor /></div>}
+                    {view === ViewMode.PROMOB && <div className="h-full p-6 overflow-auto bg-[#0f0f0f] min-h-screen"><PromobEditor /></div>}
                     {view === ViewMode.CRM && (
-                        <div className="h-full p-6 overflow-auto bg-gradient-to-br from-gray-50 to-gray-100">
+                        <div className="h-full p-6 overflow-auto bg-[#0f0f0f]">
                             <header className="mb-6">
                                 <h1 className="text-3xl font-black text-gray-900 flex items-center gap-3">
                                     <MessageCircle className="w-8 h-8 text-green-500" />
@@ -137,7 +137,7 @@ export const AppMainContent: React.FC<AppMainContentProps> = ({
                     )}
                     {view === ViewMode.AFTER_SALES && <AfterSalesPanel />}
                     {view === ViewMode.WARRANTY && (
-                        <div className="p-8 overflow-auto h-full bg-gradient-to-br from-gray-50 to-gray-100">
+                        <div className="p-8 overflow-auto h-full bg-[#0f0f0f]">
                             <WarrantyCertificate
                                 projectName={clientProject?.name || 'Projeto SD'}
                                 clientName={clientName || 'Cliente'}
@@ -148,7 +148,7 @@ export const AppMainContent: React.FC<AppMainContentProps> = ({
                             />
                         </div>
                     )}
-                    {view === ViewMode.CRM && <div className="p-8 h-full bg-white rounded-3xl m-4 shadow-xl overflow-auto"><WhatsAppCRMReal /></div>}
+                    {view === ViewMode.CRM && <div className="p-8 h-full bg-[#0f0f0f] rounded-3xl m-4 border border-white/5 shadow-xl overflow-auto"><WhatsAppCRMReal /></div>}
                     {view === ViewMode.CHAT && <InternalChat userName={clientName || 'Cliente'} userRole="CLIENT" />}
                 </>
             )}
@@ -157,7 +157,7 @@ export const AppMainContent: React.FC<AppMainContentProps> = ({
             {authState === 'EMPLOYEE' && (
                 <>
                     {view === ViewMode.TIME_TRACKING && <EmployeePortal employeeName={employeeName} />}
-                    <div style={{ display: view === ViewMode.FLEET ? "block" : "none" }} className="p-8 h-full bg-gradient-to-br from-gray-50 to-gray-100 overflow-auto"><DriverTripPanel employeeId="" employeeName={employeeName} /></div>
+                    <div style={{ display: view === ViewMode.FLEET ? "block" : "none" }} className="p-8 h-full bg-[#0f0f0f] overflow-auto"><DriverTripPanel employeeId="" employeeName={employeeName} /></div>
                     {view === ViewMode.CHAT && <InternalChat userName={employeeName || 'Funcionário'} userRole="EMPLOYEE" />}
                 </>
             )}

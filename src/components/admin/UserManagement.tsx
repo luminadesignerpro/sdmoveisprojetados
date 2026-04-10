@@ -148,10 +148,10 @@ const UserManagement: React.FC = () => {
     );
 
     return (
-        <div className="p-8 space-y-6 overflow-auto h-full bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="p-8 space-y-6 overflow-auto h-full bg-[#0f0f0f] text-white">
             <header className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-4xl font-black text-gray-900 flex items-center gap-3">
+                    <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-500 flex items-center gap-3">
                         <Users className="w-8 h-8 text-amber-500" />
                         Gestão de Usuários
                     </h1>
@@ -159,7 +159,8 @@ const UserManagement: React.FC = () => {
                 </div>
                 <button
                     onClick={() => setShowForm(true)}
-                    className="bg-amber-600 text-white px-6 py-3 rounded-2xl font-bold hover:bg-amber-700 transition-colors flex items-center gap-2 shadow-lg"
+                    className="text-black px-6 py-3 rounded-2xl font-bold hover:opacity-90 transition-opacity flex items-center gap-2 shadow-lg"
+                    style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583)' }}
                 >
                     <Plus className="w-5 h-5" />
                     Novo Usuário
@@ -172,20 +173,20 @@ const UserManagement: React.FC = () => {
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     placeholder="Buscar por nome ou e-mail..."
-                    className="w-full pl-12 pr-4 py-3 rounded-2xl border border-gray-200 bg-white focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    className="w-full pl-12 pr-4 py-3 rounded-2xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder-gray-600"
                 />
             </div>
 
             {showForm && (
-                <div className="bg-white rounded-3xl p-6 shadow-xl space-y-4">
-                    <h3 className="font-bold text-lg">Cadastrar Novo Usuário</h3>
+                <div className="bg-[#111111] border border-amber-500/20 rounded-3xl p-6 shadow-xl space-y-4">
+                    <h3 className="font-bold text-lg text-white">Cadastrar Novo Usuário</h3>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Nome Completo *</label>
                             <input
                                 value={formParams.name}
                                 onChange={e => setFormParams({ ...formParams, name: e.target.value })}
-                                className="w-full p-3 rounded-xl border border-gray-200"
+                                className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white"
                                 placeholder="Robson Silva"
                             />
                         </div>
@@ -194,7 +195,7 @@ const UserManagement: React.FC = () => {
                             <input
                                 value={formParams.email}
                                 onChange={e => setFormParams({ ...formParams, email: e.target.value })}
-                                className="w-full p-3 rounded-xl border border-gray-200"
+                                className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white"
                                 placeholder="robson@sdmoveis.com"
                             />
                         </div>
@@ -203,7 +204,7 @@ const UserManagement: React.FC = () => {
                             <input
                                 value={formParams.password}
                                 onChange={e => setFormParams({ ...formParams, password: e.target.value })}
-                                className="w-full p-3 rounded-xl border border-gray-200"
+                                className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white"
                                 type="text"
                                 placeholder="Senha segura"
                             />
@@ -213,7 +214,7 @@ const UserManagement: React.FC = () => {
                             <select
                                 value={formParams.role}
                                 onChange={e => setFormParams({ ...formParams, role: e.target.value })}
-                                className="w-full p-3 rounded-xl border border-gray-200"
+                                className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white"
                             >
                                 <option value="EMPLOYEE">Funcionário</option>
                                 <option value="ADMIN">Administrador</option>
@@ -222,24 +223,24 @@ const UserManagement: React.FC = () => {
                         </div>
                     </div>
                     <div className="flex gap-3 pt-4">
-                        <button onClick={handleSave} disabled={loading} className="bg-amber-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-amber-700 disabled:opacity-50">
+                        <button onClick={handleSave} disabled={loading} className="text-black px-6 py-3 rounded-xl font-bold hover:opacity-90 disabled:opacity-50" style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583)' }}>
                             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Salvar Usuário'}
                         </button>
-                        <button onClick={() => setShowForm(false)} className="bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-bold hover:bg-gray-300">
+                        <button onClick={() => setShowForm(false)} className="bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-xl font-bold transition-colors">
                             Cancelar
                         </button>
                     </div>
                 </div>
             )}
 
-            <div className="bg-white rounded-3xl shadow-xl overflow-hidden">
+            <div className="bg-[#111111] border border-white/10 rounded-3xl shadow-xl overflow-hidden">
                 <table className="w-full">
-                    <thead className="bg-gray-50 border-b border-gray-100">
+                    <thead className="bg-[#1a1a1a] border-b border-white/10">
                         <tr>
-                            <th className="text-left p-6 text-xs font-black text-gray-500 uppercase">Usuário</th>
-                            <th className="text-left p-6 text-xs font-black text-gray-500 uppercase">Acesso</th>
-                            <th className="text-left p-6 text-xs font-black text-gray-500 uppercase">Data de Cadastro</th>
-                            <th className="text-right p-6 text-xs font-black text-gray-500 uppercase">Ações</th>
+                            <th className="text-left p-6 text-xs font-black text-gray-400 uppercase">Usuário</th>
+                            <th className="text-left p-6 text-xs font-black text-gray-400 uppercase">Acesso</th>
+                            <th className="text-left p-6 text-xs font-black text-gray-400 uppercase">Data de Cadastro</th>
+                            <th className="text-right p-6 text-xs font-black text-gray-400 uppercase">Ações</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -247,11 +248,11 @@ const UserManagement: React.FC = () => {
                             <tr key={u.id} className="border-b last:border-0 hover:bg-gray-50 transition-colors">
                                 <td className="p-6">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center font-bold">
+                                        <div className="w-10 h-10 rounded-full bg-amber-500/20 text-amber-500 flex items-center justify-center font-bold border border-amber-500/30">
                                             {u.name?.charAt(0).toUpperCase() || 'U'}
                                         </div>
                                         <div>
-                                            <p className="font-bold text-gray-900">{u.name}</p>
+                                            <p className="font-bold text-white">{u.name}</p>
                                             <p className="text-sm text-gray-500 flex items-center gap-1">
                                                 <Mail className="w-3 h-3" /> {u.email || 'Sem e-mail'}
                                             </p>
@@ -259,9 +260,9 @@ const UserManagement: React.FC = () => {
                                     </div>
                                 </td>
                                 <td className="p-6">
-                                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${u.role === 'Administrador' ? 'bg-red-100 text-red-700' :
-                                        u.role === 'Funcionário' ? 'bg-green-100 text-green-700' :
-                                            'bg-blue-100 text-blue-700'}`}>
+                                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${u.role === 'Administrador' ? 'bg-red-900/30 text-red-500 border border-red-500/30' :
+                                        u.role === 'Funcionário' ? 'bg-green-900/30 text-green-500 border border-green-500/30' :
+                                            'bg-blue-900/30 text-blue-500 border border-blue-500/30'}`}>
                                         {u.role || 'Usuário'}
                                     </span>
                                 </td>
@@ -272,21 +273,21 @@ const UserManagement: React.FC = () => {
                                     <div className="flex gap-2 justify-end">
                                         <button
                                             onClick={() => openEdit(u)}
-                                            className="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center text-gray-500 hover:text-amber-600 hover:bg-amber-50 transition-colors"
+                                            className="w-9 h-9 bg-white/5 border border-white/5 rounded-xl flex items-center justify-center text-gray-400 hover:text-amber-500 hover:bg-amber-900/20 transition-all"
                                             title="Editar Usuário"
                                         >
                                             <Edit className="w-4 h-4" />
                                         </button>
                                         <button
                                             onClick={() => openChangePassword(u)}
-                                            className="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                                            className="w-9 h-9 bg-white/5 border border-white/5 rounded-xl flex items-center justify-center text-gray-400 hover:text-blue-500 hover:bg-blue-900/20 transition-all"
                                             title="Trocar Senha"
                                         >
                                             <Key className="w-4 h-4" />
                                         </button>
                                         <button
                                             onClick={() => handleDelete(u.id)}
-                                            className="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors"
+                                            className="w-9 h-9 bg-white/5 border border-white/5 rounded-xl flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-900/20 transition-all"
                                             title="Remover Usuário"
                                         >
                                             <Trash2 className="w-4 h-4" />
@@ -308,43 +309,43 @@ const UserManagement: React.FC = () => {
 
             {/* Edit User Modal */}
             {editingUser && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-4">
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-[#111111] border border-amber-500/30 rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-4 text-white">
                         <div className="flex items-center justify-between">
                             <h3 className="font-bold text-lg flex items-center gap-2">
                                 <Edit className="w-5 h-5 text-amber-500" />
                                 Editar Usuário
                             </h3>
-                            <button onClick={() => setEditingUser(null)} className="text-gray-400 hover:text-gray-600">
+                            <button onClick={() => setEditingUser(null)} className="text-gray-400 hover:text-white">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
 
                         <div className="space-y-3">
                             <div>
-                                <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Nome Completo *</label>
+                                <label className="text-xs font-bold text-gray-400 uppercase mb-1 block">Nome Completo *</label>
                                 <input
                                     value={editForm.name}
                                     onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))}
-                                    className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                                    className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
                                     placeholder="Nome do usuário"
                                 />
                             </div>
                             <div>
-                                <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">E-mail</label>
+                                <label className="text-xs font-bold text-gray-400 uppercase mb-1 block">E-mail</label>
                                 <input
                                     value={editForm.email}
                                     onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))}
-                                    className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                                    className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
                                     placeholder="email@sdmoveis.com"
                                 />
                             </div>
                             <div>
-                                <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Nível de Acesso</label>
+                                <label className="text-xs font-bold text-gray-400 uppercase mb-1 block">Nível de Acesso</label>
                                 <select
                                     value={editForm.role}
                                     onChange={e => setEditForm(f => ({ ...f, role: e.target.value }))}
-                                    className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                                    className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
                                 >
                                     <option value="Funcionário">Funcionário</option>
                                     <option value="Administrador">Administrador</option>
@@ -354,10 +355,10 @@ const UserManagement: React.FC = () => {
                         </div>
 
                         <div className="flex gap-3 pt-2">
-                            <button onClick={() => setEditingUser(null)} className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-300">
+                            <button onClick={() => setEditingUser(null)} className="flex-1 bg-white/10 hover:bg-white/20 text-white py-3 rounded-xl font-bold transition-all">
                                 Cancelar
                             </button>
-                            <button onClick={handleEdit} disabled={savingEdit} className="flex-1 flex items-center justify-center gap-2 bg-amber-600 text-white py-3 rounded-xl font-bold hover:bg-amber-700 disabled:opacity-50">
+                            <button onClick={handleEdit} disabled={savingEdit} className="flex-1 flex items-center justify-center gap-2 text-black py-3 rounded-xl font-bold hover:opacity-90 disabled:opacity-50" style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583)' }}>
                                 <Save className="w-4 h-4" />
                                 {savingEdit ? 'Salvando...' : 'Salvar'}
                             </button>
@@ -368,44 +369,44 @@ const UserManagement: React.FC = () => {
 
             {/* Change Password Modal */}
             {passwordUser && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl space-y-4">
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 text-white">
+                    <div className="bg-[#111111] border border-blue-500/30 rounded-3xl w-full max-w-sm p-6 shadow-2xl space-y-4">
                         <div className="flex items-center justify-between">
                             <h3 className="font-bold text-lg flex items-center gap-2">
                                 <Key className="w-5 h-5 text-blue-500" />
                                 Trocar Senha
                             </h3>
-                            <button onClick={() => setPasswordUser(null)} className="text-gray-400 hover:text-gray-600">
+                            <button onClick={() => setPasswordUser(null)} className="text-gray-400 hover:text-white">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
 
-                        <p className="text-sm text-gray-500">
-                            Definindo nova senha para <span className="font-bold text-gray-800">{passwordUser.name}</span>
+                        <p className="text-sm text-gray-400">
+                            Definindo nova senha para <span className="font-bold text-white">{passwordUser.name}</span>
                         </p>
 
                         <div>
-                            <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Nova Senha *</label>
+                            <label className="text-xs font-bold text-gray-400 uppercase mb-1 block">Nova Senha *</label>
                             <div className="relative">
                                 <input
                                     value={newPassword}
                                     onChange={e => setNewPassword(e.target.value)}
                                     type={showPassword ? 'text' : 'password'}
                                     placeholder="Digite a nova senha..."
-                                    className="w-full p-3 pr-12 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="w-full p-3 pr-12 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
                                 />
                                 <button
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600"
+                                    className="absolute right-3 top-3.5 text-gray-400 hover:text-white"
                                 >
                                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                 </button>
                             </div>
-                            <p className="text-xs text-gray-400 mt-1">Mínimo de 4 caracteres.</p>
+                            <p className="text-xs text-gray-500 mt-1">Mínimo de 4 caracteres.</p>
                         </div>
 
                         <div className="flex gap-3 pt-2">
-                            <button onClick={() => setPasswordUser(null)} className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-300">
+                            <button onClick={() => setPasswordUser(null)} className="flex-1 bg-white/10 hover:bg-white/20 text-white py-3 rounded-xl font-bold transition-all">
                                 Cancelar
                             </button>
                             <button onClick={handleChangePassword} disabled={savingPassword} className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 disabled:opacity-50">
