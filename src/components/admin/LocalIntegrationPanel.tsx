@@ -105,10 +105,21 @@ const LocalIntegrationPanel: React.FC = () => {
 
             <div className="pt-4 flex flex-col gap-3">
               <Button onClick={downloadRegFile} className="w-full bg-green-600 hover:bg-green-500 text-black font-black rounded-2xl py-6 text-lg">
-                <Download className="w-5 h-5 mr-3" /> BAIXAR REGISTRO (.REG)
+                <Download className="w-5 h-5 mr-3" /> 1. BAIXAR REGISTRO (.REG)
               </Button>
-              <Button variant="outline" className="w-full border-white/10 text-white rounded-2xl py-6 hover:bg-white/5">
-                <Settings className="w-5 h-5 mr-3" /> BAIXAR SYNC AGENT (.EXE)
+              <a href="/installers/FpqSyncAgent.exe" download>
+                <Button variant="outline" className="w-full border-white/10 text-white rounded-2xl py-6 hover:bg-white/5">
+                  <Download className="w-5 h-5 mr-3" /> 2. BAIXAR SYNC AGENT (.EXE)
+                </Button>
+              </a>
+              <Button 
+                onClick={() => {
+                  window.location.href = 'fpqsystem://test';
+                  toast({ title: "🚀 Abrindo Agent...", description: "Se o Agent estiver instalado, ele abrirá agora." });
+                }}
+                className="w-full bg-amber-500 hover:bg-amber-400 text-black font-black rounded-2xl py-6"
+              >
+                <Zap className="w-5 h-5 mr-3" /> 3. TESTAR CONEXÃO (ABRIR PC)
               </Button>
             </div>
           </CardContent>
@@ -148,8 +159,18 @@ const LocalIntegrationPanel: React.FC = () => {
                   <span className="text-[10px] font-black uppercase text-red-500 tracking-widest">Desconhecido</span>
                 </div>
               </div>
+              <Button 
+                onClick={() => {
+                  window.location.href = 'promobsystem://';
+                  toast({ title: "🚀 Abrindo Promob...", description: "Tentando iniciar o Promob Plus instalado." });
+                }}
+                variant="outline"
+                className="w-full border-red-500/20 text-white rounded-2xl py-6 hover:bg-red-500/5 mt-2"
+              >
+                <Monitor className="w-5 h-5 mr-3 text-red-500" /> TESTAR ABERTURA PROMOB
+              </Button>
               <p className="text-[10px] text-gray-500 text-center italic">
-                Recomendamos executar o arquivo .reg e reiniciar o navegador para ativar a integração completa.
+                Recomendamos executar o arquivo .reg, mover o Agent para C:\FpqSystem\ e reiniciar o navegador.
               </p>
             </div>
           </CardContent>

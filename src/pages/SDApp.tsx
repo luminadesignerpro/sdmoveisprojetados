@@ -461,6 +461,8 @@ const App: React.FC = () => {
             {authState === 'ADMIN' ? (
               <>
                 <NavIcon icon="layout-dashboard" label="Início" active={view === ViewMode.DASHBOARD} onClick={() => setView(ViewMode.DASHBOARD)} />
+                <NavIcon icon="monitor" label="FPQ PC" active={false} onClick={() => window.location.href = 'fpqsystem://'} />
+                <NavIcon icon="monitor" label="Promob PC" active={false} onClick={() => window.location.href = 'promobsystem://'} />
                 <NavIcon icon="settings" label="Integração PC" active={view === ViewMode.INTEGRATION} onClick={() => setView(ViewMode.INTEGRATION)} />
                 <NavIcon icon="camera" label="Câmera AR Pro" active={view === ViewMode.BUDGET_QUOTE} onClick={() => setView(ViewMode.BUDGET_QUOTE)} />
                 <NavIcon icon="file-text" label="Vendas" active={view === ViewMode.CONTRACTS} onClick={() => setView(ViewMode.CONTRACTS)} />
