@@ -111,18 +111,18 @@ export default function FuelLogForm({ employeeId, tripId, vehicleId: defaultVehi
 
   return (
     <div className="space-y-4">
-      <div className="bg-orange-50 rounded-xl p-4 space-y-3 border border-orange-200">
-        <p className="font-bold text-orange-800 text-sm flex items-center gap-2">
-          <Fuel className="w-4 h-4" /> Registrar Abastecimento
+      <div className="bg-[#111111] border border-amber-500/20 rounded-3xl p-6 shadow-xl space-y-4">
+        <p className="font-black text-white text-sm flex items-center gap-2">
+          <Fuel className="w-5 h-5 text-amber-500" /> Registrar Abastecimento
         </p>
 
         {/* Veículo */}
         <div>
-          <label className="text-xs font-bold text-gray-600 uppercase">Veículo *</label>
+          <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Veículo *</label>
           <select
             value={vehicleId}
             onChange={e => setVehicleId(e.target.value)}
-            className="w-full p-3 rounded-lg border border-orange-200 text-sm bg-white mt-1"
+            className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white text-sm mt-1 focus:ring-2 focus:ring-amber-500 outline-none"
           >
             <option value="">Selecione o veículo...</option>
             {vehicles.map(v => (
@@ -134,23 +134,23 @@ export default function FuelLogForm({ employeeId, tripId, vehicleId: defaultVehi
         {/* KM e Valor/Litro */}
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="text-xs font-bold text-gray-600 uppercase">KM Atual (Odômetro) *</label>
+            <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">KM Atual (Odômetro) *</label>
             <input
               type="number"
               value={odometer}
               onChange={e => setOdometer(e.target.value)}
               placeholder="Ex: 45230"
-              className="w-full p-3 rounded-lg border border-orange-200 bg-white text-sm mt-1"
+              className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white text-sm mt-1 focus:ring-2 focus:ring-amber-500 outline-none"
             />
           </div>
           <div>
-            <label className="text-xs font-bold text-gray-600 uppercase">Valor/Litro (R$) *</label>
+            <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Valor/Litro (R$) *</label>
             <input
               type="number"
               value={pricePerLiter}
               onChange={e => setPricePerLiter(e.target.value)}
               placeholder="Ex: 5.89"
-              className="w-full p-3 rounded-lg border border-orange-200 bg-white text-sm mt-1"
+              className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white text-sm mt-1 focus:ring-2 focus:ring-amber-500 outline-none"
               min="0.01"
               step="0.01"
             />
@@ -160,20 +160,20 @@ export default function FuelLogForm({ employeeId, tripId, vehicleId: defaultVehi
         {/* Valor Total e Litros */}
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="text-xs font-bold text-gray-600 uppercase">Valor Total (R$) *</label>
+            <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Valor Total (R$) *</label>
             <input
               type="number"
               value={totalCostInput}
               onChange={e => setTotalCostInput(e.target.value)}
               placeholder="Ex: 200.00"
-              className="w-full p-3 rounded-lg border border-orange-200 bg-white text-sm mt-1"
+              className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white text-sm mt-1 focus:ring-2 focus:ring-amber-500 outline-none"
               min="0.01"
               step="0.01"
             />
           </div>
           <div>
-            <label className="text-xs font-bold text-gray-600 uppercase">Litros (auto)</label>
-            <div className="w-full p-3 rounded-lg border border-orange-100 bg-orange-50 text-sm mt-1 font-bold text-orange-700 text-center">
+            <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Litros (auto)</label>
+            <div className="w-full p-3 rounded-xl border border-amber-500/10 bg-amber-500/5 text-sm mt-1 font-black text-amber-500 text-center">
               {autoLiters > 0 ? `${autoLiters.toFixed(1)}L` : '—'}
             </div>
           </div>
@@ -181,13 +181,13 @@ export default function FuelLogForm({ employeeId, tripId, vehicleId: defaultVehi
 
         {/* Observações */}
         <div>
-          <label className="text-xs font-bold text-gray-600 uppercase">Observações</label>
+          <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Observações</label>
           <input
             type="text"
             value={notes}
             onChange={e => setNotes(e.target.value)}
             placeholder="Posto, tipo de combustível.."
-            className="w-full p-3 rounded-lg border border-orange-200 bg-white text-sm mt-1"
+            className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white text-sm mt-1 focus:ring-2 focus:ring-amber-500 outline-none"
           />
         </div>
 
@@ -203,7 +203,7 @@ export default function FuelLogForm({ employeeId, tripId, vehicleId: defaultVehi
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-orange-200 rounded-lg text-sm text-orange-700 font-bold hover:bg-orange-50 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs text-white/60 font-black uppercase tracking-widest hover:bg-white/10 transition-colors"
         >
           <Camera className="w-4 h-4" />
           {uploading ? 'Enviando...' : receiptUrl ? '✅ Comprovante anexado' : '📷 Foto Comprovante'}
@@ -213,7 +213,8 @@ export default function FuelLogForm({ employeeId, tripId, vehicleId: defaultVehi
         <button
           onClick={submit}
           disabled={sending || !vehicleId || !totalCostInput || !pricePerLiter}
-          className="w-full bg-orange-500 text-white py-3 rounded-xl font-bold text-sm hover:bg-orange-600 disabled:opacity-50 flex items-center justify-center gap-2"
+          className="w-full text-black py-4 rounded-xl font-black text-sm transition-transform hover:scale-[1.02] disabled:opacity-50 flex items-center justify-center gap-2"
+          style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583)' }}
         >
           {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           Registrar Abastecimento
@@ -222,15 +223,15 @@ export default function FuelLogForm({ employeeId, tripId, vehicleId: defaultVehi
 
       {logs.length > 0 && (
         <div className="space-y-2">
-          <p className="text-sm font-bold text-gray-700">Últimos Abastecimentos</p>
+          <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Últimos Abastecimentos</p>
           {logs.map(log => (
-            <div key={log.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl text-sm">
+            <div key={log.id} className="flex items-center justify-between p-4 bg-white/5 border border-white/5 rounded-2xl text-sm">
               <div>
-                <span className="font-bold text-gray-900">{Number(log.liters).toFixed(1)}L</span>
+                <span className="font-black text-white">{Number(log.liters).toFixed(1)}L</span>
                 <span className="text-gray-500 ml-2">× R$ {Number(log.price_per_liter).toFixed(2)}</span>
                 {log.odometer && <span className="text-gray-400 ml-2 text-xs">{Number(log.odometer).toLocaleString('pt-BR')} km</span>}
               </div>
-              <span className="font-bold text-orange-700">R$ {Number(log.total_cost).toFixed(2)}</span>
+              <span className="font-black text-amber-500">R$ {Number(log.total_cost).toFixed(2)}</span>
             </div>
           ))}
         </div>
