@@ -330,7 +330,7 @@ const App: React.FC = () => {
         return;
       }
       setAuthState('ADMIN');
-      setView(ViewMode.DASHBOARD_3D);
+      setView(ViewMode.DASHBOARD);
       toast({ title: "✅ Bem-vindo!", description: "Acesso administrativo liberado" });
     } else if (selectedRole === 'EMPLOYEE') {
       if (!employeeName.trim()) {
@@ -411,9 +411,9 @@ const App: React.FC = () => {
   };
 
 
-  const totalRevenue = contracts.reduce((sum, c) => sum + (c.value || 0), 0);
-  const signedContracts = contracts.filter(c => ['assinado', 'producao', 'instalacao', 'concluido'].includes(c.status)).length;
-  const inProduction = contracts.filter(c => c.status === 'producao').length;
+  const totalRevenue = (contracts || []).reduce((sum, c) => sum + (Number(c?.value) || 0), 0);
+  const signedContracts = (contracts || []).filter(c => ['assinado', 'producao', 'instalacao', 'concluido'].includes(c?.status)).length;
+  const inProduction = (contracts || []).filter(c => c?.status === 'producao').length;
 
   return (
     <div className={`h-screen w-screen flex ${isCompactLayout ? 'flex-col' : 'flex-col sm:flex-row'} bg-background overflow-hidden relative`}>
@@ -638,7 +638,7 @@ const App: React.FC = () => {
                     <div className="rounded-[calc(1rem-2px)] overflow-hidden" style={{ background: '#111111' }}>
                       <DashboardStat
                         title="Projetos Ativos"
-                        value={contracts.length.toString()}
+                        value={(contracts?.length || 0).toString()}
                         icon="📁"
                         trend="+2 este mês"
                         dark
@@ -651,7 +651,7 @@ const App: React.FC = () => {
                     <div className="rounded-[calc(1rem-2px)] overflow-hidden" style={{ background: '#111111' }}>
                       <DashboardStat
                         title="Faturamento Total"
-                        value={`R$ ${(totalRevenue / 1000).toFixed(0)}K`}
+                        value={`R$ ${((totalRevenue || 0) / 1000).toFixed(0)}K`}
                         icon="💰"
                         trend="+15% vs mês anterior"
                         dark
@@ -664,7 +664,7 @@ const App: React.FC = () => {
                     <div className="rounded-[calc(1rem-2px)] overflow-hidden" style={{ background: '#111111' }}>
                       <DashboardStat
                         title="Em Produção"
-                        value={inProduction.toString()}
+                        value={(inProduction || 0).toString()}
                         icon="🏭"
                         trend="Meta: 10"
                         dark
@@ -677,7 +677,7 @@ const App: React.FC = () => {
                     <div className="rounded-[calc(1rem-2px)] overflow-hidden" style={{ background: '#111111' }}>
                       <DashboardStat
                         title="Conversão"
-                        value={`${contracts.length > 0 ? Math.round((signedContracts / contracts.length) * 100) : 0}%`}
+                        value={`${(contracts?.length || 0) > 0 ? Math.round(((signedContracts || 0) / (contracts?.length || 1)) * 100) : 0}%`}
                         icon="📈"
                         trend="Excelente!"
                         dark
