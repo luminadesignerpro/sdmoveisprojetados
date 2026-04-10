@@ -186,9 +186,9 @@ const ContractsPage: React.FC = () => {
         <div>
           <h1 className="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-500 flex items-center gap-3">
             <FileSignature className="w-8 h-8 text-amber-500" />
-            Contratos
+            Contratos <span className="text-xs bg-amber-500/20 text-amber-500 px-2 py-1 rounded ml-2 border border-amber-500/30">v2.1 Black Gold</span>
           </h1>
-          <p className="text-gray-400 mt-1">Gestão de contratos e ordens de serviço</p>
+          <p className="text-gray-400 mt-1">Gestão de contratos e ordens de serviço (Sincronizado)</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
           <button onClick={() => openGenerator('contrato_servico')} className="bg-[#1a1a1a] border border-amber-500/30 text-amber-500 px-5 py-3 rounded-2xl font-bold hover:bg-amber-500/10 flex items-center justify-center gap-2 shadow-lg w-full sm:w-auto transition-colors">
