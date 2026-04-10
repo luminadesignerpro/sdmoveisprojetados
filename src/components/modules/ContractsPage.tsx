@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { FileSignature, Plus, Search, Edit, Sparkles, Key, MessageCircle } from 'lucide-react';
+import { FileSignature, Plus, Search, Edit, Sparkles, Key, MessageCircle, X, User, Phone, MapPin, ClipboardList, Calendar, DollarSign, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import ContractGenerator from './ContractGenerator';
 
@@ -125,9 +125,9 @@ const ContractsPage: React.FC = () => {
       `📅 *Prazo:* ${c.delivery_deadline || 'A combinar'}\n` +
       `💳 *Pagamento:* ${c.payment_terms || 'A combinar'}\n` +
       `📍 *Status:* ${c.status.toUpperCase()}\n\n` +
-      `🔑 *Chaves PIX para pagamento:*\n` +
-      `• *Infinitypay (CNPJ):* 49228811000133\n` +
-      `• *Itaú (Celular):* 85997602237\n\n` +
+      `🔑 *CHAVES PIX PARA PAGAMENTO:*\n\n` +
+      `💎 *InfinityPay (CNPJ):* 49.228.811/0001-33\n` +
+      `🏦 *Itaú (Celular):* 85 99760-2237\n\n` +
       `Favor entrar em contato para próximos passos!`;
     window.open(`https://wa.me/55${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
   };
@@ -228,60 +228,113 @@ const ContractsPage: React.FC = () => {
       </div>
 
       {showForm && (
-        <div className="bg-[#111111] border border-amber-500/20 rounded-3xl p-6 shadow-xl space-y-4">
-          <header className="flex justify-between items-center mb-2">
-            <h3 className="font-bold text-lg text-white">{editingId ? 'Editar' : 'Novo'} Contrato</h3>
-            <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-white transition-colors">Fechar</button>
-          </header>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-4">
-              <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Título do Contrato/Projeto *" className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder-gray-500" />
-              
-              <div className="grid grid-cols-2 gap-3">
-                <select value={form.client_id} onChange={e => {
-                  const c = clients.find(cl => cl.id === e.target.value);
-                  setForm({ ...form, client_id: e.target.value, client_name: c?.name || '', client_phone: c?.phone || '', client_address: c?.address || '' });
-                }} className="p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none">
-                  <option value="">Cliente Cadastrado</option>
-                  {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-                <input value={form.client_name} onChange={e => setForm({ ...form, client_name: e.target.value })} placeholder="Nome Cliente (manual)" className="p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder-gray-500" />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <input value={form.client_phone} onChange={e => setForm({ ...form, client_phone: e.target.value })} placeholder="Telefone / WhatsApp" className="p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder-gray-500" />
-                <input type="number" value={form.value} onChange={e => setForm({ ...form, value: +e.target.value })} placeholder="Valor Total (R$)" className="p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder-gray-500" />
-              </div>
-
-              <input value={form.client_address} onChange={e => setForm({ ...form, client_address: e.target.value })} placeholder="Endereço Completo" className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder-gray-500" />
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#111111] rounded-2xl border border-amber-500/30 p-6 w-full max-w-lg max-h-[92vh] overflow-y-auto shadow-2xl text-white">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-500 flex items-center gap-2">
+                <FileSignature className="w-5 h-5 text-amber-500" />
+                {editingId ? 'Editar' : 'Novo'} Contrato Manual
+              </h3>
+              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-all">
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <input value={form.payment_terms} onChange={e => setForm({ ...form, payment_terms: e.target.value })} placeholder="Forma de Pagamento (ex: 50/50)" className="p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder-gray-500" />
-                <input value={form.delivery_deadline} onChange={e => setForm({ ...form, delivery_deadline: e.target.value })} placeholder="Prazo Entrega (ex: 45 dias)" className="p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder-gray-500" />
+              {/* Título */}
+              <div>
+                <label className="text-sm font-semibold text-gray-300 flex items-center gap-2 mb-1"><ClipboardList className="w-4 h-4 text-amber-500" /> Título do Contrato/Projeto *</label>
+                <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} 
+                  placeholder="Ex: Cozinha Completa MDF" className="w-full h-11 bg-[#1a1a1a] rounded-xl px-4 border border-white/10 text-white placeholder:text-gray-600 text-sm focus:border-amber-500 outline-none" />
               </div>
 
-              <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })} className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none">
-                <option value="rascunho">Rascunho</option>
-                <option value="ativo">Ativo</option>
-                <option value="assinado">Assinado</option>
-                <option value="cancelado">Cancelado</option>
-                <option value="finalizado">Finalizado</option>
-              </select>
+              {/* Cliente */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm font-semibold text-gray-300 flex items-center gap-2 mb-1"><User className="w-4 h-4 text-amber-500" /> Cliente Cadastrado</label>
+                  <select value={form.client_id} onChange={e => {
+                    const c = clients.find(cl => cl.id === e.target.value);
+                    setForm({ ...form, client_id: e.target.value, client_name: c?.name || '', client_phone: c?.phone || '', client_address: c?.address || '' });
+                  }} className="w-full h-11 bg-[#1a1a1a] rounded-xl px-3 border border-white/10 text-white text-sm focus:border-amber-500 outline-none">
+                    <option value="">Selecionar...</option>
+                    {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-gray-300 flex items-center gap-2 mb-1">Nome Manual</label>
+                  <input value={form.client_name} onChange={e => setForm({ ...form, client_name: e.target.value })} 
+                    placeholder="Nome do cliente" className="w-full h-11 bg-[#1a1a1a] rounded-xl px-4 border border-white/10 text-white placeholder:text-gray-600 text-sm focus:border-amber-500 outline-none" />
+                </div>
+              </div>
 
-              <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Observações Adicionais" className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder-gray-500" rows={2} />
+              {/* Celular e Endereço */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm font-semibold text-gray-300 flex items-center gap-2 mb-1"><Phone className="w-4 h-4 text-green-500" /> Celular</label>
+                  <input value={form.client_phone} onChange={e => setForm({ ...form, client_phone: e.target.value })} 
+                    placeholder="(00) 00000-0000" className="w-full h-11 bg-[#1a1a1a] rounded-xl px-4 border border-white/10 text-white placeholder:text-gray-600 text-sm focus:border-amber-500 outline-none" />
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-gray-300 flex items-center gap-2 mb-1"><MapPin className="w-4 h-4 text-red-500" /> Endereço</label>
+                  <input value={form.client_address} onChange={e => setForm({ ...form, client_address: e.target.value })} 
+                    placeholder="Rua, número, bairro" className="w-full h-11 bg-[#1a1a1a] rounded-xl px-4 border border-white/10 text-white placeholder:text-gray-600 text-sm focus:border-amber-500 outline-none" />
+                </div>
+              </div>
+
+              {/* Pagamento e Prazo */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm font-semibold text-gray-300 flex items-center gap-2 mb-1"><DollarSign className="w-4 h-4 text-green-500" /> Condições de Pagamento</label>
+                  <input value={form.payment_terms} onChange={e => setForm({ ...form, payment_terms: e.target.value })} 
+                    placeholder="Ex: 50% entrada + 50% entrega" className="w-full h-11 bg-[#1a1a1a] rounded-xl px-4 border border-white/10 text-white placeholder:text-gray-600 text-sm focus:border-amber-500 outline-none" />
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-gray-300 flex items-center gap-2 mb-1"><Clock className="w-4 h-4 text-amber-500" /> Prazo de Entrega</label>
+                  <input value={form.delivery_deadline} onChange={e => setForm({ ...form, delivery_deadline: e.target.value })} 
+                    placeholder="Ex: 45 dias úteis" className="w-full h-11 bg-[#1a1a1a] rounded-xl px-4 border border-white/10 text-white placeholder:text-gray-600 text-sm focus:border-amber-500 outline-none" />
+                </div>
+              </div>
+
+              {/* Valor e Status */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm font-semibold text-gray-300 flex items-center gap-2 mb-1"><DollarSign className="w-4 h-4 text-green-500" /> Valor Total (R$)</label>
+                  <input type="number" value={form.value} onChange={e => setForm({ ...form, value: +e.target.value })} 
+                    placeholder="0,00" className="w-full h-11 bg-[#1a1a1a] rounded-xl px-4 border border-white/10 text-white placeholder:text-gray-600 text-sm focus:border-amber-500 outline-none" />
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-gray-300 flex items-center gap-2 mb-1">Status</label>
+                  <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })} className="w-full h-11 bg-[#1a1a1a] rounded-xl px-3 border border-white/10 text-white text-sm focus:border-amber-500 outline-none">
+                    <option value="rascunho">Rascunho</option>
+                    <option value="ativo">Ativo</option>
+                    <option value="assinado">Assinado</option>
+                    <option value="cancelado">Cancelado</option>
+                    <option value="finalizado">Finalizado</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Observações / Conteúdo */}
+              <div>
+                <label className="text-sm font-semibold text-gray-300 flex items-center gap-2 mb-1"><MessageCircle className="w-4 h-4 text-gray-500" /> Descrição Completa / Observações</label>
+                <textarea value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} 
+                  placeholder="Detalhamento do projeto..." rows={3}
+                  className="w-full bg-[#1a1a1a] rounded-xl px-4 py-3 border border-white/10 text-white placeholder:text-gray-600 text-sm focus:border-amber-500 outline-none transition-all resize-none" />
+              </div>
             </div>
-          </div>
 
-          <textarea value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} placeholder="Conteúdo do Contrato / Descrição do Projeto" className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder-gray-500" rows={4} />
-
-          <div className="flex gap-3">
-            <button onClick={handleSave} className="flex-1 text-black px-6 py-3 rounded-xl font-bold transition-transform hover:scale-[1.02]" style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583)' }}>
-              {editingId ? 'Atualizar' : 'Salvar'} Contrato
-            </button>
-            <button onClick={() => setShowForm(false)} className="bg-white/10 border border-white/10 text-white px-6 py-3 rounded-xl font-bold hover:bg-white/20 transition-all">Cancelar</button>
+            <div className="flex gap-3 mt-5">
+              <button onClick={handleSave}
+                className="flex-1 h-12 text-black rounded-xl font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-lg"
+                style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583)' }}>
+                <FileSignature className="w-4 h-4" />
+                {editingId ? 'Salvar Alterações' : 'Salvar Contrato'}
+              </button>
+              <button onClick={() => setShowForm(false)}
+                className="h-12 px-5 bg-white/10 border border-white/10 text-white rounded-xl font-bold hover:bg-white/20 transition-all">
+                Cancelar
+              </button>
+            </div>
           </div>
         </div>
       )}
