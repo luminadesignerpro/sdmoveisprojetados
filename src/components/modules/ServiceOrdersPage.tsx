@@ -137,7 +137,16 @@ const ServiceOrdersPage: React.FC = () => {
       return;
     }
     const cleanPhone = phone.replace(/\D/g, '');
-    const message = `Olá *${o.clients?.name || o.client_name || 'Cliente'}*! 🛠️\n\nSou da *SD Móveis Projetados*. Gostaria de falar sobre a sua *Ordem de Serviço (OS #${o.order_number})*.\n\n📝 Serviço: ${o.description}\n📍 Status: ${statusLabels[o.status] || o.status}\n📅 Previsão: ${o.estimated_date ? format(new Date(o.estimated_date), 'dd/MM/yyyy') : 'A definir'}`;
+    const message = `Olá *${o.clients?.name || o.client_name || 'Cliente'}*! 🛠️\n\n` +
+      `Sou da *SD Móveis Projetados*. Tratando sobre a sua *Ordem de Serviço (OS #${o.order_number})*.\n\n` +
+      `📝 *Serviço:* ${o.description}\n` +
+      `📍 *Status:* ${statusLabels[o.status] || o.status}\n` +
+      `💰 *Valor:* R$ ${(o.total_value || 0).toLocaleString('pt-BR')}\n` +
+      `📅 *Previsão:* ${o.estimated_date ? format(new Date(o.estimated_date), 'dd/MM/yyyy') : 'A definir'}\n\n` +
+      `🔑 *CHAVES PIX PARA PAGAMENTO:*\n\n` +
+      `💎 *InfinityPay (CNPJ):* 49.228.811/0001-33\n` +
+      `🏦 *Itaú (Celular):* 85 99760-2237\n\n` +
+      `Aguardamos seu contato!`;
     window.open(`https://wa.me/55${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 

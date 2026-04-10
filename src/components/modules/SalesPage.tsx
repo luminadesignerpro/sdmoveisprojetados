@@ -153,7 +153,14 @@ const SalesPage: React.FC = () => {
       return;
     }
     const cleanPhone = phone.replace(/\D/g, '');
-    const message = `Olá *${p.clients?.name || p.client_name || 'Cliente'}*! 🏠\n\nSou da *SD Móveis Projetados*. Gostaria de falar sobre o projeto: *${p.title || p.name}*.\n\n💰 Valor: R$ ${(p.value || 0).toLocaleString('pt-BR')}\n📍 Status: ${statusLabels[p.status] || p.status}\n\nPodemos conversar?`;
+    const message = `Olá *${p.clients?.name || p.client_name || 'Cliente'}*! 🏠\n\n` +
+      `Sou da *SD Móveis Projetados*. Gostaria de falar sobre o projeto: *${p.title || p.name}*.\n\n` +
+      `💰 *Valor:* R$ ${(p.value || 0).toLocaleString('pt-BR')}\n` +
+      `📍 *Status:* ${statusLabels[p.status] || p.status}\n\n` +
+      `🔑 *CHAVES PIX PARA PAGAMENTO:*\n\n` +
+      `💎 *InfinityPay (CNPJ):* 49.228.811/0001-33\n` +
+      `🏦 *Itaú (Celular):* 85 99760-2237\n\n` +
+      `Aguardamos seu contato!`;
     window.open(`https://wa.me/55${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 

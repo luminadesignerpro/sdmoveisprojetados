@@ -855,6 +855,7 @@ const App: React.FC = () => {
           {view === ViewMode.ACCOUNTS_PAYABLE && authState === 'ADMIN' && <AccountsPage type="payable" />}
           {view === ViewMode.ACCOUNTS_RECEIVABLE && authState === 'ADMIN' && <AccountsPage type="receivable" />}
           {view === ViewMode.CONTRACTS_MGMT && authState === 'ADMIN' && <ContractsPage />}
+          {view === ViewMode.CONTRACTS && authState === 'ADMIN' && <SalesPage />}
 
           {/* TIME TRACKING */}
           {view === ViewMode.TIME_TRACKING && (
