@@ -127,6 +127,7 @@ const LOUVORES = [
   },
 ];
 
+// v2.1.1 - Hotfix para integração local e métricas do dashboard
 const App: React.FC = () => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
