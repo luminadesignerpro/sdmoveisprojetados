@@ -95,6 +95,7 @@ import {
   Instagram,
   Fuel,
   GitBranch,
+  Laptop,
 } from 'lucide-react';
 
 // Dashboard data is now fetched from DB
@@ -820,7 +821,7 @@ const App: React.FC = () => {
                       onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.background = '#111111'; }}
                     >
                       <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-all duration-300" style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)' }}>
-                        <Monitor className="w-6 h-6 text-amber-400" />
+                        <Laptop className="w-6 h-6 text-amber-400" />
                       </div>
                       <h4 className="font-bold text-white text-sm">Integração PC</h4>
                     </button>

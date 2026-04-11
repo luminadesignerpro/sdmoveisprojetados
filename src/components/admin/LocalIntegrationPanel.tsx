@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Monitor, 
+  Laptop, 
   Download, 
   Settings, 
   CheckCircle2, 
@@ -17,6 +18,7 @@ import {
 
 const LocalIntegrationPanel: React.FC = () => {
   const [protocolsStatus, setProtocolsStatus] = useState<'checking' | 'active' | 'inactive'>('inactive');
+  const { toast } = useToast();
 
   const downloadRegFile = () => {
     const regContent = `Windows Registry Editor Version 5.00
@@ -57,7 +59,7 @@ const LocalIntegrationPanel: React.FC = () => {
       <header className="flex justify-between items-center bg-gray-900/50 p-8 rounded-[2rem] border border-white/5 backdrop-blur-xl relative overflow-hidden">
         <div className="z-10">
           <h1 className="text-4xl font-black text-white flex items-center gap-3">
-            <Monitor className="w-10 h-10 text-amber-500" />
+            <Laptop className="w-10 h-10 text-amber-500" />
             Integração Local
           </h1>
           <p className="text-gray-400 mt-2">Configure a conexão entre este painel web e os softwares do seu PC.</p>
@@ -130,7 +132,7 @@ const LocalIntegrationPanel: React.FC = () => {
           <CardHeader className="bg-red-500/10 border-b border-white/5 p-8">
             <div className="flex justify-between items-center">
               <CardTitle className="text-2xl font-black text-white flex items-center gap-3">
-                <Monitor className="w-6 h-6 text-red-500" />
+                <Laptop className="w-6 h-6 text-red-500" />
                 Promob Plus
               </CardTitle>
               <Badge className="bg-red-500/20 text-red-400 border-red-500/30">Protocolo: promobsystem://</Badge>
@@ -167,7 +169,7 @@ const LocalIntegrationPanel: React.FC = () => {
                 variant="outline"
                 className="w-full border-red-500/20 text-white rounded-2xl py-6 hover:bg-red-500/5 mt-2"
               >
-                <Monitor className="w-5 h-5 mr-3 text-red-500" /> TESTAR ABERTURA PROMOB
+                <Laptop className="w-5 h-5 mr-3 text-red-500" /> TESTAR ABERTURA PROMOB
               </Button>
               <p className="text-[10px] text-gray-500 text-center italic">
                 Recomendamos executar o arquivo .reg, mover o Agent para C:\FpqSystem\ e reiniciar o navegador.
