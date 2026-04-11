@@ -81,22 +81,46 @@ export function WhatsAppCRMReal() {
   const getQrCode = async () => {
     setIsLoadingQR(true);
     try {
-      const res = await fetch('https://api-whatsapp-sdmoveis.onrender.com/instance/connect/sd-moveis', {
+      // Tentar conectar
+      let res = await fetch('https://api-whatsapp-sdmoveis.onrender.com/instance/connect/sd-moveis', {
         headers: { 'apikey': 'Mv06061991' }
       });
-      const data = await res.json();
+      
+      let data = await res.json();
+
+      // Se a instância não existe, vamos criar
+      if (res.status === 404 || data.error?.includes('not found') || data.message?.includes('not found')) {
+        toast({ title: "Configurando Ambiente...", description: "Criando instância 'sd-moveis' no servidor." });
+        const createRes = await fetch('https://api-whatsapp-sdmoveis.onrender.com/instance/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': 'Mv06061991' },
+          body: JSON.stringify({
+            instanceName: "sd-moveis",
+            token: "Mv06061991",
+            qrcode: true
+          })
+        });
+        
+        const createData = await createRes.json();
+        if (createData.qrcode?.base64 || createData.base64) {
+          setQrCodeData(createData.qrcode?.base64 || createData.base64);
+          toast({ title: "Instância Criada!", description: "Escaneie o QR Code agora." });
+          return;
+        }
+      }
       
       if (data.base64 || data.qrcode?.base64) {
         setQrCodeData(data.base64 || data.qrcode?.base64);
         toast({ title: "QR Code Gerado", description: "Escaneie com seu WhatsApp." });
-      } else if (data.status === 'open' || data.instance?.status === 'open') {
+      } else if (data.status === 'open' || data.instance?.status === 'open' || data.state === 'open') {
         setApiStatus("connected");
         toast({ title: "Já Conectado", description: "A instância já está ativa." });
       } else {
         throw new Error("Não foi possível obter o QR Code");
       }
     } catch (err) {
-      toast({ title: "Erro ao conectar", description: "Certifique-se que a instância 'sd-moveis' existe.", variant: "destructive" });
+      console.error("Connect error:", err);
+      toast({ title: "Erro ao conectar", description: "Falha ao iniciar conexão. Tente novamente em instantes.", variant: "destructive" });
     } finally {
       setIsLoadingQR(false);
     }
