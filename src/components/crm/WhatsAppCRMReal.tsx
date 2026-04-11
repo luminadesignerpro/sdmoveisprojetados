@@ -82,13 +82,18 @@ export function WhatsAppCRMReal() {
     setIsLoadingQR(true);
     try {
       // Tentar conectar
-      let res = await fetch('https://api-whatsapp-sdmoveis.onrender.com/instance/connect/SD-Moveis', {
+      const res = await fetch('https://api-whatsapp-sdmoveis.onrender.com/instance/connect/SD-Moveis', {
         headers: { 'apikey': 'Mv06061991' }
       });
       
-      let data = await res.json();
+      let data: any = {};
+      try {
+        data = await res.json();
+      } catch (e) {
+        console.warn("Evolution API response was not JSON or was empty");
+      }
 
-      // Se a instância não existe, vamos criar
+      // Se a instância não existe (404), vamos criar
       if (res.status === 404 || data.error?.includes('not found') || data.message?.includes('not found')) {
         toast({ title: "Configurando Ambiente...", description: "Criando instância 'SD-Moveis' no servidor." });
         const createRes = await fetch('https://api-whatsapp-sdmoveis.onrender.com/instance/create', {
