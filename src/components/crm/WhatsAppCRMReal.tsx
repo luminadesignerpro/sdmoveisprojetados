@@ -82,7 +82,7 @@ export function WhatsAppCRMReal() {
     setIsLoadingQR(true);
     try {
       // Tentar conectar
-      let res = await fetch('https://api-whatsapp-sdmoveis.onrender.com/instance/connect/sd-moveis', {
+      let res = await fetch('https://api-whatsapp-sdmoveis.onrender.com/instance/connect/SD-Moveis', {
         headers: { 'apikey': 'Mv06061991' }
       });
       
@@ -90,12 +90,12 @@ export function WhatsAppCRMReal() {
 
       // Se a instância não existe, vamos criar
       if (res.status === 404 || data.error?.includes('not found') || data.message?.includes('not found')) {
-        toast({ title: "Configurando Ambiente...", description: "Criando instância 'sd-moveis' no servidor." });
+        toast({ title: "Configurando Ambiente...", description: "Criando instância 'SD-Moveis' no servidor." });
         const createRes = await fetch('https://api-whatsapp-sdmoveis.onrender.com/instance/create', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'apikey': 'Mv06061991' },
           body: JSON.stringify({
-            instanceName: "sd-moveis",
+            instanceName: "SD-Moveis",
             token: "Mv06061991",
             qrcode: true
           })
@@ -108,6 +108,7 @@ export function WhatsAppCRMReal() {
           return;
         }
       }
+
       
       if (data.base64 || data.qrcode?.base64) {
         setQrCodeData(data.base64 || data.qrcode?.base64);
@@ -130,7 +131,7 @@ export function WhatsAppCRMReal() {
     setIsSyncingWebhook(true);
     try {
       const webhookUrl = 'https://nglwscakhhdhelhbqkyb.supabase.co/functions/v1/whatsapp-webhook';
-      const res = await fetch('https://api-whatsapp-sdmoveis.onrender.com/webhook/set/sd-moveis', {
+      const res = await fetch('https://api-whatsapp-sdmoveis.onrender.com/webhook/set/SD-Moveis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': 'Mv06061991' },
         body: JSON.stringify({
