@@ -58,11 +58,30 @@ const ServiceOrdersPage: React.FC = () => {
       toast({ title: '⚠️ Preencha pelo menos o cliente e descrição', variant: 'destructive' });
       return;
     }
+
+    let clientId = form.client_id || null;
+
+    if (!clientId && form.client_name.trim()) {
+      const { data: newClient, error: clientErr } = await db.from('clients').insert({ 
+        name: form.client_name.trim(),
+        phone: form.client_phone || null,
+        address: form.client_address || null
+      }).select('id').single();
+      
+      if (clientErr) {
+        toast({ title: '❌ Erro ao criar cliente', description: clientErr.message, variant: 'destructive' });
+        return;
+      }
+      clientId = newClient.id;
+    } else if (clientId) {
+      await db.from('clients').update({
+        phone: form.client_phone || null,
+        address: form.client_address || null
+      }).eq('id', clientId);
+    }
+
     const payload = {
-      client_id: form.client_id || null,
-      client_name: form.client_name || null,
-      client_phone: form.client_phone || null,
-      client_address: form.client_address || null,
+      client_id: clientId,
       description: form.description || null,
       status: form.status,
       priority: form.priority,

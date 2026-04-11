@@ -52,13 +52,24 @@ const ContractsPage: React.FC = () => {
     let clientId = form.client_id || null;
 
     if (!clientId && form.client_name.trim()) {
-      const { data: newClient, error: clientErr } = await db.from('clients').insert({ name: form.client_name.trim() }).select('id').single();
+      const { data: newClient, error: clientErr } = await db.from('clients').insert({ 
+        name: form.client_name.trim(),
+        phone: form.client_phone || null,
+        address: form.client_address || null
+      }).select('id').single();
+      
       if (clientErr) {
         toast({ title: '❌ Erro ao criar cliente', description: clientErr.message, variant: 'destructive' });
         return;
       }
       clientId = newClient.id;
       fetchData();
+    } else if (clientId) {
+      // Opcional: Atualizar info do cliente se houver clientId
+      await db.from('clients').update({
+        phone: form.client_phone || null,
+        address: form.client_address || null
+      }).eq('id', clientId);
     }
 
     const payload = {
@@ -67,11 +78,7 @@ const ContractsPage: React.FC = () => {
       content: form.content,
       value: form.value,
       status: form.status,
-      notes: form.notes,
-      client_phone: form.client_phone,
-      client_address: form.client_address,
-      payment_terms: form.payment_terms,
-      delivery_deadline: form.delivery_deadline
+      notes: `${form.notes || ''}\n[Prazos: ${form.delivery_deadline} | Pagamento: ${form.payment_terms}]`.trim(),
     };
 
     let result;
