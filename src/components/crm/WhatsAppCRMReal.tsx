@@ -50,6 +50,7 @@ export function WhatsAppCRMReal() {
   const [apiStatus, setApiStatus] = useState<"checking" | "connected" | "disconnected">("checking");
   const [qrCodeData, setQrCodeData] = useState<string | null>(null);
   const [isLoadingQR, setIsLoadingQR] = useState(false);
+  const [isSyncingWebhook, setIsSyncingWebhook] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const checkApiStatus = async () => {
@@ -66,16 +67,85 @@ export function WhatsAppCRMReal() {
         const status = (i?.status || i?.state || "").toLowerCase();
         return name.includes('sd-moveis') && (status === 'open' || status === 'connected');
       });
-      if (instance) setApiStatus("connected");
-      else setApiStatus("disconnected");
+      if (instance) {
+        setApiStatus("connected");
+        setQrCodeData(null);
+      } else {
+        setApiStatus("disconnected");
+      }
     } catch (err) {
-      // transient error
+      console.error("Status error:", err);
+    }
+  };
+
+  const getQrCode = async () => {
+    setIsLoadingQR(true);
+    try {
+      const res = await fetch('https://api-whatsapp-sdmoveis.onrender.com/instance/connect/sd-moveis', {
+        headers: { 'apikey': 'Mv06061991' }
+      });
+      const data = await res.json();
+      
+      if (data.base64 || data.qrcode?.base64) {
+        setQrCodeData(data.base64 || data.qrcode?.base64);
+        toast({ title: "QR Code Gerado", description: "Escaneie com seu WhatsApp." });
+      } else if (data.status === 'open' || data.instance?.status === 'open') {
+        setApiStatus("connected");
+        toast({ title: "Já Conectado", description: "A instância já está ativa." });
+      } else {
+        throw new Error("Não foi possível obter o QR Code");
+      }
+    } catch (err) {
+      toast({ title: "Erro ao conectar", description: "Certifique-se que a instância 'sd-moveis' existe.", variant: "destructive" });
+    } finally {
+      setIsLoadingQR(false);
+    }
+  };
+
+  const syncWebhook = async () => {
+    setIsSyncingWebhook(true);
+    try {
+      const webhookUrl = 'https://nglwscakhhdhelhbqkyb.supabase.co/functions/v1/whatsapp-webhook';
+      const res = await fetch('https://api-whatsapp-sdmoveis.onrender.com/webhook/set/sd-moveis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': 'Mv06061991' },
+        body: JSON.stringify({
+          url: webhookUrl,
+          enabled: true,
+          events: [
+            "MESSAGES_UPSERT",
+            "MESSAGES_UPDATE",
+            "MESSAGES_DELETE",
+            "SEND_MESSAGE",
+            "CONTACTS_UPSERT",
+            "CONTACTS_UPDATE",
+            "PRESENCE_UPDATE",
+            "CHATS_UPSERT",
+            "CHATS_UPDATE",
+            "CHATS_DELETE",
+            "GROUPS_UPSERT",
+            "GROUPS_UPDATE",
+            "GROUP_PARTICIPANTS_UPDATE",
+            "CONNECTION_UPDATE"
+          ]
+        })
+      });
+      
+      if (res.ok) {
+        toast({ title: "Webhook Sincronizado", description: "O CRM agora receberá mensagens em tempo real." });
+      } else {
+        throw new Error("Falha ao registrar webhook");
+      }
+    } catch (err) {
+      toast({ title: "Erro no Webhook", description: "Não foi possível configurar o receptor de mensagens.", variant: "destructive" });
+    } finally {
+      setIsSyncingWebhook(false);
     }
   };
 
   useEffect(() => {
     checkApiStatus();
-    const interval = setInterval(checkApiStatus, 10000);
+    const interval = setInterval(checkApiStatus, 15000);
     return () => clearInterval(interval);
   }, []);
 
@@ -141,19 +211,43 @@ export function WhatsAppCRMReal() {
             </Button>
           </div>
 
-          <Badge variant="outline" className={cn(
-            "text-xs flex items-center gap-1",
-            apiStatus === "connected" ? "bg-success/20 text-success border-success/30" : "text-muted-foreground"
-          )}>
-            {apiStatus === "connected" ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
-            {apiStatus === "connected" ? "Conectado" : apiStatus === "checking" ? "Verificando..." : "Desconectado"}
-          </Badge>
+          <div className="flex items-center justify-between">
+            <Badge variant="outline" className={cn(
+              "text-[10px] flex items-center gap-1 py-1 px-2 uppercase tracking-widest font-black",
+              apiStatus === "connected" ? "bg-green-500/10 text-green-500 border-green-500/20" : "bg-red-500/10 text-red-500 border-red-500/20"
+            )}>
+              {apiStatus === "connected" ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+              {apiStatus === "connected" ? "Conectado" : apiStatus === "checking" ? "Verificando..." : "Desconectado"}
+            </Badge>
+            
+            {apiStatus === "connected" && (
+              <Button size="sm" variant="ghost" className="h-7 text-[9px] font-black uppercase text-success hover:bg-success/10" onClick={syncWebhook} disabled={isSyncingWebhook}>
+                {isSyncingWebhook ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <RefreshCw className="w-3 h-3 mr-1" />}
+                Sync Webhook
+              </Button>
+            )}
+            
+            {apiStatus === "disconnected" && !qrCodeData && (
+              <Button size="sm" variant="outline" className="h-7 text-[9px] font-black uppercase border-amber-500/30 text-amber-500 hover:bg-amber-500/10" onClick={getQrCode} disabled={isLoadingQR}>
+                {isLoadingQR ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <RefreshCw className="w-3 h-3 mr-1" />}
+                Conectar
+              </Button>
+            )}
+          </div>
+
+          {qrCodeData && apiStatus === "disconnected" && (
+            <div className="bg-white p-3 rounded-2xl flex flex-col items-center gap-3 animate-in zoom-in-95 duration-300">
+              <img src={qrCodeData} alt="WhatsApp QR Code" className="w-48 h-48" />
+              <p className="text-[10px] text-black font-bold uppercase text-center">Escaneie para conectar</p>
+              <Button size="sm" variant="ghost" className="text-[9px] h-6 text-red-500 hover:text-red-600" onClick={() => setQrCodeData(null)}>Cancelar</Button>
+            </div>
+          )}
 
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input 
               placeholder="Buscar..." 
-              className="pl-9 h-9" 
+              className="pl-9 h-9 bg-black/20 border-white/5 rounded-xl text-sm" 
               value={searchTerm} 
               onChange={e => setSearchTerm(e.target.value)} 
             />
