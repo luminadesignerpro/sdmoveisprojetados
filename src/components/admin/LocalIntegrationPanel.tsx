@@ -43,7 +43,7 @@ const LocalIntegrationPanel: React.FC = () => {
 [HKEY_CLASSES_ROOT\\promobsystem\\shell\\open]
 
 [HKEY_CLASSES_ROOT\\promobsystem\\shell\\open\\command]
-@="\\"C:\\\\Program Files\\\\Promob\\\\Promob Plus\\\\Program\\\\bin\\\\Promob.exe\\" \\"%1\\""
+@="\\"C:\\\\Program Files\\\\Promob\\\\Promob Plus v5.60.12.4\\\\Program\\\\Bin\\\\Promob5.exe\\" \\"%1\\""
 `;
     const blob = new Blob([regContent], { type: 'text/plain' });
     const url = window.URL.createObjectURL(blob);
