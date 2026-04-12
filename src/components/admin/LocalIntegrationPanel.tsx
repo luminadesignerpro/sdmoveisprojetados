@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -13,14 +13,64 @@ import {
   FileCode,
   ShieldCheck,
   Zap,
-  Info
+  Info,
+  RefreshCw,
+  Clock,
+  ExternalLink
 } from 'lucide-react';
 
 const LocalIntegrationPanel: React.FC = () => {
-  const [protocolsStatus, setProtocolsStatus] = useState<'checking' | 'active' | 'inactive'>('inactive');
+  const [agentStatus, setAgentStatus] = useState<{
+    status: 'checking' | 'online' | 'offline';
+    lastSyncStatus: string;
+    lastSyncTime: string | null;
+    version: string;
+  }>({
+    status: 'checking',
+    lastSyncStatus: 'Aguardando verificação...',
+    lastSyncTime: null,
+    version: 'Desconhecida'
+  });
+  
   const { toast } = useToast();
 
+  const checkAgent = async () => {
+    try {
+      const response = await fetch('http://localhost:3001/status', { 
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+        mode: 'cors'
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setAgentStatus({
+          status: 'online',
+          lastSyncStatus: data.lastSyncStatus,
+          lastSyncTime: data.lastSyncTime,
+          version: data.version
+        });
+      } else {
+        throw new Error();
+      }
+    } catch (err) {
+      setAgentStatus(prev => ({ ...prev, status: 'offline' }));
+    }
+  };
+
+  useEffect(() => {
+    checkAgent();
+    const interval = setInterval(checkAgent, 10000); // Check every 10s
+    return () => clearInterval(interval);
+  }, []);
+
+  const [fpqPath, setFpqPath] = useState('C:\\\\OSMARCENARIA5.9\\\\SISCOM.exe');
+  const [promobPath, setPromobPath] = useState('C:\\\\Program Files\\\\Promob\\\\Promob Plus v5.60.12.4\\\\Program\\\\Bin\\\\Promob5.exe');
+
   const downloadRegFile = () => {
+    // Format paths for REG file (double backslashes are already in state, but we need quadruple for the @="" line in REG)
+    const formattedFpq = fpqPath.replace(/\\/g, '\\\\');
+    const formattedPromob = promobPath.replace(/\\/g, '\\\\');
+
     const regContent = `Windows Registry Editor Version 5.00
 
 [HKEY_CLASSES_ROOT\\fpqsystem]
@@ -32,7 +82,7 @@ const LocalIntegrationPanel: React.FC = () => {
 [HKEY_CLASSES_ROOT\\fpqsystem\\shell\\open]
 
 [HKEY_CLASSES_ROOT\\fpqsystem\\shell\\open\\command]
-@="\\"C:\\\\OSMARCENARIA5.9\\\\SISCOM.exe\\" \\"%1\\""
+@="\\"${formattedFpq}\\" \\"%1\\""
 
 [HKEY_CLASSES_ROOT\\promobsystem]
 @="URL:promobsystem Protocol"
@@ -43,159 +93,208 @@ const LocalIntegrationPanel: React.FC = () => {
 [HKEY_CLASSES_ROOT\\promobsystem\\shell\\open]
 
 [HKEY_CLASSES_ROOT\\promobsystem\\shell\\open\\command]
-@="\\"C:\\\\Program Files\\\\Promob\\\\Promob Plus v5.60.12.4\\\\Program\\\\Bin\\\\Promob5.exe\\" \\"%1\\""
+@="\\"${formattedPromob}\\" \\"%1\\""
 `;
     const blob = new Blob([regContent], { type: 'text/plain' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'registrar_protocolos.reg';
+    a.download = 'registrar_protocolos_sd.reg';
     a.click();
     window.URL.revokeObjectURL(url);
+    toast({ title: "✅ Arquivo .REG preparado!", description: "Execute-o e reinicie o navegador." });
   };
 
   return (
-    <div className="p-8 space-y-8 bg-[#0a0a0a] min-h-screen text-white">
+    <div className="p-8 space-y-8 bg-[#0a0a0a] min-h-screen text-white pb-20">
       <header className="flex justify-between items-center bg-gray-900/50 p-8 rounded-[2rem] border border-white/5 backdrop-blur-xl relative overflow-hidden">
         <div className="z-10">
-          <h1 className="text-4xl font-black text-white flex items-center gap-3">
+          <h1 className="text-4xl font-black text-white flex items-center gap-3 tracking-tighter">
             <Laptop className="w-10 h-10 text-amber-500" />
-            Integração Local
+            CONEXÃO DESKTOP
           </h1>
-          <p className="text-gray-400 mt-2">Configure a conexão entre este painel web e os softwares do seu PC.</p>
+          <p className="text-gray-400 mt-2 font-medium">Sincronize o Painel Web com o FPQ System e Promob no seu PC local.</p>
         </div>
-        <div className="z-10 bg-amber-500/10 p-4 rounded-3xl border border-amber-500/20">
-          <Zap className="w-8 h-8 text-amber-500 animate-pulse" />
+        <div className="z-10 flex flex-col items-end gap-2 text-right">
+           <Badge className={`${agentStatus.status === 'online' ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-red-500/20 text-red-500 border-red-500/30'} px-4 py-1.5 rounded-full`}>
+             <span className={`w-2 h-2 rounded-full mr-2 ${agentStatus.status === 'online' ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+             AGENT: {agentStatus.status.toUpperCase()}
+           </Badge>
+           <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Painel de Controle Local</p>
         </div>
         <div className="absolute -top-32 -right-32 w-80 h-80 bg-amber-500/10 rounded-full blur-[100px]" />
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* FPQ SYSTEM Section */}
-        <Card className="bg-gray-900/40 border-white/5 rounded-[2.5rem] overflow-hidden backdrop-blur-md">
+        <Card className="bg-gray-900/40 border-white/5 rounded-[2.5rem] overflow-visible backdrop-blur-md relative border">
+          {agentStatus.status === 'online' && (
+            <div className="absolute -top-3 -right-3 z-30">
+              <div className="flex items-center gap-2 bg-green-500 text-black px-4 py-1.5 rounded-full text-[10px] font-black shadow-lg shadow-green-500/20">
+                <CheckCircle2 className="w-3 h-3" /> ONLINE
+              </div>
+            </div>
+          )}
           <CardHeader className="bg-green-500/10 border-b border-white/5 p-8">
             <div className="flex justify-between items-center">
-              <CardTitle className="text-2xl font-black text-white flex items-center gap-3">
+              <CardTitle className="text-2xl font-black text-white flex items-center gap-3 uppercase tracking-tighter">
                 <FileCode className="w-6 h-6 text-green-500" />
                 FPQ System
               </CardTitle>
-              <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Protocolo: fpqsystem://</Badge>
+              <Badge variant="outline" className="border-green-500/30 text-green-500">fpqsystem://</Badge>
             </div>
           </CardHeader>
           <CardContent className="p-8 space-y-6">
-            <p className="text-gray-400 leading-relaxed">
-              O sincronizador permite que o painel web envie medidas e orçamentos diretamente para o banco de dados do FPQ System no seu computador.
+            <p className="text-gray-400 leading-relaxed text-sm">
+              Conexão com banco Firebird DADOS.FDB para orçamentos e pedidos.
             </p>
             
+            <div className="grid grid-cols-2 gap-4">
+               <div className="p-4 bg-white/5 rounded-2xl border border-white/10">
+                 <p className="text-[9px] text-gray-500 uppercase font-black mb-1">Última Sincronia</p>
+                 <p className="text-sm font-bold text-white flex items-center gap-2">
+                   <Clock className="w-4 h-4 text-green-500" />
+                   {agentStatus.lastSyncTime ? new Date(agentStatus.lastSyncTime).toLocaleTimeString() : 'Pendente'}
+                 </p>
+               </div>
+               <div className="p-4 bg-white/5 rounded-2xl border border-white/10">
+                 <p className="text-[9px] text-gray-500 uppercase font-black mb-1">Status Sync</p>
+                 <p className={`text-sm font-bold flex items-center gap-2 ${agentStatus.lastSyncStatus.includes('Erro') ? 'text-red-400' : 'text-green-400'}`}>
+                   {agentStatus.lastSyncStatus.includes('Sucesso') ? <CheckCircle2 className="w-4 h-4" /> : agentStatus.status === 'offline' ? <AlertCircle className="w-4 h-4" /> : <RefreshCw className="w-4 h-4 animate-spin" />}
+                   {agentStatus.status === 'offline' ? 'Agent Offline' : agentStatus.lastSyncStatus}
+                 </p>
+               </div>
+            </div>
+
             <div className="space-y-4">
-              <div className="p-4 bg-white/5 rounded-2xl border border-white/10 flex items-start gap-4">
-                <ShieldCheck className="w-6 h-6 text-green-500 mt-1" />
-                <div>
-                  <h4 className="font-bold text-white text-sm">Requisito de Instalação</h4>
-                  <p className="text-xs text-gray-500">O Agent deve estar instalado em <code className="text-green-400 bg-gray-800 px-1 rounded">C:\OSMARCENARIA5.9\SISCOM.exe</code></p>
-                </div>
-              </div>
-              
-              <div className="p-4 bg-white/5 rounded-2xl border border-white/10 flex items-start gap-4">
-                <Terminal className="w-6 h-6 text-green-500 mt-1" />
-                <div>
-                  <h4 className="font-bold text-white text-sm">Registro de Protocolo</h4>
-                  <p className="text-xs text-gray-500">Necessário para permitir que o navegador "chame" o software local.</p>
+              <div className="space-y-2">
+                <label className="text-[10px] text-gray-500 font-black uppercase ml-1">Caminho do SISCOM.exe</label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <ShieldCheck className="w-4 h-4 text-green-500 absolute left-4 top-1/2 -translate-y-1/2" />
+                    <input 
+                      value={fpqPath}
+                      onChange={(e) => setFpqPath(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-11 pr-4 text-xs font-mono text-green-400 focus:outline-none focus:border-green-500/50 transition-colors"
+                      placeholder="C:\\OseuCaminho\\SISCOM.exe"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="pt-4 flex flex-col gap-3">
-              <Button onClick={downloadRegFile} className="w-full bg-green-600 hover:bg-green-500 text-black font-black rounded-2xl py-6 text-lg">
+            <div className="pt-2 flex flex-col gap-3">
+              <Button onClick={downloadRegFile} className="w-full bg-green-500 hover:bg-green-400 text-black font-black rounded-2xl py-7 text-lg shadow-lg shadow-green-500/10">
                 <Download className="w-5 h-5 mr-3" /> 1. BAIXAR REGISTRO (.REG)
               </Button>
-              <a href="/installers/FpqSyncAgent.exe" download>
-                <Button variant="outline" className="w-full border-white/10 text-white rounded-2xl py-6 hover:bg-white/5">
+              <a href="/installers/FpqSyncAgent.exe" download className="w-full">
+                <Button variant="outline" className="w-full border-white/10 text-white rounded-2xl py-6 hover:bg-white/5 flex items-center justify-center">
                   <Download className="w-5 h-5 mr-3" /> 2. BAIXAR SYNC AGENT (.EXE)
                 </Button>
               </a>
               <Button 
                 onClick={() => {
                   window.location.href = 'fpqsystem://test';
-                  toast({ title: "🚀 Abrindo Agent...", description: "Se o Agent estiver instalado, ele abrirá agora." });
+                  toast({ title: "🚀 Abrindo Agent...", description: "Se o APP estiver instalado, ele abrirá agora." });
                 }}
-                className="w-full bg-amber-500 hover:bg-amber-400 text-black font-black rounded-2xl py-6"
+                className="w-full bg-white/5 border border-white/10 hover:bg-white/10 text-white font-black rounded-2xl py-6"
               >
-                <Zap className="w-5 h-5 mr-3" /> 3. TESTAR CONEXÃO (ABRIR PC)
+                <Zap className="w-5 h-5 mr-3 text-amber-500" /> 3. TESTAR ABERTURA (ABRIR PC)
               </Button>
             </div>
           </CardContent>
         </Card>
 
         {/* PROMOB Section */}
-        <Card className="bg-gray-900/40 border-white/5 rounded-[2.5rem] overflow-hidden backdrop-blur-md">
+        <Card className="bg-gray-900/40 border-white/5 rounded-[2.5rem] overflow-hidden backdrop-blur-md border">
           <CardHeader className="bg-red-500/10 border-b border-white/5 p-8">
             <div className="flex justify-between items-center">
-              <CardTitle className="text-2xl font-black text-white flex items-center gap-3">
+              <CardTitle className="text-2xl font-black text-white flex items-center gap-3 uppercase tracking-tighter">
                 <Laptop className="w-6 h-6 text-red-500" />
                 Promob Plus
               </CardTitle>
-              <Badge className="bg-red-500/20 text-red-400 border-red-500/30">Protocolo: promobsystem://</Badge>
+              <Badge variant="outline" className="border-red-500/30 text-red-500">promobsystem://</Badge>
             </div>
           </CardHeader>
           <CardContent className="p-8 space-y-6">
-            <p className="text-gray-400 leading-relaxed">
-              Integração direta com o Promob Plus para abertura automática de projetos 3D e exportação de XML de medidas do Studio AR.
+            <p className="text-gray-400 leading-relaxed text-sm">
+              Abra seus projetos 3D e exporte medidas do studio AR diretamente para o Promob local.
             </p>
 
-            <div className="p-6 bg-amber-500/10 rounded-[2.5rem] border border-amber-500/20">
-              <div className="flex items-center gap-3 mb-4">
-                <Info className="w-5 h-5 text-amber-500" />
-                <h4 className="font-black text-amber-500 text-sm uppercase">Dica de Produtividade</h4>
+            <div className="space-y-2">
+              <label className="text-[10px] text-gray-500 font-black uppercase ml-1">Caminho do Promob.exe</label>
+              <div className="relative">
+                <Settings className="w-4 h-4 text-red-500 absolute left-4 top-1/2 -translate-y-1/2" />
+                <input 
+                  value={promobPath}
+                  onChange={(e) => setPromobPath(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-11 pr-4 text-xs font-mono text-red-400 focus:outline-none focus:border-red-500/50 transition-colors"
+                  placeholder="C:\\Caminho\\Promob.exe"
+                />
               </div>
-              <p className="text-xs text-amber-200/70 leading-relaxed">
-                Ao registrar os protocolos, você poderá clicar nos botões "FPQ PC" e "Promob PC" na barra lateral e o software correspondente será aberto instantaneamente no seu computador.
+            </div>
+
+            <div className="p-6 bg-amber-500/5 rounded-3xl border border-amber-500/10">
+              <div className="flex items-center gap-3 mb-3">
+                <Info className="w-4 h-4 text-amber-500" />
+                <h4 className="font-black text-amber-500 text-[10px] uppercase">Aviso de Configuração</h4>
+              </div>
+              <p className="text-[10px] text-amber-200/50 leading-relaxed font-medium">
+                Se o seu cliente instalou o Promob em uma pasta diferente, ele deve colar o caminho do <b>Promob.exe</b> acima antes de clicar no botão verde para baixar o registro correto.
               </p>
             </div>
 
-            <div className="pt-4 space-y-4">
-              <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10">
-                <span className="text-sm font-medium">Status do Protocolo</span>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                  <span className="text-[10px] font-black uppercase text-red-500 tracking-widest">Desconhecido</span>
-                </div>
-              </div>
+            <div className="pt-2 space-y-4">
               <Button 
                 onClick={() => {
                   window.location.href = 'promobsystem://';
                   toast({ title: "🚀 Abrindo Promob...", description: "Tentando iniciar o Promob Plus instalado." });
                 }}
                 variant="outline"
-                className="w-full border-red-500/20 text-white rounded-2xl py-6 hover:bg-red-500/5 mt-2"
+                className="w-full border-red-500/20 text-white rounded-2xl py-7 hover:bg-red-500/5 group"
               >
-                <Laptop className="w-5 h-5 mr-3 text-red-500" /> TESTAR ABERTURA PROMOB
+                <Laptop className="w-6 h-6 mr-3 text-red-500 group-hover:scale-110 transition-transform" /> 
+                <span className="font-black text-lg">TESTAR ABERTURA PROMOB</span>
               </Button>
-              <p className="text-[10px] text-gray-500 text-center italic">
-                Recomendamos executar o arquivo .reg, mover o Agent para C:\OSMARCENARIA5.9\ e reiniciar o navegador.
-              </p>
+              
+              <div className="flex items-center justify-center gap-4 py-2">
+                 <p className="text-[10px] text-gray-500 italic flex items-center gap-1">
+                   <RefreshCw className="w-3 h-3 animate-spin-slow" />
+                   Interface Dinâmica • v1.3.0
+                 </p>
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <Card className="bg-gray-900/20 border-white/5 rounded-[2.5rem] p-8 border-dashed border-2">
-        <h3 className="text-xl font-bold text-white mb-4">Guia Rápido de Instalação</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="space-y-2">
-            <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center font-black text-amber-500">1</div>
-            <p className="font-bold text-sm">Baixe o .reg</p>
-            <p className="text-xs text-gray-500">Baixe o arquivo de registro clicando no botão verde acima.</p>
+      <Card className="bg-gray-900/20 border-white/5 rounded-[2.5rem] p-8 border-dashed border-2 relative overflow-hidden group">
+        <div className="absolute inset-0 bg-amber-500/0 group-hover:bg-amber-500/2 transition-colors duration-500" />
+        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+          <Settings className="w-5 h-5 text-amber-500" />
+          Guia Rápido de Instalação
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
+          <div className="space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center font-black text-amber-500 shadow-xl">1</div>
+            <div>
+              <p className="font-bold text-white mb-1">Baixe o .REG</p>
+              <p className="text-xs text-gray-500 leading-relaxed">Clique no botão verde acima. Esse arquivo informa ao Windows que o navegador pode abrir seus programas.</p>
+            </div>
           </div>
-          <div className="space-y-2">
-            <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center font-black text-amber-500">2</div>
-            <p className="font-bold text-sm">Execute o Arquivo</p>
-            <p className="text-xs text-gray-500">Dê um duplo clique no arquivo baixado e confirme o aviso do Windows.</p>
+          <div className="space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center font-black text-amber-500 shadow-xl">2</div>
+            <div>
+              <p className="font-bold text-white mb-1">Execute e Confirme</p>
+              <p className="text-xs text-gray-500 leading-relaxed">Abra o arquivo baixado, clique em "Sim" em todos os avisos do Windows. Isso é seguro e necessário.</p>
+            </div>
           </div>
-          <div className="space-y-2">
-            <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center font-black text-amber-500">3</div>
-            <p className="font-bold text-sm">Acesso Direto</p>
-            <p className="text-xs text-gray-500">Agora você pode usar os ícones de PC na barra lateral normalmente.</p>
+          <div className="space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center font-black text-amber-500 shadow-xl">3</div>
+            <div>
+              <p className="font-bold text-white mb-1">Ative o Agent</p>
+              <p className="text-xs text-gray-500 leading-relaxed">Baixe o Sync Agent e deixe-o rodando. O status lá no topo deve mudar para <span className="text-green-500 font-bold uppercase">Online</span>.</p>
+            </div>
           </div>
         </div>
       </Card>
