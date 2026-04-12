@@ -32,7 +32,7 @@ const LocalIntegrationPanel: React.FC = () => {
 [HKEY_CLASSES_ROOT\\fpqsystem\\shell\\open]
 
 [HKEY_CLASSES_ROOT\\fpqsystem\\shell\\open\\command]
-@="\\"C:\\\\FpqSys\\\\Vendas4.0\\\\SISCOM.EXE\\" \\"%1\\""
+@="\\"C:\\\\OSMARCENARIA5.9\\\\SISCOM.exe\\" \\"%1\\""
 
 [HKEY_CLASSES_ROOT\\promobsystem]
 @="URL:promobsystem Protocol"
@@ -92,7 +92,7 @@ const LocalIntegrationPanel: React.FC = () => {
                 <ShieldCheck className="w-6 h-6 text-green-500 mt-1" />
                 <div>
                   <h4 className="font-bold text-white text-sm">Requisito de Instalação</h4>
-                  <p className="text-xs text-gray-500">O Agent deve estar instalado em <code className="text-green-400 bg-gray-800 px-1 rounded">C:\FpqSystem\FpqSyncAgent.exe</code></p>
+                  <p className="text-xs text-gray-500">O Agent deve estar instalado em <code className="text-green-400 bg-gray-800 px-1 rounded">C:\OSMARCENARIA5.9\SISCOM.exe</code></p>
                 </div>
               </div>
               
@@ -172,7 +172,7 @@ const LocalIntegrationPanel: React.FC = () => {
                 <Laptop className="w-5 h-5 mr-3 text-red-500" /> TESTAR ABERTURA PROMOB
               </Button>
               <p className="text-[10px] text-gray-500 text-center italic">
-                Recomendamos executar o arquivo .reg, mover o Agent para C:\FpqSystem\ e reiniciar o navegador.
+                Recomendamos executar o arquivo .reg, mover o Agent para C:\OSMARCENARIA5.9\ e reiniciar o navegador.
               </p>
             </div>
           </CardContent>

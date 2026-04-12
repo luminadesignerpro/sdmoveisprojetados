@@ -13,7 +13,7 @@ console.log('Procurando .env em: ' + envPath);
 const fbOptions = {
     host: '127.0.0.1',
     port: 3050,
-    database: process.env.FIREBIRD_DATABASE || 'C:\\FpqSystem\\DADOS.FDB',
+    database: process.env.FIREBIRD_DATABASE || 'C:\\OSMARCENARIA5.9\\DADOS.FDB',
     user: process.env.FIREBIRD_USER || 'SYSDBA',
     password: process.env.FIREBIRD_PASSWORD || 'masterkey',
     lowercase_keys: false
