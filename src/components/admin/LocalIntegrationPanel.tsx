@@ -32,7 +32,7 @@ const LocalIntegrationPanel: React.FC = () => {
 [HKEY_CLASSES_ROOT\\fpqsystem\\shell\\open]
 
 [HKEY_CLASSES_ROOT\\fpqsystem\\shell\\open\\command]
-@="\\"C:\\\\FpqSystem\\\\FpqSyncAgent.exe\\" \\"%1\\""
+@="\\"C:\\\\FpqSys\\\\Vendas4.0\\\\SISCOM.EXE\\" \\"%1\\""
 
 [HKEY_CLASSES_ROOT\\promobsystem]
 @="URL:promobsystem Protocol"
