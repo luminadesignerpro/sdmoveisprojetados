@@ -1,377 +1,333 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Switch } from "@/components/ui/switch";
-import {
-  MessageSquare,
-  Send,
-  Search,
-  Phone,
-  MoreVertical,
-  CheckCheck,
-  Sparkles,
-  Loader2,
-  WifiOff,
-  Wifi,
-  RefreshCw,
-  Bot,
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { 
+  MessageCircle, 
+  Settings, 
+  Send, 
+  CheckCheck, 
+  QrCode, 
+  RefreshCw, 
+  Wifi, 
+  WifiOff, 
+  AlertCircle,
+  LogOut,
+  Zap,
+  Bot
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useWhatsApp, WhatsAppConversation, WhatsAppMessage } from "@/hooks/useWhatsApp";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-
-const statusConfig = {
-  lead: { label: "Lead", className: "bg-warning/20 text-warning border-warning/30" },
-  negotiating: { label: "Negociando", className: "bg-accent/20 text-accent border-accent/30" },
-  client: { label: "Cliente", className: "bg-success/20 text-success border-success/30" },
-};
+import { useWhatsApp } from "@/hooks/useWhatsApp";
+import { cn } from "@/lib/utils";
 
 export function WhatsAppCRMReal() {
+  const [apiStatus, setApiStatus] = useState<"connected" | "disconnected" | "checking">("checking");
+  const [qrCodeData, setQrCodeData] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [selectedConversation, setSelectedConversation] = useState<any>(null);
+  const [messageText, setMessageText] = useState("");
   const { toast } = useToast();
-  const {
-    conversations,
-    messages,
-    loading,
-    sendingMessage,
-    fetchConversations,
+
+  const { 
+    conversations, 
+    messages, 
+    loading: loadingData, 
+    fetchConversations, 
     fetchMessages,
-    sendMessage,
+    sendMessage 
   } = useWhatsApp();
 
-  const [selectedConversation, setSelectedConversation] = useState<WhatsAppConversation | null>(null);
-  const [messageInput, setMessageInput] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
-  const [aiAutoReply, setAiAutoReply] = useState(false);
-  const [apiStatus, setApiStatus] = useState<"checking" | "connected" | "disconnected">("checking");
-  const [qrCodeData, setQrCodeData] = useState<string | null>(null);
-  const [isLoadingQR, setIsLoadingQR] = useState(false);
-  const [isSyncingWebhook, setIsSyncingWebhook] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  const checkApiStatus = async () => {
+  const checkApiStatus = useCallback(async () => {
     try {
-      const res = await fetch('https://api-whatsapp-sdmoveis.onrender.com/instance/fetchInstances', {
-        headers: { 'apikey': 'Mv06061991' },
-        cache: 'no-store'
+      const { data, error } = await supabase.functions.invoke('whatsapp-connect', {
+        body: { action: 'get-status' }
       });
-      if (!res.ok) return;
-      const data = await res.json();
-      const instances = Array.isArray(data) ? data : (data.instances || []);
-      const instance = instances.find((i: any) => {
-        const name = (i?.instanceName || i?.name || "").toLowerCase();
-        const status = (i?.status || i?.state || "").toLowerCase();
-        return name.includes('sd-moveis') && (status === 'open' || status === 'connected');
-      });
-      if (instance) {
-        setApiStatus("connected");
+
+      if (error) throw error;
+
+      console.log('API Status:', data);
+      
+      const isConnected = data?.instance?.state === 'open' || data?.instance?.connectionStatus === 'connected';
+      setApiStatus(isConnected ? "connected" : "disconnected");
+      
+      if (isConnected) {
         setQrCodeData(null);
-      } else {
-        setApiStatus("disconnected");
+        fetchConversations();
       }
     } catch (err) {
-      console.error("Status error:", err);
+      console.error('Error checking API status:', err);
+      setApiStatus("disconnected");
+    }
+  }, [fetchConversations]);
+
+  useEffect(() => {
+    checkApiStatus();
+    const interval = setInterval(checkApiStatus, 30000); // Check every 30s
+    return () => clearInterval(interval);
+  }, [checkApiStatus]);
+
+  const getQrCode = async () => {
+    setLoading(true);
+    setApiStatus("checking");
+    try {
+      const { data, error } = await supabase.functions.invoke('whatsapp-connect', {
+        body: { action: 'connect' }
+      });
+
+      if (error) throw error;
+
+      if (data.base64 || data.qrcode?.base64) {
+        setQrCodeData(data.base64 || data.qrcode?.base64);
+        setApiStatus("disconnected");
+      } else if (data.instance?.state === 'open') {
+        toast({ title: "Conectado!", description: "WhatsApp já está ativo." });
+        setApiStatus("connected");
+      }
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao conectar",
+        description: "Não foi possível obter o QR Code."
+      });
+      setApiStatus("disconnected");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getQrCode = async () => {
-    setIsLoadingQR(true);
+  const handleLogout = async () => {
+    if (!confirm("Tem certeza que deseja desconectar o WhatsApp?")) return;
+    setLoading(true);
     try {
-      // Tentar conectar
-      const res = await fetch('https://api-whatsapp-sdmoveis.onrender.com/instance/connect/SD-Moveis', {
-        headers: { 'apikey': 'Mv06061991' }
+      await supabase.functions.invoke('whatsapp-connect', {
+        body: { action: 'logout' }
       });
-      
-      let data: any = {};
-      try {
-        data = await res.json();
-      } catch (e) {
-        console.warn("Evolution API response was not JSON or was empty");
-      }
-
-      // Se a instância não existe (404), vamos criar
-      if (res.status === 404 || data.error?.includes('not found') || data.message?.includes('not found')) {
-        toast({ title: "Configurando Ambiente...", description: "Criando instância 'SD-Moveis' no servidor." });
-        const createRes = await fetch('https://api-whatsapp-sdmoveis.onrender.com/instance/create', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'apikey': 'Mv06061991' },
-          body: JSON.stringify({
-            instanceName: "SD-Moveis",
-            token: "Mv06061991",
-            qrcode: true
-          })
-        });
-        
-        const createData = await createRes.json();
-        if (createData.qrcode?.base64 || createData.base64) {
-          setQrCodeData(createData.qrcode?.base64 || createData.base64);
-          toast({ title: "Instância Criada!", description: "Escaneie o QR Code agora." });
-          return;
-        }
-      }
-
-      
-      if (data.base64 || data.qrcode?.base64) {
-        setQrCodeData(data.base64 || data.qrcode?.base64);
-        toast({ title: "QR Code Gerado", description: "Escaneie com seu WhatsApp." });
-      } else if (data.status === 'open' || data.instance?.status === 'open' || data.state === 'open') {
-        setApiStatus("connected");
-        toast({ title: "Já Conectado", description: "A instância já está ativa." });
-      } else {
-        throw new Error("Não foi possível obter o QR Code");
-      }
+      toast({ title: "Desconectado", description: "Instância removida com sucesso." });
+      setApiStatus("disconnected");
+      setQrCodeData(null);
     } catch (err) {
-      console.error("Connect error:", err);
-      toast({ title: "Erro ao conectar", description: "Falha ao iniciar conexão. Tente novamente em instantes.", variant: "destructive" });
+      toast({ variant: "destructive", title: "Erro", description: "Falha ao desconectar." });
     } finally {
-      setIsLoadingQR(false);
+      setLoading(false);
     }
   };
 
   const syncWebhook = async () => {
-    setIsSyncingWebhook(true);
+    setLoading(true);
     try {
-      const webhookUrl = 'https://nglwscakhhdhelhbqkyb.supabase.co/functions/v1/whatsapp-webhook';
-      const res = await fetch('https://api-whatsapp-sdmoveis.onrender.com/webhook/set/SD-Moveis', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': 'Mv06061991' },
-        body: JSON.stringify({
-          url: webhookUrl,
-          enabled: true,
-          events: [
-            "MESSAGES_UPSERT",
-            "MESSAGES_UPDATE",
-            "MESSAGES_DELETE",
-            "SEND_MESSAGE",
-            "CONTACTS_UPSERT",
-            "CONTACTS_UPDATE",
-            "PRESENCE_UPDATE",
-            "CHATS_UPSERT",
-            "CHATS_UPDATE",
-            "CHATS_DELETE",
-            "GROUPS_UPSERT",
-            "GROUPS_UPDATE",
-            "GROUP_PARTICIPANTS_UPDATE",
-            "CONNECTION_UPDATE"
-          ]
-        })
+      await supabase.functions.invoke('whatsapp-connect', {
+        body: { action: 'sync-webhook' }
       });
-      
-      if (res.ok) {
-        toast({ title: "Webhook Sincronizado", description: "O CRM agora receberá mensagens em tempo real." });
-      } else {
-        throw new Error("Falha ao registrar webhook");
-      }
+      toast({ title: "Sincronizado", description: "Webhook atualizado com sucesso." });
     } catch (err) {
-      toast({ title: "Erro no Webhook", description: "Não foi possível configurar o receptor de mensagens.", variant: "destructive" });
+      toast({ variant: "destructive", title: "Erro", description: "Falha ao sincronizar webhook." });
     } finally {
-      setIsSyncingWebhook(false);
+      setLoading(false);
     }
   };
-
-  useEffect(() => {
-    checkApiStatus();
-    const interval = setInterval(checkApiStatus, 15000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    fetchConversations();
-  }, [fetchConversations]);
-
-  useEffect(() => {
-    if (selectedConversation) fetchMessages(selectedConversation.id);
-  }, [selectedConversation, fetchMessages]);
-
-  useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [messages]);
 
   const handleSendMessage = async () => {
-    if (!messageInput.trim() || !selectedConversation || sendingMessage) return;
-    const msg = messageInput;
-    setMessageInput("");
-    await sendMessage(selectedConversation.id, msg);
-  };
+    if (!messageText.trim() || !selectedConversation) return;
 
-  const generateAIResponse = async () => {
-    if (!selectedConversation) return;
-    setIsGeneratingAI(true);
+    const text = messageText;
+    setMessageText("");
+
     try {
-      const { data, error } = await supabase.functions.invoke('whatsapp-ai', {
-        body: { 
-          conversationId: selectedConversation.id,
-          contactName: selectedConversation.contact_name,
-          messageHistory: messages.slice(-5).map(m => ({ direction: m.direction, content: m.content }))
-        }
-      });
-      if (error) throw error;
-      if (data?.content) {
-        toast({ title: "IA Respondeu", description: "Mensagem gerada com sucesso." });
-        await fetchMessages(selectedConversation.id);
-      }
+      const success = await sendMessage(selectedConversation.id, text);
+      if (!success) throw new Error("Falha ao enviar");
     } catch (err) {
-      toast({ title: "Erro na IA", variant: "destructive" });
-    } finally {
-      setIsGeneratingAI(false);
+      toast({ variant: "destructive", title: "Erro ao enviar", description: "Verifique a conexão." });
+      setMessageText(text); // Restore text on error
     }
   };
 
-  const filteredConversations = conversations.filter(c =>
-    (c.contact_name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.phone_number.includes(searchTerm)
-  );
+  const getStatusBadge = (status: string) => {
+    const config: any = {
+      lead: { label: "Lead", class: "bg-blue-500/20 text-blue-400 border-blue-500/20" },
+      negociando: { label: "Negociando", class: "bg-amber-500/20 text-amber-400 border-amber-500/20" },
+      cliente: { label: "Cliente", class: "bg-emerald-500/20 text-emerald-400 border-emerald-500/20" },
+    };
+    const item = config[status] || { label: status, class: "bg-gray-500/20 text-gray-400" };
+    return <Badge variant="outline" className={cn("text-[10px] uppercase font-bold tracking-tighter", item.class)}>{item.label}</Badge>;
+  };
 
   return (
-    <div className="bg-card rounded-xl border border-border h-[700px] flex overflow-hidden">
-      {/* Sidebar de contatos */}
-      <div className="w-80 border-r border-border flex flex-col">
-        <div className="p-4 border-b border-border space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <MessageSquare className="w-5 h-5 text-success" />
-              <h3 className="font-semibold">CRM WhatsApp</h3>
-            </div>
-            <Button variant="ghost" size="icon" onClick={fetchConversations} disabled={loading}>
-              <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
-            </Button>
+    <div className="grid grid-cols-12 gap-6 h-[calc(100vh-200px)] min-h-[600px]">
+      {/* Sidebar - Conversas */}
+      <Card className="col-span-4 bg-white/5 border-white/10 overflow-hidden flex flex-col shadow-2xl backdrop-blur-xl">
+        <div className="p-4 border-b border-white/10 flex items-center justify-between bg-gradient-to-r from-amber-500/10 to-transparent">
+          <div className="flex items-center gap-2">
+            <MessageCircle className="w-5 h-5 text-amber-500" />
+            <h3 className="font-black text-sm uppercase tracking-widest text-white/80">Conversas</h3>
           </div>
-
-          <div className="flex items-center justify-between">
-            <Badge variant="outline" className={cn(
-              "text-[10px] flex items-center gap-1 py-1 px-2 uppercase tracking-widest font-black",
-              apiStatus === "connected" ? "bg-green-500/10 text-green-500 border-green-500/20" : "bg-red-500/10 text-red-500 border-red-500/20"
-            )}>
-              {apiStatus === "connected" ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
-              {apiStatus === "connected" ? "Conectado" : apiStatus === "checking" ? "Verificando..." : "Desconectado"}
-            </Badge>
-            
-            {apiStatus === "connected" && (
-              <Button size="sm" variant="ghost" className="h-7 text-[9px] font-black uppercase text-success hover:bg-success/10" onClick={syncWebhook} disabled={isSyncingWebhook}>
-                {isSyncingWebhook ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <RefreshCw className="w-3 h-3 mr-1" />}
-                Sync Webhook
-              </Button>
-            )}
-            
-            {apiStatus === "disconnected" && !qrCodeData && (
-              <Button size="sm" variant="outline" className="h-7 text-[9px] font-black uppercase border-amber-500/30 text-amber-500 hover:bg-amber-500/10" onClick={getQrCode} disabled={isLoadingQR}>
-                {isLoadingQR ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <RefreshCw className="w-3 h-3 mr-1" />}
-                Conectar
-              </Button>
-            )}
-          </div>
-
-          {qrCodeData && apiStatus === "disconnected" && (
-            <div className="bg-white p-3 rounded-2xl flex flex-col items-center gap-3 animate-in zoom-in-95 duration-300">
-              <img src={qrCodeData} alt="WhatsApp QR Code" className="w-48 h-48" />
-              <p className="text-[10px] text-black font-bold uppercase text-center">Escaneie para conectar</p>
-              <Button size="sm" variant="ghost" className="text-[9px] h-6 text-red-500 hover:text-red-600" onClick={() => setQrCodeData(null)}>Cancelar</Button>
-            </div>
-          )}
-
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input 
-              placeholder="Buscar..." 
-              className="pl-9 h-9 bg-black/20 border-white/5 rounded-xl text-sm" 
-              value={searchTerm} 
-              onChange={e => setSearchTerm(e.target.value)} 
-            />
-          </div>
+          <Button variant="ghost" size="icon" onClick={() => fetchConversations()} disabled={loadingData} className="hover:bg-amber-500/20">
+            <RefreshCw className={cn("w-4 h-4", loadingData && "animate-spin")} />
+          </Button>
         </div>
 
         <ScrollArea className="flex-1">
-          <div className="divide-y divide-border">
-            {filteredConversations.map(conversation => (
+          <div className="divide-y divide-white/5">
+            {conversations.map((conv) => (
               <button
-                key={conversation.id}
-                onClick={() => setSelectedConversation(conversation)}
+                key={conv.id}
+                onClick={() => {
+                  setSelectedConversation(conv);
+                  fetchMessages(conv.id);
+                }}
                 className={cn(
-                  "w-full p-4 text-left hover:bg-muted/50 transition-colors",
-                  selectedConversation?.id === conversation.id && "bg-muted"
+                  "w-full p-4 text-left transition-all duration-300 group hover:bg-white/5",
+                  selectedConversation?.id === conv.id && "bg-amber-500/10 border-l-2 border-amber-500"
                 )}
               >
-                <div className="flex items-start gap-3">
-                  <Avatar className="w-10 h-10">
-                    <AvatarFallback className="bg-primary/10 text-primary">
-                      {(conversation.contact_name || "C").charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-sm truncate">{conversation.contact_name || conversation.phone_number}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground truncate mt-1">{conversation.lastMessage || "Sem mensagens"}</p>
-                    <Badge variant="outline" className={cn("mt-2 text-[10px]", statusConfig[conversation.lead_status as keyof typeof statusConfig]?.className)}>
-                      {statusConfig[conversation.lead_status as keyof typeof statusConfig]?.label || conversation.lead_status}
-                    </Badge>
-                  </div>
+                <div className="flex justify-between items-start mb-1">
+                  <span className="font-bold text-white/90 group-hover:text-amber-400 transition-colors">
+                    {conv.customer_name || conv.customer_phone}
+                  </span>
+                  <span className="text-[10px] text-white/30 font-medium uppercase">
+                    {conv.last_message_at ? new Date(conv.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-white/40 truncate flex-1 mr-2 italic">
+                    {conv.last_message_preview || 'Sem mensagens...'}
+                  </p>
+                  {getStatusBadge(conv.lead_status)}
                 </div>
               </button>
             ))}
+            {conversations.length === 0 && !loadingData && (
+              <div className="p-8 text-center text-white/20 italic text-sm">Nenhuma conversa encontrada</div>
+            )}
           </div>
         </ScrollArea>
-      </div>
+      </Card>
 
-      {/* Area do Chat */}
-      {selectedConversation ? (
-        <div className="flex-1 flex flex-col">
-          <div className="p-4 border-b border-border flex items-center justify-between bg-muted/30">
-            <div className="flex items-center gap-3">
-              <Avatar>
-                <AvatarFallback>{(selectedConversation.contact_name || "C").charAt(0).toUpperCase()}</AvatarFallback>
-              </Avatar>
-              <h4 className="font-medium">{selectedConversation.contact_name || selectedConversation.phone_number}</h4>
-            </div>
-            <div className="flex items-center gap-3">
-              <Bot className="w-4 h-4 text-primary" />
-              <span className="text-xs">IA Auto</span>
-              <Switch checked={aiAutoReply} onCheckedChange={setAiAutoReply} />
+      {/* Main Chat Area */}
+      <Card className="col-span-8 bg-white/5 border-white/10 overflow-hidden flex flex-col shadow-2xl backdrop-blur-xl relative">
+        {/* Header de Conexão */}
+        <div className="absolute top-0 left-0 right-0 z-10 p-4 border-b border-white/10 bg-black/40 backdrop-blur-md flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/50 border border-white/10">
+              {apiStatus === "connected" ? (
+                <>
+                  <Wifi className="w-3 h-3 text-emerald-500" />
+                  <span className="text-[10px] font-black uppercase tracking-tighter text-emerald-500">Online</span>
+                </>
+              ) : apiStatus === "checking" ? (
+                <>
+                  <RefreshCw className="w-3 h-3 text-amber-500 animate-spin" />
+                  <span className="text-[10px] font-black uppercase tracking-tighter text-amber-500">Verificando</span>
+                </>
+              ) : (
+                <>
+                  <WifiOff className="w-3 h-3 text-red-500" />
+                  <span className="text-[10px] font-black uppercase tracking-tighter text-red-500">Offline</span>
+                </>
+              )}
             </div>
           </div>
 
-          <ScrollArea ref={scrollRef} className="flex-1 p-4 bg-muted/20">
-            <div className="space-y-4">
-              {messages.map(msg => (
-                <div key={msg.id} className={cn("flex", msg.direction === "outbound" ? "justify-end" : "justify-start")}>
-                  <div className={cn(
-                    "max-w-[75%] rounded-2xl px-4 py-2 text-sm",
-                    msg.direction === "outbound" ? "bg-success text-success-foreground" : "bg-card border border-border"
-                  )}>
-                    <p className="whitespace-pre-line">{msg.content}</p>
-                  </div>
+          <div className="flex items-center gap-2">
+            {apiStatus === "connected" ? (
+              <>
+                <Button variant="outline" size="sm" onClick={syncWebhook} className="h-8 gap-2 bg-black/50 border-white/10 hover:bg-amber-500/20 text-xs">
+                  <Zap className="w-3 h-3 text-amber-500" /> Sincronizar Webhook
+                </Button>
+                <Button variant="ghost" size="icon" onClick={handleLogout} className="h-8 w-8 text-red-400 hover:text-red-500 hover:bg-red-500/10">
+                  <LogOut className="w-4 h-4" />
+                </Button>
+              </>
+            ) : (
+              <Button size="sm" onClick={getQrCode} disabled={loading} className="h-8 gap-2 bg-amber-500 hover:bg-amber-600 text-black font-black uppercase text-[10px]">
+                {loading ? <RefreshCw className="w-3 h-3 animate-spin" /> : <QrCode className="w-3 h-3" />}
+                Conectar WhatsApp
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Mensagens ou QR Code */}
+        <div className="flex-1 flex flex-col pt-16">
+          {apiStatus === "connected" && selectedConversation ? (
+            <>
+              <ScrollArea className="flex-1 p-6">
+                <div className="space-y-4">
+                  {messages.map((msg) => (
+                    <div key={msg.id} className={cn("flex", msg.direction === 'outbound' ? "justify-end" : "justify-start")}>
+                      <div className={cn(
+                        "max-w-[80%] p-3 rounded-2xl shadow-xl",
+                        msg.direction === 'outbound' 
+                          ? "bg-amber-500 text-black rounded-tr-none" 
+                          : "bg-white/10 text-white border border-white/5 rounded-tl-none"
+                      )}>
+                        <p className="text-sm font-medium leading-relaxed">{msg.content}</p>
+                        <div className="flex items-center justify-end gap-1 mt-1 opacity-50">
+                          <span className="text-[9px] font-bold">
+                            {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                          {msg.direction === 'outbound' && <CheckCheck className="w-3 h-3" />}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </ScrollArea>
+              </ScrollArea>
 
-          <div className="p-4 border-t border-border flex gap-2">
-            <Button variant="outline" size="icon" onClick={generateAIResponse} disabled={isGeneratingAI}>
-              {isGeneratingAI ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 text-primary" />}
-            </Button>
-            <Input 
-              value={messageInput} 
-              onChange={e => setMessageInput(e.target.value)} 
-              placeholder="Digite..." 
-              onKeyDown={e => e.key === "Enter" && handleSendMessage()} 
-            />
-            <Button onClick={handleSendMessage} disabled={!messageInput.trim() || sendingMessage}>
-              <Send className="w-4 h-4" />
-            </Button>
-          </div>
+              <div className="p-4 border-t border-white/10 bg-black/20">
+                <div className="flex gap-2">
+                  <Input 
+                    value={messageText}
+                    onChange={(e) => setMessageText(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                    placeholder="Escreva sua mensagem..." 
+                    className="bg-white/5 border-white/10 text-white placeholder:text-white/20 h-10"
+                  />
+                  <Button onClick={handleSendMessage} className="bg-amber-500 hover:bg-amber-600 text-black h-10 w-10 p-0">
+                    <Send className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </>
+          ) : qrCodeData && apiStatus === "disconnected" ? (
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-black/40">
+              <div className="bg-white p-4 rounded-3xl shadow-[0_0_50px_rgba(245,158,11,0.3)] mb-6 animate-in zoom-in duration-500">
+                <img src={qrCodeData} alt="WhatsApp QR Code" className="w-64 h-64" />
+              </div>
+              <h2 className="text-2xl font-black text-amber-500 uppercase flex items-center gap-3">
+                <QrCode className="w-6 h-6" /> Escaneie para Conectar
+              </h2>
+              <p className="text-white/40 mt-2 max-w-sm text-sm">
+                Abra o WhatsApp no seu celular, vá em Aparelhos Conectados e escaneie o código acima.
+              </p>
+              <Button variant="ghost" className="mt-6 text-white/30 hover:text-white hover:bg-white/5" onClick={checkApiStatus}>
+                <RefreshCw className="w-4 h-4 mr-2" /> Já escaneei
+              </Button>
+            </div>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center opacity-20">
+              <div className="relative mb-6">
+                <Bot className="w-20 h-20 text-amber-500" />
+                <Zap className="w-8 h-8 text-amber-500 absolute -top-2 -right-2 animate-pulse" />
+              </div>
+              <h3 className="text-xl font-black uppercase tracking-widest text-white">CRM Inteligente SD</h3>
+              <p className="text-sm mt-2 max-w-xs mx-auto font-medium">
+                Selecione uma conversa ao lado ou conecte seu WhatsApp para começar a gerenciar seus leads.
+              </p>
+            </div>
+          )}
         </div>
-      ) : (
-        <div className="flex-1 flex items-center justify-center text-muted-foreground">
-          <div className="text-center">
-            <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
-            <p>Selecione uma conversa</p>
-          </div>
-        </div>
-      )}
+      </Card>
+      
+      {/* Botão Flutuante de IA */}
+      <Button className="fixed bottom-8 right-8 h-14 w-14 rounded-full bg-gradient-to-tr from-amber-500 to-amber-400 text-black shadow-[0_0_20px_rgba(245,158,11,0.4)] hover:scale-110 transition-transform flex items-center justify-center p-0">
+        <Bot className="w-7 h-7" />
+      </Button>
     </div>
   );
+}
+
+function Input({ ...props }: any) {
+  return <input {...props} className={cn("flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50", props.className)} />;
 }

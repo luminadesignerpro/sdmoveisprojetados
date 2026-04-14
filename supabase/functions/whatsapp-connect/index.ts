@@ -16,23 +16,64 @@ serve(async (req) => {
     const EVOLUTION_API_KEY = Deno.env.get("EVOLUTION_API_KEY") || "Mv06061991";
     const DB_PASSWORD = Deno.env.get("SUPABASE_DB_PASSWORD") || "Mv@1307202031011985";
     const SUPABASE_PROJECT_ID = Deno.env.get("SUPABASE_PROJECT_ID") || "nglwscakhhdhelhbqkyb";
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || `https://${SUPABASE_PROJECT_ID}.supabase.co`;
 
     const { action, instanceName = "SD-Moveis" } = await req.json();
+
+    console.log(`Action: ${action} for instance: ${instanceName}`);
 
     if (action === "get-status") {
       const res = await fetch(`${EVOLUTION_API_URL}/instance/connectionState/${instanceName}`, {
         headers: { "apikey": EVOLUTION_API_KEY }
       });
+      
+      if (!res.ok) {
+        const errorData = await res.text();
+        console.error(`Error checking status: ${errorData}`);
+        return new Response(JSON.stringify({ status: "disconnected", error: errorData }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       const data = await res.json();
       return new Response(JSON.stringify(data), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    if (action === "sync-webhook") {
+       console.log("Syncing webhook...");
+       const res = await fetch(`${EVOLUTION_API_URL}/webhook/set/${instanceName}`, {
+         method: "POST",
+         headers: { "Content-Type": "application/json", "apikey": EVOLUTION_API_KEY },
+         body: JSON.stringify({
+           enabled: true,
+           url: `${SUPABASE_URL}/functions/v1/whatsapp-webhook`,
+           webhook_by_events: false,
+           events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE", "MESSAGES_UPDATE", "SEND_MESSAGE"]
+         })
+       });
+       const data = await res.json();
+       return new Response(JSON.stringify(data), {
+         headers: { ...corsHeaders, "Content-Type": "application/json" },
+       });
+    }
+
+    if (action === "logout") {
+       console.log("Logging out instance...");
+       const res = await fetch(`${EVOLUTION_API_URL}/instance/logout/${instanceName}`, {
+         method: "DELETE",
+         headers: { "apikey": EVOLUTION_API_KEY }
+       });
+       const data = await res.json();
+       return new Response(JSON.stringify(data), {
+         headers: { ...corsHeaders, "Content-Type": "application/json" },
+       });
+    }
+
     if (action === "connect") {
        // 1. Tentar criar ou garantir que existe com banco de dados
        console.log("Creating/Updating instance with DB persistence...");
-       const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || `https://${SUPABASE_PROJECT_ID}.supabase.co`;
        
        await fetch(`${EVOLUTION_API_URL}/instance/create`, {
          method: "POST",
@@ -71,8 +112,15 @@ serve(async (req) => {
        const res = await fetch(`${EVOLUTION_API_URL}/instance/connect/${instanceName}`, {
          headers: { "apikey": EVOLUTION_API_KEY }
        });
-       const data = await res.json();
+       
+       if (!res.ok) {
+         return new Response(JSON.stringify({ error: "Failed to get QR Code. Instance might be already connected." }), {
+           status: res.status,
+           headers: { ...corsHeaders, "Content-Type": "application/json" },
+         });
+       }
 
+       const data = await res.json();
        return new Response(JSON.stringify(data), {
          headers: { ...corsHeaders, "Content-Type": "application/json" },
        });

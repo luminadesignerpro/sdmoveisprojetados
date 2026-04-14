@@ -9,7 +9,7 @@ Windows Registry Editor Version 5.00
 [HKEY_CLASSES_ROOT\fpqsystem\shell\open]
 
 [HKEY_CLASSES_ROOT\fpqsystem\shell\open\command]
-@="\"C:\\OSMARCENARIA5.9\\SISCOM.exe\" \"%1\""
+@="cmd /c \"cd /d \"C:\\OSMARCENARIA5.9\" && start \"\" \"SISCOM.exe\" %1\""
 
 [HKEY_CLASSES_ROOT\promobsystem]
 @="URL:promobsystem Protocol"
@@ -20,4 +20,4 @@ Windows Registry Editor Version 5.00
 [HKEY_CLASSES_ROOT\promobsystem\shell\open]
 
 [HKEY_CLASSES_ROOT\promobsystem\shell\open\command]
-@="\"C:\\Program Files\\Promob\\Promob Plus v5.60.12.4\\Program\\Bin\\Promob5.exe\" \"%1\""
+@="cmd /c \"cd /d \"C:\\Program Files\\Promob\\Promob Plus v5.60.12.4\\Program\\Bin\" && start \"\" \"Promob5.exe\" %1\""

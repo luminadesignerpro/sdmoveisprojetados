@@ -67,9 +67,18 @@ const LocalIntegrationPanel: React.FC = () => {
   const [promobPath, setPromobPath] = useState('C:\\\\Program Files\\\\Promob\\\\Promob Plus v5.60.12.4\\\\Program\\\\Bin\\\\Promob5.exe');
 
   const downloadRegFile = () => {
-    // Format paths for REG file (double backslashes are already in state, but we need quadruple for the @="" line in REG)
-    const formattedFpq = fpqPath.replace(/\\/g, '\\\\');
-    const formattedPromob = promobPath.replace(/\\/g, '\\\\');
+    // Extract directories and executables
+    const fpqParts = fpqPath.split('\\').filter(Boolean);
+    const fpqExe = fpqParts.pop();
+    const fpqDir = fpqParts.join('\\');
+
+    const promobParts = promobPath.split('\\').filter(Boolean);
+    const promobExe = promobParts.pop();
+    const promobDir = promobParts.join('\\');
+
+    // Format for REG file (needs double backslashes and escaped quotes)
+    const formattedFpqDir = fpqDir.replace(/\\/g, '\\\\');
+    const formattedPromobDir = promobDir.replace(/\\/g, '\\\\');
 
     const regContent = `Windows Registry Editor Version 5.00
 
@@ -82,7 +91,7 @@ const LocalIntegrationPanel: React.FC = () => {
 [HKEY_CLASSES_ROOT\\fpqsystem\\shell\\open]
 
 [HKEY_CLASSES_ROOT\\fpqsystem\\shell\\open\\command]
-@="\\"${formattedFpq}\\" \\"%1\\""
+@="cmd /c \\"cd /d \\"${formattedFpqDir}\\" && start \\"\\" \\"${fpqExe}\\" %1\\""
 
 [HKEY_CLASSES_ROOT\\promobsystem]
 @="URL:promobsystem Protocol"
@@ -93,16 +102,19 @@ const LocalIntegrationPanel: React.FC = () => {
 [HKEY_CLASSES_ROOT\\promobsystem\\shell\\open]
 
 [HKEY_CLASSES_ROOT\\promobsystem\\shell\\open\\command]
-@="\\"${formattedPromob}\\" \\"%1\\""
+@="cmd /c \\"cd /d \\"${formattedPromobDir}\\" && start \\"\\" \\"${promobExe}\\" %1\\""
 `;
     const blob = new Blob([regContent], { type: 'text/plain' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'registrar_protocolos_sd.reg';
+    a.download = 'registrar_protocolos_sd_v2.reg';
     a.click();
     window.URL.revokeObjectURL(url);
-    toast({ title: "✅ Arquivo .REG preparado!", description: "Execute-o e reinicie o navegador." });
+    toast({ 
+      title: "✅ Registro (V2) Reconfigurado!", 
+      description: "Este novo arquivo define o diretório de início (C:\\OSMARCENARIA5.9). Execute-o e tente abrir novamente." 
+    });
   };
 
   return (
