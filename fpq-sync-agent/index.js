@@ -98,6 +98,40 @@ async function processSales(sales) {
     console.log('✅ Sincronização Completa!');
 }
 
+const PROMOB_PROJECTS_DIR = process.env.PROMOB_PROJECTS_DIR || path.join(process.env.USERPROFILE, 'Documents', 'Promob', 'Projects');
+
+async function syncPromobProject(filename) {
+    if (!filename.endsWith('.promob')) return;
+    
+    const projectName = path.basename(filename, '.promob');
+    console.log('📐 Detectado Projeto Promob: ' + projectName);
+    
+    try {
+        await supabase.from('client_projects').upsert({
+            title: projectName,
+            client_name: 'Cliente Promob Local',
+            project_type: 'Promob Plus (Importado)',
+            status: 'producao', // Assume production if it was created/saved
+            updated_at: new Date().toISOString()
+        }, { onConflict: 'title, client_name' });
+        console.log('✅ Projeto Promob sincronizado com o Dash!');
+    } catch (e) {
+        console.error('Erro ao sincronizar Promob:', e.message);
+    }
+}
+
+// Watcher para a pasta do Promob
+if (fs.existsSync(PROMOB_PROJECTS_DIR)) {
+    console.log('👀 Monitorando Projetos Promob em: ' + PROMOB_PROJECTS_DIR);
+    fs.watch(PROMOB_PROJECTS_DIR, (eventType, filename) => {
+        if (filename && eventType === 'rename') { // 'rename' handles new files and deletions
+            syncPromobProject(filename);
+        }
+    });
+} else {
+    console.warn('⚠️ Pasta de projetos Promob não encontrada: ' + PROMOB_PROJECTS_DIR);
+}
+
 // Servidor de Heartbeat para o Painel Web
 const server = http.createServer((req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -116,7 +150,8 @@ const server = http.createServer((req, res) => {
             status: 'online',
             lastSyncStatus,
             lastSyncTime,
-            version: '1.2.0'
+            version: '1.3.0',
+            promobWatcher: fs.existsSync(PROMOB_PROJECTS_DIR)
         }));
     } else {
         res.writeHead(404);
@@ -130,7 +165,7 @@ server.listen(HTTP_PORT, () => {
 });
 
 const interval = parseInt(process.env.SYNC_INTERVAL_MS) || 300000;
-console.log('Intervalo: ' + (interval/60000) + ' minutos.');
+console.log('Intervalo Database: ' + (interval/60000) + ' minutos.');
 syncData();
 setInterval(syncData, interval);
 
