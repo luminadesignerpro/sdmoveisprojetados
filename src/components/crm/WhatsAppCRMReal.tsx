@@ -202,9 +202,16 @@ export function WhatsAppCRMReal() {
                 )}
               >
                 <div className="flex justify-between items-start mb-1">
-                  <span className="font-bold text-white/90 group-hover:text-amber-400 transition-colors">
-                    {conv.contact_name || conv.phone_number}
-                  </span>
+                  <div>
+                    <span className="font-bold text-white/90 group-hover:text-amber-400 transition-colors block">
+                      {conv.contact_name || conv.phone_number}
+                    </span>
+                    {conv.contact_name && (
+                      <span className="text-[10px] text-amber-500/70 font-mono">
+                        +{conv.phone_number}
+                      </span>
+                    )}
+                  </div>
                   <span className="text-[10px] text-white/30 font-medium uppercase">
                     {conv.last_message_at ? new Date(conv.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                   </span>
