@@ -23,7 +23,17 @@ serve(async (req) => {
     }
 
     const arrayBuffer = await file.arrayBuffer();
-    const base64 = btoa(new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), ''));
+    console.log(`Processing file: ${file.name}, size: ${arrayBuffer.byteLength} bytes`);
+
+    // Robust way to convert to base64 in Edge Functions
+    const uint8Array = new Uint8Array(arrayBuffer);
+    let binary = "";
+    const len = uint8Array.byteLength;
+    for (let i = 0; i < len; i++) {
+      binary += String.fromCharCode(uint8Array[i]);
+    }
+    const base64 = btoa(binary);
+    console.log("File converted to base64 successfully");
 
     const prompt = `Você é um especialista em extração de dados de ordens de serviço da marcenaria SD Móveis Projetados.
 Analise o documento PDF fornecido e extraia as seguintes informações em formato JSON rigoroso:
@@ -62,7 +72,7 @@ Regras:
 5. Retorne APENAS o JSON, sem markdown ou explicações.`;
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: "POST",
         headers: {
