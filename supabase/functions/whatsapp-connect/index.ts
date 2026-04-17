@@ -51,7 +51,8 @@ serve(async (req) => {
     if (action === "sync-webhook") {
        console.log("Syncing webhook...");
        const webhookUrl = `${SUPABASE_URL}/functions/v1/whatsapp-webhook`;
-       console.log("Webhook URL:", webhookUrl);
+       console.log("Webhook URL to register:", webhookUrl);
+       
        const res = await fetch(`${EVOLUTION_API_URL}/webhook/set/${instanceName}`, {
          method: "POST",
          headers: { "Content-Type": "application/json", "apikey": EVOLUTION_API_KEY },
@@ -59,41 +60,55 @@ serve(async (req) => {
            enabled: true,
            url: webhookUrl,
            webhook_by_events: false,
-           events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE", "MESSAGES_UPDATE", "SEND_MESSAGE"]
+           events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE", "MESSAGES_UPDATE", "SEND_MESSAGE", "TYPE_PRESENCE"]
          })
        });
+       
        const responseText = await res.text();
-       console.log(`Webhook set response: ${res.status} - ${responseText}`);
+       console.log(`Webhook Register Response (${res.status}): ${responseText}`);
+       
        if (!res.ok) {
-         return new Response(JSON.stringify({ error: `Evolution API returned ${res.status}: ${responseText}`, webhookUrl }), {
+         return new Response(JSON.stringify({ 
+           error: `Evolution API Error: ${res.status}`, 
+           details: responseText,
+           webhookUrl 
+         }), {
            status: 400,
            headers: { ...corsHeaders, "Content-Type": "application/json" },
          });
        }
-       let data: any = {};
-       try { data = JSON.parse(responseText); } catch { data = { raw: responseText }; }
-       return new Response(JSON.stringify({ ok: true, webhookUrl, data }), {
+       
+       return new Response(JSON.stringify({ ok: true, webhookUrl, message: "Webhook sincronizado com sucesso" }), {
          headers: { ...corsHeaders, "Content-Type": "application/json" },
        });
     }
 
     if (action === "logout") {
-       console.log("Logging out instance...");
+       console.log(`Logging out instance: ${instanceName}`);
        const res = await fetch(`${EVOLUTION_API_URL}/instance/logout/${instanceName}`, {
          method: "DELETE",
          headers: { "apikey": EVOLUTION_API_KEY }
        });
-       const data = await res.json();
-       return new Response(JSON.stringify(data), {
+       
+       // Also try to delete if logout fails (force cleanup)
+       if (!res.ok) {
+          console.log("Logout failed, trying force delete...");
+          await fetch(`${EVOLUTION_API_URL}/instance/delete/${instanceName}`, {
+            method: "DELETE",
+            headers: { "apikey": EVOLUTION_API_KEY }
+          });
+       }
+       
+       return new Response(JSON.stringify({ ok: true, message: "Instância removida" }), {
          headers: { ...corsHeaders, "Content-Type": "application/json" },
        });
     }
 
     if (action === "connect") {
-       // 1. Tentar criar ou garantir que existe com banco de dados
-       console.log("Creating/Updating instance with DB persistence...");
+       console.log(`Initiating connection for: ${instanceName}`);
        
-       await fetch(`${EVOLUTION_API_URL}/instance/create`, {
+       // 1. Create or Update instance
+       const createRes = await fetch(`${EVOLUTION_API_URL}/instance/create`, {
          method: "POST",
          headers: { "Content-Type": "application/json", "apikey": EVOLUTION_API_KEY },
          body: JSON.stringify({
@@ -112,43 +127,54 @@ serve(async (req) => {
            }
          })
        });
+       
+       const createData = await createRes.text();
+       console.log(`Instance Create/Update result (${createRes.status}): ${createData}`);
 
-       // 2. Registrar o Webhook
-       console.log("Registering webhook...");
+       // 2. Register Webhook
+       const webhookUrl = `${SUPABASE_URL}/functions/v1/whatsapp-webhook`;
        await fetch(`${EVOLUTION_API_URL}/webhook/set/${instanceName}`, {
          method: "POST",
          headers: { "Content-Type": "application/json", "apikey": EVOLUTION_API_KEY },
          body: JSON.stringify({
            enabled: true,
-           url: `${SUPABASE_URL}/functions/v1/whatsapp-webhook`,
+           url: webhookUrl,
            webhook_by_events: false,
            events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE", "MESSAGES_UPDATE", "SEND_MESSAGE"]
          })
        });
 
-       // 3. Pedir o QR Code
+       // 3. Get QR Code
+       console.log("Requesting QR Code...");
        const res = await fetch(`${EVOLUTION_API_URL}/instance/connect/${instanceName}`, {
          headers: { "apikey": EVOLUTION_API_KEY }
        });
        
+       const responseData = await res.text();
+       console.log(`Connect result (${res.status}): ${responseData.slice(0, 100)}...`);
+
        if (!res.ok) {
-         return new Response(JSON.stringify({ error: "Failed to get QR Code. Instance might be already connected." }), {
-           status: res.status,
+         return new Response(JSON.stringify({ 
+           error: "Erro ao obter QR Code", 
+           details: responseData,
+           suggestion: "Tente rodar 'logout' primeiro para limpar a sessão."
+         }), {
+           status: 200, // Return 200 to handle error gracefully in UI
            headers: { ...corsHeaders, "Content-Type": "application/json" },
          });
        }
 
-       const data = await res.json();
-       return new Response(JSON.stringify(data), {
+       return new Response(responseData, {
          headers: { ...corsHeaders, "Content-Type": "application/json" },
        });
     }
 
-    return new Response(JSON.stringify({ error: "Invalid action" }), {
+    return new Response(JSON.stringify({ error: "Ação inválida" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
+    console.error("Critical Function Error:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
