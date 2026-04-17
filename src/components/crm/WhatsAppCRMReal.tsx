@@ -262,7 +262,9 @@ export function WhatsAppCRMReal() {
               {apiStatus === "connected" ? (
                 <>
                   <Wifi className="w-3 h-3 text-emerald-500" />
-                  <span className="text-[10px] font-black uppercase tracking-tighter text-emerald-500">Online</span>
+                  <span className="text-[10px] font-black uppercase tracking-tighter text-emerald-500">
+                    Online (SD-Moveis)
+                  </span>
                 </>
               ) : apiStatus === "checking" ? (
                 <>
