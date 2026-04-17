@@ -135,12 +135,24 @@ export function WhatsAppCRMReal() {
   const syncWebhook = async () => {
     setLoading(true);
     try {
-      await supabase.functions.invoke('whatsapp-connect', {
+      const { data, error } = await supabase.functions.invoke('whatsapp-connect', {
         body: { action: 'sync-webhook' }
       });
-      toast({ title: "Sincronizado", description: "Webhook atualizado com sucesso." });
-    } catch (err) {
-      toast({ variant: "destructive", title: "Erro", description: "Falha ao sincronizar webhook." });
+      if (error) throw error;
+      if (data?.error) {
+        toast({ 
+          variant: "destructive",
+          title: "❌ Falha no Webhook", 
+          description: data.error 
+        });
+      } else {
+        toast({ 
+          title: "✅ Webhook Sincronizado!", 
+          description: `URL registrada: ${data?.webhookUrl || 'OK'}` 
+        });
+      }
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Erro", description: err?.message || "Falha ao sincronizar webhook." });
     } finally {
       setLoading(false);
     }

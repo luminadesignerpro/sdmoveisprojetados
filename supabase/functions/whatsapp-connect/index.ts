@@ -43,18 +43,29 @@ serve(async (req) => {
 
     if (action === "sync-webhook") {
        console.log("Syncing webhook...");
+       const webhookUrl = `${SUPABASE_URL}/functions/v1/whatsapp-webhook`;
+       console.log("Webhook URL:", webhookUrl);
        const res = await fetch(`${EVOLUTION_API_URL}/webhook/set/${instanceName}`, {
          method: "POST",
          headers: { "Content-Type": "application/json", "apikey": EVOLUTION_API_KEY },
          body: JSON.stringify({
            enabled: true,
-           url: `${SUPABASE_URL}/functions/v1/whatsapp-webhook`,
+           url: webhookUrl,
            webhook_by_events: false,
            events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE", "MESSAGES_UPDATE", "SEND_MESSAGE"]
          })
        });
-       const data = await res.json();
-       return new Response(JSON.stringify(data), {
+       const responseText = await res.text();
+       console.log(`Webhook set response: ${res.status} - ${responseText}`);
+       if (!res.ok) {
+         return new Response(JSON.stringify({ error: `Evolution API returned ${res.status}: ${responseText}`, webhookUrl }), {
+           status: 400,
+           headers: { ...corsHeaders, "Content-Type": "application/json" },
+         });
+       }
+       let data: any = {};
+       try { data = JSON.parse(responseText); } catch { data = { raw: responseText }; }
+       return new Response(JSON.stringify({ ok: true, webhookUrl, data }), {
          headers: { ...corsHeaders, "Content-Type": "application/json" },
        });
     }
