@@ -902,7 +902,7 @@ const App: React.FC = () => {
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value="crm">
-                  <WhatsAppCRMReal />
+                  <WhatsAppCRMReal setView={setView} />
                 </TabsContent>
                 <TabsContent value="flow">
                   <ChatFlowPanel />

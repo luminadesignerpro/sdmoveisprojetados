@@ -22,7 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useWhatsApp } from "@/hooks/useWhatsApp";
 import { cn } from "@/lib/utils";
 
-export function WhatsAppCRMReal() {
+export function WhatsAppCRMReal({ setView }: { setView?: (view: any) => void }) {
   const [apiStatus, setApiStatus] = useState<"connected" | "disconnected" | "checking">("checking");
   const [qrCodeData, setQrCodeData] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -375,8 +375,12 @@ export function WhatsAppCRMReal() {
         </div>
       </Card>
       
-      {/* Botão Flutuante de IA */}
-      <Button className="fixed bottom-8 right-8 h-14 w-14 rounded-full bg-gradient-to-tr from-amber-500 to-amber-400 text-black shadow-[0_0_20px_rgba(245,158,11,0.4)] hover:scale-110 transition-transform flex items-center justify-center p-0">
+      {/* Botão Flutuante de IA - Inteligência SD */}
+      <Button 
+        onClick={() => setView && setView("AI_SALES")}
+        title="Ver Vendedor IA"
+        className="fixed bottom-24 right-8 h-14 w-14 rounded-full bg-gradient-to-tr from-amber-500 to-amber-400 text-black shadow-[0_0_20px_rgba(245,158,11,0.5)] hover:scale-110 transition-transform flex items-center justify-center p-0 z-50 animate-bounce-slow"
+      >
         <Bot className="w-7 h-7" />
       </Button>
     </div>

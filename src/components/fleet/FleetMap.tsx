@@ -100,6 +100,20 @@ async function getRoutedPath(positions: [number, number][]): Promise<[number, nu
   return positions; 
 }
 
+const LocationMarker = ({ position, recordedAt, speed, accuracy }: { position: [number, number], recordedAt: string, speed: number | null, accuracy: number | null }) => {
+  const time = new Date(recordedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const speedKmh = speed !== null ? (speed * 3.6).toFixed(0) : '0';
+  
+  return (
+    `<div style="font-size:11px; min-width:140px">
+      <p style="font-weight:bold; margin-bottom:4px; border-bottom:1px solid #eee">📍 Ponto de Passagem</p>
+      <p><b>Horário:</b> ${time}</p>
+      <p><b>Velocidade:</b> ${speedKmh} km/h</p>
+      ${accuracy ? `<p><b>Precisão:</b> ${accuracy.toFixed(0)}m</p>` : ''}
+    </div>`
+  );
+};
+
 export default function FleetMap({ locations = [] }: { locations?: Location[] }) {
   const mapRef = useRef<L.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -151,57 +165,90 @@ export default function FleetMap({ locations = [] }: { locations?: Location[] })
 
     // Draw each trip — fetch road route from OSRM first
     const drawTrips = async () => {
-      for (const [, locs] of Object.entries(tripGroups)) {
-        const rawPositions = locs.map(l => [l.latitude, l.longitude] as [number, number]);
-        const lastLoc = locs[locs.length - 1];
-        const color = colors[idx % colors.length];
-        idx++;
+      try {
+        for (const [tripId, locs] of Object.entries(tripGroups)) {
+          if (!mapRef.current || !layerRef.current) return;
 
-        if (rawPositions.length > 1) {
-          // 🗺️ Get route following actual roads via OSRM
-          const routedPositions = await getRoutedPath(rawPositions);
-          
-          // Se o roteamento retornou a mesma quantidade de pontos que o bruto (falhou),
-          // desenha uma linha tracejada cinza por baixo para mostrar a intenção
-          if (routedPositions.length === rawPositions.length) {
-            L.polyline(rawPositions, { color: '#888', weight: 2, dashArray: '5, 10', opacity: 0.5 }).addTo(layer);
+          const rawPositions = locs.map(l => [l.latitude, l.longitude] as [number, number]);
+          const lastLoc = locs[locs.length - 1];
+          const color = colors[idx % colors.length];
+          idx++;
+
+          if (rawPositions.length > 1) {
+            // 🗺️ Get route following actual roads via OSRM
+            const routedPositions = await getRoutedPath(rawPositions);
+            
+            if (!mapRef.current || !layerRef.current) return;
+
+            // Se o roteamento retornou a mesma quantidade de pontos que o bruto (falhou),
+            // desenha uma linha tracejada por baixo
+            if (routedPositions.length === rawPositions.length) {
+              L.polyline(rawPositions, { color: '#888', weight: 2, dashArray: '5, 10', opacity: 0.5 }).addTo(layer);
+            }
+
+            L.polyline(routedPositions, { color, weight: 5, opacity: 0.85, lineJoin: 'round' }).addTo(layer);
           }
 
-          L.polyline(routedPositions, { color, weight: 5, opacity: 0.85, lineJoin: 'round' }).addTo(layer);
+          // Markers for EVERY raw position to show timing
+          locs.forEach((l, i) => {
+            if (!layerRef.current) return;
+            const isStart = i === 0;
+            const isEnd = i === locs.length - 1;
+            
+            // For general points, use small circle markers
+            if (!isStart && !isEnd) {
+              const dot = L.circleMarker([l.latitude, l.longitude], {
+                radius: 4,
+                color: 'white',
+                fillColor: color,
+                fillOpacity: 0.8,
+                weight: 1
+              }).addTo(layerRef.current);
+              
+              dot.bindPopup(LocationMarker({ 
+                position: [l.latitude, l.longitude], 
+                recordedAt: l.recorded_at, 
+                speed: l.speed,
+                accuracy: l.accuracy
+              }));
+            }
+          });
+
+          // Start marker (green dot)
+          if (rawPositions.length > 0) {
+            const startMarker = L.circleMarker(rawPositions[0], {
+              radius: 7, color: '#22c55e', fillColor: '#22c55e', fillOpacity: 1, weight: 2,
+            }).addTo(layer);
+            startMarker.bindPopup(`<b>🟢 Início da Rota</b><br>${new Date(locs[0].recorded_at).toLocaleString('pt-BR')}`);
+          }
+
+          // End marker
+          const endMarker = L.marker([lastLoc.latitude, lastLoc.longitude], { icon: activeIcon }).addTo(layer);
+          const speedText = lastLoc.speed !== null ? `<p>Vel: ${(lastLoc.speed * 3.6).toFixed(0)} km/h</p>` : '';
+          endMarker.bindPopup(`
+            <div style="font-size:13px">
+              <p style="font-weight:bold; color:#22c55e">🏁 Última posição</p>
+              <p>${new Date(lastLoc.recorded_at).toLocaleString('pt-BR')}</p>
+              ${speedText}
+              <p style="color:#888;font-size:11px;margin-top:4px">Total de pontos: ${locs.length}</p>
+            </div>
+          `);
         }
 
-        // Start marker (green dot)
-        if (rawPositions.length > 0) {
-          const startMarker = L.circleMarker(rawPositions[0], {
-            radius: 6, color: '#22c55e', fillColor: '#22c55e', fillOpacity: 1, weight: 2,
-          }).addTo(layer);
-          startMarker.bindPopup(`<b>🟢 Início</b><br>${new Date(locs[0].recorded_at).toLocaleString('pt-BR')}`);
-        }
+        if (!mapRef.current) return;
 
-        // End marker
-        const marker = L.marker([lastLoc.latitude, lastLoc.longitude], { icon: activeIcon }).addTo(layer);
-        const speedText = lastLoc.speed !== null ? `<p>Vel: ${(lastLoc.speed * 3.6).toFixed(0)} km/h</p>` : '';
-        marker.bindPopup(`
-          <div style="font-size:13px">
-            <p style="font-weight:bold">📍 Última posição</p>
-            <p>${new Date(lastLoc.recorded_at).toLocaleString('pt-BR')}</p>
-            ${speedText}
-            <p style="color:#888;font-size:11px">Pontos: ${locs.length}</p>
-          </div>
-        `);
-      }
-
-      // Fit map to all positions
-      const allPositions = locations.map(l => [l.latitude, l.longitude] as [number, number]);
-      if (allPositions.length === 1) {
-        map.setView(allPositions[0], 15);
-      } else {
-        const bounds = L.latLngBounds(allPositions);
-        if (bounds.getNorthEast().equals(bounds.getSouthWest())) {
+        // Fit map to all positions
+        const allPositions = locations.map(l => [l.latitude, l.longitude] as [number, number]);
+        if (allPositions.length === 1) {
           map.setView(allPositions[0], 15);
-        } else {
-          map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+        } else if (allPositions.length > 1) {
+          const bounds = L.latLngBounds(allPositions);
+          if (bounds.isValid()) {
+             map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+          }
         }
+      } catch (err) {
+        console.error('[FleetMap] Error drawing trips:', err);
       }
     };
 

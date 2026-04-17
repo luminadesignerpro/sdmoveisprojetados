@@ -198,25 +198,31 @@ serve(async (req) => {
               if (!responseText && geminiKey) {
                 console.log('Using Gemini for humanized AI response...');
                 const systemPrompt = `Você é o Consultor Especialista da SD Móveis Projetados. Seu tom: Persuasivo, elegante, caloroso e de altíssimo padrão.`;
-            const geminiRes = await fetch(
-              `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${geminiKey}`,
-              {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  contents: [{ parts: [{ text: `${systemPrompt}\n\nMensagem do cliente: ${messageContent}\n\nResponda de forma natural, direta e em português. Máximo 3 frases.` }] }],
-                }),
-              }
-            );
+                const geminiRes = await fetch(
+                  `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiKey}`,
+                  {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      contents: [{ parts: [{ text: `${systemPrompt}\n\nMensagem do cliente: ${messageContent}\n\nResponda de forma natural, direta e em português. Máximo 3 frases.` }] }],
+                    }),
+                  }
+                );
 
                 const geminiData = await geminiRes.json();
+                if (geminiData.error) {
+                  console.error('Gemini API Error:', geminiData.error);
+                }
                 const rawText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
                 responseText = rawText.trim();
                 messageTypeOut = 'ai';
               }
 
               if (responseText) {
-                const sendRes = await fetch(`${evolutionUrl}/message/sendText/SD-Moveis`, {
+                console.log(`Sending response to ${remoteJid}: ${responseText.slice(0, 50)}...`);
+                // Use the same instance name as defined in whatsapp-connect and the UI
+                const finalInstance = "SD-Moveis"; 
+                const sendRes = await fetch(`${evolutionUrl}/message/sendText/${finalInstance}`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json', apikey: evolutionKey },
                   body: JSON.stringify({
@@ -227,6 +233,7 @@ serve(async (req) => {
                 });
 
                 if (sendRes.ok) {
+                  console.log('Response sent successfully via Evolution API');
                   await supabase.from('whatsapp_messages').insert({
                     conversation_id: conversation.id,
                     direction: 'outbound',
@@ -234,7 +241,12 @@ serve(async (req) => {
                     status: 'sent',
                     message_type: messageTypeOut,
                   });
+                } else {
+                  const sendError = await sendRes.text();
+                  console.error(`Error sending message via Evolution API (${sendRes.status}):`, sendError);
                 }
+              } else {
+                console.log('No response generated (no match and no AI result)');
               }
             } catch (aiError) {
               console.error('Auto-response error:', aiError);
