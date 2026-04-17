@@ -122,20 +122,6 @@ serve(async (req) => {
               .eq("id", conversation.id);
           }
 
-          // Deduplicate: avoid saving the same message twice
-          const msgId = key?.id;
-          if (msgId) {
-            const { data: existing } = await supabase
-              .from('whatsapp_messages')
-              .select('id')
-              .eq('external_id', msgId)
-              .maybeSingle();
-            if (existing) {
-              console.log('Duplicate message skipped:', msgId);
-              continue;
-            }
-          }
-
           // Save the message to database
           const { error: msgError } = await supabase
             .from('whatsapp_messages')
@@ -145,11 +131,10 @@ serve(async (req) => {
               content: messageContent,
               status: fromMe ? 'delivered' : 'received',
               message_type: 'text',
-              external_id: msgId || null,
             });
 
           if (msgError) {
-            console.error('Error saving message:', msgError);
+            console.error('Error saving message to DB:', msgError);
           }
 
           await supabase
