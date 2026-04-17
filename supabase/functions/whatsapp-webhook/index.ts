@@ -72,11 +72,18 @@ serve(async (req) => {
             continue;
           }
 
-          // Extract phone number from JID (handle multi-device suffixes like :0)
-          const phoneNumber = remoteJid.split("@")[0].split(":")[0];
+          // Extract phone number strictly - remove everything after @ and all non-digits
+          const rawId = remoteJid.split("@")[0] || "";
+          const phoneNumber = rawId.replace(/[^0-9]/g, ""); // Ensure only digits
+          
+          if (!phoneNumber || phoneNumber.length < 5) {
+            console.log(`Skipping invalid phone number: "${phoneNumber}" from JID: ${remoteJid}`);
+            continue;
+          }
+
           const pushName = messageData.pushName || payload.data?.pushName || null;
           
-          console.log(`Checking conversation for phone: ${phoneNumber}, name: ${pushName}`);
+          console.log(`[Webhook] Event: ${event} | From: ${phoneNumber} | Name: ${pushName}`);
 
           // Find or create conversation
           let { data: conversation, error: selectError } = await supabase

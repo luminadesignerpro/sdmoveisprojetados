@@ -18,7 +18,14 @@ serve(async (req) => {
     const SUPABASE_PROJECT_ID = Deno.env.get("SUPABASE_PROJECT_ID") || "nglwscakhhdhelhbqkyb";
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || `https://${SUPABASE_PROJECT_ID}.supabase.co`;
 
-    const { action, instanceName = "SD-Moveis" } = await req.json();
+    let body: any = {};
+    try {
+      body = await req.json();
+    } catch (e) {
+      console.log("Empty or invalid body, proceeding with defaults");
+    }
+
+    const { action = "get-status", instanceName = "SD-Moveis" } = body;
 
     console.log(`Action: ${action} for instance: ${instanceName}`);
 
