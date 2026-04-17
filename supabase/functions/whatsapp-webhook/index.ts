@@ -74,10 +74,15 @@ serve(async (req) => {
 
           // Extract phone number strictly - handle multi-device suffixes (:1, :2) properly
           const rawId = remoteJid.split("@")[0] || "";
-          const phoneNumber = rawId.split(":")[0].replace(/[^0-9]/g, ""); // Split colon FIRST, then digits only
+          let phoneNumber = rawId.split(":")[0].replace(/[^0-9]/g, ""); 
+          
+          // Fix for numbers that might be missing the country code or have weird prefixes
+          if (phoneNumber.length >= 10 && !phoneNumber.startsWith("55") && !phoneNumber.startsWith("1")) {
+            phoneNumber = "55" + phoneNumber;
+          }
           
           if (!phoneNumber || phoneNumber.length < 5) {
-            console.log(`Skipping invalid phone number: "${phoneNumber}" from JID: ${remoteJid}`);
+            console.log(`Skipping invalid phone number extracted: "${phoneNumber}" from JID: ${remoteJid}`);
             continue;
           }
 
