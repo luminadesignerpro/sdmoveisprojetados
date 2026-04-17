@@ -259,7 +259,7 @@ const PdfUploader: React.FC<{ onClose?: () => void, onSuccess?: () => void }> = 
               </h3>
               <div className="mb-6">
                 <label className="text-[10px] text-gray-500 font-bold uppercase">Valor Total</label>
-                <p className="text-4xl font-black text-amber-400">R$ {extractedData.financeiro.valor_total_os.toLocaleString('pt-BR')}</p>
+                <p className="text-4xl font-black text-amber-400">R$ {(extractedData.financeiro?.valor_total_os ?? 0).toLocaleString('pt-BR')}</p>
               </div>
               <div className="flex-1">
                 <label className="text-[10px] text-gray-500 font-bold uppercase">Condições de Pagamento</label>
@@ -291,8 +291,8 @@ const PdfUploader: React.FC<{ onClose?: () => void, onSuccess?: () => void }> = 
                     <tr key={idx} className="hover:bg-white/5">
                       <td className="p-4 font-bold text-white">{item.descricao}</td>
                       <td className="p-4 text-center text-gray-400">{item.quantidade}</td>
-                      <td className="p-4 text-right text-gray-400">R$ {item.valor_unitario.toLocaleString('pt-BR')}</td>
-                      <td className="p-4 text-right font-bold text-amber-200">R$ {item.total_value.toLocaleString('pt-BR')}</td>
+                      <td className="p-4 text-right text-gray-400">R$ {(item.valor_unitario ?? 0).toLocaleString('pt-BR')}</td>
+                      <td className="p-4 text-right font-bold text-amber-200">R$ {(item.total_value ?? item.valor_total ?? 0).toLocaleString('pt-BR')}</td>
                     </tr>
                   ))}
                 </tbody>
