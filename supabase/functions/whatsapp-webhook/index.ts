@@ -18,16 +18,15 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const payload = await req.json();
-    console.log("Webhook received:", JSON.stringify(payload).slice(0, 500));
+    console.log(`[Webhook Event: ${payload.event}] Payload:`, JSON.stringify(payload).slice(0, 1000));
 
-    // Evolution API webhook format (can be v1 or v2)
     const event = (payload.event || "").toUpperCase();
 
-    if (event === "MESSAGES.UPSERT" || event === "MESSAGES_UPSERT") {
+    if (event.includes("MESSAGES") && (event.includes("UPSERT") || event.includes("CREATE"))) {
       // Handle both single message and array of messages
       const dataItems = Array.isArray(payload.data?.messages) 
         ? payload.data.messages 
-        : [payload.data || {}];
+        : payload.data?.message ? [payload.data.message] : [payload.data || {}];
 
       for (const messageData of dataItems) {
         try {
@@ -66,15 +65,22 @@ serve(async (req) => {
           // Extract phone number from JID (handle multi-device suffixes like :0)
           const phoneNumber = remoteJid.split("@")[0].split(":")[0];
           const pushName = messageData.pushName || payload.data?.pushName || null;
+          
+          console.log(`Checking conversation for phone: ${phoneNumber}, name: ${pushName}`);
 
           // Find or create conversation
-          let { data: conversation } = await supabase
+          let { data: conversation, error: selectError } = await supabase
             .from("whatsapp_conversations")
             .select("id")
             .eq("phone_number", phoneNumber)
             .maybeSingle();
 
+          if (selectError) {
+            console.error("Error selecting conversation:", selectError);
+          }
+
           if (!conversation) {
+            console.log(`Creating new conversation for ${phoneNumber}...`);
             const { data: newConv, error: convError } = await supabase
               .from("whatsapp_conversations")
               .insert({
@@ -91,6 +97,7 @@ serve(async (req) => {
               continue;
             }
             conversation = newConv;
+            console.log(`Conversation created with ID: ${conversation.id}`);
           } else if (pushName) {
             await supabase
               .from("whatsapp_conversations")
