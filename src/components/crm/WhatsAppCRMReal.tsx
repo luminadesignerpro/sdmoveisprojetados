@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +28,7 @@ export function WhatsAppCRMReal() {
   const [loading, setLoading] = useState(false);
   const [selectedConversation, setSelectedConversation] = useState<any>(null);
   const [messageText, setMessageText] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   const { 
@@ -65,9 +66,14 @@ export function WhatsAppCRMReal() {
 
   useEffect(() => {
     checkApiStatus();
-    const interval = setInterval(checkApiStatus, 30000); // Check every 30s
+    const interval = setInterval(checkApiStatus, 30000);
     return () => clearInterval(interval);
   }, [checkApiStatus]);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   const getQrCode = async () => {
     setLoading(true);
@@ -274,6 +280,7 @@ export function WhatsAppCRMReal() {
                       </div>
                     </div>
                   ))}
+                  <div ref={messagesEndRef} />
                 </div>
               </ScrollArea>
 
