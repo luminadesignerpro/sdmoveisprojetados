@@ -177,30 +177,15 @@ serve(async (req) => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                  contents: [{ parts: [{ text: `${systemPrompt}\n\nMensagem do cliente: ${messageContent}` }] }],
-                  generationConfig: { response_mime_type: 'application/json' },
+                  contents: [{ parts: [{ text: `${systemPrompt}\n\nMensagem do cliente: ${messageContent}\n\nResponda de forma natural, direta e em português. Máximo 3 frases.` }] }],
                 }),
               }
             );
 
                 const geminiData = await geminiRes.json();
-                const rawText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
-                let aiResult: any = {};
-                try { aiResult = JSON.parse(rawText); } catch { aiResult = { response: '' }; }
-
-                responseText = aiResult.response || '';
+                const rawText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                responseText = rawText.trim();
                 messageTypeOut = 'ai';
-
-                if (aiResult.score !== undefined) {
-                  await supabase
-                    .from('whatsapp_conversations')
-                    .update({
-                      lead_score: aiResult.score,
-                      ai_summary: aiResult.summary,
-                      status: aiResult.score >= 8 ? 'hot' : 'active',
-                    })
-                    .eq('id', conversation.id);
-                }
               }
 
               if (responseText) {

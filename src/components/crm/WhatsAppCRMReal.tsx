@@ -36,7 +36,8 @@ export function WhatsAppCRMReal() {
     loading: loadingData, 
     fetchConversations, 
     fetchMessages,
-    sendMessage 
+    sendMessage,
+    setActiveConversation
   } = useWhatsApp();
 
   const checkApiStatus = useCallback(async () => {
@@ -174,6 +175,7 @@ export function WhatsAppCRMReal() {
                 key={conv.id}
                 onClick={() => {
                   setSelectedConversation(conv);
+                  setActiveConversation(conv.id);
                   fetchMessages(conv.id);
                 }}
                 className={cn(
@@ -183,7 +185,7 @@ export function WhatsAppCRMReal() {
               >
                 <div className="flex justify-between items-start mb-1">
                   <span className="font-bold text-white/90 group-hover:text-amber-400 transition-colors">
-                    {conv.customer_name || conv.customer_phone}
+                    {conv.contact_name || conv.phone_number}
                   </span>
                   <span className="text-[10px] text-white/30 font-medium uppercase">
                     {conv.last_message_at ? new Date(conv.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
@@ -191,7 +193,7 @@ export function WhatsAppCRMReal() {
                 </div>
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-white/40 truncate flex-1 mr-2 italic">
-                    {conv.last_message_preview || 'Sem mensagens...'}
+                    {conv.lastMessage || 'Sem mensagens...'}
                   </p>
                   {getStatusBadge(conv.lead_status)}
                 </div>
