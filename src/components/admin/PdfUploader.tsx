@@ -126,10 +126,10 @@ const PdfUploader: React.FC<{ onClose?: () => void, onSuccess?: () => void }> = 
           .insert(
             extractedData.itens.map(item => ({
               service_order_id: os.id,
-              description: item.descricao,
-              unit_value: item.valor_unitario,
-              quantity: item.quantidade || 1,
-              total_value: item.total_value,
+              description: item.descricao || 'Item sem descrição',
+              unit_value: Number(item.valor_unitario ?? 0),
+              quantity: Number(item.quantidade ?? 1),
+              total_value: Number(item.total_value ?? item.valor_total ?? 0),
             }))
           );
         
