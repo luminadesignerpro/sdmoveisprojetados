@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.8";
+import { encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -25,14 +26,9 @@ serve(async (req) => {
     const arrayBuffer = await file.arrayBuffer();
     console.log(`Processing file: ${file.name}, size: ${arrayBuffer.byteLength} bytes`);
 
-    // Robust way to convert to base64 in Edge Functions
+    // Efficient and safe base64 conversion using Deno std
     const uint8Array = new Uint8Array(arrayBuffer);
-    let binary = "";
-    const len = uint8Array.byteLength;
-    for (let i = 0; i < len; i++) {
-      binary += String.fromCharCode(uint8Array[i]);
-    }
-    const base64 = btoa(binary);
+    const base64 = encode(uint8Array);
     console.log("File converted to base64 successfully");
 
     const prompt = `Você é um especialista em extração de dados de ordens de serviço da marcenaria SD Móveis Projetados.
@@ -55,7 +51,7 @@ Analise o documento PDF fornecido e extraia as seguintes informações em format
       "descricao": "string (ex: MDF 15 ALMERIA)",
       "valor_unitario": number (ex: 250.00),
       "quantidade": number (ex: 1),
-      "valor_total": number (ex: 250.00)
+      "total_value": number (ex: 250.00)
     }
   ],
   "financeiro": {
@@ -71,41 +67,48 @@ Regras:
 4. Identifique todos os itens da tabela de materiais/serviços.
 5. Retorne APENAS o JSON, sem markdown ou explicações.`;
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                { text: prompt },
-                {
-                  inlineData: {
-                    mimeType: "application/pdf",
-                    data: base64,
-                  },
+    // Using gemini-2.5-flash which is current and stable
+    const model = "gemini-2.5-flash";
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              { text: prompt },
+              {
+                inlineData: {
+                  mimeType: "application/pdf",
+                  data: base64,
                 },
-              ],
-            },
-          ],
-          generationConfig: {
-            responseMimeType: "application/json",
+              },
+            ],
           },
-        }),
-      }
-    );
+        ],
+        generationConfig: {
+          responseMimeType: "application/json",
+        },
+      }),
+    });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Gemini API error:", errorText);
-      throw new Error(`Gemini API error: ${response.status}`);
+      const errorData = await response.json();
+      console.error("Gemini API error detailed:", JSON.stringify(errorData));
+      throw new Error(`Gemini API error (${response.status}): ${errorData.error?.message || "Unknown error"}`);
     }
 
     const result = await response.json();
+    
+    if (!result.candidates || result.candidates.length === 0 || !result.candidates[0].content) {
+      console.error("Empty Gemini response:", JSON.stringify(result));
+      throw new Error("Gemini não retornou dados para este PDF. Verifique se o arquivo não está protegido ou vazio.");
+    }
+
     const textResponse = result.candidates[0].content.parts[0].text;
     
     // Parse the JSON to ensure it's valid
