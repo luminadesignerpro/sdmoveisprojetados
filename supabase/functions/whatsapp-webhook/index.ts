@@ -30,14 +30,14 @@ serve(async (req) => {
 
       for (const messageData of dataItems) {
         try {
-          if (!messageData || (!messageData.key && !messageData.message)) continue;
+          if (!messageData) continue;
 
-          const key = messageData.key;
-          const fromMe = key?.fromMe || false;
-          const remoteJid = key?.remoteJid || messageData.remoteJid || payload.data?.key?.remoteJid || payload.data?.remoteJid || "";
+          const key = messageData.key || {};
+          const fromMe = key.fromMe || messageData.fromMe || false;
+          const remoteJid = key.remoteJid || messageData.remoteJid || payload.data?.key?.remoteJid || payload.data?.remoteJid || "";
           
           if (!remoteJid) {
-            console.error("CRITICAL: Incoming message missing RemoteJID", JSON.stringify(messageData));
+            console.log("Skipping message: no JID found in payload structure");
             continue;
           }
 
@@ -59,15 +59,16 @@ serve(async (req) => {
             payload.data?.content || 
             "";
 
-          console.log(`[+][${event}] From ${remoteJid}: "${messageContent.slice(0, 40)}..."`);
+          console.log(`[+][${event}] JID: ${remoteJid} | Content: ${messageContent.slice(0, 30)}...`);
 
           if (remoteJid.includes('@g.us')) {
             console.log('Skipping: group jid', remoteJid);
             continue;
           }
 
+          // Even if content is empty (e.g. read receipt, typing), we might want to ensure the conversation exists
+          // but for now let's only save messages with content or fromMe
           if (!messageContent && !fromMe) {
-            console.log('Skipping inbound: no text content found in any field');
             continue;
           }
 
