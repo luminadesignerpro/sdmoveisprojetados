@@ -29,6 +29,7 @@ export function WhatsAppCRMReal() {
   const [selectedConversation, setSelectedConversation] = useState<any>(null);
   const [messageText, setMessageText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   const { 
@@ -70,10 +71,20 @@ export function WhatsAppCRMReal() {
     return () => clearInterval(interval);
   }, [checkApiStatus]);
 
-  // Auto-scroll to bottom when messages change
+  // Smart auto-scroll: only go to bottom if user is already near the bottom
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+    if (distanceFromBottom < 150) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages]);
+
+  // Always scroll to bottom when opening a new conversation
+  const scrollToBottom = () => {
+    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+  };
 
   const getQrCode = async () => {
     setLoading(true);
@@ -183,6 +194,7 @@ export function WhatsAppCRMReal() {
                   setSelectedConversation(conv);
                   setActiveConversation(conv.id);
                   fetchMessages(conv.id);
+                  scrollToBottom();
                 }}
                 className={cn(
                   "w-full p-4 text-left transition-all duration-300 group hover:bg-white/5",
@@ -260,7 +272,10 @@ export function WhatsAppCRMReal() {
         <div className="flex-1 flex flex-col pt-16">
           {apiStatus === "connected" && selectedConversation ? (
             <>
-              <ScrollArea className="flex-1 p-6">
+              <div 
+                ref={scrollContainerRef}
+                className="flex-1 overflow-y-auto p-6 scroll-smooth"
+              >
                 <div className="space-y-4">
                   {messages.map((msg) => (
                     <div key={msg.id} className={cn("flex", msg.direction === 'outbound' ? "justify-end" : "justify-start")}>
@@ -282,7 +297,7 @@ export function WhatsAppCRMReal() {
                   ))}
                   <div ref={messagesEndRef} />
                 </div>
-              </ScrollArea>
+              </div>
 
               <div className="p-4 border-t border-white/10 bg-black/20">
                 <div className="flex gap-2">
