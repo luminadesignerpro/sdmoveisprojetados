@@ -248,6 +248,16 @@ export function WhatsAppCRMReal() {
         {/* Header de Conexão */}
         <div className="absolute top-0 left-0 right-0 z-10 p-4 border-b border-white/10 bg-black/40 backdrop-blur-md flex items-center justify-between">
           <div className="flex items-center gap-4">
+            <div className="flex flex-col">
+              <h3 className="text-white font-bold text-sm">
+                {selectedConversation?.contact_name || selectedConversation?.phone_number || 'Chat'}
+              </h3>
+              {selectedConversation?.contact_name && (
+                <span className="text-[10px] text-amber-500 font-mono">
+                  +{selectedConversation?.phone_number}
+                </span>
+              )}
+            </div>
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/50 border border-white/10">
               {apiStatus === "connected" ? (
                 <>

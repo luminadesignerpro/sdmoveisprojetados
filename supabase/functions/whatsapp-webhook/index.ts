@@ -35,28 +35,31 @@ serve(async (req) => {
 
           const key = messageData.key;
           const fromMe = key?.fromMe || false;
-          const remoteJid = key?.remoteJid || messageData.remoteJid || "";
+          const remoteJid = key?.remoteJid || messageData.remoteJid || payload.data?.key?.remoteJid || "";
           
-          // Handle different message structures in v2
+          // Evolution API can have different structures for the message object
+          const msgBody = messageData.message || payload.data?.message || {};
+          
           const messageContent =
-            messageData.message?.conversation ||
-            messageData.message?.extendedTextMessage?.text ||
-            messageData.message?.imageMessage?.caption ||
-            messageData.message?.videoMessage?.caption ||
-            messageData.message?.documentWithCaptionMessage?.message?.documentMessage?.caption ||
-            messageData.message?.ephemeralMessage?.message?.extendedTextMessage?.text ||
-            messageData.message?.ephemeralMessage?.message?.conversation ||
-            messageData.conversation || // Fallback 1
-            payload.data?.message?.conversation || // Fallback 2
+            msgBody.conversation ||
+            msgBody.extendedTextMessage?.text ||
+            msgBody.imageMessage?.caption ||
+            msgBody.videoMessage?.caption ||
+            msgBody.documentWithCaptionMessage?.message?.documentMessage?.caption ||
+            msgBody.ephemeralMessage?.message?.extendedTextMessage?.text ||
+            msgBody.ephemeralMessage?.message?.conversation ||
+            messageData.conversation || 
             "";
+
+          console.log(`Processing message from ${remoteJid}: "${messageContent.slice(0, 50)}..." (fromMe: ${fromMe})`);
 
           if (!remoteJid || remoteJid.includes('@g.us')) {
             console.log('Skipping: group or empty jid', remoteJid);
             continue;
           }
 
-          if (!messageContent) {
-            console.log('Skipping message: no content', { remoteJid });
+          if (!messageContent && !fromMe) {
+            console.log('Skipping inbound message: no text content', { remoteJid });
             continue;
           }
 
