@@ -72,9 +72,9 @@ serve(async (req) => {
             continue;
           }
 
-          // Extract phone number strictly - remove everything after @ and all non-digits
+          // Extract phone number strictly - handle multi-device suffixes (:1, :2) properly
           const rawId = remoteJid.split("@")[0] || "";
-          const phoneNumber = rawId.replace(/[^0-9]/g, ""); // Ensure only digits
+          const phoneNumber = rawId.split(":")[0].replace(/[^0-9]/g, ""); // Split colon FIRST, then digits only
           
           if (!phoneNumber || phoneNumber.length < 5) {
             console.log(`Skipping invalid phone number: "${phoneNumber}" from JID: ${remoteJid}`);

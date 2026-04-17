@@ -47,6 +47,9 @@ serve(async (req) => {
       );
     }
 
+    // Clean phone number from suffixes (:1, etc)
+    targetPhone = targetPhone.split(":")[0].replace(/[^0-9]/g, "");
+
     let sendResult = { mode: "simulation", sent: false };
 
     // Try to send via Evolution API if configured
