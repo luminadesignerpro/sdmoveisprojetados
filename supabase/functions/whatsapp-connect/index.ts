@@ -14,7 +14,6 @@ serve(async (req) => {
   try {
     const EVOLUTION_API_URL = Deno.env.get("EVOLUTION_API_URL") || "https://api-whatsapp-sdmoveis.onrender.com";
     const EVOLUTION_API_KEY = Deno.env.get("EVOLUTION_API_KEY") || "Mv06061991";
-    const DB_PASSWORD = Deno.env.get("SUPABASE_DB_PASSWORD") || "Mv@1307202031011985";
     const SUPABASE_PROJECT_ID = Deno.env.get("SUPABASE_PROJECT_ID") || "nglwscakhhdhelhbqkyb";
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || `https://${SUPABASE_PROJECT_ID}.supabase.co`;
 
@@ -22,26 +21,16 @@ serve(async (req) => {
     try {
       body = await req.json();
     } catch (e) {
-      console.log("Empty or invalid body, proceeding with defaults");
+      // Ignore empty body
     }
 
     const { action = "get-status", instanceName = "SD-Moveis" } = body;
-
-    console.log(`Action: ${action} for instance: ${instanceName}`);
+    console.log(`[Action: ${action}] Instance: ${instanceName}`);
 
     if (action === "get-status") {
       const res = await fetch(`${EVOLUTION_API_URL}/instance/connectionState/${instanceName}`, {
         headers: { "apikey": EVOLUTION_API_KEY }
       });
-      
-      if (!res.ok) {
-        const errorData = await res.text();
-        console.error(`Error checking status: ${errorData}`);
-        return new Response(JSON.stringify({ status: "disconnected", error: errorData }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
       const data = await res.json();
       return new Response(JSON.stringify(data), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -49,91 +38,8 @@ serve(async (req) => {
     }
 
     if (action === "sync-webhook") {
-       console.log("Syncing webhook...");
        const webhookUrl = `${SUPABASE_URL}/functions/v1/whatsapp-webhook`;
-       console.log("Webhook URL to register:", webhookUrl);
-       
        const res = await fetch(`${EVOLUTION_API_URL}/webhook/set/${instanceName}`, {
-         method: "POST",
-         headers: { "Content-Type": "application/json", "apikey": EVOLUTION_API_KEY },
-         body: JSON.stringify({
-           enabled: true,
-           url: webhookUrl,
-           webhook_by_events: false,
-           events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE", "MESSAGES_UPDATE", "SEND_MESSAGE", "TYPE_PRESENCE"]
-         })
-       });
-       
-       const responseText = await res.text();
-       console.log(`Webhook Register Response (${res.status}): ${responseText}`);
-       
-       if (!res.ok) {
-         return new Response(JSON.stringify({ 
-           error: `Evolution API Error: ${res.status}`, 
-           details: responseText,
-           webhookUrl 
-         }), {
-           status: 400,
-           headers: { ...corsHeaders, "Content-Type": "application/json" },
-         });
-       }
-       
-       return new Response(JSON.stringify({ ok: true, webhookUrl, message: "Webhook sincronizado com sucesso" }), {
-         headers: { ...corsHeaders, "Content-Type": "application/json" },
-       });
-    }
-
-    if (action === "logout") {
-       console.log(`Logging out instance: ${instanceName}`);
-       const res = await fetch(`${EVOLUTION_API_URL}/instance/logout/${instanceName}`, {
-         method: "DELETE",
-         headers: { "apikey": EVOLUTION_API_KEY }
-       });
-       
-       // Also try to delete if logout fails (force cleanup)
-       if (!res.ok) {
-          console.log("Logout failed, trying force delete...");
-          await fetch(`${EVOLUTION_API_URL}/instance/delete/${instanceName}`, {
-            method: "DELETE",
-            headers: { "apikey": EVOLUTION_API_KEY }
-          });
-       }
-       
-       return new Response(JSON.stringify({ ok: true, message: "Instância removida" }), {
-         headers: { ...corsHeaders, "Content-Type": "application/json" },
-       });
-    }
-
-    if (action === "connect") {
-       console.log(`Initiating connection for: ${instanceName}`);
-       
-       // 1. Create or Update instance
-       const createRes = await fetch(`${EVOLUTION_API_URL}/instance/create`, {
-         method: "POST",
-         headers: { "Content-Type": "application/json", "apikey": EVOLUTION_API_KEY },
-         body: JSON.stringify({
-           instanceName,
-           qrcode: true,
-           integration: "WHATSAPP-BAILEYS",
-           database: {
-             enabled: true,
-             type: "postgres",
-             host: `db.${SUPABASE_PROJECT_ID}.supabase.co`,
-             port: 5432,
-             user: "postgres",
-             password: DB_PASSWORD,
-             database: "postgres",
-             ssl: true
-           }
-         })
-       });
-       
-       const createData = await createRes.text();
-       console.log(`Instance Create/Update result (${createRes.status}): ${createData}`);
-
-       // 2. Register Webhook
-       const webhookUrl = `${SUPABASE_URL}/functions/v1/whatsapp-webhook`;
-       await fetch(`${EVOLUTION_API_URL}/webhook/set/${instanceName}`, {
          method: "POST",
          headers: { "Content-Type": "application/json", "apikey": EVOLUTION_API_KEY },
          body: JSON.stringify({
@@ -143,40 +49,69 @@ serve(async (req) => {
            events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE", "MESSAGES_UPDATE", "SEND_MESSAGE"]
          })
        });
+       const data = await res.text();
+       return new Response(JSON.stringify({ ok: res.ok, data }), {
+         headers: { ...corsHeaders, "Content-Type": "application/json" },
+       });
+    }
 
-       // 3. Get QR Code
-       console.log("Requesting QR Code...");
+    if (action === "logout") {
+       const res = await fetch(`${EVOLUTION_API_URL}/instance/logout/${instanceName}`, {
+         method: "DELETE",
+         headers: { "apikey": EVOLUTION_API_KEY }
+       });
+       // Try force delete if logout fails
+       if (!res.ok) {
+         await fetch(`${EVOLUTION_API_URL}/instance/delete/${instanceName}`, {
+           method: "DELETE",
+           headers: { "apikey": EVOLUTION_API_KEY }
+         });
+       }
+       return new Response(JSON.stringify({ ok: true }), {
+         headers: { ...corsHeaders, "Content-Type": "application/json" },
+       });
+    }
+
+    if (action === "connect") {
+       // Ensure instance exists first without DB persistence for maximum compatibility
+       await fetch(`${EVOLUTION_API_URL}/instance/create`, {
+         method: "POST",
+         headers: { "Content-Type": "application/json", "apikey": EVOLUTION_API_KEY },
+         body: JSON.stringify({ instanceName, qrcode: true })
+       });
+
+       // Sync webhook immediately
+       await fetch(`${EVOLUTION_API_URL}/webhook/set/${instanceName}`, {
+         method: "POST",
+         headers: { "Content-Type": "application/json", "apikey": EVOLUTION_API_KEY },
+         body: JSON.stringify({
+           enabled: true,
+           url: `${SUPABASE_URL}/functions/v1/whatsapp-webhook`,
+           webhook_by_events: false,
+           events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE", "MESSAGES_UPDATE", "SEND_MESSAGE"]
+         })
+       });
+
+       // Request connection (QR Code)
        const res = await fetch(`${EVOLUTION_API_URL}/instance/connect/${instanceName}`, {
          headers: { "apikey": EVOLUTION_API_KEY }
        });
        
        const responseData = await res.text();
-       console.log(`Connect result (${res.status}): ${responseData.slice(0, 100)}...`);
-
-       if (!res.ok) {
-         return new Response(JSON.stringify({ 
-           error: "Erro ao obter QR Code", 
-           details: responseData,
-           suggestion: "Tente rodar 'logout' primeiro para limpar a sessão."
-         }), {
-           status: 200, // Return 200 to handle error gracefully in UI
-           headers: { ...corsHeaders, "Content-Type": "application/json" },
-         });
-       }
-
        return new Response(responseData, {
+         status: res.status,
          headers: { ...corsHeaders, "Content-Type": "application/json" },
        });
     }
 
-    return new Response(JSON.stringify({ error: "Ação inválida" }), {
+    return new Response(JSON.stringify({ error: "Invalid action" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Critical Function Error:", error);
+    console.error("Function error:", error);
     return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
+      status: 200, // Return 200 with error object so UI can show it
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
