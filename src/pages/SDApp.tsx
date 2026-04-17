@@ -42,6 +42,7 @@ import { supabase } from '@/integrations/supabase/client';
 import ARProjectList from '@/components/ar/ARProjectList';
 import AINegotiationDashboard from '@/components/crm/AINegotiationDashboard';
 import LocalIntegrationPanel from '@/components/admin/LocalIntegrationPanel';
+import PdfUploader from '@/components/admin/PdfUploader';
 const db = supabase as any;
 import {
   LogOut,
@@ -482,6 +483,7 @@ const App: React.FC = () => {
                 <NavIcon icon="calendar" label="Agenda" active={view === ViewMode.APPOINTMENTS} onClick={() => setView(ViewMode.APPOINTMENTS)} />
                 <NavIcon icon="camera" label="Projetos AR" active={view === ViewMode.AR_STUDIO} onClick={() => setView(ViewMode.AR_STUDIO)} />
                 <NavIcon icon="bot" label="Vendedor IA" active={view === ViewMode.AI_SALES} onClick={() => setView(ViewMode.AI_SALES)} />
+                <NavIcon icon="file-down" label="PDF Downloader" active={view === ViewMode.PDF_DOWNLOADER} onClick={() => setView(ViewMode.PDF_DOWNLOADER)} />
               </>
             ) : authState === 'EMPLOYEE' ? (
               <>
@@ -1292,6 +1294,12 @@ const App: React.FC = () => {
           {/* LOCAL INTEGRATION - Admin */}
           {view === ViewMode.INTEGRATION && authState === 'ADMIN' && (
             <LocalIntegrationPanel />
+          )}
+          {/* PDF DOWNLOADER - Admin */}
+          {view === ViewMode.PDF_DOWNLOADER && authState === 'ADMIN' && (
+            <div className="p-8 overflow-auto h-full bg-[#0f0f0f] flex items-center justify-center">
+              <PdfUploader />
+            </div>
           )}
         </ViewTransition>
       </main>

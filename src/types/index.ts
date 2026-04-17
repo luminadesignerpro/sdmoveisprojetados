@@ -28,6 +28,7 @@ export enum ViewMode {
   AR_STUDIO = 'AR_STUDIO',
   AI_SALES = 'AI_SALES',
   INTEGRATION = 'INTEGRATION',
+  PDF_DOWNLOADER = 'PDF_DOWNLOADER',
 }
 
 export enum ToolMode {
