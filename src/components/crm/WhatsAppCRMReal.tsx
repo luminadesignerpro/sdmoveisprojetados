@@ -269,12 +269,12 @@ export function WhatsAppCRMReal() {
         </div>
 
         {/* Mensagens ou QR Code */}
-        <div className="flex-1 flex flex-col pt-16">
+        <div className="flex-1 flex flex-col pt-16 min-h-0">
           {apiStatus === "connected" && selectedConversation ? (
             <>
               <div 
                 ref={scrollContainerRef}
-                className="flex-1 overflow-y-auto p-6 scroll-smooth"
+                className="flex-1 overflow-y-auto p-6 min-h-0"
               >
                 <div className="space-y-4">
                   {messages.map((msg) => (
