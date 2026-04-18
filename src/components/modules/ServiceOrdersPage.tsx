@@ -151,13 +151,16 @@ const ServiceOrdersPage: React.FC = () => {
     cancelada: 'Cancelada',
   };
 
-  const handleWhatsAppShare = (o: any) => {
+  const handleWhatsAppShare = async (o: any) => {
     const phone = o.clients?.phone || o.client_phone;
     if (!phone) {
       toast({ title: '⚠️ Cliente sem telefone cadastrado', variant: 'destructive' });
       return;
     }
+    
     const cleanPhone = phone.replace(/\D/g, '');
+    const target = cleanPhone.length > 11 ? cleanPhone : '55' + cleanPhone;
+    
     const message = `Olá *${o.clients?.name || o.client_name || 'Cliente'}*! 🛠️\n\n` +
       `Sou da *SD Móveis Projetados*. Tratando sobre a sua *Ordem de Serviço (OS #${o.order_number})*.\n\n` +
       `📝 *Serviço:* ${o.description}\n` +
@@ -168,7 +171,35 @@ const ServiceOrdersPage: React.FC = () => {
       `💎 *InfinityPay (CNPJ):* 49.228.811/0001-33\n` +
       `🏦 *Itaú (Celular):* 85 99760-2237\n\n` +
       `Aguardamos seu contato!`;
-    window.open(`https://wa.me/55${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
+
+    try {
+      toast({ title: '⏳ Enviando PIX...', description: 'Aguarde um momento.' });
+      
+      const { data: conv } = await db.from('whatsapp_conversations').select('id').eq('phone_number', target).maybeSingle();
+      let convId = conv?.id;
+      if (!convId) {
+        const { data: newConv } = await db.from('whatsapp_conversations').insert({ 
+          phone_number: target, 
+          contact_name: o.clients?.name || o.client_name 
+        }).select('id').single();
+        convId = newConv.id;
+      }
+
+      const res = await supabase.functions.invoke('whatsapp-send', {
+        body: { 
+          conversationId: convId, 
+          message: message,
+          mediaUrl: 'https://nglwscakhhdhelhbqkyb.supabase.co/storage/v1/object/public/documents/assets/pix_qr.png',
+          fileName: 'pix_sd_moveis.png'
+        }
+      });
+
+      if (res.error) throw res.error;
+      toast({ title: '✅ Mensagem e QR Code enviados!', description: 'O cliente recebeu os dados da OS e o QR Code do Pix.' });
+    } catch (e: any) {
+      console.error('Erro ao enviar WhatsApp:', e);
+      window.open(`https://wa.me/${target}?text=${encodeURIComponent(message)}`, '_blank');
+    }
   };
 
   const priorityColors: Record<string, string> = {

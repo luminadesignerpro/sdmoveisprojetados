@@ -63,12 +63,13 @@ serve(async (req) => {
 
         if (mediaUrl) {
           endpoint = `${EVOLUTION_API_URL}/message/sendMedia/SD-Moveis`;
+          const isImage = /\.(png|jpg|jpeg|webp)$/i.test(mediaUrl);
           body = {
             number: targetPhone,
             media: mediaUrl,
-            mediatype: "document",
+            mediatype: isImage ? "image" : "document",
             caption: message || "",
-            fileName: fileName || "documento.pdf"
+            fileName: fileName || (isImage ? "qrcode.png" : "documento.pdf")
           };
         }
 

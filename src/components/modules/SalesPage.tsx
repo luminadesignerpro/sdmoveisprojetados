@@ -146,13 +146,16 @@ const SalesPage: React.FC = () => {
     concluido: 'Concluído',
   };
 
-  const handleWhatsAppShare = (p: any) => {
+  const handleWhatsAppShare = async (p: any) => {
     const phone = p.clients?.phone || p.client_phone;
     if (!phone) {
       toast({ title: '⚠️ Cliente sem telefone cadastrado', variant: 'destructive' });
       return;
     }
+    
     const cleanPhone = phone.replace(/\D/g, '');
+    const target = cleanPhone.length > 11 ? cleanPhone : '55' + cleanPhone;
+    
     const message = `Olá *${p.clients?.name || p.client_name || 'Cliente'}*! 🏠\n\n` +
       `Sou da *SD Móveis Projetados*. Gostaria de falar sobre o projeto: *${p.title || p.name}*.\n\n` +
       `💰 *Valor:* R$ ${(p.value || 0).toLocaleString('pt-BR')}\n` +
@@ -161,7 +164,37 @@ const SalesPage: React.FC = () => {
       `💎 *InfinityPay (CNPJ):* 49.228.811/0001-33\n` +
       `🏦 *Itaú (Celular):* 85 99760-2237\n\n` +
       `Aguardamos seu contato!`;
-    window.open(`https://wa.me/55${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
+
+    try {
+      toast({ title: '⏳ Enviando PIX...', description: 'Aguarde um momento.' });
+      
+      // Busca ou cria conversa
+      const { data: conv } = await db.from('whatsapp_conversations').select('id').eq('phone_number', target).maybeSingle();
+      let convId = conv?.id;
+      if (!convId) {
+        const { data: newConv } = await db.from('whatsapp_conversations').insert({ 
+          phone_number: target, 
+          contact_name: p.clients?.name || p.client_name 
+        }).select('id').single();
+        convId = newConv.id;
+      }
+
+      const res = await supabase.functions.invoke('whatsapp-send', {
+        body: { 
+          conversationId: convId, 
+          message: message,
+          mediaUrl: 'https://nglwscakhhdhelhbqkyb.supabase.co/storage/v1/object/public/documents/assets/pix_qr.png',
+          fileName: 'pix_sd_moveis.png'
+        }
+      });
+
+      if (res.error) throw res.error;
+      toast({ title: '✅ Mensagem e QR Code enviados!', description: 'O cliente recebeu as chaves e o QR Code do Pix.' });
+    } catch (e: any) {
+      console.error('Erro ao enviar WhatsApp:', e);
+      // Fallback para o link direto se a API falhar
+      window.open(`https://wa.me/${target}?text=${encodeURIComponent(message)}`, '_blank');
+    }
   };
 
   const totalRevenue = projects.reduce((sum, p) => sum + (p.value || 0), 0);
