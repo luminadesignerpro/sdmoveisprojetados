@@ -451,9 +451,53 @@ const SalesPage: React.FC = () => {
                       <Eye className="w-4 h-4" />
                     </button>
                     <button onClick={() => handleWhatsAppShare(p)}
-                      className="w-9 h-9 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all shadow-lg shadow-emerald-500/10" title="Mandar via WhatsApp">
+                      className="w-9 h-9 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all shadow-lg shadow-emerald-500/10" title="Mandar texto via WhatsApp">
                       <MessageCircle className="w-4 h-4" />
                     </button>
+                    {p.pdf_url && (
+                      <button onClick={async () => {
+                        const phone = p.clients?.phone || p.client_phone;
+                        if (!phone) {
+                          toast({ title: '⚠️ Cliente sem telefone', variant: 'destructive' });
+                          return;
+                        }
+                        
+                        // Busca conversa ou cria uma
+                        const cleanPhone = phone.replace(/\D/g, '');
+                        const target = cleanPhone.length > 11 ? cleanPhone : '55' + cleanPhone;
+                        
+                        try {
+                          toast({ title: '⏳ Enviando PDF...', description: 'Aguarde um momento.' });
+                          const { data: conv } = await db.from('whatsapp_conversations').select('id').eq('phone_number', target).maybeSingle();
+                          
+                          let convId = conv?.id;
+                          if (!convId) {
+                             const { data: newConv } = await db.from('whatsapp_conversations').insert({ 
+                               phone_number: target, 
+                               contact_name: p.clients?.name || p.client_name 
+                             }).select('id').single();
+                             convId = newConv.id;
+                          }
+
+                          const res = await supabase.functions.invoke('whatsapp-send', {
+                            body: { 
+                              conversationId: convId, 
+                              message: `Segue o PDF do projeto: *${p.title || p.name}*`,
+                              mediaUrl: p.pdf_url,
+                              fileName: `${p.title || 'projeto'}.pdf`
+                            }
+                          });
+
+                          if (res.error) throw res.error;
+                          toast({ title: '✅ PDF Enviado!', description: 'O arquivo foi enviado para o WhatsApp do cliente.' });
+                        } catch (e: any) {
+                          toast({ title: '❌ Erro ao enviar', description: e.message, variant: 'destructive' });
+                        }
+                      }}
+                        className="w-9 h-9 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-center text-amber-500 hover:bg-amber-500 hover:text-white transition-all shadow-lg shadow-amber-500/10" title="Enviar PDF p/ WhatsApp">
+                        <FileDown className="w-4 h-4" />
+                      </button>
+                    )}
                     <button onClick={() => {
                       setEditingId(p.id);
                       setForm(resetForm({

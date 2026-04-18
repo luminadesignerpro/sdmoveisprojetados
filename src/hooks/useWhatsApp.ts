@@ -110,11 +110,11 @@ export function useWhatsApp() {
     }
   }, [toast]);
 
-  const sendMessage = useCallback(async (conversationId: string, message: string) => {
+  const sendMessage = useCallback(async (conversationId: string, message: string, mediaUrl?: string, fileName?: string) => {
     setSendingMessage(true);
     try {
       const { data, error } = await supabase.functions.invoke('whatsapp-send', {
-        body: { conversationId, message },
+        body: { conversationId, message, mediaUrl, fileName },
       });
 
       if (error) throw error;

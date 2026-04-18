@@ -138,11 +138,17 @@ const PdfUploader: React.FC<{ onClose?: () => void, onSuccess?: () => void }> = 
 
       // 4. Upload do PDF original para o Storage (Opcional, mas recomendado)
       const fileName = `os_${extractedData.identificacao.numero_os}_${Date.now()}.pdf`;
-      const { error: storageErr } = await supabase.storage
+      const { data: uploadData, error: storageErr } = await supabase.storage
         .from('documents')
         .upload(`service_orders/${fileName}`, file!);
       
-      if (storageErr) console.error("Erro ao salvar arquivo no storage:", storageErr);
+      if (storageErr) {
+        console.error("Erro ao salvar arquivo no storage:", storageErr);
+      } else {
+        const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(`service_orders/${fileName}`);
+        await supabase.from('service_orders').update({ pdf_url: publicUrl }).eq('id', os.id);
+        console.log("PDF vinculado com sucesso:", publicUrl);
+      }
 
       toast({
         title: "🎉 Sucesso!",

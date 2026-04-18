@@ -20,11 +20,11 @@ serve(async (req) => {
     const EVOLUTION_API_URL = Deno.env.get("EVOLUTION_API_URL") || "https://api-whatsapp-sdmoveis.onrender.com";
     const EVOLUTION_API_KEY = Deno.env.get("EVOLUTION_API_KEY") || "Mv06061991";
 
-    const { conversationId, message, phoneNumber } = await req.json();
+    const { conversationId, message, phoneNumber, mediaUrl, fileName } = await req.json();
 
-    if (!conversationId || !message) {
+    if (!conversationId || (!message && !mediaUrl)) {
       return new Response(
-        JSON.stringify({ error: "conversationId and message are required" }),
+        JSON.stringify({ error: "conversationId and either message or mediaUrl are required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -55,20 +55,31 @@ serve(async (req) => {
     // Try to send via Evolution API if configured
     if (EVOLUTION_API_URL && EVOLUTION_API_KEY) {
       try {
-        const evolutionResponse = await fetch(
-          `${EVOLUTION_API_URL}/message/sendText/SD-Moveis`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              apikey: EVOLUTION_API_KEY,
-            },
-            body: JSON.stringify({
-              number: targetPhone,
-              text: message,
-            }),
-          }
-        );
+        let endpoint = `${EVOLUTION_API_URL}/message/sendText/SD-Moveis`;
+        let body: any = {
+          number: targetPhone,
+          text: message,
+        };
+
+        if (mediaUrl) {
+          endpoint = `${EVOLUTION_API_URL}/message/sendMedia/SD-Moveis`;
+          body = {
+            number: targetPhone,
+            media: mediaUrl,
+            mediatype: "document",
+            caption: message || "",
+            fileName: fileName || "documento.pdf"
+          };
+        }
+
+        const evolutionResponse = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: EVOLUTION_API_KEY,
+          },
+          body: JSON.stringify(body),
+        });
 
         if (evolutionResponse.ok) {
           sendResult = { mode: "real", sent: true };
@@ -92,9 +103,9 @@ serve(async (req) => {
       .insert({
         conversation_id: conversationId,
         direction: "outbound",
-        content: message,
+        content: mediaUrl ? (message || "PDF: " + (fileName || "documento.pdf")) : message,
         status: sendResult.sent ? "delivered" : "pending",
-        message_type: "text",
+        message_type: mediaUrl ? "document" : "text",
       })
       .select()
       .single();
@@ -107,7 +118,10 @@ serve(async (req) => {
     // Update last_message_at
     await supabase
       .from("whatsapp_conversations")
-      .update({ last_message_at: new Date().toISOString() })
+      .update({ 
+        last_message_at: new Date().toISOString(),
+        last_message: mediaUrl ? "📄 PDF Enviado" : message
+      })
       .eq("id", conversationId);
 
     return new Response(
