@@ -76,10 +76,15 @@ const ServiceOrdersPage: React.FC = () => {
       }
       clientId = newClient.id;
     } else if (clientId) {
-      await db.from('clients').update({
+      const { error: clientUpdateErr } = await db.from('clients').update({
+        name: form.client_name.trim(),
         phone: form.client_phone || null,
         address: form.client_address || null
       }).eq('id', clientId);
+
+      if (clientUpdateErr) {
+        console.error('Client update error:', clientUpdateErr);
+      }
     }
 
     const payload = {

@@ -85,7 +85,7 @@ const SalesPage: React.FC = () => {
 
     const payload = {
       client_id: clientId,
-      title: form.name, // Usando 'title' em vez de 'name' para coincidir com o banco
+      title: form.name,
       description: form.description || null,
       value: form.value,
       status: form.status,
@@ -96,6 +96,20 @@ const SalesPage: React.FC = () => {
     };
     
     let error;
+
+    // Atualiza os dados do cliente também
+    const { error: clientUpdateErr } = await db.from('clients').update({
+      name: form.client_name.trim(),
+      phone: form.client_phone.trim() || null,
+      email: form.client_email.trim() || null,
+      address: form.client_address.trim() || null,
+    }).eq('id', clientId);
+
+    if (clientUpdateErr) {
+      console.error('Client update error:', clientUpdateErr);
+      // Não bloqueia o salvamento do projeto, mas avisa
+    }
+
     if (editingId) {
       const res = await db.from('client_projects').update(payload).eq('id', editingId);
       error = res.error;
