@@ -18,12 +18,11 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const payload = await req.json();
-    console.log(`[Webhook Event: ${payload.event}] Payload:`, JSON.stringify(payload).slice(0, 1000));
+    console.log(`[Webhook Event: ${payload.event}] Payload data received`);
 
     const event = (payload.event || "").toUpperCase();
 
     if (event.includes("MESSAGES") && (event.includes("UPSERT") || event.includes("CREATE"))) {
-      // Handle both single message and array of messages
       const dataItems = Array.isArray(payload.data?.messages) 
         ? payload.data.messages 
         : payload.data?.message ? [payload.data.message] : [payload.data || {}];
@@ -36,12 +35,11 @@ serve(async (req) => {
           const fromMe = key.fromMe || messageData.fromMe || false;
           const remoteJid = key.remoteJid || messageData.remoteJid || payload.data?.key?.remoteJid || payload.data?.remoteJid || "";
           
-          if (!remoteJid) {
-            console.log("Skipping message: no JID found in payload structure");
-            continue;
-          }
+          if (!remoteJid) continue;
 
-          // Evolution API can have different structures for the message object
+          // Skip groups
+          if (remoteJid.includes('@g.us')) continue;
+
           const msgBody = messageData.message || payload.data?.message || messageData || {};
           
           const messageContent =
@@ -59,50 +57,29 @@ serve(async (req) => {
             payload.data?.content || 
             "";
 
-          console.log(`[+][${event}] JID: ${remoteJid} | Content: ${messageContent.slice(0, 30)}...`);
+          if (!messageContent && !fromMe) continue;
 
-          if (remoteJid.includes('@g.us')) {
-            console.log('Skipping: group jid', remoteJid);
-            continue;
-          }
-
-          // Even if content is empty (e.g. read receipt, typing), we might want to ensure the conversation exists
-          // but for now let's only save messages with content or fromMe
-          if (!messageContent && !fromMe) {
-            continue;
-          }
-
-          // Extract phone number strictly - handle multi-device suffixes (:1, :2) properly
+          // Extract and clean phone number
           const rawId = remoteJid.split("@")[0] || "";
           let phoneNumber = rawId.split(":")[0].replace(/[^0-9]/g, ""); 
           
-          // Fix for numbers that might be missing the country code or have weird prefixes
           if (phoneNumber.length >= 10 && !phoneNumber.startsWith("55") && !phoneNumber.startsWith("1")) {
             phoneNumber = "55" + phoneNumber;
           }
           
-          if (!phoneNumber || phoneNumber.length < 5) {
-            console.log(`Skipping invalid phone number extracted: "${phoneNumber}" from JID: ${remoteJid}`);
-            continue;
-          }
+          if (!phoneNumber || phoneNumber.length < 5) continue;
 
           const pushName = messageData.pushName || payload.data?.pushName || null;
-          
-          console.log(`[Webhook] Event: ${event} | From: ${phoneNumber} | Name: ${pushName}`);
+          console.log(`[Processing] From: ${phoneNumber} | Content: ${messageContent.slice(0, 30)}...`);
 
           // Find or create conversation
-          let { data: conversation, error: selectError } = await supabase
+          let { data: conversation } = await supabase
             .from("whatsapp_conversations")
             .select("id")
             .eq("phone_number", phoneNumber)
             .maybeSingle();
 
-          if (selectError) {
-            console.error("Error selecting conversation:", selectError);
-          }
-
           if (!conversation) {
-            console.log(`Creating new conversation for ${phoneNumber}...`);
             const { data: newConv, error: convError } = await supabase
               .from("whatsapp_conversations")
               .insert({
@@ -119,7 +96,6 @@ serve(async (req) => {
               continue;
             }
             conversation = newConv;
-            console.log(`Conversation created with ID: ${conversation.id}`);
           } else if (pushName) {
             await supabase
               .from("whatsapp_conversations")
@@ -127,155 +103,107 @@ serve(async (req) => {
               .eq("id", conversation.id);
           }
 
-          // Save the message to database
-          const { error: msgError } = await supabase
-            .from('whatsapp_messages')
-            .insert({
-              conversation_id: conversation.id,
-              direction: fromMe ? 'outbound' : 'inbound',
-              content: messageContent,
-              status: fromMe ? 'delivered' : 'received',
-              message_type: 'text',
-            });
-
-          if (msgError) {
-            console.error('Error saving message to DB:', msgError);
-          }
+          // Save message
+          await supabase.from('whatsapp_messages').insert({
+            conversation_id: conversation.id,
+            direction: fromMe ? 'outbound' : 'inbound',
+            content: messageContent,
+            status: fromMe ? 'delivered' : 'received',
+            message_type: 'text',
+            external_id: key.id || messageData.id
+          });
 
           await supabase
             .from("whatsapp_conversations")
-            .update({ last_message_at: new Date().toISOString() })
+            .update({ last_message_at: new Date().toISOString(), last_message: messageContent.slice(0, 100) })
             .eq("id", conversation.id);
 
-          // AUTO-RESPONSE LOGIC
+          // AUTO-RESPONSE LOGIC (Only for inbound)
           if (!fromMe) {
-            try {
-              const geminiKey = Deno.env.get('GEMINI_API_KEY');
-              const evolutionUrl = Deno.env.get('EVOLUTION_API_URL') || 'https://api-whatsapp-sdmoveis.onrender.com';
-              const evolutionKey = Deno.env.get('EVOLUTION_API_KEY') || 'Mv06061991';
+            const geminiKey = Deno.env.get('GEMINI_API_KEY');
+            const evolutionUrl = Deno.env.get('EVOLUTION_API_URL') || 'https://api-whatsapp-sdmoveis.onrender.com';
+            const evolutionKey = Deno.env.get('EVOLUTION_API_KEY') || 'Mv06061991';
 
-              const cleanMessage = messageContent.trim().toLowerCase();
-              let responseText = '';
-              let messageTypeOut = 'text';
+            const cleanMessage = messageContent.trim().toLowerCase();
+            let responseText = '';
+            let messageTypeOut = 'text';
 
-              const { data: configData } = await supabase
-                .from('atendimento_config')
-                .select('conteudo')
-                .eq('chave', 'menu_principal')
-                .maybeSingle();
+            // 1. Menu Logic
+            const { data: configData } = await supabase
+              .from('atendimento_config')
+              .select('conteudo')
+              .eq('chave', 'menu_principal')
+              .maybeSingle();
 
-              const config = configData?.conteudo || {
-                greeting: 'Olá! 👋 Bem-vindo à *SD Móveis*!\nComo posso te ajudar?\n\n1️⃣ Orçamento\n2️⃣ Acompanhar projeto\n3️⃣ Pós-venda\n4️⃣ Falar com atendente',
-                responses: {},
-              };
+            const config = configData?.conteudo || {
+              greeting: 'Olá! 👋 Bem-vindo à SD Móveis!\nComo posso te ajudar?\n\n1️⃣ Orçamento\n2️⃣ Acompanhar projeto\n3️⃣ Pós-venda\n4️⃣ Falar com atendente',
+              responses: {},
+            };
 
-              const isGreeting = /^(oi|ola|olá|bom dia|boa tarde|boa noite|bomdia|boatarde|boanoite|inicio|menu|opa|oie|hey|hi|hello)$/i.test(cleanMessage);
+            const isGreeting = /^(oi|ola|olá|bom dia|boa tarde|boa noite|inicio|menu)$/i.test(cleanMessage);
+            const normalizedMatch = cleanMessage.replace(/[^0-9]/g, '');
 
-              const normalizedMessage = cleanMessage
-                .replace(/1️⃣|1/g, '1')
-                .replace(/2️⃣|2/g, '2')
-                .replace(/3️⃣|3/g, '3')
-                .replace(/4️⃣|4/g, '4')
-                .replace(/5️⃣|5/g, '5')
-                .trim();
+            if (isGreeting) {
+              responseText = config.greeting;
+            } else if (config.responses && config.responses[normalizedMatch]) {
+              responseText = config.responses[normalizedMatch];
+            }
 
-              if (isGreeting) {
-                responseText = config.greeting;
-              } else if (config.responses && config.responses[normalizedMessage]) {
-                responseText = config.responses[normalizedMessage];
-              }
-
-              if (!responseText && geminiKey) {
-                console.log('Using Gemini for humanized AI response...');
-                const systemPrompt = `Você é o Consultor Especialista da SD Móveis Projetados. Seu tom: Persuasivo, elegante, caloroso e de altíssimo padrão.`;
+            // 2. AI Logic (Gemini)
+            if (!responseText && geminiKey) {
+              const systemPrompt = `Você é o Consultor Especialista da SD Móveis Projetados. Seu tom: Persuasivo, elegante e caloroso. Responda de forma direta em no máximo 3 frases.`;
+              try {
                 const geminiRes = await fetch(
-                  `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiKey}`,
+                  `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
                   {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                      contents: [{ parts: [{ text: `${systemPrompt}\n\nMensagem do cliente: ${messageContent}\n\nResponda de forma natural, direta e em português. Máximo 3 frases.` }] }],
+                      contents: [{ parts: [{ text: `${systemPrompt}\n\nCliente: ${messageContent}\n\nConsultor:` }] }],
                     }),
                   }
                 );
-
                 const geminiData = await geminiRes.json();
-                if (geminiData.error) {
-                  console.error('Gemini API Error:', geminiData.error);
-                }
-                const rawText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
-                responseText = rawText.trim();
+                responseText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
                 messageTypeOut = 'ai';
+              } catch (e) {
+                console.error('Gemini Error:', e);
               }
+            }
 
-              if (responseText) {
-                console.log(`Sending response to ${remoteJid}: ${responseText.slice(0, 50)}...`);
-                // Use the same instance name as defined in whatsapp-connect and the UI
-                const finalInstance = "SD-Moveis"; 
-                const sendRes = await fetch(`${evolutionUrl}/message/sendText/${finalInstance}`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json', apikey: evolutionKey },
-                  body: JSON.stringify({
-                    number: remoteJid,
-                    text: responseText,
-                    options: { delay: messageTypeOut === 'ai' ? 2000 : 500, presence: 'composing' },
-                  }),
+            // 3. Send via Evolution API
+            if (responseText) {
+              const res = await fetch(`${evolutionUrl}/message/sendText/SD-Moveis`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', apikey: evolutionKey },
+                body: JSON.stringify({
+                  number: phoneNumber, // Use clean phone number
+                  text: responseText,
+                  options: { delay: 1200, presence: 'composing' },
+                }),
+              });
+
+              if (res.ok) {
+                await supabase.from('whatsapp_messages').insert({
+                  conversation_id: conversation.id,
+                  direction: 'outbound',
+                  content: responseText,
+                  status: 'sent',
+                  message_type: messageTypeOut,
                 });
-
-                if (sendRes.ok) {
-                  console.log('Response sent successfully via Evolution API');
-                  await supabase.from('whatsapp_messages').insert({
-                    conversation_id: conversation.id,
-                    direction: 'outbound',
-                    content: responseText,
-                    status: 'sent',
-                    message_type: messageTypeOut,
-                  });
-                } else {
-                  const sendError = await sendRes.text();
-                  console.error(`Error sending message via Evolution API (${sendRes.status}):`, sendError);
-                }
-              } else {
-                console.log('No response generated (no match and no AI result)');
               }
-            } catch (aiError) {
-              console.error('Auto-response error:', aiError);
             }
           }
         } catch (itemError) {
-          console.error('Error processing message item:', itemError);
+          console.error('Item processing error:', itemError);
         }
       }
-
-      return new Response(JSON.stringify({ ok: true, processed: dataItems.length }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(JSON.stringify({ ok: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Connection events
-    if (event === "CONNECTION.UPDATE" || event === "CONNECTION_UPDATE") {
-      console.log("Connection update:", payload.data?.state);
-      return new Response(JSON.stringify({ ok: true, event: "connection.update" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // QR Code events
-    if (event === "qrcode.updated") {
-      console.log("QR Code updated");
-      return new Response(JSON.stringify({ ok: true, event: "qrcode.updated" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    return new Response(JSON.stringify({ ok: true, event: event || "unknown" }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(JSON.stringify({ ok: true, event: event }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
-    console.error("Webhook error:", error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    console.error("Webhook top-level error:", error);
+    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
