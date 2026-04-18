@@ -22,27 +22,53 @@ serve(async (req) => {
 
     const { conversationId, message, phoneNumber, mediaUrl, fileName } = await req.json();
 
-    if (!conversationId || (!message && !mediaUrl)) {
+    if ((!conversationId && !phoneNumber) || (!message && !mediaUrl)) {
       return new Response(
-        JSON.stringify({ error: "conversationId and either message or mediaUrl are required" }),
+        JSON.stringify({ error: "conversationId or phoneNumber, and either message or mediaUrl are required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Get conversation phone number if not provided
+    // Get conversation phone number if not provided, or find conversation if phone provided
     let targetPhone = phoneNumber;
-    if (!targetPhone) {
+    let targetConversationId = conversationId;
+
+    if (!targetConversationId && targetPhone) {
+      // Clean phone for searching
+      const cleanPhoneForSearch = targetPhone.split(":")[0].replace(/[^0-9]/g, "");
+      const { data: conv } = await supabase
+        .from("whatsapp_conversations")
+        .select("id")
+        .eq("phone_number", cleanPhoneForSearch)
+        .maybeSingle();
+      
+      if (conv) {
+        targetConversationId = conv.id;
+      } else {
+        // Create a new conversation if it doesn't exist
+        const { data: newConv } = await supabase
+          .from("whatsapp_conversations")
+          .insert({ 
+            phone_number: cleanPhoneForSearch,
+            status: 'active',
+            lead_status: 'lead'
+          })
+          .select("id")
+          .single();
+        targetConversationId = newConv?.id;
+      }
+    } else if (!targetPhone && targetConversationId) {
       const { data: conv } = await supabase
         .from("whatsapp_conversations")
         .select("phone_number")
-        .eq("id", conversationId)
+        .eq("id", targetConversationId)
         .single();
       targetPhone = conv?.phone_number;
     }
 
-    if (!targetPhone) {
+    if (!targetPhone || !targetConversationId) {
       return new Response(
-        JSON.stringify({ error: "Could not determine phone number" }),
+        JSON.stringify({ error: "Could not determine phone number or conversation" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -88,11 +114,21 @@ serve(async (req) => {
         } else {
           const errText = await evolutionResponse.text();
           console.error("Evolution API error:", evolutionResponse.status, errText);
-          sendResult = { mode: "simulation", sent: false };
+          
+          return new Response(
+            JSON.stringify({ 
+              error: `Erro na API do WhatsApp (${evolutionResponse.status}): ${errText}`,
+              sent: false 
+            }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
         }
       } catch (evoError) {
         console.error("Evolution API connection error:", evoError);
-        sendResult = { mode: "simulation", sent: false };
+        return new Response(
+          JSON.stringify({ error: "Falha de conexão com a API do WhatsApp", sent: false }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
     } else {
       console.log("Evolution API not configured, running in simulation mode");
@@ -102,7 +138,7 @@ serve(async (req) => {
     const { data: savedMsg, error: msgError } = await supabase
       .from("whatsapp_messages")
       .insert({
-        conversation_id: conversationId,
+        conversation_id: targetConversationId,
         direction: "outbound",
         content: mediaUrl ? (message || "PDF: " + (fileName || "documento.pdf")) : message,
         status: sendResult.sent ? "delivered" : "pending",
@@ -123,7 +159,7 @@ serve(async (req) => {
         last_message_at: new Date().toISOString(),
         last_message: mediaUrl ? "📄 PDF Enviado" : message
       })
-      .eq("id", conversationId);
+      .eq("id", targetConversationId);
 
     return new Response(
       JSON.stringify({
