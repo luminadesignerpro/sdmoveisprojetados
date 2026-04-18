@@ -191,7 +191,7 @@ const ContractGenerator: React.FC<ContractGeneratorProps> = ({ templateType, cli
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
     doc.text('RUA JORGE FIGUEREDO 740 - BARROCÃO - ITAITINGA-CE', margin + 35, 28);
-    doc.text('(85) 98574-9686 | (85) 99760-2237 | CNPJ: 49.228.811/0001-33', margin + 35, 33);
+    doc.text('(85) 98574-9686 | (85) 99760-2237 | sdmoveis48@gmail.com | CNPJ: 49.228.811/0001-33', margin + 35, 33);
 
     doc.setDrawColor(200, 150, 50);
     doc.setLineWidth(0.8);
@@ -405,7 +405,7 @@ const ContractGenerator: React.FC<ContractGeneratorProps> = ({ templateType, cli
                 <div>
                   <h2 className="font-black text-xl text-gray-900">SD MÓVEIS</h2>
                   <p className="text-xs text-gray-500 font-bold">RUA JORGE FIGUEREDO 740 - BARROCÃO - ITAITINGA-CE</p>
-                  <p className="text-xs text-gray-500 font-bold">(85) 98574-9686 | CNPJ: 49.228.811/0001-33</p>
+                  <p className="text-xs text-gray-500 font-bold">(85) 98574-9686 | sdmoveis48@gmail.com | CNPJ: 49.228.811/0001-33</p>
                 </div>
               </div>
               <textarea

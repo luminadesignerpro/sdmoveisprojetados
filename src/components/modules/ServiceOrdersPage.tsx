@@ -169,7 +169,9 @@ const ServiceOrdersPage: React.FC = () => {
       `📅 *Previsão:* ${o.estimated_date ? format(new Date(o.estimated_date), 'dd/MM/yyyy') : 'A definir'}\n\n` +
       `🔑 *CHAVES PIX PARA PAGAMENTO:*\n\n` +
       `💎 *InfinityPay (CNPJ):* 49.228.811/0001-33\n` +
+      `📧 *E-mail:* sdmoveis48@gmail.com\n` +
       `🏦 *Itaú (Celular):* 85 99760-2237\n\n` +
+      `*Titular:* Samuel David C\n\n` +
       `Aguardamos seu contato!`;
 
     try {

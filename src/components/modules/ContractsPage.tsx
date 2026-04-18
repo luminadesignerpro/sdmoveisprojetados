@@ -112,13 +112,15 @@ const ContractsPage: React.FC = () => {
     finalizado: 'bg-purple-900/50 text-purple-400 border border-purple-500/30',
   };
 
-  const handleWhatsAppShare = (c: any) => {
+  const handleWhatsAppShare = async (c: any) => {
     const phone = c.client_phone || c.clients?.phone;
     if (!phone) {
       toast({ title: '⚠️ Cliente sem telefone', variant: 'destructive' });
       return;
     }
     const cleanPhone = phone.replace(/\D/g, '');
+    const target = cleanPhone.length > 11 ? cleanPhone : '55' + cleanPhone;
+
     const message = `Olá *${c.clients?.name || c.client_name || 'Cliente'}*! 📄\n\n` +
       `Sou da *SD Móveis Projetados*. Tratando sobre o *Contrato #${c.contract_number}*: *${c.title}*.\n\n` +
       `💰 *Valor:* R$ ${(c.value || 0).toLocaleString('pt-BR')}\n` +
@@ -126,9 +128,39 @@ const ContractsPage: React.FC = () => {
       `💳 *Pagamento:* ${c.payment_terms || 'A combinar'}\n\n` +
       `🔑 *CHAVES PIX PARA PAGAMENTO:*\n\n` +
       `💎 *InfinityPay (CNPJ):* 49.228.811/0001-33\n` +
+      `📧 *E-mail:* sdmoveis48@gmail.com\n` +
       `🏦 *Itaú (Celular):* 85 99760-2237\n\n` +
+      `*Titular:* Samuel David C\n\n` +
       `Aguardamos seu contato!`;
-    window.open(`https://wa.me/55${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
+
+    try {
+      toast({ title: '⏳ Enviando PIX...', description: 'Aguarde um momento.' });
+      
+      const { data: conv } = await db.from('whatsapp_conversations').select('id').eq('phone_number', target).maybeSingle();
+      let convId = conv?.id;
+      if (!convId) {
+        const { data: newConv } = await db.from('whatsapp_conversations').insert({ 
+          phone_number: target, 
+          contact_name: c.clients?.name || c.client_name 
+        }).select('id').single();
+        convId = newConv.id;
+      }
+
+      const res = await supabase.functions.invoke('whatsapp-send', {
+        body: { 
+          conversationId: convId, 
+          message: message,
+          mediaUrl: 'https://nglwscakhhdhelhbqkyb.supabase.co/storage/v1/object/public/documents/assets/pix_qr.png',
+          fileName: 'pix_sd_moveis.png'
+        }
+      });
+
+      if (res.error) throw res.error;
+      toast({ title: '✅ Mensagem e QR Code enviados!', description: 'O cliente recebeu os dados do contrato e o QR Code do Pix.' });
+    } catch (e: any) {
+      console.error('Erro ao enviar WhatsApp:', e);
+      window.open(`https://wa.me/${target}?text=${encodeURIComponent(message)}`, '_blank');
+    }
   };
 
   const generateClientLogin = async (contract: any) => {
