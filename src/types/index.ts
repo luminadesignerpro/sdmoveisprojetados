@@ -29,6 +29,7 @@ export enum ViewMode {
   AI_SALES = 'AI_SALES',
   INTEGRATION = 'INTEGRATION',
   PDF_DOWNLOADER = 'PDF_DOWNLOADER',
+  SMART_MEASUREMENT = 'SMART_MEASUREMENT',
 }
 
 export enum ToolMode {

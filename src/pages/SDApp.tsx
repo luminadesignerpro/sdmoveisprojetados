@@ -43,6 +43,7 @@ import ARProjectList from '@/components/ar/ARProjectList';
 import AINegotiationDashboard from '@/components/crm/AINegotiationDashboard';
 import LocalIntegrationPanel from '@/components/admin/LocalIntegrationPanel';
 import PdfUploader from '@/components/admin/PdfUploader';
+import SmartMeasurement from '@/components/modules/SmartMeasurement';
 const db = supabase as any;
 import {
   LogOut,
@@ -484,6 +485,7 @@ const App: React.FC = () => {
                 <NavIcon icon="camera" label="Projetos AR" active={view === ViewMode.AR_STUDIO} onClick={() => setView(ViewMode.AR_STUDIO)} />
                 <NavIcon icon="bot" label="Vendedor IA" active={view === ViewMode.AI_SALES} onClick={() => setView(ViewMode.AI_SALES)} />
                 <NavIcon icon="file-down" label="PDF Downloader" active={view === ViewMode.PDF_DOWNLOADER} onClick={() => setView(ViewMode.PDF_DOWNLOADER)} />
+                <NavIcon icon="ruler" label="Medição IA" active={view === ViewMode.SMART_MEASUREMENT} onClick={() => setView(ViewMode.SMART_MEASUREMENT)} />
               </>
             ) : authState === 'EMPLOYEE' ? (
               <>
@@ -1300,6 +1302,10 @@ const App: React.FC = () => {
             <div className="p-8 overflow-auto h-full bg-[#0f0f0f] flex items-center justify-center">
               <PdfUploader />
             </div>
+          )}
+          {/* SMART MEASUREMENT - Admin */}
+          {view === ViewMode.SMART_MEASUREMENT && authState === 'ADMIN' && (
+            <SmartMeasurement />
           )}
         </ViewTransition>
       </main>
