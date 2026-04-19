@@ -12,7 +12,8 @@ import {
   ChevronRight,
   Calculator,
   ScanLine,
-  ChevronDown
+  ChevronDown,
+  Send
 } from 'lucide-react';
 import { analyzeImageWithGemini } from '@/services/geminiService';
 import { Button } from '@/components/ui/button';
