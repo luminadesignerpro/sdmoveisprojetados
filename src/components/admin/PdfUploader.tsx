@@ -28,7 +28,11 @@ interface ExtractedData {
   };
 }
 
-const PdfUploader: React.FC<{ onClose?: () => void, onSuccess?: () => void }> = ({ onClose, onSuccess }) => {
+const PdfUploader: React.FC<{ 
+  mode?: 'os' | 'venda' | 'contrato',
+  onClose?: () => void, 
+  onSuccess?: () => void 
+}> = ({ mode = 'os', onClose, onSuccess }) => {
   const { toast } = useToast();
   const [file, setFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -103,56 +107,92 @@ const PdfUploader: React.FC<{ onClose?: () => void, onSuccess?: () => void }> = 
         clientId = newClient.id;
       }
 
-      // 2. Criar a Ordem de Serviço
-      const { data: os, error: osErr } = await supabase
-        .from('service_orders')
-        .insert({
-          client_id: clientId,
-          description: `Importado via PDF - OS #${extractedData.identificacao.numero_os}`,
-          status: 'aberta',
-          total_value: extractedData.financeiro.valor_total_os,
-          notes: `Condições: ${extractedData.financeiro.condicoes_pagamento}\nExtraído em: ${new Date().toLocaleString()}`,
-          estimated_date: extractedData.identificacao.data,
-        })
-        .select('id')
-        .single();
+      let recordId: string;
+      let tableName: string;
 
-      if (osErr) throw osErr;
+      // 2. Criar o registro conforme o modo
+      if (mode === 'venda') {
+        tableName = 'client_projects';
+        const { data: record, error: err } = await supabase
+          .from('client_projects')
+          .insert({
+            client_id: clientId,
+            title: `Projeto - OS #${extractedData.identificacao.numero_os}`,
+            description: `Importado via PDF. ${extractedData.identificacao.data}`,
+            status: 'em_negociacao',
+            value: extractedData.financeiro.valor_total_os,
+            notes: `Extraído em: ${new Date().toLocaleString()}`,
+            deadline: extractedData.identificacao.data,
+          })
+          .select('id')
+          .single();
+        if (err) throw err;
+        recordId = record.id;
+      } else if (mode === 'contrato') {
+        tableName = 'contracts';
+        const { data: record, error: err } = await supabase
+          .from('contracts')
+          .insert({
+            client_id: clientId,
+            title: `Contrato - OS #${extractedData.identificacao.numero_os}`,
+            content: `Condições: ${extractedData.financeiro.condicoes_pagamento}`,
+            status: 'rascunho',
+            value: extractedData.financeiro.valor_total_os,
+            notes: `Importado via PDF em: ${new Date().toLocaleString()}`,
+          })
+          .select('id')
+          .single();
+        if (err) throw err;
+        recordId = record.id;
+      } else {
+        // Padrão: OS
+        tableName = 'service_orders';
+        const { data: os, error: osErr } = await supabase
+          .from('service_orders')
+          .insert({
+            client_id: clientId,
+            description: `Importado via PDF - OS #${extractedData.identificacao.numero_os}`,
+            status: 'aberta',
+            total_value: extractedData.financeiro.valor_total_os,
+            notes: `Condições: ${extractedData.financeiro.condicoes_pagamento}\nExtraído em: ${new Date().toLocaleString()}`,
+            estimated_date: extractedData.identificacao.data,
+          })
+          .select('id')
+          .single();
+        if (osErr) throw osErr;
+        recordId = os.id;
 
-      // 3. Inserir itens (na nova tabela itens_projeto)
-      if (extractedData.itens && extractedData.itens.length > 0) {
-        const { error: itemsErr } = await supabase
-          .from('itens_projeto')
-          .insert(
-            extractedData.itens.map(item => ({
-              service_order_id: os.id,
-              description: item.descricao || 'Item sem descrição',
-              unit_value: Number(item.valor_unitario ?? 0),
-              quantity: Number(item.quantidade ?? 1),
-              total_value: Number(item.total_value ?? item.valor_total ?? 0),
-            }))
-          );
-        
-        if (itemsErr) throw itemsErr;
+        // Inserir itens vinculados (apenas para OS por enquanto, ou se as outras tabelas suportarem)
+        if (extractedData.itens && extractedData.itens.length > 0) {
+          await supabase
+            .from('itens_projeto')
+            .insert(
+              extractedData.itens.map(item => ({
+                service_order_id: recordId,
+                description: item.descricao || 'Item sem descrição',
+                unit_value: Number(item.valor_unitario ?? 0),
+                quantity: Number(item.quantidade ?? 1),
+                total_value: Number(item.total_value ?? item.valor_total ?? 0),
+              }))
+            );
+        }
       }
 
-      // 4. Upload do PDF original para o Storage (Opcional, mas recomendado)
-      const fileName = `os_${extractedData.identificacao.numero_os}_${Date.now()}.pdf`;
+      // 4. Upload do PDF original
+      const fileName = `${mode}_${extractedData.identificacao.numero_os}_${Date.now()}.pdf`;
+      const folder = mode === 'os' ? 'service_orders' : (mode === 'venda' ? 'projects' : 'contracts');
       const { data: uploadData, error: storageErr } = await supabase.storage
         .from('documents')
-        .upload(`service_orders/${fileName}`, file!);
+        .upload(`${folder}/${fileName}`, file!);
       
-      if (storageErr) {
-        console.error("Erro ao salvar arquivo no storage:", storageErr);
-      } else {
-        const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(`service_orders/${fileName}`);
-        await supabase.from('service_orders').update({ pdf_url: publicUrl }).eq('id', os.id);
-        console.log("PDF vinculado com sucesso:", publicUrl);
+      if (!storageErr) {
+        const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(`${folder}/${fileName}`);
+        await supabase.from(tableName).update({ pdf_url: publicUrl }).eq('id', recordId);
       }
 
       toast({
         title: "🎉 Sucesso!",
-        description: `OS #${extractedData.identificacao.numero_os} importada com sucesso.`,
+        description: `Importação para ${mode.toUpperCase()} realizada com sucesso.`,
       });
 
       if (onSuccess) onSuccess();

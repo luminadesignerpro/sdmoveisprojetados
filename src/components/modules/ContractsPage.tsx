@@ -3,10 +3,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { 
   FileSignature, Plus, Search, Edit, Sparkles, Key, MessageCircle, X, 
-  User, Phone, MapPin, ClipboardList, DollarSign, Clock 
+  User, Phone, MapPin, ClipboardList, DollarSign, Clock, FileDown 
 } from 'lucide-react';
 import { format } from 'date-fns';
 import ContractGenerator from './ContractGenerator';
+import PdfUploader from '../admin/PdfUploader';
 
 const db = supabase as any;
 
@@ -32,6 +33,7 @@ const ContractsPage: React.FC = () => {
     delivery_deadline: ''
   });
   const [showGenerator, setShowGenerator] = useState<'contrato_servico' | 'ordem_servico' | null>(null);
+  const [showPdfUploader, setShowPdfUploader] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -200,6 +202,10 @@ const ContractsPage: React.FC = () => {
           <p className="text-gray-400 mt-1">Gestão de contratos (Design Black Gold Atualizado)</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
+          <button onClick={() => setShowPdfUploader(true)}
+            className="bg-white/5 border border-white/10 text-white px-6 py-4 rounded-2xl font-bold hover:bg-white/10 transition-all flex items-center gap-2 w-full xl:w-auto justify-center">
+            <FileDown className="w-5 h-5 text-amber-500" /> Importar PDF
+          </button>
           <button onClick={() => setShowGenerator('contrato_servico')} className="bg-[#1a1a1a] border border-amber-500/30 text-amber-500 px-5 py-3 rounded-2xl font-bold hover:bg-amber-500/10 flex items-center justify-center gap-2 shadow-lg w-full sm:w-auto transition-colors">
             <Sparkles className="w-5 h-5" /> Gerar Contrato (IA)
           </button>
@@ -236,6 +242,19 @@ const ContractsPage: React.FC = () => {
           className="w-full pl-12 pr-4 py-3 rounded-2xl border border-white/10 bg-[#1a1a1a] text-white focus:outline-none focus:border-amber-500" 
         />
       </div>
+
+      {showPdfUploader && (
+        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <PdfUploader 
+            mode="contrato"
+            onClose={() => setShowPdfUploader(false)} 
+            onSuccess={() => {
+              fetchData();
+              setShowPdfUploader(false);
+            }}
+          />
+        </div>
+      )}
 
       {showForm && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
@@ -366,6 +385,41 @@ const ContractsPage: React.FC = () => {
                 <td className="p-4 flex gap-2">
                   <button onClick={() => generateClientLogin(c)} title="Gerar Login" className="w-9 h-9 bg-white/5 border border-white/5 rounded-xl flex items-center justify-center hover:bg-amber-500/10"><Key className="w-4 h-4" /></button>
                   <button onClick={() => handleWhatsAppShare(c)} className="w-9 h-9 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all"><MessageCircle className="w-4 h-4" /></button>
+                  {c.pdf_url && (
+                    <button onClick={async () => {
+                      const phone = c.clients?.phone || c.client_phone;
+                      if (!phone) {
+                        toast({ title: '⚠️ Cliente sem telefone', variant: 'destructive' });
+                        return;
+                      }
+                      const cleanPhone = phone.replace(/\D/g, '');
+                      const target = cleanPhone.length > 11 ? cleanPhone : '55' + cleanPhone;
+                      try {
+                        toast({ title: '⏳ Enviando PDF...', description: 'Aguarde um momento.' });
+                        const { data: conv } = await db.from('whatsapp_conversations').select('id').eq('phone_number', target).maybeSingle();
+                        let convId = conv?.id;
+                        if (!convId) {
+                           const { data: newConv } = await db.from('whatsapp_conversations').insert({ phone_number: target, contact_name: c.clients?.name || c.client_name }).select('id').single();
+                           convId = newConv.id;
+                        }
+                        const res = await supabase.functions.invoke('whatsapp-send', {
+                          body: { 
+                            conversationId: convId, 
+                            message: `Segue o PDF do contrato: *${c.title}*`,
+                            mediaUrl: c.pdf_url,
+                            fileName: `${c.title}.pdf`
+                          }
+                        });
+                        if (res.error) throw res.error;
+                        toast({ title: '✅ PDF Enviado!' });
+                      } catch (e: any) {
+                        toast({ title: '❌ Erro ao enviar', description: e.message, variant: 'destructive' });
+                      }
+                    }}
+                      className="w-9 h-9 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-center text-amber-500 hover:bg-amber-500 hover:text-white transition-all" title="Enviar PDF p/ WhatsApp">
+                      <FileDown className="w-4 h-4" />
+                    </button>
+                  )}
                   <button onClick={() => {
                     setEditingId(c.id);
                     setForm({

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { FileText, Plus, Search, Eye, Phone, Mail, DollarSign, CheckCircle, MessageCircle, Edit, X, User, MapPin, Calendar, Clock, Package, Wrench, StickyNote } from 'lucide-react';
+import { FileText, Plus, Search, Eye, Phone, Mail, DollarSign, CheckCircle, MessageCircle, Edit, X, User, MapPin, Calendar, Clock, Package, Wrench, StickyNote, FileDown } from 'lucide-react';
 import { format } from 'date-fns';
+import PdfUploader from '../admin/PdfUploader';
 
 const db = supabase as any;
 
@@ -15,6 +16,7 @@ const SalesPage: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedProject, setSelectedProject] = useState<any | null>(null);
+  const [showPdfUploader, setShowPdfUploader] = useState(false);
   const [form, setForm] = useState({
     client_id: '',
     client_name: '',
@@ -237,14 +239,20 @@ const SalesPage: React.FC = () => {
           </h1>
           <p className="text-gray-400 mt-1">Acompanhamento de Vendas e Produção</p>
         </div>
-        <button
-          onClick={() => { setShowForm(true); setEditingId(null); setForm(resetForm()); }}
-          className="text-black px-8 py-4 rounded-2xl font-bold hover:opacity-90 transition-opacity flex items-center gap-2 shadow-lg w-full sm:w-auto justify-center"
-          style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583)' }}
-        >
-          <Plus className="w-5 h-5" />
-          + Nova Venda / Projeto
-        </button>
+        <div className="flex gap-4 w-full sm:w-auto">
+          <button onClick={() => setShowPdfUploader(true)}
+            className="bg-white/5 border border-white/10 text-white px-6 py-4 rounded-2xl font-bold hover:bg-white/10 transition-all flex items-center gap-2 w-full sm:w-auto justify-center">
+            <FileDown className="w-5 h-5 text-amber-500" /> Importar PDF
+          </button>
+          <button
+            onClick={() => { setShowForm(true); setEditingId(null); setForm(resetForm()); }}
+            className="text-black px-8 py-4 rounded-2xl font-bold hover:opacity-90 transition-opacity flex items-center gap-2 shadow-lg w-full sm:w-auto justify-center"
+            style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583)' }}
+          >
+            <Plus className="w-5 h-5" />
+            + Nova Venda / Projeto
+          </button>
+        </div>
       </header>
 
       {/* Stats */}
@@ -272,6 +280,19 @@ const SalesPage: React.FC = () => {
         <Search className="absolute left-4 top-3 w-5 h-5 text-gray-500" />
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar projeto ou cliente..." className="w-full pl-12 pr-4 py-3 rounded-2xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder-gray-600" />
       </div>
+      
+      {showPdfUploader && (
+        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <PdfUploader 
+            mode="venda"
+            onClose={() => setShowPdfUploader(false)} 
+            onSuccess={() => {
+              fetchData();
+              setShowPdfUploader(false);
+            }}
+          />
+        </div>
+      )}
 
       {/* Form Modal */}
       {showForm && (
