@@ -131,6 +131,7 @@ const LOUVORES = [
 ];
 
 // v2.1.1 - Hotfix para integração local e métricas do dashboard
+// v2.1.2 - Deploying Nano Banna Creative Engine
 const App: React.FC = () => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
