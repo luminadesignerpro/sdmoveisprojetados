@@ -334,9 +334,21 @@ const SmartMeasurement: React.FC = () => {
           </Button>
         </div>
 
-        <Button onClick={() => fileInputRef.current?.click()} className="bg-white/5 border border-white/10 h-12 px-6 rounded-xl font-bold hover:bg-white/10 transition-all">
-          <Camera className="w-4 h-4 mr-2 text-amber-500" /> SUBSTITUIR
-        </Button>
+        <div className="flex items-center gap-3">
+          {image && mode === 'MEASURE' && (
+            <Button 
+              onClick={handleAnalyze} 
+              disabled={analyzing} 
+              className="bg-amber-500 hover:bg-amber-400 text-black font-black h-12 px-8 rounded-xl shadow-lg shadow-amber-500/20 transition-all active:scale-95"
+            >
+              {analyzing ? "CALCULANDO..." : "CALCULAR MEDIDA"}
+            </Button>
+          )}
+          
+          <Button onClick={() => fileInputRef.current?.click()} className="bg-white/5 border border-white/10 h-12 px-6 rounded-xl font-bold hover:bg-white/10 transition-all">
+            <Camera className="w-4 h-4 mr-2 text-amber-500" /> SUBSTITUIR
+          </Button>
+        </div>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
