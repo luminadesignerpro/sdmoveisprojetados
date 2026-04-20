@@ -13,11 +13,18 @@ import {
   Calculator,
   ScanLine,
   ChevronDown,
-  Send
+  Send,
+  Wand2,
+  Brush,
+  Eraser,
+  Sparkles,
+  Undo2
 } from 'lucide-react';
 import { analyzeImageWithGemini } from '@/services/geminiService';
+import { cleanupObject, inpaintObject, generativeFill, styleTransfer } from '@/services/stabilityService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 
 const db = supabase as any;
 
@@ -39,7 +46,15 @@ const SmartMeasurement: React.FC = () => {
   const [hoverPos, setHoverPos] = useState<Point | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   
+  // Magic Mode States
+  const [mode, setMode] = useState<'MEASURE' | 'MAGIC'>('MEASURE');
+  const [maskPoints, setMaskPoints] = useState<Point[]>([]);
+  const [iaCommand, setIaCommand] = useState('');
+  const [isMagicLoading, setIsMagicLoading] = useState(false);
+  const [magicHistory, setMagicHistory] = useState<string[]>([]);
+  
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const maskCanvasRef = useRef<HTMLCanvasElement>(null);
   const zoomCanvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -108,9 +123,12 @@ const SmartMeasurement: React.FC = () => {
   };
 
   const handlePointerUp = (e: any) => {
-    if (!isDragging) return;
-    const pos = getPos(e);
-    if (!pos) return;
+    if (mode === 'MAGIC') {
+      setMaskPoints([...maskPoints, { x: pos.x, y: pos.y }]);
+      setIsDragging(false);
+      setHoverPos(null);
+      return;
+    }
 
     if (settingRef) {
       if (refPoints.length < 2) setRefPoints([...refPoints, { x: pos.x, y: pos.y }]);
@@ -162,7 +180,7 @@ const SmartMeasurement: React.FC = () => {
 
   useEffect(() => {
     drawCanvas();
-  }, [image, points, refPoints, settingRef]);
+  }, [image, points, refPoints, settingRef, maskPoints, mode]);
 
   const drawCanvas = () => {
     const canvas = canvasRef.current;
@@ -221,68 +239,142 @@ const SmartMeasurement: React.FC = () => {
           ctx.stroke();
         }
       }
+      // Draw Mask (Red Overlay)
+      if (mode === 'MAGIC' && maskPoints.length > 0) {
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.4)';
+        ctx.strokeStyle = '#ff0000';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        maskPoints.forEach((p, i) => {
+          if (i === 0) ctx.moveTo(p.x * canvas.width, p.y * canvas.height);
+          else ctx.lineTo(p.x * canvas.width, p.y * canvas.height);
+        });
+        if (maskPoints.length > 2) ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Draw points for clarity
+        maskPoints.forEach(p => {
+          ctx.fillStyle = '#ff0000';
+          ctx.beginPath();
+          ctx.arc(p.x * canvas.width, p.y * canvas.height, 8, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      }
     };
     img.src = image;
   };
 
-  const handleAnalyze = async () => {
-    if (!image || refPoints.length < 2 || points.length < 2) {
-      toast({ title: '⚠️ Marque a referência e a medida', variant: 'destructive' });
+  const handleMagicAction = async () => {
+    if (!image || !iaCommand) {
+      toast({ title: '⚠️ Digite um comando', variant: 'destructive' });
       return;
     }
 
-    setAnalyzing(true);
+    setIsMagicLoading(true);
     try {
-      // 1. Chamar a Edge Function de Profundidade (ZoeDepth)
-      const { data: prediction, error } = await supabase.functions.invoke('measure-depth', {
-        body: { image, points, refPoints }
-      });
+      // 1. Analisar cena com Gemini para detectar objetos se não houver máscara manual
+      let actions = [];
+      
+      if (maskPoints.length < 3) {
+        toast({ title: '🔍 Analisando cena...', description: 'Aguarde enquanto a IA localiza os elementos...' });
+        const analysisPrompt = `[SISTEMA NANO BANNA]
+        Analise o comando: "${iaCommand}".
+        Você deve identificar quais objetos na imagem precisam ser alterados/removidos.
+        Retorne um JSON com o seguinte formato:
+        {
+          "globalAction": "style" | "none", 
+          "stylePrompt": "english prompt if style",
+          "localActions": [
+            {
+              "type": "cleanup" | "inpaint",
+              "label": "objeto a ser removido",
+              "points": [{"x": 0.12, "y": 0.5}, ...], // MÍNIMO 4 PONTOS para fechar o polígono
+              "prompt": "english description for replacement"
+            }
+          ]
+        }
+        Coordenadas são normais (0.0 a 1.0). Se for apenas remover, use 'cleanup'.`;
 
-      if (error) throw error;
-
-      // 2. Polling para aguardar o resultado do Replicate (IA de Profundidade)
-      let currentPrediction = prediction;
-      while (currentPrediction.status !== 'succeeded' && currentPrediction.status !== 'failed') {
-        await new Promise(r => setTimeout(r, 2000));
-        const response = await fetch(`https://api.replicate.com/v1/predictions/${currentPrediction.id}`, {
-          headers: {
-            "Authorization": `Token ${localStorage.getItem('REPLICATE_API_TOKEN') || ''}`, // Idealmente via Edge Function interna
-          }
-        });
+        const analysisRes = await analyzeImageWithGemini(image, analysisPrompt);
+        const analysis = JSON.parse(analysisRes.replace(/```json|```/g, '').trim());
         
-        // Se falhar o fetch direto por CORS (comum no browser), vamos assumir que o usuário precisa do token no Supabase
-        // E vamos usar o Gemini como fallback de alta precisão calibrado se o Replicate falhar
-        if (!response.ok) break; 
-        currentPrediction = await response.json();
+        if (analysis.globalAction === 'style') {
+          toast({ title: '🎨 Aplicando novo estilo global...' });
+          const styleImg = await styleTransfer(image, analysis.stylePrompt);
+          if (styleImg) {
+            setMagicHistory([styleImg, ...magicHistory]);
+            setImage(styleImg);
+            toast({ title: '✅ Estilo renovado!' });
+          }
+          setIsMagicLoading(false);
+          return;
+        }
+        
+        actions = analysis.localActions || [];
+      } else {
+        // Máscara manual existente
+        actions = [{
+          type: iaCommand.toLowerCase().match(/tire|remover|exclua/) ? 'cleanup' : 'inpaint',
+          points: maskPoints,
+          prompt: iaCommand
+        }];
       }
 
-      // 3. Fallback Inteligente (Refinado)
-      // Se a API de profundidade demorar ou falhar, o Gemini atua usando o prompt de engenharia
-      // Mas com o diferencial de que agora pedimos para ele "Atuar como um Scanner 3D"
-      
-      const prompt = `[SISTEMA DE METROLOGIA SD]
-      DADOS:
-      - LINHA DE ESCALA (AMARELA): Representa exatamente 297mm (Folha A4 no plano Z=0 do chão).
-      - LINHA DE ALVO (VERDE): O objeto a ser medido.
-      - PERSPECTIVA: Analise a convergência das linhas das paredes (Vanish Points).
-      
-      TAFA:
-      Calcule a medida real em MM. Seja EXTREMAMENTE rígido com a métrica.
-      Use a folha A4 para compensar a distorção da lente 'Wide' do celular.
-      
-      RETORNE APENAS JSON: {"measureMm": number, "confidence": number, "roomType": string, "reasoning": string}`;
+      if (actions.length === 0) {
+        toast({ title: '❓ Não consegui localizar os objetos. Tente marcar manualmente.' });
+        setIsMagicLoading(false);
+        return;
+      }
 
-      const response = await analyzeImageWithGemini(image, prompt);
-      const cleanedJson = response.replace(/```json|```/g, '').trim();
-      const data = JSON.parse(cleanedJson);
-      setResult(data);
-      
-      toast({ title: '✅ Metrologia de Alta Precisão Finalizada' });
+      let currentImage = image;
+
+      // Executar ações em série
+      for (const action of actions) {
+        toast({ title: `🪄 Processando: ${action.label || 'seleção'}...` });
+        
+        const maskCanvas = document.createElement('canvas');
+        const imgObj = new Image();
+        imgObj.src = currentImage;
+        await new Promise(r => imgObj.onload = r);
+        
+        maskCanvas.width = imgObj.width;
+        maskCanvas.height = imgObj.height;
+        const mctx = maskCanvas.getContext('2d')!;
+        mctx.fillStyle = 'black';
+        mctx.fillRect(0, 0, maskCanvas.width, maskCanvas.height);
+        mctx.fillStyle = 'white';
+        mctx.beginPath();
+        action.points.forEach((p, i) => {
+          if (i === 0) mctx.moveTo(p.x * maskCanvas.width, p.y * maskCanvas.height);
+          else mctx.lineTo(p.x * maskCanvas.width, p.y * maskCanvas.height);
+        });
+        mctx.closePath();
+        mctx.fill();
+        
+        const maskBase64 = maskCanvas.toDataURL('image/png');
+        
+        let resultImg: string | null = null;
+        if (action.type === 'cleanup') {
+          resultImg = await cleanupObject({ image: currentImage, mask: maskBase64 });
+        } else {
+          resultImg = await inpaintObject(currentImage, maskBase64, action.prompt);
+        }
+
+        if (resultImg) currentImage = resultImg;
+      }
+
+      setMagicHistory([currentImage, ...magicHistory]);
+      setImage(currentImage);
+      setMaskPoints([]);
+      setIaCommand('');
+      toast({ title: '✅ Todas as alterações foram concluídas!' });
+
     } catch (e: any) {
       console.error(e);
-      toast({ title: '❌ Falha no Processamento', description: "Verifique a chave REPLICATE_API_TOKEN ou tente novamente.", variant: 'destructive' });
+      toast({ title: '❌ Falha no Processamento IA', description: "Tente um comando mais simples ou marque o objeto manualmente.", variant: 'destructive' });
     } finally {
-      setAnalyzing(false);
+      setIsMagicLoading(false);
     }
   };
 
@@ -332,10 +424,27 @@ const SmartMeasurement: React.FC = () => {
         
         <div className="flex gap-4 w-full md:w-auto">
            <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*" className="hidden" />
+           
+           <div className="flex bg-white/5 border border-white/10 rounded-2xl p-1">
+             <Button 
+               onClick={() => setMode('MEASURE')} 
+               className={`h-12 px-6 rounded-xl font-bold transition-all ${mode === 'MEASURE' ? 'bg-amber-500 text-black' : 'bg-transparent text-gray-400 hover:text-white'}`}
+             >
+               <Ruler className="w-4 h-4 mr-2" /> MEDIÇÃO
+             </Button>
+             <Button 
+               onClick={() => setMode('MAGIC')} 
+               className={`h-12 px-6 rounded-xl font-bold transition-all ${mode === 'MAGIC' ? 'bg-indigo-600 text-white' : 'bg-transparent text-gray-400 hover:text-white'}`}
+             >
+               <Wand2 className="w-4 h-4 mr-2" /> MAGIC EDIT (KREATIV)
+             </Button>
+           </div>
+
            <Button onClick={() => fileInputRef.current?.click()} className="bg-white/5 border border-white/10 hover:bg-white/10 h-14 px-8 rounded-2xl font-bold transition-all">
-             <Camera className="w-5 h-5 mr-3 text-amber-500" /> SUBSTITUIR FOTO
+             <Camera className="w-5 h-5 mr-3 text-amber-500" /> SUBSTITUIR
            </Button>
-           {image && (
+           
+           {image && mode === 'MEASURE' && (
              <Button onClick={handleAnalyze} disabled={analyzing} className="bg-amber-500 hover:bg-amber-400 text-black font-black h-14 px-10 rounded-2xl shadow-2xl shadow-amber-500/20 active:scale-95 transition-all">
                {analyzing ? (
                  <span className="flex items-center gap-2">
@@ -412,21 +521,60 @@ const SmartMeasurement: React.FC = () => {
             </CardContent>
 
             {/* Floating Control Bar */}
-            {image && (
+            {image && mode === 'MEASURE' && (
               <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/80 backdrop-blur-3xl p-2 rounded-[24px] border border-white/10 shadow-2xl">
                 <Button 
                   onClick={() => setSettingRef(true)}
-                  className={`h-14 px-8 rounded-2xl font-black text-xs tracking-widest transition-all ${settingRef ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'bg-transparent text-gray-500 hover:text-white'}`}
+                  className={`h-11 px-6 rounded-xl font-black text-[10px] tracking-widest transition-all ${settingRef ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'bg-transparent text-gray-500 hover:text-white'}`}
                 >
                   SETAR ESCALA (A4)
                 </Button>
                 <div className="w-px h-8 bg-white/10 mx-2" />
                 <Button 
                   onClick={() => setSettingRef(false)}
-                  className={`h-14 px-8 rounded-2xl font-black text-xs tracking-widest transition-all ${!settingRef ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' : 'bg-transparent text-gray-500 hover:text-white'}`}
+                  className={`h-11 px-6 rounded-xl font-black text-[10px] tracking-widest transition-all ${!settingRef ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' : 'bg-transparent text-gray-500 hover:text-white'}`}
                 >
                   MARCAR MEDIDA
                 </Button>
+              </div>
+            )}
+
+            {image && mode === 'MAGIC' && (
+              <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-2xl flex flex-col gap-4">
+                <div className="flex items-center gap-2 bg-black/80 backdrop-blur-3xl p-3 rounded-[24px] border border-white/10 shadow-2xl">
+                  <div className="flex-1 relative">
+                    <Sparkles className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-400" />
+                    <Input 
+                      placeholder="Ex: tire o sofá e coloque um vaso... (ou marque a área e digite)"
+                      value={iaCommand}
+                      onChange={e => setIaCommand(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleMagicAction()}
+                      className="bg-white/5 border-white/10 pl-11 h-14 rounded-xl text-sm focus-visible:ring-indigo-500"
+                    />
+                  </div>
+                  <Button 
+                    onClick={handleMagicAction}
+                    disabled={isMagicLoading}
+                    className="h-14 px-8 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black transition-all shadow-lg shadow-indigo-500/20"
+                  >
+                    {isMagicLoading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Wand2 className="w-5 h-5 mr-2" /> APLICAR</>}
+                  </Button>
+                </div>
+                
+                <div className="flex justify-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setMaskPoints([])} className="bg-black/60 border-white/10 text-white hover:bg-red-500/20 hover:text-red-400 rounded-full h-8 px-4 text-[10px] uppercase font-bold">
+                    <Eraser className="w-3 h-3 mr-2" /> Limpar Seleção
+                  </Button>
+                  {magicHistory.length > 0 && (
+                    <Button variant="outline" size="sm" onClick={() => {
+                      const prev = magicHistory[1] || magicHistory[0];
+                      setImage(prev);
+                      setMagicHistory(magicHistory.slice(1));
+                    }} className="bg-black/60 border-white/10 text-white hover:bg-white/20 rounded-full h-8 px-4 text-[10px] uppercase font-bold">
+                      <Undo2 className="w-3 h-3 mr-2" /> Desfazer
+                    </Button>
+                  )}
+                </div>
               </div>
             )}
           </Card>
@@ -434,8 +582,32 @@ const SmartMeasurement: React.FC = () => {
 
         {/* Lado Direito: Intelligence Sidebar */}
         <div className="xl:col-span-3 space-y-6">
+          {mode === 'MAGIC' && (
+            <Card className="bg-[#111114] border-indigo-500/30 rounded-[32px] p-6 space-y-6 animate-in slide-in-from-right duration-500">
+               <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-indigo-400" />
+                    <h4 className="text-sm font-black text-white uppercase tracking-widest">Magic Kreativ</h4>
+                  </div>
+                  <p className="text-xs text-gray-400 leading-relaxed font-medium">
+                    Você pode selecionar manualmente uma área clicando na imagem, ou simplesmente digitar o que deseja fazer no ambiente todo.
+                  </p>
+               </div>
+               
+               <div className="space-y-3">
+                 <div className="p-3 bg-white/5 border border-white/5 rounded-2xl group hover:border-indigo-500/30 transition-all cursor-pointer" onClick={() => setIaCommand("Tire o sofá e coloque um tapete moderno")}>
+                   <p className="text-[10px] font-black text-indigo-400 uppercase mb-1">Comando Combo:</p>
+                   <p className="text-[11px] text-gray-300">"Tire o sofá e as plantas"</p>
+                 </div>
+                 <div className="p-3 bg-white/5 border border-white/5 rounded-2xl group hover:border-indigo-500/30 transition-all cursor-pointer" onClick={() => setIaCommand("Mude o estilo para um loft industrial moderno")}>
+                   <p className="text-[10px] font-black text-indigo-400 uppercase mb-1">Transformação Total:</p>
+                   <p className="text-[11px] text-gray-300">"Estilo loft industrial"</p>
+                 </div>
+            </Card>
+          )}
+
           {/* Analysis Result Card */}
-          {result ? (
+          {result && mode === 'MEASURE' ? (
             <div className="space-y-6 animate-in slide-in-from-right duration-500">
                <Card className="bg-[#111114] border-amber-500/30 rounded-[32px] p-8 shadow-2xl relative overflow-hidden">
                   <div className="absolute top-0 right-0 p-4">

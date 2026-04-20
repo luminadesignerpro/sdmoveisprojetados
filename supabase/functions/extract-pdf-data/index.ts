@@ -68,7 +68,7 @@ Regras:
 5. Retorne APENAS o JSON, sem markdown ou explicações.`;
 
     // Using gemini-2.5-flash which is current and stable
-    const model = "gemini-2.5-flash";
+    const model = "gemini-1.5-flash";
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
 
     const response = await fetch(url, {

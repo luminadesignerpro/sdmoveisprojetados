@@ -28,13 +28,23 @@ serve(async (req) => {
     console.log(`[Action: ${action}] Instance: ${instanceName}`);
 
     if (action === "get-status") {
-      const res = await fetch(`${EVOLUTION_API_URL}/instance/connectionState/${instanceName}`, {
-        headers: { "apikey": EVOLUTION_API_KEY }
-      });
-      const data = await res.json();
-      return new Response(JSON.stringify(data), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      const url = `${EVOLUTION_API_URL}/instance/connectionState/${instanceName}`;
+      console.log(`[Status Check] Fetching: ${url}`);
+      try {
+        const res = await fetch(url, {
+          headers: { "apikey": EVOLUTION_API_KEY }
+        });
+        const data = await res.json();
+        console.log(`[Status Check] Response Status: ${res.status}`, data);
+        return new Response(JSON.stringify(data), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      } catch (fetchErr) {
+        console.error(`[Status Check] Fetch error:`, fetchErr);
+        return new Response(JSON.stringify({ status: 500, error: fetchErr.message }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     if (action === "sync-webhook") {
