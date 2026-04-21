@@ -1,3 +1,4 @@
+// Build: 2026-04-21 — Chave Gemini atualizada
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { supabase } from "@/integrations/supabase/client";
 
