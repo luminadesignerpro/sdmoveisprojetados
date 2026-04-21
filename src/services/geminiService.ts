@@ -1,9 +1,5 @@
-// Build: 2026-04-21 — Chave Gemini atualizada
-import { GoogleGenerativeAI } from "@google/generative-ai";
+// Build: 2026-04-21 — Gemini chamado via Edge Function segura (chave protegida no servidor)
 import { supabase } from "@/integrations/supabase/client";
-
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY || "");
 
 export interface RenderParams {
   room: string;
@@ -23,7 +19,7 @@ export interface ChatMessage {
 }
 
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
-const GROQ_MODEL = "llama-3.3-70b-versatile"; // Updated to current stable Groq model
+const GROQ_MODEL = "llama-3.3-70b-versatile";
 
 export async function generateRealisticRender(params: RenderParams): Promise<string | null> {
   try {
@@ -43,35 +39,33 @@ export async function generateRealisticRender(params: RenderParams): Promise<str
   }
 }
 
+/**
+ * Analisa imagem(ns) com Gemini via Edge Function segura (backend).
+ * A chave da API nunca é exposta no frontend.
+ * @param base64Image - Uma imagem base64 ou múltiplas separadas por '|'
+ * @param prompt - Instrução para a IA
+ */
 export async function analyzeImageWithGemini(base64Image: string, prompt: string): Promise<string> {
-  if (!GEMINI_API_KEY) {
-    throw new Error("API Key para Gemini não encontrada. Verifique VITE_GEMINI_API_KEY no .env");
-  }
-
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    
-    // Split the base64Image by '|' if multiple images are provided
-    const imageParts = base64Image.split('|').map(img => {
-      // Remove data:image/...;base64, prefix if present
-      const cleanBase64 = img.replace(/^data:image\/\w+;base64,/, "");
-      return {
-        inlineData: {
-          data: cleanBase64,
-          mimeType: "image/jpeg"
-        }
-      };
+    // Divide múltiplas imagens separadas por '|'
+    const images = base64Image.split('|');
+
+    const { data, error } = await supabase.functions.invoke("gemini-vision", {
+      body: { images, prompt },
     });
 
-    const result = await model.generateContent([
-      prompt,
-      ...imageParts
-    ]);
+    if (error) {
+      console.error("Erro na Edge Function gemini-vision:", error);
+      throw new Error(error.message || "Falha na comunicação com o servidor de IA.");
+    }
 
-    const response = await result.response;
-    return response.text();
+    if (data?.error) {
+      throw new Error(data.error);
+    }
+
+    return data?.result || "";
   } catch (error) {
-    console.error("Gemini Vision Error:", error);
+    console.error("analyzeImageWithGemini error:", error);
     throw error;
   }
 }
