@@ -48,7 +48,7 @@ export async function analyzeImageWithGemini(base64Image: string, prompt: string
   }
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     
     // Split the base64Image by '|' if multiple images are provided
     const imageParts = base64Image.split('|').map(img => {
