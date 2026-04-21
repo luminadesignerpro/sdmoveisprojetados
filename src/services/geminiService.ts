@@ -48,19 +48,23 @@ export async function analyzeImageWithGemini(base64Image: string, prompt: string
   }
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     
-    // Remove data:image/...;base64, prefix if present
-    const cleanBase64 = base64Image.replace(/^data:image\/\w+;base64,/, "");
-
-    const result = await model.generateContent([
-      prompt,
-      {
+    // Split the base64Image by '|' if multiple images are provided
+    const imageParts = base64Image.split('|').map(img => {
+      // Remove data:image/...;base64, prefix if present
+      const cleanBase64 = img.replace(/^data:image\/\w+;base64,/, "");
+      return {
         inlineData: {
           data: cleanBase64,
           mimeType: "image/jpeg"
         }
-      }
+      };
+    });
+
+    const result = await model.generateContent([
+      prompt,
+      ...imageParts
     ]);
 
     const response = await result.response;
