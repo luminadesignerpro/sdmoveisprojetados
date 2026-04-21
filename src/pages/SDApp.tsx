@@ -133,6 +133,7 @@ const LOUVORES = [
 // v2.1.1 - Hotfix para integração local e métricas do dashboard
 // v2.1.2 - Deploying Nano Banna Creative Engine
 // v2.1.3 - Supabase Edge Functions Sync
+// v2.1.4 - Final Deployment Sync (Vercel Connected)
 const App: React.FC = () => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
