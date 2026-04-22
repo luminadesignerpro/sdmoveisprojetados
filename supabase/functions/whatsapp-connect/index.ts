@@ -83,33 +83,61 @@ serve(async (req) => {
     }
 
     if (action === "connect") {
-       // Ensure instance exists first without DB persistence for maximum compatibility
-       await fetch(`${EVOLUTION_API_URL}/instance/create`, {
-         method: "POST",
-         headers: { "Content-Type": "application/json", "apikey": EVOLUTION_API_KEY },
-         body: JSON.stringify({ instanceName, qrcode: true })
-       });
+       console.log(`[Connect] Triggering instance creation and connection for: ${instanceName}`);
+       
+       // Ensure instance exists first. For Evolution API v1.8.x, token is often required in body
+       try {
+         const createRes = await fetch(`${EVOLUTION_API_URL}/instance/create`, {
+           method: "POST",
+           headers: { "Content-Type": "application/json", "apikey": EVOLUTION_API_KEY },
+           body: JSON.stringify({ 
+             instanceName, 
+             token: EVOLUTION_API_KEY, // Using the same API Key as the instance token for simplicity
+             qrcode: true 
+           })
+         });
+         const createData = await createRes.text();
+         console.log(`[Connect] Create Instance Response (${createRes.status}):`, createData);
+       } catch (err) {
+         console.error(`[Connect] Create Instance Error (ignoring if already exists):`, err);
+       }
 
        // Sync webhook immediately
-       await fetch(`${EVOLUTION_API_URL}/webhook/set/${instanceName}`, {
-         method: "POST",
-         headers: { "Content-Type": "application/json", "apikey": EVOLUTION_API_KEY },
-         body: JSON.stringify({
-           enabled: true,
-           url: `${SUPABASE_URL}/functions/v1/whatsapp-webhook`,
-           webhook_by_events: false,
-           events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE", "MESSAGES_UPDATE", "SEND_MESSAGE"]
-         })
-       });
+       try {
+         await fetch(`${EVOLUTION_API_URL}/webhook/set/${instanceName}`, {
+           method: "POST",
+           headers: { "Content-Type": "application/json", "apikey": EVOLUTION_API_KEY },
+           body: JSON.stringify({
+             enabled: true,
+             url: `${SUPABASE_URL}/functions/v1/whatsapp-webhook`,
+             webhook_by_events: false,
+             events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE", "MESSAGES_UPDATE", "SEND_MESSAGE"]
+           })
+         });
+       } catch (err) {
+         console.error(`[Connect] Webhook sync error:`, err);
+       }
 
        // Request connection (QR Code)
+       console.log(`[Connect] Fetching QR Code from: ${EVOLUTION_API_URL}/instance/connect/${instanceName}`);
        const res = await fetch(`${EVOLUTION_API_URL}/instance/connect/${instanceName}`, {
          headers: { "apikey": EVOLUTION_API_KEY }
        });
        
-       const responseData = await res.text();
-       return new Response(responseData, {
-         status: res.status,
+       const responseData = await res.json().catch(() => ({}));
+       console.log(`[Connect] Connection Response (${res.status}):`, responseData);
+
+       if (res.status === 404) {
+         return new Response(JSON.stringify({ 
+           error: "Instância não encontrada. Tente novamente em alguns segundos (Cold Start).",
+           status: 404 
+         }), {
+           headers: { ...corsHeaders, "Content-Type": "application/json" },
+         });
+       }
+
+       return new Response(JSON.stringify(responseData), {
+         status: 200,
          headers: { ...corsHeaders, "Content-Type": "application/json" },
        });
     }

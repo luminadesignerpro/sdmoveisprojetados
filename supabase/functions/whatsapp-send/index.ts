@@ -90,10 +90,13 @@ serve(async (req) => {
         if (mediaUrl) {
           endpoint = `${EVOLUTION_API_URL}/message/sendMedia/SD-Moveis`;
           const isImage = /\.(png|jpg|jpeg|webp)$/i.test(mediaUrl);
+          const isPdf = /\.pdf$/i.test(mediaUrl);
+          
           body = {
             number: targetPhone,
             media: mediaUrl,
             mediatype: isImage ? "image" : "document",
+            mimetype: isImage ? "image/png" : (isPdf ? "application/pdf" : "application/octet-stream"),
             caption: message || "",
             fileName: fileName || (isImage ? "qrcode.png" : "documento.pdf")
           };

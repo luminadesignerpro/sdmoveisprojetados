@@ -96,18 +96,34 @@ export function WhatsAppCRMReal({ setView }: { setView?: (view: any) => void }) 
 
       if (error) throw error;
 
+      if (data.error) {
+        toast({
+          variant: "destructive",
+          title: "Erro na API",
+          description: data.error
+        });
+        setApiStatus("disconnected");
+        return;
+      }
+
       if (data.base64 || data.qrcode?.base64) {
         setQrCodeData(data.base64 || data.qrcode?.base64);
         setApiStatus("disconnected");
       } else if (data.instance?.state === 'open') {
         toast({ title: "Conectado!", description: "WhatsApp já está ativo." });
         setApiStatus("connected");
+      } else {
+        toast({
+          title: "⏳ Aguarde",
+          description: "O servidor está iniciando. Tente novamente em 20 segundos.",
+          variant: "destructive"
+        });
       }
-    } catch (err) {
+    } catch (err: any) {
       toast({
         variant: "destructive",
         title: "Erro ao conectar",
-        description: "Não foi possível obter o QR Code."
+        description: err.message || "Não foi possível obter o QR Code."
       });
       setApiStatus("disconnected");
     } finally {
