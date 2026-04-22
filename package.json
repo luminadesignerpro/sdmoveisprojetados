@@ -11,7 +11,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "bot": "node scripts/whatsapp-bot.js"
+    "bot": "node scripts/whatsapp-bot.cjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.1.0",

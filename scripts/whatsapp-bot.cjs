@@ -7,7 +7,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 
 // Load Config
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const GEMINI_API_KEY = process.env.VITE_GEMINI_API_KEY;
 
 if (!GEMINI_API_KEY) {
     console.error('❌ ERRO: GEMINI_API_KEY não encontrada no arquivo .env');
