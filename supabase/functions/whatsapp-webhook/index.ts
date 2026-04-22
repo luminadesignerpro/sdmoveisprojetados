@@ -63,11 +63,34 @@ serve(async (req) => {
           const rawId = remoteJid.split("@")[0] || "";
           let phoneNumber = rawId.split(":")[0].replace(/[^0-9]/g, ""); 
           
-          if (phoneNumber.length >= 10 && !phoneNumber.startsWith("55") && !phoneNumber.startsWith("1")) {
+          // Brazilian number normalization:
+          // Valid Brazilian numbers: 55 + DDD(2) + number(8-9) = 12-13 digits
+          // If number already starts with 55 and is 12-13 digits, it's correct
+          // If number is 10-11 digits (DDD + number), prepend 55
+          // Otherwise skip invalid numbers
+          if (phoneNumber.startsWith("55") && (phoneNumber.length === 12 || phoneNumber.length === 13)) {
+            // Already correct Brazilian format (55 + DDD + number)
+          } else if (phoneNumber.length === 10 || phoneNumber.length === 11) {
+            // DDD + number without country code
             phoneNumber = "55" + phoneNumber;
+          } else if (phoneNumber.length > 13 && phoneNumber.startsWith("55")) {
+            // Too long but starts with 55 - truncate to 13 digits (mobile) or 12 (landline)
+            phoneNumber = phoneNumber.substring(0, 13);
+          } else if (!phoneNumber.startsWith("55") && phoneNumber.length >= 12) {
+            // Number doesn't start with 55 - try to find the Brazilian part
+            // Could be a malformed number with extra prefix digits
+            const possibleBR = phoneNumber.replace(/^1+/, ""); // strip leading 1s
+            if (possibleBR.startsWith("55") && (possibleBR.length === 12 || possibleBR.length === 13)) {
+              phoneNumber = possibleBR;
+            } else if (possibleBR.length === 10 || possibleBR.length === 11) {
+              phoneNumber = "55" + possibleBR;
+            }
+            // If still invalid, keep as-is and let length check below handle it
           }
           
-          if (!phoneNumber || phoneNumber.length < 5) continue;
+          console.log(`[Phone Normalized] Raw: ${rawId} → Clean: ${phoneNumber} (${phoneNumber.length} digits)`);
+          
+          if (!phoneNumber || phoneNumber.length < 10 || phoneNumber.length > 15) continue;
 
           const pushName = messageData.pushName || payload.data?.pushName || null;
           console.log(`[Processing] From: ${phoneNumber} | Content: ${messageContent.slice(0, 30)}...`);
