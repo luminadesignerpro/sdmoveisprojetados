@@ -177,8 +177,8 @@ serve(async (req) => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', apikey: evolutionKey },
                 body: JSON.stringify({
-                  number: phoneNumber, // Use clean phone number
-                  text: responseText,
+                  number: phoneNumber,
+                  textMessage: { text: responseText },
                   options: { delay: 1200, presence: 'composing' },
                 }),
               });

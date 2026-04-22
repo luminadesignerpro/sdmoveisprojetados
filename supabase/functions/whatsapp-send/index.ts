@@ -84,7 +84,7 @@ serve(async (req) => {
         let endpoint = `${EVOLUTION_API_URL}/message/sendText/SD-Moveis`;
         let body: any = {
           number: targetPhone,
-          text: message,
+          textMessage: { text: message },
         };
 
         if (mediaUrl) {
@@ -94,11 +94,13 @@ serve(async (req) => {
           
           body = {
             number: targetPhone,
-            media: mediaUrl,
-            mediatype: isImage ? "image" : "document",
-            mimetype: isImage ? "image/png" : (isPdf ? "application/pdf" : "application/octet-stream"),
-            caption: message || "",
-            fileName: fileName || (isImage ? "qrcode.png" : "documento.pdf")
+            mediaMessage: {
+              mediatype: isImage ? "image" : "document",
+              mimetype: isImage ? "image/png" : (isPdf ? "application/pdf" : "application/octet-stream"),
+              caption: message || "",
+              media: mediaUrl,
+              fileName: fileName || (isImage ? "qrcode.png" : "documento.pdf")
+            }
           };
         }
 

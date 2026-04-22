@@ -82,7 +82,7 @@ DIRETRIZES:
             headers: { "Content-Type": "application/json", apikey: evolutionKey },
             body: JSON.stringify({
               number: targetPhone,
-              text: aiContent,
+              textMessage: { text: aiContent },
               options: { delay: 1000, presence: 'composing' }
             }),
           });
