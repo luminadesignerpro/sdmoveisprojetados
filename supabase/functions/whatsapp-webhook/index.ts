@@ -28,7 +28,16 @@ serve(async (req) => {
           if (!remoteJid || remoteJid.includes("@g.us")) continue;
 
           const jidRaw = remoteJid.split("@")[0].split(":")[0].replace(/[^0-9]/g, "");
-          console.log(`[JID Raw] ${jidRaw}`);
+          
+          // --- CORREÇÃO DE NÚMERO (BRAZIL FIX) ---
+          let phoneNumber = jidRaw;
+          if (phoneNumber.startsWith("550")) {
+            phoneNumber = "55" + phoneNumber.slice(3); // Corrige 55075 para 5575
+          }
+          if (phoneNumber.length >= 10 && phoneNumber.length <= 11 && !phoneNumber.startsWith("55")) {
+            phoneNumber = "55" + phoneNumber;
+          }
+          console.log(`[JID Raw] ${jidRaw} -> Processado: ${phoneNumber}`);
 
           const msgBody = messageData.message || payload.data?.message || messageData || {};
           const messageContent =
@@ -42,36 +51,32 @@ serve(async (req) => {
 
           const pushName = messageData.pushName || payload.data?.pushName || null;
 
-          // Busca conversa existente pelos ultimos 8 digitos do JID
-          const last8 = jidRaw.slice(-8);
+          // Busca conversa existente pelos ultimos 8 digitos
+          const last8 = phoneNumber.slice(-8);
           const { data: convs } = await supabase
             .from("whatsapp_conversations")
             .select("id, phone_number")
             .ilike("phone_number", `%${last8}`);
 
           let conversation = convs?.[0] || null;
-          let phoneNumber: string;
 
           if (conversation) {
             phoneNumber = conversation.phone_number;
-            console.log(`[Conversation] Found: ${phoneNumber}`);
+            console.log(`[Conversation] Encontrada: ${phoneNumber}`);
             if (pushName) {
               await supabase.from("whatsapp_conversations").update({ contact_name: pushName }).eq("id", conversation.id);
             }
           } else {
-            // Cria nova conversa com numero montado
-            const newPhone = jidRaw.startsWith("55") ? jidRaw : "55" + jidRaw.slice(-11);
-            phoneNumber = newPhone;
-            console.log(`[Conversation] Creating new: ${phoneNumber}`);
+            console.log(`[Conversation] Criando nova para: ${phoneNumber}`);
             const { data: newConv, error: convError } = await supabase
               .from("whatsapp_conversations")
               .insert({ phone_number: phoneNumber, contact_name: pushName, status: "active", lead_status: "lead" })
               .select("id, phone_number").single();
-            if (convError) { console.error("Error creating conversation:", convError); continue; }
+            if (convError) { console.error("Erro ao criar conversa:", convError); continue; }
             conversation = newConv;
           }
 
-          console.log(`[Processing] phone: ${phoneNumber} | fromMe: ${fromMe} | "${messageContent.slice(0, 50)}"`);
+          console.log(`[Processing] phone: ${phoneNumber} | fromMe: ${fromMe} | Content: "${messageContent.slice(0, 50)}"`);
 
           const externalId = key.id || messageData.id;
           if (externalId) {
@@ -97,9 +102,8 @@ serve(async (req) => {
               .gt("created_at", new Date(Date.now() - 30000).toISOString()).limit(1);
 
             if (recentResponses && recentResponses.length > 0) {
-              console.log(`[Rate Limit] Pulando resposta`);
+              console.log(`[Rate Limit] Pulando resposta automática para evitar loop.`);
             } else {
-              const geminiKey = Deno.env.get("GEMINI_API_KEY");
               const evolutionUrl = Deno.env.get("EVOLUTION_API_URL") || "https://api-whatsapp-sdmoveis.onrender.com";
               const evolutionKey = Deno.env.get("EVOLUTION_API_KEY") || "Mv06061991";
 
@@ -109,56 +113,44 @@ serve(async (req) => {
 
               const { data: configData } = await supabase.from("atendimento_config").select("conteudo").eq("chave", "menu_principal").maybeSingle();
               const config = configData?.conteudo || {
-                greeting: "Ola! Bem-vindo a SD Moveis!\nComo posso te ajudar?\n\n1 - Orcamento\n2 - Acompanhar projeto\n3 - Pos-venda\n4 - Falar com atendente",
+                greeting: "Olá! Bem-vindo à SD Móveis!\nComo posso te ajudar?",
                 responses: {},
               };
 
-              const isGreeting = /^(oi|ola|olá|bom dia|boa tarde|boa noite|inicio|menu|oi!|ola!)$/i.test(cleanMessage.trim());
+              const isGreeting = /^(oi|ola|olá|bom dia|boa tarde|boa noite|inicio|menu)$/i.test(cleanMessage);
               const normalizedMatch = cleanMessage.replace(/[^0-9]/g, "");
               if (isGreeting) responseText = config.greeting;
               else if (config.responses?.[normalizedMatch]) responseText = config.responses[normalizedMatch];
 
               if (!responseText) {
                 try {
-                  const groqKey = "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";
-                  
-                  console.log(`[Groq] Iniciando requisição com mensagem: "${messageContent.slice(0, 50)}"`);
-                  
-                  const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-                    method: "POST",
-                    headers: { 
-                      "Content-Type": "application/json",
-                      "Authorization": `Bearer ${groqKey}`
-                    },
-                    body: JSON.stringify({
-                      model: "mixtral-8x7b-32768",
-                      messages: [{
-                        role: "system",
-                        content: "Voce e o Consultor Especialista da SD Moveis Projetados, loja de moveis planejados em Fortaleza-CE. Tom persuasivo, elegante e caloroso. Maximo 3 frases. Sem markdown."
-                      }, {
-                        role: "user",
-                        content: messageContent
-                      }],
-                      max_tokens: 150,
-                      temperature: 0.7,
-                    }),
-                    signal: AbortSignal.timeout(10000),
-                  });
-
-                  console.log(`[Groq] Status: ${groqRes.status}`);
-
-                  if (groqRes.ok) {
-                    const groqData = await groqRes.json();
-                    responseText = groqData.choices?.[0]?.message?.content || "";
-                    messageTypeOut = "ai";
-                    console.log(`[Groq] ✅ Resposta: "${responseText.slice(0, 80)}"`);
+                  const groqKey = Deno.env.get("GROQ_API_KEY");
+                  if (!groqKey) {
+                    console.warn("[Groq] GROQ_API_KEY não configurada.");
                   } else {
-                    const errorText = await groqRes.text();
-                    console.error(`[Groq] ❌ Erro ${groqRes.status}: ${errorText}`);
+                    console.log(`[Groq] Iniciando requisição com mensagem: "${messageContent.slice(0, 50)}"`);
+                    const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${groqKey}` },
+                      body: JSON.stringify({
+                        model: "mixtral-8x7b-32768",
+                        messages: [
+                          { role: "system", content: "Você é o Consultor Especialista da SD Móveis Projetados em Fortaleza. Tom persuasivo e elegante. Máximo 3 frases." },
+                          { role: "user", content: messageContent }
+                        ],
+                        max_tokens: 150, temperature: 0.7,
+                      }),
+                      signal: AbortSignal.timeout(10000),
+                    });
+
+                    if (groqRes.ok) {
+                      const groqData = await groqRes.json();
+                      responseText = groqData.choices?.[0]?.message?.content || "";
+                      messageTypeOut = "ai";
+                      console.log(`[Groq] ✅ Resposta gerada: "${responseText.slice(0, 50)}..."`);
+                    }
                   }
-                } catch (e) { 
-                  console.error("[Groq Error]:", e?.message || e); 
-                }
+                } catch (e) { console.error("[Groq Error]:", e.message); }
               }
 
               if (responseText) {
@@ -166,24 +158,26 @@ serve(async (req) => {
                 try {
                   const res = await fetch(`${evolutionUrl}/message/sendText/SD-Moveis`, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json", apikey: evolutionKey },
-                    body: JSON.stringify({ number: phoneNumber, textMessage: { text: responseText }, options: { delay: 1200, presence: "composing" } }),
-                    signal: AbortSignal.timeout(15000),
+                    headers: { "Content-Type": "application/json", "apikey": evolutionKey },
+                    body: JSON.stringify({ 
+                      number: phoneNumber, 
+                      textMessage: { text: responseText }, 
+                      options: { delay: 1200, presence: "composing" } 
+                    }),
                   });
+
                   if (res.ok) {
                     await supabase.from("whatsapp_messages").insert({
                       conversation_id: conversation.id, direction: "outbound",
                       content: responseText, status: "sent", message_type: messageTypeOut,
                     });
-                    console.log(`[Auto-Response] Enviado para ${phoneNumber}`);
-                  } else {
-                    console.error(`[Auto-Response] Falhou ${res.status}: ${await res.text()}`);
+                    console.log(`[Auto-Response] ✅ Mensagem entregue via Evolution.`);
                   }
-                } catch (sendError) { console.error("[Auto-Response] Erro:", sendError); }
+                } catch (sendError) { console.error("[Auto-Response] ❌ Erro ao enviar:", sendError.message); }
               }
             }
           }
-        } catch (itemError) { console.error("Item error:", itemError); }
+        } catch (itemError) { console.error("Erro no processamento do item:", itemError); }
       }
       return new Response(JSON.stringify({ ok: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
