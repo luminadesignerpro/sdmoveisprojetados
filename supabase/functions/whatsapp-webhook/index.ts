@@ -120,18 +120,41 @@ serve(async (req) => {
 
               if (!responseText && geminiKey) {
                 try {
-                  const geminiRes = await fetch(
-                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
-                    {
-                      method: "POST", headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ contents: [{ parts: [{ text: `Voce e o Consultor Especialista da SD Moveis Projetados, loja de moveis planejados em Fortaleza-CE. Tom persuasivo, elegante e caloroso. Maximo 3 frases. Sem markdown.\n\nCliente: ${messageContent}\n\nConsultor:` }] }] }),
-                    }
-                  );
-                  const geminiData = await geminiRes.json();
-                  responseText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "";
-                  messageTypeOut = "ai";
-                  console.log(`[Gemini] Resposta gerada`);
-                } catch (e) { console.error("[Gemini Error]:", e); }
+                  const groqKey = "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";
+                  
+                  const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                    method: "POST",
+                    headers: { 
+                      "Content-Type": "application/json",
+                      "Authorization": `Bearer ${groqKey}`
+                    },
+                    body: JSON.stringify({
+                      model: "mixtral-8x7b-32768",
+                      messages: [{
+                        role: "system",
+                        content: "Voce e o Consultor Especialista da SD Moveis Projetados, loja de moveis planejados em Fortaleza-CE. Tom persuasivo, elegante e caloroso. Maximo 3 frases. Sem markdown."
+                      }, {
+                        role: "user",
+                        content: messageContent
+                      }],
+                      max_tokens: 150,
+                      temperature: 0.7,
+                    }),
+                    signal: AbortSignal.timeout(10000),
+                  });
+
+                  if (groqRes.ok) {
+                    const groqData = await groqRes.json();
+                    responseText = groqData.choices?.[0]?.message?.content || "";
+                    messageTypeOut = "ai";
+                    console.log(`[Groq] Resposta gerada com sucesso`);
+                  } else {
+                    const errorText = await groqRes.text();
+                    console.error(`[Groq] Erro ${groqRes.status}: ${errorText}`);
+                  }
+                } catch (e) { 
+                  console.error("[Groq Error]:", e?.message); 
+                }
               }
 
               if (responseText) {
