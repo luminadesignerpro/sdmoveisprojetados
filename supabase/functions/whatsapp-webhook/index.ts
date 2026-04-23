@@ -118,9 +118,11 @@ serve(async (req) => {
               if (isGreeting) responseText = config.greeting;
               else if (config.responses?.[normalizedMatch]) responseText = config.responses[normalizedMatch];
 
-              if (!responseText && geminiKey) {
+              if (!responseText) {
                 try {
                   const groqKey = "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";
+                  
+                  console.log(`[Groq] Iniciando requisição com mensagem: "${messageContent.slice(0, 50)}"`);
                   
                   const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST",
@@ -143,17 +145,19 @@ serve(async (req) => {
                     signal: AbortSignal.timeout(10000),
                   });
 
+                  console.log(`[Groq] Status: ${groqRes.status}`);
+
                   if (groqRes.ok) {
                     const groqData = await groqRes.json();
                     responseText = groqData.choices?.[0]?.message?.content || "";
                     messageTypeOut = "ai";
-                    console.log(`[Groq] Resposta gerada com sucesso`);
+                    console.log(`[Groq] ✅ Resposta: "${responseText.slice(0, 80)}"`);
                   } else {
                     const errorText = await groqRes.text();
-                    console.error(`[Groq] Erro ${groqRes.status}: ${errorText}`);
+                    console.error(`[Groq] ❌ Erro ${groqRes.status}: ${errorText}`);
                   }
                 } catch (e) { 
-                  console.error("[Groq Error]:", e?.message); 
+                  console.error("[Groq Error]:", e?.message || e); 
                 }
               }
 
