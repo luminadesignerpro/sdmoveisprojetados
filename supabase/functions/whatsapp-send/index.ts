@@ -17,7 +17,7 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const EVOLUTION_API_URL = Deno.env.get("EVOLUTION_API_URL") || "https://api-whatsapp-sdmoveis.onrender.com";
+    const EVOLUTION_API_URL = Deno.env.get("EVOLUTION_API_URL") || "https://evolution-api-production-202b.up.railway.app";
     const EVOLUTION_API_KEY = Deno.env.get("EVOLUTION_API_KEY") || "Mv06061991";
 
     const { conversationId, message, phoneNumber, mediaUrl, fileName } = await req.json();
@@ -75,6 +75,8 @@ serve(async (req) => {
 
     // Clean phone number from suffixes (:1, etc)
     targetPhone = targetPhone.split(":")[0].replace(/[^0-9]/g, "");
+    // Add JID suffix for Evolution v2 compatibility
+    const recipient = targetPhone.includes("@") ? targetPhone : `${targetPhone}@s.whatsapp.net`;
 
     let sendResult = { mode: "simulation", sent: false };
 
@@ -83,19 +85,25 @@ serve(async (req) => {
       try {
         let endpoint = `${EVOLUTION_API_URL}/message/sendText/SD-Moveis`;
         let body: any = {
-          number: targetPhone,
-          text: message,
+          number: recipient,
+          text: message, // Evolution v2
+          textMessage: { text: message }, // Evolution v1
         };
 
         if (mediaUrl) {
           endpoint = `${EVOLUTION_API_URL}/message/sendMedia/SD-Moveis`;
           const isImage = /\.(png|jpg|jpeg|webp)$/i.test(mediaUrl);
+          const isPdf = /\.pdf$/i.test(mediaUrl);
+          
           body = {
-            number: targetPhone,
-            media: mediaUrl,
-            mediatype: isImage ? "image" : "document",
-            caption: message || "",
-            fileName: fileName || (isImage ? "qrcode.png" : "documento.pdf")
+            number: recipient,
+            mediaMessage: {
+              mediatype: isImage ? "image" : "document",
+              mimetype: isImage ? "image/png" : (isPdf ? "application/pdf" : "application/octet-stream"),
+              caption: message || "",
+              media: mediaUrl,
+              fileName: fileName || (isImage ? "qrcode.png" : "documento.pdf")
+            }
           };
         }
 

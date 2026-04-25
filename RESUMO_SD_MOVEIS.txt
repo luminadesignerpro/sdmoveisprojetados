@@ -1,0 +1,19 @@
+CONTEXTO DO PROJETO - SD MÓVEIS PROJETADOS
+-------------------------------------------
+PROBLEMA: WhatsApp CRM não recebia mensagens da Lu Lima e a IA não respondia.
+
+O QUE JÁ FOI FEITO:
+1. BANCO DE DADOS: O número da Lu Lima foi corrigido na tabela 'whatsapp_conversations' de '18367588012778' para '5585988412334'.
+2. CÓDIGO (WEBHOOK): O arquivo 'supabase/functions/whatsapp-webhook/index.ts' foi atualizado com uma lógica de normalização de números muito mais robusta para evitar que números inválidos sejam salvos no futuro.
+3. SECRETS: As chaves GEMINI_API_KEY e EVOLUTION_API_KEY foram configuradas no Supabase via CLI.
+4. DEPLOY: A edge function 'whatsapp-webhook' foi deployada.
+
+PROBLEMA ATUAL:
+Apesar do código estar correto, a conexão via QR Code com a Evolution API está falhando ou expirando logo após o escaneamento. Suspeita-se de lentidão no serviço Render (Cold Start) ou instabilidade na instância da Evolution API.
+
+ARQUIVOS INCLUÍDOS NESTE ZIP:
+- .env (Configurações e Chaves)
+- supabase/functions/whatsapp-webhook/index.ts (Lógica de Recebimento/IA)
+- supabase/functions/whatsapp-connect/index.ts (Lógica de Conexão/QR Code)
+- src/hooks/useWhatsApp.ts (Frontend Hook)
+- src/components/crm/WhatsAppCRM.tsx (Frontend UI)
