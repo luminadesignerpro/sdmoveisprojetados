@@ -20,9 +20,9 @@ serve(async (req) => {
     const { action = "get-status", instanceName = "SD-Moveis" } = body;
 
     if (action === "sync-webhook") {
+       console.log(`[CONNECT] Sincronizando webhook para a instância: ${instanceName}`);
        const webhookUrl = `${SUPABASE_URL}/functions/v1/whatsapp-webhook`;
        
-       // FIX V2: Eventos em minúsculo para compatibilidade total
        const webhookConfig = {
          enabled: true,
          url: webhookUrl,
@@ -44,7 +44,9 @@ serve(async (req) => {
        });
        
        const data = await res.text();
-       return new Response(JSON.stringify({ ok: res.ok, data }), {
+       console.log(`[CONNECT] Resposta da Evolution: ${data}`);
+       
+       return new Response(JSON.stringify({ ok: res.ok, data: JSON.parse(data || "{}") }), {
          headers: { ...corsHeaders, "Content-Type": "application/json" },
        });
     }
@@ -74,8 +76,10 @@ serve(async (req) => {
       status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error: any) {
+    console.error(`[CONNECT] Erro: ${error.message}`);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
+

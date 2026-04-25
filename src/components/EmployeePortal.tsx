@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Clock, Play, Square, DollarSign, Calendar, User, Send, CheckCircle, XCircle, Loader2, Download } from 'lucide-react';
+import { Clock, Play, Square, DollarSign, Calendar, User, Send, CheckCircle, XCircle, Loader2, Download, MapPin, Star } from 'lucide-react';
+import { Geolocation } from '@capacitor/geolocation';
 import jsPDF from 'jspdf';
 
 interface Employee {
@@ -30,6 +31,18 @@ interface Adjustment {
 
 type Period = 'week' | 'biweekly' | 'month';
 
+const HQ_LAT = -3.7389;
+const HQ_LON = -38.5897;
+const ALLOWED_DISTANCE_KM = 0.3; // 300 meters
+
+function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 interface EmployeePortalProps {
   employeeName: string;
 }
@@ -48,6 +61,9 @@ export default function EmployeePortal({ employeeName }: EmployeePortalProps) {
   const [valeSending, setValeSending] = useState(false);
   const [valeRequests, setValeRequests] = useState<any[]>([]);
   const [adjustments, setAdjustments] = useState<Adjustment[]>([]);
+  const [isNearHQ, setIsNearHQ] = useState<boolean | null>(null);
+  const [checkingLocation, setCheckingLocation] = useState(false);
+  const [drivingScore, setDrivingScore] = useState<number | null>(null);
 
   useEffect(() => {
     fetchEmployee();
@@ -73,8 +89,34 @@ export default function EmployeePortal({ employeeName }: EmployeePortalProps) {
       if (entriesRes.data) setEntries(entriesRes.data);
       if (valeRes.data) setValeRequests(valeRes.data);
       if (adjRes.data) setAdjustments(adjRes.data as Adjustment[]);
+      
+      // Fetch recent trip for score
+      const { data: tripData } = await supabase.from('trips').select('id').eq('employee_id', empData.id).eq('status', 'completed').order('ended_at', { ascending: false }).limit(1).maybeSingle();
+      if (tripData) {
+        const { count: incidents } = await supabase.from('trip_incidents').select('*', { count: 'exact', head: true }).eq('trip_id', tripData.id);
+        const { data: locs } = await supabase.from('trip_locations').select('speed').eq('trip_id', tripData.id).gt('speed', 22.2); // 22.2 m/s = 80km/h
+        let score = 10;
+        if (incidents) score -= (incidents * 2);
+        if (locs && locs.length > 0) score -= 1;
+        setDrivingScore(Math.max(0, score));
+      }
     }
     setLoading(false);
+    checkLocation();
+  };
+
+  const checkLocation = async () => {
+    setCheckingLocation(true);
+    try {
+      const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 10000 });
+      const dist = haversineDistance(pos.coords.latitude, pos.coords.longitude, HQ_LAT, HQ_LON);
+      setIsNearHQ(dist <= ALLOWED_DISTANCE_KM);
+    } catch (err) {
+      console.error('Location check failed:', err);
+      setIsNearHQ(false);
+    } finally {
+      setCheckingLocation(false);
+    }
   };
 
   const clockIn = async () => {
@@ -375,6 +417,24 @@ export default function EmployeePortal({ employeeName }: EmployeePortalProps) {
           </span>
         </div>
 
+        {!openEntry && (
+          <div className="mb-4 flex items-center gap-2 p-3 rounded-xl bg-black/40 border border-white/5">
+            {checkingLocation ? (
+              <Loader2 className="w-4 h-4 text-amber-500 animate-spin" />
+            ) : isNearHQ ? (
+              <CheckCircle className="w-4 h-4 text-green-500" />
+            ) : (
+              <MapPin className="w-4 h-4 text-red-500" />
+            )}
+            <span className="text-sm text-gray-300">
+              {checkingLocation ? 'Verificando localização...' : 
+               isNearHQ ? 'Você está na Sede (Acesso Liberado)' : 
+               'Fora da Sede (Acesso Bloqueado)'}
+            </span>
+            <button onClick={checkLocation} className="ml-auto text-xs text-amber-500 hover:underline">Recarregar</button>
+          </div>
+        )}
+
         {openEntry ? (
           <div>
             <p className="text-sm text-green-400 mb-4">⏱️ Entrada: {formatTime(openEntry.clock_in)}</p>
@@ -388,13 +448,31 @@ export default function EmployeePortal({ employeeName }: EmployeePortalProps) {
         ) : (
           <button
             onClick={clockIn}
-            className="w-full text-black py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all text-lg"
+            disabled={!isNearHQ || checkingLocation}
+            className="w-full text-black py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all text-lg disabled:opacity-30 disabled:grayscale"
             style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583)' }}
           >
-            <Play className="w-5 h-5" /> Registrar Entrada
+            {checkingLocation ? <Loader2 className="w-5 h-5 animate-spin" /> : <Play className="w-5 h-5" />}
+            Registrar Entrada
           </button>
         )}
       </div>
+
+      {/* Driving Score Section */}
+      {drivingScore !== null && (
+        <div className="rounded-2xl p-6 shadow-lg border max-w-lg" style={{ background: '#1a1a1a', borderColor: 'rgba(212,175,55,0.2)' }}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-white font-bold">
+              <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
+              Score de Direção (Última Viagem)
+            </div>
+            <div className="text-2xl font-black" style={{ color: drivingScore >= 9 ? '#22c55e' : drivingScore >= 7 ? '#f59e0b' : '#ef4444' }}>
+              {drivingScore.toFixed(1)}/10
+            </div>
+          </div>
+          <p className="text-xs text-gray-500 mt-1">Sua nota influencia bônus mensais e segurança.</p>
+        </div>
+      )}
 
       {/* Payment Summary */}
       <div className="rounded-2xl p-8 shadow-lg" style={{ background: '#1a1a1a' }}>

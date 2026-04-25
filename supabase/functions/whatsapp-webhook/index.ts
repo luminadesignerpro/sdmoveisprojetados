@@ -174,7 +174,7 @@ serve(async (req) => {
                       "Authorization": `Bearer ${groqKey}` 
                     },
                     body: JSON.stringify({
-                      model: "mixtral-8x7b-32768",
+                      model: "llama3-8b-8192", // Modelo mais rápido e estável
                       messages: [
                         { role: "system", content: "Você é o Consultor Especialista da SD Móveis. Elegante, persuasivo e focado em converter o cliente para um projeto 3D gratuito. Use MDF 18mm e ferragens premium. Máximo 3 frases." }, 
                         { role: "user", content: messageContent }
@@ -189,25 +189,34 @@ serve(async (req) => {
                     messageTypeOut = "ai";
                     console.log("[WEBHOOK] Resposta da IA gerada com sucesso.");
                   } else {
-                    console.error("[WEBHOOK] Erro na API do Groq:", await groqRes.text());
+                    const errorText = await groqRes.text();
+                    console.error(`[WEBHOOK] Erro na API do Groq (${groqRes.status}):`, errorText);
                   }
                 } catch (e) {
                   console.error("[WEBHOOK] Exceção ao chamar Groq:", e);
                 }
               } else {
-                console.warn("[WEBHOOK] GROQ_API_KEY não configurada.");
+                console.warn("[WEBHOOK] GROQ_API_KEY não configurada nas Secrets.");
               }
             }
 
             // ENVIAR RESPOSTA
             if (responseText) {
-              console.log(`[WEBHOOK] Enviando resposta para ${phoneNumber}...`);
+              // Garante que o número tenha o formato JID se necessário para a v2
+              const recipient = phoneNumber.includes("@") ? phoneNumber : `${phoneNumber}@s.whatsapp.net`;
+              
+              console.log(`[WEBHOOK] Enviando resposta para ${recipient}...`);
+              
               const sendRes = await fetch(`${evolutionUrl}/message/sendText/${instanceName}`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json", "apikey": evolutionKey },
+                headers: { 
+                  "Content-Type": "application/json", 
+                  "apikey": evolutionKey 
+                },
                 body: JSON.stringify({ 
-                  number: phoneNumber, 
-                  textMessage: { text: responseText } 
+                  number: recipient, 
+                  text: responseText, // Algumas versões da v2 usam 'text' direto
+                  textMessage: { text: responseText } // Outras usam o padrão v1
                 }),
               });
 
@@ -221,7 +230,8 @@ serve(async (req) => {
                   message_type: messageTypeOut,
                 });
               } else {
-                console.error("[WEBHOOK] Erro ao enviar para Evolution API:", await sendRes.text());
+                const errorDetail = await sendRes.text();
+                console.error(`[WEBHOOK] Erro ao enviar para Evolution API (${sendRes.status}):`, errorDetail);
               }
             }
           }

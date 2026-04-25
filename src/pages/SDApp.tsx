@@ -44,6 +44,7 @@ import AINegotiationDashboard from '@/components/crm/AINegotiationDashboard';
 import LocalIntegrationPanel from '@/components/admin/LocalIntegrationPanel';
 import PdfUploader from '@/components/admin/PdfUploader';
 import SmartMeasurement from '@/components/modules/SmartMeasurement';
+import CustomerTrackingPage from '@/components/fleet/CustomerTrackingPage';
 const db = supabase as any;
 import {
   LogOut,
@@ -170,6 +171,7 @@ const App: React.FC = () => {
   const [clientTimeline, setClientTimeline] = useState<any[]>([]);
   const [clientName, setClientName] = useState('');
   const [showArModal, setShowArModal] = useState<{ title: string; url: string } | null>(null);
+  const [trackingTripId, setTrackingTripId] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -204,6 +206,14 @@ const App: React.FC = () => {
     } else if (teste === 'employee') {
       setAuthState('EMPLOYEE');
       setView(ViewMode.TIME_TRACKING);
+    }
+    
+    // Check for tracking tripId
+    const trackingId = params.get('tripId');
+    if (trackingId) {
+      setTrackingTripId(trackingId);
+      setView(ViewMode.TRACKING);
+      setAuthState('SELECT'); // Public access
     }
   }, []);
 
@@ -1309,6 +1319,11 @@ const App: React.FC = () => {
           {/* SMART MEASUREMENT - Admin */}
           {view === ViewMode.SMART_MEASUREMENT && authState === 'ADMIN' && (
             <SmartMeasurement />
+          )}
+
+          {/* CUSTOMER TRACKING - Public */}
+          {view === ViewMode.TRACKING && trackingTripId && (
+            <CustomerTrackingPage tripId={trackingTripId} />
           )}
         </ViewTransition>
       </main>
