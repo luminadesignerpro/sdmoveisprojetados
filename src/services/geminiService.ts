@@ -1,4 +1,4 @@
-// Build: 2026-04-21 — Gemini chamado via Edge Function segura (chave protegida no servidor)
+// Build: 2026-04-25 — Unificado para Groq & Railway via Edge Functions
 import { supabase } from "@/integrations/supabase/client";
 
 export interface RenderParams {
@@ -14,13 +14,13 @@ export interface RenderParams {
 }
 
 export interface ChatMessage {
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "system";
   content: string;
 }
 
-const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
-const GROQ_MODEL = "llama-3.3-70b-versatile";
-
+/**
+ * Gera render realista (Simulação ou API externa)
+ */
 export async function generateRealisticRender(params: RenderParams): Promise<string | null> {
   try {
     const { data, error } = await supabase.functions.invoke("generate-render", {
@@ -40,8 +40,7 @@ export async function generateRealisticRender(params: RenderParams): Promise<str
 }
 
 /**
- * Analisa imagem(ns) com Gemini via Edge Function segura (backend).
- * A chave da API nunca é exposta no frontend.
+ * Analisa imagem(ns) com Groq Vision via Edge Function segura.
  * @param base64Image - Uma imagem base64 ou múltiplas separadas por '|'
  * @param prompt - Instrução para a IA
  */
@@ -55,7 +54,7 @@ export async function analyzeImageWithGemini(base64Image: string, prompt: string
     });
 
     if (error) {
-      console.error("Erro na Edge Function gemini-vision:", error);
+      console.error("Erro na Edge Function ai-vision (gemini-vision):", error);
       throw new Error(error.message || "Falha na comunicação com o servidor de IA.");
     }
 
@@ -65,47 +64,37 @@ export async function analyzeImageWithGemini(base64Image: string, prompt: string
 
     return data?.result || "";
   } catch (error) {
-    console.error("analyzeImageWithGemini error:", error);
+    console.error("analyzeImageWithGroqVision error:", error);
     throw error;
   }
 }
 
+/**
+ * Gera resposta de chat usando a Edge Function ai-chat (Groq Llama 3.3)
+ */
 export async function generateAiChatResponse(messages: ChatMessage[]): Promise<string> {
-  if (!GROQ_API_KEY) {
-    console.error("GROQ_API_KEY not found in environment");
-    return "Erro de configuração: Chave de API não encontrada.";
-  }
-
   try {
-    const systemPrompt = `Você é o assistente IA da SD Móveis, especialista em móveis planejados.
-Responda sempre em português brasileiro, de forma profissional e amigável.`;
-
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${GROQ_API_KEY}`
+    const { data, error } = await supabase.functions.invoke("ai-chat", {
+      body: { 
+        messages: messages.map(m => ({ 
+          role: m.role === 'assistant' ? 'assistant' : m.role, 
+          content: m.content 
+        })) 
       },
-      body: JSON.stringify({
-        model: GROQ_MODEL,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          ...messages.map(m => ({ role: m.role, content: m.content }))
-        ],
-        temperature: 0.7,
-        max_tokens: 1024
-      })
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error?.message || 'Erro na API do Groq');
+    if (error) {
+      console.error("Erro na Edge Function ai-chat:", error);
+      throw new Error(error.message || "Erro ao processar chat.");
     }
 
-    const data = await response.json();
-    return data.choices[0]?.message?.content || "Desculpe, não consegui processar sua mensagem.";
+    if (data?.error) {
+      throw new Error(data.error);
+    }
+
+    return data?.result || "Desculpe, não consegui processar sua mensagem.";
   } catch (error) {
     console.error("Failed to generate chat response:", error);
-    return "Erro ao processar mensagem com Groq. Tente novamente.";
+    return "Erro ao processar mensagem com Groq. Verifique a conexão.";
   }
 }
