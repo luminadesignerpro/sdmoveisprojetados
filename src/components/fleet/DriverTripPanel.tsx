@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase as supabaseClient } from '@/integrations/supabase/client';
 const db = supabaseClient as any;
 import { useToast } from '@/hooks/use-toast';
-import { Navigation, Play, Square, MapPin, Clock, Route, AlertTriangle, Camera, CheckSquare, Send, X, Image, PackageCheck, Fuel, Terminal, ClipboardList, User, Star } from 'lucide-react';
+import { Navigation, Play, Square, MapPin, Clock, Route, AlertTriangle, Camera, CheckSquare, Send, X, Image, PackageCheck, Fuel, Terminal, ClipboardList, User, Star, Share2 } from 'lucide-react';
 import SignaturePad from '@/components/employee/SignaturePad';
 import ToolInventory from '@/components/employee/ToolInventory';
 import FuelLogForm from '@/components/fleet/FuelLogForm';
@@ -372,6 +372,18 @@ export default function DriverTripPanel({ employeeId, employeeName }: DriverTrip
       return;
     }
 
+    // Check if daily checklist is complete
+    const uncheckedDaily = dailyChecklist.filter(c => !c.checked);
+    if (uncheckedDaily.length > 0) {
+      setShowDailyChecklist(true);
+      toast({ 
+        title: '⚠️ Checklist Pendente', 
+        description: `Complete os ${uncheckedDaily.length} itens do checklist diário antes de sair.`, 
+        variant: 'destructive' 
+      });
+      return;
+    }
+
     const finalEmployeeId = resolvedEmployeeId || employeeId;
     if (!finalEmployeeId) {
       toast({ title: '❌ Erro ao iniciar viagem', description: 'Funcionário não identificado. Faça login novamente.', variant: 'destructive' });
@@ -440,7 +452,20 @@ export default function DriverTripPanel({ employeeId, employeeName }: DriverTrip
     setActiveTrip(data as Trip);
     setLocationCount(0);
     startTracking(data.id);
-    toast({ title: '🚗 Viagem iniciada!', description: gpsAvailable ? 'GPS rastreando a cada 30s' : 'Viagem salva! GPS pode estar limitado.' });
+    toast({ 
+      title: '🚗 Viagem iniciada!', 
+      description: gpsAvailable ? 'GPS rastreando a cada 30s' : 'Viagem salva! GPS pode estar limitado.' 
+    });
+  };
+
+  const shareTrackingLink = () => {
+    if (!activeTrip) return;
+    const url = `${window.location.origin}${window.location.pathname}?tripId=${activeTrip.id}`;
+    navigator.clipboard.writeText(url);
+    toast({
+      title: "🔗 Link de Rastreio Copiado!",
+      description: "Envie este link para o cliente acompanhar em tempo real.",
+    });
   };
 
   const setMontagemConcluida = async () => {
@@ -759,6 +784,15 @@ export default function DriverTripPanel({ employeeId, employeeName }: DriverTrip
                 {signatureUrl ? '✅ Assinatura' : 'Assinatura'}
               </button>
             )}
+
+            <button
+              onClick={shareTrackingLink}
+              className="flex items-center justify-center gap-2 rounded-xl p-4 font-bold border transition-all active:scale-95"
+              style={{ background: '#1a1a1a', borderColor: 'rgba(212,175,55,0.3)', color: '#D4AF37' }}
+            >
+              <Share2 className="w-5 h-5" />
+              Enviar Rastreio
+            </button>
           </div>
 
           {/* Debug GPS Section */}

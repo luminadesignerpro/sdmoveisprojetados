@@ -41,6 +41,20 @@ const SmartMeasurement: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    if (image && canvasRef.current) {
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      img.onload = () => {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx?.drawImage(img, 0, 0);
+      };
+      img.src = image;
+    }
+  }, [image]);
+
   const executeIA = async () => {
     if (!image || !iaCommand) {
       toast({ title: '⚠️ Descreva o que deseja fazer.' });
@@ -49,64 +63,105 @@ const SmartMeasurement: React.FC = () => {
 
     setAnalyzing(true);
     try {
-      // 1. O prompt agora é muito mais inteligente
       const prompt = `[SISTEMA PROJETISTA SD V10] 
       Usuário quer: "${iaCommand}". 
       ${refImage ? "Existe uma imagem de REFERÊNCIA de um móvel para ser usado como base." : ""}
       
       TAREFAS POSSÍVEIS:
       - measure: Se o usuário perguntou sobre medida (sofá, parede, ambiente).
-      - replace_with_photo: Se o usuário quer trocar um móvel baseado na foto de referência.
-      - replace_with_text: Se for apenas comando de texto.
-      - cleanup: Se for para remover.
+      - inpaint: Se o usuário quer trocar um móvel ou adicionar algo (ex: sofá, mesa).
+      - cleanup: Se for para remover algo do ambiente.
+      - style: Se for para trocar o estilo, cores ou revestimentos de uma área.
       
-      REGRAS DE MEDIÇÃO:
-      - Use a folha A4 no chão como escala 297mm.
-      - Se perguntado sobre a medida do sofá, encontre-o e calcule a largura.
+      REGRAS:
+      - Para medição, use a folha A4 no chão como escala 297mm.
+      - Se houver refImage e o comando for de troca, use action 'inpaint'.
       
       RETORNE APENAS JSON:
       {
         "action": "measure" | "cleanup" | "inpaint" | "style",
-        "measureResult": "string com a medida encontrada",
-        "descriptionEn": "English detailed descriptive prompt for Stability AI",
-        "targetPolygon": [{"x":float, "y":float}, ...] // Coordenadas do móvel ou área
+        "measureResult": "string com a medida encontrada ou null",
+        "reasoning": "Breve explicação técnica do seu cálculo ou ação",
+        "descriptionEn": "Detailed descriptive prompt in English for the AI image engine",
+        "targetPolygon": [{"x":float, "y":float}, ...] // Normalized coordinates (0-1) of the target object/area
       }`;
 
-      // No caso de replace_with_photo, enviamos as DUAS imagens para o Gemini entender o móvel novo
       const imagesToAnalyze = [image];
       if (refImage) imagesToAnalyze.push(refImage);
 
       const res = await analyzeImageWithGemini(imagesToAnalyze.join('|'), prompt); 
-      const data = JSON.parse(res.replace(/```json|```/g, '').trim());
+      const cleanRes = res.replace(/```json|```/g, '').trim();
+      const data = JSON.parse(cleanRes);
 
       if (data.action === 'measure') {
-        setResult({ measureMm: data.measureResult, reasoning: "Cálculo baseado na escala 3D do ambiente detectada." });
+        setResult({ 
+          measureMm: data.measureResult, 
+          reasoning: data.reasoning || "Cálculo baseado na escala 3D do ambiente detectada." 
+        });
         toast({ title: '📐 Medição detectada!' });
-      } else if (data.action === 'cleanup' || data.action === 'inpaint') {
+      } else if (data.action === 'cleanup' || data.action === 'inpaint' || data.action === 'style') {
         toast({ title: '✨ Gerando imagem em Alta Definição...' });
         
-        const mCanvas = document.createElement('canvas');
-        const tmpImg = new Image(); tmpImg.src = image; await new Promise(r => tmpImg.onload = r);
-        mCanvas.width = tmpImg.width; mCanvas.height = tmpImg.height;
-        const mctx = mCanvas.getContext('2d')!;
-        mctx.fillStyle = 'black'; mctx.fillRect(0, 0, mCanvas.width, mCanvas.height);
-        mctx.fillStyle = 'white'; mctx.beginPath();
-        data.targetPolygon.forEach((p: any, i: number) => { 
-          if (i === 0) mctx.moveTo(p.x * mCanvas.width, p.y * mCanvas.height); 
-          else mctx.lineTo(p.x * mCanvas.width, p.y * mCanvas.height); 
+        setResult({ 
+          measureMm: data.action.toUpperCase(), 
+          reasoning: data.reasoning || "Processando requisição de edição inteligente." 
         });
-        mctx.closePath(); mctx.fill();
-        
-        const mBase64 = mCanvas.toDataURL('image/png');
-        const finalImg = data.action === 'cleanup' ? await cleanupObject({ image, mask: mBase64 }) : await inpaintObject(image, mBase64, data.descriptionEn);
+
+        let finalImg: string | null = null;
+
+        if (data.action === 'cleanup' || (data.action === 'inpaint' && data.targetPolygon)) {
+          const mCanvas = document.createElement('canvas');
+          const tmpImg = new Image(); 
+          tmpImg.src = image; 
+          await new Promise(r => tmpImg.onload = r);
+          
+          mCanvas.width = tmpImg.width; 
+          mCanvas.height = tmpImg.height;
+          const mctx = mCanvas.getContext('2d')!;
+          mctx.fillStyle = 'black'; 
+          mctx.fillRect(0, 0, mCanvas.width, mCanvas.height);
+          mctx.fillStyle = 'white'; 
+          mctx.beginPath();
+          
+          if (data.targetPolygon && data.targetPolygon.length > 0) {
+            data.targetPolygon.forEach((p: any, i: number) => { 
+              if (i === 0) mctx.moveTo(p.x * mCanvas.width, p.y * mCanvas.height); 
+              else mctx.lineTo(p.x * mCanvas.width, p.y * mCanvas.height); 
+            });
+          } else {
+            // Fallback mask (center) if polygon missing
+            mctx.arc(mCanvas.width/2, mCanvas.height/2, mCanvas.width/4, 0, Math.PI*2);
+          }
+          
+          mctx.closePath(); 
+          mctx.fill();
+          
+          const mBase64 = mCanvas.toDataURL('image/png');
+          
+          if (data.action === 'cleanup') {
+            finalImg = await cleanupObject({ image, mask: mBase64 });
+          } else {
+            finalImg = await inpaintObject(image, mBase64, data.descriptionEn);
+          }
+        } else if (data.action === 'style') {
+          finalImg = await styleTransfer(image, data.descriptionEn);
+        }
         
         if (finalImg) {
           setHistory([finalImg, ...history]);
           setImage(finalImg);
+          toast({ title: '✅ Ambiente atualizado!' });
+        } else {
+          throw new Error("Falha ao gerar a imagem processada.");
         }
       }
-    } catch (e) {
-      toast({ title: '❌ Erro de processamento IA' });
+    } catch (e: any) {
+      console.error("ERRO DETALHADO IA:", e);
+      toast({ 
+        variant: "destructive",
+        title: '❌ Erro de processamento', 
+        description: 'Não foi possível completar a tarefa. Verifique as chaves de API.' 
+      });
     } finally {
       setAnalyzing(false);
     }

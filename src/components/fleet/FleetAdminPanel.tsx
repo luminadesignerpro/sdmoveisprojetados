@@ -2,7 +2,7 @@ import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { supabase as supabaseClient } from '@/integrations/supabase/client';
 const db = supabaseClient as any;
 import { useToast } from '@/hooks/use-toast';
-import { MapPin, Navigation, Route, Clock, Users, Eye, Fuel, Car, Plus, Pencil, ToggleLeft, ToggleRight, X, Save, RefreshCw } from 'lucide-react';
+import { MapPin, Navigation, Route, Clock, Users, Eye, Fuel, Car, Plus, Pencil, ToggleLeft, ToggleRight, X, Save, RefreshCw, Star } from 'lucide-react';
 import FleetMap from './FleetMap';
 import FuelAdminPanel from './FuelAdminPanel';
 
@@ -370,6 +370,24 @@ export default function FleetAdminPanel() {
 
   const filteredVehicles = showInactive ? vehicles : vehicles.filter(v => v.active);
 
+  const calculateTripScore = (tripId: string) => {
+    const pts = tripPointCounts[tripId] || 0;
+    if (pts === 0) return 0;
+    
+    // Base score 10
+    let score = 10;
+    
+    // Check speed violations (> 80km/h)
+    const tripLocs = tripLocations.filter(l => l.trip_id === tripId);
+    const speedViolations = tripLocs.filter(l => l.speed && l.speed > 22.2).length;
+    if (speedViolations > 0) score -= 1;
+    
+    // Penalize for low number of GPS points (implies tracker was off)
+    if (pts < 20) score -= 2;
+    
+    return Math.max(0, score);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -519,6 +537,10 @@ export default function FleetAdminPanel() {
                     <Clock className="w-3 h-3 inline mr-1" />
                     {calcDuration(trip.started_at, trip.ended_at)}
                   </span>
+                  <div className="flex items-center gap-1 bg-background px-2 py-1 rounded-lg border border-primary/20">
+                    <Star className={`w-3 h-3 ${calculateTripScore(trip.id) >= 7 ? 'text-amber-500 fill-amber-500' : 'text-red-500 fill-red-500'}`} />
+                    <span className="text-xs font-black">{calculateTripScore(trip.id).toFixed(1)}</span>
+                  </div>
                   <Eye className="w-4 h-4 text-primary" />
                 </div>
               </div>
