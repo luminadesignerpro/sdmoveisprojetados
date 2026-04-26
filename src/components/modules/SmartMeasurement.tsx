@@ -175,7 +175,7 @@ const SmartMeasurement: React.FC = () => {
              <ScanLine className="w-8 h-8 text-black" />
           </div>
           <div>
-            <h1 className="text-3xl font-black italic tracking-tighter text-white">SD VISION <span className="text-amber-500 font-normal">ENGINEERING V10</span></h1>
+            <h1 className="text-3xl font-black italic tracking-tighter text-white">SD VISION <span className="text-amber-500 font-normal">ENGINEERING V11</span></h1>
             <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.4em]">Advanced Creative Surveyor Engine</p>
           </div>
         </div>

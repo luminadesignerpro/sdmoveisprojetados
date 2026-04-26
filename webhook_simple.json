@@ -1,0 +1,7 @@
+{
+  "webhook": {
+    "enabled": true,
+    "url": "https://nglwscakhhdhelhbqkyb.supabase.co/functions/v1/whatsapp-webhook",
+    "events": ["MESSAGES_UPSERT", "MESSAGES_UPDATE", "SEND_MESSAGE"]
+  }
+}
