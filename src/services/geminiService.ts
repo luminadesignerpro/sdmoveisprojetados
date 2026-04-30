@@ -51,17 +51,26 @@ export async function analyzeImageWithGemini(base64Image: string, prompt: string
 
     // Tentar via Edge Function primeiro
     try {
-      const { data, error } = await supabase.functions.invoke("gemini-vision", {
+      const { data, error: edgeError } = await supabase.functions.invoke("gemini-vision", {
         body: { images, prompt },
       });
 
-      if (!error && data?.result) {
+      if (edgeError) {
+        console.warn("Edge Function gemini-vision retornou erro:", edgeError);
+        // Se for um erro do Supabase (ex: 404, 500), tentamos o fallback mas registramos o erro
+      } else if (data?.error) {
+        console.error("Erro dentro da Edge Function:", data.error);
+        throw new Error(`Erro no servidor (Supabase): ${data.error}`);
+      } else if (data?.result) {
         return data.result;
       }
       
-      console.warn("Edge Function gemini-vision falhou ou não retornou resultado. Tentando fallback direto para Groq...");
-    } catch (edgeError) {
-      console.warn("Erro ao chamar Edge Function:", edgeError);
+      console.warn("Edge Function gemini-vision não retornou resultado. Tentando fallback direto para Groq...");
+    } catch (err: any) {
+      console.warn("Falha ao chamar Edge Function:", err);
+      if (err.message && err.message.includes("servidor (Supabase)")) {
+        throw err; // Repassa o erro específico do servidor
+      }
     }
 
     // Fallback Direto para Groq (Client-side)
