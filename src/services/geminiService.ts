@@ -95,22 +95,29 @@ export async function analyzeImageWithGemini(base64Image: string, prompt: string
             content: content,
           },
         ],
-        temperature: 0.5,
+        temperature: 0.1,
         max_tokens: 1024,
       }),
     });
 
     if (!response.ok) {
       const errText = await response.text();
-      throw new Error(`Groq Vision API error: ${response.status} - ${errText}`);
+      let errorMessage = `Groq Vision API error: ${response.status}`;
+      try {
+        const errJson = JSON.parse(errText);
+        if (errJson.error?.message) errorMessage += ` - ${errJson.error.message}`;
+      } catch (e) {
+        errorMessage += ` - ${errText}`;
+      }
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();
     return data.choices?.[0]?.message?.content || "";
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("analyzeImageWithGroqVision error:", error);
-    throw error;
+    throw new Error(error.message || "Erro desconhecido na análise de imagem.");
   }
 }
 

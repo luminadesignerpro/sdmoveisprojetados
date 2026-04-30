@@ -162,7 +162,7 @@ const SmartMeasurement: React.FC = () => {
       toast({ 
         variant: "destructive",
         title: '❌ Erro de processamento', 
-        description: 'Não foi possível completar a tarefa. Verifique as chaves de API.' 
+        description: e.message || 'Não foi possível completar a tarefa. Verifique as chaves de API.' 
       });
     } finally {
       setAnalyzing(false);
