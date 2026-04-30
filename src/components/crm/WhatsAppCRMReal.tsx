@@ -27,6 +27,7 @@ export function WhatsAppCRMReal({ setView }: { setView?: (view: any) => void }) 
   const [qrCodeData, setQrCodeData] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [selectedConversation, setSelectedConversation] = useState<any>(null);
+  const [mobileView, setMobileView] = useState<"list" | "chat">("list");
   const [messageText, setMessageText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -200,9 +201,12 @@ export function WhatsAppCRMReal({ setView }: { setView?: (view: any) => void }) 
   };
 
   return (
-    <div className="grid grid-cols-12 gap-6 h-[calc(100vh-200px)] min-h-[600px]">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-auto lg:h-[calc(100vh-200px)] min-h-[500px] pb-20 lg:pb-0">
       {/* Sidebar - Conversas */}
-      <Card className="col-span-4 bg-white/5 border-white/10 overflow-hidden flex flex-col shadow-2xl backdrop-blur-xl">
+      <Card className={cn(
+        "col-span-1 lg:col-span-4 bg-white/5 border-white/10 overflow-hidden flex flex-col shadow-2xl backdrop-blur-xl transition-all duration-300 h-[600px] lg:h-full",
+        mobileView === "chat" && "hidden lg:flex"
+      )}>
         <div className="p-4 border-b border-white/10 flex items-center justify-between bg-gradient-to-r from-amber-500/10 to-transparent">
           <div className="flex items-center gap-2">
             <MessageCircle className="w-5 h-5 text-amber-500" />
@@ -222,6 +226,7 @@ export function WhatsAppCRMReal({ setView }: { setView?: (view: any) => void }) 
                   setSelectedConversation(conv);
                   setActiveConversation(conv.id);
                   fetchMessages(conv.id);
+                  setMobileView("chat");
                   scrollToBottom();
                 }}
                 className={cn(
@@ -260,10 +265,23 @@ export function WhatsAppCRMReal({ setView }: { setView?: (view: any) => void }) 
       </Card>
 
       {/* Main Chat Area */}
-      <Card className="col-span-8 bg-white/5 border-white/10 overflow-hidden flex flex-col shadow-2xl backdrop-blur-xl relative">
+      <Card className={cn(
+        "col-span-1 lg:col-span-8 bg-white/5 border-white/10 overflow-hidden flex flex-col shadow-2xl backdrop-blur-xl relative transition-all duration-300 h-[600px] lg:h-full",
+        mobileView === "list" && "hidden lg:flex"
+      )}>
         {/* Header de Conexão */}
         <div className="absolute top-0 left-0 right-0 z-10 p-4 border-b border-white/10 bg-black/40 backdrop-blur-md flex items-center justify-between">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 lg:gap-4">
+            {/* Mobile Back Button */}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="lg:hidden h-8 w-8 text-white/50" 
+              onClick={() => setMobileView("list")}
+            >
+              <RefreshCw className="w-4 h-4 rotate-180" />
+            </Button>
+
             <div className="flex flex-col">
               <h3 className="text-white font-bold text-sm">
                 {selectedConversation?.contact_name || selectedConversation?.phone_number || 'Chat'}

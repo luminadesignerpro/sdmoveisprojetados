@@ -9,6 +9,7 @@ import { cleanupObject, inpaintObject, styleTransfer } from '@/services/stabilit
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const db = supabase as any;
 
@@ -16,6 +17,7 @@ interface Point { x: number; y: number; }
 
 const SmartMeasurement: React.FC = () => {
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [image, setImage] = useState<string | null>(null);
   const [refImage, setRefImage] = useState<string | null>(null); // Foto do móvel novo
   const [points, setPoints] = useState<Point[]>([]);
@@ -169,29 +171,29 @@ const SmartMeasurement: React.FC = () => {
 
   return (
     <div className="p-4 sm:p-8 space-y-6 bg-[#0a0a0c] min-h-screen text-white w-full selection:bg-amber-500/30">
-      <header className="flex justify-between items-center bg-[#111114] p-8 rounded-[40px] border border-white/5 shadow-2xl">
-        <div className="flex items-center gap-6">
-          <div className="w-14 h-14 rounded-2xl bg-amber-500 flex items-center justify-center shadow-2xl shadow-amber-500/20 rotate-3">
-             <ScanLine className="w-8 h-8 text-black" />
+      <header className="flex flex-col md:flex-row justify-between items-center bg-[#111114] p-4 sm:p-8 rounded-[30px] sm:rounded-[40px] border border-white/5 shadow-2xl gap-6">
+        <div className="flex items-center gap-4 sm:gap-6">
+          <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl bg-amber-500 flex items-center justify-center shadow-2xl shadow-amber-500/20 rotate-3 shrink-0">
+             <ScanLine className="w-6 h-6 sm:w-8 sm:h-8 text-black" />
           </div>
           <div>
-            <h1 className="text-3xl font-black italic tracking-tighter text-white">SD VISION <span className="text-amber-500 font-normal">ENGINEERING V12</span></h1>
-            <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.4em]">Advanced Creative Surveyor Engine</p>
+            <h1 className="text-xl sm:text-3xl font-black italic tracking-tighter text-white">SD VISION <span className="text-amber-500 font-normal">ENGINEERING V12</span></h1>
+            <p className="text-[8px] sm:text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] sm:tracking-[0.4em]">Advanced Creative Surveyor Engine</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-           <Button onClick={() => fileInputRef.current?.click()} className="bg-white/5 border border-white/10 h-16 px-8 rounded-3xl font-black hover:bg-white/10 transition-all">
-             <Camera className="w-5 h-5 mr-3 text-amber-500" /> NOVO AMBIENTE
+        <div className="flex items-center gap-2 sm:gap-4 w-full md:w-auto">
+           <Button onClick={() => fileInputRef.current?.click()} className="flex-1 md:flex-none bg-white/5 border border-white/10 h-12 sm:h-16 px-4 sm:px-8 rounded-2xl sm:rounded-3xl font-black hover:bg-white/10 transition-all text-xs sm:text-base">
+             <Camera className="w-4 h-4 sm:w-5 sm:h-5 mr-2 sm:mr-3 text-amber-500" /> NOVO
            </Button>
-           <Button onClick={executeIA} disabled={analyzing} className="bg-amber-500 hover:bg-amber-300 text-black font-black h-16 px-12 rounded-3xl shadow-2xl shadow-amber-500/30 transition-all active:scale-95 text-lg">
-             {analyzing ? <Sparkles className="animate-spin w-6 h-6" /> : "PROJETAR AGORA"}
+           <Button onClick={executeIA} disabled={analyzing} className="flex-1 md:flex-none bg-amber-500 hover:bg-amber-300 text-black font-black h-12 sm:h-16 px-6 sm:px-12 rounded-2xl sm:rounded-3xl shadow-2xl shadow-amber-500/30 transition-all active:scale-95 text-xs sm:text-lg">
+             {analyzing ? <Sparkles className="animate-spin w-5 h-5 sm:w-6 sm:h-6" /> : "PROJETAR"}
            </Button>
         </div>
       </header>
 
-      <div className="grid grid-cols-12 gap-8 h-[calc(100vh-250px)]">
-        <Card className="col-span-9 bg-[#0b0b0d] border-white/5 rounded-[50px] overflow-hidden relative shadow-inner flex items-center justify-center border-t border-l border-white/10">
+      <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6 lg:gap-8 h-auto lg:h-[calc(100vh-250px)]">
+        <Card className="lg:col-span-9 bg-[#0b0b0d] border-white/5 rounded-[30px] lg:rounded-[50px] overflow-hidden relative shadow-inner flex items-center justify-center border-t border-l border-white/10 min-h-[400px] lg:h-full">
           {image ? (
              <div className="relative w-full h-full flex items-center justify-center p-8">
                <canvas ref={canvasRef} className="max-w-full max-h-full object-contain pointer-events-none drop-shadow-2xl" />
@@ -216,29 +218,31 @@ const SmartMeasurement: React.FC = () => {
                  </div>
                )}
 
-               <div className="flex gap-4 p-4 bg-black/80 backdrop-blur-3xl rounded-[35px] border border-white/10 shadow-[0_30px_60px_rgba(0,0,0,0.6)]">
+               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 p-3 sm:p-4 bg-black/80 backdrop-blur-3xl rounded-[25px] sm:rounded-[35px] border border-white/10 shadow-[0_30px_60px_rgba(0,0,0,0.6)]">
                   <div className="flex-1 relative">
-                    <Wand2 className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-amber-500" />
+                    <Wand2 className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 w-5 h-5 sm:w-6 sm:h-6 text-amber-500" />
                     <Input 
-                      placeholder="Ex: 'Qual a largura do sofá?', 'Troque o sofá por esse da foto', 'Tire esse ar'..."
+                      placeholder="Qual a largura?"
                       value={iaCommand}
                       onChange={e => setIaCommand(e.target.value)}
                       onKeyDown={e => e.key === 'Enter' && executeIA()}
-                      className="bg-transparent border-none text-lg h-16 pl-16 focus-visible:ring-0 placeholder:text-white/20 font-medium"
+                      className="bg-transparent border-none text-sm sm:text-lg h-12 sm:h-16 pl-12 sm:pl-16 focus-visible:ring-0 placeholder:text-white/20 font-medium"
                     />
                   </div>
-                  <Button onClick={() => refFileInputRef.current?.click()} className={`h-16 px-6 rounded-3xl transition-all ${refImage ? 'bg-amber-500 text-black' : 'bg-white/5 text-gray-500 hover:text-white'}`}>
-                    <ImageIcon className="w-6 h-6 mr-1" /> {refImage ? 'MUDAR REF.' : 'USAR FOTO REF.'}
-                  </Button>
-                  <Button onClick={executeIA} disabled={analyzing} className="bg-white text-black h-16 px-10 rounded-3xl font-black text-lg hover:bg-amber-500 transition-colors">
-                    PERGUNTAR
-                  </Button>
+                  <div className="flex gap-2 w-full sm:w-auto">
+                    <Button onClick={() => refFileInputRef.current?.click()} className={`flex-1 sm:flex-none h-12 sm:h-16 px-4 sm:px-6 rounded-xl sm:rounded-3xl transition-all text-[10px] sm:text-xs ${refImage ? 'bg-amber-500 text-black' : 'bg-white/5 text-gray-500 hover:text-white'}`}>
+                      <ImageIcon className="w-5 h-5 sm:w-6 sm:h-6 sm:mr-1" /> {refImage ? (isMobile ? 'REF.' : 'MUDAR REF.') : (isMobile ? 'REF.' : 'USAR FOTO REF.')}
+                    </Button>
+                    <Button onClick={executeIA} disabled={analyzing} className="flex-1 sm:flex-none bg-white text-black h-12 sm:h-16 px-6 sm:px-10 rounded-xl sm:rounded-3xl font-black text-xs sm:text-lg hover:bg-amber-500 transition-colors">
+                      OK
+                    </Button>
+                  </div>
                </div>
             </div>
           )}
         </Card>
 
-        <div className="col-span-3 space-y-6 overflow-y-auto pr-2">
+        <div className="lg:col-span-3 space-y-6 overflow-y-auto lg:pr-2">
            {result && (
              <Card className="bg-amber-500 rounded-[40px] p-8 space-y-4 shadow-2xl animate-in zoom-in-95 duration-500">
                 <div className="flex items-center gap-2">

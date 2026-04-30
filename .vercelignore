@@ -15,3 +15,4 @@ android/
 replay_pid*.log
 hs_err_pid*.log
 build_log_main_app_apk.txt
+*.apk

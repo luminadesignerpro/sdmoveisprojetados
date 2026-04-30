@@ -1,5 +1,6 @@
-// Build: 2026-04-25 — Unificado para Groq & Railway via Edge Functions
 import { supabase } from "@/integrations/supabase/client";
+
+const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
 
 export interface RenderParams {
   room: string;
@@ -46,23 +47,67 @@ export async function generateRealisticRender(params: RenderParams): Promise<str
  */
 export async function analyzeImageWithGemini(base64Image: string, prompt: string): Promise<string> {
   try {
-    // Divide múltiplas imagens separadas por '|'
     const images = base64Image.split('|');
 
-    const { data, error } = await supabase.functions.invoke("gemini-vision", {
-      body: { images, prompt },
+    // Tentar via Edge Function primeiro
+    try {
+      const { data, error } = await supabase.functions.invoke("gemini-vision", {
+        body: { images, prompt },
+      });
+
+      if (!error && data?.result) {
+        return data.result;
+      }
+      
+      console.warn("Edge Function gemini-vision falhou ou não retornou resultado. Tentando fallback direto para Groq...");
+    } catch (edgeError) {
+      console.warn("Erro ao chamar Edge Function:", edgeError);
+    }
+
+    // Fallback Direto para Groq (Client-side)
+    if (!GROQ_API_KEY) {
+      throw new Error("Chave de API Groq não configurada e Edge Function indisponível.");
+    }
+
+    const content: any[] = [{ type: "text", text: prompt }];
+
+    for (const img of images) {
+      const cleanBase64 = img.startsWith("data:") ? img : `data:image/jpeg;base64,${img}`;
+      content.push({
+        type: "image_url",
+        image_url: {
+          url: cleanBase64,
+        },
+      });
+    }
+
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${GROQ_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "llama-3.2-11b-vision-preview",
+        messages: [
+          {
+            role: "user",
+            content: content,
+          },
+        ],
+        temperature: 0.5,
+        max_tokens: 1024,
+      }),
     });
 
-    if (error) {
-      console.error("Erro na Edge Function ai-vision (gemini-vision):", error);
-      throw new Error(error.message || "Falha na comunicação com o servidor de IA.");
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`Groq Vision API error: ${response.status} - ${errText}`);
     }
 
-    if (data?.error) {
-      throw new Error(data.error);
-    }
+    const data = await response.json();
+    return data.choices?.[0]?.message?.content || "";
 
-    return data?.result || "";
   } catch (error) {
     console.error("analyzeImageWithGroqVision error:", error);
     throw error;

@@ -50,7 +50,7 @@ export default function FpqOrders() {
   }, []);
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-black tracking-tighter text-white">FPQ SYSTEM</h1>
@@ -101,46 +101,48 @@ export default function FpqOrders() {
         </Card>
       </div>
 
-      <Card className="bg-black/40 border-white/10 backdrop-blur-md">
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader className="bg-white/5">
-              <TableRow className="border-white/10 hover:bg-transparent">
-                <TableHead className="text-amber-500 font-bold">Nº Ordem</TableHead>
-                <TableHead className="text-white">Cliente</TableHead>
-                <TableHead className="text-white">Data</TableHead>
-                <TableHead className="text-white">Valor</TableHead>
-                <TableHead className="text-white">Situação</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {orders.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-10 text-gray-500 italic">
-                    Nenhum pedido sincronizado ainda. Ligue o Agente no PC Local.
-                  </TableCell>
+      <Card className="bg-black/40 border-white/10 backdrop-blur-md overflow-hidden">
+        <CardContent className="p-0 overflow-x-auto">
+          <div className="min-w-[600px]">
+            <Table>
+              <TableHeader className="bg-white/5">
+                <TableRow className="border-white/10 hover:bg-transparent">
+                  <TableHead className="text-amber-500 font-bold">Nº Ordem</TableHead>
+                  <TableHead className="text-white">Cliente</TableHead>
+                  <TableHead className="text-white">Data</TableHead>
+                  <TableHead className="text-white">Valor</TableHead>
+                  <TableHead className="text-white">Situação</TableHead>
                 </TableRow>
-              ) : (
-                orders.map((order) => (
-                  <TableRow key={order.id} className="border-white/5 hover:bg-white/5 transition-all">
-                    <TableCell className="font-bold text-amber-500">#{order.order_number}</TableCell>
-                    <TableCell className="text-white font-medium uppercase">{order.client_name}</TableCell>
-                    <TableCell className="text-gray-400">
-                      {new Date(order.order_date).toLocaleDateString('pt-BR')}
-                    </TableCell>
-                    <TableCell className="text-white font-black">
-                      R$ {Number(order.total_amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </TableCell>
-                    <TableCell>
-                      <Badge className="bg-amber-500/20 text-amber-500 border-none">
-                        {order.status || 'Pendente'}
-                      </Badge>
+              </TableHeader>
+              <TableBody>
+                {orders.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-10 text-gray-500 italic">
+                      Nenhum pedido sincronizado ainda. Ligue o Agente no PC Local.
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  orders.map((order) => (
+                    <TableRow key={order.id} className="border-white/5 hover:bg-white/5 transition-all">
+                      <TableCell className="font-bold text-amber-500">#{order.order_number}</TableCell>
+                      <TableCell className="text-white font-medium uppercase">{order.client_name}</TableCell>
+                      <TableCell className="text-gray-400">
+                        {new Date(order.order_date).toLocaleDateString('pt-BR')}
+                      </TableCell>
+                      <TableCell className="text-white font-black">
+                        R$ {Number(order.total_amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </TableCell>
+                      <TableCell>
+                        <Badge className="bg-amber-500/20 text-amber-500 border-none">
+                          {order.status || 'Pendente'}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>
