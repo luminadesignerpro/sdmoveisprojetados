@@ -201,10 +201,10 @@ export function WhatsAppCRMReal({ setView }: { setView?: (view: any) => void }) 
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-auto lg:h-[calc(100vh-200px)] min-h-[500px] pb-20 lg:pb-0">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 h-full lg:h-[calc(100vh-220px)] min-h-[500px] pb-4 lg:pb-0">
       {/* Sidebar - Conversas */}
       <Card className={cn(
-        "col-span-1 lg:col-span-4 bg-white/5 border-white/10 overflow-hidden flex flex-col shadow-2xl backdrop-blur-xl transition-all duration-300 h-[600px] lg:h-full",
+        "col-span-1 lg:col-span-4 bg-white/5 border-white/10 overflow-hidden flex flex-col shadow-2xl backdrop-blur-xl transition-all duration-300 h-[70vh] lg:h-full",
         mobileView === "chat" && "hidden lg:flex"
       )}>
         <div className="p-4 border-b border-white/10 flex items-center justify-between bg-gradient-to-r from-amber-500/10 to-transparent">
@@ -266,7 +266,7 @@ export function WhatsAppCRMReal({ setView }: { setView?: (view: any) => void }) 
 
       {/* Main Chat Area */}
       <Card className={cn(
-        "col-span-1 lg:col-span-8 bg-white/5 border-white/10 overflow-hidden flex flex-col shadow-2xl backdrop-blur-xl relative transition-all duration-300 h-[600px] lg:h-full",
+        "col-span-1 lg:col-span-8 bg-white/5 border-white/10 overflow-hidden flex flex-col shadow-2xl backdrop-blur-xl relative transition-all duration-300 h-[70vh] lg:h-full",
         mobileView === "list" && "hidden lg:flex"
       )}>
         {/* Header de Conexão */}

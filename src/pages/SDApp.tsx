@@ -438,16 +438,17 @@ const App: React.FC = () => {
       {(authState === 'ADMIN' || authState === 'CLIENT' || authState === 'EMPLOYEE') && (
         <aside
           className={isCompactLayout
-            ? 'order-2 w-full h-auto min-h-[4rem] flex items-center gap-0 overflow-x-auto overflow-y-hidden relative z-10 backdrop-blur-xl border-t border-sidebar-border/30 flex-nowrap'
+            ? 'order-2 w-full h-auto min-h-[4.5rem] flex items-center gap-0 overflow-x-auto overflow-y-hidden relative z-10 backdrop-blur-xl border-t border-sidebar-border/30 flex-nowrap'
             : 'order-none w-24 h-auto flex flex-col items-center py-4 gap-2 min-h-0 overflow-hidden relative z-10 backdrop-blur-xl border-r border-sidebar-border/30'
           }
           style={{
-            background: 'linear-gradient(180deg, hsl(var(--sidebar-background) / 0.92) 0%, hsl(var(--sidebar-background) / 0.98) 100%)',
-            boxShadow: '4px 0 30px hsl(var(--primary) / 0.08), inset -1px 0 0 hsl(var(--primary) / 0.06)',
+            background: 'linear-gradient(180deg, hsl(var(--sidebar-background) / 0.95) 0%, hsl(var(--sidebar-background) / 0.98) 100%)',
+            boxShadow: '0 -4px 30px rgba(0,0,0,0.3)',
             ...(isCompactLayout
               ? {
                 WebkitOverflowScrolling: 'touch',
-                paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8px)',
+                paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 4px)',
+                paddingTop: '4px',
               }
               : {}),
           }}
@@ -461,7 +462,7 @@ const App: React.FC = () => {
 
           <nav
             className={isCompactLayout
-              ? 'flex-1 flex items-center justify-start gap-0 px-1 w-full min-w-0 overflow-x-auto overflow-y-hidden flex-nowrap scrollbar-hide touch-pan-x'
+              ? 'flex-1 flex items-center justify-start gap-1 px-2 w-full min-w-0 overflow-x-auto overflow-y-hidden flex-nowrap scrollbar-hide touch-pan-x'
               : 'flex-1 flex flex-col items-center justify-start gap-2 mt-6 px-0 w-full min-w-0 overflow-x-hidden overflow-y-auto'
             }
             style={isCompactLayout
@@ -471,6 +472,8 @@ const App: React.FC = () => {
                 msOverflowStyle: 'none',
                 touchAction: 'pan-x',
                 overscrollBehaviorX: 'contain',
+                paddingLeft: '12px',
+                paddingRight: '12px',
               }
               : undefined
             }
@@ -905,15 +908,15 @@ const App: React.FC = () => {
                 </h1>
                 <p className="text-white/40 mt-1 font-bold uppercase text-[10px] tracking-widest">Gerencie suas conversas e leads com IA</p>
               </header>
-              <Tabs defaultValue="crm" className="w-full">
-                <TabsList className="mb-4">
-                  <TabsTrigger value="crm" className="gap-2">
+              <Tabs defaultValue="crm" className="w-full flex flex-col h-full">
+                <TabsList className="mb-4 w-full flex justify-start sm:justify-center overflow-x-auto overflow-y-hidden scrollbar-hide py-1">
+                  <TabsTrigger value="crm" className="gap-2 flex-shrink-0">
                     <MessageCircle className="w-4 h-4" />
-                    Conversas
+                    <span className="text-xs sm:text-sm">Conversas</span>
                   </TabsTrigger>
-                  <TabsTrigger value="flow" className="gap-2">
+                  <TabsTrigger value="flow" className="gap-2 flex-shrink-0">
                     <GitBranch className="w-4 h-4" />
-                    Fluxo de Atendimento
+                    <span className="text-xs sm:text-sm">Fluxo de Atendimento</span>
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value="crm">

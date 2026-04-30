@@ -73,7 +73,7 @@ export const NavIcon: React.FC<NavIconProps> = ({ icon, label, active, onClick, 
     >
       <div
         className={cn(
-          "w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-300 ease-out",
+          "w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-2xl flex items-center justify-center transition-all duration-300 ease-out",
           active
             ? "bg-primary text-primary-foreground shadow-glow"
             : "bg-sidebar-accent/40 backdrop-blur-sm border border-sidebar-border/30 group-hover:bg-sidebar-accent/70 group-hover:border-primary/30 group-hover:shadow-[0_0_15px_hsl(var(--primary)/0.2)]"
@@ -85,7 +85,7 @@ export const NavIcon: React.FC<NavIconProps> = ({ icon, label, active, onClick, 
       >
         <IconComponent
           className={cn(
-            "w-4 h-4 sm:w-5 sm:h-5 transition-all duration-300 ease-out",
+            "w-3.5 h-3.5 sm:w-5 sm:h-5 transition-all duration-300 ease-out",
             "group-hover:scale-110",
             active && "drop-shadow-[0_0_6px_hsl(var(--primary-foreground)/0.5)]"
           )}
@@ -95,7 +95,7 @@ export const NavIcon: React.FC<NavIconProps> = ({ icon, label, active, onClick, 
         />
       </div>
       <span className={cn(
-        "text-[8px] sm:text-[9px] font-bold uppercase tracking-wider transition-all duration-300",
+        "text-[7px] sm:text-[9px] font-bold uppercase tracking-tighter sm:tracking-wider transition-all duration-300 text-center leading-[1.1] max-w-[60px] sm:max-w-none break-words line-clamp-2",
         active ? "text-primary" : "text-sidebar-foreground/75 group-hover:text-sidebar-foreground"
       )}>
         {label}
