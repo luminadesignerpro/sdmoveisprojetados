@@ -10,15 +10,12 @@ export interface StabilityCleanupParams {
  */
 async function callStabilityEdgeFunction(task: string, params: any): Promise<string | null> {
   const SUPABASE_URL = "https://nglwscakhhdhelhbqkyb.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5nbHdzY2FiaGhkaGVsaGJxa3liIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1NDYzNjgsImV4cCI6MjA4NzEyMjM2OH0.MidIwMPLT17szfNnG9VRTnisoPzDAFnEw7IVLpqJj6A";
 
   try {
     const response = await fetch(`${SUPABASE_URL}/functions/v1/stability-ai`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-        "apikey": SUPABASE_ANON_KEY,
       },
       body: JSON.stringify({
         task,
