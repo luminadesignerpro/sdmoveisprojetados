@@ -14,6 +14,16 @@ const corsHeaders = (origin: string | null) => ({
   "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
 });
 
+// Helper: base64 DataURL -> Blob
+const base64ToBlob = (base64: string, type: string) => {
+  const data = base64.includes(',') ? base64.split(',')[1] : base64;
+  const byteString = atob(data);
+  const ab = new ArrayBuffer(byteString.length);
+  const ia = new Uint8Array(ab);
+  for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+  return new Blob([ab], { type });
+};
+
 serve(async (req) => {
   const origin = req.headers.get("origin");
   if (req.method === "OPTIONS") {
@@ -22,46 +32,34 @@ serve(async (req) => {
 
   try {
     const stabilityKey = Deno.env.get("STABILITY_API_KEY");
-    if (!stabilityKey) throw new Error("STABILITY_API_KEY is not configured in Supabase");
+    if (!stabilityKey) throw new Error("STABILITY_API_KEY nao configurada no Supabase.");
 
     const { task, image, mask, prompt } = await req.json();
+    if (!task || !image) throw new Error("task e image sao obrigatorios.");
 
-    if (!task || !image) {
-      throw new Error("Task and Image are required");
-    }
-
-    const formData = new FormData();
-    
-    // Helper to convert base64 to Blob in Deno
-    const base64ToBlob = (base64: string, type: string) => {
-      const byteString = atob(base64.split(',')[1]);
-      const ab = new ArrayBuffer(byteString.length);
-      const ia = new Uint8Array(ab);
-      for (let i = 0; i < byteString.length; i++) {
-        ia[i] = byteString.charCodeAt(i);
-      }
-      return new Blob([ab], { type });
-    };
+    console.log(`[stability-ai] task=${task}, prompt="${prompt?.slice(0, 60)}"`);
 
     const imageBlob = base64ToBlob(image, 'image/jpeg');
-    formData.append('image_file', imageBlob);
+    const maskBlob = mask ? base64ToBlob(mask, 'image/png') : null;
 
-    if (mask) {
-      const maskBlob = base64ToBlob(mask, 'image/png');
-      formData.append('mask_file', maskBlob);
-    }
-
-    if (prompt) {
-      formData.append('prompt', prompt);
-    }
-
+    const formData = new FormData();
     let endpoint = "";
-    switch (task) {
-      case "cleanup": endpoint = "https://clipdrop-api.co/cleanup/v1"; break;
-      case "relight": endpoint = "https://clipdrop-api.co/relight/v1"; break;
-      case "inpaint": endpoint = "https://clipdrop-api.co/text-to-inpainting/v1"; break;
-      case "style": endpoint = "https://clipdrop-api.co/reimagine/v1"; break;
-      default: throw new Error("Invalid task: " + task);
+
+    if (task === "cleanup") {
+      endpoint = "https://clipdrop-api.co/cleanup/v1";
+      formData.append('image_file', imageBlob, 'image.jpg');
+      if (maskBlob) formData.append('mask_file', maskBlob, 'mask.png');
+    } else if (task === "relight") {
+      endpoint = "https://clipdrop-api.co/relight/v1";
+      formData.append('image_file', imageBlob, 'image.jpg');
+      if (prompt) formData.append('prompt', prompt);
+    } else if (task === "inpaint" || task === "style") {
+      // replace-background: mantém móveis (foreground) e troca paredes/piso (background)
+      endpoint = "https://clipdrop-api.co/replace-background/v1";
+      formData.append('image_file', imageBlob, 'image.jpg');
+      formData.append('background_prompt', prompt || "same room interior with freshly painted walls");
+    } else {
+      throw new Error("Task invalida: " + task);
     }
 
     const response = await fetch(endpoint, {
@@ -72,23 +70,19 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error(`Stability API Error (${task}):`, response.status, errText);
-      throw new Error(`Stability API returned ${response.status}: ${errText}`);
+      console.error(`ClipDrop API Error [${task}] ${response.status}:`, errText);
+      throw new Error(`ClipDrop API ${response.status}: ${errText}`);
     }
 
     const buffer = await response.arrayBuffer();
-    
     return new Response(buffer, {
-      headers: {
-        ...corsHeaders(origin),
-        "Content-Type": "image/jpeg",
-      },
+      headers: { ...corsHeaders(origin), "Content-Type": "image/jpeg" },
     });
 
   } catch (error) {
     console.error("stability-ai error:", error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      JSON.stringify({ error: error instanceof Error ? error.message : "Erro desconhecido" }),
       { status: 500, headers: { ...corsHeaders(origin), "Content-Type": "application/json" } }
     );
   }
