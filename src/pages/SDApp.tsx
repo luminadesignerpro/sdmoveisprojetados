@@ -1584,7 +1584,7 @@ const App: React.FC = () => {
               </div>
               <div>
                 <p className="text-white font-medium text-sm">SD Móveis Projetados</p>
-                <p className="text-gray-500 text-xs">Sistema PRO AI v2.0</p>
+                <p className="text-gray-500 text-xs">Sistema PRO AI v5.3</p>
               </div>
             </div>
           </div>

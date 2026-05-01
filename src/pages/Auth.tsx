@@ -152,7 +152,7 @@ export default function Auth() {
               <img src={logoSD} alt="SD Móveis" className="w-full h-full object-cover" />
             </div>
             <h1 className="text-3xl font-bold text-gradient-gold">SD Móveis</h1>
-            <p className="text-sm text-muted-foreground mt-1">Sistema PRO AI</p>
+            <p className="text-sm text-muted-foreground mt-1">Sistema PRO AI v5.3</p>
           </div>
 
           {/* Form */}
