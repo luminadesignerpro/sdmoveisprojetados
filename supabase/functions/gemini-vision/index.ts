@@ -1,14 +1,23 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+const ALLOWED_ORIGINS = [
+  "https://sdmoveisprojetados-zeta.vercel.app",
+  "https://sdmoveisprojetados.vercel.app",
+  "http://localhost:5173"
+];
+
+const corsHeaders = (origin: string | null) => ({
+  "Access-Control-Allow-Origin": ALLOWED_ORIGINS.includes(origin || "") ? origin! : ALLOWED_ORIGINS[0],
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+  "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+});
 
 serve(async (req) => {
+  const origin = req.headers.get("origin");
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders(origin) });
   }
 
   try {
@@ -18,6 +27,7 @@ serve(async (req) => {
     }
 
     const { images, prompt } = await req.json();
+    console.log(`[GEMINI-VISION] Recebido: ${images?.length || 0} imagens, prompt: "${prompt?.slice(0, 50)}..."`);
 
     if (!images || images.length === 0 || !prompt) {
       throw new Error("Parâmetros inválidos: imagens e prompt são obrigatórios.");
@@ -65,13 +75,13 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({ result: text }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders(origin), "Content-Type": "application/json" } }
     );
   } catch (error) {
     console.error("gemini-vision error:", error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : "Erro desconhecido" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...corsHeaders(origin), "Content-Type": "application/json" } }
     );
   }
 });

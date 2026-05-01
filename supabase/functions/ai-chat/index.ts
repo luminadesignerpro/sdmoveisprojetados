@@ -1,15 +1,24 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.8";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+const ALLOWED_ORIGINS = [
+  "https://sdmoveisprojetados-zeta.vercel.app",
+  "https://sdmoveisprojetados.vercel.app",
+  "http://localhost:5173"
+];
+
+const corsHeaders = (origin: string | null) => ({
+  "Access-Control-Allow-Origin": ALLOWED_ORIGINS.includes(origin || "") ? origin! : ALLOWED_ORIGINS[0],
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+  "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+});
 
 serve(async (req) => {
+  const origin = req.headers.get("origin");
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders(origin) });
   }
 
   try {
@@ -87,13 +96,13 @@ Ação de Venda: Pergunte se deseja gerar o contrato em PDF agora.`;
     const resultText = data.choices?.[0]?.message?.content || "";
 
     return new Response(JSON.stringify({ result: resultText }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...corsHeaders(origin), "Content-Type": "application/json" },
     });
   } catch (error) {
     console.error("ai-chat error:", error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...corsHeaders(origin), "Content-Type": "application/json" } }
     );
   }
 });

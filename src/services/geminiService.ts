@@ -47,7 +47,18 @@ export async function generateRealisticRender(params: RenderParams): Promise<str
  */
 export async function analyzeImageWithGemini(base64Image: string, prompt: string): Promise<string> {
   try {
-    const images = base64Image.split('|');
+    const images = await Promise.all(base64Image.split('|').map(async (img) => {
+      if (img.startsWith('blob:')) {
+        const response = await fetch(img);
+        const blob = await response.blob();
+        return new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        });
+      }
+      return img;
+    }));
 
     // Tentar via Edge Function primeiro
     try {
@@ -82,17 +93,6 @@ export async function analyzeImageWithGemini(base64Image: string, prompt: string
 
     for (const img of images) {
       let cleanBase64 = img;
-      
-      // Se for um link de blob (imagem editada anteriormente), converter para base64
-      if (img.startsWith('blob:')) {
-        const response = await fetch(img);
-        const blob = await response.blob();
-        cleanBase64 = await new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.readAsDataURL(blob);
-        });
-      }
       
       if (!cleanBase64.startsWith("data:")) {
         cleanBase64 = `data:image/jpeg;base64,${cleanBase64}`;
@@ -141,7 +141,7 @@ export async function analyzeImageWithGemini(base64Image: string, prompt: string
     return data.choices?.[0]?.message?.content || "";
 
   } catch (error: any) {
-    console.error("analyzeImageWithGroqVision error:", error);
+    console.error("analyzeImageWithGemini error:", error);
     throw new Error(error.message || "Erro desconhecido na análise de imagem.");
   }
 }

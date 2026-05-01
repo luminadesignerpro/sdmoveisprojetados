@@ -65,7 +65,7 @@ const SmartMeasurement: React.FC = () => {
 
     setAnalyzing(true);
     try {
-      const prompt = `[SISTEMA PROJETISTA SD V10] 
+      const prompt = `[SISTEMA PROJETISTA SD VISION ENGINEERING V12] 
       Usuário quer: "${iaCommand}". 
       ${refImage ? "Existe uma imagem de REFERÊNCIA de um móvel para ser usado como base." : ""}
       
@@ -75,17 +75,18 @@ const SmartMeasurement: React.FC = () => {
       - cleanup: Se for para remover algo do ambiente.
       - style: Se for para trocar o estilo, cores ou revestimentos de uma área.
       
-      REGRAS:
-      - Para medição, use a folha A4 no chão como escala 297mm.
+      REGRAS CRÍTICAS:
+      - Responda o campo "reasoning" sempre em PORTUGUÊS.
+      - Para medição, procure a folha A4 no chão como escala (297mm). 
+      - SE NÃO HOUVER A4, use proporções arquitetônicas padrão (ex: cama tem ~60cm altura, pé direito ~2.7m, porta ~2.1m) para ESTIMAR a medida. NUNCA diga que não pode medir; forneça sempre uma estimativa técnica aproximada.
       - Se o usuário quer TROCAR ou MUDAR um objeto, use action 'inpaint'.
       - Se o usuário quer REMOVER ou TIRAR sem colocar nada no lugar, use action 'cleanup'.
-      - Se houver refImage e o comando for de troca, use action 'inpaint'.
       
       RETORNE APENAS JSON:
       {
         "action": "measure" | "cleanup" | "inpaint" | "style",
-        "measureResult": "string com a medida encontrada ou null",
-        "reasoning": "Breve explicação técnica do seu cálculo ou ação",
+        "measureResult": "valor estimado (ex: 2.50m) ou null",
+        "reasoning": "Explicação técnica EM PORTUGUÊS do seu cálculo (ex: 'Estimado com base na proporção da cama...')",
         "descriptionEn": "Detailed descriptive prompt in English for the AI image engine",
         "targetPolygon": [{"x":float, "y":float}, ...] // Normalized coordinates (0-1) of the target object/area
       }`;
@@ -148,7 +149,12 @@ const SmartMeasurement: React.FC = () => {
             finalImg = await inpaintObject(image, mBase64, data.descriptionEn);
           }
         } else if (data.action === 'style') {
-          finalImg = await styleTransfer(image, data.descriptionEn);
+          // Usamos Inpaint para estilo também, pois é mais preciso para mudanças arquitetônicas (pintura/materiais)
+          // e evita o erro 404 do endpoint Reimagine.
+          finalImg = await inpaintObject(image, mBase64, data.descriptionEn);
+        } else {
+          // Se for pintura ou troca de material, usamos Inpaint (mais preciso)
+          finalImg = await inpaintObject(image, mBase64, data.descriptionEn);
         }
         
         if (finalImg) {
