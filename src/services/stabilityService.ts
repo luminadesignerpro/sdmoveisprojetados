@@ -9,32 +9,34 @@ export interface StabilityCleanupParams {
  * Chama a Edge Function segura para processamento de imagem com Stability AI/ClipDrop
  */
 async function callStabilityEdgeFunction(task: string, params: any): Promise<string | null> {
+  const SUPABASE_URL = "https://nglwscakhhdhelhbqkyb.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5nbHdzY2FiaGhkaGVsaGJxa3liIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1NDYzNjgsImV4cCI6MjA4NzEyMjM2OH0.MidIwMPLT17szfNnG9VRTnisoPzDAFnEw7IVLpqJj6A";
+
   try {
-    const { data, error } = await supabase.functions.invoke("stability-ai", {
-      body: { 
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/stability-ai`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+        "apikey": SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({
         task,
         image: params.image,
         mask: params.mask,
-        prompt: params.prompt
-      }
+        prompt: params.prompt,
+      }),
     });
 
-    if (error) {
-      console.error(`Edge Function stability-ai (${task}) error:`, error);
-      throw error;
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error(`stability-ai (${task}) error ${response.status}:`, errText);
+      throw new Error(`stability-ai returned ${response.status}: ${errText}`);
     }
 
-    if (data instanceof Blob) {
-      return URL.createObjectURL(data);
-    }
-    
-    // Se o retorno for um arrayBuffer ou similar que não veio como Blob automático
-    if (data) {
-      const blob = new Blob([data], { type: 'image/jpeg' });
-      return URL.createObjectURL(blob);
-    }
-
-    return null;
+    const buffer = await response.arrayBuffer();
+    const blob = new Blob([buffer], { type: "image/jpeg" });
+    return URL.createObjectURL(blob);
   } catch (error) {
     console.error(`Failed to call stability-ai (${task}):`, error);
     return null;
