@@ -114,7 +114,7 @@ const SmartMeasurement: React.FC = () => {
 
         let finalImg: string | null = null;
 
-        if (data.action === 'cleanup' || (data.action === 'inpaint' && data.targetPolygon)) {
+        if (data.action === 'cleanup' || data.action === 'inpaint' || data.action === 'style') {
           const mCanvas = document.createElement('canvas');
           const tmpImg = new Image(); 
           tmpImg.src = image; 
@@ -145,16 +145,12 @@ const SmartMeasurement: React.FC = () => {
           
           if (data.action === 'cleanup') {
             finalImg = await cleanupObject({ image, mask: mBase64 });
-          } else {
+          } else if (data.action === 'inpaint') {
+            finalImg = await inpaintObject(image, mBase64, data.descriptionEn);
+          } else if (data.action === 'style') {
+            // Usamos Inpaint para estilo também (evita erro 404 e é mais preciso)
             finalImg = await inpaintObject(image, mBase64, data.descriptionEn);
           }
-        } else if (data.action === 'style') {
-          // Usamos Inpaint para estilo também, pois é mais preciso para mudanças arquitetônicas (pintura/materiais)
-          // e evita o erro 404 do endpoint Reimagine.
-          finalImg = await inpaintObject(image, mBase64, data.descriptionEn);
-        } else {
-          // Se for pintura ou troca de material, usamos Inpaint (mais preciso)
-          finalImg = await inpaintObject(image, mBase64, data.descriptionEn);
         }
         
         if (finalImg) {
