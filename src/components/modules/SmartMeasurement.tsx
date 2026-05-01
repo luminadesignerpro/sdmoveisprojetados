@@ -77,6 +77,8 @@ const SmartMeasurement: React.FC = () => {
       
       REGRAS:
       - Para medição, use a folha A4 no chão como escala 297mm.
+      - Se o usuário quer TROCAR ou MUDAR um objeto, use action 'inpaint'.
+      - Se o usuário quer REMOVER ou TIRAR sem colocar nada no lugar, use action 'cleanup'.
       - Se houver refImage e o comando for de troca, use action 'inpaint'.
       
       RETORNE APENAS JSON:
@@ -230,8 +232,18 @@ const SmartMeasurement: React.FC = () => {
                     />
                   </div>
                   <div className="flex gap-2 w-full sm:w-auto">
-                    <Button onClick={() => refFileInputRef.current?.click()} className={`flex-1 sm:flex-none h-12 sm:h-16 px-4 sm:px-6 rounded-xl sm:rounded-3xl transition-all text-[10px] sm:text-xs ${refImage ? 'bg-amber-500 text-black' : 'bg-white/5 text-gray-500 hover:text-white'}`}>
-                      <ImageIcon className="w-5 h-5 sm:w-6 sm:h-6 sm:mr-1" /> {refImage ? (isMobile ? 'REF.' : 'MUDAR REF.') : (isMobile ? 'REF.' : 'USAR FOTO REF.')}
+                    <Button 
+                      onClick={() => refFileInputRef.current?.click()} 
+                      variant="outline" 
+                      className={`h-12 sm:h-14 px-4 sm:px-6 rounded-2xl border-2 transition-all active:scale-95 ${
+                        refImage 
+                          ? 'border-green-500/50 bg-green-500/10 text-green-400' 
+                          : 'border-amber-500/50 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20'
+                      }`}
+                    >
+                      <ImageIcon className="w-5 h-5 sm:w-6 sm:h-6 sm:mr-1" /> 
+                      <span className="hidden sm:inline">{refImage ? 'FOTO SELECIONADA' : 'USAR FOTO REF.'}</span>
+                      <span className="sm:hidden">{refImage ? 'OK' : 'REF.'}</span>
                     </Button>
                     <Button onClick={executeIA} disabled={analyzing} className="flex-1 sm:flex-none bg-white text-black h-12 sm:h-16 px-6 sm:px-10 rounded-xl sm:rounded-3xl font-black text-xs sm:text-lg hover:bg-amber-500 transition-colors">
                       OK
@@ -254,22 +266,23 @@ const SmartMeasurement: React.FC = () => {
              </Card>
            )}
 
-           <div className="bg-[#111114] rounded-[40px] p-8 border border-white/5 space-y-6">
+            <div className="bg-[#111114] rounded-[40px] p-8 border border-white/5 space-y-6">
               <h4 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-3">
-                 <Info className="w-5 h-5 text-amber-500" /> Guia de Comandos
+                 <Sparkles className="w-5 h-5 text-amber-500" /> Super Poderes IA
               </h4>
               <div className="grid gap-4">
                  {[
-                   { t: "MEDIR", d: "Qual a medida da cama?", i: <Ruler className="w-4 h-4 text-amber-500" /> },
-                   { t: "TROCAR", d: "Troque o tapete", i: <ImageIcon className="w-4 h-4 text-amber-500" /> },
-                   { t: "REMOVER", d: "Tire o lustre", i: <Calculator className="w-4 h-4 text-amber-500" /> }
+                   { t: "TROCAR MÓVEL", d: "Use 'USAR FOTO REF.' + comando 'Troque o sofá por este'", i: <ImageIcon className="w-4 h-4 text-amber-500" /> },
+                   { t: "PINTAR PAREDE", d: "Digite 'Pinte a parede de cinza cimento queimado'", i: <Wand2 className="w-4 h-4 text-amber-500" /> },
+                   { t: "REMODELAR", d: "Digite 'Mude o estilo desta sala para Luxo Moderno'", i: <ScanLine className="w-4 h-4 text-amber-500" /> },
+                   { t: "MEDIR", d: "Perqunte 'Qual a largura desta parede?'", i: <Ruler className="w-4 h-4 text-amber-500" /> }
                  ].map((g, i) => (
-                   <div key={i} className="p-4 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/10 transition-all cursor-help">
+                   <div key={i} className="p-4 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/10 transition-all cursor-help group">
                      <div className="flex items-center gap-2 mb-1">
                         {g.i}
-                        <p className="text-[10px] font-black uppercase text-amber-500">{g.t}</p>
+                        <p className="text-[10px] font-black uppercase text-amber-500 group-hover:text-white transition-colors">{g.t}</p>
                      </div>
-                     <p className="text-[11px] text-gray-300 font-medium">{g.d}</p>
+                     <p className="text-[11px] text-gray-300 font-medium leading-relaxed">{g.d}</p>
                    </div>
                  ))}
               </div>

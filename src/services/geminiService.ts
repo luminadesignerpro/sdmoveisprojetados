@@ -81,7 +81,23 @@ export async function analyzeImageWithGemini(base64Image: string, prompt: string
     const content: any[] = [{ type: "text", text: prompt }];
 
     for (const img of images) {
-      const cleanBase64 = img.startsWith("data:") ? img : `data:image/jpeg;base64,${img}`;
+      let cleanBase64 = img;
+      
+      // Se for um link de blob (imagem editada anteriormente), converter para base64
+      if (img.startsWith('blob:')) {
+        const response = await fetch(img);
+        const blob = await response.blob();
+        cleanBase64 = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        });
+      }
+      
+      if (!cleanBase64.startsWith("data:")) {
+        cleanBase64 = `data:image/jpeg;base64,${cleanBase64}`;
+      }
+      
       content.push({
         type: "image_url",
         image_url: {
