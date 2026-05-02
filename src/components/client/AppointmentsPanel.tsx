@@ -96,19 +96,23 @@ const AppointmentsPanel: React.FC<AppointmentsPanelProps> = ({ clientId, clientN
     };
 
     const handleSubmit = async () => {
-        if (!title.trim() || !preferredDate) {
-            toast({ title: '⚠️ Preencha os campos', description: 'Título e data são obrigatórios', variant: 'destructive' });
+        if (!preferredDate) {
+            toast({ title: '⚠️ Selecione uma data', description: 'A data do agendamento é obrigatória', variant: 'destructive' });
             return;
         }
 
         setSubmitting(true);
         const dateStr = format(preferredDate, 'yyyy-MM-dd');
 
+        // Auto-preenche o título se estiver vazio
+        const typeLabel = APPOINTMENT_TYPES.find(t => t.value === type)?.label || type;
+        const autoTitle = title.trim() || `${typeLabel}${clientNameInput.trim() ? ' - ' + clientNameInput.trim() : ''}`;
+
         const payload = {
             client_id: clientId || null,
             project_id: projectId || null,
             type,
-            title: title.trim(),
+            title: autoTitle,
             description: description.trim() || null,
             preferred_date: dateStr,
             preferred_time: preferredTime,
@@ -123,7 +127,8 @@ const AppointmentsPanel: React.FC<AppointmentsPanelProps> = ({ clientId, clientN
             : await supabase.from('appointments').insert(payload);
 
         if (error) {
-            toast({ title: '❌ Erro ao salvar', description: error.message, variant: 'destructive' });
+            console.error('Erro ao salvar agendamento:', error);
+            toast({ title: '❌ Erro ao salvar', description: error.message || 'Verifique os campos e tente novamente', variant: 'destructive' });
         } else {
             toast({ title: `✅ Agendamento ${editingApt ? 'atualizado' : 'solicitado'}!`, description: 'Você será notificado quando for confirmado.' });
 
@@ -133,7 +138,7 @@ const AppointmentsPanel: React.FC<AppointmentsPanelProps> = ({ clientId, clientN
                     await supabase.functions.invoke('whatsapp-send', {
                         body: {
                             phone: '5500000000000', // Admin phone - placeholder
-                            message: `📅 *Novo Agendamento*\n\n👤 Cliente: ${clientName || 'N/A'}\n📋 Tipo: ${APPOINTMENT_TYPES.find(t => t.value === type)?.label}\n📝 ${title}\n📅 Data: ${format(preferredDate, "dd/MM/yyyy", { locale: ptBR })}\n⏰ Horário: ${preferredTime}${description ? `\n\n📄 Obs: ${description}` : ''}`,
+                            message: `📅 *Novo Agendamento*\n\n👤 Cliente: ${clientNameInput || clientName || 'N/A'}\n📋 Tipo: ${typeLabel}\n📝 ${autoTitle}\n📅 Data: ${format(preferredDate, "dd/MM/yyyy", { locale: ptBR })}\n⏰ Horário: ${preferredTime}${description ? `\n\n📄 Obs: ${description}` : ''}`,
                         },
                     });
                 } catch (e) {}
