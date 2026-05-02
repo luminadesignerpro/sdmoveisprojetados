@@ -83,7 +83,7 @@ const DEFAULT_TEMPLATES: FlowTemplate[] = [
         emoji: "2️⃣",
         label: "Acompanhar meu projeto",
         response:
-          "Claro! Vou verificar o andamento do seu projeto. 📋\n\nPor favor, me informe:\n📝 *Seu nome completo*\n📄 *Número do contrato* (se tiver)\n\nAssim consigo buscar todas as informações atualizadas para você! ⏳",
+          "Perfeito! Vou verificar o andamento do seu projeto. 📋\n\nPor favor, me informe:\n📝 *Seu nome completo*\n📄 *Número do contrato* (se tiver)\n\nAssim consigo buscar todas as informações atualizadas para você! ⏳",
       },
       {
         id: "posvenda",

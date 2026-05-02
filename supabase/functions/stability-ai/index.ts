@@ -57,7 +57,8 @@ serve(async (req) => {
       // replace-background: mantém móveis (foreground) e troca paredes/piso (background)
       endpoint = "https://clipdrop-api.co/replace-background/v1";
       formData.append('image_file', imageBlob, 'image.jpg');
-      formData.append('background_prompt', prompt || "same room interior with freshly painted walls");
+      // A API exige o campo 'prompt' (não 'background_prompt')
+      formData.append('prompt', prompt || "same room interior with freshly painted walls");
     } else {
       throw new Error("Task invalida: " + task);
     }
