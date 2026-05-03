@@ -11,7 +11,7 @@ const db = supabase as any;
 export default function GalleryManager() {
   const { toast } = useToast();
   const [projects, setProjects] = useState<any[]>([]);
-  const [selectedProjectId, setSelectedProjectId] = useState<string>('');
+  const [selectedProject, setSelectedProject] = useState<any>(null);
   const [galleryItems, setGalleryItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -30,15 +30,20 @@ export default function GalleryManager() {
   }, []);
 
   useEffect(() => {
-    if (selectedProjectId) {
-      fetchGallery(selectedProjectId);
+    if (selectedProject) {
+      // Check if project has a project_id (linked to client_projects)
+      if (selectedProject.project_id) {
+        fetchGallery(selectedProject.project_id);
+      } else {
+        setGalleryItems([]);
+      }
     } else {
       setGalleryItems([]);
     }
-  }, [selectedProjectId]);
+  }, [selectedProject]);
 
   const fetchProjects = async () => {
-    const { data } = await db.from('client_projects').select('id, name, clients(name)').order('created_at', { ascending: false });
+    const { data } = await db.from('contracts').select('id, title, project_id, clients(name)').order('created_at', { ascending: false });
     if (data) setProjects(data);
   };
 
@@ -61,15 +66,35 @@ export default function GalleryManager() {
   };
 
   const handleUpload = async () => {
-    if (!selectedProjectId || !newImage.file || !newImage.title) {
+    if (!selectedProject || !newImage.file || !newImage.title) {
       toast({ title: '⚠️ Preencha todos os campos', variant: 'destructive' });
       return;
     }
 
     setUploading(true);
     try {
+      let projectId = selectedProject.project_id;
+
+      // Se o contrato não tiver um project_id vinculado, criamos um registro em client_projects
+      if (!projectId) {
+        const { data: newProj, error: projErr } = await db.from('client_projects').insert({
+          name: selectedProject.title,
+          client_id: selectedProject.client_id || (await db.from('contracts').select('client_id').eq('id', selectedProject.id).single()).data?.client_id,
+          status: 'producao'
+        }).select('id').single();
+
+        if (projErr) throw projErr;
+        projectId = newProj.id;
+
+        // Vincula o novo projeto ao contrato
+        await db.from('contracts').update({ project_id: projectId }).eq('id', selectedProject.id);
+        
+        // Atualiza o estado local
+        selectedProject.project_id = projectId;
+      }
+
       const fileExt = newImage.file.name.split('.').pop();
-      const fileName = `${selectedProjectId}/${Math.random()}.${fileExt}`;
+      const fileName = `${projectId}/${Math.random()}.${fileExt}`;
       const filePath = `gallery/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
@@ -83,7 +108,7 @@ export default function GalleryManager() {
         .getPublicUrl(filePath);
 
       const { error: dbError } = await db.from('project_gallery').insert({
-        project_id: selectedProjectId,
+        project_id: projectId,
         title: newImage.title,
         description: newImage.description,
         image_url: publicUrl
@@ -93,7 +118,7 @@ export default function GalleryManager() {
 
       toast({ title: '✅ Imagem enviada com sucesso!' });
       setNewImage({ title: '', description: '', file: null, previewUrl: '' });
-      fetchGallery(selectedProjectId);
+      fetchGallery(projectId);
     } catch (error: any) {
       toast({ title: '❌ Erro ao enviar', description: error.message, variant: 'destructive' });
     } finally {
@@ -115,15 +140,15 @@ export default function GalleryManager() {
       if (error) throw error;
 
       toast({ title: '✅ Imagem excluída' });
-      fetchGallery(selectedProjectId);
+      fetchGallery(selectedProject.project_id);
     } catch (error: any) {
       toast({ title: '❌ Erro ao excluir', description: error.message, variant: 'destructive' });
     }
   };
 
   const filteredProjects = projects.filter(p => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    p.clients?.name.toLowerCase().includes(searchTerm.toLowerCase())
+    p.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    p.clients?.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -159,21 +184,21 @@ export default function GalleryManager() {
               {filteredProjects.map(p => (
                 <button
                   key={p.id}
-                  onClick={() => setSelectedProjectId(p.id)}
+                  onClick={() => setSelectedProject(p)}
                   className={`w-full text-left p-4 rounded-2xl transition-all border ${
-                    selectedProjectId === p.id 
+                    selectedProject?.id === p.id 
                       ? 'bg-amber-500/10 border-amber-500 text-amber-400' 
                       : 'bg-white/5 border-white/5 hover:bg-white/10 text-gray-400'
                   }`}
                 >
-                  <p className="font-black text-sm uppercase truncate">{p.name}</p>
-                  <p className="text-[10px] opacity-60 truncate">{p.clients?.name}</p>
+                  <p className="font-black text-sm uppercase truncate">{p.title}</p>
+                  <p className="text-[10px] opacity-60 truncate">{p.clients?.name || 'Cliente Geral'}</p>
                 </button>
               ))}
             </div>
           </div>
 
-          {selectedProjectId && (
+          {selectedProject && (
             <div className="bg-[#111111] border border-amber-500/20 rounded-[32px] p-6 shadow-2xl animate-in fade-in slide-in-from-bottom-4">
               <h3 className="font-bold text-amber-500 mb-4 flex items-center gap-2">
                 <UploadCloud className="w-4 h-4" /> Nova Atualização
@@ -235,7 +260,7 @@ export default function GalleryManager() {
 
         {/* Right Column: Gallery View */}
         <div className="lg:col-span-2">
-          {!selectedProjectId ? (
+          {!selectedProject ? (
             <div className="h-full min-h-[400px] flex flex-col items-center justify-center text-gray-600 border-2 border-dashed border-white/5 rounded-[40px]">
               <ImageIcon className="w-16 h-16 mb-4 opacity-20" />
               <p className="font-black uppercase tracking-tighter text-xl">Selecione um projeto para gerenciar</p>
@@ -244,7 +269,7 @@ export default function GalleryManager() {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-black text-white flex items-center gap-2 uppercase tracking-tight">
-                  Galeria: {projects.find(p => p.id === selectedProjectId)?.name}
+                  Galeria: {selectedProject.title}
                 </h2>
                 <span className="text-[10px] bg-white/5 px-3 py-1 rounded-full font-bold text-gray-400">
                   {galleryItems.length} itens
