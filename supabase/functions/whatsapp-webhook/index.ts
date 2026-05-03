@@ -156,23 +156,15 @@ serve(async (req) => {
             const isGreeting = /^(oi|ola|olá|bom dia|boa tarde|boa noite|inicio|menu)$/i.test(cleanMessageLower);
             const normalizedMatch = cleanMessageLower.replace(/[^0-9]/g, "");
             
-            // VERIFICA SE ESTAMOS NO FLUXO DE BUSCA DE CONTRATO (ESTADO ANTERIOR)
-            const { data: recentBotMsgs } = await supabase.from("whatsapp_messages")
-              .select("content")
-              .eq("conversation_id", conversation.id)
-              .eq("direction", "outbound")
-              .order("created_at", { ascending: false })
-              .limit(1);
-
-            const lastBotMsg = recentBotMsgs?.[0]?.content || "";
-            const isWaitingForContract = lastBotMsg.includes("nome completo") || lastBotMsg.includes("número do contrato");
+            // VERIFICA SE ESTAMOS NO FLUXO DE BUSCA DE CONTRATO (ESTADO SALVO NA CONVERSA)
+            const isWaitingForContract = conversation.ai_summary === "WAITING_FOR_CONTRACT";
 
             if (isWaitingForContract && !isGreeting && !config.responses?.[normalizedMatch]) {
-              console.log("[WEBHOOK] Fluxo de busca detectado. Procurando por:", cleanMessage);
+              console.log("[WEBHOOK] Estado WAITING_FOR_CONTRACT detectado. Procurando por:", cleanMessage);
               
               let foundEmployee = null;
               
-              // 1. Tenta buscar por nome (ILIKE para ser flexível com maiúsculas/minúsculas)
+              // 1. Tenta buscar por nome
               const { data: empsByName } = await supabase.from("employees")
                 .select("name, password")
                 .eq("role", "Cliente")
@@ -182,7 +174,7 @@ serve(async (req) => {
               if (empsByName && empsByName.length > 0) {
                 foundEmployee = empsByName[0];
               } else {
-                // 2. Tenta buscar por número do contrato (se o cliente digitou apenas números)
+                // 2. Tenta buscar por número do contrato
                 const contractNumOnly = cleanMessage.replace(/[^0-9]/g, "");
                 if (contractNumOnly.length > 0) {
                   const { data: contract } = await supabase.from("contracts")
@@ -204,20 +196,32 @@ serve(async (req) => {
                 }
               }
 
+              // Limpa o estado da conversa independente de ter achado ou não
+              await supabase.from("whatsapp_conversations").update({ ai_summary: null }).eq("id", conversation.id);
+
               if (foundEmployee) {
                 responseText = `Localizei seu cadastro, *${foundEmployee.name}*! 🎉\n\n` +
                   `🔐 *Sua senha de acesso:* ${foundEmployee.password}\n\n` +
                   `📱 *Acesse nosso app aqui:* https://sdmoveisprojetados-zeta.vercel.app/\n\n` +
                   `Selecione "Cliente" na tela inicial e use sua senha para acompanhar seu projeto!`;
               } else {
-                // Se não achou, mas estava esperando um contrato, dá um feedback e mostra o menu de novo
                 responseText = "Desculpe, não localizei nenhum cadastro com esse nome ou número de contrato. 😕\n\n" +
                   "Verifique se o nome está correto ou escolha uma opção do menu:\n\n" + config.greeting;
               }
             } else if (isGreeting) {
+              // Se for saudação, limpa qualquer estado anterior
+              if (isWaitingForContract) await supabase.from("whatsapp_conversations").update({ ai_summary: null }).eq("id", conversation.id);
               responseText = config.greeting;
             } else if (config.responses?.[normalizedMatch]) {
+              // Se escolheu uma opção do menu, limpa estado anterior
+              if (isWaitingForContract) await supabase.from("whatsapp_conversations").update({ ai_summary: null }).eq("id", conversation.id);
+              
               responseText = config.responses[normalizedMatch];
+              
+              // Se escolheu a opção 2, ativa o estado de espera
+              if (normalizedMatch === "2") {
+                await supabase.from("whatsapp_conversations").update({ ai_summary: "WAITING_FOR_CONTRACT" }).eq("id", conversation.id);
+              }
             }
 
             // 2. Lógica da IA (GROQ)
