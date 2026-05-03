@@ -53,7 +53,13 @@ serve(async (req) => {
 
           // Extração de conteúdo
           const msgBody = messageData.message || payload.data?.message || messageData || {};
-          const messageContent =
+          
+          // Detecta se é áudio, figurinha ou mídia sem texto
+          const isAudio = msgBody.audioMessage || msgBody.ephemeralMessage?.message?.audioMessage || false;
+          const isSticker = msgBody.stickerMessage || msgBody.ephemeralMessage?.message?.stickerMessage || false;
+          const isMedia = isAudio || isSticker || msgBody.imageMessage || msgBody.videoMessage || msgBody.documentMessage;
+
+          let messageContent =
             msgBody.conversation || 
             msgBody.extendedTextMessage?.text ||
             msgBody.imageMessage?.caption || 
@@ -63,8 +69,14 @@ serve(async (req) => {
             messageData.conversation || 
             payload.data?.content || "";
 
+          // Se for áudio, figurinha ou mídia sem legenda, define um conteúdo simbólico para processar
+          if (!messageContent && isMedia && !fromMe) {
+            messageContent = isAudio ? "[AUDIO]" : (isSticker ? "[STICKER]" : "[MEDIA]");
+            console.log(`[WEBHOOK] Mídia detectada (${messageContent}), processando fluxo.`);
+          }
+
           if (!messageContent && !fromMe) {
-            console.log("[WEBHOOK] Mensagem sem conteúdo textual ignorada.");
+            console.log("[WEBHOOK] Mensagem sem conteúdo ignorada.");
             continue;
           }
 
@@ -153,7 +165,7 @@ serve(async (req) => {
 
             const cleanMessage = messageContent.trim();
             const cleanMessageLower = cleanMessage.toLowerCase();
-            const isGreeting = /^(oi|ola|olá|bom dia|boa tarde|boa noite|inicio|menu)$/i.test(cleanMessageLower);
+            const isGreeting = /^(oi|ola|olá|bom dia|boa tarde|boa noite|inicio|menu|ei|opa|oie|olá tudo bem|tudo bem)$/i.test(cleanMessageLower);
             const normalizedMatch = cleanMessageLower.replace(/[^0-9]/g, "");
             
             // VERIFICA SE ESTAMOS NO FLUXO DE BUSCA DE CONTRATO
@@ -212,10 +224,14 @@ serve(async (req) => {
               }
             }
 
-            // Se ainda não tiver resposta, tenta o menu normal
+            // Se ainda não tiver resposta, tenta o menu normal ou trata mídia
             if (!responseText) {
               if (isGreeting) {
                 responseText = config.greeting;
+              } else if (messageContent === "[AUDIO]" || messageContent === "[STICKER]" || messageContent === "[MEDIA]") {
+                // Resposta especial para mídias que o bot não processa mas deve responder
+                const mediaLabel = messageContent === "[AUDIO]" ? "áudios" : (messageContent === "[STICKER]" ? "figurinhas" : "mídias");
+                responseText = `Ainda não consigo processar ${mediaLabel}, mas estou à disposição! 😊\n\n` + config.greeting;
               } else if (config.responses?.[normalizedMatch]) {
                 responseText = config.responses[normalizedMatch];
                 
@@ -230,7 +246,7 @@ serve(async (req) => {
             if (!responseText) {
               const groqKey = Deno.env.get("GROQ_API_KEY");
               if (groqKey) {
-                console.log("[WEBHOOK] Chamando Groq AI...");
+                console.log(`[WEBHOOK] Chamando Groq AI para: "${messageContent}"`);
                 try {
                   const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST",
@@ -239,12 +255,16 @@ serve(async (req) => {
                       "Authorization": `Bearer ${groqKey}` 
                     },
                     body: JSON.stringify({
-                      model: "llama3-8b-8192", // Modelo mais rápido e estável
+                      model: "llama-3.3-70b-versatile", // Modelo mais robusto e inteligente
                       messages: [
-                        { role: "system", content: "Você é o Consultor Especialista da SD Móveis. Elegante, persuasivo e focado em converter o cliente para um projeto 3D gratuito. Use MDF 18mm e ferragens premium. Máximo 3 frases." }, 
+                        { 
+                          role: "system", 
+                          content: "Você é o Consultor Especialista da SD Móveis. Elegante, persuasivo e focado em converter o cliente para um projeto 3D gratuito. Use MDF 18mm e ferragens premium. Máximo 3 frases. Responda de forma natural e amigável." 
+                        }, 
                         { role: "user", content: messageContent }
                       ],
                       temperature: 0.7,
+                      max_tokens: 500
                     }),
                   });
                   
@@ -256,12 +276,16 @@ serve(async (req) => {
                   } else {
                     const errorText = await groqRes.text();
                     console.error(`[WEBHOOK] Erro na API do Groq (${groqRes.status}):`, errorText);
+                    // Fallback para o menu principal se a IA falhar
+                    responseText = "Olá! Não consegui processar sua mensagem agora, mas estou aqui para ajudar. 😊\n\n" + config.greeting;
                   }
                 } catch (e) {
                   console.error("[WEBHOOK] Exceção ao chamar Groq:", e);
+                  responseText = "Olá! Como posso te ajudar hoje? 😊\n\n" + config.greeting;
                 }
               } else {
                 console.warn("[WEBHOOK] GROQ_API_KEY não configurada nas Secrets.");
+                responseText = "Olá! Como posso te ajudar hoje? 😊\n\n" + config.greeting;
               }
             }
 

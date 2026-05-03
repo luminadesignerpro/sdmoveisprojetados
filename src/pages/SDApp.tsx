@@ -45,6 +45,7 @@ import LocalIntegrationPanel from '@/components/admin/LocalIntegrationPanel';
 import PdfUploader from '@/components/admin/PdfUploader';
 import SmartMeasurement from '@/components/modules/SmartMeasurement';
 import CustomerTrackingPage from '@/components/fleet/CustomerTrackingPage';
+import GalleryManager from '@/components/admin/GalleryManager';
 const db = supabase as any;
 import {
   LogOut,
@@ -496,11 +497,13 @@ const App: React.FC = () => {
                 <NavIcon icon="bot" label="Vendedor IA" active={view === ViewMode.AI_SALES} onClick={() => setView(ViewMode.AI_SALES)} />
                 <NavIcon icon="file-down" label="PDF Downloader" active={view === ViewMode.PDF_DOWNLOADER} onClick={() => setView(ViewMode.PDF_DOWNLOADER)} />
                 <NavIcon icon="ruler" label="Medição IA" active={view === ViewMode.SMART_MEASUREMENT} onClick={() => setView(ViewMode.SMART_MEASUREMENT)} />
+                <NavIcon icon="camera" label="Galeria" active={view === ViewMode.PROJECT_GALLERY} onClick={() => setView(ViewMode.PROJECT_GALLERY)} />
               </>
             ) : authState === 'EMPLOYEE' ? (
               <>
                 <NavIcon icon="clock" label="Meu Ponto" active={view === ViewMode.TIME_TRACKING} onClick={() => setView(ViewMode.TIME_TRACKING)} />
                 <NavIcon icon="navigation" label="Viagens" active={view === ViewMode.FLEET} onClick={() => setView(ViewMode.FLEET)} />
+                <NavIcon icon="camera" label="Galeria" active={view === ViewMode.PROJECT_GALLERY} onClick={() => setView(ViewMode.PROJECT_GALLERY)} />
                 <NavIcon icon="message-circle" label="Chat" active={view === ViewMode.INTERNAL_CHAT} onClick={() => setView(ViewMode.INTERNAL_CHAT)} />
               </>
             ) : (
@@ -1130,7 +1133,7 @@ const App: React.FC = () => {
                     <Camera className="w-8 h-8 text-amber-500" />
                     Minha Galeria SD
                   </h1>
-                  <p className="text-white/40 mt-1 font-bold uppercase text-[10px] tracking-widest text-center md:text-left">Arquivos em Ultra-Alta Definição</p>
+                  <p className="text-white/40 mt-1 font-bold uppercase text-[10px] tracking-widest text-center md:text-left">Acompanhe seu projeto: Do render 4K à montagem final</p>
                 </div>
                 <button
                   onClick={() => setView(ViewMode.CLIENT_PORTAL)}
@@ -1316,6 +1319,11 @@ const App: React.FC = () => {
           {/* SMART MEASUREMENT - Admin */}
           {view === ViewMode.SMART_MEASUREMENT && authState === 'ADMIN' && (
             <SmartMeasurement />
+          )}
+
+          {/* GALLERY MANAGEMENT - Admin & Employee */}
+          {view === ViewMode.PROJECT_GALLERY && (authState === 'ADMIN' || authState === 'EMPLOYEE') && (
+            <GalleryManager />
           )}
 
           {/* CUSTOMER TRACKING - Public */}
