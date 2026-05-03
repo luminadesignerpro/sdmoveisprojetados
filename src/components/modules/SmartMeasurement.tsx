@@ -100,6 +100,15 @@ const SmartMeasurement: React.FC = () => {
       const cleanRes = res.replace(/```json|```/g, '').trim();
       const data = JSON.parse(cleanRes);
 
+      // --- OVERRIDE DE SEGURANÇA SD VISION ---
+      // Se o usuário pediu para pintar ou mudar cor, FORÇAMOS o modo inpaint
+      // para evitar que o Gemini escolha 'style' e mude o ambiente todo.
+      const cmdLower = iaCommand.toLowerCase();
+      if (cmdLower.includes('pintar') || cmdLower.includes('parede') || cmdLower.includes('cor')) {
+        console.log("[SD VISION] Force Override: Switch to INPAINT for consistency.");
+        data.action = 'inpaint';
+      }
+
       console.log("[SD VISION] AI Plan:", data);
 
       if (data.action === 'measure') {
