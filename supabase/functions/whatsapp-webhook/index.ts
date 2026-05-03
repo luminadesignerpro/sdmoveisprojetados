@@ -133,7 +133,7 @@ serve(async (req) => {
             // Anti-loop: Verifica se já respondemos nos últimos 10 segundos
             const { data: recentResponses } = await supabase.from("whatsapp_messages")
               .select("id").eq("conversation_id", conversation.id).eq("direction", "outbound")
-              .gt("created_at", new Date(Date.now() - 10000).toISOString()).limit(1);
+              .gt("created_at", new Date(Date.now() - 2000).toISOString()).limit(1);
 
             if (recentResponses && recentResponses.length > 0) {
               console.log("[WEBHOOK] Resposta ignorada (anti-loop: mensagem enviada recentemente)");
