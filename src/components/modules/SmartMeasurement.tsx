@@ -57,6 +57,18 @@ const SmartMeasurement: React.FC = () => {
     }
   }, [image]);
 
+  const toBase64 = async (url: string): Promise<string> => {
+    if (!url.startsWith('blob:')) return url;
+    const response = await fetch(url);
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  };
+
   const executeIA = async () => {
     if (!image || !iaCommand) {
       toast({ title: '⚠️ Descreva o que deseja fazer.' });
@@ -79,20 +91,25 @@ const SmartMeasurement: React.FC = () => {
       - Responda o campo "reasoning" sempre em PORTUGUÊS.
       - Para medição, procure a folha A4 no chão como escala (297mm). 
       - SE NÃO HOUVER A4, use proporções arquitetônicas padrão (ex: cama tem ~60cm altura, pé direito ~2.7m, porta ~2.1m) para ESTIMAR a medida. NUNCA diga que não pode medir; forneça sempre uma estimativa técnica aproximada.
-      - Se o usuário quer TROCAR ou MUDAR um objeto, use action 'inpaint'.
+      - Se o usuário quer TROCAR ou MUDAR um objeto (ex: trocar sofá), use action 'inpaint' e defina o targetPolygon no objeto atual.
       - Se o usuário quer REMOVER ou TIRAR sem colocar nada no lugar, use action 'cleanup'.
+      - Se o usuário quer PINTAR uma parede, use action 'inpaint' e defina o targetPolygon na parede específica.
       
       RETORNE APENAS JSON:
       {
         "action": "measure" | "cleanup" | "inpaint" | "style",
         "measureResult": "valor estimado (ex: 2.50m) ou null",
-        "reasoning": "Explicação técnica EM PORTUGUÊS do seu cálculo (ex: 'Estimado com base na proporção da cama...')",
-        "descriptionEn": "Detailed descriptive prompt in English for the AI image engine",
+        "reasoning": "Explicação técnica EM PORTUGUÊS do seu cálculo",
+        "descriptionEn": "Detailed descriptive prompt in English for the AI image engine (e.g. 'a modern grey leather sofa' or 'red painted wall')",
         "targetPolygon": [{"x":float, "y":float}, ...] // Normalized coordinates (0-1) of the target object/area
       }`;
 
-      const imagesToAnalyze = [image];
-      if (refImage) imagesToAnalyze.push(refImage);
+      // Garantir que temos base64 para a analise do Gemini
+      const base64Main = await toBase64(image);
+      const base64Ref = refImage ? await toBase64(refImage) : null;
+
+      const imagesToAnalyze = [base64Main];
+      if (base64Ref) imagesToAnalyze.push(base64Ref);
 
       const res = await analyzeImageWithGemini(imagesToAnalyze.join('|'), prompt); 
       const cleanRes = res.replace(/```json|```/g, '').trim();
@@ -114,43 +131,40 @@ const SmartMeasurement: React.FC = () => {
 
         let finalImg: string | null = null;
 
-        if (data.action === 'cleanup' || data.action === 'inpaint' || data.action === 'style') {
-          const mCanvas = document.createElement('canvas');
-          const tmpImg = new Image(); 
-          tmpImg.src = image; 
-          await new Promise(r => tmpImg.onload = r);
-          
-          mCanvas.width = tmpImg.width; 
-          mCanvas.height = tmpImg.height;
-          const mctx = mCanvas.getContext('2d')!;
-          mctx.fillStyle = 'black'; 
-          mctx.fillRect(0, 0, mCanvas.width, mCanvas.height);
-          mctx.fillStyle = 'white'; 
-          mctx.beginPath();
-          
-          if (data.targetPolygon && data.targetPolygon.length > 0) {
-            data.targetPolygon.forEach((p: any, i: number) => { 
-              if (i === 0) mctx.moveTo(p.x * mCanvas.width, p.y * mCanvas.height); 
-              else mctx.lineTo(p.x * mCanvas.width, p.y * mCanvas.height); 
-            });
-          } else {
-            // Fallback mask (center) if polygon missing
-            mctx.arc(mCanvas.width/2, mCanvas.height/2, mCanvas.width/4, 0, Math.PI*2);
-          }
-          
-          mctx.closePath(); 
-          mctx.fill();
-          
-          const mBase64 = mCanvas.toDataURL('image/png');
-          
-          if (data.action === 'cleanup') {
-            finalImg = await cleanupObject({ image, mask: mBase64 });
-          } else if (data.action === 'inpaint') {
-            finalImg = await inpaintObject(image, mBase64, data.descriptionEn);
-          } else if (data.action === 'style') {
-            // Usamos Inpaint para estilo também (evita erro 404 e é mais preciso)
-            finalImg = await inpaintObject(image, mBase64, data.descriptionEn);
-          }
+        const mCanvas = document.createElement('canvas');
+        const tmpImg = new Image(); 
+        tmpImg.src = image; 
+        await new Promise(r => tmpImg.onload = r);
+        
+        mCanvas.width = tmpImg.width; 
+        mCanvas.height = tmpImg.height;
+        const mctx = mCanvas.getContext('2d')!;
+        mctx.fillStyle = 'black'; 
+        mctx.fillRect(0, 0, mCanvas.width, mCanvas.height);
+        mctx.fillStyle = 'white'; 
+        mctx.beginPath();
+        
+        if (data.targetPolygon && data.targetPolygon.length > 0) {
+          data.targetPolygon.forEach((p: any, i: number) => { 
+            if (i === 0) mctx.moveTo(p.x * mCanvas.width, p.y * mCanvas.height); 
+            else mctx.lineTo(p.x * mCanvas.width, p.y * mCanvas.height); 
+          });
+        } else {
+          // Fallback mask (center) if polygon missing
+          mctx.arc(mCanvas.width/2, mCanvas.height/2, mCanvas.width/4, 0, Math.PI*2);
+        }
+        
+        mctx.closePath(); 
+        mctx.fill();
+        
+        const mBase64 = mCanvas.toDataURL('image/png');
+        
+        if (data.action === 'cleanup') {
+          finalImg = await cleanupObject({ image: base64Main, mask: mBase64 });
+        } else if (data.action === 'inpaint') {
+          finalImg = await inpaintObject(base64Main, mBase64, data.descriptionEn);
+        } else if (data.action === 'style') {
+          finalImg = await styleTransfer(base64Main, data.descriptionEn);
         }
         
         if (finalImg) {
@@ -166,7 +180,7 @@ const SmartMeasurement: React.FC = () => {
       toast({ 
         variant: "destructive",
         title: '❌ Erro de processamento', 
-        description: e.message || 'Não foi possível completar a tarefa. Verifique as chaves de API.' 
+        description: e.message || 'Não foi possível completar a tarefa.' 
       });
     } finally {
       setAnalyzing(false);

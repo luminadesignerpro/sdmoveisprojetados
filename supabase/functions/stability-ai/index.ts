@@ -16,12 +16,26 @@ const corsHeaders = (origin: string | null) => ({
 
 // Helper: base64 DataURL -> Blob
 const base64ToBlob = (base64: string, type: string) => {
-  const data = base64.includes(',') ? base64.split(',')[1] : base64;
-  const byteString = atob(data);
-  const ab = new ArrayBuffer(byteString.length);
-  const ia = new Uint8Array(ab);
-  for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
-  return new Blob([ab], { type });
+  if (!base64 || typeof base64 !== 'string') {
+    throw new Error("Imagem base64 invalida ou vazia.");
+  }
+  
+  // Se ja for uma URL de blob, nao conseguimos processar aqui no servidor Deno sem fetch
+  if (base64.startsWith('blob:')) {
+    throw new Error("A Edge Function recebeu uma blob URL em vez de base64. O cliente deve converter antes de enviar.");
+  }
+
+  const data = (base64.includes(',') ? base64.split(',')[1] : base64).replace(/\s/g, '');
+  try {
+    const byteString = atob(data);
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+    return new Blob([ab], { type });
+  } catch (e) {
+    console.error("Erro ao decodificar base64. Inicio da string:", data.slice(0, 50));
+    throw new Error("Falha ao decodificar base64: A string fornecida nao e um base64 valido.");
+  }
 };
 
 serve(async (req) => {
@@ -53,11 +67,19 @@ serve(async (req) => {
       endpoint = "https://clipdrop-api.co/relight/v1";
       formData.append('image_file', imageBlob, 'image.jpg');
       if (prompt) formData.append('prompt', prompt);
-    } else if (task === "inpaint" || task === "style") {
+    } else if (task === "inpaint") {
+      // Inpainting real: troca apenas a area da mascara
+      endpoint = "https://clipdrop-api.co/inpaint/v1";
+      formData.append('image_file', imageBlob, 'image.jpg');
+      if (maskBlob) {
+        formData.append('mask_file', maskBlob, 'mask.png');
+      } else {
+        throw new Error("Mascara (mask) e obrigatoria para a tarefa de inpaint.");
+      }
+    } else if (task === "style") {
       // replace-background: mantém móveis (foreground) e troca paredes/piso (background)
       endpoint = "https://clipdrop-api.co/replace-background/v1";
       formData.append('image_file', imageBlob, 'image.jpg');
-      // A API exige o campo 'prompt' (não 'background_prompt')
       formData.append('prompt', prompt || "same room interior with freshly painted walls");
     } else {
       throw new Error("Task invalida: " + task);
