@@ -766,5 +766,3 @@ Estrutura do JSON:
     </div>
   );
 }
-
-}
