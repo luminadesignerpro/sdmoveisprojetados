@@ -73,18 +73,24 @@ export default function GalleryManager() {
 
     setUploading(true);
     try {
+      console.log('Starting upload for project:', selectedProject);
       let projectId = selectedProject.project_id;
 
       // Se o contrato não tiver um project_id vinculado, criamos um registro em client_projects
       if (!projectId) {
+        console.log('Project ID missing, creating client_projects record...');
         const { data: newProj, error: projErr } = await db.from('client_projects').insert({
           title: selectedProject.title,
           client_id: selectedProject.client_id || (await db.from('contracts').select('client_id').eq('id', selectedProject.id).single()).data?.client_id,
           status: 'producao'
         }).select('id').single();
 
-        if (projErr) throw projErr;
+        if (projErr) {
+          console.error('Error creating project record:', projErr);
+          throw projErr;
+        }
         projectId = newProj.id;
+        console.log('New Project created with ID:', projectId);
 
         // Vincula o novo projeto ao contrato
         await db.from('contracts').update({ project_id: projectId }).eq('id', selectedProject.id);
@@ -93,15 +99,26 @@ export default function GalleryManager() {
         selectedProject.project_id = projectId;
       }
 
+      if (!newImage.file) throw new Error('Arquivo não selecionado');
+
       const fileExt = newImage.file.name.split('.').pop();
-      const fileName = `${projectId}/${Math.random()}.${fileExt}`;
-      const filePath = `gallery/${fileName}`;
+      const fileName = `${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `gallery/${projectId}/${fileName}`;
+
+      console.log('Uploading to storage...', { bucket: 'documents', filePath });
+      
+      // Test bucket access
+      const { data: buckets } = await supabase.storage.listBuckets();
+      console.log('Available buckets:', buckets?.map(b => b.name));
 
       const { error: uploadError } = await supabase.storage
         .from('documents')
         .upload(filePath, newImage.file);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Storage upload error:', uploadError);
+        throw uploadError;
+      }
 
       const { data: { publicUrl } } = supabase.storage
         .from('documents')
