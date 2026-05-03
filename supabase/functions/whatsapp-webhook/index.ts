@@ -144,7 +144,6 @@ serve(async (req) => {
             const evolutionKey = Deno.env.get("EVOLUTION_API_KEY") || "Mv06061991";
             const instanceName = "SD-Moveis"; // Ajuste se o nome no Railway for diferente
 
-            const cleanMessage = messageContent.trim().toLowerCase();
             let responseText = "";
             let messageTypeOut = "text";
 
@@ -152,10 +151,69 @@ serve(async (req) => {
             const { data: configData } = await supabase.from("atendimento_config").select("conteudo").eq("chave", "menu_principal").maybeSingle();
             const config = configData?.conteudo || { greeting: "Olá! Como posso ajudar?", responses: {} };
 
-            const isGreeting = /^(oi|ola|olá|bom dia|boa tarde|boa noite|inicio|menu)$/i.test(cleanMessage);
-            const normalizedMatch = cleanMessage.replace(/[^0-9]/g, "");
+            const cleanMessage = messageContent.trim();
+            const cleanMessageLower = cleanMessage.toLowerCase();
+            const isGreeting = /^(oi|ola|olá|bom dia|boa tarde|boa noite|inicio|menu)$/i.test(cleanMessageLower);
+            const normalizedMatch = cleanMessageLower.replace(/[^0-9]/g, "");
             
-            if (isGreeting) {
+            // VERIFICA SE ESTAMOS NO FLUXO DE BUSCA DE CONTRATO (ESTADO ANTERIOR)
+            const { data: lastBotMsg } = await supabase.from("whatsapp_messages")
+              .select("content")
+              .eq("conversation_id", conversation.id)
+              .eq("direction", "outbound")
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+
+            const isWaitingForContract = lastBotMsg?.content?.includes("informe seu nome completo");
+
+            if (isWaitingForContract && !isGreeting && !config.responses?.[normalizedMatch]) {
+              console.log("[WEBHOOK] Buscando contrato para:", cleanMessage);
+              
+              let foundEmployee = null;
+              
+              // Tenta buscar por nome primeiro
+              const { data: empsByName } = await supabase.from("employees")
+                .select("name, password")
+                .eq("role", "Cliente")
+                .ilike("name", `%${cleanMessage}%`)
+                .limit(1);
+              
+              if (empsByName && empsByName.length > 0) {
+                foundEmployee = empsByName[0];
+              } else {
+                // Tenta buscar por número do contrato se for um número
+                const contractNum = parseInt(cleanMessage.replace(/[^0-9]/g, ""));
+                if (!isNaN(contractNum)) {
+                  const { data: contract } = await supabase.from("contracts")
+                    .select("client_id")
+                    .eq("contract_number", contractNum)
+                    .maybeSingle();
+                  
+                  if (contract?.client_id) {
+                    const { data: empsByEmail } = await supabase.from("employees")
+                      .select("name, password")
+                      .eq("role", "Cliente")
+                      .eq("email", `cliente_${contract.client_id}@sdmoveis.com`)
+                      .limit(1);
+                    
+                    if (empsByEmail && empsByEmail.length > 0) {
+                      foundEmployee = empsByEmail[0];
+                    }
+                  }
+                }
+              }
+
+              if (foundEmployee) {
+                responseText = `Localizei seu cadastro, *${foundEmployee.name}*! 🎉\n\n` +
+                  `🔐 *Sua senha de acesso:* ${foundEmployee.password}\n\n` +
+                  `📱 *Acesse nosso app aqui:* https://sdmoveisprojetados-zeta.vercel.app/\n\n` +
+                  `Selecione "Cliente" na tela inicial e use sua senha para acompanhar seu projeto!`;
+              } else {
+                responseText = "Desculpe, não localizei nenhum cadastro com esse nome ou número de contrato. 😕\n\n" +
+                  "Pode digitar o nome novamente ou escolher uma opção do menu:\n\n" + config.greeting;
+              }
+            } else if (isGreeting) {
               responseText = config.greeting;
             } else if (config.responses?.[normalizedMatch]) {
               responseText = config.responses[normalizedMatch];
