@@ -78,7 +78,7 @@ export default function GalleryManager() {
       // Se o contrato não tiver um project_id vinculado, criamos um registro em client_projects
       if (!projectId) {
         const { data: newProj, error: projErr } = await db.from('client_projects').insert({
-          name: selectedProject.title,
+          title: selectedProject.title,
           client_id: selectedProject.client_id || (await db.from('contracts').select('client_id').eq('id', selectedProject.id).single()).data?.client_id,
           status: 'producao'
         }).select('id').single();
