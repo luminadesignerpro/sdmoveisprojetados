@@ -319,6 +319,7 @@ const SmartMeasurement: React.FC = () => {
           )}
         </Card>
 
+        <div className="lg:col-span-3 space-y-6 overflow-y-auto lg:pr-2">
             <div className="bg-[#111114] rounded-[40px] p-8 border border-white/5 space-y-6">
               <h4 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-3">
                  <Sparkles className="w-5 h-5 text-amber-500" /> Memória de Projeto
