@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { 
-  Camera, Ruler, CheckCircle2, Upload, Maximize, Info, Send, Wand2, Sparkles, Undo2, ScanLine, Calculator, ChevronRight, MousePointer2, Image as ImageIcon, Search
+  Camera, Ruler, CheckCircle2, Upload, Maximize, Info, Send, Wand2, Sparkles, Undo2, ScanLine, Calculator, ChevronRight, MousePointer2, Image as ImageIcon, Search, Loader2
 } from 'lucide-react';
 import { analyzeImageWithGemini } from '@/services/geminiService';
 import { cleanupObject, inpaintObject, styleTransfer } from '@/services/stabilityService';
