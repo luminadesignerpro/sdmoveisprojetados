@@ -140,16 +140,12 @@ const App: React.FC = () => {
   const isMobile = useIsMobile();
   const [isTouchDevice, setIsTouchDevice] = useState(false);
   const isCompactLayout = isMobile || isTouchDevice;
-  const [authState, setAuthState] = useState<'SELECT' | 'LOGIN' | 'ADMIN' | 'CLIENT' | 'EMPLOYEE'>(() => {
-    return (localStorage.getItem('sd_authState') as any) || 'SELECT';
-  });
-  const [selectedRole, setSelectedRole] = useState<'ADMIN' | 'CLIENT' | 'EMPLOYEE'>(() => {
-    return (localStorage.getItem('sd_selectedRole') as any) || 'ADMIN';
-  });
-  const [employeeName, setEmployeeName] = useState(() => localStorage.getItem('sd_employeeName') || '');
-  const [employeeId, setEmployeeId] = useState(() => localStorage.getItem('sd_employeeId') || '');
+  const [authState, setAuthState] = useState<'SELECT' | 'LOGIN' | 'ADMIN' | 'CLIENT' | 'EMPLOYEE'>('SELECT');
+  const [selectedRole, setSelectedRole] = useState<'ADMIN' | 'CLIENT' | 'EMPLOYEE'>('ADMIN');
+  const [employeeName, setEmployeeName] = useState('');
+  const [employeeId, setEmployeeId] = useState('');
   const [password, setPassword] = useState("");
-  const [view, setView] = useState(() => localStorage.getItem('sd_view') as ViewMode || ViewMode.DASHBOARD);
+  const [view, setView] = useState(ViewMode.DASHBOARD);
   const [contracts, setContracts] = useState<any[]>([]);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiLoadingMessage, setAiLoadingMessage] = useState("");
@@ -183,14 +179,8 @@ const App: React.FC = () => {
     );
   }, []);
 
-  // Save state changes to localStorage
-  useEffect(() => {
-    localStorage.setItem('sd_authState', authState);
-    localStorage.setItem('sd_selectedRole', selectedRole);
-    localStorage.setItem('sd_employeeName', employeeName);
-    localStorage.setItem('sd_employeeId', employeeId);
-    localStorage.setItem('sd_view', view);
-  }, [authState, selectedRole, employeeName, employeeId, view]);
+  // v2.1.5 - Removida persistência de login por segurança (Sempre abre na seleção de perfil)
+
 
   // ===== MODO TESTE TEMPORÁRIO =====
   // Acesse com ?teste=admin, ?teste=client ou ?teste=employee
