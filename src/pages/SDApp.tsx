@@ -479,7 +479,6 @@ const App: React.FC = () => {
                 <NavIcon icon="monitor" label="FPQ PC" active={false} onClick={() => window.location.href = 'fpqsystem://'} />
                 <NavIcon icon="monitor" label="Promob PC" active={false} onClick={() => window.location.href = 'promobsystem://'} />
                 <NavIcon icon="settings" label="Integração PC" active={view === ViewMode.INTEGRATION} onClick={() => setView(ViewMode.INTEGRATION)} />
-                <NavIcon icon="camera" label="Câmera AR Pro" active={view === ViewMode.BUDGET_QUOTE} onClick={() => setView(ViewMode.BUDGET_QUOTE)} />
                 <NavIcon icon="file-text" label="Vendas" active={view === ViewMode.CONTRACTS} onClick={() => setView(ViewMode.CONTRACTS)} />
                 <NavIcon icon="building" label="Fornecedores" active={view === ViewMode.SUPPLIERS} onClick={() => setView(ViewMode.SUPPLIERS)} />
                 <NavIcon icon="package" label="Estoque" active={view === ViewMode.PRODUCTS} onClick={() => setView(ViewMode.PRODUCTS)} />
@@ -493,7 +492,6 @@ const App: React.FC = () => {
                 <NavIcon icon="message-square" label="CRM" active={view === ViewMode.CRM} onClick={() => setView(ViewMode.CRM)} isFab />
                 <NavIcon icon="message-circle" label="Chat" active={view === ViewMode.INTERNAL_CHAT} onClick={() => setView(ViewMode.INTERNAL_CHAT)} />
                 <NavIcon icon="calendar" label="Agenda" active={view === ViewMode.APPOINTMENTS} onClick={() => setView(ViewMode.APPOINTMENTS)} />
-                <NavIcon icon="camera" label="Projetos AR" active={view === ViewMode.AR_STUDIO} onClick={() => setView(ViewMode.AR_STUDIO)} />
                 <NavIcon icon="bot" label="Vendedor IA" active={view === ViewMode.AI_SALES} onClick={() => setView(ViewMode.AI_SALES)} />
                 <NavIcon icon="file-down" label="PDF Downloader" active={view === ViewMode.PDF_DOWNLOADER} onClick={() => setView(ViewMode.PDF_DOWNLOADER)} />
                 <NavIcon icon="ruler" label="Medição IA" active={view === ViewMode.SMART_MEASUREMENT} onClick={() => setView(ViewMode.SMART_MEASUREMENT)} />

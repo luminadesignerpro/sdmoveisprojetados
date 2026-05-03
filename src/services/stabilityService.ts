@@ -32,8 +32,10 @@ async function callStabilityEdgeFunction(task: string, params: any): Promise<str
     }
 
     const buffer = await response.arrayBuffer();
-    const blob = new Blob([buffer], { type: "image/jpeg" });
-    return URL.createObjectURL(blob);
+    const base64 = btoa(
+      new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), "")
+    );
+    return `data:image/jpeg;base64,${base64}`;
   } catch (error) {
     console.error(`Failed to call stability-ai (${task}):`, error);
     return null;

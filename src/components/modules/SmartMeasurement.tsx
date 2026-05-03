@@ -57,18 +57,9 @@ const SmartMeasurement: React.FC = () => {
     }
   }, [image]);
 
-  const toBase64 = async (url: string): Promise<string> => {
-    if (!url.startsWith('blob:')) return url;
-    const response = await fetch(url);
-    const blob = await response.blob();
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  };
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
+  // No longer needed to convert blob to base64 as we will keep base64 in state
   const executeIA = async () => {
     if (!image || !iaCommand) {
       toast({ title: '⚠️ Descreva o que deseja fazer.' });
@@ -77,60 +68,59 @@ const SmartMeasurement: React.FC = () => {
 
     setAnalyzing(true);
     try {
-      const prompt = `[SISTEMA PROJETISTA SD VISION ENGINEERING V12] 
-      Usuário quer: "${iaCommand}". 
-      ${refImage ? "Existe uma imagem de REFERÊNCIA de um móvel para ser usado como base." : ""}
+      // PROMPT DE ALTO NÍVEL - AGENTE ARQUITETO SD VISION
+      const prompt = `Você é o AGENTE PROJETISTA SD VISION ENGINEERING V12, uma IA de nível avançado especializada em arquitetura.
       
-      TAREFAS POSSÍVEIS:
-      - measure: Se o usuário perguntou sobre medida (sofá, parede, ambiente).
-      - inpaint: Se o usuário quer trocar um móvel ou adicionar algo (ex: sofá, mesa).
-      - cleanup: Se for para remover algo do ambiente.
-      - style: Se for para trocar o estilo, cores ou revestimentos de uma área.
+      OBJETIVO: Analisar a foto do ambiente e o comando: "${iaCommand}".
       
-      REGRAS CRÍTICAS:
-      - Responda o campo "reasoning" sempre em PORTUGUÊS.
-      - Para medição, procure a folha A4 no chão como escala (297mm). 
-      - SE NÃO HOUVER A4, use proporções arquitetônicas padrão (ex: cama tem ~60cm altura, pé direito ~2.7m, porta ~2.1m) para ESTIMAR a medida. NUNCA diga que não pode medir; forneça sempre uma estimativa técnica aproximada.
-      - Se o usuário quer TROCAR ou MUDAR um objeto (ex: trocar sofá), use action 'inpaint' e defina o targetPolygon no objeto atual.
-      - Se o usuário quer REMOVER ou TIRAR sem colocar nada no lugar, use action 'cleanup'.
-      - Se o usuário quer PINTAR uma parede, use action 'inpaint' e defina o targetPolygon na parede específica.
+      DEFINIÇÕES DE ACTIONS:
+      1. "measure": Medição técnica.
+      2. "inpaint": Mudanças pontuais (Pintar UMA parede, trocar UM móvel). Preserve 90% da cena original.
+      3. "cleanup": Remover objetos.
+      4. "style": Remodelagem estética preservando o layout e móveis grandes.
       
-      RETORNE APENAS JSON:
+      REGRAS DE FIDELIDADE:
+      - Se o usuário quer PINTAR, identifique apenas a parede. O prompt em inglês deve focar na COR e TEXTURA da parede (ex: 'deep red matte finish wall').
+      - Se o usuário quer MUDAR O ESTILO, preserve os móveis principais e mude apenas acabamentos e decoração.
+      
+      RETORNE APENAS JSON VÁLIDO:
       {
         "action": "measure" | "cleanup" | "inpaint" | "style",
-        "measureResult": "valor estimado (ex: 2.50m) ou null",
-        "reasoning": "Explicação técnica EM PORTUGUÊS do seu cálculo",
-        "descriptionEn": "Detailed descriptive prompt in English for the AI image engine (e.g. 'a modern grey leather sofa' or 'red painted wall')",
-        "targetPolygon": [{"x":float, "y":float}, ...] // Normalized coordinates (0-1) of the target object/area
+        "measureResult": "valor estimado",
+        "reasoning": "Sua análise técnica em Português.",
+        "descriptionEn": "A very detailed architectural prompt in English focusing on preserving original details while applying the change.",
+        "targetPolygon": [{"x": float, "y": float}, ...] 
       }`;
 
-      // Garantir que temos base64 para a analise do Gemini
-      const base64Main = await toBase64(image);
-      const base64Ref = refImage ? await toBase64(refImage) : null;
-
-      const imagesToAnalyze = [base64Main];
-      if (base64Ref) imagesToAnalyze.push(base64Ref);
+      // Já temos o base64 no estado 'image'
+      const imagesToAnalyze = [image];
+      if (refImage) imagesToAnalyze.push(refImage);
 
       const res = await analyzeImageWithGemini(imagesToAnalyze.join('|'), prompt); 
       const cleanRes = res.replace(/```json|```/g, '').trim();
       const data = JSON.parse(cleanRes);
 
+      console.log("[SD VISION] AI Plan:", data);
+
       if (data.action === 'measure') {
         setResult({ 
           measureMm: data.measureResult, 
-          reasoning: data.reasoning || "Cálculo baseado na escala 3D do ambiente detectada." 
+          reasoning: data.reasoning || "Cálculo baseado na escala 3D do ambiente detectada.",
+          promptEn: data.descriptionEn
         });
         toast({ title: '📐 Medição detectada!' });
       } else if (data.action === 'cleanup' || data.action === 'inpaint' || data.action === 'style') {
-        toast({ title: '✨ Gerando imagem em Alta Definição...' });
+        toast({ title: '✨ Projetando mudanças em HD...' });
         
         setResult({ 
           measureMm: data.action.toUpperCase(), 
-          reasoning: data.reasoning || "Processando requisição de edição inteligente." 
+          reasoning: data.reasoning || "Processando requisição de edição inteligente.",
+          promptEn: data.descriptionEn
         });
 
         let finalImg: string | null = null;
 
+        // Preparação da máscara
         const mCanvas = document.createElement('canvas');
         const tmpImg = new Image(); 
         tmpImg.src = image; 
@@ -150,7 +140,7 @@ const SmartMeasurement: React.FC = () => {
             else mctx.lineTo(p.x * mCanvas.width, p.y * mCanvas.height); 
           });
         } else {
-          // Fallback mask (center) if polygon missing
+          // Fallback mask (centro)
           mctx.arc(mCanvas.width/2, mCanvas.height/2, mCanvas.width/4, 0, Math.PI*2);
         }
         
@@ -159,28 +149,71 @@ const SmartMeasurement: React.FC = () => {
         
         const mBase64 = mCanvas.toDataURL('image/png');
         
+        // Chamada aos serviços de imagem
+        let aiRawResult: string | null = null;
         if (data.action === 'cleanup') {
-          finalImg = await cleanupObject({ image: base64Main, mask: mBase64 });
+          aiRawResult = await cleanupObject({ image, mask: mBase64 });
         } else if (data.action === 'inpaint') {
-          finalImg = await inpaintObject(base64Main, mBase64, data.descriptionEn);
+          aiRawResult = await inpaintObject(image, mBase64, data.descriptionEn);
         } else if (data.action === 'style') {
-          finalImg = await styleTransfer(base64Main, data.descriptionEn);
+          aiRawResult = await styleTransfer(image, data.descriptionEn);
         }
         
-        if (finalImg) {
+        if (aiRawResult) {
+          // --- LÓGICA DE COMPOSIÇÃO DE PRESERVAÇÃO ESTRUTURAL ---
+          // Se for uma tarefa localizada (inpaint ou cleanup), forçamos a composição 
+          // para garantir que nada fora da máscara mude.
+          if (data.action === 'inpaint' || data.action === 'cleanup') {
+            const compCanvas = document.createElement('canvas');
+            compCanvas.width = tmpImg.width;
+            compCanvas.height = tmpImg.height;
+            const cctx = compCanvas.getContext('2d')!;
+
+            // 1. Desenha a imagem original (Fundo intacto)
+            cctx.drawImage(tmpImg, 0, 0);
+
+            // 2. Carrega o resultado da IA
+            const aiImg = new Image();
+            aiImg.src = aiRawResult;
+            await new Promise(r => aiImg.onload = r);
+
+            // 3. Cria uma máscara temporária para o recorte
+            const maskImg = new Image();
+            maskImg.src = mBase64;
+            await new Promise(r => maskImg.onload = r);
+
+            // 4. Desenha o resultado da IA apenas na área da máscara usando compositing
+            const resultCanvas = document.createElement('canvas');
+            resultCanvas.width = tmpImg.width;
+            resultCanvas.height = tmpImg.height;
+            const rctx = resultCanvas.getContext('2d')!;
+            
+            rctx.drawImage(maskImg, 0, 0);
+            rctx.globalCompositeOperation = 'source-in';
+            rctx.drawImage(aiImg, 0, 0);
+
+            // 5. Sobrepõe apenas a parte editada sobre a original
+            cctx.drawImage(resultCanvas, 0, 0);
+            
+            finalImg = compCanvas.toDataURL('image/jpeg', 0.95);
+          } else {
+            // Para 'style', deixamos a IA mudar o ambiente todo conforme solicitado
+            finalImg = aiRawResult;
+          }
+
           setHistory([finalImg, ...history]);
           setImage(finalImg);
-          toast({ title: '✅ Ambiente atualizado!' });
+          toast({ title: '✅ Projeto atualizado com fidelidade total!' });
         } else {
-          throw new Error("Falha ao gerar a imagem processada.");
+          throw new Error("A IA de renderização não conseguiu processar a imagem. Tente um comando mais simples.");
         }
       }
     } catch (e: any) {
       console.error("ERRO DETALHADO IA:", e);
       toast({ 
         variant: "destructive",
-        title: '❌ Erro de processamento', 
-        description: e.message || 'Não foi possível completar a tarefa.' 
+        title: '❌ Erro no Processamento', 
+        description: e.message || 'Houve um erro técnico. Tente novamente em instantes.' 
       });
     } finally {
       setAnalyzing(false);
@@ -270,15 +303,67 @@ const SmartMeasurement: React.FC = () => {
           )}
         </Card>
 
-        <div className="lg:col-span-3 space-y-6 overflow-y-auto lg:pr-2">
+            <div className="bg-[#111114] rounded-[40px] p-8 border border-white/5 space-y-6">
+              <h4 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-3">
+                 <Sparkles className="w-5 h-5 text-amber-500" /> Memória de Projeto
+              </h4>
+              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                {history.map((h, i) => (
+                  <img 
+                    key={i} 
+                    src={h} 
+                    onClick={() => setImage(h)}
+                    className="w-20 h-20 object-cover rounded-xl border-2 border-white/5 hover:border-amber-500 transition-all cursor-pointer shrink-0" 
+                  />
+                ))}
+                {history.length === 0 && <p className="text-[10px] text-gray-600 uppercase font-black">Nenhuma versão anterior</p>}
+              </div>
+           </div>
+
+           {analyzing && (
+             <Card className="bg-amber-500/10 border border-amber-500/30 rounded-[30px] p-6 animate-pulse">
+                <div className="flex items-center gap-4">
+                   <Loader2 className="w-6 h-6 text-amber-500 animate-spin" />
+                   <div>
+                     <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest">IA SD VISION PENSANDO...</p>
+                     <p className="text-xs text-white/70">Analisando arquitetura e planejando renderização...</p>
+                   </div>
+                </div>
+             </Card>
+           )}
+
            {result && (
              <Card className="bg-amber-500 rounded-[40px] p-8 space-y-4 shadow-2xl animate-in zoom-in-95 duration-500">
                 <div className="flex items-center gap-2">
                   <Search className="w-5 h-5 text-black" />
-                  <p className="text-[10px] font-black text-black/60 uppercase tracking-widest">Resultado do Projetista</p>
+                  <p className="text-[10px] font-black text-black/60 uppercase tracking-widest">Análise do Projetista</p>
                 </div>
-                <h2 className="text-4xl font-black text-black leading-tight border-b border-black/10 pb-4">{result.measureMm}</h2>
-                <p className="text-xs text-black/80 font-medium leading-relaxed italic">"{result.reasoning}"</p>
+                <h2 className="text-2xl font-black text-black leading-tight border-b border-black/10 pb-4">
+                  {result.measureMm === 'INPAINT' ? 'Edição Localizada' : 
+                   result.measureMm === 'STYLE' ? 'Nova Estilização' : 
+                   result.measureMm === 'CLEANUP' ? 'Limpeza de Ambiente' : 
+                   result.measureMm}
+                </h2>
+                <div className="bg-black/10 p-4 rounded-2xl">
+                  <p className="text-[11px] text-black font-bold leading-relaxed italic">
+                    <Sparkles className="w-3 h-3 inline mr-2" />
+                    {result.reasoning}
+                  </p>
+                </div>
+
+                <div className="pt-4 border-t border-black/10">
+                   <button 
+                     onClick={() => setShowAdvanced(!showAdvanced)}
+                     className="text-[9px] font-black uppercase text-black/40 hover:text-black transition-colors flex items-center gap-1"
+                   >
+                     {showAdvanced ? 'Esconder Prompt Técnico' : 'Ver Prompt Técnico (Modo Avançado)'}
+                   </button>
+                   {showAdvanced && result.promptEn && (
+                     <div className="mt-2 p-3 bg-black/5 rounded-xl border border-black/5">
+                        <p className="text-[10px] font-mono text-black/60 break-words">{result.promptEn}</p>
+                     </div>
+                   )}
+                </div>
              </Card>
            )}
 
