@@ -156,11 +156,12 @@ serve(async (req) => {
             const isGreeting = /^(oi|ola|olá|bom dia|boa tarde|boa noite|inicio|menu)$/i.test(cleanMessageLower);
             const normalizedMatch = cleanMessageLower.replace(/[^0-9]/g, "");
             
-            // VERIFICA SE ESTAMOS NO FLUXO DE BUSCA DE CONTRATO (ESTADO SALVO NA CONVERSA)
-            const isWaitingForContract = conversation.ai_summary === "WAITING_FOR_CONTRACT";
+            // VERIFICA SE ESTAMOS NO FLUXO DE BUSCA DE CONTRATO
+            const isWaitingForContract = conversation.lead_status === "awaiting_contract";
 
-            if (isWaitingForContract && !isGreeting && !config.responses?.[normalizedMatch]) {
-              console.log("[WEBHOOK] Estado WAITING_FOR_CONTRACT detectado. Procurando por:", cleanMessage);
+            // Tenta processar como busca de contrato se estiver no estado correto OU se a mensagem for longa (provavelmente um nome) e não for um comando
+            if ((isWaitingForContract || (cleanMessage.length > 3 && !isGreeting && !config.responses?.[normalizedMatch])) && !responseText) {
+              console.log("[WEBHOOK] Tentando busca de contrato para:", cleanMessage);
               
               let foundEmployee = null;
               
@@ -176,7 +177,7 @@ serve(async (req) => {
               } else {
                 // 2. Tenta buscar por número do contrato
                 const contractNumOnly = cleanMessage.replace(/[^0-9]/g, "");
-                if (contractNumOnly.length > 0) {
+                if (contractNumOnly.length > 0 && contractNumOnly.length < 5) {
                   const { data: contract } = await supabase.from("contracts")
                     .select("client_id")
                     .eq("contract_number", parseInt(contractNumOnly))
@@ -196,31 +197,32 @@ serve(async (req) => {
                 }
               }
 
-              // Limpa o estado da conversa independente de ter achado ou não
-              await supabase.from("whatsapp_conversations").update({ ai_summary: null }).eq("id", conversation.id);
-
               if (foundEmployee) {
+                // Se achou, limpa o estado e define a resposta
+                await supabase.from("whatsapp_conversations").update({ lead_status: "lead" }).eq("id", conversation.id);
                 responseText = `Localizei seu cadastro, *${foundEmployee.name}*! 🎉\n\n` +
                   `🔐 *Sua senha de acesso:* ${foundEmployee.password}\n\n` +
                   `📱 *Acesse nosso app aqui:* https://sdmoveisprojetados-zeta.vercel.app/\n\n` +
                   `Selecione "Cliente" na tela inicial e use sua senha para acompanhar seu projeto!`;
-              } else {
+              } else if (isWaitingForContract) {
+                // Se estava esperando e não achou, avisa e limpa
+                await supabase.from("whatsapp_conversations").update({ lead_status: "lead" }).eq("id", conversation.id);
                 responseText = "Desculpe, não localizei nenhum cadastro com esse nome ou número de contrato. 😕\n\n" +
                   "Verifique se o nome está correto ou escolha uma opção do menu:\n\n" + config.greeting;
               }
-            } else if (isGreeting) {
-              // Se for saudação, limpa qualquer estado anterior
-              if (isWaitingForContract) await supabase.from("whatsapp_conversations").update({ ai_summary: null }).eq("id", conversation.id);
-              responseText = config.greeting;
-            } else if (config.responses?.[normalizedMatch]) {
-              // Se escolheu uma opção do menu, limpa estado anterior
-              if (isWaitingForContract) await supabase.from("whatsapp_conversations").update({ ai_summary: null }).eq("id", conversation.id);
-              
-              responseText = config.responses[normalizedMatch];
-              
-              // Se escolheu a opção 2, ativa o estado de espera
-              if (normalizedMatch === "2") {
-                await supabase.from("whatsapp_conversations").update({ ai_summary: "WAITING_FOR_CONTRACT" }).eq("id", conversation.id);
+            }
+
+            // Se ainda não tiver resposta, tenta o menu normal
+            if (!responseText) {
+              if (isGreeting) {
+                responseText = config.greeting;
+              } else if (config.responses?.[normalizedMatch]) {
+                responseText = config.responses[normalizedMatch];
+                
+                // Se escolheu a opção 2, ativa o estado de espera
+                if (normalizedMatch === "2") {
+                  await supabase.from("whatsapp_conversations").update({ lead_status: "awaiting_contract" }).eq("id", conversation.id);
+                }
               }
             }
 
