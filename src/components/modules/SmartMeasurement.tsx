@@ -100,16 +100,23 @@ const SmartMeasurement: React.FC = () => {
       const cleanRes = res.replace(/```json|```/g, '').trim();
       const data = JSON.parse(cleanRes);
 
-      // --- OVERRIDE DE SEGURANÇA SD VISION ---
-      // Se o usuário pediu para pintar ou mudar cor, FORÇAMOS o modo inpaint
-      // para evitar que o Gemini escolha 'style' e mude o ambiente todo.
+      // --- BLOQUEIO DE SEGURANÇA SD VISION V13 (HARD-OVERRIDE) ---
       const cmdLower = iaCommand.toLowerCase();
-      if (cmdLower.includes('pintar') || cmdLower.includes('parede') || cmdLower.includes('cor')) {
-        console.log("[SD VISION] Force Override: Switch to INPAINT for consistency.");
+      const paintKeywords = ['pinte', 'pinta', 'pintura', 'pintar', 'parede', 'cor', 'mudar cor', 'colorir', 'preto', 'preta'];
+      const isPaintTask = paintKeywords.some(k => cmdLower.includes(k));
+
+      if (isPaintTask) {
+        console.log("[SD VISION V13] Hard Override: Forçando modo INPAINT para fidelidade total.");
         data.action = 'inpaint';
+        data.reasoning = "Comando de pintura/alteração detectado. Ativando motor de preservação estrutural SD VISION V13 para garantir fidelidade zero de erro.";
+        
+        // Refinamento do prompt para evitar borrões (smudges)
+        if (cmdLower.includes('pret')) {
+          data.descriptionEn = "Solid uniform deep matte black wall, architectural finish, high quality, photorealistic, no smudges, no artifacts, consistent texture";
+        }
       }
 
-      console.log("[SD VISION] AI Plan:", data);
+      console.log("[SD VISION V13] AI Plan:", data);
 
       if (data.action === 'measure') {
         setResult({ 
@@ -237,7 +244,7 @@ const SmartMeasurement: React.FC = () => {
              <ScanLine className="w-6 h-6 sm:w-8 sm:h-8 text-black" />
           </div>
           <div>
-            <h1 className="text-xl sm:text-3xl font-black italic tracking-tighter text-white">SD VISION <span className="text-amber-500 font-normal">ENGINEERING V12</span></h1>
+            <h1 className="text-xl sm:text-3xl font-black italic tracking-tighter text-white">SD VISION <span className="text-amber-500 font-normal">V13 - ATIVO</span></h1>
             <p className="text-[8px] sm:text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] sm:tracking-[0.4em]">Advanced Creative Surveyor Engine</p>
           </div>
         </div>
