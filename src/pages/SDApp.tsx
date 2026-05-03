@@ -172,6 +172,10 @@ const App: React.FC = () => {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
+    // Força o reset para a tela de seleção ao iniciar, por segurança
+    setAuthState('SELECT');
+    setView(ViewMode.DASHBOARD);
+
     setIsTouchDevice(
       'ontouchstart' in window ||
       navigator.maxTouchPoints > 0 ||
