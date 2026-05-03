@@ -108,7 +108,7 @@ serve(async (req) => {
           }
 
           // Salva a mensagem no banco
-          const externalId = key.id || messageData.id;
+          const externalId = key.id || messageData.id || `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
           if (externalId) {
             await supabase.from("whatsapp_messages").upsert({
               external_id: externalId, 
@@ -157,22 +157,22 @@ serve(async (req) => {
             const normalizedMatch = cleanMessageLower.replace(/[^0-9]/g, "");
             
             // VERIFICA SE ESTAMOS NO FLUXO DE BUSCA DE CONTRATO (ESTADO ANTERIOR)
-            const { data: lastBotMsg } = await supabase.from("whatsapp_messages")
+            const { data: recentBotMsgs } = await supabase.from("whatsapp_messages")
               .select("content")
               .eq("conversation_id", conversation.id)
               .eq("direction", "outbound")
               .order("created_at", { ascending: false })
-              .limit(1)
-              .maybeSingle();
+              .limit(1);
 
-            const isWaitingForContract = lastBotMsg?.content?.includes("informe seu nome completo");
+            const lastBotMsg = recentBotMsgs?.[0]?.content || "";
+            const isWaitingForContract = lastBotMsg.includes("nome completo") || lastBotMsg.includes("número do contrato");
 
             if (isWaitingForContract && !isGreeting && !config.responses?.[normalizedMatch]) {
-              console.log("[WEBHOOK] Buscando contrato para:", cleanMessage);
+              console.log("[WEBHOOK] Fluxo de busca detectado. Procurando por:", cleanMessage);
               
               let foundEmployee = null;
               
-              // Tenta buscar por nome primeiro
+              // 1. Tenta buscar por nome (ILIKE para ser flexível com maiúsculas/minúsculas)
               const { data: empsByName } = await supabase.from("employees")
                 .select("name, password")
                 .eq("role", "Cliente")
@@ -182,12 +182,12 @@ serve(async (req) => {
               if (empsByName && empsByName.length > 0) {
                 foundEmployee = empsByName[0];
               } else {
-                // Tenta buscar por número do contrato se for um número
-                const contractNum = parseInt(cleanMessage.replace(/[^0-9]/g, ""));
-                if (!isNaN(contractNum)) {
+                // 2. Tenta buscar por número do contrato (se o cliente digitou apenas números)
+                const contractNumOnly = cleanMessage.replace(/[^0-9]/g, "");
+                if (contractNumOnly.length > 0) {
                   const { data: contract } = await supabase.from("contracts")
                     .select("client_id")
-                    .eq("contract_number", contractNum)
+                    .eq("contract_number", parseInt(contractNumOnly))
                     .maybeSingle();
                   
                   if (contract?.client_id) {
@@ -210,8 +210,9 @@ serve(async (req) => {
                   `📱 *Acesse nosso app aqui:* https://sdmoveisprojetados-zeta.vercel.app/\n\n` +
                   `Selecione "Cliente" na tela inicial e use sua senha para acompanhar seu projeto!`;
               } else {
+                // Se não achou, mas estava esperando um contrato, dá um feedback e mostra o menu de novo
                 responseText = "Desculpe, não localizei nenhum cadastro com esse nome ou número de contrato. 😕\n\n" +
-                  "Pode digitar o nome novamente ou escolher uma opção do menu:\n\n" + config.greeting;
+                  "Verifique se o nome está correto ou escolha uma opção do menu:\n\n" + config.greeting;
               }
             } else if (isGreeting) {
               responseText = config.greeting;
