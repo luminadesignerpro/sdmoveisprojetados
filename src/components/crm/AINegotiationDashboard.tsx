@@ -166,9 +166,31 @@ const AINegotiationDashboard: React.FC = () => {
                   </div>
                 </div>
               ))}
-              {negotiations.length === 0 && (
-                <div className="p-12 text-center text-gray-600 font-bold uppercase tracking-widest">
-                  Aguardando atendimentos iniciados pelo robô...
+               {negotiations.length === 0 && (
+                <div className="p-12 text-center flex flex-col items-center">
+                  <Bot className="w-12 h-12 text-gray-600 mb-4" />
+                  <p className="text-gray-600 font-bold uppercase tracking-widest mb-6">Aguardando atendimentos iniciados pelo robô...</p>
+                  <Button 
+                    className="bg-amber-600/10 border border-amber-600/30 text-amber-500 hover:bg-amber-600 hover:text-black transition-all"
+                    onClick={async () => {
+                      const mockConv = {
+                        contact_name: 'Marcos Oliveira (Simulação)',
+                        phone_number: '+5511999999999',
+                        status: 'active',
+                        lead_score: 85,
+                        ai_summary: 'Cliente interessado em cozinha planejada com ilha. Já possui medidas aproximadas.',
+                        last_message_at: new Date().toISOString(),
+                        created_at: new Date().toISOString()
+                      };
+                      const { error } = await supabase.from('whatsapp_conversations').insert([mockConv]);
+                      if (!error) {
+                        fetchNegotiations();
+                        toast({ title: "🤖 Simulação Ativada", description: "Um novo lead foi gerado para teste." });
+                      }
+                    }}
+                  >
+                    Simular Conversa de Cliente
+                  </Button>
                 </div>
               )}
             </div>

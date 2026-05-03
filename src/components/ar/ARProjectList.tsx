@@ -158,10 +158,33 @@ const ARProjectList: React.FC = () => {
             </Card>
           ))}
           {projects.length === 0 && (
-            <div className="col-span-full py-12 text-center bg-white/5 rounded-3xl border border-dashed border-white/10">
-              <Clock className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+            <div className="col-span-full py-12 text-center bg-white/5 rounded-3xl border border-dashed border-white/10 flex flex-col items-center">
+              <Clock className="w-12 h-12 text-gray-600 mb-4" />
               <p className="text-gray-500 font-bold uppercase tracking-widest">Nenhum projeto AR recebido ainda</p>
-              <p className="text-gray-600 text-sm mt-1">Peça ao vendedor para usar o app "Studio AR Pro"</p>
+              <p className="text-gray-600 text-sm mt-1 mb-6">Peça ao vendedor para usar o app "Studio AR Pro"</p>
+              <Button 
+                variant="outline" 
+                className="bg-amber-500/10 border-amber-500/30 text-amber-500 hover:bg-amber-500 hover:text-black transition-all"
+                onClick={async () => {
+                  const demoProject = {
+                    title: 'Projeto Cozinha Demo',
+                    data: {
+                      measurements: '2.45m x 3.10m',
+                      items: ['Balcão Pia', 'Armário Aéreo', 'Torre Quente'],
+                      timestamp: new Date().toISOString()
+                    },
+                    total_value: 12500,
+                    screenshot_url: 'https://images.unsplash.com/photo-1556911220-e15224bbaf40?auto=format&fit=crop&q=80',
+                  };
+                  const { error } = await supabase.from('ar_measurements').insert([demoProject]);
+                  if (!error) {
+                    fetchProjects();
+                    toast({ title: "✅ Projeto Demo Criado", description: "Agora você pode visualizar a interface de produção." });
+                  }
+                }}
+              >
+                Criar Projeto Demo para Teste
+              </Button>
             </div>
           )}
         </div>
