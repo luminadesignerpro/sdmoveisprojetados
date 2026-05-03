@@ -107,14 +107,17 @@ export default function GalleryManager() {
         .from('documents')
         .getPublicUrl(filePath);
 
+      console.log('Inserting into project_gallery...', { projectId, publicUrl });
       const { error: dbError } = await db.from('project_gallery').insert({
         project_id: projectId,
-        title: newImage.title,
-        description: newImage.description,
+        description: `${newImage.title}${newImage.description ? ' - ' + newImage.description : ''}`,
         image_url: publicUrl
       });
 
-      if (dbError) throw dbError;
+      if (dbError) {
+        console.error('Error inserting into project_gallery:', dbError);
+        throw dbError;
+      }
 
       toast({ title: '✅ Imagem enviada com sucesso!' });
       setNewImage({ title: '', description: '', file: null, previewUrl: '' });
@@ -296,7 +299,7 @@ export default function GalleryManager() {
                         </div>
                       </div>
                       <div className="p-5">
-                        <p className="font-black text-white text-sm uppercase truncate">{item.title}</p>
+                        <p className="font-black text-white text-sm uppercase truncate">{item.title || item.description || 'Sem título'}</p>
                         <p className="text-[10px] text-gray-500 mt-1 line-clamp-2">{item.description || 'Sem descrição'}</p>
                         <p className="text-[9px] text-amber-500/40 font-bold mt-4 uppercase">
                           {new Date(item.created_at).toLocaleDateString('pt-BR')} às {new Date(item.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
