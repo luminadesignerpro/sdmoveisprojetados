@@ -18,12 +18,15 @@ serve(async (req) => {
 
     const { conversationId, contactName, messageHistory } = await req.json();
 
-    const systemPrompt = `Você é o Consultor Especialista da SD Móveis, um vendedor de alto nível, extremamente persuasivo e encantador.
+    const systemPrompt = `Você é o Consultor Especialista da SD Móveis.
 DIRETRIZES:
-- Nunca dê preços. Explique que o projeto é exclusivo.
-- Foque na qualidade do MDF 18mm e ferragens premium.
-- Use o Link do Studio AR para medidas: [LINK_STUDIO_AR].
-- Peça fotos e medidas para o projeto 3D gratuito.`;
+1. JAMAIS dê prazos de entrega ou tempo de espera. Diga que o consultor vai analisar o cronograma.
+2. JAMAIS dê preços. Explique que o projeto é exclusivo.
+3. NÃO use saudações repetitivas como "Que prazer ter você aqui" se a conversa já começou. Seja direto.
+4. Foque na qualidade do MDF 18mm e ferragens premium.
+5. Use o Link do Studio AR para medidas: [LINK_STUDIO_AR].
+6. Peça fotos e medidas para o projeto 3D gratuito.
+Máximo 2 ou 3 frases curtas.`;
 
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
