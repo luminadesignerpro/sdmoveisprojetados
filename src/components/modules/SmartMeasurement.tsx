@@ -59,8 +59,15 @@ const SmartMeasurement: React.FC = () => {
   }, [image]);
 
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [history, setHistory] = useState<string[]>([]);
+  
+  const creativeKeywords = [
+    'sugest', 'melhor', 'decor', 'estil', 'luxo', 'bonit', 'chatgpt', 'ambiente', 
+    'moderno', 'novo', 'troc', 'mud', 'substitu', 'preto', 'cinza', 'diferente', 'top',
+    'remov', 'tirar', 'apagar', 'limpar'
+  ];
+  const isCreativeTaskUI = iaCommand && creativeKeywords.some(k => iaCommand.toLowerCase().includes(k));
 
-  // No longer needed to convert blob to base64 as we will keep base64 in state
   const executeIA = async () => {
     if (!image || !iaCommand) {
       toast({ title: '⚠️ Descreva o que deseja fazer.' });
