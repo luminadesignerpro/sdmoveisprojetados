@@ -73,22 +73,23 @@ const SmartMeasurement: React.FC = () => {
       
       OBJETIVO: Analisar a foto do ambiente e o comando: "${iaCommand}".
       
-      REFERÊNCIA: Se houver uma segunda imagem, ela é a FOTO DE REFERÊNCIA. Você deve DESCREVER os móveis da referência no prompt 'descriptionEn'.
+      REFERÊNCIA: Se houver uma segunda imagem, ela é a FOTO DE REFERÊNCIA. Você deve DESCREVER os móveis da referência no prompt 'descriptionEn' com detalhes de cores e materiais.
       
       REGRAS DE MÁSCARA (targetPolygon):
-      - O targetPolygon DEVE cobrir o sofá INTEIRO e a PAREDE se ambos forem mencionados.
-      - Seja GENEROSO na máscara de objetos a serem trocados (inclua sombras).
+      - O targetPolygon DEVE cobrir o sofá INTEIRO (incluindo pés e sombras) e a PAREDE.
+      - Use uma margem de segurança GENEROSA.
       
       REGRAS DE PROMPT (descriptionEn):
-      - Se houver foto de referência, NÃO diga "igual à foto". DESCREVA o móvel (ex: "modern black leather sectional sofa").
-      - Foque em materiais de luxo, iluminação e acabamentos cinematográficos.
+      - Use linguagem de SUBSTITUIÇÃO TOTAL: "Completely replace the existing furniture", "Erase and redraw", "No remnants of original piece".
+      - Descreva o novo sofá da referência como o centro da cena.
+      - Adicione detalhes de luxo: cinematic lighting, architectural moldings, 8k resolution.
       
       RETORNE APENAS JSON VÁLIDO:
       {
         "action": "inpaint" | "style" | "cleanup",
         "measureResult": "valor estimado",
         "reasoning": "Sua análise em Português.",
-        "descriptionEn": "Extremely detailed architectural prompt describing the new environment and furniture from the reference.",
+        "descriptionEn": "Aggressive transformative architectural prompt for total replacement of elements.",
         "targetPolygon": [{"x": float, "y": float}, ...] 
       }`;
 
@@ -370,7 +371,7 @@ const SmartMeasurement: React.FC = () => {
                   <p className="text-[10px] font-black text-black/60 uppercase tracking-widest">Análise do Projetista</p>
                 </div>
                 <h2 className="text-2xl font-black text-black leading-tight border-b border-black/10 pb-4">
-                  {result.measureMm === 'INPAINT' ? 'Edição Localizada' : 
+                  {result.measureMm === 'INPAINT' ? (iaCommand.toLowerCase().includes('troc') || iaCommand.toLowerCase().includes('sugest') ? 'Projeto Criativo IA' : 'Edição Localizada') : 
                    result.measureMm === 'STYLE' ? 'Nova Estilização' : 
                    result.measureMm === 'CLEANUP' ? 'Limpeza de Ambiente' : 
                    result.measureMm}
