@@ -17,12 +17,11 @@ export default function GalleryManager() {
   const [uploading, setUploading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Form for new image
   const [newImage, setNewImage] = useState({
     title: '',
     description: '',
-    file: null as File | null,
-    previewUrl: ''
+    files: [] as File[],
+    previews: [] as string[]
   });
 
   useEffect(() => {
@@ -55,23 +54,43 @@ export default function GalleryManager() {
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      const newPreviews = files.map(file => URL.createObjectURL(file));
       setNewImage({
         ...newImage,
-        file,
-        previewUrl: URL.createObjectURL(file)
+        files: [...newImage.files, ...files],
+        previews: [...newImage.previews, ...newPreviews]
       });
     }
   };
 
+  const removeSelectedFile = (index: number) => {
+    const updatedFiles = [...newImage.files];
+    const updatedPreviews = [...newImage.previews];
+    
+    // Revoke the object URL to avoid memory leaks
+    URL.revokeObjectURL(updatedPreviews[index]);
+    
+    updatedFiles.splice(index, 1);
+    updatedPreviews.splice(index, 1);
+    
+    setNewImage({
+      ...newImage,
+      files: updatedFiles,
+      previews: updatedPreviews
+    });
+  };
+
   const handleUpload = async () => {
-    if (!selectedProject || !newImage.file || !newImage.title) {
-      toast({ title: '⚠️ Preencha todos os campos', variant: 'destructive' });
+    if (!selectedProject || newImage.files.length === 0 || !newImage.title) {
+      toast({ title: '⚠️ Preencha o título e selecione ao menos uma foto', variant: 'destructive' });
       return;
     }
 
     setUploading(true);
+    let successCount = 0;
+    
     try {
       let projectId = selectedProject.project_id;
 
@@ -93,38 +112,50 @@ export default function GalleryManager() {
         selectedProject.project_id = projectId;
       }
 
-      if (!newImage.file) throw new Error('Arquivo não selecionado');
+      // Upload each file
+      for (let i = 0; i < newImage.files.length; i++) {
+        const file = newImage.files[i];
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `gallery/${projectId}/${fileName}`;
 
-      const fileExt = newImage.file.name.split('.').pop();
-      const fileName = `${Math.random().toString(36).substring(7)}.${fileExt}`;
-      const filePath = `gallery/${projectId}/${fileName}`;
+        const { error: uploadError } = await supabase.storage
+          .from('documents')
+          .upload(filePath, file);
 
-      const { error: uploadError } = await supabase.storage
-        .from('documents')
-        .upload(filePath, newImage.file);
+        if (uploadError) {
+          console.error(`Error uploading file ${i}:`, uploadError);
+          continue;
+        }
 
-      if (uploadError) throw uploadError;
+        const { data: { publicUrl } } = supabase.storage
+          .from('documents')
+          .getPublicUrl(filePath);
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('documents')
-        .getPublicUrl(filePath);
+        const { error: dbError } = await db.from('project_gallery').insert({
+          project_id: projectId,
+          description: `${newImage.title}${newImage.description ? ' - ' + newImage.description : ''}${newImage.files.length > 1 ? ` (${i + 1}/${newImage.files.length})` : ''}`,
+          image_url: publicUrl
+        });
 
-      const { error: dbError } = await db.from('project_gallery').insert({
-        project_id: projectId,
-        description: `${newImage.title}${newImage.description ? ' - ' + newImage.description : ''}`,
-        image_url: publicUrl
-      });
-
-      if (dbError) {
-        console.error('Error inserting into project_gallery:', dbError);
-        throw dbError;
+        if (dbError) {
+          console.error('Error inserting into project_gallery:', dbError);
+        } else {
+          successCount++;
+        }
       }
 
-      toast({ title: '✅ Imagem enviada com sucesso!' });
-      setNewImage({ title: '', description: '', file: null, previewUrl: '' });
-      fetchGallery(projectId);
+      if (successCount > 0) {
+        toast({ title: `✅ ${successCount} imagens enviadas com sucesso!` });
+        // Clear previews
+        newImage.previews.forEach(url => URL.revokeObjectURL(url));
+        setNewImage({ title: '', description: '', files: [], previews: [] });
+        fetchGallery(projectId);
+      } else {
+        throw new Error('Nenhuma imagem pôde ser enviada.');
+      }
     } catch (error: any) {
-      toast({ title: '❌ Erro ao enviar', description: error.message, variant: 'destructive' });
+      toast({ title: '❌ Erro no envio', description: error.message, variant: 'destructive' });
     } finally {
       setUploading(false);
     }
@@ -209,28 +240,41 @@ export default function GalleryManager() {
               </h3>
               
               <div className="space-y-4">
-                <div className="aspect-video bg-black/60 rounded-2xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center relative overflow-hidden group cursor-pointer hover:border-amber-500/40 transition-colors">
-                  {newImage.previewUrl ? (
-                    <img src={newImage.previewUrl} className="w-full h-full object-cover" alt="Preview" />
-                  ) : (
-                    <>
-                      <ImageIcon className="w-8 h-8 text-gray-600 mb-2 group-hover:scale-110 transition-transform" />
-                      <p className="text-[10px] font-black text-gray-500 uppercase">Clique para selecionar foto</p>
-                    </>
-                  )}
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    onChange={handleFileChange} 
-                    className="absolute inset-0 opacity-0 cursor-pointer"
-                  />
-                  {newImage.previewUrl && (
-                    <button 
-                      onClick={() => setNewImage({ ...newImage, file: null, previewUrl: '' })}
-                      className="absolute top-2 right-2 p-1 bg-red-500 rounded-full text-white"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
+                <div className="space-y-2">
+                  <div className={`aspect-video bg-black/60 rounded-2xl border-2 border-dashed ${newImage.files.length > 0 ? 'border-amber-500/30' : 'border-white/10'} flex flex-col items-center justify-center relative overflow-hidden group cursor-pointer hover:border-amber-500/40 transition-colors`}>
+                    {newImage.previews.length > 0 ? (
+                      <div className="grid grid-cols-3 gap-1 w-full h-full p-2 overflow-auto custom-scrollbar">
+                        {newImage.previews.map((url, idx) => (
+                          <div key={idx} className="relative aspect-square rounded-lg overflow-hidden group/item">
+                            <img src={url} className="w-full h-full object-cover" alt="Preview" />
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); removeSelectedFile(idx); }}
+                              className="absolute top-1 right-1 p-1 bg-red-500 rounded-full text-white opacity-0 group-hover/item:opacity-100 transition-opacity"
+                            >
+                              <X className="w-2 h-2" />
+                            </button>
+                          </div>
+                        ))}
+                        <div className="aspect-square bg-white/5 rounded-lg flex items-center justify-center border border-dashed border-white/10 hover:bg-white/10 transition-colors">
+                           <Plus className="w-4 h-4 text-gray-500" />
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <ImageIcon className="w-8 h-8 text-gray-600 mb-2 group-hover:scale-110 transition-transform" />
+                        <p className="text-[10px] font-black text-gray-500 uppercase">Clique para selecionar fotos</p>
+                      </>
+                    )}
+                    <input 
+                      type="file" 
+                      multiple
+                      accept="image/*" 
+                      onChange={handleFileChange} 
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                    />
+                  </div>
+                  {newImage.files.length > 0 && (
+                    <p className="text-[10px] text-amber-500/60 font-bold uppercase text-center">{newImage.files.length} fotos selecionadas</p>
                   )}
                 </div>
 
@@ -251,11 +295,11 @@ export default function GalleryManager() {
 
                 <button
                   onClick={handleUpload}
-                  disabled={uploading || !newImage.file || !newImage.title}
+                  disabled={uploading || newImage.files.length === 0 || !newImage.title}
                   className="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-black py-4 rounded-xl font-black uppercase text-xs tracking-widest hover:opacity-90 disabled:opacity-30 transition-all flex items-center justify-center gap-2"
                 >
                   {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UploadCloud className="w-4 h-4" />}
-                  Enviar para Galeria
+                  {uploading ? `Enviando (${newImage.files.length})...` : 'Enviar para Galeria'}
                 </button>
               </div>
             </div>
