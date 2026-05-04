@@ -170,19 +170,30 @@ const ContractsPage: React.FC = () => {
       toast({ title: '⚠️ Vincule um cliente primeiro', variant: 'destructive' });
       return;
     }
+    
+    // Busca o cliente para ver se já tem acesso
+    const { data: clientData } = await db.from('clients').select('access_code').eq('id', contract.client_id).single();
+    
+    if (clientData?.access_code) {
+      toast({ 
+        title: '🔑 Acesso do Cliente', 
+        description: `A senha atual é: ${clientData.access_code}`, 
+        duration: 15000 
+      });
+      return;
+    }
+
     const tempPassword = Math.floor(100000 + Math.random() * 900000).toString();
     try {
-      const { error } = await db.from('employees').insert([{
-        name: contract.clients.name,
-        email: `cliente_${contract.client_id}@sdmoveis.com`,
-        password: tempPassword,
-        role: 'Cliente',
-        active: true
-      }]);
+      const { error } = await db.from('clients').update({
+        access_code: tempPassword
+      }).eq('id', contract.client_id);
+      
       if (error) throw error;
-      toast({ title: '🔑 Acesso Gerado!', description: `Senha: ${tempPassword}`, duration: 10000 });
-    } catch (e) {
-      alert(`[BACKUP] A senha gerada para o cliente é: ${tempPassword}`);
+      toast({ title: '🔑 Acesso Criado!', description: `Senha: ${tempPassword}`, duration: 15000 });
+      fetchData();
+    } catch (e: any) {
+      toast({ title: '❌ Erro ao gerar acesso', description: e.message, variant: 'destructive' });
     }
   };
 

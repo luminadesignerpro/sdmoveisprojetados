@@ -1661,15 +1661,23 @@ const App: React.FC = () => {
                   </div>
                 )}
                 <div className="relative">
-                  <input
-                    type="password"
-                    placeholder="••••••••"
-                    className="w-full h-14 bg-white/5 hover:bg-white/8 rounded-xl px-6 border border-white/10 focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20 text-center text-lg tracking-[0.3em] text-white placeholder:text-gray-600 transition-all outline-none"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-                  />
-                </div>
+                    <input
+                      type="password"
+                      placeholder="••••••••"
+                      className="w-full h-14 bg-white/5 hover:bg-white/8 rounded-xl px-6 border border-white/10 focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20 text-center text-lg tracking-[0.3em] text-white placeholder:text-gray-600 transition-all outline-none"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+                    />
+                    {selectedRole === 'CLIENT' && (
+                      <button 
+                        onClick={() => window.open('https://wa.me/5585997602237?text=Olá, esqueci minha senha de acesso ao portal do cliente.', '_blank')}
+                        className="text-[10px] text-amber-500/60 hover:text-amber-500 mt-2 block mx-auto font-bold uppercase tracking-widest"
+                      >
+                        Esqueceu a senha?
+                      </button>
+                    )}
+                  </div>
 
                 <button
                   onClick={handleLogin}
