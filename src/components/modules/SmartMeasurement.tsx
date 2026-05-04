@@ -197,39 +197,38 @@ const SmartMeasurement: React.FC = () => {
         }
         
         if (aiRawResult) {
-          // --- LÓGICA DE COMPOSIÇÃO ---
-          // Se for uma tarefa CRIATIVA, usamos o resultado direto da IA (estilo ChatGPT) para blending perfeito.
-          // Se for uma tarefa TÉCNICA (fidelidade), forçamos a composição restrita.
-          if ((data.action === 'inpaint' || data.action === 'cleanup') && !isCreativeTask) {
-            const compCanvas = document.createElement('canvas');
-            compCanvas.width = tmpImg.width;
-            compCanvas.height = tmpImg.height;
-            const cctx = compCanvas.getContext('2d')!;
-
-            cctx.drawImage(tmpImg, 0, 0);
-
-            const aiImg = new Image();
-            aiImg.src = aiRawResult;
-            await new Promise(r => aiImg.onload = r);
-
+          // --- COMPOSIÇÃO FINAL SD VISION V13 ---
+          let finalImg = "";
+          
+          if (data.action === 'style') {
+            // Em modo STYLE (remodelagem global), aceitamos o render completo da IA
+            finalImg = aiRawResult;
+          } else {
+            // Para INPAINT (troca de móvel) ou CLEANUP (remoção), 
+            // SEMPRE usamos composição para preservar 100% do ambiente original.
+            const canvas = document.createElement('canvas');
+            canvas.width = tmpImg.width;
+            canvas.height = tmpImg.height;
+            const ctx = canvas.getContext('2d')!;
+            
+            // 1. Desenha o ambiente original
+            ctx.drawImage(tmpImg, 0, 0);
+            
+            // 2. Prepara a máscara no canvas de composição
+            ctx.globalCompositeOperation = 'destination-out';
             const maskImg = new Image();
             maskImg.src = mBase64;
             await new Promise(r => maskImg.onload = r);
-
-            const resultCanvas = document.createElement('canvas');
-            resultCanvas.width = tmpImg.width;
-            resultCanvas.height = tmpImg.height;
-            const rctx = resultCanvas.getContext('2d')!;
+            ctx.drawImage(maskImg, 0, 0);
             
-            rctx.drawImage(maskImg, 0, 0);
-            rctx.globalCompositeOperation = 'source-in';
-            rctx.drawImage(aiImg, 0, 0);
-
-            cctx.drawImage(resultCanvas, 0, 0);
-            finalImg = compCanvas.toDataURL('image/jpeg', 0.95);
-          } else {
-            // Em modo criativo ou style, aceitamos o render completo da IA
-            finalImg = aiRawResult;
+            // 3. Sobrepõe o resultado da IA apenas na área da máscara
+            ctx.globalCompositeOperation = 'destination-over';
+            const aiImg = new Image();
+            aiImg.src = aiRawResult;
+            await new Promise(r => aiImg.onload = r);
+            ctx.drawImage(aiImg, 0, 0);
+            
+            finalImg = canvas.toDataURL('image/jpeg', 0.95);
           }
 
           setHistory([finalImg, ...history]);
