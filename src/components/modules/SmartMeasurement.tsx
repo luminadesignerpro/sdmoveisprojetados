@@ -102,22 +102,25 @@ const SmartMeasurement: React.FC = () => {
 
       // --- INTELIGÊNCIA DE DECISÃO SD VISION V13 (ESTILO CHATGPT) ---
       const cmdLower = iaCommand.toLowerCase();
-      // Usando prefixos menores para aceitar variações (ex: sugest, melhor, decor)
       const creativeKeywords = ['sugest', 'melhor', 'decor', 'estil', 'luxo', 'bonit', 'chatgpt', 'ambiente'];
       const isCreativeTask = creativeKeywords.some(k => cmdLower.includes(k));
       
+      const changeKeywords = ['troc', 'mud', 'substitu', 'coloc', 'põe', 'poe'];
+      const isChangeTask = changeKeywords.some(k => cmdLower.includes(k));
+
       const paintKeywords = ['pint', 'parede', 'cor', 'colorir', 'mudar'];
       const isPaintTask = paintKeywords.some(k => cmdLower.includes(k));
 
       if (isCreativeTask) {
-        console.log("[SD VISION V13] Modo Criativo Ativado: Re-renderização estética global (Estilo ChatGPT).");
-        data.action = 'style';
-        data.reasoning = "Modo de Alta Criatividade ativado. Re-renderizando ambiente com foco em estética, iluminação e sugestões de design arquitetônico.";
-        data.descriptionEn = `A high-end luxury interior design of this ${data.action} with ${iaCommand}, cinematic lighting, architectural details like wall moldings and spotlights, ultra-realistic, professional photography, 8k, highly detailed.`;
+        console.log("[SD VISION V13] Modo Criativo Ativado.");
+        // Se envolver troca de móvel, usamos inpaint para focar no objeto, mas com liberdade
+        data.action = isChangeTask ? 'inpaint' : 'style';
+        data.reasoning = `Modo de Alta Criatividade ativado. Re-renderizando ${isChangeTask ? 'objetos e ' : ''}ambiente com foco em estética e design.`;
+        data.descriptionEn = `A high-end luxury interior design, ${iaCommand}, cinematic lighting, architectural details, ultra-realistic, professional photography, 8k, highly detailed.`;
       } else if (isPaintTask) {
-        console.log("[SD VISION V13] Modo Fidelidade: Pintura técnica preservando geometria.");
+        console.log("[SD VISION V13] Modo Fidelidade: Pintura técnica.");
         data.action = 'inpaint';
-        data.reasoning = "Comando de pintura detectado. Ativando motor de preservação estrutural para garantir que a cor mude sem alterar seus móveis.";
+        data.reasoning = "Comando de pintura detectado. Ativando motor de preservação estrutural.";
         if (cmdLower.includes('pret')) {
           data.descriptionEn = "Solid uniform deep matte black wall, architectural finish, high quality, photorealistic, consistent texture, luxury matte black paint.";
         }
@@ -163,14 +166,14 @@ const SmartMeasurement: React.FC = () => {
             else mctx.lineTo(p.x * mCanvas.width, p.y * mCanvas.height); 
           });
           
-          if (data.action === 'cleanup') {
-            mctx.lineWidth = 60; // "Engorda" a máscara para garantir remoção total
+          if (data.action === 'cleanup' || (data.action === 'inpaint' && isCreativeTask)) {
+            mctx.lineWidth = 100; // Máscara mais larga para blending melhor em modo criativo
             mctx.strokeStyle = 'white';
             mctx.stroke();
           }
         } else {
           // Fallback mask (centro)
-          mctx.arc(mCanvas.width/2, mCanvas.height/2, mCanvas.width/4, 0, Math.PI*2);
+          mctx.arc(mCanvas.width/2, mCanvas.height/2, mCanvas.width/3, 0, Math.PI*2);
         }
         
         mctx.closePath(); 
@@ -189,29 +192,25 @@ const SmartMeasurement: React.FC = () => {
         }
         
         if (aiRawResult) {
-          // --- LÓGICA DE COMPOSIÇÃO DE PRESERVAÇÃO ESTRUTURAL ---
-          // Se for uma tarefa localizada (inpaint ou cleanup), forçamos a composição 
-          // para garantir que nada fora da máscara mude.
-          if (data.action === 'inpaint' || data.action === 'cleanup') {
+          // --- LÓGICA DE COMPOSIÇÃO ---
+          // Se for uma tarefa CRIATIVA, usamos o resultado direto da IA (estilo ChatGPT) para blending perfeito.
+          // Se for uma tarefa TÉCNICA (fidelidade), forçamos a composição restrita.
+          if ((data.action === 'inpaint' || data.action === 'cleanup') && !isCreativeTask) {
             const compCanvas = document.createElement('canvas');
             compCanvas.width = tmpImg.width;
             compCanvas.height = tmpImg.height;
             const cctx = compCanvas.getContext('2d')!;
 
-            // 1. Desenha a imagem original (Fundo intacto)
             cctx.drawImage(tmpImg, 0, 0);
 
-            // 2. Carrega o resultado da IA
             const aiImg = new Image();
             aiImg.src = aiRawResult;
             await new Promise(r => aiImg.onload = r);
 
-            // 3. Cria uma máscara temporária para o recorte
             const maskImg = new Image();
             maskImg.src = mBase64;
             await new Promise(r => maskImg.onload = r);
 
-            // 4. Desenha o resultado da IA apenas na área da máscara usando compositing
             const resultCanvas = document.createElement('canvas');
             resultCanvas.width = tmpImg.width;
             resultCanvas.height = tmpImg.height;
@@ -221,12 +220,10 @@ const SmartMeasurement: React.FC = () => {
             rctx.globalCompositeOperation = 'source-in';
             rctx.drawImage(aiImg, 0, 0);
 
-            // 5. Sobrepõe apenas a parte editada sobre a original
             cctx.drawImage(resultCanvas, 0, 0);
-            
             finalImg = compCanvas.toDataURL('image/jpeg', 0.95);
           } else {
-            // Para 'style', deixamos a IA mudar o ambiente todo conforme solicitado
+            // Em modo criativo ou style, aceitamos o render completo da IA
             finalImg = aiRawResult;
           }
 
