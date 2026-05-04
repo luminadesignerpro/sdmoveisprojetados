@@ -363,7 +363,7 @@ const SmartMeasurement: React.FC = () => {
                   <p className="text-[10px] font-black text-black/60 uppercase tracking-widest">Análise do Projetista</p>
                 </div>
                 <h2 className="text-2xl font-black text-black leading-tight border-b border-black/10 pb-4 uppercase">
-                  {isCreativeTask ? 'SD VISION - MOTOR CHATGPT (V4)' : 
+                  {isCreativeTaskUI ? 'SD VISION - MOTOR CHATGPT (V4)' : 
                    result.measureMm === 'INPAINT' ? 'Edição Localizada' : 
                    result.measureMm === 'STYLE' ? 'Nova Estilização' : 
                    result.measureMm === 'CLEANUP' ? 'Limpeza de Ambiente' : 
