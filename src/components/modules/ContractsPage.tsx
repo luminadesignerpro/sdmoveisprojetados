@@ -171,33 +171,48 @@ const ContractsPage: React.FC = () => {
       return;
     }
     
-    const clientEmail = `cliente_${contract.client_id}@sdmoveis.com`;
+    const clientName = contract.clients.name;
 
-    // Verifica se já existe um registro para este cliente na tabela de funcionários
-    const { data: empData } = await db.from('employees').select('password').eq('email', clientEmail).maybeSingle();
+    // Busca todos os registros de clientes com esse nome (evita maybeSingle que falha com múltiplos)
+    const { data: empList } = await db
+      .from('employees')
+      .select('id, password')
+      .eq('name', clientName)
+      .eq('role', 'Cliente')
+      .limit(5);
     
-    if (empData?.password) {
+    // Se já tem algum com senha, mostra a primeira
+    const existing = empList?.find((e: any) => e.password);
+    if (existing?.password) {
       toast({ 
         title: '🔑 Acesso do Cliente', 
-        description: `A senha atual é: ${empData.password}`, 
+        description: `Senha atual de ${clientName}: ${existing.password}`, 
         duration: 15000 
       });
       return;
     }
 
+    // Se tem registros sem senha, atualiza o primeiro com uma senha
+    if (empList && empList.length > 0) {
+      const tempPassword = Math.floor(100000 + Math.random() * 900000).toString();
+      await db.from('employees').update({ password: tempPassword }).eq('id', empList[0].id);
+      toast({ title: '🔑 Senha Definida!', description: `Senha de ${clientName}: ${tempPassword}`, duration: 15000 });
+      return;
+    }
+
+    // Não existe nenhum registro — cria um novo
     const tempPassword = Math.floor(100000 + Math.random() * 900000).toString();
     try {
       const { error } = await db.from('employees').insert([{
-        name: contract.clients.name,
-        email: clientEmail,
+        name: clientName,
+        email: `cliente_${contract.client_id}@sdmoveis.com`,
         password: tempPassword,
         role: 'Cliente',
         active: true
       }]);
       
       if (error) throw error;
-      toast({ title: '🔑 Acesso Criado!', description: `Senha: ${tempPassword}`, duration: 15000 });
-      fetchData();
+      toast({ title: '🔑 Acesso Criado!', description: `Senha de ${clientName}: ${tempPassword}`, duration: 15000 });
     } catch (e: any) {
       toast({ title: '❌ Erro ao gerar acesso', description: e.message, variant: 'destructive' });
     }
