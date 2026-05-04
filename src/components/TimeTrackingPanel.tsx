@@ -176,6 +176,12 @@ export default function TimeTrackingPanel() {
     return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
   };
 
+  const toHHMM = (decimalHours: number) => {
+    const h = Math.floor(Math.abs(decimalHours));
+    const m = Math.round((Math.abs(decimalHours) - h) * 60);
+    return `${decimalHours < 0 ? '-' : ''}${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+  };
+
   const tabClass = (t: string) =>
     `px-6 py-3 rounded-xl font-bold text-sm transition-all ${tab === t ? 'bg-amber-500 text-white shadow-lg' : 'bg-white text-gray-600 hover:bg-gray-100'}`;
 
@@ -236,7 +242,8 @@ export default function TimeTrackingPanel() {
   };
 
   const buildPayslipText = (emp: Employee) => {
-    const hours = calcHours(emp.id);
+    const rawHours = calcHours(emp.id);
+    const hours = Math.round(rawHours * 100) / 100;
     const base = hours * emp.hourly_rate;
     const overtime = calcOvertime(emp.id);
     const fuelAllowance = calcFuelAllowance(emp.id);
@@ -247,7 +254,7 @@ export default function TimeTrackingPanel() {
       `👤 *${emp.name}*\n` +
       `📋 Cargo: ${emp.role || '-'}\n` +
       `📅 Período: ${periodLabel}\n\n` +
-      `⏱ Horas trabalhadas: ${hours.toFixed(1)}h\n` +
+      `⏱ Horas trabalhadas: ${hours.toFixed(2)}h (${toHHMM(hours)})\n` +
       `💰 Valor/hora: R$ ${emp.hourly_rate.toFixed(2)}\n` +
       `💵 Base: R$ ${base.toFixed(2)}\n` +
       (overtime > 0 ? `✅ Horas Extra: +R$ ${overtime.toFixed(2)}\n` : '') +
@@ -545,7 +552,8 @@ export default function TimeTrackingPanel() {
               </thead>
               <tbody>
                 {employees.map(emp => {
-                  const hours = calcHours(emp.id);
+                  const rawHours = calcHours(emp.id);
+                  const hours = Math.round(rawHours * 100) / 100;
                   const base = hours * emp.hourly_rate;
                   const overtime = calcOvertime(emp.id);
                   const fuelAllowance = calcFuelAllowance(emp.id);
@@ -556,7 +564,7 @@ export default function TimeTrackingPanel() {
                     <tr key={emp.id} className="border-t border-gray-100 hover:bg-gray-50">
                       <td className="px-6 py-4 font-bold text-gray-900">{emp.name}</td>
                       <td className="px-6 py-4 text-gray-500 text-sm">{emp.role || '-'}</td>
-                      <td className="px-6 py-4 text-right font-mono text-gray-700">{hours.toFixed(1)}h</td>
+                      <td className="px-6 py-4 text-right font-mono text-gray-700">{hours.toFixed(2)}h <span className="text-[10px] opacity-50 block">({toHHMM(hours)})</span></td>
                       <td className="px-6 py-4 text-right text-gray-500">R$ {emp.hourly_rate.toFixed(2)}</td>
                       <td className="px-6 py-4 text-right font-bold text-green-600">{overtime > 0 ? `+R$ ${overtime.toFixed(2)}` : '-'}</td>
                       <td className="px-6 py-4 text-right font-bold text-orange-600">{fuelAllowance > 0 ? `+R$ ${fuelAllowance.toFixed(2)}` : '-'}</td>
@@ -580,7 +588,7 @@ export default function TimeTrackingPanel() {
               <tfoot className="bg-gray-900 text-white">
                 <tr>
                   <td colSpan={2} className="px-6 py-4 font-bold">TOTAL</td>
-                  <td className="px-6 py-4 text-right font-mono">{employees.reduce((s, e) => s + calcHours(e.id), 0).toFixed(1)}h</td>
+                  <td className="px-6 py-4 text-right font-mono">{employees.reduce((s, e) => s + (Math.round(calcHours(e.id) * 100) / 100), 0).toFixed(2)}h</td>
                   <td className="px-6 py-4"></td>
                   <td className="px-6 py-4 text-right font-bold text-green-400">+R$ {employees.reduce((s, e) => s + calcOvertime(e.id), 0).toFixed(2)}</td>
                   <td className="px-6 py-4 text-right font-bold text-orange-400">+R$ {employees.reduce((s, e) => s + calcFuelAllowance(e.id), 0).toFixed(2)}</td>
@@ -588,7 +596,7 @@ export default function TimeTrackingPanel() {
                   <td className="px-6 py-4 text-right font-bold text-red-400">-R$ {employees.reduce((s, e) => s + calcDeductions(e.id), 0).toFixed(2)}</td>
                   <td className="px-6 py-4 text-right font-black text-amber-400 text-xl">
                     R$ {employees.reduce((s, e) => {
-                      const h = calcHours(e.id);
+                      const h = Math.round(calcHours(e.id) * 100) / 100;
                       return s + (h * e.hourly_rate) + calcOvertime(e.id) + calcFuelAllowance(e.id) - calcDeductions(e.id);
                     }, 0).toFixed(2)}
                   </td>
