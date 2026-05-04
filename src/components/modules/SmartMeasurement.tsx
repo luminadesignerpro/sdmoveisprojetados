@@ -102,13 +102,17 @@ const SmartMeasurement: React.FC = () => {
 
       // --- INTELIGÊNCIA DE DECISÃO SD VISION V13 (ESTILO CHATGPT) ---
       const cmdLower = iaCommand.toLowerCase();
-      const creativeKeywords = ['sugest', 'melhor', 'decor', 'estil', 'luxo', 'bonit', 'chatgpt', 'ambiente'];
+      // Qualquer palavra que indique mudança de estilo ou desejo de algo novo ativa o modo criativo
+      const creativeKeywords = [
+        'sugest', 'melhor', 'decor', 'estil', 'luxo', 'bonit', 'chatgpt', 'ambiente', 
+        'moderno', 'novo', 'troc', 'mud', 'substitu', 'preto', 'cinza', 'diferente', 'top'
+      ];
       const isCreativeTask = creativeKeywords.some(k => cmdLower.includes(k));
       
       const changeKeywords = ['troc', 'mud', 'substitu', 'coloc', 'põe', 'poe'];
       const isChangeTask = changeKeywords.some(k => cmdLower.includes(k));
 
-      const paintKeywords = ['pint', 'parede', 'cor', 'colorir', 'mudar'];
+      const paintKeywords = ['pint', 'parede', 'cor', 'colorir'];
       const isPaintTask = paintKeywords.some(k => cmdLower.includes(k));
 
       if (isCreativeTask) {
