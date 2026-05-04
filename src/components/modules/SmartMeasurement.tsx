@@ -69,26 +69,29 @@ const SmartMeasurement: React.FC = () => {
     setAnalyzing(true);
     try {
       // PROMPT DE ALTO NÍVEL - AGENTE ARQUITETO SD VISION
-      const prompt = `Você é o AGENTE PROJETISTA SD VISION ENGINEERING V12, uma IA de nível avançado especializada em arquitetura.
+      const prompt = `Você é o AGENTE PROJETISTA SD VISION ENGINEERING V13, uma IA de nível avançado especializada em arquitetura e renderização.
       
       OBJETIVO: Analisar a foto do ambiente e o comando: "${iaCommand}".
       
       DEFINIÇÕES DE ACTIONS:
       1. "measure": Medição técnica.
-      2. "inpaint": Mudanças pontuais (Pintar UMA parede, trocar UM móvel). Preserve 90% da cena original.
-      3. "cleanup": Remover objetos. O polígono deve ser GENEROSO e envolver TODO o objeto e suas SOMBRAS.
-      4. "style": Remodelagem estética preservando o layout e móveis grandes.
+      2. "inpaint": Trocas de objetos, pintura de paredes ou mudanças pontuais. 
+      3. "cleanup": Remover objetos e recompor o fundo.
+      4. "style": Remodelagem estética global (Background replacement).
       
-      REGRAS DE FIDELIDADE:
-      - Se o usuário quer PINTAR, identifique apenas a parede. O prompt em inglês deve focar na COR e TEXTURA da parede (ex: 'deep red matte finish wall').
-      - Se o usuário quer MUDAR O ESTILO, preserve os móveis principais e mude apenas acabamentos e decoração.
+      REGRAS DE MÁSCARA (targetPolygon):
+      - O targetPolygon DEVE envolver TODAS as áreas e objetos mencionados no comando.
+      - Se o usuário quer TROCAR o sofá, o polígono DEVE cobrir o sofá INTEIRO.
+      - Se quer PINTAR a parede, o polígono DEVE cobrir a parede.
+      - Se quer AMBOS, o polígono DEVE cobrir TANTO a parede QUANTO o sofá.
+      - Use coordenadas normalizadas (0.0 a 1.0).
       
       RETORNE APENAS JSON VÁLIDO:
       {
         "action": "measure" | "cleanup" | "inpaint" | "style",
         "measureResult": "valor estimado",
         "reasoning": "Sua análise técnica em Português.",
-        "descriptionEn": "A very detailed architectural prompt in English focusing on preserving original details while applying the change.",
+        "descriptionEn": "A very detailed aesthetic architectural prompt in English for Stable Diffusion, describe the new materials, lighting and high-end finishes.",
         "targetPolygon": [{"x": float, "y": float}, ...] 
       }`;
 
