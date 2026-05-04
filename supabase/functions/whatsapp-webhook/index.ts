@@ -215,7 +215,7 @@ serve(async (req) => {
                 responseText = `Localizei seu cadastro, *${foundEmployee.name}*! 🎉\n\n` +
                   `🔐 *Sua senha de acesso:* ${foundEmployee.password}\n\n` +
                   `📱 *Acesse nosso app aqui:* https://sdmoveisprojetados-zeta.vercel.app/\n\n` +
-                  `Selecione "Cliente" na tela inicial e use sua senha para acompanhar seu projeto!`;
+                  `Selecione "Cliente" na tela inicial e use sua senha para acompanhar seu projeto ou abrir chamados de garantia no chat interno!`;
               } else if (isWaitingForContract) {
                 // Se estava esperando e não achou, avisa e limpa
                 await supabase.from("whatsapp_conversations").update({ lead_status: "lead" }).eq("id", conversation.id);
@@ -233,10 +233,12 @@ serve(async (req) => {
                 const mediaLabel = messageContent === "[AUDIO]" ? "seu áudio" : (messageContent === "[STICKER]" ? "sua figurinha" : "sua foto/mídia");
                 responseText = `Recebi ${mediaLabel}! 📸 Já encaminhei aqui para o nosso time de projetistas analisar. \n\nFique à vontade para mandar mais fotos ou descrever os detalhes do seu projeto enquanto preparamos seu atendimento! 😊`;
               } else if (config.responses?.[normalizedMatch]) {
-                responseText = config.responses[normalizedMatch];
-                
-                // Se escolheu a opção 2, ativa o estado de espera
+                // Se escolheu a opção 2 ou 3, ativa o estado de espera para buscar contrato/nome
                 if (normalizedMatch === "2") {
+                  responseText = "Perfeito! Vou verificar o andamento do seu projeto. 📋 Por favor, me informe seu *nome completo* ou o *número do contrato*.";
+                  await supabase.from("whatsapp_conversations").update({ lead_status: "awaiting_contract" }).eq("id", conversation.id);
+                } else if (normalizedMatch === "3") {
+                  responseText = "Estamos aqui para ajudar no seu pós-venda! 🛡️ Para acessar sua área exclusiva e abrir um chamado de garantia, por favor me informe seu *nome completo* ou o *número do contrato*.";
                   await supabase.from("whatsapp_conversations").update({ lead_status: "awaiting_contract" }).eq("id", conversation.id);
                 }
               }
