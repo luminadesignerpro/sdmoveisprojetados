@@ -351,8 +351,10 @@ const SmartMeasurement: React.FC = () => {
                   <Search className="w-5 h-5 text-black" />
                   <p className="text-[10px] font-black text-black/60 uppercase tracking-widest">Análise do Projetista</p>
                 </div>
-                <h2 className="text-2xl font-black text-black leading-tight border-b border-black/10 pb-4">
-                  {result.measureMm === 'INPAINT' ? (iaCommand.toLowerCase().includes('troc') || iaCommand.toLowerCase().includes('sugest') ? 'Projeto Criativo IA' : 'Edição Localizada') : 
+                <h2 className="text-2xl font-black text-black leading-tight border-b border-black/10 pb-4 uppercase">
+                  {result.measureMm === 'INPAINT' ? 
+                    (iaCommand.toLowerCase().includes('troc') || iaCommand.toLowerCase().includes('sugest') || iaCommand.toLowerCase().includes('mud') ? 
+                    'SD VISION - PROJETO CRIATIVO' : 'Edição Localizada') : 
                    result.measureMm === 'STYLE' ? 'Nova Estilização' : 
                    result.measureMm === 'CLEANUP' ? 'Limpeza de Ambiente' : 
                    result.measureMm}
