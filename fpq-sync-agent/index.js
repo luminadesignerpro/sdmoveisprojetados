@@ -26,7 +26,7 @@ let lastSyncStatus = "Nunca sincronizado";
 let lastSyncTime = null;
 
 async function syncData() {
-    console.log('[' + new Date().toLocaleString() + '] 🔄 Iniciando Sincronização Geral...');
+    console.log('[' + new Date().toLocaleString() + '] 🔄 Iniciando Sincronização em tempo real...');
     
     Firebird.attach(fbOptions, function(err, db) {
         if (err) {
@@ -57,17 +57,34 @@ async function syncData() {
             }
         });
 
-        // --- 2. SINCRONIZAR VENDAS (PROJETOS) --- 
-        // Tenta buscar na tabela de VENDAS ou PEDIDOS
+        // --- 2. SINCRONIZAR CONTRATOS ---
+        // Tenta buscar na tabela de CONTRATOS ou VENDAS
+        db.query('SELECT * FROM CONTRATOS', async function(err, result) {
+            if (!err && result) {
+                console.log('📄 Sincronizando ' + result.length + ' Contratos...');
+                for (const row of result) {
+                    try {
+                        await supabase.from('contracts').upsert({
+                            contract_number: row.NUMERO || row.ID,
+                            title: row.DESCRICAO || 'Contrato FPQ - ' + (row.ID || row.NUMERO),
+                            value: row.VALOR_TOTAL || row.TOTAL || 0,
+                            status: (row.SITUACAO || 'assinado').toLowerCase(),
+                            created_at: row.DATA || new Date().toISOString()
+                        }, { onConflict: 'contract_number' });
+                    } catch (e) {
+                        console.error('Erro ao subir Contrato individual:', e.message);
+                    }
+                }
+            } else {
+                console.log('Tabela CONTRATOS não encontrada, usando VENDAS como base.');
+            }
+        });
+
+        // --- 3. SINCRONIZAR VENDAS (PROJETOS) --- 
         db.query('SELECT * FROM VENDAS', async function(err, result) {
             if (err) {
-                console.log('Tabela VENDAS não encontrada, tentando PEDIDOS...');
                 db.query('SELECT * FROM PEDIDOS', async function(err2, result2) {
-                    if (err2) {
-                        console.error('Nenhuma tabela de vendas encontrada (VENDAS/PEDIDOS)');
-                    } else if (result2) {
-                        await processSales(result2);
-                    }
+                    if (!err2 && result2) await processSales(result2);
                 });
             } else if (result) {
                 await processSales(result);
@@ -93,7 +110,7 @@ async function processSales(sales) {
             console.error('Erro ao subir Venda individual:', e.message);
         }
     }
-    lastSyncStatus = "Sucesso: OS e Vendas Sincronizadas";
+    lastSyncStatus = "Sucesso: OS, Contratos e Vendas Sincronizadas";
     lastSyncTime = new Date().toISOString();
     console.log('✅ Sincronização Completa!');
 }
@@ -111,10 +128,10 @@ async function syncPromobProject(filename) {
             title: projectName,
             client_name: 'Cliente Promob Local',
             project_type: 'Promob Plus (Importado)',
-            status: 'producao', // Assume production if it was created/saved
+            status: 'producao',
             updated_at: new Date().toISOString()
         }, { onConflict: 'title, client_name' });
-        console.log('✅ Projeto Promob sincronizado com o Dash!');
+        console.log('✅ Projeto Promob sincronizado!');
     } catch (e) {
         console.error('Erro ao sincronizar Promob:', e.message);
     }
@@ -146,42 +163,37 @@ async function uploadAndSyncPdf(filePath) {
     if (!filePath.toLowerCase().endsWith('.pdf')) return;
     
     const fileName = path.basename(filePath);
-    const fileBuffer = fs.readFileSync(filePath);
+    console.log('📄 Processando PDF: ' + fileName);
     
-    console.log('📄 Novo PDF detectado: ' + fileName);
+    // Pequeno delay para garantir que o FPQ terminou de escrever o arquivo
+    await new Promise(resolve => setTimeout(resolve, 2000));
     
     try {
-        // 1. Upload para Supabase Storage
+        const fileBuffer = fs.readFileSync(filePath);
         const storagePath = `automated/${Date.now()}_${fileName}`;
+        
         const { data: uploadData, error: uploadError } = await supabase.storage
             .from('documents')
             .upload(storagePath, fileBuffer, { contentType: 'application/pdf', upsert: true });
 
         if (uploadError) throw uploadError;
 
-        // 2. Pegar URL pública
         const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(storagePath);
         console.log('✅ PDF no Storage: ' + publicUrl);
 
-        // 3. Tentar vincular à OS ou Venda
-        // Padrões comuns: OS_123.pdf, PED_123.pdf, Venda_123.pdf
         const match = fileName.match(/\d+/);
         const refId = match ? match[0] : null;
 
         if (refId) {
             if (fileName.toUpperCase().includes('OS')) {
-                const { error: updErr } = await supabase
-                    .from('service_orders')
-                    .update({ pdf_url: publicUrl })
-                    .eq('order_number', refId);
-                if (!updErr) console.log(`🔗 PDF vinculado à OS #${refId}`);
+                await supabase.from('service_orders').update({ pdf_url: publicUrl }).eq('order_number', refId);
+                console.log(`🔗 PDF vinculado à OS #${refId}`);
+            } else if (fileName.toUpperCase().includes('CONTRATO')) {
+                await supabase.from('contracts').update({ pdf_url: publicUrl }).eq('contract_number', refId);
+                console.log(`🔗 PDF vinculado ao Contrato #${refId}`);
             } else {
-                // Tenta vincular projetos/vendas pelo titulo ou numero
-                const { error: updErr } = await supabase
-                    .from('client_projects')
-                    .update({ pdf_url: publicUrl })
-                    .ilike('title', `%${refId}%`);
-                if (!updErr) console.log(`🔗 PDF vinculado ao Projeto #${refId}`);
+                await supabase.from('client_projects').update({ pdf_url: publicUrl }).ilike('title', `%${refId}%`);
+                console.log(`🔗 PDF vinculado ao Projeto #${refId}`);
             }
         }
     } catch (e) {
@@ -190,28 +202,22 @@ async function uploadAndSyncPdf(filePath) {
 }
 
 if (fs.existsSync(PDF_WATCH_DIR)) {
-    console.log('👀 Monitorando PDFs em: ' + PDF_WATCH_DIR);
-    fs.watch(PDF_WATCH_DIR, (eventType, filename) => {
+    console.log('👀 Monitorando PDFs (Recursivo) em: ' + PDF_WATCH_DIR);
+    fs.watch(PDF_WATCH_DIR, { recursive: true }, (eventType, filename) => {
         if (filename && eventType === 'rename') {
             const fullPath = path.join(PDF_WATCH_DIR, filename);
             if (fs.existsSync(fullPath)) {
-                setTimeout(() => uploadAndSyncPdf(fullPath), 1000); // Delay p/ garantir que o arquivo terminou de salvar
+                uploadAndSyncPdf(fullPath);
             }
         }
     });
 }
 
-// Servidor de Heartbeat para o Painel Web
+// Servidor de Heartbeat
 const server = http.createServer((req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
     res.setHeader('Content-Type', 'application/json');
-
-    if (req.method === 'OPTIONS') {
-        res.writeHead(204);
-        res.end();
-        return;
-    }
 
     if (req.url === '/status') {
         res.writeHead(200);
@@ -219,8 +225,11 @@ const server = http.createServer((req, res) => {
             status: 'online',
             lastSyncStatus,
             lastSyncTime,
-            version: '1.3.0',
-            promobWatcher: fs.existsSync(PROMOB_PROJECTS_DIR)
+            version: '1.4.0',
+            watchers: {
+                promob: fs.existsSync(PROMOB_PROJECTS_DIR),
+                pdf: fs.existsSync(PDF_WATCH_DIR)
+            }
         }));
     } else {
         res.writeHead(404);
@@ -230,11 +239,12 @@ const server = http.createServer((req, res) => {
 
 const HTTP_PORT = 3001;
 server.listen(HTTP_PORT, () => {
-    console.log(`Servidor de status rodando em http://localhost:${HTTP_PORT}/status`);
+    console.log(`Servidor de status em http://localhost:${HTTP_PORT}/status`);
 });
 
-const interval = parseInt(process.env.SYNC_INTERVAL_MS) || 300000;
-console.log('Intervalo Database: ' + (interval/60000) + ' minutos.');
+// Intervalo reduzido para 60 segundos para parecer "direto"
+const interval = 60000; 
+console.log('Sincronização agendada a cada 60 segundos.');
 syncData();
 setInterval(syncData, interval);
 

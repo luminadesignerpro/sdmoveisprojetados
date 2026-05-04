@@ -76,7 +76,7 @@ const SmartMeasurement: React.FC = () => {
       DEFINIÇÕES DE ACTIONS:
       1. "measure": Medição técnica.
       2. "inpaint": Mudanças pontuais (Pintar UMA parede, trocar UM móvel). Preserve 90% da cena original.
-      3. "cleanup": Remover objetos.
+      3. "cleanup": Remover objetos. O polígono deve ser GENEROSO e envolver TODO o objeto e suas SOMBRAS.
       4. "style": Remodelagem estética preservando o layout e móveis grandes.
       
       REGRAS DE FIDELIDADE:
@@ -155,6 +155,12 @@ const SmartMeasurement: React.FC = () => {
             if (i === 0) mctx.moveTo(p.x * mCanvas.width, p.y * mCanvas.height); 
             else mctx.lineTo(p.x * mCanvas.width, p.y * mCanvas.height); 
           });
+          
+          if (data.action === 'cleanup') {
+            mctx.lineWidth = 60; // "Engorda" a máscara para garantir remoção total
+            mctx.strokeStyle = 'white';
+            mctx.stroke();
+          }
         } else {
           // Fallback mask (centro)
           mctx.arc(mCanvas.width/2, mCanvas.height/2, mCanvas.width/4, 0, Math.PI*2);
