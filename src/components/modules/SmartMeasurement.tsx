@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { analyzeImageWithGemini } from '@/services/geminiService';
 import { cleanupObject, inpaintObject, styleTransfer } from '@/services/stabilityService';
+import { generateOpenAIImage } from '@/services/openaiImageService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -193,9 +194,19 @@ const SmartMeasurement: React.FC = () => {
         
         // Chamada aos serviços de imagem
         let aiRawResult: string | null = null;
-        if (data.action === 'cleanup') aiRawResult = await cleanupObject({ image, mask: mBase64 });
-        else if (data.action === 'inpaint') aiRawResult = await inpaintObject(image, mBase64, data.descriptionEn);
-        else if (data.action === 'style') aiRawResult = await styleTransfer(image, data.descriptionEn);
+        
+        if (isCreativeTask) {
+          // --- MOTOR CHATGPT (DALL-E 3) ---
+          console.log("[SD VISION] Usando Motor OpenAI (DALL-E 3) para tarefa criativa.");
+          // Criamos um prompt ultra-descritivo combinando o ambiente original com o novo desejo
+          const dallePrompt = `A high-end, realistic professional interior photography of a room. ${data.descriptionEn}. The room should have a luxury architecture, cinematic lighting, 8k resolution, photorealistic textures.`;
+          aiRawResult = await generateOpenAIImage(dallePrompt);
+        } else {
+          // --- MOTOR TÉCNICO (STABILITY) ---
+          if (data.action === 'cleanup') aiRawResult = await cleanupObject({ image, mask: mBase64 });
+          else if (data.action === 'inpaint') aiRawResult = await inpaintObject(image, mBase64, data.descriptionEn);
+          else if (data.action === 'style') aiRawResult = await styleTransfer(image, data.descriptionEn);
+        }
         
         if (aiRawResult) {
           let finalImg = "";
@@ -352,9 +363,8 @@ const SmartMeasurement: React.FC = () => {
                   <p className="text-[10px] font-black text-black/60 uppercase tracking-widest">Análise do Projetista</p>
                 </div>
                 <h2 className="text-2xl font-black text-black leading-tight border-b border-black/10 pb-4 uppercase">
-                  {result.measureMm === 'INPAINT' ? 
-                    (iaCommand.toLowerCase().includes('troc') || iaCommand.toLowerCase().includes('sugest') || iaCommand.toLowerCase().includes('mud') ? 
-                    'SD VISION - PROJETO CRIATIVO' : 'Edição Localizada') : 
+                  {isCreativeTask ? 'SD VISION - MOTOR CHATGPT (V4)' : 
+                   result.measureMm === 'INPAINT' ? 'Edição Localizada' : 
                    result.measureMm === 'STYLE' ? 'Nova Estilização' : 
                    result.measureMm === 'CLEANUP' ? 'Limpeza de Ambiente' : 
                    result.measureMm}
