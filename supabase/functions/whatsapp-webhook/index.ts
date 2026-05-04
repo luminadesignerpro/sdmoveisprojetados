@@ -229,9 +229,9 @@ serve(async (req) => {
               if (isGreeting) {
                 responseText = config.greeting;
               } else if (messageContent === "[AUDIO]" || messageContent === "[STICKER]" || messageContent === "[MEDIA]") {
-                // Resposta especial para mídias que o bot não processa mas deve responder
-                const mediaLabel = messageContent === "[AUDIO]" ? "áudios" : (messageContent === "[STICKER]" ? "figurinhas" : "mídias");
-                responseText = `Ainda não consigo processar ${mediaLabel}, mas estou à disposição! 😊\n\n` + config.greeting;
+                // Resposta acolhedora para mídias
+                const mediaLabel = messageContent === "[AUDIO]" ? "seu áudio" : (messageContent === "[STICKER]" ? "sua figurinha" : "sua foto/mídia");
+                responseText = `Recebi ${mediaLabel}! 📸 Já encaminhei aqui para o nosso time de projetistas analisar. \n\nFique à vontade para mandar mais fotos ou descrever os detalhes do seu projeto enquanto preparamos seu atendimento! 😊`;
               } else if (config.responses?.[normalizedMatch]) {
                 responseText = config.responses[normalizedMatch];
                 
