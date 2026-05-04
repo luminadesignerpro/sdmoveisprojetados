@@ -69,29 +69,26 @@ const SmartMeasurement: React.FC = () => {
     setAnalyzing(true);
     try {
       // PROMPT DE ALTO NÍVEL - AGENTE ARQUITETO SD VISION
-      const prompt = `Você é o AGENTE PROJETISTA SD VISION ENGINEERING V13, uma IA de nível avançado especializada em arquitetura e renderização.
+      const prompt = `Você é o AGENTE PROJETISTA SD VISION ENGINEERING V13.
       
       OBJETIVO: Analisar a foto do ambiente e o comando: "${iaCommand}".
       
-      DEFINIÇÕES DE ACTIONS:
-      1. "measure": Medição técnica.
-      2. "inpaint": Trocas de objetos, pintura de paredes ou mudanças pontuais. 
-      3. "cleanup": Remover objetos e recompor o fundo.
-      4. "style": Remodelagem estética global (Background replacement).
+      REFERÊNCIA: Se houver uma segunda imagem, ela é a FOTO DE REFERÊNCIA. Você deve DESCREVER os móveis da referência no prompt 'descriptionEn'.
       
       REGRAS DE MÁSCARA (targetPolygon):
-      - O targetPolygon DEVE envolver TODAS as áreas e objetos mencionados no comando.
-      - Se o usuário quer TROCAR o sofá, o polígono DEVE cobrir o sofá INTEIRO.
-      - Se quer PINTAR a parede, o polígono DEVE cobrir a parede.
-      - Se quer AMBOS, o polígono DEVE cobrir TANTO a parede QUANTO o sofá.
-      - Use coordenadas normalizadas (0.0 a 1.0).
+      - O targetPolygon DEVE cobrir o sofá INTEIRO e a PAREDE se ambos forem mencionados.
+      - Seja GENEROSO na máscara de objetos a serem trocados (inclua sombras).
+      
+      REGRAS DE PROMPT (descriptionEn):
+      - Se houver foto de referência, NÃO diga "igual à foto". DESCREVA o móvel (ex: "modern black leather sectional sofa").
+      - Foque em materiais de luxo, iluminação e acabamentos cinematográficos.
       
       RETORNE APENAS JSON VÁLIDO:
       {
-        "action": "measure" | "cleanup" | "inpaint" | "style",
+        "action": "inpaint" | "style" | "cleanup",
         "measureResult": "valor estimado",
-        "reasoning": "Sua análise técnica em Português.",
-        "descriptionEn": "A very detailed aesthetic architectural prompt in English for Stable Diffusion, describe the new materials, lighting and high-end finishes.",
+        "reasoning": "Sua análise em Português.",
+        "descriptionEn": "Extremely detailed architectural prompt describing the new environment and furniture from the reference.",
         "targetPolygon": [{"x": float, "y": float}, ...] 
       }`;
 
