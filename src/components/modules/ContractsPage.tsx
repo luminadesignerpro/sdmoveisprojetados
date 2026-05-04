@@ -171,13 +171,15 @@ const ContractsPage: React.FC = () => {
       return;
     }
     
-    // Busca o cliente para ver se já tem acesso
-    const { data: clientData } = await db.from('clients').select('access_code').eq('id', contract.client_id).single();
+    const clientEmail = `cliente_${contract.client_id}@sdmoveis.com`;
+
+    // Verifica se já existe um registro para este cliente na tabela de funcionários
+    const { data: empData } = await db.from('employees').select('password').eq('email', clientEmail).maybeSingle();
     
-    if (clientData?.access_code) {
+    if (empData?.password) {
       toast({ 
         title: '🔑 Acesso do Cliente', 
-        description: `A senha atual é: ${clientData.access_code}`, 
+        description: `A senha atual é: ${empData.password}`, 
         duration: 15000 
       });
       return;
@@ -185,9 +187,13 @@ const ContractsPage: React.FC = () => {
 
     const tempPassword = Math.floor(100000 + Math.random() * 900000).toString();
     try {
-      const { error } = await db.from('clients').update({
-        access_code: tempPassword
-      }).eq('id', contract.client_id);
+      const { error } = await db.from('employees').insert([{
+        name: contract.clients.name,
+        email: clientEmail,
+        password: tempPassword,
+        role: 'Cliente',
+        active: true
+      }]);
       
       if (error) throw error;
       toast({ title: '🔑 Acesso Criado!', description: `Senha: ${tempPassword}`, duration: 15000 });

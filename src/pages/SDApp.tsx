@@ -227,15 +227,20 @@ const App: React.FC = () => {
   useEffect(() => {
     if (authState === 'CLIENT') {
       const fetchClientData = async () => {
-        const { data: clients } = await db
-          .from('clients')
-          .select('id, name')
-          .eq('access_code', password.trim() || 'SD2024')
+        // Busca o employee com role=Cliente e password igual ao código fornecido
+        const { data: emps } = await db
+          .from('employees')
+          .select('email, name')
+          .eq('password', password.trim())
+          .eq('role', 'Cliente')
           .limit(1);
 
-        const client = clients && clients.length > 0 ? clients[0] : null;
-        if (client) setClientName(client.name);
-        const clientId = client?.id;
+        const emp = emps && emps.length > 0 ? emps[0] : null;
+        if (emp) setClientName(emp.name);
+
+        // Extrai o client_id do email: cliente_UUID@sdmoveis.com
+        const match = emp?.email?.match(/cliente_(.+)@sdmoveis\.com/);
+        const clientId = match ? match[1] : null;
 
         if (clientId) {
           const { data: projects } = await db
