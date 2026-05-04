@@ -106,15 +106,22 @@ const SmartMeasurement: React.FC = () => {
       // Qualquer palavra que indique mudança de estilo ou desejo de algo novo ativa o modo criativo
       const creativeKeywords = [
         'sugest', 'melhor', 'decor', 'estil', 'luxo', 'bonit', 'chatgpt', 'ambiente', 
-        'moderno', 'novo', 'troc', 'mud', 'substitu', 'preto', 'cinza', 'diferente', 'top'
+        'moderno', 'novo', 'troc', 'mud', 'substitu', 'preto', 'cinza', 'diferente', 'top',
+        'remov', 'tirar', 'apagar', 'limpar'
       ];
       const isCreativeTask = creativeKeywords.some(k => cmdLower.includes(k));
       
-      const changeKeywords = ['troc', 'mud', 'substitu', 'coloc', 'põe', 'poe'];
+      const changeKeywords = ['troc', 'mud', 'substitu', 'coloc', 'põe', 'poe', 'remov', 'tirar'];
       const isChangeTask = changeKeywords.some(k => cmdLower.includes(k));
 
       const paintKeywords = ['pint', 'parede', 'cor', 'colorir'];
       const isPaintTask = paintKeywords.some(k => cmdLower.includes(k));
+
+      // Se for uma tarefa de REMOÇÃO grande em modo criativo, tratamos como INPAINT de reconstrução
+      if (data.action === 'cleanup' && isCreativeTask) {
+        data.action = 'inpaint';
+        data.descriptionEn = "clean empty floor, perfectly reconstructed wall, high-end interior architecture, empty space, realistic lighting";
+      }
 
       if (isCreativeTask) {
         console.log("[SD VISION V13] Modo Criativo Ativado.");
