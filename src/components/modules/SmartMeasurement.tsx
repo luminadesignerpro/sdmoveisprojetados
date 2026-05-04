@@ -69,27 +69,25 @@ const SmartMeasurement: React.FC = () => {
     setAnalyzing(true);
     try {
       // PROMPT DE ALTO NÍVEL - AGENTE ARQUITETO SD VISION
-      const prompt = `Você é o AGENTE PROJETISTA SD VISION ENGINEERING V13.
+      const prompt = `Você é o AGENTE PROJETISTA SD VISION ENGINEERING V14.
       
       OBJETIVO: Analisar a foto do ambiente e o comando: "${iaCommand}".
       
-      REFERÊNCIA: Se houver uma segunda imagem, ela é a FOTO DE REFERÊNCIA. Você deve DESCREVER os móveis da referência no prompt 'descriptionEn' com detalhes de cores e materiais.
-      
       REGRAS DE MÁSCARA (targetPolygon):
-      - O targetPolygon DEVE cobrir o sofá INTEIRO (incluindo pés e sombras) e a PAREDE.
-      - Use uma margem de segurança GENEROSA.
+      - Se o comando for "trocar o sofá", foque o polígono EXCLUSIVAMENTE no sofá e no chão ao redor dele. 
+      - NÃO mascare as paredes ou o teto se o comando for apenas para trocar móveis.
+      - Seja MUITO agressivo no tamanho do polígono do móvel.
       
       REGRAS DE PROMPT (descriptionEn):
-      - Use linguagem de SUBSTITUIÇÃO TOTAL: "Completely replace the existing furniture", "Erase and redraw", "No remnants of original piece".
-      - Descreva o novo sofá da referência como o centro da cena.
-      - Adicione detalhes de luxo: cinematic lighting, architectural moldings, 8k resolution.
+      - Use termos de substituição total: "Completely delete the old sofa", "Replace with a new modern black furniture", "Total reconstruction of the seating area".
+      - Foque em materiais de luxo e design de alto padrão.
       
       RETORNE APENAS JSON VÁLIDO:
       {
         "action": "inpaint" | "style" | "cleanup",
         "measureResult": "valor estimado",
         "reasoning": "Sua análise em Português.",
-        "descriptionEn": "Aggressive transformative architectural prompt for total replacement of elements.",
+        "descriptionEn": "Aggressive transformative prompt to REPLACE the target object entirely.",
         "targetPolygon": [{"x": float, "y": float}, ...] 
       }`;
 
