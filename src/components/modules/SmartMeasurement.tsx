@@ -195,54 +195,31 @@ const SmartMeasurement: React.FC = () => {
         
         // Chamada aos serviços de imagem
         let aiRawResult: string | null = null;
-        if (data.action === 'cleanup') {
-          aiRawResult = await cleanupObject({ image, mask: mBase64 });
-        } else if (data.action === 'inpaint') {
-          aiRawResult = await inpaintObject(image, mBase64, data.descriptionEn);
-        } else if (data.action === 'style') {
-          aiRawResult = await styleTransfer(image, data.descriptionEn);
-        }
+        if (data.action === 'cleanup') aiRawResult = await cleanupObject({ image, mask: mBase64 });
+        else if (data.action === 'inpaint') aiRawResult = await inpaintObject(image, mBase64, data.descriptionEn);
+        else if (data.action === 'style') aiRawResult = await styleTransfer(image, data.descriptionEn);
         
         if (aiRawResult) {
-          // --- COMPOSIÇÃO FINAL SD VISION V13 ---
           let finalImg = "";
-          
-          if (data.action === 'style') {
-            // Em modo STYLE (remodelagem global), aceitamos o render completo da IA
+          if (isCreativeTask || data.action === 'style') {
             finalImg = aiRawResult;
           } else {
-            // Para INPAINT (troca de móvel) ou CLEANUP (remoção), 
-            // SEMPRE usamos composição para preservar 100% do ambiente original.
             const canvas = document.createElement('canvas');
-            canvas.width = tmpImg.width;
-            canvas.height = tmpImg.height;
+            canvas.width = tmpImg.width; canvas.height = tmpImg.height;
             const ctx = canvas.getContext('2d')!;
-            
-            // 1. Desenha o ambiente original
             ctx.drawImage(tmpImg, 0, 0);
-            
-            // 2. Prepara a máscara no canvas de composição
             ctx.globalCompositeOperation = 'destination-out';
-            const maskImg = new Image();
-            maskImg.src = mBase64;
-            await new Promise(r => maskImg.onload = r);
+            const maskImg = new Image(); maskImg.src = mBase64; await new Promise(r => maskImg.onload = r);
             ctx.drawImage(maskImg, 0, 0);
-            
-            // 3. Sobrepõe o resultado da IA apenas na área da máscara
             ctx.globalCompositeOperation = 'destination-over';
-            const aiImg = new Image();
-            aiImg.src = aiRawResult;
-            await new Promise(r => aiImg.onload = r);
+            const aiImg = new Image(); aiImg.src = aiRawResult; await new Promise(r => aiImg.onload = r);
             ctx.drawImage(aiImg, 0, 0);
-            
             finalImg = canvas.toDataURL('image/jpeg', 0.95);
           }
 
           setHistory([finalImg, ...history]);
           setImage(finalImg);
-          toast({ title: '✅ Projeto atualizado com fidelidade total!' });
-        } else {
-          throw new Error("A IA de renderização não conseguiu processar a imagem. Tente um comando mais simples.");
+          toast({ title: '✅ Projeto atualizado!' });
         }
       }
     } catch (e: any) {
