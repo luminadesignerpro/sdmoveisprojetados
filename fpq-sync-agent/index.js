@@ -25,6 +25,26 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY
 let lastSyncStatus = "Nunca sincronizado";
 let lastSyncTime = null;
 
+/**
+ * Helper para buscar ou criar um cliente no Supabase pelo nome
+ */
+async function getOrCreateClient(name) {
+    if (!name) return null;
+    const cleanName = name.trim();
+    
+    try {
+        const { data: existing } = await supabase.from('clients').select('id').ilike('name', cleanName).limit(1);
+        if (existing && existing.length > 0) return existing[0].id;
+        
+        const { data: newClient, error } = await supabase.from('clients').insert({ name: cleanName, status: 'ativo' }).select('id').single();
+        if (error) throw error;
+        return newClient.id;
+    } catch (e) {
+        console.error(`Erro ao resolver cliente ${cleanName}:`, e.message);
+        return null;
+    }
+}
+
 async function syncData() {
     console.log('[' + new Date().toLocaleString() + '] 🔄 Iniciando Sincronização em tempo real...');
     
@@ -42,9 +62,10 @@ async function syncData() {
                 console.log('📦 Sincronizando ' + result.length + ' OS...');
                 for (const row of result) {
                     try {
+                        const clientId = await getOrCreateClient(row.CLIENTE);
                         await supabase.from('service_orders').upsert({
                             order_number: row.NUMERO || row.ID,
-                            client_name: row.CLIENTE,
+                            client_id: clientId,
                             description: row.SERVICO || row.DESCRICAO || 'OS Importada do FPQ',
                             total_value: row.VALOR_TOTAL || row.VALOR || 0,
                             status: (row.SITUACAO || 'aberta').toLowerCase(),
@@ -58,14 +79,15 @@ async function syncData() {
         });
 
         // --- 2. SINCRONIZAR CONTRATOS ---
-        // Tenta buscar na tabela de CONTRATOS ou VENDAS
         db.query('SELECT * FROM CONTRATOS', async function(err, result) {
             if (!err && result) {
                 console.log('📄 Sincronizando ' + result.length + ' Contratos...');
                 for (const row of result) {
                     try {
+                        const clientId = await getOrCreateClient(row.CLIENTE);
                         await supabase.from('contracts').upsert({
                             contract_number: row.NUMERO || row.ID,
+                            client_id: clientId,
                             title: row.DESCRICAO || 'Contrato FPQ - ' + (row.ID || row.NUMERO),
                             value: row.VALOR_TOTAL || row.TOTAL || 0,
                             status: (row.SITUACAO || 'assinado').toLowerCase(),
@@ -75,8 +97,6 @@ async function syncData() {
                         console.error('Erro ao subir Contrato individual:', e.message);
                     }
                 }
-            } else {
-                console.log('Tabela CONTRATOS não encontrada, usando VENDAS como base.');
             }
         });
 
@@ -98,19 +118,20 @@ async function processSales(sales) {
     console.log('💰 Sincronizando ' + sales.length + ' Vendas para projetos...');
     for (const row of sales) {
         try {
+            const clientId = await getOrCreateClient(row.CLIENTE);
             await supabase.from('client_projects').upsert({
-                title: row.DESCRICAO || 'Venda/Projeto - ' + (row.ID || row.NUMERO),
-                client_name: row.CLIENTE,
+                name: row.DESCRICAO || 'Venda/Projeto - ' + (row.ID || row.NUMERO),
+                client_id: clientId,
                 value: row.VALOR_TOTAL || row.TOTAL || 0,
                 status: 'assinado',
                 deadline: row.DATA_ENTREGA || row.DATA || new Date().toISOString(),
                 project_type: 'Móveis Projetados (Importado)'
-            }, { onConflict: 'title, client_name' });
+            }, { onConflict: 'name, client_id' });
         } catch (e) {
             console.error('Erro ao subir Venda individual:', e.message);
         }
     }
-    lastSyncStatus = "Sucesso: OS, Contratos e Vendas Sincronizadas";
+    lastSyncStatus = "Sucesso: Sincronização Completa";
     lastSyncTime = new Date().toISOString();
     console.log('✅ Sincronização Completa!');
 }
@@ -147,70 +168,148 @@ if (fs.existsSync(PROMOB_PROJECTS_DIR)) {
     });
 }
 
-// Watcher para PDF (OS e Vendas)
+// Watcher para arquivos do FPQ (OS e Orçamentos)
 const PDF_WATCH_DIR = process.env.PDF_WATCH_DIR || 'C:\\OSMARCENARIA5.9\\Export';
-
-if (!fs.existsSync(PDF_WATCH_DIR)) {
-    try {
-        fs.mkdirSync(PDF_WATCH_DIR, { recursive: true });
-        console.log('📁 Criada pasta de exportação PDF: ' + PDF_WATCH_DIR);
-    } catch (e) {
-        console.warn('⚠️ Não foi possível criar/acessar pasta PDF: ' + PDF_WATCH_DIR);
+const ORCAMENTOS_DIR = path.join(PDF_WATCH_DIR, 'ORÇAMENTOS');
+const WATCH_DIRS = [PDF_WATCH_DIR, ORCAMENTOS_DIR].filter(d => {
+    if (!fs.existsSync(d)) {
+        try { fs.mkdirSync(d, { recursive: true }); } catch(e) {}
+        return fs.existsSync(d);
     }
+    return true;
+});
+
+// Rastreia arquivos já processados para evitar duplicatas no mesmo minuto
+const processedFiles = new Set();
+
+/**
+ * Extrai número da OS e nome do cliente do nome do arquivo FPQ
+ * Suporta formatos: "OS_000965_SAMUEL DAVID.pdf", "000965 - SAMUEL DAVID.pdf",
+ *                   "OS 965 SAMUEL.fpq", "ORCAMENTO_965_CLIENTE.pdf", etc.
+ */
+function parseFileName(fileName) {
+    const nameWithoutExt = path.basename(fileName, path.extname(fileName));
+    
+    // Extrai número (sequência de 1+ dígitos)
+    const numMatch = nameWithoutExt.match(/(\d{3,6})/);
+    const orderNumber = numMatch ? parseInt(numMatch[1]) : null;
+    
+    // Extrai nome do cliente (texto após o número e separadores)
+    let clientName = 'FPQ - ' + nameWithoutExt;
+    const afterNum = nameWithoutExt.replace(/^[^a-zA-ZÀ-ÿ]*\d+[^a-zA-ZÀ-ÿ]*/, '').trim();
+    if (afterNum.length > 2) clientName = afterNum;
+    
+    // Detecta tipo
+    const upper = nameWithoutExt.toUpperCase();
+    const isOS = upper.includes('OS') || upper.includes('ORDEM') || upper.includes('SERVICO') || upper.includes('SERVIÇO');
+    const isOrcamento = upper.includes('ORC') || upper.includes('ORÇAMENTO') || upper.includes('ORCAMENTO') || upper.includes('BUDGET');
+    
+    return { orderNumber, clientName, isOS, isOrcamento, nameWithoutExt };
 }
 
-async function uploadAndSyncPdf(filePath) {
-    if (!filePath.toLowerCase().endsWith('.pdf')) return;
-    
+async function processFpqFile(filePath) {
     const fileName = path.basename(filePath);
-    console.log('📄 Processando PDF: ' + fileName);
+    const ext = path.extname(fileName).toLowerCase();
     
-    // Pequeno delay para garantir que o FPQ terminou de escrever o arquivo
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Ignora arquivos temporários ou do sistema
+    if (fileName.startsWith('~') || fileName.startsWith('.') || fileName.endsWith('.tmp')) return;
+    
+    // Evita processar o mesmo arquivo duas vezes em 30 segundos
+    const key = filePath + '_' + Math.floor(Date.now() / 30000);
+    if (processedFiles.has(key)) return;
+    processedFiles.add(key);
+    setTimeout(() => processedFiles.delete(key), 30000);
+    
+    // Aguarda o FPQ terminar de escrever
+    await new Promise(resolve => setTimeout(resolve, 2500));
+    
+    if (!fs.existsSync(filePath)) return;
+    
+    const { orderNumber, clientName, isOS, isOrcamento, nameWithoutExt } = parseFileName(fileName);
+    
+    console.log(`📂 Arquivo FPQ detectado: ${fileName}`);
+    console.log(`   → OS#: ${orderNumber} | Cliente: ${clientName} | Tipo: ${isOS ? 'OS' : isOrcamento ? 'Orçamento' : 'Geral'}`);
     
     try {
-        const fileBuffer = fs.readFileSync(filePath);
-        const storagePath = `automated/${Date.now()}_${fileName}`;
+        let pdfUrl = null;
         
-        const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('documents')
-            .upload(storagePath, fileBuffer, { contentType: 'application/pdf', upsert: true });
-
-        if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(storagePath);
-        console.log('✅ PDF no Storage: ' + publicUrl);
-
-        const match = fileName.match(/\d+/);
-        const refId = match ? match[0] : null;
-
-        if (refId) {
-            if (fileName.toUpperCase().includes('OS')) {
-                await supabase.from('service_orders').update({ pdf_url: publicUrl }).eq('order_number', refId);
-                console.log(`🔗 PDF vinculado à OS #${refId}`);
-            } else if (fileName.toUpperCase().includes('CONTRATO')) {
-                await supabase.from('contracts').update({ pdf_url: publicUrl }).eq('contract_number', refId);
-                console.log(`🔗 PDF vinculado ao Contrato #${refId}`);
-            } else {
-                await supabase.from('client_projects').update({ pdf_url: publicUrl }).ilike('title', `%${refId}%`);
-                console.log(`🔗 PDF vinculado ao Projeto #${refId}`);
+        // Se for PDF, faz upload para o Storage
+        if (ext === '.pdf') {
+            const fileBuffer = fs.readFileSync(filePath);
+            const storagePath = `automated/${Date.now()}_${fileName}`;
+            
+            const { error: uploadError } = await supabase.storage
+                .from('documents')
+                .upload(storagePath, fileBuffer, { contentType: 'application/pdf', upsert: true });
+            
+            if (!uploadError) {
+                const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(storagePath);
+                pdfUrl = publicUrl;
+                console.log('✅ PDF enviado: ' + publicUrl);
             }
         }
+        
+        // Cria/atualiza a OS no Supabase
+        const clientId = await getOrCreateClient(clientName);
+        const osData = {
+            client_id: clientId,
+            description: `Importado automaticamente do FPQ System - ${nameWithoutExt}`,
+            status: 'aberta',
+            priority: 'normal',
+            ...(orderNumber && { order_number: orderNumber }),
+            ...(pdfUrl && { pdf_url: pdfUrl }),
+            estimated_date: new Date().toISOString().split('T')[0]
+        };
+        
+        if (orderNumber) {
+            // Tenta atualizar primeiro, se não existir, cria
+            const { data: existing } = await supabase
+                .from('service_orders')
+                .select('id')
+                .eq('order_number', orderNumber)
+                .limit(1);
+            
+            if (existing && existing.length > 0) {
+                await supabase.from('service_orders')
+                    .update({ ...(pdfUrl && { pdf_url: pdfUrl }), client_id: clientId })
+                    .eq('order_number', orderNumber);
+                console.log(`🔄 OS #${orderNumber} atualizada`);
+            } else {
+                const { error } = await supabase.from('service_orders').insert(osData);
+                if (error) console.error('Erro ao inserir OS:', error.message);
+                else console.log(`✅ Nova OS #${orderNumber} criada no sistema!`);
+            }
+        } else {
+            // Sem número, cria nova OS com título do arquivo
+            osData.description = nameWithoutExt;
+            const { error } = await supabase.from('service_orders').insert(osData);
+            if (error) console.error('Erro ao inserir OS sem número:', error.message);
+            else console.log(`✅ Nova OS criada: ${nameWithoutExt}`);
+        }
+        
+        lastSyncStatus = `Sucesso: ${fileName} sincronizado`;
+        lastSyncTime = new Date().toISOString();
     } catch (e) {
-        console.error('❌ Erro no sync do PDF:', e.message);
+        console.error('❌ Erro ao processar arquivo FPQ:', e.message);
+        lastSyncStatus = 'Erro: ' + e.message;
     }
 }
 
-if (fs.existsSync(PDF_WATCH_DIR)) {
-    console.log('👀 Monitorando PDFs (Recursivo) em: ' + PDF_WATCH_DIR);
-    fs.watch(PDF_WATCH_DIR, { recursive: true }, (eventType, filename) => {
-        if (filename && eventType === 'rename') {
-            const fullPath = path.join(PDF_WATCH_DIR, filename);
-            if (fs.existsSync(fullPath)) {
-                uploadAndSyncPdf(fullPath);
+// Inicia os watchers em todas as pastas configuradas
+WATCH_DIRS.forEach(dir => {
+    console.log('👀 Monitorando pasta FPQ (recursivo): ' + dir);
+    fs.watch(dir, { recursive: true }, (eventType, filename) => {
+        if (filename && (eventType === 'rename' || eventType === 'change')) {
+            const fullPath = path.join(dir, filename);
+            if (fs.existsSync(fullPath) && !fs.statSync(fullPath).isDirectory()) {
+                processFpqFile(fullPath);
             }
         }
     });
+});
+
+if (WATCH_DIRS.length === 0) {
+    console.warn('⚠️ Nenhuma pasta de monitoramento encontrada. Verifique PDF_WATCH_DIR no .env');
 }
 
 // Servidor de Heartbeat
