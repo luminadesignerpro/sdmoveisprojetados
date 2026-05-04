@@ -259,7 +259,7 @@ serve(async (req) => {
                       messages: [
                         { 
                           role: "system", 
-                          content: "Você é o Consultor Especialista da SD Móveis. Seja breve e humano. Se o cliente disser 'show', 'ok' ou 'tudo bem', responda apenas de forma amigável e curta, sem vender nada. NÃO repita o pitch de projeto 3D ou MDF em toda mensagem. Máximo 1 frase para respostas curtas." 
+                          content: "Você é o Consultor Especialista da SD Móveis. É PROIBIDO dar prazos ou citar números de dias. Se perguntarem o prazo, responda apenas: 'O prazo será confirmado pelo consultor após a análise do seu projeto.' Seja breve e humano." 
                         }, 
                         { role: "user", content: messageContent }
                       ],
