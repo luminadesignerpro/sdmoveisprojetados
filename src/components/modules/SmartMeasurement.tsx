@@ -100,19 +100,26 @@ const SmartMeasurement: React.FC = () => {
       const cleanRes = res.replace(/```json|```/g, '').trim();
       const data = JSON.parse(cleanRes);
 
-      // --- BLOQUEIO DE SEGURANÇA SD VISION V13 (HARD-OVERRIDE) ---
+      // --- INTELIGÊNCIA DE DECISÃO SD VISION V13 (ESTILO CHATGPT) ---
       const cmdLower = iaCommand.toLowerCase();
-      const paintKeywords = ['pinte', 'pinta', 'pintura', 'pintar', 'parede', 'cor', 'mudar cor', 'colorir', 'preto', 'preta'];
+      // Usando prefixos menores para aceitar variações (ex: sugest, melhor, decor)
+      const creativeKeywords = ['sugest', 'melhor', 'decor', 'estil', 'luxo', 'bonit', 'chatgpt', 'ambiente'];
+      const isCreativeTask = creativeKeywords.some(k => cmdLower.includes(k));
+      
+      const paintKeywords = ['pint', 'parede', 'cor', 'colorir', 'mudar'];
       const isPaintTask = paintKeywords.some(k => cmdLower.includes(k));
 
-      if (isPaintTask) {
-        console.log("[SD VISION V13] Hard Override: Forçando modo INPAINT para fidelidade total.");
+      if (isCreativeTask) {
+        console.log("[SD VISION V13] Modo Criativo Ativado: Re-renderização estética global (Estilo ChatGPT).");
+        data.action = 'style';
+        data.reasoning = "Modo de Alta Criatividade ativado. Re-renderizando ambiente com foco em estética, iluminação e sugestões de design arquitetônico.";
+        data.descriptionEn = `A high-end luxury interior design of this ${data.action} with ${iaCommand}, cinematic lighting, architectural details like wall moldings and spotlights, ultra-realistic, professional photography, 8k, highly detailed.`;
+      } else if (isPaintTask) {
+        console.log("[SD VISION V13] Modo Fidelidade: Pintura técnica preservando geometria.");
         data.action = 'inpaint';
-        data.reasoning = "Comando de pintura/alteração detectado. Ativando motor de preservação estrutural SD VISION V13 para garantir fidelidade zero de erro.";
-        
-        // Refinamento do prompt para evitar borrões (smudges)
+        data.reasoning = "Comando de pintura detectado. Ativando motor de preservação estrutural para garantir que a cor mude sem alterar seus móveis.";
         if (cmdLower.includes('pret')) {
-          data.descriptionEn = "Solid uniform deep matte black wall, architectural finish, high quality, photorealistic, no smudges, no artifacts, consistent texture";
+          data.descriptionEn = "Solid uniform deep matte black wall, architectural finish, high quality, photorealistic, consistent texture, luxury matte black paint.";
         }
       }
 
@@ -396,10 +403,10 @@ const SmartMeasurement: React.FC = () => {
               </h4>
               <div className="grid gap-4">
                  {[
-                   { t: "TROCAR MÓVEL", d: "Use 'USAR FOTO REF.' + comando 'Troque o sofá por este'", i: <ImageIcon className="w-4 h-4 text-amber-500" /> },
-                   { t: "PINTAR PAREDE", d: "Digite 'Pinte a parede de cinza cimento queimado'", i: <Wand2 className="w-4 h-4 text-amber-500" /> },
-                   { t: "REMODELAR", d: "Digite 'Mude o estilo desta sala para Luxo Moderno'", i: <ScanLine className="w-4 h-4 text-amber-500" /> },
-                   { t: "MEDIR", d: "Perqunte 'Qual a largura desta parede?'", i: <Ruler className="w-4 h-4 text-amber-500" /> }
+                   { t: "MODO CHATGPT", d: "Use 'Dê uma sugestão...' para remodelagem total e estética.", i: <Sparkles className="w-4 h-4 text-amber-400" /> },
+                   { t: "PINTAR PAREDE", d: "Pinte a parede de [cor]. Use modo técnico para fidelidade.", i: <Wand2 className="w-4 h-4 text-amber-500" /> },
+                   { t: "TROCAR MÓVEL", d: "Use 'USAR FOTO REF.' + 'Troque o sofá por este'.", i: <ImageIcon className="w-4 h-4 text-amber-500" /> },
+                   { t: "MEDIR", d: "Pergunte 'Qual a largura desta parede?'", i: <Ruler className="w-4 h-4 text-amber-500" /> }
                  ].map((g, i) => (
                    <div key={i} className="p-4 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/10 transition-all cursor-help group">
                      <div className="flex items-center gap-2 mb-1">

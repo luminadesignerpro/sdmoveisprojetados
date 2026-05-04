@@ -1775,7 +1775,7 @@ const App: React.FC = () => {
             <div className="bg-gradient-to-r from-gray-900 to-gray-800 text-white p-6 rounded-t-3xl flex justify-between items-center">
               <div>
                 <h3 className="text-xl font-bold flex items-center gap-2"><FileText className="w-5 h-5 text-amber-400" /> Meu Contrato</h3>
-                <p className="text-gray-400 text-sm">Cozinha Gourmet Lux</p>
+                <p className="text-gray-400 text-sm">{clientProject?.title || clientProject?.name || 'Cozinha Gourmet Lux'}</p>
               </div>
               <button onClick={() => setShowClientContract(false)} className="text-white/60 hover:text-white"><X className="w-6 h-6" /></button>
             </div>
@@ -1783,28 +1783,51 @@ const App: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-gray-50 p-4 rounded-xl">
                   <p className="text-xs text-gray-500 uppercase font-bold">Valor Total</p>
-                  <p className="text-2xl font-black text-amber-600">R$ 45.000</p>
+                  <p className="text-2xl font-black text-amber-600">R$ {(clientProject?.value || 45000).toLocaleString('pt-BR')}</p>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-xl">
                   <p className="text-xs text-gray-500 uppercase font-bold">Status</p>
-                  <p className="text-xl font-bold text-blue-600">Em Produção</p>
+                  <p className="text-xl font-bold text-blue-600 capitalize">
+                    {clientProject?.status?.replace('_', ' ') || 'Em Produção'}
+                  </p>
                 </div>
               </div>
               <div className="bg-gray-50 p-4 rounded-xl space-y-3">
                 <p className="text-xs text-gray-500 uppercase font-bold">Detalhes do Contrato</p>
-                <div className="flex justify-between text-sm"><span className="text-gray-500">Data de Assinatura:</span><span className="font-bold">01/02/2024</span></div>
-                <div className="flex justify-between text-sm"><span className="text-gray-500">Previsão de Entrega:</span><span className="font-bold">15/03/2024</span></div>
-                <div className="flex justify-between text-sm"><span className="text-gray-500">Tipo de Projeto:</span><span className="font-bold">Cozinha Planejada</span></div>
-                <div className="flex justify-between text-sm"><span className="text-gray-500">Material:</span><span className="font-bold">MDF Premium + Granito</span></div>
-                <div className="flex justify-between text-sm"><span className="text-gray-500">Garantia:</span><span className="font-bold">5 Anos</span></div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Data de Assinatura:</span>
+                  <span className="font-bold">{clientProject?.signed_at ? new Date(clientProject.signed_at).toLocaleDateString('pt-BR') : '01/02/2024'}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Previsão de Entrega:</span>
+                  <span className="font-bold">{clientProject?.deadline ? new Date(clientProject.deadline).toLocaleDateString('pt-BR') : '15/03/2024'}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Tipo de Projeto:</span>
+                  <span className="font-bold">{clientProject?.project_type || 'Cozinha Planejada'}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Material:</span>
+                  <span className="font-bold">{clientProject?.material || 'MDF Premium + Granito'}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Garantia:</span>
+                  <span className="font-bold">{clientProject?.warranty || '5 Anos'}</span>
+                </div>
               </div>
-              <div className="bg-green-50 p-4 rounded-xl border border-green-200">
-                <p className="text-xs text-green-600 uppercase font-bold mb-1">✅ Contrato Assinado Digitalmente</p>
-                <p className="text-sm text-green-700">Assinado em 01/02/2024 às 14:32</p>
-              </div>
+              {clientProject?.signed_at && (
+                <div className="bg-green-50 p-4 rounded-xl border border-green-200">
+                  <p className="text-xs text-green-600 uppercase font-bold mb-1">✅ Contrato Assinado Digitalmente</p>
+                  <p className="text-sm text-green-700">Assinado em {new Date(clientProject.signed_at).toLocaleString('pt-BR')}</p>
+                </div>
+              )}
               <button
                 onClick={() => {
-                  toast({ title: "📄 PDF Gerado", description: "Seu contrato está sendo baixado" });
+                  if (clientProject?.pdf_url) {
+                    window.open(clientProject.pdf_url, '_blank');
+                  } else {
+                    toast({ title: "📄 PDF Gerado", description: "Seu contrato está sendo baixado" });
+                  }
                 }}
                 className="w-full bg-amber-600 text-white py-3 rounded-xl font-bold hover:bg-amber-700 transition-colors flex items-center justify-center gap-2"
               >
@@ -1831,29 +1854,39 @@ const App: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-green-50 p-4 rounded-xl border border-green-200">
                   <p className="text-xs text-green-600 uppercase font-bold">Pago</p>
-                  <p className="text-2xl font-black text-green-600">R$ 27.000</p>
+                  <p className="text-2xl font-black text-green-600">
+                    R$ {(clientInstallments?.length > 0 
+                      ? clientInstallments.filter(i => i.status === 'Pago').reduce((acc, curr) => acc + (curr.amount || 0), 0)
+                      : 27000).toLocaleString('pt-BR')}
+                  </p>
                 </div>
                 <div className="bg-amber-50 p-4 rounded-xl border border-amber-200">
                   <p className="text-xs text-amber-600 uppercase font-bold">Restante</p>
-                  <p className="text-2xl font-black text-amber-600">R$ 18.000</p>
+                  <p className="text-2xl font-black text-amber-600">
+                    R$ {(clientInstallments?.length > 0 
+                      ? clientInstallments.filter(i => i.status !== 'Pago').reduce((acc, curr) => acc + (curr.amount || 0), 0)
+                      : 18000).toLocaleString('pt-BR')}
+                  </p>
                 </div>
               </div>
               <div className="bg-gray-50 p-4 rounded-xl">
                 <p className="text-xs text-gray-500 uppercase font-bold mb-3">Parcelas</p>
-                {[
-                  { num: 1, valor: 9000, data: '01/02/2024', status: 'Pago' },
-                  { num: 2, valor: 9000, data: '01/03/2024', status: 'Pago' },
-                  { num: 3, valor: 9000, data: '01/04/2024', status: 'Pago' },
-                  { num: 4, valor: 9000, data: '01/05/2024', status: 'Pendente' },
-                  { num: 5, valor: 9000, data: '01/06/2024', status: 'Pendente' },
-                ].map(p => (
-                  <div key={p.num} className="flex justify-between items-center py-3 border-b last:border-0">
+                {(clientInstallments?.length > 0 ? clientInstallments : [
+                  { installment_number: 1, amount: 9000, due_date: '2024-02-01', status: 'Pago' },
+                  { installment_number: 2, amount: 9000, due_date: '2024-03-01', status: 'Pago' },
+                  { installment_number: 3, amount: 9000, due_date: '2024-04-01', status: 'Pago' },
+                  { installment_number: 4, amount: 9000, due_date: '2024-05-01', status: 'Pendente' },
+                  { installment_number: 5, amount: 9000, due_date: '2024-06-01', status: 'Pendente' },
+                ]).map((p, idx) => (
+                  <div key={idx} className="flex justify-between items-center py-3 border-b last:border-0">
                     <div>
-                      <p className="font-bold text-gray-900">Parcela {p.num}/5</p>
-                      <p className="text-xs text-gray-500">{p.data}</p>
+                      <p className="font-bold text-gray-900">Parcela {p.installment_number}/{clientInstallments?.length || 5}</p>
+                      <p className="text-xs text-gray-500">
+                        {p.due_date ? new Date(p.due_date).toLocaleDateString('pt-BR') : '-'}
+                      </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-gray-900">R$ {p.valor.toLocaleString()}</p>
+                      <p className="font-bold text-gray-900">R$ {p.amount.toLocaleString('pt-BR')}</p>
                       <span className={`text-xs font-bold ${p.status === 'Pago' ? 'text-green-600' : 'text-amber-600'}`}>
                         {p.status === 'Pago' ? '✅ Pago' : '⏳ Pendente'}
                       </span>
@@ -1861,12 +1894,16 @@ const App: React.FC = () => {
                   </div>
                 ))}
               </div>
-              <div className="bg-blue-50 p-4 rounded-xl border border-blue-200">
-                <p className="text-sm text-blue-700 flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4" />
-                  Próximo vencimento: <span className="font-bold">01/05/2024</span>
-                </p>
-              </div>
+              {clientInstallments?.find(i => i.status !== 'Pago') && (
+                <div className="bg-blue-50 p-4 rounded-xl border border-blue-200">
+                  <p className="text-sm text-blue-700 flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4" />
+                    Próximo vencimento: <span className="font-bold">
+                      {new Date(clientInstallments.find(i => i.status !== 'Pago').due_date).toLocaleDateString('pt-BR')}
+                    </span>
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>

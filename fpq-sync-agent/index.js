@@ -109,9 +109,60 @@ async function syncData() {
             } else if (result) {
                 await processSales(result);
             }
-            db.detach();
+            
+            // --- 4. SINCRONIZAR PARCELAS (FINANCEIRO) ---
+            syncInstallments(db);
         });
     });
+}
+
+async function syncInstallments(db) {
+    // Tenta buscar na tabela RECEBER ou CONTAS_RECEBER
+    db.query('SELECT * FROM RECEBER', async function(err, result) {
+        if (err) {
+            db.query('SELECT * FROM CONTAS_RECEBER', async function(err2, result2) {
+                if (!err2 && result2) await processInstallments(result2);
+                else db.detach(); // Fecha a conexão se falhar aqui
+            });
+        } else if (result) {
+            await processInstallments(result);
+            db.detach();
+        } else {
+            db.detach();
+        }
+    });
+}
+
+async function processInstallments(installments) {
+    console.log('💳 Sincronizando ' + installments.length + ' Parcelas (Financeiro)...');
+    for (const row of installments) {
+        try {
+            // Busca o projeto pelo ID da Venda ou Nome do Cliente (Melhor esforço)
+            // No FPQ, ID_VENDA ou ID_PEDIDO costuma ligar com a venda
+            const firebirdSaleId = row.ID_VENDA || row.ID_PEDIDO || row.ID_OS;
+            
+            // Busca o projeto no Supabase que tenha esse ID no título ou descrição
+            const { data: projects } = await supabase
+                .from('client_projects')
+                .select('id')
+                .ilike('title', `%${firebirdSaleId}%`)
+                .limit(1);
+
+            const projectId = projects && projects.length > 0 ? projects[0].id : null;
+
+            if (projectId) {
+                await supabase.from('project_installments').upsert({
+                    project_id: projectId,
+                    installment_number: row.PARCELA || row.NUMERO || 1,
+                    amount: row.VALOR || row.VALOR_PARCELA || 0,
+                    due_date: row.VENCIMENTO || row.DATA_VENCIMENTO || new Date().toISOString(),
+                    paid: !!(row.DATA_PAGAMENTO || row.PAGO || row.SITUACAO === 'P')
+                }, { onConflict: 'project_id, installment_number' });
+            }
+        } catch (e) {
+            console.error('Erro ao subir Parcela individual:', e.message);
+        }
+    }
 }
 
 async function processSales(sales) {
@@ -120,13 +171,13 @@ async function processSales(sales) {
         try {
             const clientId = await getOrCreateClient(row.CLIENTE);
             await supabase.from('client_projects').upsert({
-                name: row.DESCRICAO || 'Venda/Projeto - ' + (row.ID || row.NUMERO),
+                title: row.DESCRICAO || 'Venda/Projeto - ' + (row.ID || row.NUMERO),
                 client_id: clientId,
                 value: row.VALOR_TOTAL || row.TOTAL || 0,
                 status: 'assinado',
                 deadline: row.DATA_ENTREGA || row.DATA || new Date().toISOString(),
                 project_type: 'Móveis Projetados (Importado)'
-            }, { onConflict: 'name, client_id' });
+            }, { onConflict: 'title, client_id' });
         } catch (e) {
             console.error('Erro ao subir Venda individual:', e.message);
         }
