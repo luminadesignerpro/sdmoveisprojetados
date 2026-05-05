@@ -24,22 +24,32 @@ async function callStabilityEdgeFunction(task: string, params: any): Promise<str
       throw error;
     }
 
-    if (data instanceof Blob || data instanceof ArrayBuffer) {
-      const blob = data instanceof Blob ? data : new Blob([data]);
-      return new Promise((resolve) => {
+    if (!data) return null;
+
+    try {
+      let blob: Blob;
+      if (data instanceof Blob) {
+        blob = data;
+      } else if (data instanceof ArrayBuffer) {
+        blob = new Blob([data]);
+      } else if (typeof data === 'string' && data.startsWith('data:')) {
+        return data; // Já é base64
+      } else {
+        // Fallback para dados binários em string
+        const buffer = typeof data === 'string' ? new TextEncoder().encode(data) : data;
+        blob = new Blob([buffer]);
+      }
+
+      return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
         reader.readAsDataURL(blob);
       });
-    }
-
-    // Se a Edge Function retornar JSON com erro
-    if (data?.error) {
-      console.error(`stability-ai error:`, data.error);
+    } catch (e) {
+      console.error("Erro na conversão final da imagem:", e);
       return null;
     }
-
-    return data;
   } catch (error) {
     console.error(`Failed to call stability-ai (${task}):`, error);
     return null;
