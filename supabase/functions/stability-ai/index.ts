@@ -57,35 +57,32 @@ serve(async (req) => {
     const maskBlob = mask ? base64ToBlob(mask, 'image/png') : null;
 
     const formData = new FormData();
-    let endpoint = "";
+    let targetUrl = "";
 
     if (task === "cleanup") {
-      endpoint = "https://clipdrop-api.co/cleanup/v1";
+      targetUrl = "https://clipdrop-api.co/cleanup/v1";
       formData.append('image_file', imageBlob, 'image.jpg');
       if (maskBlob) formData.append('mask_file', maskBlob, 'mask.png');
     } else if (task === "relight") {
-      endpoint = "https://clipdrop-api.co/relight/v1";
+      targetUrl = "https://clipdrop-api.co/relight/v1";
       formData.append('image_file', imageBlob, 'image.jpg');
       if (prompt) formData.append('prompt', prompt);
     } else if (task === "inpaint") {
-      endpoint = "https://clipdrop-api.co/inpaint/v1";
+      targetUrl = "https://clipdrop-api.co/inpaint/v1";
       formData.append('image_file', imageBlob, 'image.jpg');
-      if (maskBlob) {
-        formData.append('mask_file', maskBlob, 'mask.png');
-      } else {
-        throw new Error("Mascara (mask) e obrigatoria para inpaint.");
-      }
+      if (maskBlob) formData.append('mask_file', maskBlob, 'mask.png');
+      else throw new Error("Mascara obrigatoria para inpaint.");
     } else if (task === "style") {
-      endpoint = "https://clipdrop-api.co/replace-background/v1";
+      targetUrl = "https://clipdrop-api.co/replace-background/v1";
       formData.append('image_file', imageBlob, 'image.jpg');
-      formData.append('prompt', prompt || "modern room interior");
+      formData.append('prompt', prompt || "modern luxury interior");
     } else {
-      throw new Error("Task invalida: " + task);
+      throw new Error("Tarefa invalida: " + task);
     }
 
-    console.log(`[stability-ai] POST ${endpoint}`);
+    console.log(`[stability-ai] Iniciando fetch para: ${targetUrl}`);
 
-    const response = await fetch(endpoint, {
+    const response = await fetch(targetUrl, {
       method: 'POST',
       headers: { 'x-api-key': stabilityKey },
       body: formData,

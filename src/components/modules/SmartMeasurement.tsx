@@ -59,12 +59,14 @@ const SmartMeasurement: React.FC = () => {
     }
   }, [image]);
 
-  const creativeKeywords = [
-    'sugest', 'melhor', 'decor', 'estil', 'luxo', 'bonit', 'chatgpt', 'ambiente', 
-    'moderno', 'novo', 'troc', 'mud', 'substitu', 'preto', 'cinza', 'diferente', 'top',
-    'remov', 'tirar', 'apagar', 'limpar'
-  ];
-  const isCreativeTaskUI = iaCommand && creativeKeywords.some(k => iaCommand.toLowerCase().includes(k));
+  const isCreativeTaskUI = React.useMemo(() => {
+    const creativeKeywords = [
+      'sugest', 'melhor', 'decor', 'estil', 'luxo', 'bonit', 'chatgpt', 'ambiente', 
+      'moderno', 'novo', 'troc', 'mud', 'substitu', 'preto', 'cinza', 'diferente', 'top',
+      'remov', 'tirar', 'apagar', 'limpar'
+    ];
+    return iaCommand && creativeKeywords.some(k => iaCommand.toLowerCase().includes(k));
+  }, [iaCommand]);
 
   const resizeImage = (base64Str: string, maxW = 1024, maxH = 1024): Promise<string> => {
     return new Promise((resolve) => {
