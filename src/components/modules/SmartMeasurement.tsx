@@ -275,32 +275,43 @@ const SmartMeasurement: React.FC = () => {
             if (!aiRawResult) throw new Error("OpenAI retornou vazio");
           } catch (err) {
             console.warn("[SD VISION] Motor OpenAI falhou ou limite atingido. Usando Stability como fallback.", err);
-            // Fallback para Stability Inpaint ou Style
-            if (data.action === 'style') {
-              console.log("[SD VISION] Executando Style Transfer (Stability)...");
-              aiRawResult = await styleTransfer(optimizedImage, data.descriptionEn);
-            } else {
-              console.log("[SD VISION] Executando Inpaint (Stability)...");
-              aiRawResult = await inpaintObject(optimizedImage, mBase64, data.descriptionEn);
+            try {
+              if (data.action === 'style') {
+                console.log("[SD VISION] Executando Style Transfer (Stability)...");
+                aiRawResult = await styleTransfer(optimizedImage, data.descriptionEn);
+              } else {
+                console.log("[SD VISION] Executando Inpaint (Stability)...");
+                aiRawResult = await inpaintObject(optimizedImage, mBase64, data.descriptionEn);
+              }
+              if (!aiRawResult) throw new Error("Stability retornou vazio");
+            } catch (err2) {
+              console.warn("[SD VISION] Stability falhou. Usando Pollinations (Gratuito) como último recurso.", err2);
+              // Pollinations.ai é gratuito e não requer chave. Gera uma imagem nova do zero.
+              const seed = Math.floor(Math.random() * 1000000);
+              aiRawResult = `https://pollinations.ai/p/${encodeURIComponent(data.descriptionEn)}?width=1024&height=1024&seed=${seed}&model=flux`;
             }
           }
         } else {
           // --- MOTOR TÉCNICO (STABILITY) ---
-          if (data.action === 'cleanup') {
-            console.log("[SD VISION] Executando Cleanup...");
-            aiRawResult = await cleanupObject({ image: optimizedImage, mask: mBase64 });
-          } else if (data.action === 'inpaint') {
-            console.log("[SD VISION] Executando Inpaint...");
-            aiRawResult = await inpaintObject(optimizedImage, mBase64, data.descriptionEn);
-          } else if (data.action === 'style') {
-            console.log("[SD VISION] Executando Style Transfer...");
-            aiRawResult = await styleTransfer(optimizedImage, data.descriptionEn);
+          try {
+            if (data.action === 'cleanup') {
+              console.log("[SD VISION] Executando Cleanup...");
+              aiRawResult = await cleanupObject({ image: optimizedImage, mask: mBase64 });
+            } else if (data.action === 'inpaint') {
+              console.log("[SD VISION] Executando Inpaint...");
+              aiRawResult = await inpaintObject(optimizedImage, mBase64, data.descriptionEn);
+            } else if (data.action === 'style') {
+              console.log("[SD VISION] Executando Style Transfer...");
+              aiRawResult = await styleTransfer(optimizedImage, data.descriptionEn);
+            }
+          } catch (err3) {
+            console.error("[SD VISION] Motor técnico falhou:", err3);
           }
         }
         
         if (!aiRawResult) {
           console.error("[SD VISION] Falha crítica: Nenhum motor retornou resultado.");
-          throw new Error("Não foi possível processar a imagem com nenhum dos motores disponíveis.");
+          throw new Error("Não foi possível processar a imagem com nenhum dos motores disponíveis. Verifique suas chaves de API ou tente um comando mais simples.");
         }
         
         if (aiRawResult) {

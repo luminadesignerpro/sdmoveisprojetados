@@ -61,49 +61,46 @@ serve(async (req) => {
 
     if (task === "cleanup") {
       endpoint = "https://clipdrop-api.co/cleanup/v1";
-      formData.append('image_file', imageBlob);
-      if (maskBlob) formData.append('mask_file', maskBlob);
+      formData.append('image_file', imageBlob, 'image.jpg');
+      if (maskBlob) formData.append('mask_file', maskBlob, 'mask.png');
     } else if (task === "relight") {
       endpoint = "https://clipdrop-api.co/relight/v1";
-      formData.append('image_file', imageBlob);
+      formData.append('image_file', imageBlob, 'image.jpg');
       if (prompt) formData.append('prompt', prompt);
     } else if (task === "inpaint") {
-      // Inpainting real (Cleanup): remove a area da mascara
       endpoint = "https://clipdrop-api.co/inpaint/v1";
-      formData.append('image_file', imageBlob);
+      formData.append('image_file', imageBlob, 'image.jpg');
       if (maskBlob) {
-        formData.append('mask_file', maskBlob);
+        formData.append('mask_file', maskBlob, 'mask.png');
       } else {
-        throw new Error("Mascara (mask) e obrigatoria para a tarefa de inpaint.");
+        throw new Error("Mascara (mask) e obrigatoria para inpaint.");
       }
     } else if (task === "style") {
       endpoint = "https://clipdrop-api.co/replace-background/v1";
-      formData.append('image_file', imageBlob);
-      formData.append('prompt', prompt || "same room interior with freshly painted walls");
+      formData.append('image_file', imageBlob, 'image.jpg');
+      formData.append('prompt', prompt || "modern room interior");
     } else {
       throw new Error("Task invalida: " + task);
     }
 
-    console.log(`[stability-ai] Chamando API: ${endpoint}`);
+    console.log(`[stability-ai] POST ${endpoint}`);
 
     const response = await fetch(endpoint, {
       method: 'POST',
-      headers: { 
-        'x-api-key': stabilityKey,
-      },
+      headers: { 'x-api-key': stabilityKey },
       body: formData,
     });
 
     if (!response.ok) {
       const errText = await response.text();
-      let errorMsg = `ClipDrop API ${response.status}: ${errText}`;
+      let msg = `Erro ClipDrop (${response.status})`;
       try {
-        const errJson = JSON.parse(errText);
-        if (errJson.error) errorMsg = errJson.error;
-      } catch (e) {}
-      
-      console.error(`ClipDrop API Error:`, errorMsg);
-      throw new Error(errorMsg);
+        const json = JSON.parse(errText);
+        msg = json.error || json.message || msg;
+      } catch(e) {
+        msg = errText || msg;
+      }
+      throw new Error(msg);
     }
 
     const buffer = await response.arrayBuffer();
@@ -115,7 +112,7 @@ serve(async (req) => {
     console.error("stability-ai error:", error);
     return new Response(
       JSON.stringify({ 
-        error: error instanceof Error ? error.message : "Erro interno na Edge Function",
+        error: error instanceof Error ? error.message : "Erro interno",
         details: error.stack 
       }),
       { status: 500, headers: { ...corsHeaders(origin), "Content-Type": "application/json" } }
