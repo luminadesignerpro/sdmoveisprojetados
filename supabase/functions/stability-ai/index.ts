@@ -63,22 +63,19 @@ serve(async (req) => {
     const engineId = "stable-diffusion-xl-1024-v1-0";
     
     if (task === "cleanup" || task === "inpaint") {
-      targetUrl = `https://api.stability.ai/v1/generation/${engineId}/image-to-image/masking`;
-      formData.append('init_image', imageBlob);
-      formData.append('mask_source', 'MASK_IMAGE_WHITE');
+      // Usando o modelo Ultra Inpaint V2 (Melhor qualidade do mundo)
+      targetUrl = "https://api.stability.ai/v2beta/stable-image/edit/inpaint";
+      formData.append('image', imageBlob);
       if (maskBlob) {
-        formData.append('mask_image', maskBlob);
+        formData.append('mask', maskBlob);
       } else {
-        throw new Error("Mascara obrigatoria para inpaint/cleanup.");
+        throw new Error("Mascara obrigatoria para edicao.");
       }
-      formData.append('text_prompts[0][text]', prompt || "clean luxury interior design, professional photography");
-      formData.append('text_prompts[0][weight]', '1');
-      formData.append('cfg_scale', '7');
-      formData.append('clip_guidance_preset', 'FAST_BLUE');
-      formData.append('samples', '1');
-      formData.append('steps', '30');
+      formData.append('prompt', prompt || "clean luxury interior design, professional photography");
+      formData.append('output_format', 'webp'); // WebP é mais leve e rápido
     } else if (task === "style") {
-      targetUrl = `https://api.stability.ai/v1/generation/${engineId}/image-to-image`;
+      // Usando Image-to-Image (V1) para redesenhar o ambiente
+      targetUrl = "https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/image-to-image";
       formData.append('init_image', imageBlob);
       formData.append('image_strength', '0.35');
       formData.append('text_prompts[0][text]', prompt || "modern luxury interior");
@@ -87,19 +84,19 @@ serve(async (req) => {
       formData.append('samples', '1');
       formData.append('steps', '30');
     } else {
-      // Fallback para ClipDrop se for uma tarefa não suportada pela API V1 da Stability
+      // Fallback para ClipDrop se for uma tarefa legada
       targetUrl = `https://clipdrop-api.co/${task}/v1`;
       formData.append('image_file', imageBlob, 'image.jpg');
       if (maskBlob) formData.append('mask_file', maskBlob, 'mask.png');
     }
 
-    console.log(`[stability-ai] Iniciando fetch para Stability Platform: ${targetUrl}`);
+    console.log(`[stability-ai] Chamando Motor Profissional: ${targetUrl}`);
 
     const response = await fetch(targetUrl, {
       method: 'POST',
       headers: { 
         'Authorization': `Bearer ${stabilityKey}`,
-        'Accept': 'application/json' 
+        'Accept': task === 'style' ? 'application/json' : 'image/*' 
       },
       body: formData,
     });
@@ -109,22 +106,28 @@ serve(async (req) => {
       let msg = `Erro Stability (${response.status})`;
       try {
         const json = JSON.parse(errText);
-        msg = json.message || json.error || msg;
+        msg = json.message || json.errors?.[0] || json.error || msg;
       } catch(e) {}
       throw new Error(msg);
     }
 
-    const resultJson = await response.json();
-    if (!resultJson.artifacts || resultJson.artifacts.length === 0) {
-      throw new Error("Nenhum artefato retornado pela Stability.");
+    // Se for o motor V1 (Style), o retorno é JSON. Se for V2 (Inpaint), é binário.
+    if (task === 'style') {
+      const resultJson = await response.json();
+      if (!resultJson.artifacts || resultJson.artifacts.length === 0) {
+        throw new Error("Nenhum artefato retornado.");
+      }
+      const base64Image = resultJson.artifacts[0].base64;
+      const binary = Uint8Array.from(atob(base64Image), c => c.charCodeAt(0));
+      return new Response(binary, {
+        headers: { ...corsHeaders(origin), "Content-Type": "image/png" },
+      });
+    } else {
+      const buffer = await response.arrayBuffer();
+      return new Response(buffer, {
+        headers: { ...corsHeaders(origin), "Content-Type": "image/webp" },
+      });
     }
-
-    const base64Image = resultJson.artifacts[0].base64;
-    const binary = Uint8Array.from(atob(base64Image), c => c.charCodeAt(0));
-
-    return new Response(binary, {
-      headers: { ...corsHeaders(origin), "Content-Type": "image/png" },
-    });
 
   } catch (error) {
     console.error("stability-ai error:", error);

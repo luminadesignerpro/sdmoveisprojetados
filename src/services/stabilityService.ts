@@ -25,11 +25,12 @@ async function callStabilityEdgeFunction(task: string, params: any): Promise<str
     }
 
     if (data instanceof Blob || data instanceof ArrayBuffer) {
-      const buffer = data instanceof Blob ? await data.arrayBuffer() : data;
-      const base64 = btoa(
-        new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), "")
-      );
-      return `data:image/jpeg;base64,${base64}`;
+      const blob = data instanceof Blob ? data : new Blob([data]);
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
     }
 
     // Se a Edge Function retornar JSON com erro
