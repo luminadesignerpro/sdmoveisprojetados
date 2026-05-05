@@ -141,23 +141,38 @@ serve(async (req) => {
             .eq("id", conversation.id);
 
           // RESPOSTA AUTOMÁTICA (Apenas se não for mensagem nossa)
-          if (!fromMe) {
-            // Anti-loop: Verifica se já respondemos nos últimos 10 segundos
-            const { data: recentResponses } = await supabase.from("whatsapp_messages")
-              .select("id").eq("conversation_id", conversation.id).eq("direction", "outbound")
-              .gt("created_at", new Date(Date.now() - 2000).toISOString()).limit(1);
+            if (!fromMe) {
+              // 1. Trava de Intervenção Humana: Se você falou nas últimas 2 horas, a IA silencia
+              const { data: recentHumanMsg } = await supabase.from("whatsapp_messages")
+                .select("id")
+                .eq("conversation_id", conversation.id)
+                .eq("direction", "outbound")
+                .neq("message_type", "ai")
+                .neq("message_type", "system")
+                .gt("created_at", new Date(Date.now() - 30 * 60 * 1000).toISOString())
+                .limit(1);
 
-            if (recentResponses && recentResponses.length > 0) {
-              console.log("[WEBHOOK] Resposta ignorada (anti-loop: mensagem enviada recentemente)");
-              continue;
-            }
+              if (recentHumanMsg && recentHumanMsg.length > 0) {
+                console.log("[WEBHOOK] IA silenciada: Atendimento humano detectado.");
+                continue;
+              }
+
+              // 2. Anti-loop: Verifica se já respondemos nos últimos 2 segundos
+              const { data: recentResponses } = await supabase.from("whatsapp_messages")
+                .select("id").eq("conversation_id", conversation.id).eq("direction", "outbound")
+                .gt("created_at", new Date(Date.now() - 2000).toISOString()).limit(1);
+
+              if (recentResponses && recentResponses.length > 0) {
+                console.log("[WEBHOOK] Resposta ignorada (anti-loop: mensagem enviada recentemente)");
+                continue;
+              }
 
             const evolutionUrl = Deno.env.get("EVOLUTION_API_URL") || "https://evolution-api-production-202b.up.railway.app";
             const evolutionKey = Deno.env.get("EVOLUTION_API_KEY") || "Mv06061991";
             const instanceName = "SD-Moveis"; // Ajuste se o nome no Railway for diferente
 
             let responseText = "";
-            let messageTypeOut = "text";
+            let messageTypeOut = "system"; // Default para respostas automáticas do sistema
 
             // 1. Lógica do Menu Principal
             const { data: configData } = await supabase.from("atendimento_config").select("conteudo").eq("chave", "menu_principal").maybeSingle();
@@ -233,6 +248,9 @@ serve(async (req) => {
                 const mediaLabel = messageContent === "[AUDIO]" ? "seu áudio" : (messageContent === "[STICKER]" ? "sua figurinha" : "sua foto/mídia");
                 responseText = `Recebi ${mediaLabel}! 📸 Já encaminhei aqui para o nosso time de projetistas analisar. \n\nFique à vontade para mandar mais fotos ou descrever os detalhes do seu projeto enquanto preparamos seu atendimento! 😊`;
               } else if (config.responses?.[normalizedMatch]) {
+                // Define a resposta padrão do banco de dados para a opção escolhida
+                responseText = config.responses[normalizedMatch];
+                
                 // Se escolheu a opção 2 ou 3, ativa o estado de espera para buscar contrato/nome
                 if (normalizedMatch === "2") {
                   responseText = "Perfeito! Vou verificar o andamento do seu projeto. 📋 Por favor, me informe seu *nome completo* ou o *número do contrato*.";
@@ -261,7 +279,7 @@ serve(async (req) => {
                       messages: [
                         { 
                           role: "system", 
-                          content: "Você é o Consultor Especialista da SD Móveis. É PROIBIDO dar prazos ou citar números de dias. Se perguntarem o prazo, responda apenas: 'O prazo será confirmado pelo consultor após a análise do seu projeto.' Seja breve e humano." 
+                          content: "Você é o Consultor da SD Móveis. Seja direto e objetivo. Não dê definições técnicas (ex: não explique o que é MDF). Se o cliente escolher uma cor ou material, apenas confirme. É PROIBIDO dar orçamentos ou prazos; responda sempre: 'Esses detalhes serão confirmados pelo projetista após a análise do seu projeto.' Seja breve e não termine com perguntas que prolonguem a conversa desnecessariamente." 
                         }, 
                         { role: "user", content: messageContent }
                       ],

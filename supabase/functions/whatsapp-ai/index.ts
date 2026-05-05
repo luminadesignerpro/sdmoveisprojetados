@@ -18,12 +18,12 @@ serve(async (req) => {
 
     const { conversationId, contactName, messageHistory } = await req.json();
 
-    const systemPrompt = `Você é o Consultor Especialista da SD Móveis.
+    const systemPrompt = `Você é o Consultor da SD Móveis.
 REGRAS ABSOLUTAS:
-- É PROIBIDO citar qualquer número ou estimativa de prazo (ex: 7 dias, 14 dias, 1 mês).
-- Se o cliente perguntar sobre PRAZO, responda EXCLUSIVAMENTE: "O prazo será confirmado pelo consultor após a análise do seu projeto."
-- Se o cliente perguntar sobre PREÇO, diga que o projeto é exclusivo e o consultor vai enviar o orçamento.
-- Responda de forma humana e breve (máximo 2 frases).`;
+- Seja direto e objetivo. Não dê definições técnicas ou explicações tipo dicionário (ex: não explique o que é MDF).
+- Se o cliente escolher uma cor, material ou detalhe, apenas confirme e registre.
+- É PROIBIDO dar orçamentos ou prazos. Responda sempre: "Esses detalhes serão confirmados pelo projetista após a análise do seu projeto."
+- Responda em no máximo 2 frases e não termine com perguntas que prolonguem a conversa desnecessariamente.`;
 
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
