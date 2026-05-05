@@ -66,6 +66,34 @@ const SmartMeasurement: React.FC = () => {
   ];
   const isCreativeTaskUI = iaCommand && creativeKeywords.some(k => iaCommand.toLowerCase().includes(k));
 
+  const resizeImage = (base64Str: string, maxW = 1024, maxH = 1024): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = base64Str;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        if (width > height) {
+          if (width > maxW) {
+            height *= maxW / width;
+            width = maxW;
+          }
+        } else {
+          if (height > maxH) {
+            width *= maxH / height;
+            height = maxH;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.8));
+      };
+    });
+  };
+
   const executeIA = async () => {
     if (!image || !iaCommand) {
       toast({ title: '⚠️ Descreva o que deseja fazer.' });
@@ -73,7 +101,17 @@ const SmartMeasurement: React.FC = () => {
     }
 
     setAnalyzing(true);
+    setResult(null);
+
     try {
+      console.log("[SD VISION] Otimizando imagem...");
+      const optimizedImage = await resizeImage(image);
+      const optimizedRefImage = refImage ? await resizeImage(refImage, 512, 512) : null;
+
+      const tmpImg = new Image();
+      tmpImg.src = optimizedImage;
+      await new Promise(r => tmpImg.onload = r);
+
       // PROMPT DE ALTO NÍVEL - AGENTE ARQUITETO SD VISION
       const prompt = `Você é o AGENTE PROJETISTA SD VISION ENGINEERING V15.
       
@@ -97,18 +135,17 @@ const SmartMeasurement: React.FC = () => {
         "targetPolygon": [{"x": float, "y": float}, ...] 
       }`;
 
-      // Já temos o base64 no estado 'image'
-      const imagesToAnalyze = [image];
-    if (refImage) {
-      imagesToAnalyze.push(refImage);
-    }
+      const imagesToAnalyze = [optimizedImage];
+      if (optimizedRefImage) {
+        imagesToAnalyze.push(optimizedRefImage);
+      }
 
-    // Enriquecer o prompt para indicar que a foto de referência deve ser usada
-    let enhancedPrompt = prompt;
-    if (refImage) {
-      enhancedPrompt += "\n\nINSTRUÇÃO: Use a foto de referência enviada como guia visual para o novo sofá ou móvel a ser inserido.";
-    }
-    const res = await analyzeImageWithGemini(imagesToAnalyze.join('|'), enhancedPrompt); 
+      // Enriquecer o prompt para indicar que a foto de referência deve ser usada
+      let enhancedPrompt = prompt;
+      if (optimizedRefImage) {
+        enhancedPrompt += "\n\nINSTRUÇÃO: Use a foto de referência enviada como guia visual para o novo sofá ou móvel a ser inserido.";
+      }
+      const res = await analyzeImageWithGemini(imagesToAnalyze.join('|'), enhancedPrompt); 
       const cleanRes = res.replace(/```json|```/g, '').trim();
       const data = JSON.parse(cleanRes);
 
@@ -240,16 +277,30 @@ const SmartMeasurement: React.FC = () => {
             console.warn("[SD VISION] Motor OpenAI falhou ou limite atingido. Usando Stability como fallback.", err);
             // Fallback para Stability Inpaint ou Style
             if (data.action === 'style') {
-              aiRawResult = await styleTransfer(image, data.descriptionEn);
+              console.log("[SD VISION] Executando Style Transfer (Stability)...");
+              aiRawResult = await styleTransfer(optimizedImage, data.descriptionEn);
             } else {
-              aiRawResult = await inpaintObject(image, mBase64, data.descriptionEn);
+              console.log("[SD VISION] Executando Inpaint (Stability)...");
+              aiRawResult = await inpaintObject(optimizedImage, mBase64, data.descriptionEn);
             }
           }
         } else {
           // --- MOTOR TÉCNICO (STABILITY) ---
-          if (data.action === 'cleanup') aiRawResult = await cleanupObject({ image, mask: mBase64 });
-          else if (data.action === 'inpaint') aiRawResult = await inpaintObject(image, mBase64, data.descriptionEn);
-          else if (data.action === 'style') aiRawResult = await styleTransfer(image, data.descriptionEn);
+          if (data.action === 'cleanup') {
+            console.log("[SD VISION] Executando Cleanup...");
+            aiRawResult = await cleanupObject({ image: optimizedImage, mask: mBase64 });
+          } else if (data.action === 'inpaint') {
+            console.log("[SD VISION] Executando Inpaint...");
+            aiRawResult = await inpaintObject(optimizedImage, mBase64, data.descriptionEn);
+          } else if (data.action === 'style') {
+            console.log("[SD VISION] Executando Style Transfer...");
+            aiRawResult = await styleTransfer(optimizedImage, data.descriptionEn);
+          }
+        }
+        
+        if (!aiRawResult) {
+          console.error("[SD VISION] Falha crítica: Nenhum motor retornou resultado.");
+          throw new Error("Não foi possível processar a imagem com nenhum dos motores disponíveis.");
         }
         
         if (aiRawResult) {

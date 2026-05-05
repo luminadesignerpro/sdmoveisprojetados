@@ -61,40 +61,49 @@ serve(async (req) => {
 
     if (task === "cleanup") {
       endpoint = "https://clipdrop-api.co/cleanup/v1";
-      formData.append('image_file', imageBlob, 'image.jpg');
-      if (maskBlob) formData.append('mask_file', maskBlob, 'mask.png');
+      formData.append('image_file', imageBlob);
+      if (maskBlob) formData.append('mask_file', maskBlob);
     } else if (task === "relight") {
       endpoint = "https://clipdrop-api.co/relight/v1";
-      formData.append('image_file', imageBlob, 'image.jpg');
+      formData.append('image_file', imageBlob);
       if (prompt) formData.append('prompt', prompt);
     } else if (task === "inpaint") {
-      // Inpainting real: troca apenas a area da mascara
+      // Inpainting real (Cleanup): remove a area da mascara
       endpoint = "https://clipdrop-api.co/inpaint/v1";
-      formData.append('image_file', imageBlob, 'image.jpg');
+      formData.append('image_file', imageBlob);
       if (maskBlob) {
-        formData.append('mask_file', maskBlob, 'mask.png');
+        formData.append('mask_file', maskBlob);
       } else {
         throw new Error("Mascara (mask) e obrigatoria para a tarefa de inpaint.");
       }
     } else if (task === "style") {
-      // replace-background: mantém móveis (foreground) e troca paredes/piso (background)
       endpoint = "https://clipdrop-api.co/replace-background/v1";
-      formData.append('image_file', imageBlob, 'image.jpg');
+      formData.append('image_file', imageBlob);
       formData.append('prompt', prompt || "same room interior with freshly painted walls");
     } else {
       throw new Error("Task invalida: " + task);
     }
 
+    console.log(`[stability-ai] Chamando API: ${endpoint}`);
+
     const response = await fetch(endpoint, {
       method: 'POST',
-      headers: { 'x-api-key': stabilityKey },
+      headers: { 
+        'x-api-key': stabilityKey,
+      },
       body: formData,
     });
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error(`ClipDrop API Error [${task}] ${response.status}:`, errText);
-      throw new Error(`ClipDrop API ${response.status}: ${errText}`);
+      let errorMsg = `ClipDrop API ${response.status}: ${errText}`;
+      try {
+        const errJson = JSON.parse(errText);
+        if (errJson.error) errorMsg = errJson.error;
+      } catch (e) {}
+      
+      console.error(`ClipDrop API Error:`, errorMsg);
+      throw new Error(errorMsg);
     }
 
     const buffer = await response.arrayBuffer();
@@ -105,7 +114,10 @@ serve(async (req) => {
   } catch (error) {
     console.error("stability-ai error:", error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Erro desconhecido" }),
+      JSON.stringify({ 
+        error: error instanceof Error ? error.message : "Erro interno na Edge Function",
+        details: error.stack 
+      }),
       { status: 500, headers: { ...corsHeaders(origin), "Content-Type": "application/json" } }
     );
   }
