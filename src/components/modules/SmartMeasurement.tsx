@@ -267,12 +267,12 @@ const SmartMeasurement: React.FC = () => {
 
         if (isSofaSwap) {
           console.log("[SD VISION] Troca de sofá detectada – usando motor Stability (inpaint)");
-          aiRawResult = await inpaintObject(image, mBase64, data.descriptionEn);
+          aiRawResult = await inpaintObject(optimizedImage, mBase64, data.descriptionEn);
         } else if (isCreativeTask) {
           try {
             console.log("[SD VISION] Usando Motor OpenAI (DALL-E 3) para tarefa criativa.");
             const dallePrompt = `A high-end, realistic professional interior photography of a room. ${data.descriptionEn}. The room should have a luxury architecture, cinematic lighting, 8k resolution, photorealistic textures.`;
-            aiRawResult = await generateOpenAIImage(dallePrompt);
+            aiRawResult = await generateOpenAIImage(dallePrompt, optimizedImage, mBase64);
             
             if (!aiRawResult) throw new Error("OpenAI retornou vazio");
           } catch (err) {
