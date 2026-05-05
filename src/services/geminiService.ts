@@ -113,7 +113,7 @@ export async function analyzeImageWithGemini(base64Image: string, prompt: string
         "Authorization": `Bearer ${GROQ_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "meta-llama/llama-4-scout-17b-16e-instruct",
+        model: "llama-3.2-90b-vision-preview",
         messages: [
           {
             role: "user",

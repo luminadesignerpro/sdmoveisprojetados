@@ -262,51 +262,11 @@ serve(async (req) => {
               }
             }
 
-            // 2. Lógica da IA (GROQ)
+            // 2. Resposta de Fallback (Fora do fluxo)
             if (!responseText) {
-              const groqKey = Deno.env.get("GROQ_API_KEY");
-              if (groqKey) {
-                console.log(`[WEBHOOK] Chamando Groq AI para: "${messageContent}"`);
-                try {
-                  const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-                    method: "POST",
-                    headers: { 
-                      "Content-Type": "application/json", 
-                      "Authorization": `Bearer ${groqKey}` 
-                    },
-                    body: JSON.stringify({
-                      model: "llama-3.3-70b-versatile", // Modelo mais robusto e inteligente
-                      messages: [
-                        { 
-                          role: "system", 
-                          content: "Você é o Consultor da SD Móveis. Seja direto e objetivo. Não dê definições técnicas (ex: não explique o que é MDF). Se o cliente escolher uma cor ou material, apenas confirme. É PROIBIDO dar orçamentos ou prazos; responda sempre: 'Esses detalhes serão confirmados pelo projetista após a análise do seu projeto.' Seja breve e não termine com perguntas que prolonguem a conversa desnecessariamente." 
-                        }, 
-                        { role: "user", content: messageContent }
-                      ],
-                      temperature: 0.7,
-                      max_tokens: 500
-                    }),
-                  });
-                  
-                  if (groqRes.ok) {
-                    const groqData = await groqRes.json();
-                    responseText = groqData.choices?.[0]?.message?.content || "";
-                    messageTypeOut = "ai";
-                    console.log("[WEBHOOK] Resposta da IA gerada com sucesso.");
-                  } else {
-                    const errorText = await groqRes.text();
-                    console.error(`[WEBHOOK] Erro na API do Groq (${groqRes.status}):`, errorText);
-                    // Fallback para o menu principal se a IA falhar
-                    responseText = "Olá! Não consegui processar sua mensagem agora, mas estou aqui para ajudar. 😊\n\n" + config.greeting;
-                  }
-                } catch (e) {
-                  console.error("[WEBHOOK] Exceção ao chamar Groq:", e);
-                  responseText = "Olá! Como posso te ajudar hoje? 😊\n\n" + config.greeting;
-                }
-              } else {
-                console.warn("[WEBHOOK] GROQ_API_KEY não configurada nas Secrets.");
-                responseText = "Olá! Como posso te ajudar hoje? 😊\n\n" + config.greeting;
-              }
+              console.log(`[WEBHOOK] Mensagem fora do fluxo: "${messageContent}"`);
+              responseText = "Entendido! Já recebi sua mensagem e um de nossos projetistas entrará em contato com você em breve para te atender. 😊";
+              messageTypeOut = "system";
             }
 
             // ENVIAR RESPOSTA

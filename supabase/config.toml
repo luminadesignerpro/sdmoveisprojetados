@@ -17,3 +17,9 @@ verify_jwt = false
 
 [functions.whatsapp-connect]
 verify_jwt = false
+
+[functions.openai-image]
+verify_jwt = false
+
+[functions.stability-ai]
+verify_jwt = false

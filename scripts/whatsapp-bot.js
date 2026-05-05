@@ -55,20 +55,16 @@ client.on('message', async (msg) => {
     console.log(`📩 Mensagem recebida de ${msg.from}: ${text}`);
 
     try {
-        // 1. Generate AI Response
-        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-        const prompt = `${SYSTEM_PROMPT}\n\nCliente: ${text}\nAssistente:`;
+        // 1. Resposta Estática de Fallback (fora do fluxo)
+        const aiResponse = "Entendido! Já recebi sua mensagem e um de nossos projetistas entrará em contato com você em breve para te atender. 😊";
 
-        const result = await model.generateContent(prompt);
-        const aiResponse = result.response.text();
-
-        console.log(`🤖 Resposta da IA: ${aiResponse}`);
+        console.log(`🤖 Resposta Automática: ${aiResponse}`);
 
         // 2. Reply to user
         await msg.reply(aiResponse);
 
     } catch (error) {
-        console.error('❌ Erro ao processar resposta IA:', error.message);
+        console.error('❌ Erro ao processar resposta:', error.message);
     }
 });
 

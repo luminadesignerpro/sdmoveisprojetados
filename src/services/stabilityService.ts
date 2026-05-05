@@ -9,33 +9,36 @@ export interface StabilityCleanupParams {
  * Chama a Edge Function segura para processamento de imagem com Stability AI/ClipDrop
  */
 async function callStabilityEdgeFunction(task: string, params: any): Promise<string | null> {
-  const SUPABASE_URL = "https://nglwscakhhdhelhbqkyb.supabase.co";
-
   try {
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/stability-ai`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
+    const { data, error } = await supabase.functions.invoke("stability-ai", {
+      body: {
         task,
         image: params.image,
         mask: params.mask,
         prompt: params.prompt,
-      }),
+      },
     });
 
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error(`stability-ai (${task}) error ${response.status}:`, errText);
-      throw new Error(`stability-ai returned ${response.status}: ${errText}`);
+    if (error) {
+      console.error(`stability-ai (${task}) error:`, error);
+      throw error;
     }
 
-    const buffer = await response.arrayBuffer();
-    const base64 = btoa(
-      new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), "")
-    );
-    return `data:image/jpeg;base64,${base64}`;
+    if (data instanceof Blob || data instanceof ArrayBuffer) {
+      const buffer = data instanceof Blob ? await data.arrayBuffer() : data;
+      const base64 = btoa(
+        new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), "")
+      );
+      return `data:image/jpeg;base64,${base64}`;
+    }
+
+    // Se a Edge Function retornar JSON com erro
+    if (data?.error) {
+      console.error(`stability-ai error:`, data.error);
+      return null;
+    }
+
+    return data;
   } catch (error) {
     console.error(`Failed to call stability-ai (${task}):`, error);
     return null;

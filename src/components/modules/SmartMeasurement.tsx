@@ -27,6 +27,7 @@ const SmartMeasurement: React.FC = () => {
   const [result, setResult] = useState<any>(null);
   const [iaCommand, setIaCommand] = useState('');
   const [history, setHistory] = useState<string[]>([]);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -58,9 +59,6 @@ const SmartMeasurement: React.FC = () => {
     }
   }, [image]);
 
-  const [showAdvanced, setShowAdvanced] = useState(false);
-  const [history, setHistory] = useState<string[]>([]);
-  
   const creativeKeywords = [
     'sugest', 'melhor', 'decor', 'estil', 'luxo', 'bonit', 'chatgpt', 'ambiente', 
     'moderno', 'novo', 'troc', 'mud', 'substitu', 'preto', 'cinza', 'diferente', 'top',
@@ -77,7 +75,7 @@ const SmartMeasurement: React.FC = () => {
     setAnalyzing(true);
     try {
       // PROMPT DE ALTO NÍVEL - AGENTE ARQUITETO SD VISION
-      const prompt = `Você é o AGENTE PROJETISTA SD VISION ENGINEERING V14.
+      const prompt = `Você é o AGENTE PROJETISTA SD VISION ENGINEERING V15.
       
       OBJETIVO: Analisar a foto do ambiente e o comando: "${iaCommand}".
       
@@ -92,8 +90,8 @@ const SmartMeasurement: React.FC = () => {
       
       RETORNE APENAS JSON VÁLIDO:
       {
-        "action": "inpaint" | "style" | "cleanup",
-        "measureResult": "valor estimado",
+        "action": "inpaint" | "style" | "cleanup" | "measure",
+        "measureResult": "valor estimado (ex: 2.5m ou 2500mm)",
         "reasoning": "Sua análise em Português.",
         "descriptionEn": "Aggressive transformative prompt to REPLACE the target object entirely.",
         "targetPolygon": [{"x": float, "y": float}, ...] 
@@ -101,9 +99,16 @@ const SmartMeasurement: React.FC = () => {
 
       // Já temos o base64 no estado 'image'
       const imagesToAnalyze = [image];
-      if (refImage) imagesToAnalyze.push(refImage);
+    if (refImage) {
+      imagesToAnalyze.push(refImage);
+    }
 
-      const res = await analyzeImageWithGemini(imagesToAnalyze.join('|'), prompt); 
+    // Enriquecer o prompt para indicar que a foto de referência deve ser usada
+    let enhancedPrompt = prompt;
+    if (refImage) {
+      enhancedPrompt += "\n\nINSTRUÇÃO: Use a foto de referência enviada como guia visual para o novo sofá ou móvel a ser inserido.";
+    }
+    const res = await analyzeImageWithGemini(imagesToAnalyze.join('|'), enhancedPrompt); 
       const cleanRes = res.replace(/```json|```/g, '').trim();
       const data = JSON.parse(cleanRes);
 
@@ -113,15 +118,34 @@ const SmartMeasurement: React.FC = () => {
       const creativeKeywords = [
         'sugest', 'melhor', 'decor', 'estil', 'luxo', 'bonit', 'chatgpt', 'ambiente', 
         'moderno', 'novo', 'troc', 'mud', 'substitu', 'preto', 'cinza', 'diferente', 'top',
-        'remov', 'tirar', 'apagar', 'limpar'
+        'remov', 'tirar', 'apagar', 'limpar', 'sofa', 'sofá'
       ];
       const isCreativeTask = creativeKeywords.some(k => cmdLower.includes(k));
       
-      const changeKeywords = ['troc', 'mud', 'substitu', 'coloc', 'põe', 'poe', 'remov', 'tirar'];
+      const changeKeywords = ['troc', 'mud', 'substitu', 'coloc', 'põe', 'poe', 'remov', 'tirar', 'sofa', 'sofá'];
       const isChangeTask = changeKeywords.some(k => cmdLower.includes(k));
 
       const paintKeywords = ['pint', 'parede', 'cor', 'colorir'];
       const isPaintTask = paintKeywords.some(k => cmdLower.includes(k));
+
+      // Detecção robusta de troca de sofá via Regex (mais flexível)
+      const sofaRegex = /(troc|remov|tir|substitu|mud|troca|mudar|novo|nova|coloc|põe|poe).*sof[aá]/i;
+      const isSofaSwap = sofaRegex.test(iaCommand);
+      
+      console.log("[SD VISION] Análise de Comando:", { 
+        iaCommand, 
+        isSofaSwap, 
+        isCreativeTask, 
+        isPaintTask, 
+        isChangeTask 
+      });
+
+      if (isSofaSwap) {
+        console.log("[SD VISION] Forçando Inpaint para Troca de Sofá.");
+        data.action = 'inpaint';
+        data.descriptionEn = "Remove entire old sofa and replace with new modern sofa, high quality interior design";
+        data.targetPolygon = []; // Força máscara completa
+      }
 
       // Se for uma tarefa de REMOÇÃO grande em modo criativo, tratamos como INPAINT de reconstrução
       if (data.action === 'cleanup' && isCreativeTask) {
@@ -162,30 +186,30 @@ const SmartMeasurement: React.FC = () => {
           promptEn: data.descriptionEn
         });
 
-        let finalImg: string | null = null;
-
         // Preparação da máscara
         const mCanvas = document.createElement('canvas');
-        const tmpImg = new Image(); 
-        tmpImg.src = image; 
+        const tmpImg = new Image();
+        tmpImg.src = image;
         await new Promise(r => tmpImg.onload = r);
-        
-        mCanvas.width = tmpImg.width; 
+
+        mCanvas.width = tmpImg.width;
         mCanvas.height = tmpImg.height;
         const mctx = mCanvas.getContext('2d')!;
-        mctx.fillStyle = 'black'; 
+        mctx.fillStyle = 'black';
         mctx.fillRect(0, 0, mCanvas.width, mCanvas.height);
-        mctx.fillStyle = 'white'; 
+        mctx.fillStyle = 'white';
         mctx.beginPath();
-        
-        if (data.targetPolygon && data.targetPolygon.length > 0) {
-          data.targetPolygon.forEach((p: any, i: number) => { 
-            if (i === 0) mctx.moveTo(p.x * mCanvas.width, p.y * mCanvas.height); 
-            else mctx.lineTo(p.x * mCanvas.width, p.y * mCanvas.height); 
+
+        if (isSofaSwap) {
+          // Máscara completa para trocar o sofá
+          mctx.rect(0, 0, mCanvas.width, mCanvas.height);
+        } else if (data.targetPolygon && data.targetPolygon.length > 0) {
+          data.targetPolygon.forEach((p: any, i: number) => {
+            if (i === 0) mctx.moveTo(p.x * mCanvas.width, p.y * mCanvas.height);
+            else mctx.lineTo(p.x * mCanvas.width, p.y * mCanvas.height);
           });
-          
           if (data.action === 'cleanup' || (data.action === 'inpaint' && isCreativeTask)) {
-            mctx.lineWidth = 100; // Máscara mais larga para blending melhor em modo criativo
+            mctx.lineWidth = 100;
             mctx.strokeStyle = 'white';
             mctx.stroke();
           }
@@ -193,21 +217,34 @@ const SmartMeasurement: React.FC = () => {
           // Fallback mask (centro)
           mctx.arc(mCanvas.width/2, mCanvas.height/2, mCanvas.width/3, 0, Math.PI*2);
         }
-        
-        mctx.closePath(); 
+
+        mctx.closePath();
         mctx.fill();
         
         const mBase64 = mCanvas.toDataURL('image/png');
         
-        // Chamada aos serviços de imagem
+        // Escolha do motor de imagem com Fallback
         let aiRawResult: string | null = null;
-        
-        if (isCreativeTask) {
-          // --- MOTOR CHATGPT (DALL-E 3) ---
-          console.log("[SD VISION] Usando Motor OpenAI (DALL-E 3) para tarefa criativa.");
-          // Criamos um prompt ultra-descritivo combinando o ambiente original com o novo desejo
-          const dallePrompt = `A high-end, realistic professional interior photography of a room. ${data.descriptionEn}. The room should have a luxury architecture, cinematic lighting, 8k resolution, photorealistic textures.`;
-          aiRawResult = await generateOpenAIImage(dallePrompt);
+
+        if (isSofaSwap) {
+          console.log("[SD VISION] Troca de sofá detectada – usando motor Stability (inpaint)");
+          aiRawResult = await inpaintObject(image, mBase64, data.descriptionEn);
+        } else if (isCreativeTask) {
+          try {
+            console.log("[SD VISION] Usando Motor OpenAI (DALL-E 3) para tarefa criativa.");
+            const dallePrompt = `A high-end, realistic professional interior photography of a room. ${data.descriptionEn}. The room should have a luxury architecture, cinematic lighting, 8k resolution, photorealistic textures.`;
+            aiRawResult = await generateOpenAIImage(dallePrompt);
+            
+            if (!aiRawResult) throw new Error("OpenAI retornou vazio");
+          } catch (err) {
+            console.warn("[SD VISION] Motor OpenAI falhou ou limite atingido. Usando Stability como fallback.", err);
+            // Fallback para Stability Inpaint ou Style
+            if (data.action === 'style') {
+              aiRawResult = await styleTransfer(image, data.descriptionEn);
+            } else {
+              aiRawResult = await inpaintObject(image, mBase64, data.descriptionEn);
+            }
+          }
         } else {
           // --- MOTOR TÉCNICO (STABILITY) ---
           if (data.action === 'cleanup') aiRawResult = await cleanupObject({ image, mask: mBase64 });
@@ -258,8 +295,8 @@ const SmartMeasurement: React.FC = () => {
              <ScanLine className="w-6 h-6 sm:w-8 sm:h-8 text-black" />
           </div>
           <div>
-            <h1 className="text-xl sm:text-3xl font-black italic tracking-tighter text-white">SD VISION <span className="text-amber-500 font-normal">V13 - ATIVO</span></h1>
-            <p className="text-[8px] sm:text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] sm:tracking-[0.4em]">Advanced Creative Surveyor Engine</p>
+            <h1 className="text-xl sm:text-3xl font-black italic tracking-tighter text-white">SD VISION <span className="text-amber-500 font-normal">V15 - ATIVO</span></h1>
+            <p className="text-[8px] sm:text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] sm:tracking-[0.4em]">Advanced Creative Surveyor Engine & AI Measurement</p>
           </div>
         </div>
 
