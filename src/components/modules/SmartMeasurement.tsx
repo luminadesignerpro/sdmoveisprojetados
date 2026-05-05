@@ -262,58 +262,48 @@ const SmartMeasurement: React.FC = () => {
         
         const mBase64 = mCanvas.toDataURL('image/png');
         
-        // Escolha do motor de imagem com Fallback
+        // --- FLUXO DE GERAÇÃO UNIFICADO COM FALLBACK MULTI-CAMADA ---
         let aiRawResult: string | null = null;
-
-        if (isSofaSwap) {
-          console.log("[SD VISION] Troca de sofá detectada – usando motor Stability (inpaint)");
-          aiRawResult = await inpaintObject(optimizedImage, mBase64, data.descriptionEn);
-        } else if (isCreativeTask) {
-          try {
-            console.log("[SD VISION] Usando Motor OpenAI (DALL-E 3) para tarefa criativa.");
-            const dallePrompt = `A high-end, realistic professional interior photography of a room. ${data.descriptionEn}. The room should have a luxury architecture, cinematic lighting, 8k resolution, photorealistic textures.`;
-            aiRawResult = await generateOpenAIImage(dallePrompt, optimizedImage, mBase64);
-            
-            if (!aiRawResult) throw new Error("OpenAI retornou vazio");
-          } catch (err) {
-            console.warn("[SD VISION] Motor OpenAI falhou ou limite atingido. Usando Stability como fallback.", err);
+        
+        const tryAIGeneration = async () => {
+          // 1. Tentar OpenAI se for tarefa criativa
+          if (isCreativeTask && !isSofaSwap) {
             try {
-              if (data.action === 'style') {
-                console.log("[SD VISION] Executando Style Transfer (Stability)...");
-                aiRawResult = await styleTransfer(optimizedImage, data.descriptionEn);
-              } else {
-                console.log("[SD VISION] Executando Inpaint (Stability)...");
-                aiRawResult = await inpaintObject(optimizedImage, mBase64, data.descriptionEn);
-              }
-              if (!aiRawResult) throw new Error("Stability retornou vazio");
-            } catch (err2) {
-              console.warn("[SD VISION] Stability falhou. Usando Pollinations (Gratuito) como último recurso.", err2);
-              // Pollinations.ai é gratuito e não requer chave. Gera uma imagem nova do zero.
-              const seed = Math.floor(Math.random() * 1000000);
-              aiRawResult = `https://pollinations.ai/p/${encodeURIComponent(data.descriptionEn)}?width=1024&height=1024&seed=${seed}&model=flux`;
+              console.log("[SD VISION] Camada 1: Tentando OpenAI (DALL-E 3)...");
+              const dallePrompt = `A high-end, realistic professional interior photography of a room. ${data.descriptionEn}. The room should have a luxury architecture, cinematic lighting, 8k resolution, photorealistic textures.`;
+              const res = await generateOpenAIImage(dallePrompt, optimizedImage, mBase64);
+              if (res) return res;
+            } catch (err) {
+              console.warn("[SD VISION] OpenAI falhou. Indo para próxima camada.");
             }
           }
-        } else {
-          // --- MOTOR TÉCNICO (STABILITY) ---
+
+          // 2. Tentar Stability AI (ClipDrop/Platform)
           try {
+            console.log(`[SD VISION] Camada 2: Tentando Stability (${data.action})...`);
+            let res = null;
             if (data.action === 'cleanup') {
-              console.log("[SD VISION] Executando Cleanup...");
-              aiRawResult = await cleanupObject({ image: optimizedImage, mask: mBase64 });
-            } else if (data.action === 'inpaint') {
-              console.log("[SD VISION] Executando Inpaint...");
-              aiRawResult = await inpaintObject(optimizedImage, mBase64, data.descriptionEn);
+              res = await cleanupObject({ image: optimizedImage, mask: mBase64 });
             } else if (data.action === 'style') {
-              console.log("[SD VISION] Executando Style Transfer...");
-              aiRawResult = await styleTransfer(optimizedImage, data.descriptionEn);
+              res = await styleTransfer(optimizedImage, data.descriptionEn);
+            } else {
+              res = await inpaintObject(optimizedImage, mBase64, data.descriptionEn);
             }
-          } catch (err3) {
-            console.error("[SD VISION] Motor técnico falhou:", err3);
+            if (res) return res;
+          } catch (err) {
+            console.warn("[SD VISION] Stability falhou. Indo para camada de emergência.");
           }
-        }
+
+          // 3. Camada de Emergência: Pollinations (Gratuito e Garantido)
+          console.log("[SD VISION] Camada 3: Usando Motor de Emergência (Pollinations)...");
+          const seed = Math.floor(Math.random() * 1000000);
+          return `https://pollinations.ai/p/${encodeURIComponent(data.descriptionEn)}?width=1024&height=1024&seed=${seed}&model=flux`;
+        };
+
+        aiRawResult = await tryAIGeneration();
         
         if (!aiRawResult) {
-          console.error("[SD VISION] Falha crítica: Nenhum motor retornou resultado.");
-          throw new Error("Não foi possível processar a imagem com nenhum dos motores disponíveis. Verifique suas chaves de API ou tente um comando mais simples.");
+          throw new Error("Falha total em todos os motores de imagem.");
         }
         
         if (aiRawResult) {

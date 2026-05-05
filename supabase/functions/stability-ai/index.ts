@@ -59,50 +59,71 @@ serve(async (req) => {
     const formData = new FormData();
     let targetUrl = "";
 
-    if (task === "cleanup") {
-      targetUrl = "https://clipdrop-api.co/cleanup/v1";
-      formData.append('image_file', imageBlob, 'image.jpg');
-      if (maskBlob) formData.append('mask_file', maskBlob, 'mask.png');
-    } else if (task === "relight") {
-      targetUrl = "https://clipdrop-api.co/relight/v1";
-      formData.append('image_file', imageBlob, 'image.jpg');
-      if (prompt) formData.append('prompt', prompt);
-    } else if (task === "inpaint") {
-      targetUrl = "https://clipdrop-api.co/inpaint/v1";
-      formData.append('image_file', imageBlob, 'image.jpg');
-      if (maskBlob) formData.append('mask_file', maskBlob, 'mask.png');
-      else throw new Error("Mascara obrigatoria para inpaint.");
+    // Mapeamento para Stability Platform API (DreamStudio)
+    const engineId = "stable-diffusion-xl-1024-v1-0";
+    
+    if (task === "cleanup" || task === "inpaint") {
+      targetUrl = `https://api.stability.ai/v1/generation/${engineId}/image-to-image/masking`;
+      formData.append('init_image', imageBlob);
+      formData.append('mask_source', 'MASK_IMAGE_WHITE');
+      if (maskBlob) {
+        formData.append('mask_image', maskBlob);
+      } else {
+        throw new Error("Mascara obrigatoria para inpaint/cleanup.");
+      }
+      formData.append('text_prompts[0][text]', prompt || "clean luxury interior design, professional photography");
+      formData.append('text_prompts[0][weight]', '1');
+      formData.append('cfg_scale', '7');
+      formData.append('clip_guidance_preset', 'FAST_BLUE');
+      formData.append('samples', '1');
+      formData.append('steps', '30');
     } else if (task === "style") {
-      targetUrl = "https://clipdrop-api.co/replace-background/v1";
-      formData.append('image_file', imageBlob, 'image.jpg');
-      formData.append('prompt', prompt || "modern luxury interior");
+      targetUrl = `https://api.stability.ai/v1/generation/${engineId}/image-to-image`;
+      formData.append('init_image', imageBlob);
+      formData.append('image_strength', '0.35');
+      formData.append('text_prompts[0][text]', prompt || "modern luxury interior");
+      formData.append('text_prompts[0][weight]', '1');
+      formData.append('cfg_scale', '7');
+      formData.append('samples', '1');
+      formData.append('steps', '30');
     } else {
-      throw new Error("Tarefa invalida: " + task);
+      // Fallback para ClipDrop se for uma tarefa não suportada pela API V1 da Stability
+      targetUrl = `https://clipdrop-api.co/${task}/v1`;
+      formData.append('image_file', imageBlob, 'image.jpg');
+      if (maskBlob) formData.append('mask_file', maskBlob, 'mask.png');
     }
 
-    console.log(`[stability-ai] Iniciando fetch para: ${targetUrl}`);
+    console.log(`[stability-ai] Iniciando fetch para Stability Platform: ${targetUrl}`);
 
     const response = await fetch(targetUrl, {
       method: 'POST',
-      headers: { 'x-api-key': stabilityKey },
+      headers: { 
+        'Authorization': `Bearer ${stabilityKey}`,
+        'Accept': 'application/json' 
+      },
       body: formData,
     });
 
     if (!response.ok) {
       const errText = await response.text();
-      let msg = `Erro ClipDrop (${response.status})`;
+      let msg = `Erro Stability (${response.status})`;
       try {
         const json = JSON.parse(errText);
-        msg = json.error || json.message || msg;
-      } catch(e) {
-        msg = errText || msg;
-      }
+        msg = json.message || json.error || msg;
+      } catch(e) {}
       throw new Error(msg);
     }
 
-    const buffer = await response.arrayBuffer();
-    return new Response(buffer, {
-      headers: { ...corsHeaders(origin), "Content-Type": "image/jpeg" },
+    const resultJson = await response.json();
+    if (!resultJson.artifacts || resultJson.artifacts.length === 0) {
+      throw new Error("Nenhum artefato retornado pela Stability.");
+    }
+
+    const base64Image = resultJson.artifacts[0].base64;
+    const binary = Uint8Array.from(atob(base64Image), c => c.charCodeAt(0));
+
+    return new Response(binary, {
+      headers: { ...corsHeaders(origin), "Content-Type": "image/png" },
     });
 
   } catch (error) {
