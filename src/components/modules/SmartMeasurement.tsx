@@ -262,40 +262,37 @@ const SmartMeasurement: React.FC = () => {
         
         const mBase64 = mCanvas.toDataURL('image/png');
         
-        // --- FLUXO DE GERAÇÃO UNIFICADO COM FALLBACK MULTI-CAMADA ---
+        // --- FLUXO DE GERAÇÃO UNIFICADO (STABILITY AI + FALLBACK) ---
         let aiRawResult: string | null = null;
         
         const tryAIGeneration = async () => {
-          // 1. Tentar OpenAI se for tarefa criativa
-          if (isCreativeTask && !isSofaSwap) {
-            try {
-              console.log("[SD VISION] Camada 1: Tentando OpenAI (DALL-E 3)...");
-              const dallePrompt = `A high-end, realistic professional interior photography of a room. ${data.descriptionEn}. The room should have a luxury architecture, cinematic lighting, 8k resolution, photorealistic textures.`;
-              const res = await generateOpenAIImage(dallePrompt, optimizedImage, mBase64);
-              if (res) return res;
-            } catch (err) {
-              console.warn("[SD VISION] OpenAI falhou. Indo para próxima camada.");
-            }
-          }
-
-          // 2. Tentar Stability AI (ClipDrop/Platform)
+          // 1. Tentar Stability AI (Motor Profissional) com Timeout de 8 segundos
           try {
-            console.log(`[SD VISION] Camada 2: Tentando Stability (${data.action})...`);
-            let res = null;
-            if (data.action === 'cleanup') {
-              res = await cleanupObject({ image: optimizedImage, mask: mBase64 });
-            } else if (data.action === 'style') {
-              res = await styleTransfer(optimizedImage, data.descriptionEn);
-            } else {
-              res = await inpaintObject(optimizedImage, mBase64, data.descriptionEn);
-            }
+            console.log(`[SD VISION] Camada 1: Tentando Stability (${data.action})...`);
+            
+            // Promise de Timeout para não travar a UI se a Stability demorar
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error("Timeout Stability")), 8000)
+            );
+
+            const generationPromise = (async () => {
+              if (data.action === 'cleanup') {
+                return await cleanupObject({ image: optimizedImage, mask: mBase64 });
+              } else if (data.action === 'style') {
+                return await styleTransfer(optimizedImage, data.descriptionEn);
+              } else {
+                return await inpaintObject(optimizedImage, mBase64, data.descriptionEn);
+              }
+            })();
+
+            const res = await Promise.race([generationPromise, timeoutPromise]) as string | null;
             if (res) return res;
           } catch (err) {
-            console.warn("[SD VISION] Stability falhou. Indo para camada de emergência.");
+            console.warn("[SD VISION] Stability falhou ou demorou demais. Indo para emergência.");
           }
 
-          // 3. Camada de Emergência: Pollinations (Gratuito e Garantido)
-          console.log("[SD VISION] Camada 3: Usando Motor de Emergência (Pollinations)...");
+          // 2. Camada de Emergência: Pollinations (Gratuito e Instantâneo)
+          console.log("[SD VISION] Camada 2: Usando Motor de Emergência (Pollinations)...");
           const seed = Math.floor(Math.random() * 1000000);
           const pollinationsUrl = `https://pollinations.ai/p/${encodeURIComponent(data.descriptionEn)}?width=1024&height=1024&seed=${seed}&model=flux`;
           return pollinationsUrl;
