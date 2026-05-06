@@ -297,7 +297,8 @@ const SmartMeasurement: React.FC = () => {
           // 3. Camada de Emergência: Pollinations (Gratuito e Garantido)
           console.log("[SD VISION] Camada 3: Usando Motor de Emergência (Pollinations)...");
           const seed = Math.floor(Math.random() * 1000000);
-          return `https://pollinations.ai/p/${encodeURIComponent(data.descriptionEn)}?width=1024&height=1024&seed=${seed}&model=flux`;
+          const pollinationsUrl = `https://pollinations.ai/p/${encodeURIComponent(data.descriptionEn)}?width=1024&height=1024&seed=${seed}&model=flux`;
+          return pollinationsUrl;
         };
 
         aiRawResult = await tryAIGeneration();
@@ -309,7 +310,8 @@ const SmartMeasurement: React.FC = () => {
         if (aiRawResult) {
           let finalImg = "";
           if (isCreativeTask || data.action === 'style') {
-            finalImg = aiRawResult;
+            // Cache busting para evitar que o navegador mostre a imagem antiga
+            finalImg = aiRawResult.includes('?') ? `${aiRawResult}&t=${Date.now()}` : `${aiRawResult}?t=${Date.now()}`;
           } else {
             const canvas = document.createElement('canvas');
             canvas.width = tmpImg.width; canvas.height = tmpImg.height;
@@ -319,12 +321,18 @@ const SmartMeasurement: React.FC = () => {
             const maskImg = new Image(); maskImg.src = mBase64; await new Promise(r => maskImg.onload = r);
             ctx.drawImage(maskImg, 0, 0);
             ctx.globalCompositeOperation = 'destination-over';
-            const aiImg = new Image(); aiImg.src = aiRawResult; await new Promise(r => aiImg.onload = r);
+            const aiImg = new Image(); 
+            aiImg.crossOrigin = "anonymous"; // Evitar problemas de CORS ao processar imagem da rede
+            aiImg.src = aiRawResult; 
+            await new Promise((resolve, reject) => {
+              aiImg.onload = resolve;
+              aiImg.onerror = reject;
+            });
             ctx.drawImage(aiImg, 0, 0);
             finalImg = canvas.toDataURL('image/jpeg', 0.95);
           }
 
-          setHistory([finalImg, ...history]);
+          setHistory(prev => [finalImg, ...prev]);
           setImage(finalImg);
           toast({ title: '✅ Projeto atualizado!' });
         }
