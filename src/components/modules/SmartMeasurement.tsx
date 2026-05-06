@@ -259,55 +259,51 @@ const SmartMeasurement: React.FC = () => {
 
         mctx.closePath();
         mctx.fill();
-        
-        const mBase64 = mCanvas.toDataURL('image/png');
-        
-        // --- FLUXO DE GERAÇÃO UNIFICADO (STABILITY AI + FALLBACK) ---
+            // --- FLUXO DE GERAÇÃO DEFINITIVO (ESTABILIDADE + RESGATE) ---
         let aiRawResult: string | null = null;
         
         const tryAIGeneration = async () => {
-          // 1. Tentar Stability AI (Motor Profissional) com Timeout de 8 segundos
+          // 1. Camada Profissional: Stability AI (com Timeout de 10s)
           try {
-            console.log(`[SD VISION] Camada 1: Tentando Stability (${data.action})...`);
+            console.log(`[SD VISION] Camada 1: Acionando Stability (${data.action})...`);
             
-            // Promise de Timeout para não travar a UI se a Stability demorar
             const timeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error("Timeout Stability")), 8000)
+              setTimeout(() => reject(new Error("Timeout")), 10000)
             );
 
             const generationPromise = (async () => {
+              // Normalizar imagem para 1024x1024 (Evitar Erro 500)
+              const normalizedImg = await resizeImage(optimizedImage, 1024, 1024);
+              const normalizedMask = await resizeImage(mBase64, 1024, 1024);
+              
               if (data.action === 'cleanup') {
-                return await cleanupObject({ image: optimizedImage, mask: mBase64 });
+                return await cleanupObject({ image: normalizedImg, mask: normalizedMask });
               } else if (data.action === 'style') {
-                return await styleTransfer(optimizedImage, data.descriptionEn);
+                return await styleTransfer(normalizedImg, data.descriptionEn);
               } else {
-                return await inpaintObject(optimizedImage, mBase64, data.descriptionEn);
+                return await inpaintObject(normalizedImg, normalizedMask, data.descriptionEn);
               }
             })();
 
             const res = await Promise.race([generationPromise, timeoutPromise]) as string | null;
             if (res) return res;
           } catch (err) {
-            console.warn("[SD VISION] Stability falhou ou demorou demais. Indo para emergência.");
+            console.warn("[SD VISION] Motor principal offline ou lento. Usando motor de resgate...");
           }
 
-          // 2. Camada de Emergência: Pollinations (Gratuito e Instantâneo)
-          console.log("[SD VISION] Camada 2: Usando Motor de Emergência (Pollinations)...");
+          // 2. Camada de Resgate: Pollinations (Garantido)
+          console.log("[SD VISION] Camada 2: Motor de Resgate Ativado...");
+          toast({ title: '🔄 Gerando projeto (Aguarde 10s)...' });
           const seed = Math.floor(Math.random() * 1000000);
-          const pollinationsUrl = `https://pollinations.ai/p/${encodeURIComponent(data.descriptionEn)}?width=1024&height=1024&seed=${seed}&model=flux`;
-          return pollinationsUrl;
+          return `https://pollinations.ai/p/${encodeURIComponent(data.descriptionEn)}?width=1024&height=1024&seed=${seed}&model=flux`;
         };
 
         aiRawResult = await tryAIGeneration();
         
-        if (!aiRawResult) {
-          throw new Error("Falha total em todos os motores de imagem.");
-        }
-        
         if (aiRawResult) {
           let finalImg = "";
           if (isCreativeTask || data.action === 'style') {
-            // Cache busting para evitar que o navegador mostre a imagem antiga
+            // Adicionar timestamp para forçar atualização da imagem
             finalImg = aiRawResult.includes('?') ? `${aiRawResult}&t=${Date.now()}` : `${aiRawResult}?t=${Date.now()}`;
           } else {
             const canvas = document.createElement('canvas');
@@ -319,11 +315,12 @@ const SmartMeasurement: React.FC = () => {
             ctx.drawImage(maskImg, 0, 0);
             ctx.globalCompositeOperation = 'destination-over';
             const aiImg = new Image(); 
-            aiImg.crossOrigin = "anonymous"; // Evitar problemas de CORS ao processar imagem da rede
+            aiImg.crossOrigin = "anonymous";
             aiImg.src = aiRawResult; 
             await new Promise((resolve, reject) => {
               aiImg.onload = resolve;
               aiImg.onerror = reject;
+              setTimeout(() => reject(new Error("Image Load Timeout")), 15000);
             });
             ctx.drawImage(aiImg, 0, 0);
             finalImg = canvas.toDataURL('image/jpeg', 0.95);
@@ -331,15 +328,15 @@ const SmartMeasurement: React.FC = () => {
 
           setHistory(prev => [finalImg, ...prev]);
           setImage(finalImg);
-          toast({ title: '✅ Projeto atualizado!' });
+          toast({ title: '✅ Projeto concluído!' });
         }
       }
     } catch (e: any) {
-      console.error("ERRO DETALHADO IA:", e);
+      console.error("ERRO FINAL IA:", e);
       toast({ 
         variant: "destructive",
         title: '❌ Erro no Processamento', 
-        description: e.message || 'Houve um erro técnico. Tente novamente em instantes.' 
+        description: 'Não foi possível gerar a imagem no momento. Tente novamente.' 
       });
     } finally {
       setAnalyzing(false);
