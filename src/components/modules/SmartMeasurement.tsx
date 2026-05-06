@@ -249,49 +249,36 @@ const SmartMeasurement: React.FC = () => {
           });
           if (data.action === 'cleanup' || (data.action === 'inpaint' && isCreativeTask)) {
             mctx.lineWidth = 100;
-            mctx.strokeStyle = 'white';
-            mctx.stroke();
-          }
+          mctx.beginPath();
+          mctx.moveTo(data.targetPolygon[0].x * mCanvas.width, data.targetPolygon[0].y * mCanvas.height);
+          data.targetPolygon.forEach((p: any) => mctx.lineTo(p.x * mCanvas.width, p.y * mCanvas.height));
+          mctx.closePath();
+          mctx.fill();
         } else {
-          // Fallback mask (centro)
-          mctx.arc(mCanvas.width/2, mCanvas.height/2, mCanvas.width/3, 0, Math.PI*2);
+          mctx.arc(mCanvas.width/2, mCanvas.height/2, mCanvas.width/4, 0, Math.PI*2);
+          mctx.fill();
         }
-
-        mctx.closePath();
-        mctx.fill();
-            // --- FLUXO DE GERAÇÃO DEFINITIVO (ESTABILIDADE + RESGATE) ---
+        
+        const mBase64 = mCanvas.toDataURL('image/png');
+        
         let aiRawResult: string | null = null;
         
         const tryAIGeneration = async () => {
-          // 1. Camada Profissional: Stability AI (com Timeout de 10s)
           try {
             console.log(`[SD VISION] Camada 1: Acionando Stability (${data.action})...`);
-            
-            const timeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error("Timeout")), 10000)
-            );
-
+            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 10000));
             const generationPromise = (async () => {
-              // Normalizar imagem para 1024x1024 (Evitar Erro 500)
               const normalizedImg = await resizeImage(optimizedImage, 1024, 1024);
               const normalizedMask = await resizeImage(mBase64, 1024, 1024);
-              
-              if (data.action === 'cleanup') {
-                return await cleanupObject({ image: normalizedImg, mask: normalizedMask });
-              } else if (data.action === 'style') {
-                return await styleTransfer(normalizedImg, data.descriptionEn);
-              } else {
-                return await inpaintObject(normalizedImg, normalizedMask, data.descriptionEn);
-              }
+              if (data.action === 'cleanup') return await cleanupObject({ image: normalizedImg, mask: normalizedMask });
+              else if (data.action === 'style') return await styleTransfer(normalizedImg, data.descriptionEn);
+              else return await inpaintObject(normalizedImg, normalizedMask, data.descriptionEn);
             })();
-
             const res = await Promise.race([generationPromise, timeoutPromise]) as string | null;
             if (res) return res;
           } catch (err) {
             console.warn("[SD VISION] Motor principal offline ou lento. Usando motor de resgate...");
           }
-
-          // 2. Camada de Resgate: Pollinations (Garantido)
           console.log("[SD VISION] Camada 2: Motor de Resgate Ativado...");
           toast({ title: '🔄 Gerando projeto (Aguarde 10s)...' });
           const seed = Math.floor(Math.random() * 1000000);
@@ -299,11 +286,11 @@ const SmartMeasurement: React.FC = () => {
         };
 
         aiRawResult = await tryAIGeneration();
+        console.log("[SD VISION] IA RETORNOU:", aiRawResult?.slice(0, 50) + "...");
         
         if (aiRawResult) {
           let finalImg = "";
           if (isCreativeTask || data.action === 'style') {
-            // Adicionar timestamp para forçar atualização da imagem
             finalImg = aiRawResult.includes('?') ? `${aiRawResult}&t=${Date.now()}` : `${aiRawResult}?t=${Date.now()}`;
           } else {
             const canvas = document.createElement('canvas');
@@ -325,7 +312,6 @@ const SmartMeasurement: React.FC = () => {
             ctx.drawImage(aiImg, 0, 0);
             finalImg = canvas.toDataURL('image/jpeg', 0.95);
           }
-
           setHistory(prev => [finalImg, ...prev]);
           setImage(finalImg);
           toast({ title: '✅ Projeto concluído!' });
