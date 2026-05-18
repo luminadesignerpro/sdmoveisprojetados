@@ -67,6 +67,7 @@ const AppointmentsPanel: React.FC<AppointmentsPanelProps> = ({ clientId, clientN
     const [dismissedAlarms, setDismissedAlarms] = useState<Set<string>>(new Set());
     const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
     const [alarmIntervalId, setAlarmIntervalId] = useState<any>(null);
+    const [activeTab, setActiveTab] = useState<'upcoming' | 'history'>('upcoming');
 
     // Form state
     const [type, setType] = useState('visita_tecnica');
@@ -341,6 +342,10 @@ const AppointmentsPanel: React.FC<AppointmentsPanelProps> = ({ clientId, clientN
         setClientPhone('');
     };
 
+    const upcomingAppointments = appointments.filter(apt => apt.status === 'pendente' || apt.status === 'confirmado');
+    const historyAppointments = appointments.filter(apt => apt.status === 'concluido' || apt.status === 'cancelado');
+    const displayedAppointments = activeTab === 'upcoming' ? upcomingAppointments : historyAppointments;
+
     const today = new Date().toISOString().split('T')[0];
 
     return (
@@ -523,20 +528,52 @@ const AppointmentsPanel: React.FC<AppointmentsPanelProps> = ({ clientId, clientN
                 </div>
             )}
 
+            {/* Tabs Selector */}
+            <div className="flex bg-muted/60 p-1.5 rounded-2xl border border-border/40 max-w-xs mb-2">
+                <button
+                    onClick={() => setActiveTab('upcoming')}
+                    className={cn(
+                        "flex-1 py-2 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-200",
+                        activeTab === 'upcoming' 
+                            ? "bg-card text-foreground shadow-sm border border-border/10" 
+                            : "text-muted-foreground/75 hover:text-foreground hover:bg-white/5"
+                    )}
+                >
+                    📅 Próximos ({upcomingAppointments.length})
+                </button>
+                <button
+                    onClick={() => setActiveTab('history')}
+                    className={cn(
+                        "flex-1 py-2 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-200",
+                        activeTab === 'history' 
+                            ? "bg-card text-foreground shadow-sm border border-border/10" 
+                            : "text-muted-foreground/75 hover:text-foreground hover:bg-white/5"
+                    )}
+                >
+                    ✅ Histórico ({historyAppointments.length})
+                </button>
+            </div>
+
             {/* Appointments List */}
             {loading ? (
                 <div className="flex items-center justify-center py-16">
                     <Loader2 className="w-6 h-6 animate-spin text-primary" />
                 </div>
-            ) : appointments.length === 0 ? (
-                <div className="text-center py-16">
-                    <CalendarIcon className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
-                    <p className="text-muted-foreground font-medium">Nenhum agendamento</p>
-                    <p className="text-muted-foreground/60 text-sm mt-1">Clique em "Novo Agendamento" para começar</p>
+            ) : displayedAppointments.length === 0 ? (
+                <div className="text-center py-16 bg-card/30 border border-border/50 rounded-2xl">
+                    <CalendarIcon className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+                    <p className="text-muted-foreground font-medium">
+                        {activeTab === 'upcoming' ? 'Nenhum agendamento pendente' : 'Histórico vazio'}
+                    </p>
+                    <p className="text-muted-foreground/60 text-sm mt-1">
+                        {activeTab === 'upcoming' 
+                            ? 'Clique em "Novo Agendamento" para começar' 
+                            : 'Agendamentos concluídos ou cancelados aparecerão aqui.'}
+                    </p>
                 </div>
             ) : (
                 <div className="space-y-3">
-                    {appointments.map((apt) => {
+                    {displayedAppointments.map((apt) => {
                         const statusInfo = STATUS_MAP[apt.status] || STATUS_MAP.pendente;
                         const typeInfo = APPOINTMENT_TYPES.find((t) => t.value === apt.type);
                         const StatusIcon = statusInfo.icon;
