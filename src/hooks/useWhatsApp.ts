@@ -26,6 +26,34 @@ export interface WhatsAppMessage {
 // Use `any` cast on supabase client for tables not yet in the generated types
 const db = supabase as any;
 
+const playMessageSound = () => {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const playTone = (time: number, freq: number, dur: number) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.frequency.setValueAtTime(freq, time);
+      osc.type = 'sine';
+      
+      gain.gain.setValueAtTime(0.15, time);
+      gain.gain.exponentialRampToValueAtTime(0.01, time + dur - 0.02);
+      
+      osc.start(time);
+      osc.stop(time + dur);
+    };
+    
+    // High-pitched notification chime: C6 (1046.5Hz) followed by E6 (1318.51Hz)
+    playTone(ctx.currentTime, 1046.5, 0.12);
+    playTone(ctx.currentTime + 0.08, 1318.5, 0.2);
+  } catch (error) {
+    console.error('Erro ao tocar som de mensagem:', error);
+  }
+};
+
 export function useWhatsApp() {
   const [conversations, setConversations] = useState<WhatsAppConversation[]>([]);
   const [messages, setMessages] = useState<WhatsAppMessage[]>([]);
@@ -160,6 +188,11 @@ export function useWhatsApp() {
           fetchConversations();
           // Also refresh messages if the incoming message belongs to the open conversation
           const newMsg = payload.new as WhatsAppMessage;
+          
+          if (newMsg?.direction === 'inbound') {
+            playMessageSound();
+          }
+
           if (newMsg?.conversation_id && newMsg.conversation_id === activeConversationId.current) {
             setMessages((prev) => {
               // Deduplicate by id

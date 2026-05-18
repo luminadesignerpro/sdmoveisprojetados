@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Plus, CheckCircle, AlertCircle, Loader2, Wrench, Users, Shield, X, User, MapPin, Phone, CalendarClock } from 'lucide-react';
+import { Clock, Plus, CheckCircle, AlertCircle, Loader2, Wrench, Users, Shield, X, User, MapPin, Phone, CalendarClock, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -62,6 +62,12 @@ const AppointmentsPanel: React.FC<AppointmentsPanelProps> = ({ clientId, clientN
     const [concludingId, setConcludingId] = useState<string | null>(null);
     const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
 
+    // Alarm state
+    const [activeAlarm, setActiveAlarm] = useState<Appointment | null>(null);
+    const [dismissedAlarms, setDismissedAlarms] = useState<Set<string>>(new Set());
+    const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
+    const [alarmIntervalId, setAlarmIntervalId] = useState<any>(null);
+
     // Form state
     const [type, setType] = useState('visita_tecnica');
     const [title, setTitle] = useState('');
@@ -91,9 +97,136 @@ const AppointmentsPanel: React.FC<AppointmentsPanelProps> = ({ clientId, clientN
         let query = supabase.from('appointments').select('*').order('preferred_date', { ascending: true });
         if (clientId) query = query.eq('client_id', clientId);
         const { data, error } = await query;
-        if (!error && data) setAppointments(data);
+        if (!error && data) {
+            // Sort by:
+            // 1. Active (pendente/confirmado) at the top, sorted by date ascending (closest first)
+            // 2. Inactive (concluido/cancelado) at the bottom, sorted by date descending (most recent first)
+            const sorted = [...data].sort((a, b) => {
+                const isAActive = a.status === 'pendente' || a.status === 'confirmado';
+                const isBActive = b.status === 'pendente' || b.status === 'confirmado';
+
+                if (isAActive && !isBActive) return -1;
+                if (!isAActive && isBActive) return 1;
+
+                const timeA = new Date(`${a.preferred_date}T${a.preferred_time || '00:00'}:00`).getTime();
+                const timeB = new Date(`${b.preferred_date}T${b.preferred_time || '00:00'}:00`).getTime();
+
+                if (isAActive) {
+                    return timeA - timeB;
+                } else {
+                    return timeB - timeA;
+                }
+            });
+            setAppointments(sorted);
+        }
         setLoading(false);
     };
+
+    // Alarm sound player
+    const triggerAlarm = (apt: Appointment) => {
+        setActiveAlarm(apt);
+        
+        try {
+            const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+            setAudioContext(ctx);
+            
+            const interval = setInterval(() => {
+                const playBeep = (delay: number, duration: number, frequency: number) => {
+                    if (ctx.state === 'suspended') {
+                        ctx.resume();
+                    }
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    
+                    osc.frequency.setValueAtTime(frequency, ctx.currentTime + delay);
+                    osc.type = 'sine';
+                    
+                    gain.gain.setValueAtTime(0.4, ctx.currentTime + delay);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + delay + duration - 0.05);
+                    
+                    osc.start(ctx.currentTime + delay);
+                    osc.stop(ctx.currentTime + delay + duration);
+                };
+                
+                // Double alarm tone (similar to clock)
+                playBeep(0, 0.15, 880);
+                playBeep(0.25, 0.15, 880);
+            }, 1000);
+            
+            setAlarmIntervalId(interval);
+        } catch (error) {
+            console.error('Erro ao iniciar o alarme sonoro:', error);
+        }
+    };
+
+    const handleDismissAlarm = () => {
+        if (activeAlarm) {
+            setDismissedAlarms(prev => {
+                const next = new Set(prev);
+                next.add(activeAlarm.id);
+                return next;
+            });
+            setActiveAlarm(null);
+        }
+        
+        if (alarmIntervalId) {
+            clearInterval(alarmIntervalId);
+            setAlarmIntervalId(null);
+        }
+        
+        if (audioContext) {
+            audioContext.close();
+            setAudioContext(null);
+        }
+    };
+
+    // Check for due appointments
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const now = new Date();
+            const todayStr = format(now, 'yyyy-MM-dd');
+            
+            const dueAppointment = appointments.find(apt => {
+                if (apt.status !== 'pendente' && apt.status !== 'confirmado') return false;
+                if (dismissedAlarms.has(apt.id)) return false;
+                if (activeAlarm?.id === apt.id) return false;
+                
+                // Check if appointment is today
+                if (apt.preferred_date !== todayStr) return false;
+                
+                try {
+                    const [aptHour, aptMin] = apt.preferred_time.split(':').map(Number);
+                    const aptDateTime = new Date();
+                    aptDateTime.setHours(aptHour, aptMin, 0, 0);
+                    
+                    const diffMs = now.getTime() - aptDateTime.getTime();
+                    const diffMins = diffMs / (1000 * 60);
+                    
+                    // Trigger if we are at or after the appointment (up to 30 mins)
+                    return diffMins >= 0 && diffMins <= 30;
+                } catch (e) {
+                    return false;
+                }
+            });
+
+            if (dueAppointment) {
+                triggerAlarm(dueAppointment);
+            }
+        }, 5000);
+
+        return () => clearInterval(interval);
+    }, [appointments, dismissedAlarms, activeAlarm]);
+
+    // Ensure audio cleanup on unmount
+    useEffect(() => {
+        return () => {
+            if (alarmIntervalId) clearInterval(alarmIntervalId);
+            if (audioContext) audioContext.close();
+        };
+    }, [alarmIntervalId, audioContext]);
 
     const handleSubmit = async () => {
         if (!preferredDate) {
@@ -177,6 +310,18 @@ const AppointmentsPanel: React.FC<AppointmentsPanelProps> = ({ clientId, clientN
         const { error } = await supabase.from('appointments').update({ status: 'cancelado' }).eq('id', id);
         if (error) toast({ title: '❌ Erro ao cancelar', description: error.message, variant: 'destructive' });
         else toast({ title: '🚫 Agendamento cancelado' });
+    };
+
+    const handleDeleteApt = async (id: string) => {
+        if (!confirm('⚠️ Deseja realmente excluir permanentemente este agendamento? Esta ação não pode ser desfeita.')) return;
+        
+        const { error } = await supabase.from('appointments').delete().eq('id', id);
+        if (error) {
+            toast({ title: '❌ Erro ao remover', description: error.message, variant: 'destructive' });
+        } else {
+            toast({ title: '🗑️ Agendamento excluído', description: 'O agendamento foi removido com sucesso.' });
+            fetchAppointments();
+        }
     };
 
     const handleRemarcar = (apt: Appointment) => {
@@ -440,9 +585,16 @@ const AppointmentsPanel: React.FC<AppointmentsPanelProps> = ({ clientId, clientN
 
                                     <div className="flex flex-col items-end gap-2 shrink-0">
                                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border ${statusInfo.color}`}>
-                                            <StatusIcon className="w-3 h-3" />
+                                            <StatusIcon className="w-3.5 h-3.5" />
                                             {statusInfo.label}
                                         </span>
+                                        <button
+                                            onClick={() => handleDeleteApt(apt.id)}
+                                            className="p-1.5 text-muted-foreground hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all mt-1 active:scale-90"
+                                            title="Excluir agendamento"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
                                     </div>
                                 </div>
 
@@ -497,6 +649,56 @@ const AppointmentsPanel: React.FC<AppointmentsPanelProps> = ({ clientId, clientN
                             </div>
                         );
                     })}
+                </div>
+            )}
+
+            {/* Alarm Overlay Modal */}
+            {activeAlarm && (
+                <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+                    <div className="bg-card border-2 border-red-500/40 rounded-3xl p-8 w-full max-w-md shadow-2xl text-center border-t-red-500/60 animate-in zoom-in-95 duration-200">
+                        <div className="relative w-20 h-20 mx-auto mb-6 bg-red-500/20 rounded-full flex items-center justify-center border border-red-500/30 animate-bounce">
+                            <Clock className="w-10 h-10 text-red-500 animate-pulse" />
+                            <div className="absolute inset-0 rounded-full border-4 border-red-500 animate-ping opacity-75"></div>
+                        </div>
+                        
+                        <h3 className="text-2xl font-black text-foreground mb-2 uppercase tracking-wide">
+                            ⏰ Hora do Atendimento!
+                        </h3>
+                        <p className="text-muted-foreground text-sm mb-6">
+                            O despertador foi acionado para o seguinte compromisso:
+                        </p>
+
+                        <div className="bg-muted/50 rounded-2xl p-5 mb-6 text-left border border-border">
+                            <p className="font-bold text-foreground text-base mb-1">{activeAlarm.title}</p>
+                            <p className="text-primary text-xs font-semibold uppercase tracking-wider mb-3">
+                                {APPOINTMENT_TYPES.find(t => t.value === activeAlarm.type)?.label || activeAlarm.type}
+                            </p>
+                            
+                            {activeAlarm.client_name && (
+                                <p className="text-xs text-foreground/80 flex items-center gap-1.5 mb-1">
+                                    <User className="w-3.5 h-3.5 text-primary shrink-0" />
+                                    <span className="font-semibold">Cliente:</span> {activeAlarm.client_name}
+                                </p>
+                            )}
+                            
+                            <p className="text-xs text-foreground/80 flex items-center gap-1.5 mb-1">
+                                <CalendarIcon className="w-3.5 h-3.5 text-primary shrink-0" />
+                                <span className="font-semibold">Data:</span> {format(new Date(activeAlarm.preferred_date + 'T12:00:00'), "dd/MM/yyyy", { locale: ptBR })}
+                            </p>
+                            
+                            <p className="text-xs text-foreground/80 flex items-center gap-1.5">
+                                <Clock className="w-3.5 h-3.5 text-primary shrink-0" />
+                                <span className="font-semibold">Horário:</span> {activeAlarm.preferred_time}
+                            </p>
+                        </div>
+
+                        <button
+                            onClick={handleDismissAlarm}
+                            className="w-full h-14 bg-red-500 hover:bg-red-600 text-white rounded-2xl font-black text-sm transition-all shadow-lg shadow-red-500/20 active:scale-95 flex items-center justify-center gap-2 text-center"
+                        >
+                            🔕 DESLIGAR DESPERTADOR
+                        </button>
+                    </div>
                 </div>
             )}
         </div>

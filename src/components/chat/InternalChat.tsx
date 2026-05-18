@@ -6,6 +6,34 @@ interface InternalChatProps { userName: string; userRole: 'ADMIN' | 'CLIENT' | '
 
 type RecipientMode = 'all' | 'clients' | 'employees' | string; // string = specific person JSON
 
+const playMessageSound = () => {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const playTone = (time: number, freq: number, dur: number) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.frequency.setValueAtTime(freq, time);
+      osc.type = 'sine';
+      
+      gain.gain.setValueAtTime(0.15, time);
+      gain.gain.exponentialRampToValueAtTime(0.01, time + dur - 0.02);
+      
+      osc.start(time);
+      osc.stop(time + dur);
+    };
+    
+    // High-pitched notification chime: C6 (1046.5Hz) followed by E6 (1318.51Hz)
+    playTone(ctx.currentTime, 1046.5, 0.12);
+    playTone(ctx.currentTime + 0.08, 1318.5, 0.2);
+  } catch (error) {
+    console.error('Erro ao tocar som de mensagem:', error);
+  }
+};
+
 export default function InternalChat({ userName, userRole }: InternalChatProps) {
   const [messages, setMessages] = useState<any[]>([]);
   const [text, setText] = useState('');
@@ -71,7 +99,12 @@ export default function InternalChat({ userName, userRole }: InternalChatProps) 
           msg.recipient_name === userName ||
           (msg.sender_role === 'ADMIN' && !msg.recipient_name && !msg.recipient_role) ||
           (msg.sender_role === 'ADMIN' && msg.recipient_role === userRole && !msg.recipient_name);
-        if (isForMe) setMessages(prev => [...prev, msg]);
+        if (isForMe) {
+          setMessages(prev => [...prev, msg]);
+          if (msg.sender_name !== userName) {
+            playMessageSound();
+          }
+        }
       }).subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [userName, userRole]);
