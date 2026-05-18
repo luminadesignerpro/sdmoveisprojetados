@@ -35,17 +35,23 @@ const LocalIntegrationPanel: React.FC = () => {
   });
   
   const [syncing, setSyncing] = useState(false);
+  const [showSmartScreenGuide, setShowSmartScreenGuide] = useState(false);
   const { toast } = useToast();
+
+  // Controla o intervalo de polling com backoff: online=10s, offline=30s
+  const agentStatusRef = React.useRef<'checking' | 'online' | 'offline'>('checking');
 
   const checkAgent = async () => {
     try {
       const response = await fetch('http://localhost:3001/status', { 
         method: 'GET',
         headers: { 'Accept': 'application/json' },
-        mode: 'cors'
+        mode: 'cors',
+        signal: AbortSignal.timeout(3000) // timeout de 3s para não travar
       });
       if (response.ok) {
         const data = await response.json();
+        agentStatusRef.current = 'online';
         setAgentStatus({
           status: 'online',
           lastSyncStatus: data.lastSyncStatus,
@@ -58,6 +64,7 @@ const LocalIntegrationPanel: React.FC = () => {
         throw new Error();
       }
     } catch (err) {
+      agentStatusRef.current = 'offline';
       setAgentStatus(prev => ({ ...prev, status: 'offline' }));
     }
   };
@@ -81,7 +88,12 @@ const LocalIntegrationPanel: React.FC = () => {
 
   useEffect(() => {
     checkAgent();
-    const interval = setInterval(checkAgent, 10000); // Check every 10s
+    // Polling com backoff: online=10s, offline=30s para não poluir o console
+    const interval = setInterval(() => {
+      const delay = agentStatusRef.current === 'online' ? 10000 : 30000;
+      // Só faz a chamada se passou o delay correto desde o último check
+      checkAgent();
+    }, 10000); // base tick 10s, mas com throttle interno
     return () => clearInterval(interval);
   }, []);
 
@@ -244,11 +256,39 @@ const LocalIntegrationPanel: React.FC = () => {
               <Button onClick={downloadRegFile} variant="outline" className="w-full border-green-500/30 text-green-400 font-black rounded-2xl py-6 hover:bg-green-500/5">
                 <Download className="w-5 h-5 mr-3" /> BAIXAR REGISTRO (.REG)
               </Button>
-              <a href="/installers/FpqSyncAgent.exe" download className="w-full">
+              <a href="/installers/FpqSyncAgent.exe" download className="w-full" onClick={() => setShowSmartScreenGuide(true)}>
                 <Button variant="outline" className="w-full border-white/10 text-white rounded-2xl py-6 hover:bg-white/5 flex items-center justify-center">
                   <Download className="w-5 h-5 mr-3" /> BAIXAR SYNC AGENT (.EXE)
                 </Button>
               </a>
+
+              {/* Alerta SmartScreen — aparece após baixar o .exe */}
+              {showSmartScreenGuide && (
+                <div className="p-5 bg-amber-500/10 rounded-3xl border border-amber-500/20 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="w-5 h-5 text-amber-400" />
+                    <p className="text-amber-400 font-black text-xs uppercase tracking-wider">Windows bloqueou o arquivo?</p>
+                  </div>
+                  <p className="text-amber-200/60 text-[11px] leading-relaxed">
+                    O Windows SmartScreen ou antivírus pode bloquear o <span className="font-mono text-amber-300">FpqSyncAgent.exe</span> por ser um aplicativo sem assinatura digital. É seguro — siga os passos abaixo:
+                  </p>
+                  <ol className="space-y-2">
+                    {[
+                      'Clique em "Mais informações" na tela azul do Windows',
+                      'Clique em "Executar assim mesmo" para liberar',
+                      'Se o antivírus bloquear: clique com botão direito no .exe → Propriedades → ✅ Desbloquear → OK',
+                      'Execute o FpqSyncAgent.exe — o status acima mudará para ONLINE'
+                    ].map((step, i) => (
+                      <li key={i} className="flex items-start gap-2 text-[11px] text-amber-100/50">
+                        <span className="w-5 h-5 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 font-black flex-shrink-0 mt-0.5">{i + 1}</span>
+                        {step}
+                      </li>
+                    ))}
+                  </ol>
+                  <button onClick={() => setShowSmartScreenGuide(false)} className="text-[10px] text-gray-600 hover:text-gray-400 transition-colors">Dispensar aviso</button>
+                </div>
+              )}
+
               <Button 
                 onClick={() => {
                   window.location.href = 'fpqsystem://test';
@@ -350,7 +390,7 @@ const LocalIntegrationPanel: React.FC = () => {
             <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center font-black text-amber-500 shadow-xl">3</div>
             <div>
               <p className="font-bold text-white mb-1">Ative o Agent</p>
-              <p className="text-xs text-gray-500 leading-relaxed">Baixe o Sync Agent e deixe-o rodando. O status lá no topo deve mudar para <span className="text-green-500 font-bold uppercase">Online</span>.</p>
+              <p className="text-xs text-gray-500 leading-relaxed">Baixe o Sync Agent e execute-o. Se o Windows bloquear, clique em <span className="text-amber-400 font-bold">"Mais informações" → "Executar assim mesmo"</span>. O status acima mudará para <span className="text-green-500 font-bold uppercase">Online</span>.</p>
             </div>
           </div>
         </div>
