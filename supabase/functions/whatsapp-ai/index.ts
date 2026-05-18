@@ -78,7 +78,7 @@ REGRAS ABSOLUTAS:
         .eq("id", conversationId);
 
       if (targetPhone) {
-        const evolutionUrl = Deno.env.get("EVOLUTION_API_URL") || "https://evolution-api-production-202b.up.railway.app";
+        const evolutionUrl = Deno.env.get("EVOLUTION_API_URL") || "https://api-whatsapp-sdmoveis.onrender.com";
         const evolutionKey = Deno.env.get("EVOLUTION_API_KEY") || "Mv06061991";
         
         try {

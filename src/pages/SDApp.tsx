@@ -46,6 +46,7 @@ import PdfUploader from '@/components/admin/PdfUploader';
 import SmartMeasurement from '@/components/modules/SmartMeasurement';
 import CustomerTrackingPage from '@/components/fleet/CustomerTrackingPage';
 import GalleryManager from '@/components/admin/GalleryManager';
+import { PlayCanvasViewer } from '@/components/PlayCanvasViewer';
 const db = supabase as any;
 import {
   LogOut,
@@ -100,6 +101,7 @@ import {
   Fuel,
   GitBranch,
   Laptop,
+  Box,
 } from 'lucide-react';
 
 // Dashboard data is now fetched from DB
@@ -202,7 +204,7 @@ const App: React.FC = () => {
       setAuthState('EMPLOYEE');
       setView(ViewMode.TIME_TRACKING);
     }
-    
+
     // Check for tracking tripId
     const trackingId = params.get('tripId');
     if (trackingId) {
@@ -501,6 +503,7 @@ const App: React.FC = () => {
                 <NavIcon icon="file-down" label="PDF Downloader" active={view === ViewMode.PDF_DOWNLOADER} onClick={() => setView(ViewMode.PDF_DOWNLOADER)} />
                 <NavIcon icon="ruler" label="Medição IA" active={view === ViewMode.SMART_MEASUREMENT} onClick={() => setView(ViewMode.SMART_MEASUREMENT)} />
                 <NavIcon icon="camera" label="Galeria" active={view === ViewMode.PROJECT_GALLERY} onClick={() => setView(ViewMode.PROJECT_GALLERY)} />
+                <NavIcon icon="box" label="3D PlayCanvas" active={view === ViewMode.PLAYCANVAS} onClick={() => setView(ViewMode.PLAYCANVAS)} />
               </>
             ) : authState === 'EMPLOYEE' ? (
               <>
@@ -596,6 +599,19 @@ const App: React.FC = () => {
           <AnimatedBackground />
         )}
         <ViewTransition viewKey={view}>
+          {/* PLAYCANVAS VIEWER */}
+          {view === ViewMode.PLAYCANVAS && (
+            <div className="p-4 sm:p-8 space-y-6 overflow-x-hidden overflow-y-auto w-full h-full relative" style={{ background: '#0f0f0f' }}>
+              <div className="mb-4">
+                <h1 className="text-3xl font-black text-white flex items-center gap-3">
+                  <Box className="w-8 h-8 text-amber-400" />
+                  Demonstração PlayCanvas 3D
+                </h1>
+                <p className="text-gray-400 mt-1">Gire o móvel e teste a troca de materiais em tempo real</p>
+              </div>
+              <PlayCanvasViewer />
+            </div>
+          )}
           {/* DASHBOARD ADMIN */}
           {view === ViewMode.DASHBOARD && authState === 'ADMIN' && (
             <div
@@ -1225,7 +1241,7 @@ const App: React.FC = () => {
                 <div className="bg-white/5 border border-amber-500/20 rounded-[40px] p-12 shadow-2xl text-center relative overflow-hidden backdrop-blur-md">
                   <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full blur-[100px] -mr-32 -mt-32" />
                   <div className="absolute bottom-0 left-0 w-64 h-64 bg-amber-500/5 rounded-full blur-[100px] -ml-32 -mb-32" />
-                  
+
                   <div className="relative z-10">
                     <div className="w-20 h-20 bg-amber-500/10 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-amber-500/20">
                       <ThumbsUp className="w-10 h-10 text-amber-500" />
@@ -1336,76 +1352,76 @@ const App: React.FC = () => {
         </ViewTransition>
       </main>
 
-          {/* PIX PAYMENT MODAL */}
-          {payWithPix && (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
-              <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setPayWithPix(null)} />
-              <div className="bg-[#111111] border border-amber-500/30 rounded-[32px] w-full max-w-md p-8 relative z-10 animate-slide-up shadow-[0_0_50px_rgba(245,158,11,0.2)]">
-                <button
-                  onClick={() => setPayWithPix(null)}
-                  className="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/40 hover:text-white transition-colors"
-                >
-                  <Plus className="w-5 h-5 rotate-45" />
-                </button>
+      {/* PIX PAYMENT MODAL */}
+      {payWithPix && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setPayWithPix(null)} />
+          <div className="bg-[#111111] border border-amber-500/30 rounded-[32px] w-full max-w-md p-8 relative z-10 animate-slide-up shadow-[0_0_50px_rgba(245,158,11,0.2)]">
+            <button
+              onClick={() => setPayWithPix(null)}
+              className="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/40 hover:text-white transition-colors"
+            >
+              <Plus className="w-5 h-5 rotate-45" />
+            </button>
 
-                <div className="text-center mb-8">
-                  <div className="w-16 h-16 bg-amber-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-amber-500/20">
-                    <Banknote className="w-8 h-8 text-amber-500" />
-                  </div>
-                  <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Pagamento via Pix</h3>
-                  <p className="text-white/40 text-xs mt-1">Valor da Parcela: <span className="text-white font-bold">R$ {payWithPix.amount.toLocaleString('pt-BR')}</span></p>
-                </div>
-
-                <div className="bg-white p-6 rounded-[24px] shadow-inner mb-6 relative overflow-hidden group">
-                  <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=SD-MOVEIS-PIX-SIMULATION-${payWithPix.id}-${payWithPix.amount}`}
-                    alt="QR Code Pix"
-                    className="w-48 h-48 mx-auto relative z-10"
-                  />
-                  <div className="absolute inset-0 bg-amber-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-                </div>
-
-                <div className="space-y-4">
-                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                    <p className="text-[10px] text-white/40 uppercase font-black tracking-widest mb-2">Pix Copia e Cola</p>
-                    <div className="flex items-center gap-3">
-                      <code className="flex-1 text-[10px] text-amber-500 font-mono break-all line-clamp-1">
-                        00020126580014BR.GOV.BCB.PIX0136sdmoveisprojetados-pix-gateway-test-31011985
-                      </code>
-                      <button
-                        onClick={() => {
-                          navigator.clipboard.writeText("00020126580014BR.GOV.BCB.PIX0136sdmoveisprojetados-pix-gateway-test-31011985");
-                          toast({ title: "🔗 Pix copiado!", description: "Cole no app do seu banco para pagar" });
-                        }}
-                        className="w-10 h-10 rounded-xl bg-amber-500 text-black flex items-center justify-center hover:bg-white transition-all shrink-0"
-                      >
-                        <ClipboardList className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-
-                  <p className="text-[9px] text-center text-white/20 uppercase font-bold tracking-[0.2em]">
-                    <Shield className="w-3 h-3 inline mr-1 mb-0.5" /> Pagamento 100% Seguro via SD Pay
-                  </p>
-                </div>
-
-                <button
-                  onClick={() => {
-                    toast({ title: "⏳ Validando pagamento...", description: "Aguardando confirmação do banco" });
-                    setTimeout(() => {
-                      setPayWithPix(null);
-                      toast({ title: "✅ Pagamento Confirmado!", description: "Sua produção segue a todo vapor!", variant: "default" });
-                    }, 3000);
-                  }}
-                  className="w-full mt-6 bg-white/5 border border-white/10 text-white p-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-amber-500 hover:text-black transition-all"
-                >
-                  Já realizei o pagamento
-                </button>
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 bg-amber-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-amber-500/20">
+                <Banknote className="w-8 h-8 text-amber-500" />
               </div>
+              <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Pagamento via Pix</h3>
+              <p className="text-white/40 text-xs mt-1">Valor da Parcela: <span className="text-white font-bold">R$ {payWithPix.amount.toLocaleString('pt-BR')}</span></p>
             </div>
-          )}
 
-          {/* LOGIN SCREENS */}
+            <div className="bg-white p-6 rounded-[24px] shadow-inner mb-6 relative overflow-hidden group">
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=SD-MOVEIS-PIX-SIMULATION-${payWithPix.id}-${payWithPix.amount}`}
+                alt="QR Code Pix"
+                className="w-48 h-48 mx-auto relative z-10"
+              />
+              <div className="absolute inset-0 bg-amber-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                <p className="text-[10px] text-white/40 uppercase font-black tracking-widest mb-2">Pix Copia e Cola</p>
+                <div className="flex items-center gap-3">
+                  <code className="flex-1 text-[10px] text-amber-500 font-mono break-all line-clamp-1">
+                    00020126580014BR.GOV.BCB.PIX0136sdmoveisprojetados-pix-gateway-test-31011985
+                  </code>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText("00020126580014BR.GOV.BCB.PIX0136sdmoveisprojetados-pix-gateway-test-31011985");
+                      toast({ title: "🔗 Pix copiado!", description: "Cole no app do seu banco para pagar" });
+                    }}
+                    className="w-10 h-10 rounded-xl bg-amber-500 text-black flex items-center justify-center hover:bg-white transition-all shrink-0"
+                  >
+                    <ClipboardList className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              <p className="text-[9px] text-center text-white/20 uppercase font-bold tracking-[0.2em]">
+                <Shield className="w-3 h-3 inline mr-1 mb-0.5" /> Pagamento 100% Seguro via SD Pay
+              </p>
+            </div>
+
+            <button
+              onClick={() => {
+                toast({ title: "⏳ Validando pagamento...", description: "Aguardando confirmação do banco" });
+                setTimeout(() => {
+                  setPayWithPix(null);
+                  toast({ title: "✅ Pagamento Confirmado!", description: "Sua produção segue a todo vapor!", variant: "default" });
+                }, 3000);
+              }}
+              className="w-full mt-6 bg-white/5 border border-white/10 text-white p-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-amber-500 hover:text-black transition-all"
+            >
+              Já realizei o pagamento
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* LOGIN SCREENS */}
       {authState === 'SELECT' && (
         <div className="fixed inset-0 z-50 isolate bg-gradient-to-br from-gray-950 via-gray-900 to-black flex flex-col items-center justify-start md:justify-center overflow-y-auto overflow-x-hidden">
           {/* Animated particle background */}
@@ -1666,23 +1682,23 @@ const App: React.FC = () => {
                   </div>
                 )}
                 <div className="relative">
-                    <input
-                      type="password"
-                      placeholder="••••••••"
-                      className="w-full h-14 bg-white/5 hover:bg-white/8 rounded-xl px-6 border border-white/10 focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20 text-center text-lg tracking-[0.3em] text-white placeholder:text-gray-600 transition-all outline-none"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-                    />
-                    {selectedRole === 'CLIENT' && (
-                      <button 
-                        onClick={() => window.open('https://wa.me/5585997602237?text=Olá, esqueci minha senha de acesso ao portal do cliente.', '_blank')}
-                        className="text-[10px] text-amber-500/60 hover:text-amber-500 mt-2 block mx-auto font-bold uppercase tracking-widest"
-                      >
-                        Esqueceu a senha?
-                      </button>
-                    )}
-                  </div>
+                  <input
+                    type="password"
+                    placeholder="••••••••"
+                    className="w-full h-14 bg-white/5 hover:bg-white/8 rounded-xl px-6 border border-white/10 focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20 text-center text-lg tracking-[0.3em] text-white placeholder:text-gray-600 transition-all outline-none"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+                  />
+                  {selectedRole === 'CLIENT' && (
+                    <button
+                      onClick={() => window.open('https://wa.me/5585997602237?text=Olá, esqueci minha senha de acesso ao portal do cliente.', '_blank')}
+                      className="text-[10px] text-amber-500/60 hover:text-amber-500 mt-2 block mx-auto font-bold uppercase tracking-widest"
+                    >
+                      Esqueceu a senha?
+                    </button>
+                  )}
+                </div>
 
                 <button
                   onClick={handleLogin}
@@ -1855,7 +1871,7 @@ const App: React.FC = () => {
                 <div className="bg-green-50 p-4 rounded-xl border border-green-200">
                   <p className="text-xs text-green-600 uppercase font-bold">Pago</p>
                   <p className="text-2xl font-black text-green-600">
-                    R$ {(clientInstallments?.length > 0 
+                    R$ {(clientInstallments?.length > 0
                       ? clientInstallments.filter(i => i.status === 'Pago').reduce((acc, curr) => acc + (curr.amount || 0), 0)
                       : 27000).toLocaleString('pt-BR')}
                   </p>
@@ -1863,7 +1879,7 @@ const App: React.FC = () => {
                 <div className="bg-amber-50 p-4 rounded-xl border border-amber-200">
                   <p className="text-xs text-amber-600 uppercase font-bold">Restante</p>
                   <p className="text-2xl font-black text-amber-600">
-                    R$ {(clientInstallments?.length > 0 
+                    R$ {(clientInstallments?.length > 0
                       ? clientInstallments.filter(i => i.status !== 'Pago').reduce((acc, curr) => acc + (curr.amount || 0), 0)
                       : 18000).toLocaleString('pt-BR')}
                   </p>

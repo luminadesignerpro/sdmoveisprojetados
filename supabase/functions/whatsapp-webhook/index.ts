@@ -167,7 +167,7 @@ serve(async (req) => {
                 continue;
               }
 
-            const evolutionUrl = Deno.env.get("EVOLUTION_API_URL") || "https://evolution-api-production-202b.up.railway.app";
+            const evolutionUrl = Deno.env.get("EVOLUTION_API_URL") || "https://api-whatsapp-sdmoveis.onrender.com";
             const evolutionKey = Deno.env.get("EVOLUTION_API_KEY") || "Mv06061991";
             const instanceName = "SD-Moveis"; // Ajuste se o nome no Railway for diferente
 

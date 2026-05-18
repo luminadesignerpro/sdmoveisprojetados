@@ -25,6 +25,8 @@ const LocalIntegrationPanel: React.FC = () => {
     lastSyncStatus: string;
     lastSyncTime: string | null;
     version: string;
+    syncCount?: number;
+    config?: { firebirdDatabase: string; firebirdFound: boolean; watchDirs: string[] };
   }>({
     status: 'checking',
     lastSyncStatus: 'Aguardando verificação...',
@@ -32,6 +34,7 @@ const LocalIntegrationPanel: React.FC = () => {
     version: 'Desconhecida'
   });
   
+  const [syncing, setSyncing] = useState(false);
   const { toast } = useToast();
 
   const checkAgent = async () => {
@@ -47,13 +50,32 @@ const LocalIntegrationPanel: React.FC = () => {
           status: 'online',
           lastSyncStatus: data.lastSyncStatus,
           lastSyncTime: data.lastSyncTime,
-          version: data.version
+          version: data.version,
+          syncCount: data.syncCount,
+          config: data.config
         });
       } else {
         throw new Error();
       }
     } catch (err) {
       setAgentStatus(prev => ({ ...prev, status: 'offline' }));
+    }
+  };
+
+  const triggerManualSync = async () => {
+    if (agentStatus.status !== 'online') {
+      toast({ title: '⚠️ Agent Offline', description: 'Inicie o FPQSync.exe primeiro.', variant: 'destructive' });
+      return;
+    }
+    setSyncing(true);
+    try {
+      await fetch('http://localhost:3001/sync', { method: 'GET', mode: 'cors' });
+      toast({ title: '🔄 Sincronização iniciada!', description: 'Buscando dados do FPQ System agora...' });
+      setTimeout(checkAgent, 5000);
+    } catch (e) {
+      toast({ title: '❌ Erro', description: 'Não foi possível contatar o agent.', variant: 'destructive' });
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -170,12 +192,27 @@ const LocalIntegrationPanel: React.FC = () => {
                  </p>
                </div>
                <div className="p-4 bg-white/5 rounded-2xl border border-white/10">
-                 <p className="text-[9px] text-gray-500 uppercase font-black mb-1">Status Sync</p>
-                 <p className={`text-sm font-bold flex items-center gap-2 ${agentStatus.lastSyncStatus.includes('Erro') ? 'text-red-400' : 'text-green-400'}`}>
-                   {agentStatus.lastSyncStatus.includes('Sucesso') ? <CheckCircle2 className="w-4 h-4" /> : agentStatus.status === 'offline' ? <AlertCircle className="w-4 h-4" /> : <RefreshCw className="w-4 h-4 animate-spin" />}
-                   {agentStatus.status === 'offline' ? 'Agent Offline' : agentStatus.lastSyncStatus}
+                 <p className="text-[9px] text-gray-500 uppercase font-black mb-1">Banco Firebird</p>
+                 <p className={`text-xs font-bold flex items-center gap-2 ${agentStatus.config?.firebirdFound ? 'text-green-400' : 'text-red-400'}`}>
+                   {agentStatus.config?.firebirdFound ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+                   {agentStatus.config?.firebirdFound ? 'DADOS.FDB ✓' : 'Arquivo não encontrado'}
                  </p>
+                 {agentStatus.config && (
+                   <p className="text-[9px] text-gray-600 mt-1 font-mono truncate" title={agentStatus.config.firebirdDatabase}>
+                     {agentStatus.config.firebirdDatabase}
+                   </p>
+                 )}
                </div>
+            </div>
+            <div className="p-4 bg-white/5 rounded-2xl border border-white/10">
+              <p className="text-[9px] text-gray-500 uppercase font-black mb-1">Status Sync</p>
+              <p className={`text-sm font-bold flex items-center gap-2 ${agentStatus.lastSyncStatus.includes('Erro') ? 'text-red-400' : 'text-green-400'}`}>
+                {agentStatus.lastSyncStatus.includes('Sucesso') || agentStatus.lastSyncStatus.includes('sincronizado') ? <CheckCircle2 className="w-4 h-4" /> : agentStatus.status === 'offline' ? <AlertCircle className="w-4 h-4" /> : <RefreshCw className="w-4 h-4 animate-spin" />}
+                {agentStatus.status === 'offline' ? 'Agent Offline — Abra o FPQSync.exe' : agentStatus.lastSyncStatus}
+              </p>
+              {agentStatus.syncCount !== undefined && (
+                <p className="text-[9px] text-gray-600 mt-1">Total de syncs nesta sessão: {agentStatus.syncCount}</p>
+              )}
             </div>
 
             <div className="space-y-4">
@@ -196,22 +233,30 @@ const LocalIntegrationPanel: React.FC = () => {
             </div>
 
             <div className="pt-2 flex flex-col gap-3">
-              <Button onClick={downloadRegFile} className="w-full bg-green-500 hover:bg-green-400 text-black font-black rounded-2xl py-7 text-lg shadow-lg shadow-green-500/10">
-                <Download className="w-5 h-5 mr-3" /> 1. BAIXAR REGISTRO (.REG)
+              <Button 
+                onClick={triggerManualSync}
+                disabled={syncing || agentStatus.status !== 'online'}
+                className="w-full bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-black rounded-2xl py-7 text-lg shadow-lg shadow-green-500/20"
+              >
+                <RefreshCw className={`w-5 h-5 mr-3 ${syncing ? 'animate-spin' : ''}`} />
+                {syncing ? 'SINCRONIZANDO...' : '🔄 SINCRONIZAR AGORA'}
+              </Button>
+              <Button onClick={downloadRegFile} variant="outline" className="w-full border-green-500/30 text-green-400 font-black rounded-2xl py-6 hover:bg-green-500/5">
+                <Download className="w-5 h-5 mr-3" /> BAIXAR REGISTRO (.REG)
               </Button>
               <a href="/installers/FpqSyncAgent.exe" download className="w-full">
                 <Button variant="outline" className="w-full border-white/10 text-white rounded-2xl py-6 hover:bg-white/5 flex items-center justify-center">
-                  <Download className="w-5 h-5 mr-3" /> 2. BAIXAR SYNC AGENT (.EXE)
+                  <Download className="w-5 h-5 mr-3" /> BAIXAR SYNC AGENT (.EXE)
                 </Button>
               </a>
               <Button 
                 onClick={() => {
                   window.location.href = 'fpqsystem://test';
-                  toast({ title: "🚀 Abrindo Agent...", description: "Se o APP estiver instalado, ele abrirá agora." });
+                  toast({ title: "🚀 Abrindo FPQ...", description: "Se o registro estiver instalado, o FPQ abrirá agora." });
                 }}
                 className="w-full bg-white/5 border border-white/10 hover:bg-white/10 text-white font-black rounded-2xl py-6"
               >
-                <Zap className="w-5 h-5 mr-3 text-amber-500" /> 3. TESTAR ABERTURA (ABRIR PC)
+                <Zap className="w-5 h-5 mr-3 text-amber-500" /> TESTAR ABERTURA DO FPQ
               </Button>
             </div>
           </CardContent>
