@@ -75,6 +75,17 @@ export default function TimeTrackingPanel() {
   const [adjAmount, setAdjAmount] = useState('');
   const [adjHours, setAdjHours] = useState('');
 
+  // Edit Time Entry
+  const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
+  const [editClockIn, setEditClockIn] = useState('');
+  const [editClockOut, setEditClockOut] = useState('');
+
+  // Manual Time Entry
+  const [showManualEntry, setShowManualEntry] = useState(false);
+  const [manualEmpId, setManualEmpId] = useState('');
+  const [manualClockIn, setManualClockIn] = useState('');
+  const [manualClockOut, setManualClockOut] = useState('');
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -179,6 +190,62 @@ export default function TimeTrackingPanel() {
       toast({ title: '✅ Saída registrada!' });
       fetchData();
     }
+  };
+
+  const deleteTimeEntry = async (id: string) => {
+    if (!confirm('Deseja realmente excluir este registro?')) return;
+    const { error } = await supabase.from('time_entries').delete().eq('id', id);
+    if (error) {
+      toast({ title: '❌ Erro', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: '🗑️ Registro removido' });
+      fetchData();
+    }
+  };
+
+  const saveTimeEntryEdit = async () => {
+    if (!editingEntry) return;
+    const { error } = await supabase.from('time_entries').update({
+      clock_in: new Date(editClockIn).toISOString(),
+      clock_out: editClockOut ? new Date(editClockOut).toISOString() : null,
+    }).eq('id', editingEntry.id);
+    
+    if (error) {
+      toast({ title: '❌ Erro', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: '✅ Registro atualizado' });
+      setEditingEntry(null);
+      fetchData();
+    }
+  };
+
+  const addManualTimeEntry = async () => {
+    if (!manualEmpId || !manualClockIn) {
+      toast({ title: '⚠️ Preencha o funcionário e a entrada', variant: 'destructive' });
+      return;
+    }
+    const { error } = await supabase.from('time_entries').insert({
+      employee_id: manualEmpId,
+      clock_in: new Date(manualClockIn).toISOString(),
+      clock_out: manualClockOut ? new Date(manualClockOut).toISOString() : null,
+    });
+    
+    if (error) {
+      toast({ title: '❌ Erro', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: '✅ Registro inserido' });
+      setShowManualEntry(false);
+      setManualClockIn('');
+      setManualClockOut('');
+      fetchData();
+    }
+  };
+
+  const toDatetimeLocal = (iso: string | null) => {
+    if (!iso) return '';
+    const d = new Date(iso);
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0, 16);
   };
 
   const getOpenEntry = (employeeId: string) =>
@@ -811,21 +878,98 @@ export default function TimeTrackingPanel() {
 
           {/* Histórico recente */}
           <div className="bg-[#111111] border border-white/10 rounded-2xl p-6 shadow-lg">
-            <h3 className="font-bold text-white mb-4 flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-amber-500" /> Registros Recentes
-            </h3>
-            <div className="space-y-2 max-h-64 overflow-auto">
-              {timeEntries.slice(0, 20).map(entry => {
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-white flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-amber-500" /> Registros Recentes (Ponto)
+              </h3>
+              <button
+                onClick={() => { setShowManualEntry(!showManualEntry); if (!manualEmpId && employees.length) setManualEmpId(employees[0].id); }}
+                className="text-amber-500 hover:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors flex items-center gap-1"
+              >
+                <Plus className="w-4 h-4" /> Adicionar Manual
+              </button>
+            </div>
+
+            {/* Manual Entry Form */}
+            {showManualEntry && (
+              <div className="mb-4 bg-[#1a1a1a] border border-amber-500/30 rounded-xl p-4 flex flex-col md:flex-row gap-3 items-end">
+                <div className="flex-1 w-full">
+                  <label className="text-xs font-bold text-gray-400 block mb-1">Funcionário</label>
+                  <select value={manualEmpId} onChange={e => setManualEmpId(e.target.value)} className="border border-white/10 bg-[#111] text-white rounded-xl px-4 py-2.5 text-sm w-full focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                    {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+                  </select>
+                </div>
+                <div className="flex-1 w-full">
+                  <label className="text-xs font-bold text-gray-400 block mb-1">Entrada</label>
+                  <input type="datetime-local" value={manualClockIn} onChange={e => setManualClockIn(e.target.value)} className="border border-white/10 bg-[#111] text-white rounded-xl px-4 py-2.5 text-sm w-full focus:ring-2 focus:ring-amber-500 focus:outline-none [color-scheme:dark]" />
+                </div>
+                <div className="flex-1 w-full">
+                  <label className="text-xs font-bold text-gray-400 block mb-1">Saída (Opcional)</label>
+                  <input type="datetime-local" value={manualClockOut} onChange={e => setManualClockOut(e.target.value)} className="border border-white/10 bg-[#111] text-white rounded-xl px-4 py-2.5 text-sm w-full focus:ring-2 focus:ring-amber-500 focus:outline-none [color-scheme:dark]" />
+                </div>
+                <div className="flex gap-2 w-full md:w-auto">
+                  <button onClick={addManualTimeEntry} className="flex-1 md:flex-none bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-1">
+                    <Save className="w-4 h-4" /> Salvar
+                  </button>
+                  <button onClick={() => setShowManualEntry(false)} className="bg-white/10 hover:bg-white/20 text-white px-4 py-2.5 rounded-xl font-bold transition-all flex items-center justify-center">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2 max-h-[500px] overflow-auto pr-2 custom-scrollbar">
+              {timeEntries.map(entry => {
                 const emp = employees.find(e => e.id === entry.employee_id);
+                const isEditing = editingEntry?.id === entry.id;
+
+                if (isEditing) {
+                  return (
+                    <div key={entry.id} className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl space-y-3">
+                      <div className="font-bold text-white mb-2">{emp?.name || 'Desconhecido'} - Editando Registro</div>
+                      <div className="flex flex-col sm:flex-row gap-3 items-end">
+                        <div className="flex-1 w-full">
+                          <label className="text-xs font-bold text-gray-400 block mb-1">Entrada</label>
+                          <input type="datetime-local" value={editClockIn} onChange={e => setEditClockIn(e.target.value)} className="border border-white/10 bg-[#111] text-white rounded-xl px-3 py-2 text-sm w-full focus:ring-2 focus:ring-amber-500 focus:outline-none [color-scheme:dark]" />
+                        </div>
+                        <div className="flex-1 w-full">
+                          <label className="text-xs font-bold text-gray-400 block mb-1">Saída</label>
+                          <input type="datetime-local" value={editClockOut} onChange={e => setEditClockOut(e.target.value)} className="border border-white/10 bg-[#111] text-white rounded-xl px-3 py-2 text-sm w-full focus:ring-2 focus:ring-amber-500 focus:outline-none [color-scheme:dark]" />
+                        </div>
+                        <div className="flex gap-2 w-full sm:w-auto">
+                          <button onClick={saveTimeEntryEdit} className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-1">
+                            <Save className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => setEditingEntry(null)} className="flex-1 sm:flex-none bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl font-bold transition-all flex items-center justify-center">
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
                 return (
-                  <div key={entry.id} className="flex items-center justify-between p-3 bg-white/5 border border-white/5 rounded-xl text-sm hover:bg-white/10 transition-colors">
+                  <div key={entry.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-white/5 border border-white/5 rounded-xl text-sm hover:bg-white/10 transition-colors gap-3">
                     <div className="flex items-center gap-3">
                       <span className={`w-2 h-2 rounded-full ${entry.clock_out ? 'bg-gray-600' : 'bg-green-500 animate-pulse'}`} />
                       <span className="font-bold text-white">{emp?.name || 'Desconhecido'}</span>
                     </div>
-                    <div className="flex items-center gap-4 text-gray-400">
+                    <div className="flex items-center gap-4 text-gray-400 flex-wrap">
                       <span>🟢 {formatTime(entry.clock_in)}</span>
                       {entry.clock_out ? <span>🔴 {formatTime(entry.clock_out)}</span> : <span className="text-green-400 font-bold">Em andamento...</span>}
+                      <div className="flex gap-2 border-l border-white/10 pl-4 ml-2">
+                        <button onClick={() => {
+                          setEditingEntry(entry);
+                          setEditClockIn(toDatetimeLocal(entry.clock_in));
+                          setEditClockOut(toDatetimeLocal(entry.clock_out));
+                        }} className="text-blue-400 hover:text-blue-300 transition-colors" title="Editar">
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => deleteTimeEntry(entry.id)} className="text-red-400 hover:text-red-300 transition-colors" title="Excluir">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
