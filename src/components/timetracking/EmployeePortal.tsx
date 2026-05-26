@@ -136,7 +136,22 @@ export default function EmployeePortal({ employeeName }: EmployeePortalProps) {
     return entries
       .filter(e => e.clock_out && new Date(e.clock_in) >= start && new Date(e.clock_in) <= end)
       .reduce((sum, e) => {
-        const diff = (new Date(e.clock_out!).getTime() - new Date(e.clock_in).getTime()) / 3600000;
+        const clockInTime = new Date(e.clock_in).getTime();
+        const clockOutTime = new Date(e.clock_out!).getTime();
+        let diff = (clockOutTime - clockInTime) / 3600000;
+
+        const lunchStart = new Date(e.clock_in);
+        lunchStart.setHours(12, 0, 0, 0);
+        const lunchEnd = new Date(e.clock_in);
+        lunchEnd.setHours(13, 30, 0, 0);
+
+        const overlapStart = Math.max(clockInTime, lunchStart.getTime());
+        const overlapEnd = Math.min(clockOutTime, lunchEnd.getTime());
+
+        if (overlapEnd > overlapStart) {
+          diff -= (overlapEnd - overlapStart) / 3600000;
+        }
+
         return sum + diff;
       }, 0);
   };
