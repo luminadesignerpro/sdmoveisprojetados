@@ -17,5 +17,17 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+    // Garante instância única — CRÍTICO para @react-three/fiber
+    dedupe: ["react", "react-dom", "three"],
+  },
+  optimizeDeps: {
+    include: ["react", "react-dom", "three", "@react-three/fiber", "@react-three/drei"],
+  },
+  build: {
+    target: "es2015",
+    // SEM manualChunks — o chunking manual causava dependências circulares entre chunks
+    // resultando em React undefined (useLayoutEffect, forwardRef, etc.)
+    // Vite gera chunks automaticamente de forma segura
+    chunkSizeWarningLimit: 5000,
   },
 }));

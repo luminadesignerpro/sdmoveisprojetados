@@ -18,10 +18,26 @@
   <meta name="theme-color" content="#f59e0b" />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+  <script>
+    if ('caches' in window) {
+      caches.keys().then(function(names) {
+        for (let name of names) caches.delete(name);
+      });
+    }
+  </script>
 </head>
 
 <body>
   <div id="root"></div>
+  <script>
+    window.onerror = function(message, source, lineno, colno, error) {
+      alert("Error: " + message + " at " + source + ":" + lineno + ":" + colno);
+      return true;
+    };
+    window.addEventListener("unhandledrejection", function(event) {
+      alert("Unhandled promise rejection: " + (event.reason && event.reason.message ? event.reason.message : event.reason));
+    });
+  </script>
   <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
   <script type="module" src="/src/main.tsx"></script>
 </body>

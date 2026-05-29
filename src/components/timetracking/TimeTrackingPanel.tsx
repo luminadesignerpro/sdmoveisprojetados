@@ -25,7 +25,7 @@ interface TimeEntry {
 interface Adjustment {
   id: string;
   employee_id: string;
-  type: 'overtime' | 'advance' | 'fuel_allowance' | 'meal_allowance';
+  type: 'overtime' | 'advance' | 'fuel_allowance' | 'meal_allowance' | 'absence';
   description: string | null;
   amount: number;
   hours: number;
@@ -70,7 +70,7 @@ export default function TimeTrackingPanel() {
   // Adjustment form
   const [showAdjForm, setShowAdjForm] = useState(false);
   const [adjEmployeeId, setAdjEmployeeId] = useState('');
-  const [adjType, setAdjType] = useState<'overtime' | 'advance' | 'fuel_allowance' | 'meal_allowance'>('overtime');
+  const [adjType, setAdjType] = useState<'overtime' | 'advance' | 'fuel_allowance' | 'meal_allowance' | 'absence'>('overtime');
   const [adjDescription, setAdjDescription] = useState('');
   const [adjAmount, setAdjAmount] = useState('');
   const [adjHours, setAdjHours] = useState('');
@@ -329,6 +329,10 @@ export default function TimeTrackingPanel() {
     return getEmployeeAdjustments(employeeId).filter(a => a.type === 'advance').reduce((sum, a) => sum + Number(a.amount), 0);
   };
 
+  const calcAbsences = (employeeId: string) => {
+    return getEmployeeAdjustments(employeeId).filter(a => a.type === 'absence').reduce((sum, a) => sum + Number(a.amount), 0);
+  };
+
   const calcFuelAllowance = (employeeId: string) => {
     return getEmployeeAdjustments(employeeId).filter(a => a.type === 'fuel_allowance').reduce((sum, a) => sum + Number(a.amount), 0);
   };
@@ -408,8 +412,10 @@ export default function TimeTrackingPanel() {
     const base = hours * emp.hourly_rate;
     const overtime = calcOvertime(emp.id);
     const fuelAllowance = calcFuelAllowance(emp.id);
+    const mealAllowance = calcMealAllowance(emp.id);
     const deductions = calcDeductions(emp.id);
-    const total = base + overtime + fuelAllowance - deductions;
+    const absences = calcAbsences(emp.id);
+    const total = base + overtime + fuelAllowance + mealAllowance - deductions - absences;
     const periodLabel = period === 'week' ? 'Semana' : period === 'biweekly' ? 'Quinzena' : 'Mês';
     return `*SD Móveis Projetados - Contracheque*\n\n` +
       `👤 *${emp.name}*\n` +
@@ -420,7 +426,9 @@ export default function TimeTrackingPanel() {
       `💵 Base: R$ ${base.toFixed(2)}\n` +
       (overtime > 0 ? `✅ Horas Extra: +R$ ${overtime.toFixed(2)}\n` : '') +
       (fuelAllowance > 0 ? `⛽ Vale Combustível: +R$ ${fuelAllowance.toFixed(2)}\n` : '') +
+      (mealAllowance > 0 ? `🍽️ Vale Refeição: +R$ ${mealAllowance.toFixed(2)}\n` : '') +
       (deductions > 0 ? `❌ Adiantamentos: -R$ ${deductions.toFixed(2)}\n` : '') +
+      (absences > 0 ? `🚫 Faltas: -R$ ${absences.toFixed(2)}\n` : '') +
       `\n*💰 Total Líquido: R$ ${total.toFixed(2)}*`;
   };
 
@@ -754,6 +762,7 @@ export default function TimeTrackingPanel() {
                     <option value="fuel_allowance">⛽ Vale Combustível</option>
                     <option value="meal_allowance">🍽️ Vale Refeição</option>
                     <option value="advance">💵 Adiantamento / Desconto</option>
+                    <option value="absence">🚫 Falta</option>
                   </select>
                 </div>
                 <div>
@@ -795,6 +804,7 @@ export default function TimeTrackingPanel() {
                   <th className="text-right px-6 py-4 text-sm font-bold text-orange-400">⛽ V.Combustível</th>
                   <th className="text-right px-6 py-4 text-sm font-bold text-purple-400">🍽️ V.Refeição</th>
                   <th className="text-right px-6 py-4 text-sm font-bold text-red-500">- Adiantamentos</th>
+                  <th className="text-right px-6 py-4 text-sm font-bold text-pink-500">🚫 Faltas</th>
                   <th className="text-right px-6 py-4 text-sm font-bold text-gray-400">Total Líquido</th>
                   <th className="text-center px-6 py-4 text-sm font-bold text-gray-400">Enviar</th>
                 </tr>
@@ -808,7 +818,8 @@ export default function TimeTrackingPanel() {
                   const fuelAllowance = calcFuelAllowance(emp.id);
                   const mealAllowance = calcMealAllowance(emp.id);
                   const deductions = calcDeductions(emp.id);
-                  const total = base + overtime + fuelAllowance - deductions;
+                  const absences = calcAbsences(emp.id);
+                  const total = base + overtime + fuelAllowance + mealAllowance - deductions - absences;
                   return (
                     <tr key={emp.id} className="border-t border-white/5 hover:bg-white/5 transition-colors">
                       <td className="px-6 py-4 font-bold text-white">{emp.name}</td>
@@ -819,6 +830,7 @@ export default function TimeTrackingPanel() {
                       <td className="px-6 py-4 text-right font-bold text-orange-400">{fuelAllowance > 0 ? `+R$ ${fuelAllowance.toFixed(2)}` : '-'}</td>
                       <td className="px-6 py-4 text-right font-bold text-purple-400">{mealAllowance > 0 ? `+R$ ${mealAllowance.toFixed(2)}` : '-'}</td>
                       <td className="px-6 py-4 text-right font-bold text-red-500">{deductions > 0 ? `-R$ ${deductions.toFixed(2)}` : '-'}</td>
+                      <td className="px-6 py-4 text-right font-bold text-pink-500">{absences > 0 ? `-R$ ${absences.toFixed(2)}` : '-'}</td>
                       <td className="px-6 py-4 text-right font-black text-lg" style={{ color: total >= 0 ? '#4ade80' : '#ef4444' }}>R$ {total.toFixed(2)}</td>
                       <td className="px-6 py-4 text-center">
                         <div className="flex items-center justify-center gap-1">
@@ -843,10 +855,11 @@ export default function TimeTrackingPanel() {
                   <td className="px-6 py-4 text-right font-bold text-orange-400">+R$ {employees.reduce((s, e) => s + calcFuelAllowance(e.id), 0).toFixed(2)}</td>
                   <td className="px-6 py-4 text-right font-bold text-purple-400">+R$ {employees.reduce((s, e) => s + calcMealAllowance(e.id), 0).toFixed(2)}</td>
                   <td className="px-6 py-4 text-right font-bold text-red-500">-R$ {employees.reduce((s, e) => s + calcDeductions(e.id), 0).toFixed(2)}</td>
+                  <td className="px-6 py-4 text-right font-bold text-pink-500">-R$ {employees.reduce((s, e) => s + calcAbsences(e.id), 0).toFixed(2)}</td>
                   <td className="px-6 py-4 text-right font-black text-amber-500 text-xl">
                     R$ {employees.reduce((s, e) => {
                       const h = Math.round(calcHours(e.id) * 100) / 100;
-                      return s + (h * e.hourly_rate) + calcOvertime(e.id) + calcFuelAllowance(e.id) + calcMealAllowance(e.id) - calcDeductions(e.id);
+                      return s + (h * e.hourly_rate) + calcOvertime(e.id) + calcFuelAllowance(e.id) + calcMealAllowance(e.id) - calcDeductions(e.id) - calcAbsences(e.id);
                     }, 0).toFixed(2)}
                   </td>
                   <td className="px-6 py-4"></td>
@@ -865,18 +878,19 @@ export default function TimeTrackingPanel() {
                 {adjustments.slice(0, 20).map(adj => {
                   const emp = employees.find(e => e.id === adj.employee_id);
                   const isPositive = adj.type === 'overtime' || adj.type === 'fuel_allowance' || adj.type === 'meal_allowance';
+                  const isAbsence = adj.type === 'absence';
                   return (
                     <div key={adj.id} className="flex items-center justify-between p-3 bg-white/5 border border-white/5 rounded-xl text-sm hover:bg-white/10 transition-colors">
                       <div className="flex items-center gap-3">
-                        <span className={`w-2 h-2 rounded-full ${isPositive ? 'bg-green-500' : 'bg-red-500'}`} />
+                        <span className={`w-2 h-2 rounded-full ${isPositive ? 'bg-green-500' : isAbsence ? 'bg-pink-500' : 'bg-red-500'}`} />
                         <span className="font-bold text-white">{emp?.name || 'Desconhecido'}</span>
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${adj.type === 'overtime' ? 'bg-green-900/50 text-green-400 border border-green-500/30' : adj.type === 'fuel_allowance' ? 'bg-orange-900/50 text-orange-400 border border-orange-500/30' : adj.type === 'meal_allowance' ? 'bg-purple-900/50 text-purple-400 border border-purple-500/30' : 'bg-red-900/50 text-red-400 border border-red-500/30'}`}>
-                          {adj.type === 'overtime' ? '⏰ Hora Extra' : adj.type === 'fuel_allowance' ? '⛽ Vale Combustível' : adj.type === 'meal_allowance' ? '🍽️ Vale Refeição' : '💵 Adiantamento'}
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${adj.type === 'overtime' ? 'bg-green-900/50 text-green-400 border border-green-500/30' : adj.type === 'fuel_allowance' ? 'bg-orange-900/50 text-orange-400 border border-orange-500/30' : adj.type === 'meal_allowance' ? 'bg-purple-900/50 text-purple-400 border border-purple-500/30' : adj.type === 'absence' ? 'bg-pink-900/50 text-pink-400 border border-pink-500/30' : 'bg-red-900/50 text-red-400 border border-red-500/30'}`}>
+                          {adj.type === 'overtime' ? '⏰ Hora Extra' : adj.type === 'fuel_allowance' ? '⛽ Vale Combustível' : adj.type === 'meal_allowance' ? '🍽️ Vale Refeição' : adj.type === 'absence' ? '🚫 Falta' : '💵 Adiantamento'}
                         </span>
                         {adj.description && <span className="text-gray-400">{adj.description}</span>}
                       </div>
                       <div className="flex items-center gap-3">
-                        <span className={`font-bold ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
+                        <span className={`font-bold ${isPositive ? 'text-green-400' : isAbsence ? 'text-pink-400' : 'text-red-400'}`}>
                           {isPositive ? '+' : '-'}R$ {Number(adj.amount).toFixed(2)}
                         </span>
                         <span className="text-xs text-gray-500">{new Date(adj.reference_date).toLocaleDateString('pt-BR')}</span>
