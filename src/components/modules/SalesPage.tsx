@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { FileText, Plus, Search, Eye, Phone, Mail, DollarSign, CheckCircle, MessageCircle, Edit, X, User, MapPin, Calendar, Clock, Package, Wrench, StickyNote, FileDown } from 'lucide-react';
+import { FileText, Plus, Search, Eye, Phone, Mail, DollarSign, CheckCircle, MessageCircle, Edit, X, User, MapPin, Calendar, Clock, Package, Wrench, StickyNote, FileDown, Trash } from 'lucide-react';
 import { format } from 'date-fns';
 import PdfUploader from '../admin/PdfUploader';
 
@@ -150,6 +150,7 @@ const SalesPage: React.FC = () => {
     producao: 'bg-blue-900/50 text-blue-400 border border-blue-500/30',
     instalacao: 'bg-purple-900/50 text-purple-400 border border-purple-500/30',
     concluido: 'bg-emerald-900/50 text-emerald-400 border border-emerald-500/30',
+    cancelado: 'bg-red-900/50 text-red-500 border border-red-500/30',
   };
 
   const statusLabels: Record<string, string> = {
@@ -160,6 +161,18 @@ const SalesPage: React.FC = () => {
     producao: 'Produção',
     instalacao: 'Instalação',
     concluido: 'Concluído',
+    cancelado: 'Cancelado',
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir esta venda/projeto? Esta ação não pode ser desfeita.')) return;
+    const { error } = await db.from('client_projects').delete().eq('id', id);
+    if (error) {
+      toast({ title: '❌ Erro ao excluir', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: '✅ Venda excluída com sucesso' });
+      fetchData();
+    }
   };
 
   const handleWhatsAppShare = async (p: any) => {
@@ -400,6 +413,7 @@ const SalesPage: React.FC = () => {
                   <option value="producao">Produção</option>
                   <option value="instalacao">Instalação</option>
                   <option value="concluido">Concluído</option>
+                  <option value="cancelado">Cancelado</option>
                 </select>
               </div>
 
@@ -512,6 +526,7 @@ const SalesPage: React.FC = () => {
                     <option value="producao" className="bg-[#1a1a1a] text-white">Produção</option>
                     <option value="instalacao" className="bg-[#1a1a1a] text-white">Instalação</option>
                     <option value="concluido" className="bg-[#1a1a1a] text-white">Concluído</option>
+                    <option value="cancelado" className="bg-[#1a1a1a] text-white">Cancelado</option>
                   </select>
                 </td>
                 <td className="p-5">
@@ -590,6 +605,10 @@ const SalesPage: React.FC = () => {
                     }}
                       className="w-9 h-9 bg-white/5 border border-white/5 rounded-xl flex items-center justify-center text-gray-400 hover:text-blue-400 hover:bg-blue-900/20 transition-all" title="Editar">
                       <Edit className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => handleDelete(p.id)}
+                      className="w-9 h-9 bg-white/5 border border-white/5 rounded-xl flex items-center justify-center text-gray-400 hover:text-red-400 hover:bg-red-900/20 transition-all" title="Excluir">
+                      <Trash className="w-4 h-4" />
                     </button>
                   </div>
                 </td>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast'
-import { ClipboardList, Plus, Search, Edit, Calendar, Clock, Phone, MapPin, User, DollarSign, StickyNote, MessageCircle, X, Eye, FileDown } from 'lucide-react';
+import { ClipboardList, Plus, Search, Edit, Calendar, Clock, Phone, MapPin, User, DollarSign, StickyNote, MessageCircle, X, Eye, FileDown, Trash } from 'lucide-react';
 import PdfUploader from '../admin/PdfUploader';
 import { format } from 'date-fns';
 
@@ -154,6 +154,17 @@ const ServiceOrdersPage: React.FC = () => {
     em_andamento: 'Em Andamento',
     concluida: 'Concluída',
     cancelada: 'Cancelada',
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir esta OS? Esta ação não pode ser desfeita.')) return;
+    const { error } = await db.from('service_orders').delete().eq('id', id);
+    if (error) {
+      toast({ title: '❌ Erro ao excluir', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: '✅ OS excluída com sucesso' });
+      fetchData();
+    }
   };
 
   const handleWhatsAppShare = async (o: any) => {
@@ -568,6 +579,10 @@ const ServiceOrdersPage: React.FC = () => {
                     <button onClick={() => openForm(o)}
                       className="w-9 h-9 bg-white/5 border border-white/5 rounded-xl flex items-center justify-center hover:bg-white/10 hover:border-amber-500/30 transition-all text-gray-400 hover:text-blue-400" title="Editar">
                       <Edit className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => handleDelete(o.id)}
+                      className="w-9 h-9 bg-white/5 border border-white/5 rounded-xl flex items-center justify-center text-gray-400 hover:text-red-400 hover:bg-red-900/20 transition-all" title="Excluir">
+                      <Trash className="w-4 h-4" />
                     </button>
                   </div>
                 </td>
