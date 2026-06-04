@@ -31,8 +31,8 @@ interface Adjustment {
 
 type Period = 'week' | 'biweekly' | 'month';
 
-const HQ_LAT = -3.83251;
-const HQ_LON = -38.56785;
+const HQ_LAT = -3.7389;
+const HQ_LON = -38.5897;
 const ALLOWED_DISTANCE_KM = 1.5; // 1.5km to account for GPS inaccuracy indoors
 
 function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
