@@ -225,7 +225,7 @@ export default function EmployeePortal({ employeeName }: EmployeePortalProps) {
     doc.setFontSize(8);
     doc.setTextColor(100, 100, 100);
     doc.text('CNPJ: 27.693.081/0001-09', logoData ? margin + 26 : margin, 24);
-    doc.text('Rua Jorge Figueiredo, 740 • Itaitinga - CE • CEP 61880-000', logoData ? margin + 26 : margin, 28);
+    doc.text('Rua Jorge Figueredo, 740 • Fortaleza - CE • CEP 60874-765', logoData ? margin + 26 : margin, 28);
 
     // Title bar
     doc.setFillColor(...darkGray);
