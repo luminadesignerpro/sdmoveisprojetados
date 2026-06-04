@@ -278,7 +278,7 @@ export default function EmployeePortal({ employeeName }: EmployeePortalProps) {
     doc.setFillColor(...gold);
     doc.rect(0, 0, W, 4, 'F');
 
-    if (logoData) doc.addImage(logoData, 'JPEG', margin, 10, 22, 22);
+    if (logoData) doc.addImage(logoData, 'PNG', margin, 10, 22, 22);
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(16);
