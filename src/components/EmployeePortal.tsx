@@ -108,7 +108,23 @@ export default function EmployeePortal({ employeeName }: EmployeePortalProps) {
   const checkLocation = async () => {
     setCheckingLocation(true);
     try {
-      const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 10000 });
+      try {
+        const perm = await Geolocation.checkPermissions();
+        if (perm.location !== 'granted') {
+          await Geolocation.requestPermissions();
+        }
+      } catch (e) {
+        // Ignora no web/browser se a API de permissões não for suportada da mesma forma
+      }
+
+      let pos;
+      try {
+        pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 15000 });
+      } catch (highAccErr) {
+        console.warn('Alta precisão falhou, tentando baixa precisão...', highAccErr);
+        pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: false, timeout: 15000 });
+      }
+
       const dist = haversineDistance(pos.coords.latitude, pos.coords.longitude, HQ_LAT, HQ_LON);
       setIsNearHQ(dist <= ALLOWED_DISTANCE_KM);
       
@@ -119,12 +135,12 @@ export default function EmployeePortal({ employeeName }: EmployeePortalProps) {
           variant: 'destructive' 
         });
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Location check failed:', err);
       setIsNearHQ(false);
       toast({ 
-        title: '📍 GPS Necessário', 
-        description: 'Por favor, ative a localização (GPS) do seu celular e dê permissão para o app.', 
+        title: '📍 Falha no GPS', 
+        description: err?.message ? `Erro: ${err.message}` : 'Ative a localização e dê permissão ao app.', 
         variant: 'destructive' 
       });
     } finally {
