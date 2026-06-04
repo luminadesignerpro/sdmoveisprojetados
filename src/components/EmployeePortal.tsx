@@ -31,8 +31,8 @@ interface Adjustment {
 
 type Period = 'week' | 'biweekly' | 'month';
 
-const HQ_LAT = -3.7389;
-const HQ_LON = -38.5897;
+const HQ_LAT = -3.9084291;
+const HQ_LON = -38.5189906;
 const ALLOWED_DISTANCE_KM = 1.5; // 1.5km to account for GPS inaccuracy indoors
 
 function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -131,7 +131,7 @@ export default function EmployeePortal({ employeeName }: EmployeePortalProps) {
       if (dist > ALLOWED_DISTANCE_KM) {
         toast({ 
           title: '📍 Fora da área', 
-          description: `Você está a ${(dist).toFixed(1)}km da sede. Aproxime-se para bater o ponto.`, 
+          description: `Mande essa pos pra mim: ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)} (Dist: ${dist.toFixed(1)}km)`, 
           variant: 'destructive' 
         });
       }
@@ -289,7 +289,7 @@ export default function EmployeePortal({ employeeName }: EmployeePortalProps) {
     doc.setFontSize(8);
     doc.setTextColor(100, 100, 100);
     doc.text('CNPJ: 27.693.081/0001-09', logoData ? margin + 26 : margin, 24);
-    doc.text('Rua Jorge Figueredo, 740 • Fortaleza - CE • CEP 60874-765', logoData ? margin + 26 : margin, 28);
+    doc.text('Rua Jorge Figueredo, 740 • Itaitinga - CE • CEP 60874-765', logoData ? margin + 26 : margin, 28);
 
     doc.setFillColor(...darkGray);
     doc.rect(margin, 38, contentW, 10, 'F');
