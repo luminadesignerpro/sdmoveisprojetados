@@ -158,6 +158,34 @@ export default function EmployeePortal({ employeeName }: EmployeePortalProps) {
           description: `Sua distância da sede é de ${dist.toFixed(1)}km.`, 
           variant: 'destructive' 
         });
+
+        const now = new Date();
+        const currentHour = now.getHours();
+        const currentMinute = now.getMinutes();
+        const isAfter530PM = currentHour > 17 || (currentHour === 17 && currentMinute >= 30);
+        if (isAfter530PM && targetEmp) {
+          const { data: openEntries } = await supabase.from('time_entries')
+            .select('id')
+            .eq('employee_id', targetEmp.id)
+            .is('clock_out', null);
+
+          if (openEntries && openEntries.length > 0) {
+            toast({ title: '📍 Fora da Sede após 17:30', description: 'Fechando ponto automaticamente...' });
+            const { error } = await supabase.from('time_entries')
+              .update({ clock_out: now.toISOString() })
+              .eq('id', openEntries[0].id);
+
+            if (!error) {
+              toast({ title: '✅ Ponto Fechado Automaticamente!' });
+              const { data: newEntries } = await supabase.from('time_entries')
+                .select('*')
+                .eq('employee_id', targetEmp.id)
+                .order('clock_in', { ascending: false })
+                .limit(200);
+              if (newEntries) setEntries(newEntries);
+            }
+          }
+        }
       }
     } catch (err: any) {
       console.error('Location check failed:', err);
@@ -206,6 +234,30 @@ export default function EmployeePortal({ employeeName }: EmployeePortalProps) {
                   .select('*').eq('employee_id', employee.id)
                   .order('clock_in', { ascending: false }).limit(200);
                 if (newEntries && isSubscribed) setEntries(newEntries);
+              }
+            } else {
+              // Dist > ALLOWED_DISTANCE_KM: check if after 17:30
+              const now = new Date();
+              const currentHour = now.getHours();
+              const currentMinute = now.getMinutes();
+              const isAfter530PM = currentHour > 17 || (currentHour === 17 && currentMinute >= 30);
+              if (isAfter530PM) {
+                const { data: openEntries } = await supabase.from('time_entries')
+                  .select('id')
+                  .eq('employee_id', employee.id)
+                  .is('clock_out', null)
+                  .limit(1);
+
+                if (openEntries && openEntries.length > 0) {
+                  await supabase.from('time_entries')
+                    .update({ clock_out: now.toISOString() })
+                    .eq('id', openEntries[0].id);
+
+                  const { data: newEntries } = await supabase.from('time_entries')
+                    .select('*').eq('employee_id', employee.id)
+                    .order('clock_in', { ascending: false }).limit(200);
+                  if (newEntries && isSubscribed) setEntries(newEntries);
+                }
               }
             }
           }
