@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Clock, Play, Square, DollarSign, Calendar, User, Send, CheckCircle, XCircle, Loader2, Download, Fuel } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 import jsPDF from 'jspdf';
 
 interface Employee {
@@ -357,8 +360,35 @@ export default function EmployeePortal({ employeeName }: EmployeePortalProps) {
     doc.setTextColor(150, 150, 150);
     doc.text('Documento gerado automaticamente pelo sistema SD Móveis Projetados', W / 2, 290, { align: 'center' });
 
-    const pdfBlob = doc.output('blob'); const blobUrl = URL.createObjectURL(pdfBlob); const link = document.createElement('a'); link.href = blobUrl; link.download = `contracheque-${employee.name.toLowerCase().replace(/\s+/g, '-')}-${periodLabel.toLowerCase()}.pdf`; document.body.appendChild(link); link.click(); document.body.removeChild(link); setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
-    toast({ title: '📄 Contracheque PDF baixado!' });
+    const fileName = `contracheque-${employee.name.toLowerCase().replace(/\s+/g, '-')}-${periodLabel.toLowerCase()}.pdf`;
+
+    if (Capacitor.isNativePlatform()) {
+      try {
+        toast({ title: '⏳ Preparando Contracheque...' });
+        const base64Data = doc.output('datauristring').split(',')[1];
+        
+        const result = await Filesystem.writeFile({
+          path: fileName,
+          data: base64Data,
+          directory: Directory.Documents,
+        });
+        
+        await Share.share({
+          title: 'Contracheque SD Móveis',
+          text: 'Aqui está seu contracheque.',
+          url: result.uri,
+          dialogTitle: 'Salvar ou Compartilhar Contracheque',
+        });
+        
+        toast({ title: '✅ Contracheque disponibilizado com sucesso!' });
+      } catch (err: any) {
+        console.error('File save error:', err);
+        toast({ title: '❌ Erro ao salvar PDF', description: err.message, variant: 'destructive' });
+      }
+    } else {
+      const pdfBlob = doc.output('blob'); const blobUrl = URL.createObjectURL(pdfBlob); const link = document.createElement('a'); link.href = blobUrl; link.download = fileName; document.body.appendChild(link); link.click(); document.body.removeChild(link); setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+      toast({ title: '📄 Contracheque PDF baixado!' });
+    }
   };
 
   if (loading) {

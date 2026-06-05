@@ -3,6 +3,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Clock, Play, Square, DollarSign, Calendar, User, Send, CheckCircle, XCircle, Loader2, Download, MapPin, Star } from 'lucide-react';
 import { Geolocation } from '@capacitor/geolocation';
+import { BackgroundGeolocation } from '@capgo/background-geolocation';
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 import jsPDF from 'jspdf';
 
 interface Employee {
@@ -33,7 +37,7 @@ type Period = 'week' | 'biweekly' | 'month';
 
 const HQ_LAT = -3.9084291;
 const HQ_LON = -38.5189906;
-const ALLOWED_DISTANCE_KM = 1.5; // 1.5km to account for GPS inaccuracy indoors
+const ALLOWED_DISTANCE_KM = 0.15; // 150m to account for GPS inaccuracy indoors
 
 function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371;
@@ -102,10 +106,10 @@ export default function EmployeePortal({ employeeName }: EmployeePortalProps) {
       }
     }
     setLoading(false);
-    checkLocation();
+    await checkLocationAndAutoClockIn(empData);
   };
 
-  const checkLocation = async () => {
+  const checkLocationAndAutoClockIn = async (empData?: Employee) => {
     setCheckingLocation(true);
     try {
       try {
@@ -128,25 +132,98 @@ export default function EmployeePortal({ employeeName }: EmployeePortalProps) {
       const dist = haversineDistance(pos.coords.latitude, pos.coords.longitude, HQ_LAT, HQ_LON);
       setIsNearHQ(dist <= ALLOWED_DISTANCE_KM);
       
+      const targetEmp = empData || employee;
+      if (dist <= ALLOWED_DISTANCE_KM && targetEmp) {
+        // Auto-clock in if no open entry
+        const { data: openEntries } = await supabase.from('time_entries')
+          .select('id')
+          .eq('employee_id', targetEmp.id)
+          .is('clock_out', null);
+
+        if (!openEntries || openEntries.length === 0) {
+          toast({ title: '📍 Na Sede!', description: 'Batendo ponto automaticamente...' });
+          const { error } = await supabase.from('time_entries').insert({ employee_id: targetEmp.id });
+          if (!error) {
+            toast({ title: '✅ Ponto Registrado Automaticamente!' });
+            // Atualiza os registros sem recarregar tudo
+            const { data: newEntries } = await supabase.from('time_entries').select('*').eq('employee_id', targetEmp.id).order('clock_in', { ascending: false }).limit(200);
+            if (newEntries) setEntries(newEntries);
+          }
+        }
+      }
+
       if (dist > ALLOWED_DISTANCE_KM) {
         toast({ 
           title: '📍 Fora da área', 
-          description: `Mande essa pos pra mim: ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)} (Dist: ${dist.toFixed(1)}km)`, 
+          description: `Sua distância da sede é de ${dist.toFixed(1)}km.`, 
           variant: 'destructive' 
         });
       }
     } catch (err: any) {
       console.error('Location check failed:', err);
       setIsNearHQ(false);
-      toast({ 
-        title: '📍 Falha no GPS', 
-        description: err?.message ? `Erro: ${err.message}` : 'Ative a localização e dê permissão ao app.', 
-        variant: 'destructive' 
-      });
     } finally {
       setCheckingLocation(false);
     }
   };
+
+  useEffect(() => {
+    if (!employee) return;
+    
+    let watcherId: string | null = null;
+    let isSubscribed = true;
+
+    const setupBackgroundTracking = async () => {
+      if (!Capacitor.isNativePlatform()) return;
+      try {
+        const id = await BackgroundGeolocation.addWatcher(
+          {
+            backgroundMessage: "Monitorando proximidade da Sede para bater ponto automático.",
+            backgroundTitle: "SD Móveis - Ponto Automático",
+            requestPermissions: true,
+            stale: false,
+            distanceFilter: 30 // Update every 30 meters
+          },
+          async (location, error) => {
+            if (error || !location || !isSubscribed) return;
+            
+            const dist = haversineDistance(location.latitude, location.longitude, HQ_LAT, HQ_LON);
+            setIsNearHQ(dist <= ALLOWED_DISTANCE_KM);
+            
+            if (dist <= ALLOWED_DISTANCE_KM) {
+              const { data: openEntries } = await supabase.from('time_entries')
+                .select('id')
+                .eq('employee_id', employee.id)
+                .is('clock_out', null)
+                .limit(1);
+                
+              if (!openEntries || openEntries.length === 0) {
+                // Not clocked in yet
+                await supabase.from('time_entries').insert({ employee_id: employee.id });
+                // We could use local notifications here if we wanted to
+                // Refresh list if app is in foreground
+                const { data: newEntries } = await supabase.from('time_entries')
+                  .select('*').eq('employee_id', employee.id)
+                  .order('clock_in', { ascending: false }).limit(200);
+                if (newEntries && isSubscribed) setEntries(newEntries);
+              }
+            }
+          }
+        );
+        watcherId = id;
+      } catch (err) {
+        console.error("Erro no BackgroundGeolocation:", err);
+      }
+    };
+
+    setupBackgroundTracking();
+
+    return () => {
+      isSubscribed = false;
+      // We don't remove the watcher because we want it to keep running in background!
+      // But we prevent state updates via isSubscribed
+    };
+  }, [employee]);
 
   const clockIn = async () => {
     if (!employee) return;
@@ -413,8 +490,35 @@ export default function EmployeePortal({ employeeName }: EmployeePortalProps) {
     doc.setTextColor(150, 150, 150);
     doc.text('Documento gerado automaticamente pelo sistema SD Móveis Projetados', W / 2, 290, { align: 'center' });
 
-    doc.save(`contracheque-${employee.name.toLowerCase().replace(/\s+/g, '-')}-${periodLabel.toLowerCase()}.pdf`);
-    toast({ title: '📄 Contracheque PDF baixado!' });
+    const fileName = `contracheque-${employee.name.toLowerCase().replace(/\s+/g, '-')}-${periodLabel.toLowerCase()}.pdf`;
+
+    if (Capacitor.isNativePlatform()) {
+      try {
+        toast({ title: '⏳ Preparando Contracheque...' });
+        const base64Data = doc.output('datauristring').split(',')[1];
+        
+        const result = await Filesystem.writeFile({
+          path: fileName,
+          data: base64Data,
+          directory: Directory.Documents,
+        });
+        
+        await Share.share({
+          title: 'Contracheque SD Móveis',
+          text: 'Aqui está seu contracheque.',
+          url: result.uri,
+          dialogTitle: 'Salvar ou Compartilhar Contracheque',
+        });
+        
+        toast({ title: '✅ Contracheque disponibilizado com sucesso!' });
+      } catch (err: any) {
+        console.error('File save error:', err);
+        toast({ title: '❌ Erro ao salvar PDF', description: err.message, variant: 'destructive' });
+      }
+    } else {
+      doc.save(fileName);
+      toast({ title: '📄 Contracheque PDF baixado!' });
+    }
   };
 
   if (loading) {
@@ -475,7 +579,7 @@ export default function EmployeePortal({ employeeName }: EmployeePortalProps) {
                isNearHQ ? 'Você está na Sede (Acesso Liberado)' : 
                'Fora da Sede (Acesso Bloqueado)'}
             </span>
-            <button onClick={checkLocation} className="ml-auto text-xs text-amber-500 hover:underline">Recarregar</button>
+            <button onClick={() => checkLocationAndAutoClockIn()} className="ml-auto text-xs text-amber-500 hover:underline">Recarregar</button>
           </div>
         )}
 
