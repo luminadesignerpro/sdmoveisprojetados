@@ -43,6 +43,21 @@ interface LocationPayload {
 let gpsDebugLog: GpsLogEntry[] = [];
 let pendingQueue: LocationPayload[] = [];
 const MAX_LOG_SIZE = 80;
+// Headquarters coordinates (set these to actual location)
+const HEADQUARTERS_LAT = 0; // TODO: replace with real latitude
+const HEADQUARTERS_LNG = 0; // TODO: replace with real longitude
+
+function getDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const toRad = (v: number) => (v * Math.PI) / 180;
+    const R = 6371000; // metres
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+}
 
 function addLog(message: string, type: GpsLogEntry['type'] = 'info') {
     const entry = { timestamp: new Date().toLocaleTimeString(), message, type };
@@ -140,6 +155,15 @@ async function savePosition(tripId: string, coords: { latitude: number; longitud
 
     addLog('✅ Posição salva!', 'success');
     onLocationSaved?.();
+    // Auto‑close after 17:30 when the employee is more than 30 m from the headquarters
+    const nowObj = new Date();
+    if (nowObj.getHours() > 17 || (nowObj.getHours() === 17 && nowObj.getMinutes() >= 30)) {
+        const distance = getDistanceMeters(payload.latitude, payload.longitude, HEADQUARTERS_LAT, HEADQUARTERS_LNG);
+        if (distance > 30) {
+            addLog(`🚦 Ponto fechado automaticamente (${distance.toFixed(1)}m da sede)`, 'info');
+            gpsTracker.stop();
+        }
+    }
 }
 
 // ─── Fallback: getCurrentPosition polling ─────────────────────────────
