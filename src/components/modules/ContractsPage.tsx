@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { 
   FileSignature, Plus, Search, Edit, Sparkles, Key, MessageCircle, X, 
-  User, Phone, MapPin, ClipboardList, DollarSign, Clock, FileDown 
+  User, Phone, MapPin, ClipboardList, DollarSign, Clock, FileDown, Trash2 
 } from 'lucide-react';
 import { format } from 'date-fns';
 import ContractGenerator from './ContractGenerator';
@@ -215,6 +215,17 @@ const ContractsPage: React.FC = () => {
       toast({ title: '🔑 Acesso Criado!', description: `Senha de ${clientName}: ${tempPassword}`, duration: 15000 });
     } catch (e: any) {
       toast({ title: '❌ Erro ao gerar acesso', description: e.message, variant: 'destructive' });
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir este contrato? Esta ação não pode ser desfeita.')) return;
+    const { error } = await db.from('contracts').delete().eq('id', id);
+    if (error) {
+      toast({ title: '❌ Erro ao excluir', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: '✅ Contrato excluído com sucesso' });
+      fetchData();
     }
   };
 
@@ -469,6 +480,10 @@ const ContractsPage: React.FC = () => {
                     });
                     setShowForm(true);
                   }} className="w-9 h-9 bg-white/10 border border-white/10 rounded-xl flex items-center justify-center hover:bg-white/20"><Edit className="w-4 h-4" /></button>
+                  <button onClick={() => handleDelete(c.id)}
+                    className="w-9 h-9 bg-white/5 border border-white/5 rounded-xl flex items-center justify-center text-gray-400 hover:text-red-400 hover:bg-red-900/20 transition-all" title="Excluir contrato">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </td>
               </tr>
             ))}

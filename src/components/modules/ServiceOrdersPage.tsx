@@ -1,11 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast'
-import { ClipboardList, Plus, Search, Edit, Calendar, Clock, Phone, MapPin, User, DollarSign, StickyNote, MessageCircle, X, Eye, FileDown, Trash } from 'lucide-react';
+import { ClipboardList, Plus, Search, Edit, Calendar, Clock, Phone, MapPin, User, DollarSign, StickyNote, MessageCircle, X, Eye, FileDown, Trash, Trash2, Image, FileText, Info, List, Camera, ChevronRight } from 'lucide-react';
 import PdfUploader from '../admin/PdfUploader';
 import { format } from 'date-fns';
 
 const db = supabase as any;
+
+// Tipo para item de produto/serviço na OS
+interface OSItem {
+  id: string;
+  description: string;
+  unit: string;
+  width: number;
+  height: number;
+  total_m2: number;
+  value: number;
+  quantity: number;
+  total_value: number;
+}
 
 const ServiceOrdersPage: React.FC = () => {
   const { toast } = useToast();
@@ -18,6 +31,33 @@ const ServiceOrdersPage: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
   const [showPdfUploader, setShowPdfUploader] = useState(false);
+
+  // Tabs dentro do formulário
+  const [activeTab, setActiveTab] = useState<'obs' | 'produtos' | 'imagens' | 'controle'>('obs');
+
+  // Itens da lista de produtos/serviços
+  const [osItems, setOsItems] = useState<OSItem[]>([]);
+  const [editingItem, setEditingItem] = useState<OSItem | null>(null);
+  const [showItemForm, setShowItemForm] = useState(false);
+  const [itemForm, setItemForm] = useState({
+    description: '',
+    unit: 'un',
+    width: 0,
+    height: 0,
+    value: 0,
+    quantity: 1,
+  });
+
+  // Imagens da OS
+  const [osImages, setOsImages] = useState<{ id: string; url: string; caption: string }[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Campos de controle interno
+  const [internalNotes, setInternalNotes] = useState('');
+  const [serviceToPerform, setServiceToPerform] = useState('');
+  const [problemsToFix, setProblemsToFix] = useState('');
+  const [currentStage, setCurrentStage] = useState('');
+
   const [form, setForm] = useState({
     client_id: '',
     client_name: '',
@@ -87,14 +127,23 @@ const ServiceOrdersPage: React.FC = () => {
       }
     }
 
+    // Calcular valor total dos itens
+    const itemsTotal = osItems.reduce((sum, item) => sum + item.total_value, 0);
+
     const payload = {
       client_id: clientId,
       description: form.description || null,
       status: form.status,
       priority: form.priority,
       assigned_to: form.assigned_to || null,
-      total_value: form.total_value,
-      notes: form.notes || null,
+      total_value: itemsTotal > 0 ? itemsTotal : form.total_value,
+      notes: [
+        form.notes,
+        serviceToPerform ? `[Serviço a ser Realizado]: ${serviceToPerform}` : '',
+        problemsToFix ? `[Problemas a Reparar]: ${problemsToFix}` : '',
+        currentStage ? `[Etapa do Serviço]: ${currentStage}` : '',
+        internalNotes ? `[Notas Internas]: ${internalNotes}` : '',
+      ].filter(Boolean).join('\n') || null,
       estimated_date: form.estimated_date || null,
     };
 
@@ -139,7 +188,77 @@ const ServiceOrdersPage: React.FC = () => {
 
     setShowForm(false);
     setEditingId(null);
+    resetFormState();
     fetchData();
+  };
+
+  const resetFormState = () => {
+    setForm(resetForm());
+    setOsItems([]);
+    setOsImages([]);
+    setServiceToPerform('');
+    setProblemsToFix('');
+    setCurrentStage('');
+    setInternalNotes('');
+    setActiveTab('obs');
+  };
+
+  // ===================== ITEMS (Produtos/Serviços) =====================
+  const calcItemTotalM2 = (w: number, h: number) => +(w * h).toFixed(3);
+  const calcItemTotal = (value: number, qty: number, m2: number) => {
+    if (m2 > 0) return +(value * m2).toFixed(2);
+    return +(value * qty).toFixed(2);
+  };
+
+  const openItemForm = (item?: OSItem) => {
+    if (item) {
+      setEditingItem(item);
+      setItemForm({
+        description: item.description,
+        unit: item.unit,
+        width: item.width,
+        height: item.height,
+        value: item.value,
+        quantity: item.quantity,
+      });
+    } else {
+      setEditingItem(null);
+      setItemForm({ description: '', unit: 'un', width: 0, height: 0, value: 0, quantity: 1 });
+    }
+    setShowItemForm(true);
+  };
+
+  const saveItem = () => {
+    if (!itemForm.description.trim()) {
+      toast({ title: '⚠️ Informe a descrição do produto/serviço', variant: 'destructive' });
+      return;
+    }
+    const total_m2 = calcItemTotalM2(itemForm.width, itemForm.height);
+    const total_value = calcItemTotal(itemForm.value, itemForm.quantity, total_m2);
+
+    if (editingItem) {
+      setOsItems(prev => prev.map(it => it.id === editingItem.id ? {
+        ...editingItem, ...itemForm, total_m2, total_value
+      } : it));
+      toast({ title: '✅ Item atualizado' });
+    } else {
+      const newItem: OSItem = {
+        id: Date.now().toString(),
+        ...itemForm,
+        total_m2,
+        total_value,
+      };
+      setOsItems(prev => [...prev, newItem]);
+      toast({ title: '✅ Item incluído' });
+    }
+    setShowItemForm(false);
+    setEditingItem(null);
+  };
+
+  const deleteItem = (id: string) => {
+    if (!confirm('Excluir este item?')) return;
+    setOsItems(prev => prev.filter(it => it.id !== id));
+    toast({ title: '🗑️ Item excluído' });
   };
 
   const statusColors: Record<string, string> = {
@@ -259,11 +378,27 @@ const ServiceOrdersPage: React.FC = () => {
       setEditingId(null);
       setForm(resetForm());
     }
+    setOsItems([]);
+    setOsImages([]);
+    setServiceToPerform('');
+    setProblemsToFix('');
+    setCurrentStage('');
+    setInternalNotes('');
+    setActiveTab('obs');
     setShowForm(true);
   };
 
   const inputCls = "w-full h-11 bg-[#1a1a1a] rounded-xl px-4 border border-white/10 text-white placeholder:text-gray-600 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500/40 outline-none transition-all";
   const labelCls = "text-sm font-semibold text-gray-300 flex items-center gap-2 mb-1";
+
+  const totalItemsValue = osItems.reduce((s, i) => s + i.total_value, 0);
+
+  const TABS = [
+    { id: 'obs', label: 'Observações Gerais do Serviço', icon: StickyNote },
+    { id: 'produtos', label: 'Lista de Produtos e Serviços', icon: List },
+    { id: 'imagens', label: 'Imagens do Trabalho / Serviço', icon: Camera },
+    { id: 'controle', label: 'Informações de Controle Interno / Registros Diversos', icon: Info },
+  ] as const;
 
   return (
     <div className="p-4 sm:p-8 space-y-6 overflow-auto h-full bg-[#0f0f0f] w-full text-white">
@@ -319,104 +454,82 @@ const ServiceOrdersPage: React.FC = () => {
 
       {/* Form Modal */}
       {showForm && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#111111] rounded-2xl border border-amber-500/30 p-6 w-full max-w-lg max-h-[92vh] overflow-y-auto shadow-2xl text-white">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-500 flex items-center gap-2">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4">
+          <div className="bg-[#111111] rounded-2xl border border-amber-500/30 w-full max-w-4xl max-h-[97vh] flex flex-col shadow-2xl text-white">
+            
+            {/* Header do formulário */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 flex-shrink-0">
+              <div className="flex items-center gap-3">
                 <ClipboardList className="w-5 h-5 text-amber-500" />
-                {editingId ? 'Editar' : 'Nova'} Ordem de Serviço
-              </h3>
-              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-all">
+                <h3 className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-500">
+                  {editingId ? 'Editar' : 'Nova'} Ordem de Serviço
+                </h3>
+                {editingId && (
+                  <span className="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded border border-amber-500/30 font-mono">
+                    Editando
+                  </span>
+                )}
+              </div>
+              <button onClick={() => { setShowForm(false); setEditingId(null); resetFormState(); }}
+                className="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-all">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="space-y-4">
-              {/* Nome do Cliente */}
-              <div>
-                <label className={labelCls}><User className="w-4 h-4 text-amber-500" /> Nome do Cliente *</label>
-                <input type="text" value={form.client_name} onChange={e => setForm({ ...form, client_name: e.target.value })}
-                  placeholder="Nome completo do cliente" className={inputCls} />
-              </div>
-
-              {/* Celular */}
-              <div>
-                <label className={labelCls}><Phone className="w-4 h-4 text-green-500" /> Celular</label>
-                <input type="tel" value={form.client_phone} onChange={e => setForm({ ...form, client_phone: e.target.value })}
-                  placeholder="(00) 00000-0000" className={inputCls} />
-              </div>
-
-              {/* Endereço */}
-              <div>
-                <label className={labelCls}><MapPin className="w-4 h-4 text-red-500" /> Endereço</label>
-                <input type="text" value={form.client_address} onChange={e => setForm({ ...form, client_address: e.target.value })}
-                  placeholder="Rua, número, bairro, cidade" className={inputCls} />
-              </div>
-
-              {/* Descrição do Serviço */}
-              <div>
-                <label className={labelCls}><ClipboardList className="w-4 h-4 text-amber-500" /> Descrição do Serviço *</label>
-                <input type="text" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })}
-                  placeholder="Ex: Medição da cozinha, Instalação de armários..." className={inputCls} />
-              </div>
-
-              {/* Data + Horário */}
-              <div className="grid grid-cols-2 gap-3">
+            {/* Dados do cliente (sempre visíveis) */}
+            <div className="px-6 py-3 bg-[#0d0d0d] border-b border-white/5 flex-shrink-0">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 <div>
-                  <label className={labelCls}><Calendar className="w-4 h-4 text-amber-500" /> Data *</label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                    <input type="date" value={form.estimated_date} onChange={e => setForm({ ...form, estimated_date: e.target.value })}
-                      className="w-full h-11 bg-[#1a1a1a] rounded-xl pl-10 pr-3 border border-white/10 text-white text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500/40 outline-none transition-all" />
-                  </div>
+                  <label className={labelCls}><User className="w-4 h-4 text-amber-500" /> Cliente</label>
+                  <input type="text" value={form.client_name} onChange={e => setForm({ ...form, client_name: e.target.value })}
+                    placeholder="Nome do cliente" className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls}><Phone className="w-4 h-4 text-green-500" /> Celular</label>
+                  <input type="tel" value={form.client_phone} onChange={e => setForm({ ...form, client_phone: e.target.value })}
+                    placeholder="(00) 00000-0000" className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls}><MapPin className="w-4 h-4 text-red-500" /> Endereço</label>
+                  <input type="text" value={form.client_address} onChange={e => setForm({ ...form, client_address: e.target.value })}
+                    placeholder="Rua, número, cidade" className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls}><ClipboardList className="w-4 h-4 text-amber-500" /> Descrição do Serviço</label>
+                  <input type="text" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })}
+                    placeholder="Ex: Instalação de armários" className={inputCls} />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
+                <div>
+                  <label className={labelCls}><Calendar className="w-4 h-4 text-amber-500" /> Data</label>
+                  <input type="date" value={form.estimated_date} onChange={e => setForm({ ...form, estimated_date: e.target.value })}
+                    className={inputCls} />
                 </div>
                 <div>
                   <label className={labelCls}><Clock className="w-4 h-4 text-amber-500" /> Horário</label>
-                  <div className="relative">
-                    <Clock className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                    <select value={form.meeting_time} onChange={e => setForm({ ...form, meeting_time: e.target.value })}
-                      className="w-full h-11 bg-[#1a1a1a] rounded-xl pl-10 pr-3 border border-white/10 text-white text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500/40 outline-none transition-all appearance-none">
-                      {['07:00','07:30','08:00','08:30','09:00','09:30','10:00','10:30','11:00','11:30','12:00','12:30','13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00','18:30','19:00','19:30','20:00'].map(t => (
-                        <option key={t} value={t}>{t}</option>
-                      ))}
-                    </select>
-                  </div>
+                  <select value={form.meeting_time} onChange={e => setForm({ ...form, meeting_time: e.target.value })}
+                    className="w-full h-11 bg-[#1a1a1a] rounded-xl px-3 border border-white/10 text-white text-sm focus:border-amber-500 outline-none transition-all appearance-none">
+                    {['00:00','00:30','01:00','01:30','02:00','02:30','03:00','03:30','04:00','04:30','05:00','05:30',
+                      '06:00','06:30','07:00','07:30','08:00','08:30','09:00','09:30','10:00','10:30','11:00','11:30',
+                      '12:00','12:30','13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30',
+                      '18:00','18:30','19:00','19:30','20:00','20:30','21:00','21:30','22:00','22:30','23:00','23:30'
+                    ].map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
                 </div>
-              </div>
-
-              {/* Responsável + Prioridade */}
-              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className={labelCls}><User className="w-4 h-4 text-gray-400" /> Responsável</label>
+                  <label className={labelCls}>Responsável</label>
                   <select value={form.assigned_to} onChange={e => setForm({ ...form, assigned_to: e.target.value })}
-                    className="w-full h-11 bg-[#1a1a1a] rounded-xl px-3 border border-white/10 text-white text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500/40 outline-none transition-all">
+                    className="w-full h-11 bg-[#1a1a1a] rounded-xl px-3 border border-white/10 text-white text-sm focus:border-amber-500 outline-none transition-all">
                     <option value="">Selecionar funcionário</option>
                     {employees.map(em => <option key={em.id} value={em.id}>{em.name}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className={labelCls}> Prioridade</label>
-                  <select value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value })}
-                    className="w-full h-11 bg-[#1a1a1a] rounded-xl px-3 border border-white/10 text-white text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500/40 outline-none transition-all">
-                    <option value="baixa">Baixa</option>
-                    <option value="normal">Normal</option>
-                    <option value="alta">Alta</option>
-                    <option value="urgente">Urgente</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Valor + Status */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className={labelCls}><DollarSign className="w-4 h-4 text-green-500" /> Valor (R$)</label>
-                  <input type="number" value={form.total_value} onChange={e => setForm({ ...form, total_value: +e.target.value })}
-                    placeholder="0,00" className={inputCls} />
-                </div>
-                <div>
-                  <label className={labelCls}> Status</label>
+                  <label className={labelCls}>Status</label>
                   <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}
-                    className="w-full h-11 bg-[#1a1a1a] rounded-xl px-3 border border-white/10 text-white text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500/40 outline-none transition-all">
+                    className="w-full h-11 bg-[#1a1a1a] rounded-xl px-3 border border-white/10 text-white text-sm focus:border-amber-500 outline-none transition-all">
                     <option value="aberta">Aberta</option>
                     <option value="em_andamento">Em Andamento</option>
                     <option value="concluida">Concluída</option>
@@ -424,26 +537,346 @@ const ServiceOrdersPage: React.FC = () => {
                   </select>
                 </div>
               </div>
-
-              {/* Observações */}
-              <div>
-                <label className={labelCls}><MessageCircle className="w-4 h-4 text-gray-500" /> Observações</label>
-                <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })}
-                  placeholder="Detalhes adicionais..." rows={3}
-                  className="w-full bg-[#1a1a1a] rounded-xl px-4 py-3 border border-white/10 text-white placeholder:text-gray-600 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500/40 outline-none transition-all resize-none" />
-              </div>
             </div>
 
-            <div className="flex gap-3 mt-5">
-              <button onClick={handleSave}
-                className="flex-1 h-12 text-black rounded-xl font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-lg"
-                style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583)' }}>
-                <Plus className="w-4 h-4" />
-                {editingId ? 'Salvar Alterações' : 'Criar Ordem de Serviço'}
-              </button>
-              <button onClick={() => setShowForm(false)}
-                className="h-12 px-5 bg-white/10 border border-white/10 text-white rounded-xl font-bold hover:bg-white/20 transition-all">
+            {/* Abas */}
+            <div className="flex border-b border-white/10 bg-[#0a0a0a] flex-shrink-0 overflow-x-auto">
+              {TABS.map(tab => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex items-center gap-2 px-4 py-3 text-xs font-bold whitespace-nowrap border-b-2 transition-all ${
+                      activeTab === tab.id
+                        ? 'border-amber-500 text-amber-400 bg-amber-500/5'
+                        : 'border-transparent text-gray-500 hover:text-gray-300 hover:bg-white/5'
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5 flex-shrink-0" />
+                    {tab.label}
+                    {tab.id === 'produtos' && osItems.length > 0 && (
+                      <span className="ml-1 bg-amber-500 text-black text-[10px] px-1.5 py-0.5 rounded-full font-black">
+                        {osItems.length}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Conteúdo das abas */}
+            <div className="flex-1 overflow-y-auto">
+
+              {/* ABA 1 - Observações Gerais */}
+              {activeTab === 'obs' && (
+                <div className="p-6 space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className={labelCls}><StickyNote className="w-4 h-4 text-green-400" /> Serviço a ser Realizado</label>
+                      <textarea value={serviceToPerform} onChange={e => setServiceToPerform(e.target.value)}
+                        rows={5} placeholder="Descreva o serviço que será realizado..."
+                        className="w-full bg-[#1a1a1a] rounded-xl px-4 py-3 border border-white/10 text-white placeholder:text-gray-600 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500/40 outline-none transition-all resize-none" />
+                    </div>
+                    <div>
+                      <label className={labelCls}><Info className="w-4 h-4 text-red-400" /> Problemas e Reparos a Serem Feitos no Serviço</label>
+                      <textarea value={problemsToFix} onChange={e => setProblemsToFix(e.target.value)}
+                        rows={5} placeholder="Descreva os problemas e reparos..."
+                        className="w-full bg-[#1a1a1a] rounded-xl px-4 py-3 border border-white/10 text-white placeholder:text-gray-600 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500/40 outline-none transition-all resize-none" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className={labelCls}><ChevronRight className="w-4 h-4 text-amber-400" /> Etapa do Serviço Sendo Realizado</label>
+                    <textarea value={currentStage} onChange={e => setCurrentStage(e.target.value)}
+                      rows={4} placeholder="Ex: Medição concluída, aguardando fabricação..."
+                      className="w-full bg-[#1a1a1a] rounded-xl px-4 py-3 border border-white/10 text-white placeholder:text-gray-600 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500/40 outline-none transition-all resize-none" />
+                  </div>
+                </div>
+              )}
+
+              {/* ABA 2 - Lista de Produtos e Serviços */}
+              {activeTab === 'produtos' && (
+                <div className="p-6 space-y-4">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <button onClick={() => openItemForm()}
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-black text-sm font-bold shadow-lg transition-all hover:opacity-90 active:scale-95"
+                      style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583)' }}>
+                      <Plus className="w-4 h-4" /> Incluir
+                    </button>
+                    <button
+                      onClick={() => {
+                        const selected = osItems[osItems.length - 1];
+                        if (selected) openItemForm(selected);
+                        else toast({ title: '⚠️ Selecione um item para alterar', variant: 'destructive' });
+                      }}
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600/20 border border-blue-500/30 text-blue-400 text-sm font-bold hover:bg-blue-600/30 transition-all">
+                      <Edit className="w-4 h-4" /> Alterar
+                    </button>
+                    <button
+                      onClick={() => {
+                        const last = osItems[osItems.length - 1];
+                        if (last) deleteItem(last.id);
+                        else toast({ title: '⚠️ Nenhum item para excluir', variant: 'destructive' });
+                      }}
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-600/20 border border-red-500/30 text-red-400 text-sm font-bold hover:bg-red-600/30 transition-all">
+                      <Trash2 className="w-4 h-4" /> Excluir
+                    </button>
+                    <div className="ml-auto text-right">
+                      <p className="text-xs text-gray-400 uppercase font-bold">Valor Total dos Itens</p>
+                      <p className="text-lg font-black text-amber-400">R$ {totalItemsValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    </div>
+                  </div>
+
+                  {/* Tabela de itens */}
+                  <div className="bg-[#0d0d0d] border border-white/10 rounded-2xl overflow-x-auto">
+                    <table className="w-full min-w-[700px]">
+                      <thead className="bg-[#1a1a1a] border-b border-white/10">
+                        <tr>
+                          <th className="text-left p-3 text-xs font-black text-gray-400 uppercase">Nº</th>
+                          <th className="text-left p-3 text-xs font-black text-gray-400 uppercase">Descrição do Produto</th>
+                          <th className="text-left p-3 text-xs font-black text-gray-400 uppercase">Un</th>
+                          <th className="text-left p-3 text-xs font-black text-gray-400 uppercase">Largura</th>
+                          <th className="text-left p-3 text-xs font-black text-gray-400 uppercase">Altura</th>
+                          <th className="text-left p-3 text-xs font-black text-gray-400 uppercase">Tot M²</th>
+                          <th className="text-left p-3 text-xs font-black text-gray-400 uppercase">Valor</th>
+                          <th className="text-left p-3 text-xs font-black text-gray-400 uppercase">Quant.</th>
+                          <th className="text-left p-3 text-xs font-black text-gray-400 uppercase">Vlr Total</th>
+                          <th className="text-left p-3 text-xs font-black text-gray-400 uppercase">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {osItems.length === 0 && (
+                          <tr><td colSpan={10} className="p-8 text-center text-gray-600 text-sm italic">
+                            Nenhum item adicionado. Clique em "Incluir" para adicionar produtos ou serviços.
+                          </td></tr>
+                        )}
+                        {osItems.map((item, idx) => (
+                          <tr key={item.id} className="border-t border-white/5 hover:bg-white/5 transition-colors">
+                            <td className="p-3 text-gray-500 font-bold text-xs">{String(idx + 1).padStart(4, '0')}</td>
+                            <td className="p-3 text-white font-medium text-sm max-w-[200px] truncate">{item.description}</td>
+                            <td className="p-3 text-gray-400 text-xs">{item.unit}</td>
+                            <td className="p-3 text-gray-400 text-xs">{item.width > 0 ? item.width.toFixed(2) : '-'}</td>
+                            <td className="p-3 text-gray-400 text-xs">{item.height > 0 ? item.height.toFixed(2) : '-'}</td>
+                            <td className="p-3 text-gray-400 text-xs">{item.total_m2 > 0 ? item.total_m2.toFixed(3) : '-'}</td>
+                            <td className="p-3 text-gray-300 text-xs">R$ {item.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                            <td className="p-3 text-gray-400 text-xs">{item.quantity}</td>
+                            <td className="p-3 font-bold text-amber-400 text-sm">R$ {item.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                            <td className="p-3">
+                              <div className="flex gap-1.5">
+                                <button onClick={() => openItemForm(item)}
+                                  className="w-7 h-7 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-center justify-center text-blue-400 hover:bg-blue-500/20 transition-all" title="Alterar">
+                                  <Edit className="w-3.5 h-3.5" />
+                                </button>
+                                <button onClick={() => deleteItem(item.id)}
+                                  className="w-7 h-7 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center justify-center text-red-400 hover:bg-red-500/20 transition-all" title="Excluir">
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      {osItems.length > 0 && (
+                        <tfoot className="border-t border-amber-500/20 bg-[#1a1a1a]">
+                          <tr>
+                            <td colSpan={8} className="p-3 text-right text-xs font-black text-gray-400 uppercase">Total Geral:</td>
+                            <td colSpan={2} className="p-3 font-black text-amber-400">R$ {totalItemsValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                          </tr>
+                        </tfoot>
+                      )}
+                    </table>
+                  </div>
+
+                  {/* Modal de item */}
+                  {showItemForm && (
+                    <div className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+                      <div className="bg-[#111111] border border-amber-500/30 rounded-2xl p-6 w-full max-w-lg shadow-2xl text-white">
+                        <div className="flex items-center justify-between mb-5">
+                          <h4 className="text-base font-bold text-amber-400 flex items-center gap-2">
+                            <List className="w-4 h-4" />
+                            {editingItem ? 'Alterar Item' : 'Incluir Novo Item'}
+                          </h4>
+                          <button onClick={() => setShowItemForm(false)} className="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-white/10">
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <div className="space-y-4">
+                          <div>
+                            <label className={labelCls}>Descrição do Produto/Serviço *</label>
+                            <input type="text" value={itemForm.description}
+                              onChange={e => setItemForm({ ...itemForm, description: e.target.value })}
+                              placeholder="Ex: Armário planejado 3 portas" className={inputCls} />
+                          </div>
+                          <div className="grid grid-cols-3 gap-3">
+                            <div>
+                              <label className={labelCls}>Unidade</label>
+                              <select value={itemForm.unit} onChange={e => setItemForm({ ...itemForm, unit: e.target.value })}
+                                className="w-full h-11 bg-[#1a1a1a] rounded-xl px-3 border border-white/10 text-white text-sm focus:border-amber-500 outline-none">
+                                <option value="un">un</option>
+                                <option value="m²">m²</option>
+                                <option value="m">m</option>
+                                <option value="pç">pç</option>
+                                <option value="hr">hr</option>
+                                <option value="vb">vb</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className={labelCls}>Largura (m)</label>
+                              <input type="number" step="0.01" value={itemForm.width}
+                                onChange={e => setItemForm({ ...itemForm, width: +e.target.value })}
+                                placeholder="0.00" className={inputCls} />
+                            </div>
+                            <div>
+                              <label className={labelCls}>Altura (m)</label>
+                              <input type="number" step="0.01" value={itemForm.height}
+                                onChange={e => setItemForm({ ...itemForm, height: +e.target.value })}
+                                placeholder="0.00" className={inputCls} />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className={labelCls}><DollarSign className="w-4 h-4 text-green-500" /> Valor Unitário (R$)</label>
+                              <input type="number" step="0.01" value={itemForm.value}
+                                onChange={e => setItemForm({ ...itemForm, value: +e.target.value })}
+                                placeholder="0,00" className={inputCls} />
+                            </div>
+                            <div>
+                              <label className={labelCls}>Quantidade</label>
+                              <input type="number" step="1" min="1" value={itemForm.quantity}
+                                onChange={e => setItemForm({ ...itemForm, quantity: +e.target.value })}
+                                placeholder="1" className={inputCls} />
+                            </div>
+                          </div>
+                          {/* Preview do total */}
+                          <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
+                            <p className="text-xs text-gray-400 uppercase font-bold">Prévia do Total</p>
+                            <p className="text-lg font-black text-amber-400 mt-1">
+                              R$ {calcItemTotal(
+                                itemForm.value, itemForm.quantity,
+                                calcItemTotalM2(itemForm.width, itemForm.height)
+                              ).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </p>
+                            {(itemForm.width > 0 && itemForm.height > 0) && (
+                              <p className="text-xs text-gray-500 mt-0.5">
+                                M²: {calcItemTotalM2(itemForm.width, itemForm.height).toFixed(3)}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex gap-3 mt-5">
+                          <button onClick={saveItem}
+                            className="flex-1 h-11 text-black rounded-xl font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-all"
+                            style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583)' }}>
+                            <Plus className="w-4 h-4" /> {editingItem ? 'Salvar Alterações' : 'Incluir Item'}
+                          </button>
+                          <button onClick={() => setShowItemForm(false)}
+                            className="h-11 px-5 bg-white/10 border border-white/10 text-white rounded-xl font-bold hover:bg-white/20 transition-all">
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ABA 3 - Imagens do Trabalho */}
+              {activeTab === 'imagens' && (
+                <div className="p-6 space-y-4">
+                  <p className="text-sm text-gray-400">Adicione fotos do trabalho antes e depois da execução do serviço.</p>
+                  <input type="file" accept="image/*" multiple ref={fileInputRef} className="hidden"
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files || []);
+                      const newImages = files.map(f => ({
+                        id: Date.now().toString() + Math.random(),
+                        url: URL.createObjectURL(f),
+                        caption: f.name,
+                      }));
+                      setOsImages(prev => [...prev, ...newImages]);
+                    }}
+                  />
+                  <button onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-dashed border-amber-500/40 text-amber-400 text-sm font-bold hover:bg-amber-500/10 transition-all">
+                    <Camera className="w-4 h-4" /> Adicionar Imagens
+                  </button>
+
+                  {osImages.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16 text-center border border-dashed border-white/10 rounded-2xl">
+                      <Camera className="w-12 h-12 text-gray-700 mb-3" />
+                      <p className="text-gray-600 text-sm">Nenhuma imagem adicionada</p>
+                      <p className="text-gray-700 text-xs mt-1">Clique em "Adicionar Imagens" para incluir fotos</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                      {osImages.map(img => (
+                        <div key={img.id} className="relative group rounded-xl overflow-hidden border border-white/10 aspect-square bg-[#1a1a1a]">
+                          <img src={img.url} alt={img.caption} className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center">
+                            <button onClick={() => setOsImages(prev => prev.filter(i => i.id !== img.id))}
+                              className="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center">
+                              <Trash2 className="w-4 h-4 text-white" />
+                            </button>
+                          </div>
+                          <p className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-[9px] p-1 truncate">{img.caption}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ABA 4 - Informações de Controle Interno */}
+              {activeTab === 'controle' && (
+                <div className="p-6 space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className={labelCls}>Prioridade</label>
+                      <select value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value })}
+                        className="w-full h-11 bg-[#1a1a1a] rounded-xl px-3 border border-white/10 text-white text-sm focus:border-amber-500 outline-none transition-all">
+                        <option value="baixa">Baixa</option>
+                        <option value="normal">Normal</option>
+                        <option value="alta">Alta</option>
+                        <option value="urgente">Urgente</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className={labelCls}><DollarSign className="w-4 h-4 text-green-500" /> Valor Manual (R$)</label>
+                      <input type="number" value={form.total_value} onChange={e => setForm({ ...form, total_value: +e.target.value })}
+                        placeholder="0,00" className={inputCls} />
+                      {totalItemsValue > 0 && (
+                        <p className="text-xs text-amber-400 mt-1">⚠️ Valor dos itens: R$ {totalItemsValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (sobrescreve este campo)</p>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <label className={labelCls}><Info className="w-4 h-4 text-blue-400" /> Notas Internas / Registros Diversos</label>
+                    <textarea value={internalNotes} onChange={e => setInternalNotes(e.target.value)}
+                      rows={6} placeholder="Registros internos, observações para a equipe, histórico de alterações..."
+                      className="w-full bg-[#1a1a1a] rounded-xl px-4 py-3 border border-white/10 text-white placeholder:text-gray-600 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500/40 outline-none transition-all resize-none" />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer com botões de ação */}
+            <div className="px-6 py-4 border-t border-white/10 flex items-center gap-3 bg-[#0d0d0d] flex-shrink-0">
+              <div className="flex gap-2 flex-1 flex-wrap">
+                {totalItemsValue > 0 && (
+                  <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2">
+                    <DollarSign className="w-4 h-4 text-amber-400" />
+                    <span className="text-xs font-bold text-amber-400">Total Itens: R$ {totalItemsValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                  </div>
+                )}
+              </div>
+              <button onClick={() => { setShowForm(false); setEditingId(null); resetFormState(); }}
+                className="h-11 px-5 bg-white/10 border border-white/10 text-white rounded-xl font-bold hover:bg-white/20 transition-all">
                 Cancelar
+              </button>
+              <button onClick={handleSave}
+                className="h-11 px-6 text-black rounded-xl font-bold flex items-center gap-2 hover:opacity-90 transition-all shadow-lg"
+                style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583)' }}>
+                <ClipboardList className="w-4 h-4" />
+                {editingId ? 'Salvar Alterações' : 'Criar Ordem de Serviço'}
               </button>
             </div>
           </div>
