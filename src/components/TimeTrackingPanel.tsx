@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import {
-  Clock, UserPlus, Play, Square, Calendar, DollarSign, Users, Trash2, Edit2, Save, X, Plus, Minus, MessageCircle, Mail, Key, Eye, EyeOff
+  Clock, UserPlus, Play, Square, Calendar, DollarSign, Users, Trash2, Edit2, Save, X, Plus, Minus, MessageCircle, Mail, Key, Eye, EyeOff, UserX
 } from 'lucide-react';
 
 interface Employee {
@@ -25,7 +25,7 @@ interface TimeEntry {
 interface Adjustment {
   id: string;
   employee_id: string;
-  type: 'overtime' | 'advance' | 'fuel_allowance' | 'meal_allowance';
+  type: 'overtime' | 'advance' | 'fuel_allowance' | 'meal_allowance' | 'absence';
   description: string | null;
   amount: number;
   hours: number;
@@ -59,7 +59,7 @@ export default function TimeTrackingPanel() {
   // Adjustment form
   const [showAdjForm, setShowAdjForm] = useState(false);
   const [adjEmployeeId, setAdjEmployeeId] = useState('');
-  const [adjType, setAdjType] = useState<'overtime' | 'advance' | 'fuel_allowance' | 'meal_allowance'>('overtime');
+  const [adjType, setAdjType] = useState<'overtime' | 'advance' | 'fuel_allowance' | 'meal_allowance' | 'absence'>('overtime');
   const [adjDescription, setAdjDescription] = useState('');
   const [adjAmount, setAdjAmount] = useState('');
   const [adjHours, setAdjHours] = useState('');
@@ -143,6 +143,25 @@ export default function TimeTrackingPanel() {
       toast({ title: '❌ Erro', description: error.message, variant: 'destructive' });
     } else {
       toast({ title: '✅ Saída registrada!' });
+      fetchData();
+    }
+  };
+
+  const registerAbsence = async (emp: Employee) => {
+    const today = new Date().toISOString().split('T')[0];
+    if (!confirm(`Registrar falta de ${emp.name} para hoje (${new Date().toLocaleDateString('pt-BR')})?`)) return;
+    const { error } = await supabase.from('employee_adjustments').insert({
+      employee_id: emp.id,
+      type: 'absence',
+      description: `Falta registrada em ${new Date().toLocaleDateString('pt-BR')}`,
+      amount: 0,
+      hours: 0,
+      reference_date: today,
+    });
+    if (error) {
+      toast({ title: '❌ Erro ao registrar falta', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: '📋 Falta registrada!', description: `Falta de ${emp.name} anotada para hoje.` });
       fetchData();
     }
   };
@@ -352,9 +371,14 @@ export default function TimeTrackingPanel() {
                     </button>
                   </div>
                 ) : (
-                  <button onClick={() => clockIn(emp.id)} className="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
-                    <Play className="w-4 h-4" /> Registrar Entrada
-                  </button>
+                  <div className="flex flex-col gap-2">
+                    <button onClick={() => clockIn(emp.id)} className="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
+                      <Play className="w-4 h-4" /> Registrar Entrada
+                    </button>
+                    <button onClick={() => registerAbsence(emp)} className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-xl font-bold flex items-center justify-center gap-2 transition-all text-sm">
+                      <UserX className="w-4 h-4" /> Registrar Falta
+                    </button>
+                  </div>
                 )}
               </div>
             );
@@ -520,6 +544,7 @@ export default function TimeTrackingPanel() {
                     <option value="fuel_allowance">⛽ Vale Combustível</option>
                     <option value="meal_allowance">🍽️ Vale Refeição</option>
                     <option value="advance">💵 Adiantamento / Desconto</option>
+                    <option value="absence">🚫 Falta</option>
                   </select>
                 </div>
                 <div>
@@ -636,8 +661,8 @@ export default function TimeTrackingPanel() {
                       <div className="flex items-center gap-3">
                         <span className={`w-2 h-2 rounded-full ${isPositive ? 'bg-green-500' : 'bg-red-500'}`} />
                         <span className="font-bold text-gray-900">{emp?.name || 'Desconhecido'}</span>
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${adj.type === 'overtime' ? 'bg-green-100 text-green-700' : adj.type === 'fuel_allowance' ? 'bg-orange-100 text-orange-700' : adj.type === 'meal_allowance' ? 'bg-purple-100 text-purple-700' : 'bg-red-100 text-red-700'}`}>
-                          {adj.type === 'overtime' ? '⏰ Hora Extra' : adj.type === 'fuel_allowance' ? '⛽ Vale Combustível' : adj.type === 'meal_allowance' ? '🍽️ Vale Refeição' : '💵 Adiantamento'}
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${adj.type === 'overtime' ? 'bg-green-100 text-green-700' : adj.type === 'fuel_allowance' ? 'bg-orange-100 text-orange-700' : adj.type === 'meal_allowance' ? 'bg-purple-100 text-purple-700' : adj.type === 'absence' ? 'bg-gray-100 text-gray-700' : 'bg-red-100 text-red-700'}`}>
+                          {adj.type === 'overtime' ? '⏰ Hora Extra' : adj.type === 'fuel_allowance' ? '⛽ Vale Combustível' : adj.type === 'meal_allowance' ? '🍽️ Vale Refeição' : adj.type === 'absence' ? '🚫 Falta' : '💵 Adiantamento'}
                         </span>
                         {adj.description && <span className="text-gray-400">{adj.description}</span>}
                       </div>

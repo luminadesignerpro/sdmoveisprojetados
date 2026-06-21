@@ -33,6 +33,7 @@ export enum ViewMode {
   PROJECT_GALLERY = 'PROJECT_GALLERY',
   TRACKING = 'TRACKING',
   PLAYCANVAS = 'PLAYCANVAS',
+  LEGACY_SYSTEM = 'LEGACY_SYSTEM',
 }
 
 export enum ToolMode {

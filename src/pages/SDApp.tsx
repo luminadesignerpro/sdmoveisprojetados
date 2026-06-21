@@ -19,6 +19,7 @@ import PromobEditor from '@/components/promob/PromobEditor';
 import SuppliersPage from '@/components/modules/SuppliersPage';
 import ProductsPage from '@/components/modules/ProductsPage';
 import ServiceOrdersPage from '@/components/modules/ServiceOrdersPage';
+import LegacySystemPage from '@/components/modules/LegacySystemPage';
 import CashRegisterPage from '@/components/modules/CashRegisterPage';
 import AccountsPage from '@/components/modules/AccountsPage';
 import ContractsPage from '@/components/modules/ContractsPage';
@@ -490,6 +491,7 @@ const App: React.FC = () => {
                 <NavIcon icon="building" label="Fornecedores" active={view === ViewMode.SUPPLIERS} onClick={() => setView(ViewMode.SUPPLIERS)} />
                 <NavIcon icon="package" label="Estoque" active={view === ViewMode.PRODUCTS} onClick={() => setView(ViewMode.PRODUCTS)} />
                 <NavIcon icon="clipboard-list" label="OS" active={view === ViewMode.SERVICE_ORDERS} onClick={() => setView(ViewMode.SERVICE_ORDERS)} />
+                <NavIcon icon="laptop" label="OS Clássica" active={view === ViewMode.LEGACY_SYSTEM} onClick={() => setView(ViewMode.LEGACY_SYSTEM)} />
                 <NavIcon icon="banknote" label="Caixa" active={view === ViewMode.CASH_REGISTER} onClick={() => setView(ViewMode.CASH_REGISTER)} />
                 <NavIcon icon="trending-down" label="A Pagar" active={view === ViewMode.ACCOUNTS_PAYABLE} onClick={() => setView(ViewMode.ACCOUNTS_PAYABLE)} />
                 <NavIcon icon="trending-up" label="A Receber" active={view === ViewMode.ACCOUNTS_RECEIVABLE} onClick={() => setView(ViewMode.ACCOUNTS_RECEIVABLE)} />
@@ -610,6 +612,12 @@ const App: React.FC = () => {
                 <p className="text-gray-400 mt-1">Gire o móvel e teste a troca de materiais em tempo real</p>
               </div>
               <PlayCanvasViewer />
+            </div>
+          )}
+          {/* LEGACY SYSTEM */}
+          {view === ViewMode.LEGACY_SYSTEM && authState === 'ADMIN' && (
+            <div className="w-full h-full relative" style={{ background: '#0f0f0f' }}>
+              <LegacySystemPage />
             </div>
           )}
           {/* DASHBOARD ADMIN */}
