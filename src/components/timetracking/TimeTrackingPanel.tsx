@@ -83,6 +83,7 @@ export default function TimeTrackingPanel() {
   // Manual Time Entry
   const [showManualEntry, setShowManualEntry] = useState(false);
   const [manualEmpId, setManualEmpId] = useState('');
+  const [manualEntryType, setManualEntryType] = useState<'ponto'|'falta'>('ponto');
   const [manualClockIn, setManualClockIn] = useState('');
   const [manualClockOut, setManualClockOut] = useState('');
 
@@ -221,9 +222,31 @@ export default function TimeTrackingPanel() {
 
   const addManualTimeEntry = async () => {
     if (!manualEmpId || !manualClockIn) {
-      toast({ title: '⚠️ Preencha o funcionário e a entrada', variant: 'destructive' });
+      toast({ title: '⚠️ Preencha o funcionário e a data/hora', variant: 'destructive' });
       return;
     }
+    
+    if (manualEntryType === 'falta') {
+      const { error } = await supabase.from('employee_adjustments').insert({
+        employee_id: manualEmpId,
+        type: 'absence',
+        description: 'Falta lançada manualmente',
+        amount: 0,
+        hours: 0,
+        reference_date: manualClockIn.split('T')[0] || manualClockIn,
+      });
+      if (error) {
+        toast({ title: '❌ Erro', description: error.message, variant: 'destructive' });
+      } else {
+        toast({ title: '✅ Falta registrada' });
+        setShowManualEntry(false);
+        setManualClockIn('');
+        setManualClockOut('');
+        fetchData();
+      }
+      return;
+    }
+
     const { error } = await supabase.from('time_entries').insert({
       employee_id: manualEmpId,
       clock_in: new Date(manualClockIn).toISOString(),
@@ -921,28 +944,56 @@ export default function TimeTrackingPanel() {
 
             {/* Manual Entry Form */}
             {showManualEntry && (
-              <div className="mb-4 bg-[#1a1a1a] border border-amber-500/30 rounded-xl p-4 flex flex-col md:flex-row gap-3 items-end">
-                <div className="flex-1 w-full">
-                  <label className="text-xs font-bold text-gray-400 block mb-1">Funcionário</label>
-                  <select value={manualEmpId} onChange={e => setManualEmpId(e.target.value)} className="border border-white/10 bg-[#111] text-white rounded-xl px-4 py-2.5 text-sm w-full focus:ring-2 focus:ring-amber-500 focus:outline-none">
-                    {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
-                  </select>
-                </div>
-                <div className="flex-1 w-full">
-                  <label className="text-xs font-bold text-gray-400 block mb-1">Entrada</label>
-                  <input type="datetime-local" value={manualClockIn} onChange={e => setManualClockIn(e.target.value)} className="border border-white/10 bg-[#111] text-white rounded-xl px-4 py-2.5 text-sm w-full focus:ring-2 focus:ring-amber-500 focus:outline-none [color-scheme:dark]" />
-                </div>
-                <div className="flex-1 w-full">
-                  <label className="text-xs font-bold text-gray-400 block mb-1">Saída (Opcional)</label>
-                  <input type="datetime-local" value={manualClockOut} onChange={e => setManualClockOut(e.target.value)} className="border border-white/10 bg-[#111] text-white rounded-xl px-4 py-2.5 text-sm w-full focus:ring-2 focus:ring-amber-500 focus:outline-none [color-scheme:dark]" />
-                </div>
-                <div className="flex gap-2 w-full md:w-auto">
-                  <button onClick={addManualTimeEntry} className="flex-1 md:flex-none bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-1">
-                    <Save className="w-4 h-4" /> Salvar
+              <div className="mb-4 bg-[#1a1a1a] border border-amber-500/30 rounded-xl p-4 flex flex-col gap-4">
+                {/* Mini Tabs for Type */}
+                <div className="flex bg-[#111] rounded-xl p-1 w-fit border border-white/5">
+                  <button
+                    onClick={() => setManualEntryType('ponto')}
+                    className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${manualEntryType === 'ponto' ? 'bg-amber-500/20 text-amber-500' : 'text-gray-500 hover:text-gray-300'}`}
+                  >
+                    Registrar Ponto
                   </button>
-                  <button onClick={() => setShowManualEntry(false)} className="bg-white/10 hover:bg-white/20 text-white px-4 py-2.5 rounded-xl font-bold transition-all flex items-center justify-center">
-                    <X className="w-4 h-4" />
+                  <button
+                    onClick={() => setManualEntryType('falta')}
+                    className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${manualEntryType === 'falta' ? 'bg-pink-500/20 text-pink-500' : 'text-gray-500 hover:text-gray-300'}`}
+                  >
+                    Registrar Falta
                   </button>
+                </div>
+
+                <div className="flex flex-col md:flex-row gap-3 items-end">
+                  <div className="flex-1 w-full">
+                    <label className="text-xs font-bold text-gray-400 block mb-1">Funcionário</label>
+                    <select value={manualEmpId} onChange={e => setManualEmpId(e.target.value)} className="border border-white/10 bg-[#111] text-white rounded-xl px-4 py-2.5 text-sm w-full focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                      {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+                    </select>
+                  </div>
+                  
+                  {manualEntryType === 'falta' ? (
+                    <div className="flex-1 w-full">
+                      <label className="text-xs font-bold text-gray-400 block mb-1">Data da Falta</label>
+                      <input type="date" value={manualClockIn} onChange={e => setManualClockIn(e.target.value)} className="border border-white/10 bg-[#111] text-white rounded-xl px-4 py-2.5 text-sm w-full focus:ring-2 focus:ring-amber-500 focus:outline-none [color-scheme:dark]" />
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex-1 w-full">
+                        <label className="text-xs font-bold text-gray-400 block mb-1">Entrada</label>
+                        <input type="datetime-local" value={manualClockIn} onChange={e => setManualClockIn(e.target.value)} className="border border-white/10 bg-[#111] text-white rounded-xl px-4 py-2.5 text-sm w-full focus:ring-2 focus:ring-amber-500 focus:outline-none [color-scheme:dark]" />
+                      </div>
+                      <div className="flex-1 w-full">
+                        <label className="text-xs font-bold text-gray-400 block mb-1">Saída (Opcional)</label>
+                        <input type="datetime-local" value={manualClockOut} onChange={e => setManualClockOut(e.target.value)} className="border border-white/10 bg-[#111] text-white rounded-xl px-4 py-2.5 text-sm w-full focus:ring-2 focus:ring-amber-500 focus:outline-none [color-scheme:dark]" />
+                      </div>
+                    </>
+                  )}
+                  <div className="flex gap-2 w-full md:w-auto">
+                    <button onClick={addManualTimeEntry} className="flex-1 md:flex-none bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-1">
+                      <Save className="w-4 h-4" /> Salvar
+                    </button>
+                    <button onClick={() => setShowManualEntry(false)} className="bg-white/10 hover:bg-white/20 text-white px-4 py-2.5 rounded-xl font-bold transition-all flex items-center justify-center">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             )}

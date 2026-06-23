@@ -57,6 +57,16 @@ const LegacySystemPage: React.FC = () => {
   const [showClientModal, setShowClientModal] = useState(false);
   const [clientSearch, setClientSearch] = useState('');
 
+  // ── new modals state ────────────────────────────────────────────────────────
+  const [showCustomerRegistrationModal, setShowCustomerRegistrationModal] = useState(false);
+  const [customerRegistrationTab, setCustomerRegistrationTab] = useState('endereco');
+  const [showProductSearchModal, setShowProductSearchModal] = useState(false);
+  const [productSearchStr, setProductSearchStr] = useState('');
+  const [showOSSearchModal, setShowOSSearchModal] = useState(false);
+  const [osSearchStr, setOsSearchStr] = useState('');
+  const [productsList, setProductsList] = useState<any[]>([]);
+  const [osList, setOsList] = useState<any[]>([]);
+
   // ── tabs ──────────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState('obs');
 
@@ -112,15 +122,19 @@ const LegacySystemPage: React.FC = () => {
   // ─── On mount: load employees, clients, next order number ─────────────────
   useEffect(() => {
     const init = async () => {
-      const [empRes, cliRes, osRes] = await Promise.all([
+      const [empRes, cliRes, osRes, prodRes, allOsRes] = await Promise.all([
         db.from('employees').select('id, name').eq('active', true).order('name'),
         db.from('clients').select('id, name, phone').order('name'),
         db.from('service_orders').select('order_number').order('order_number', { ascending: false }).limit(1),
+        db.from('inventory_items').select('*').limit(50),
+        db.from('service_orders').select('*, clients(name, phone)').order('created_at', { ascending: false }).limit(50)
       ]);
       setEmployees(empRes.data || []);
       setClients(cliRes.data || []);
       const lastNo = osRes.data?.[0]?.order_number;
       setOrderNo(lastNo ? String(Number(lastNo) + 1) : '1001');
+      if (prodRes && !prodRes.error) setProductsList(prodRes.data);
+      if (allOsRes && !allOsRes.error) setOsList(allOsRes.data);
     };
     init();
 
@@ -440,43 +454,69 @@ const LegacySystemPage: React.FC = () => {
       {/* ── Client Search Modal ─────────────────────────────────────────── */}
       {showClientModal && (
         <div className="fixed inset-0 z-[80] bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white border border-gray-400 rounded shadow-lg w-full max-w-md" style={{ fontFamily: 'Tahoma,Arial,sans-serif', fontSize: 12 }}>
-            <div className="bg-[#dde] px-3 py-2 flex items-center justify-between border-b border-gray-400">
-              <span className="font-bold text-sm">Consulta de Clientes</span>
+          <div className="bg-white border border-gray-400 rounded shadow-lg w-full max-w-4xl" style={{ fontFamily: 'Tahoma,Arial,sans-serif', fontSize: 11 }}>
+            <div className="bg-[#dde] px-3 py-1 flex items-center justify-between border-b border-gray-400">
+              <span className="font-bold text-xs">Pesquisa em Tela Cadastro de Clientes</span>
               <button onClick={() => setShowClientModal(false)} className="text-gray-600 hover:text-red-600"><X size={14} /></button>
             </div>
-            <div className="p-3">
-              <div className="flex gap-2 mb-2">
-                <input
-                  autoFocus
-                  type="text"
-                  value={clientSearch}
-                  onChange={e => setClientSearch(e.target.value)}
-                  placeholder="Pesquisar por nome..."
-                  className="legacy-input flex-1"
-                />
-                <button className="legacy-button"><Search size={12} /> Buscar</button>
+            <div className="p-2 bg-[#f0f0f0]">
+              <div className="flex gap-2 mb-2 items-end">
+                <div className="flex-1">
+                  <span className="legacy-label text-[10px]">Pesquisar por Nome Razão Social</span><br />
+                  <input
+                    autoFocus
+                    type="text"
+                    value={clientSearch}
+                    onChange={e => setClientSearch(e.target.value)}
+                    className="legacy-input w-full bg-yellow-100"
+                  />
+                </div>
+                <div className="flex-1">
+                  <span className="legacy-label text-[10px]">Pesquisar por Nome Fantasia</span><br />
+                  <input type="text" className="legacy-input w-full bg-yellow-100" />
+                </div>
+                <div className="flex-1">
+                  <span className="legacy-label text-[10px]">Rastrear por Nome</span><br />
+                  <input type="text" className="legacy-input w-full" />
+                </div>
+                <div className="flex-1">
+                  <span className="legacy-label text-[10px]">Rastrear Telefone</span><br />
+                  <input type="text" className="legacy-input w-full text-red-600 text-center" defaultValue="-" />
+                </div>
+                <div className="flex gap-1 mb-1">
+                  <button className="bg-green-100 border border-green-400 p-1 rounded-sm"><Plus size={16} className="text-green-600"/></button>
+                  <button className="bg-gray-100 border border-gray-400 p-1 rounded-sm"><Edit size={16} className="text-gray-600"/></button>
+                  <button className="bg-blue-100 border border-blue-400 p-1 rounded-sm"><Search size={16} className="text-blue-600"/></button>
+                </div>
               </div>
-              <div style={{ maxHeight: 220, overflowY: 'auto', border: '1px solid #a0a0a0' }}>
-                <table className="legacy-table" style={{ width: '100%' }}>
+              <div style={{ height: 350, overflowY: 'auto', border: '1px solid #a0a0a0', backgroundColor: '#fff' }}>
+                <table className="legacy-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr><th>Nome</th><th>Telefone</th></tr>
+                    <tr>
+                      <th style={{ width: '50px' }}>Código</th>
+                      <th>Nome do Cliente / Razão Social</th>
+                      <th>Fantasia/Apelido</th>
+                      <th style={{ width: '100px' }}>WhatsApp</th>
+                      <th style={{ width: '100px' }}>Telefone</th>
+                      <th style={{ width: '120px' }}>Tipo Cadastro -&gt;-&gt;-&gt;</th>
+                    </tr>
                   </thead>
                   <tbody>
                     {filteredClients.length === 0 && (
-                      <tr><td colSpan={2} style={{ textAlign: 'center', color: '#888', padding: 8 }}>Nenhum cliente encontrado</td></tr>
+                      <tr><td colSpan={6} style={{ textAlign: 'center', color: '#888', padding: 8 }}>Nenhum cliente encontrado</td></tr>
                     )}
                     {filteredClients.map(c => (
-                      <tr key={c.id} onClick={() => selectClient(c)} style={{ cursor: 'pointer' }}>
-                        <td>{c.name}</td>
-                        <td>{c.phone || '-'}</td>
+                      <tr key={c.id} onClick={() => selectClient(c)} style={{ cursor: 'pointer', borderBottom: '1px solid #eee' }}>
+                        <td>{String(c.id).substring(0, 5).padStart(5, '0')}</td>
+                        <td>{c.name.toUpperCase()}</td>
+                        <td></td>
+                        <td>{c.phone ? `(${c.phone.slice(0,2)}) ${c.phone.slice(2,7)}-${c.phone.slice(7)}` : ''}</td>
+                        <td>{c.phone ? `(${c.phone.slice(0,2)}) ${c.phone.slice(2,7)}-${c.phone.slice(7)}` : ''}</td>
+                        <td></td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-              </div>
-              <div className="flex justify-end gap-2 mt-2">
-                <button className="legacy-button" onClick={() => setShowClientModal(false)}>Fechar</button>
               </div>
             </div>
           </div>
@@ -642,6 +682,405 @@ const LegacySystemPage: React.FC = () => {
         </div>
       )}
 
+      {/* ── NEW: Customer Registration Modal ──────────────────────────────── */}
+      {showCustomerRegistrationModal && (
+        <div className="fixed inset-0 z-[90] bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white border border-gray-400 rounded shadow-lg w-full max-w-5xl flex flex-col" style={{ fontFamily: 'Tahoma,Arial,sans-serif', fontSize: 11, height: '90vh' }}>
+            <div className="bg-[#dde] px-3 py-2 flex items-center justify-between border-b border-gray-400">
+              <span className="font-bold text-sm">Tela Cadastro de Clientes</span>
+              <button onClick={() => setShowCustomerRegistrationModal(false)}><X size={14} /></button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-2 bg-[#f0f0f0] flex flex-col gap-2">
+              <div className="flex gap-2">
+                <div className="w-16">
+                  <span className="legacy-label text-[10px]">Registro</span>
+                  <input className="legacy-input w-full text-right font-bold" value="4" readOnly />
+                </div>
+                <div className="w-24">
+                  <span className="legacy-label text-[10px]">Data Cadastro</span>
+                  <input className="legacy-input w-full text-center" value={format(new Date(), 'dd/MM/yyyy')} readOnly />
+                </div>
+                <div className="flex-1 flex gap-2 justify-center items-end ml-4">
+                  <button className="legacy-button h-6 w-32 flex justify-center items-center"><span className="w-4 h-1 bg-gray-400 mr-2" /> Pesquisar Vendas</button>
+                  <button className="legacy-button h-6 w-32 flex justify-center items-center"><span className="w-4 h-1 bg-gray-400 mr-2" /> Pesquisar Serviços</button>
+                  <button className="legacy-button h-6 w-36 flex justify-center items-center"><div className="rounded-full bg-gray-400 w-4 h-4 mr-2" /> Pesquisar Financeiro</button>
+                </div>
+              </div>
+              <div className="flex gap-2 mt-2">
+                <div className="w-48 flex flex-col gap-2">
+                  <div className="h-48 bg-gray-100 border border-gray-400"></div>
+                  <div className="flex justify-end gap-1"><button className="p-1 border bg-white"><Camera size={14} /></button><button className="p-1 border bg-white"><Search size={14} /></button><button className="p-1 border bg-white"><Plus size={14} className="text-green-600" /></button></div>
+                  <div className="h-48 bg-gray-100 border border-gray-400"></div>
+                  <div className="flex justify-end gap-1"><button className="p-1 border bg-white"><Camera size={14} /></button><button className="p-1 border bg-white"><Search size={14} /></button><button className="p-1 border bg-white"><Plus size={14} className="text-green-600" /></button></div>
+                </div>
+                <div className="flex-1 bg-white border border-gray-400 p-2 flex flex-col">
+                  <div className="flex gap-2 mb-2">
+                    <div className="flex-1">
+                      <span className="legacy-label text-[10px]">Nome / Razão Completo</span>
+                      <input className="legacy-input w-full font-bold bg-yellow-50" value={clientDesc || 'SAMUEL DAVID CARVALHO DOS SANTOS'} onChange={e => setClientDesc(e.target.value)} />
+                    </div>
+                    <div className="w-64">
+                      <span className="legacy-label text-[10px]">Seguimento do Cliente ou Tipo</span>
+                      <select className="legacy-input w-full">
+                        <option>EMPRESARIO</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div className="legacy-tab-bar mt-2">
+                    <div className={`legacy-tab ${customerRegistrationTab === 'endereco' ? 'active' : ''}`} onClick={() => setCustomerRegistrationTab('endereco')}>Endereço e Contatos -&gt;</div>
+                    <div className={`legacy-tab ${customerRegistrationTab === 'filiacao' ? 'active' : ''}`} onClick={() => setCustomerRegistrationTab('filiacao')}>Filiação e Avaliação Financeira -&gt;</div>
+                    <div className={`legacy-tab ${customerRegistrationTab === 'historico' ? 'active' : ''}`} onClick={() => setCustomerRegistrationTab('historico')}>Informações / Observações / Histórico</div>
+                  </div>
+                  <div className="legacy-tab-content flex-1 p-2 bg-white" style={{ minHeight: 'auto' }}>
+                    {customerRegistrationTab === 'endereco' && (
+                      <div className="space-y-2">
+                        <div>
+                          <span className="legacy-label text-[10px]">Nome Fantasia / Apelido</span>
+                          <input className="legacy-input w-full" defaultValue="SD MOVEIS" />
+                        </div>
+                        <div>
+                          <span className="legacy-label text-[10px]">Nome da Rua / AV</span>
+                          <input className="legacy-input w-full" />
+                        </div>
+                        <div className="flex gap-2">
+                          <div className="flex-1">
+                            <span className="legacy-label text-[10px]">Bairro</span>
+                            <input className="legacy-input w-full" defaultValue="ITAITINGA" />
+                          </div>
+                          <div className="w-24">
+                            <span className="legacy-label text-[10px]">Cidade</span>
+                            <input className="legacy-input w-full text-center" defaultValue="ITAITINGA" />
+                          </div>
+                          <div className="w-16">
+                            <span className="legacy-label text-[10px]">UF</span>
+                            <select className="legacy-input w-full"><option>CE</option></select>
+                          </div>
+                          <div className="w-24">
+                            <span className="legacy-label text-[10px]">CEP</span>
+                            <input className="legacy-input w-full text-center" defaultValue="-" />
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <div className="w-24">
+                            <span className="legacy-label text-[10px]">1º Telefone</span>
+                            <input className="legacy-input w-full text-center" defaultValue="( ) -" />
+                          </div>
+                          <div className="w-24">
+                            <span className="legacy-label text-[10px]">2º Telefone</span>
+                            <input className="legacy-input w-full text-center" defaultValue="( ) -" />
+                          </div>
+                          <div className="w-24">
+                            <span className="legacy-label text-[10px]">Nº Celular</span>
+                            <input className="legacy-input w-full text-center" defaultValue="( ) -" />
+                          </div>
+                          <div className="w-24">
+                            <span className="legacy-label text-[10px]">Whatsapp</span>
+                            <input className="legacy-input w-full text-center" defaultValue="( ) -" />
+                          </div>
+                          <div className="flex-1">
+                            <span className="legacy-label text-[10px]">Complemento</span>
+                            <input className="legacy-input w-full" />
+                          </div>
+                        </div>
+                        <div className="flex gap-2 items-end">
+                          <div className="flex-1">
+                            <span className="legacy-label text-[10px]">E-mail</span>
+                            <div className="flex gap-1"><input className="legacy-input flex-1" /><button className="bg-gray-200 border px-2 text-gray-500">@</button></div>
+                          </div>
+                          <div className="w-48">
+                            <span className="legacy-label text-[10px]">Contato</span>
+                            <div className="flex gap-1"><input className="legacy-input flex-1" /><button className="bg-gray-200 border px-2 text-gray-600 text-[10px]">CONTATOS</button></div>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <div className="flex-1">
+                            <span className="legacy-label text-[10px]">SKYPE</span>
+                            <input className="legacy-input w-full" />
+                          </div>
+                          <div className="flex-1">
+                            <span className="legacy-label text-[10px]">Rede Social</span>
+                            <input className="legacy-input w-full" />
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <div className="flex-1">
+                            <span className="legacy-label text-[10px]">Nº CNPJ</span>
+                            <input className="legacy-input w-full text-center" defaultValue="../-" />
+                          </div>
+                          <div className="flex-1">
+                            <span className="legacy-label text-[10px]">Nº IE</span>
+                            <input className="legacy-input w-full" />
+                          </div>
+                          <div className="flex-1">
+                            <span className="legacy-label text-[10px]">Nº IM</span>
+                            <input className="legacy-input w-full" />
+                          </div>
+                          <div className="flex-1">
+                            <span className="legacy-label text-[10px]">Nº CPF</span>
+                            <input className="legacy-input w-full" />
+                          </div>
+                          <div className="flex-1">
+                            <span className="legacy-label text-[10px]">Nº RG</span>
+                            <input className="legacy-input w-full" />
+                          </div>
+                          <div className="flex-1">
+                            <span className="legacy-label text-[10px]">Orgão Emissor</span>
+                            <input className="legacy-input w-full" />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {customerRegistrationTab !== 'endereco' && (
+                      <div className="flex items-center justify-center h-full text-gray-400">
+                        {customerRegistrationTab === 'filiacao' ? 'Aba Filiação e Avaliação Financeira' : 'Aba Informações e Observações'}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2 mt-2 h-28">
+                    <div className="w-3/4 flex flex-col relative">
+                      <span className="legacy-label text-[10px] absolute -top-2 left-2 bg-white px-1">Observações Gerais</span>
+                      <div className="border border-gray-400 p-2 flex-1 bg-yellow-50 flex gap-4 mt-1">
+                        <label className="flex items-center gap-1 text-[11px] font-bold"><input type="radio" name="status" defaultChecked /> LIBERAR</label>
+                        <label className="flex items-center gap-1 text-[11px] font-bold"><input type="radio" name="status" /> RESTRINGIR</label>
+                        <label className="flex items-center gap-1 text-[11px] font-bold"><input type="radio" name="status" /> BLOQUEAR</label>
+                      </div>
+                    </div>
+                    <div className="w-1/4 flex flex-col gap-1">
+                      <button className="legacy-button flex-1 flex items-center justify-center gap-2"><Printer size={16} className="text-orange-600"/> Imprimir Ficha</button>
+                      <button className="legacy-button flex-1 flex items-center justify-center gap-2" onClick={() => {toast({title:'Cliente salvo com sucesso!'}); setShowCustomerRegistrationModal(false);}}><CheckSquare size={16} className="text-green-600"/> Salvar Cadastro</button>
+                      <button className="legacy-button flex-1 flex items-center justify-center gap-2" onClick={() => setShowCustomerRegistrationModal(false)}><X size={16} className="text-blue-600"/> SAIR</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── NEW: Product Search Modal ─────────────────────────────────────── */}
+      {showProductSearchModal && (
+        <div className="fixed inset-0 z-[90] bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white border border-gray-400 rounded shadow-lg w-full max-w-6xl flex flex-col" style={{ fontFamily: 'Tahoma,Arial,sans-serif', fontSize: 11, height: '90vh' }}>
+            <div className="bg-[#dde] px-3 py-2 flex items-center justify-between border-b border-gray-400">
+              <span className="font-bold text-sm">PESQUISA DOS PRODUTOS & SERVIÇOS CADASTRADOS &lt;&lt;&lt;</span>
+              <button onClick={() => setShowProductSearchModal(false)}><X size={14} /></button>
+            </div>
+            <div className="p-2 bg-[#f0f0f0] flex-1 flex flex-col gap-2">
+              <div className="flex gap-2 items-end">
+                <div className="w-32">
+                  <span className="legacy-label text-[10px]">Ordenar a Pesquisa</span>
+                  <select className="legacy-input w-full"><option>Por Descrição</option></select>
+                </div>
+                <div className="flex-1">
+                  <span className="legacy-label text-[10px]">Filtro Geral</span>
+                  <select className="legacy-input w-full"><option>Pesquisar TODOS</option></select>
+                </div>
+                <div className="flex-1">
+                  <span className="legacy-label text-[10px]">Filtro por Categoria</span>
+                  <select className="legacy-input w-full"><option>Pesquisar TODOS</option></select>
+                </div>
+                <div className="flex gap-2">
+                  <button className="legacy-button flex flex-col items-center justify-center w-12 h-12"><ImageIcon size={16} className="text-green-600" /><span className="text-[9px]">Imagem</span></button>
+                  <button className="legacy-button flex flex-col items-center justify-center w-12 h-12"><div className="w-4 h-3 bg-gray-500 mb-1" /><span className="text-[9px]">CodBarra</span></button>
+                  <button className="legacy-button flex flex-col items-center justify-center w-12 h-12"><Plus size={16} className="text-green-600" /><span className="text-[9px]">Incluir</span></button>
+                </div>
+                <div className="w-12"></div>
+                <div className="w-12 text-right">
+                  <button className="legacy-button flex flex-col items-center justify-center w-12 h-12 ml-auto" onClick={() => setShowProductSearchModal(false)}><LogOut size={16} className="text-blue-600" /><span className="text-[9px]">Sair</span></button>
+                </div>
+              </div>
+              <div className="flex gap-2 items-end">
+                <div className="flex-1">
+                  <span className="legacy-label text-[10px]">Pesquisar por Descrição</span>
+                  <input className="legacy-input w-full bg-yellow-50" value={productSearchStr} onChange={e => setProductSearchStr(e.target.value)} />
+                </div>
+                <div className="flex-1">
+                  <span className="legacy-label text-[10px]">Rastrear Palavras</span>
+                  <div className="flex"><input className="legacy-input flex-1" /><button className="bg-gray-200 border px-1"><Search size={12}/></button></div>
+                </div>
+                <div className="w-48">
+                  <span className="legacy-label text-[10px]">Referencia</span>
+                  <input className="legacy-input w-full bg-yellow-50" />
+                </div>
+                <div className="flex gap-2 ml-4 mb-1">
+                  <label className="flex items-center gap-1 text-[11px]"><input type="radio" name="listType" defaultChecked /> Lista A</label>
+                  <label className="flex items-center gap-1 text-[11px]"><input type="radio" name="listType" /> Lista B</label>
+                </div>
+              </div>
+              
+              <div className="flex-1 border border-gray-400 bg-white overflow-hidden mt-1 flex flex-col">
+                <div className="flex-1 overflow-y-auto">
+                  <table className="legacy-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
+                      <tr>
+                        <th>Referencia</th>
+                        <th>Código</th>
+                        <th>Descrição do Produto</th>
+                        <th>Uni</th>
+                        <th>Valor Avista</th>
+                        <th>Est. Atual</th>
+                        <th>Grupo / Categoria</th>
+                        <th>Marca do Produto</th>
+                        <th>Localização do Produto</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {/* Fake data since we may not have a populated products table */}
+                      {[...productsList, ...Array.from({length: 15})].map((prod, i) => (
+                        <tr key={prod?.id || i} style={{ backgroundColor: '#c8e6c9', borderBottom: '1px solid #a5d6a7', cursor: 'pointer' }} onClick={() => {
+                            openItemForm({ id: Date.now().toString(), description: prod?.name || `20 MTS FITA ${['SAFIRA', 'BRANCO DIAMANTE', 'ABSOLUTO', 'ACACIA', 'ALMERIA', 'ARAUCARIA', 'ARDOSIA', 'AREIA'][i % 8] || 'GENERIC'}`, unit: 'un', width: 0, height: 0, value: prod?.price || 95.55, quantity: 1, total_m2: 0, total_value: prod?.price || 95.55 });
+                            setShowProductSearchModal(false);
+                        }}>
+                          <td style={{ width: 80 }}><div className="flex justify-between items-center"><Camera size={10} className="text-gray-500"/></div></td>
+                          <td style={{ width: 60, textAlign: 'right' }}>{prod?.id || i + 1}</td>
+                          <td>{prod?.name || `20 MTS FITA ${['SAFIRA', 'BRANCO DIAMANTE', 'ABSOLUTO', 'ACACIA', 'ALMERIA', 'ARAUCARIA', 'ARDOSIA', 'AREIA'][i % 8] || 'GENERIC'}`}</td>
+                          <td style={{ width: 40, textAlign: 'center' }}>UNI</td>
+                          <td style={{ width: 80, textAlign: 'right' }}>{fmtMoney(prod?.price || (90 + i))}</td>
+                          <td style={{ width: 80, textAlign: 'right' }}>{fmtMoney(1000 - i * 10)}</td>
+                          <td>FITA DE BORDO</td>
+                          <td>{i % 4 === 0 ? 'GUARARAPES' : ''}</td>
+                          <td></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="bg-[#f0f0f0] border-t border-gray-400 p-1 flex justify-between text-[10px]">
+                  <div className="flex gap-4">
+                    <span className="flex items-center gap-1"><div className="w-3 h-3 bg-blue-600" /> &gt; Habilitar o Gerenciamento do Estoque por Cores</span>
+                  </div>
+                  <div className="flex gap-4">
+                    <span className="flex items-center gap-1"><div className="w-3 h-3 bg-green-500" /> Em estoque</span>
+                    <span className="flex items-center gap-1"><div className="w-3 h-3 bg-yellow-400" /> Estoque Baixo</span>
+                    <span className="flex items-center gap-1"><div className="w-3 h-3 bg-red-400" /> Estoque Zerado</span>
+                    <span className="text-gray-500">| Item Serviço ou sem Controle de Estoque</span>
+                  </div>
+                  <span>Para sair ESC ou botão SAIR</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── NEW: OS Search Modal ──────────────────────────────────────────── */}
+      {showOSSearchModal && (
+        <div className="fixed inset-0 z-[90] bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white border border-gray-400 rounded shadow-lg w-full max-w-6xl flex flex-col" style={{ fontFamily: 'Tahoma,Arial,sans-serif', fontSize: 11, height: '90vh' }}>
+            <div className="bg-[#dde] px-3 py-2 flex items-center justify-between border-b border-gray-400">
+              <span className="font-bold text-sm">Pesquisa Ordem de Serviços</span>
+              <button onClick={() => setShowOSSearchModal(false)}><X size={14} /></button>
+            </div>
+            <div className="p-2 bg-[#f0f0f0] flex-1 flex flex-col gap-2">
+              <div className="flex gap-2 items-end">
+                <div className="font-bold text-sm flex gap-4 mr-4 mb-1">
+                  <span>ORÇAMENTO</span>
+                  <span>PENDENTE</span>
+                </div>
+                <div className="w-48">
+                  <span className="legacy-label text-[10px]">Filtrar por Nome</span>
+                  <select className="legacy-input w-full"><option>&gt;&gt; TODOS &lt;&lt;</option></select>
+                </div>
+                <div className="flex-1">
+                  <span className="legacy-label text-[10px]">Pesquisar por Nome</span>
+                  <input className="legacy-input w-full bg-yellow-50" value={osSearchStr} onChange={e => setOsSearchStr(e.target.value)} />
+                </div>
+                <div className="w-24">
+                  <span className="legacy-label text-[10px]">Data Inicial</span>
+                  <input className="legacy-input w-full text-center font-bold text-green-700" defaultValue="23/05/2026" />
+                </div>
+                <div className="w-24">
+                  <span className="legacy-label text-[10px]">Data Final</span>
+                  <input className="legacy-input w-full text-center font-bold text-green-700" defaultValue="22/07/2026" />
+                </div>
+                <div className="flex gap-1 mb-1">
+                  <button className="legacy-button px-2 py-1 bg-green-100 border border-green-400 rounded"><RefreshCw size={14} className="text-green-600" /></button>
+                  <button className="legacy-button px-2 py-1"><div className="text-blue-600 font-bold text-sm">&lt;</div></button>
+                  <button className="legacy-button px-2 py-1"><div className="text-blue-600 font-bold text-sm">&gt;</div></button>
+                </div>
+                <div className="ml-auto mb-1">
+                  <button className="legacy-button flex items-center justify-center rounded-full w-8 h-8 p-0" onClick={() => setShowOSSearchModal(false)}>
+                    <LogOut size={16} className="text-blue-600" />
+                  </button>
+                </div>
+              </div>
+              
+              <div className="flex-1 border border-gray-400 bg-white overflow-hidden mt-1 flex flex-col">
+                <div className="flex-1 overflow-y-auto">
+                  <table className="legacy-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
+                      <tr>
+                        <th>Nº</th>
+                        <th>Data</th>
+                        <th>Hora</th>
+                        <th>Nome do Cliente</th>
+                        <th>Telefone</th>
+                        <th>Produtos</th>
+                        <th>Serviços</th>
+                        <th>Outros</th>
+                        <th>Desconto</th>
+                        <th>TOTAL</th>
+                        <th>Entrega</th>
+                        <th>Hora</th>
+                        <th>Situação Atual -&gt;</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {/* Fake data since we don't have enough OSs in mock */}
+                      {[...osList, ...Array.from({length: 15})].map((os, i) => (
+                        <tr key={os?.id || i} style={{ backgroundColor: i % 2 === 0 ? '#ffff99' : '#fff', cursor: 'pointer' }} onClick={() => {
+                            setOrderNo(os?.order_number || String(999+i));
+                            setClientDesc(os?.clients?.name || ['SONIA', 'CLAUDIA', 'MARLUCE', 'ATHENAS CONDOMINIUM', 'GISLENE', 'SAMUEL DAVID CARVALHO DOS SANTOS'][i % 6]);
+                            setPhone(os?.clients?.phone || '(85)99184-8975');
+                            setValorMaterial(fmtMoney(os?.total_value || (493.34 + i * 1000)));
+                            setSituacaoAtual(os?.status === 'concluida' ? 'Concluído' : os?.status === 'em_andamento' ? 'Em Andamento' : 'Aguardando Aprovação');
+                            setShowOSSearchModal(false);
+                        }}>
+                          <td style={{ width: 40, textAlign: 'center', backgroundColor: '#008080', color: 'white' }}>{os?.order_number || (999 + i)}</td>
+                          <td style={{ width: 70, textAlign: 'center' }}>{os?.created_at ? format(new Date(os.created_at), 'dd/MM/yyyy') : `23/05/2026`}</td>
+                          <td style={{ width: 40, textAlign: 'center' }}>10:08</td>
+                          <td>{os?.clients?.name || ['SONIA', 'CLAUDIA', 'MARLUCE', 'ATHENAS CONDOMINIUM', 'GISLENE', 'SAMUEL DAVID CARVALHO DOS SANTOS'][i % 6]}</td>
+                          <td style={{ width: 100 }}>{os?.clients?.phone || '(85)99184-8975'}</td>
+                          <td style={{ width: 70, textAlign: 'right' }}>{fmtMoney(os?.total_value || (493.34 + i * 1000))}</td>
+                          <td style={{ width: 70, textAlign: 'right' }}>{i % 2 === 0 ? '' : fmtMoney(1200)}</td>
+                          <td style={{ width: 50, textAlign: 'right' }}></td>
+                          <td style={{ width: 50, textAlign: 'right' }}>{i % 3 === 0 ? fmtMoney(132) : ''}</td>
+                          <td style={{ width: 70, textAlign: 'right', fontWeight: 'bold' }}>{fmtMoney(os?.total_value || (493.34 + i * 1000))}</td>
+                          <td style={{ width: 40, textAlign: 'center' }}>/ /</td>
+                          <td style={{ width: 40, textAlign: 'center' }}></td>
+                          <td style={{ width: 120 }}>{os?.status === 'concluida' ? 'Concluído' : 'Aguardando Aprovação'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="bg-[#f0f0f0] border-t border-gray-400 p-2 flex justify-between items-center text-[10px]">
+                  <div className="flex gap-2">
+                    <button className="legacy-button h-8"><Plus size={14} className="mr-1 text-green-600"/> Nova</button>
+                    <button className="legacy-button h-8"><Edit size={14} className="mr-1 text-blue-600"/> Alterar</button>
+                    <button className="legacy-button h-8"><X size={14} className="mr-1 text-red-600"/> Cancelar</button>
+                    <button className="legacy-button h-8"><CheckSquare size={14} className="mr-1 text-green-600"/> Finalizar</button>
+                    <button className="legacy-button h-8"><Printer size={14} className="mr-1 text-blue-600"/> Emitir Jato</button>
+                    <button className="legacy-button h-8"><Printer size={14} className="mr-1 text-orange-600"/> Cupom</button>
+                    <button className="legacy-button h-8"><FileText size={14} className="mr-1 text-gray-600"/> Relatório</button>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <span className="legacy-label text-[10px] block mb-0">VALOR TOTAL</span>
+                      <span className="font-bold text-blue-700 text-sm">160.199,07</span>
+                    </div>
+                    <span className="text-gray-500 font-bold ml-4">System</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Main ─────────────────────────────────────────────────────────── */}
       <div className="legacy-container">
         <div className="legacy-header">
@@ -653,10 +1092,15 @@ const LegacySystemPage: React.FC = () => {
 
           {/* Nº / Data / Hora */}
           <div className="flex flex-col gap-1">
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-end">
               <div>
                 <span className="legacy-label">Nº DA ORDEM</span><br />
-                <input type="text" className="legacy-input font-bold text-base w-16 text-center" value={orderNo} readOnly />
+                <div className="flex">
+                  <input type="text" className="legacy-input font-bold text-base w-16 text-center" value={orderNo} readOnly />
+                  <button className="bg-blue-100 border border-blue-400 p-1" onClick={() => setShowOSSearchModal(true)} title="Pesquisar Ordem de Serviços">
+                    <Search size={16} className="text-blue-600" />
+                  </button>
+                </div>
               </div>
               <div>
                 <span className="legacy-label">DATA</span><br />
@@ -721,7 +1165,7 @@ const LegacySystemPage: React.FC = () => {
                   onChange={e => setClientDesc(e.target.value.toUpperCase())}
                 />
               </div>
-              <button className="legacy-button h-[24px]" onClick={() => setShowClientModal(true)}>
+              <button className="legacy-button h-[24px]" onClick={() => setShowCustomerRegistrationModal(true)}>
                 <Users size={13} className="text-blue-600" /> Consultar
               </button>
               <button className="legacy-button h-[24px]" onClick={() => { setClientSearch(''); setShowClientModal(true); }}>
@@ -773,117 +1217,107 @@ const LegacySystemPage: React.FC = () => {
 
             {/* ── ABA: Observações ──────────────────────────────────── */}
             {activeTab === 'obs' && (
-              <div className="flex flex-col gap-2 h-full">
-                <div className="flex gap-2" style={{ minHeight: 110 }}>
-                  <div className="flex-1 flex flex-col">
-                    <label className="legacy-textarea-label">
-                      <input type="checkbox" className="legacy-checkbox" /> Serviço a ser Realizado:
-                    </label>
-                    <textarea
-                      className="legacy-textarea flex-1"
-                      value={servicoRealizado}
-                      onChange={e => setServicoRealizado(e.target.value)}
-                    />
-                  </div>
-                  <div className="flex-1 flex flex-col">
-                    <label className="legacy-textarea-label">
-                      <input type="checkbox" className="legacy-checkbox" /> Problemas e Reparos a Serem Feitos no Serviço:
-                    </label>
-                    <textarea
-                      className="legacy-textarea flex-1"
-                      value={problemasReparos}
-                      onChange={e => setProblemasReparos(e.target.value)}
-                    />
-                  </div>
-                </div>
-                <div className="flex flex-col mt-1" style={{ minHeight: 100 }}>
-                  <label className="legacy-textarea-label">
-                    <input type="checkbox" className="legacy-checkbox" /> Etapa do Serviço Sendo Realizado:
-                  </label>
-                  <textarea
-                    className="legacy-textarea flex-1"
-                    value={etapaServico}
-                    onChange={e => setEtapaServico(e.target.value)}
-                  />
-                </div>
+              <div className="flex flex-col gap-2 h-full items-center justify-center text-gray-400">
+                <p>Nenhuma observação geral no momento.</p>
               </div>
             )}
 
             {/* ── ABA: Produtos ─────────────────────────────────────── */}
             {activeTab === 'produtos' && (
-              <div>
-                <div className="flex items-center gap-2 mb-2 flex-wrap">
-                  <button className="legacy-button" onClick={() => openItemForm()}>
-                    <Plus size={12} className="text-green-600" /> Incluir
+              <div className="flex gap-2 h-full">
+                {/* Left side buttons */}
+                <div className="flex flex-col gap-2 w-32 shrink-0 border border-gray-400 p-2 bg-white" style={{ minHeight: 250 }}>
+                  <button className="flex flex-col items-center justify-center gap-1 border border-blue-300 p-2 bg-gradient-to-b from-white to-blue-50 rounded hover:from-blue-50 hover:to-blue-100" onClick={() => openItemForm()}>
+                    <Plus size={20} className="text-green-600" />
+                    <span className="text-[11px] font-bold">Incluir</span>
                   </button>
-                  <button className="legacy-button" onClick={() => {
+                  
+                  <button className="flex flex-col items-center justify-center gap-1 border border-gray-300 p-2 bg-gradient-to-b from-white to-gray-100 rounded hover:from-gray-100 hover:to-gray-200" onClick={() => toast({ title: 'ℹ️ Função Automático não implementada nesta versão.' })}>
+                    <div className="flex flex-col gap-[2px]">
+                      <div className="w-6 h-[2px] bg-gray-600"></div>
+                      <div className="w-6 h-[2px] bg-gray-600"></div>
+                      <div className="w-6 h-[2px] bg-gray-600"></div>
+                      <div className="w-6 h-[2px] bg-gray-600"></div>
+                    </div>
+                    <span className="text-[11px] font-bold">Automático</span>
+                  </button>
+
+                  <button className="flex flex-col items-center justify-center gap-1 border border-gray-300 p-2 bg-gradient-to-b from-white to-gray-100 rounded hover:from-gray-100 hover:to-gray-200" onClick={() => {
                     const sel = osItems.find(i => i.id === selectedItemId) || osItems[osItems.length - 1];
                     if (sel) openItemForm(sel);
                     else toast({ title: '⚠️ Selecione um item', variant: 'destructive' });
                   }}>
-                    <Edit size={12} className="text-blue-600" /> Alterar
+                    <Edit size={20} className="text-blue-600" />
+                    <span className="text-[11px] font-bold">Alterar</span>
                   </button>
-                  <button className="legacy-button" onClick={() => {
+
+                  <button className="flex flex-col items-center justify-center gap-1 border border-gray-300 p-2 bg-gradient-to-b from-white to-gray-100 rounded hover:from-gray-100 hover:to-gray-200" onClick={() => {
                     const sel = osItems.find(i => i.id === selectedItemId) || osItems[osItems.length - 1];
                     if (sel) deleteItem(sel.id);
                     else toast({ title: '⚠️ Nenhum item para excluir', variant: 'destructive' });
                   }}>
-                    <Trash2 size={12} className="text-red-600" /> Excluir
+                    <Trash2 size={20} className="text-red-600" />
+                    <span className="text-[11px] font-bold">Excluir</span>
                   </button>
-                  <span className="ml-auto text-[11px] font-bold text-blue-700">
-                    Total: R$ {fmtMoney(totalItems)}
-                  </span>
+
+                  <button className="flex flex-col items-center justify-center gap-1 border border-gray-300 p-2 bg-gradient-to-b from-white to-gray-100 rounded hover:from-gray-100 hover:to-gray-200" onClick={() => setShowProductSearchModal(true)}>
+                    <Search size={20} className="text-blue-600" />
+                    <span className="text-[11px] font-bold">Pesquisar</span>
+                  </button>
                 </div>
 
-                <div style={{ maxHeight: 200, overflowY: 'auto', border: '1px solid #a0a0a0' }}>
-                  <table className="legacy-table" style={{ width: '100%' }}>
-                    <thead>
-                      <tr>
-                        <th>Nº</th>
-                        <th>Descrição do Produto</th>
-                        <th>Un</th>
-                        <th>Larg</th>
-                        <th>Alt</th>
-                        <th>Tot M²</th>
-                        <th>Valor</th>
-                        <th>Quant.</th>
-                        <th>Vlr Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {osItems.length === 0 && (
-                        <tr><td colSpan={9} style={{ textAlign: 'center', color: '#888', padding: 8 }}>
-                          Nenhum item. Clique em "Incluir".
-                        </td></tr>
-                      )}
-                      {osItems.map((it, i) => (
-                        <tr
-                          key={it.id}
-                          className={selectedItemId === it.id ? 'selected' : ''}
-                          onClick={() => setSelectedItemId(it.id)}
-                          onDoubleClick={() => openItemForm(it)}
-                        >
-                          <td>{String(i + 1).padStart(4, '0')}</td>
-                          <td>{it.description}</td>
-                          <td>{it.unit}</td>
-                          <td>{it.width > 0 ? it.width.toFixed(2) : '-'}</td>
-                          <td>{it.height > 0 ? it.height.toFixed(2) : '-'}</td>
-                          <td>{it.total_m2 > 0 ? it.total_m2.toFixed(3) : '-'}</td>
-                          <td>R$ {fmtMoney(it.value)}</td>
-                          <td>{it.quantity}</td>
-                          <td style={{ fontWeight: 'bold', color: '#0000aa' }}>R$ {fmtMoney(it.total_value)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                    {osItems.length > 0 && (
-                      <tfoot>
+                {/* Right side table */}
+                <div className="flex-1 border border-gray-400 bg-white overflow-hidden flex flex-col">
+                  <div style={{ flex: 1, overflowY: 'auto' }}>
+                    <table className="legacy-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
                         <tr>
-                          <td colSpan={8} style={{ textAlign: 'right', fontWeight: 'bold', padding: '2px 4px', background: '#eef' }}>Total Geral:</td>
-                          <td style={{ fontWeight: 'bold', color: '#0000aa', background: '#eef' }}>R$ {fmtMoney(totalItems)}</td>
+                          <th>Nº</th>
+                          <th>Descrição do Produto</th>
+                          <th>Uni</th>
+                          <th>Largura</th>
+                          <th>Altura</th>
+                          <th>Tot MT2</th>
+                          <th>Valor</th>
+                          <th>Quantia</th>
+                          <th>Vlr Total</th>
+                          <th>C...</th>
                         </tr>
-                      </tfoot>
-                    )}
-                  </table>
+                      </thead>
+                      <tbody>
+                        {osItems.length === 0 && (
+                          <tr><td colSpan={10} style={{ textAlign: 'center', color: '#888', padding: 8 }}>
+                            Nenhum item. Clique em "Incluir".
+                          </td></tr>
+                        )}
+                        {osItems.map((it, i) => (
+                          <tr
+                            key={it.id}
+                            className={selectedItemId === it.id ? 'selected' : ''}
+                            onClick={() => setSelectedItemId(it.id)}
+                            onDoubleClick={() => openItemForm(it)}
+                          >
+                            <td>{String(i + 1).padStart(4, '0')}</td>
+                            <td>{it.description}</td>
+                            <td>{it.unit}</td>
+                            <td>{it.width > 0 ? it.width.toFixed(2) : '-'}</td>
+                            <td>{it.height > 0 ? it.height.toFixed(2) : '-'}</td>
+                            <td>{it.total_m2 > 0 ? it.total_m2.toFixed(3) : '-'}</td>
+                            <td>R$ {fmtMoney(it.value)}</td>
+                            <td>{it.quantity}</td>
+                            <td style={{ fontWeight: 'bold', color: '#0000aa' }}>R$ {fmtMoney(it.total_value)}</td>
+                            <td></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {osItems.length > 0 && (
+                    <div className="p-1 bg-[#eef] border-t border-gray-400 text-right text-[11px]">
+                      <span className="font-bold mr-2">Total Geral:</span>
+                      <span className="font-bold text-[#0000aa]">R$ {fmtMoney(totalItems)}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -931,8 +1365,42 @@ const LegacySystemPage: React.FC = () => {
 
             {/* ── ABA: Controle ─────────────────────────────────────── */}
             {activeTab === 'controle' && (
-              <div className="flex flex-col gap-2 h-full">
-                <div className="flex gap-2" style={{ minHeight: 100 }}>
+              <div className="flex flex-col gap-2 h-full overflow-y-auto">
+                {/* Moved from Observações */}
+                <div className="flex gap-2" style={{ minHeight: 110 }}>
+                  <div className="flex-1 flex flex-col">
+                    <label className="legacy-textarea-label">
+                      <input type="checkbox" className="legacy-checkbox" /> Serviço a ser Realizado:
+                    </label>
+                    <textarea
+                      className="legacy-textarea flex-1"
+                      value={servicoRealizado}
+                      onChange={e => setServicoRealizado(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex-1 flex flex-col">
+                    <label className="legacy-textarea-label">
+                      <input type="checkbox" className="legacy-checkbox" /> Problemas e Reparos a Serem Feitos no Serviço:
+                    </label>
+                    <textarea
+                      className="legacy-textarea flex-1"
+                      value={problemasReparos}
+                      onChange={e => setProblemasReparos(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="flex flex-col" style={{ minHeight: 80 }}>
+                  <label className="legacy-textarea-label">
+                    <input type="checkbox" className="legacy-checkbox" /> Etapa do Serviço Sendo Realizado:
+                  </label>
+                  <textarea
+                    className="legacy-textarea flex-1"
+                    value={etapaServico}
+                    onChange={e => setEtapaServico(e.target.value)}
+                  />
+                </div>
+                {/* Original Controle fields */}
+                <div className="flex gap-2 mt-2" style={{ minHeight: 80 }}>
                   <div className="flex-1 flex flex-col">
                     <label className="legacy-textarea-label">Notas Internas / Observações Administrativas:</label>
                     <textarea
@@ -952,7 +1420,7 @@ const LegacySystemPage: React.FC = () => {
                     />
                   </div>
                 </div>
-                <div className="flex gap-4 mt-1">
+                <div className="flex gap-4 mt-2 mb-2">
                   <div>
                     <label className="legacy-label block mb-1">Forma de Pagamento</label>
                     <span className="text-[12px] font-bold text-blue-700">{paymentMethod}</span>
