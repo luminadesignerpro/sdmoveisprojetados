@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import {
   Users, Search, Printer, Save, CheckSquare, Calculator,
   CreditCard, X, Plus, Trash2, Edit, Camera, Image as ImageIcon,
+  LogOut, FileText, RefreshCw,
 } from 'lucide-react';
 
 const db = supabase as any;
@@ -60,6 +61,14 @@ const LegacySystemPage: React.FC = () => {
   // ── new modals state ────────────────────────────────────────────────────────
   const [showCustomerRegistrationModal, setShowCustomerRegistrationModal] = useState(false);
   const [customerRegistrationTab, setCustomerRegistrationTab] = useState('endereco');
+
+  // Customer Form State
+  const [customerForm, setCustomerForm] = useState({
+    fantasia: 'SD MOVEIS', rua: '', bairro: 'ITAITINGA', cidade: 'ITAITINGA', uf: 'CE', cep: '',
+    tel1: '', tel2: '', celular: '', whatsapp: '', complemento: '', email: '', contato: '', skype: '', redeSocial: '',
+    cnpj: '../-', ie: '', im: '', cpf: '', rg: '', orgaoEmissor: ''
+  });
+
   const [showProductSearchModal, setShowProductSearchModal] = useState(false);
   const [productSearchStr, setProductSearchStr] = useState('');
   const [showOSSearchModal, setShowOSSearchModal] = useState(false);
@@ -345,10 +354,13 @@ const LegacySystemPage: React.FC = () => {
 
   // ─── CSS ──────────────────────────────────────────────────────────────────
   const css = `
+    .legacy-container, .legacy-container * {
+      box-sizing: border-box;
+    }
     .legacy-container {
       font-family: Tahoma, Arial, sans-serif;
       background-color: #f0f0f0;
-      color: #000;
+      color: #000 !important;
       width: 100%;
       height: 100%;
       overflow-y: auto;
@@ -357,24 +369,39 @@ const LegacySystemPage: React.FC = () => {
     }
     .legacy-header {
       background-color: #fce4ec;
-      color: #880e4f;
+      color: #880e4f !important;
       padding: 4px 8px;
       font-size: 11px;
       border: 1px solid #dcdcdc;
       margin-bottom: 8px;
     }
-    .legacy-input {
+    .legacy-input,
+    .legacy-input[type="text"],
+    .legacy-input[type="number"],
+    select.legacy-input,
+    textarea.legacy-input {
       border: 1px solid #a0a0a0;
       border-right-color: #e0e0e0;
       border-bottom-color: #e0e0e0;
       padding: 2px 4px;
-      background-color: #fff;
+      background-color: #fff !important;
       font-size: 12px;
       outline: none;
+      color: #000 !important;
+      -webkit-text-fill-color: #000;
     }
-    .legacy-input:read-only { background-color: #f0f0f0; }
+    .legacy-input::placeholder,
+    .legacy-textarea::placeholder {
+      color: #888 !important;
+      opacity: 1 !important;
+      -webkit-text-fill-color: #888;
+    }
+    .legacy-input:read-only { background-color: #f0f0f0 !important; color: #000 !important; }
+    .legacy-input:disabled { background-color: #e8e8e8 !important; color: #555 !important; -webkit-text-fill-color: #555; }
+    select.legacy-input { background-color: #fff !important; color: #000 !important; }
+    select.legacy-input option { color: #000; background-color: #fff; }
     .legacy-label {
-      font-size: 11px; color: #333; margin-bottom: 2px; display: inline-block;
+      font-size: 11px; color: #333 !important; margin-bottom: 2px; display: inline-block;
     }
     .legacy-button {
       background: linear-gradient(to bottom, #f0f0f0, #e0e0e0);
@@ -388,7 +415,7 @@ const LegacySystemPage: React.FC = () => {
       align-items: center;
       justify-content: center;
       gap: 4px;
-      color: #000;
+      color: #000 !important;
       border-radius: 3px;
     }
     .legacy-button:hover { background: linear-gradient(to bottom, #fff, #e8e8e8); }
@@ -404,46 +431,65 @@ const LegacySystemPage: React.FC = () => {
       padding: 4px 8px; border: 1px solid #a0a0a0; border-bottom: none;
       background-color: #e8e8e8; margin-right: 2px;
       border-top-left-radius: 3px; border-top-right-radius: 3px;
-      cursor: pointer; font-size: 11px; color: #555;
+      cursor: pointer; font-size: 11px; color: #555 !important;
       position: relative; top: 1px;
     }
     .legacy-tab.active {
       background-color: #f0f0f0; border-bottom: 1px solid #f0f0f0;
-      font-weight: bold; color: #000;
+      font-weight: bold; color: #000 !important;
     }
     .legacy-tab-content {
       border: 1px solid #a0a0a0; border-top: none; padding: 8px;
-      background-color: #f0f0f0; min-height: 260px;
+      background-color: #f0f0f0; min-height: 260px; color: #000 !important;
     }
     .legacy-textarea {
       border: 1px solid #a0a0a0; border-right-color: #e0e0e0;
-      border-bottom-color: #e0e0e0; background-color: #e8f5e9;
+      border-bottom-color: #e0e0e0; background-color: #e8f5e9 !important;
       width: 100%; resize: none; padding: 4px; font-size: 12px; outline: none;
+      color: #000 !important; -webkit-text-fill-color: #000;
     }
     .legacy-textarea-label {
-      font-weight: bold; color: #666; font-size: 12px;
+      font-weight: bold; color: #666 !important; font-size: 12px;
       display: flex; align-items: center; gap: 4px; margin-bottom: 2px;
     }
     .legacy-money-input {
       text-align: right; font-weight: bold; font-size: 14px;
     }
     .legacy-money-label {
-      background-color: #ffffe0; border: 1px solid #a0a0a0;
-      padding: 2px 6px; font-size: 11px; color: #000;
+      background-color: #ffffe0 !important; border: 1px solid #a0a0a0;
+      padding: 2px 6px; font-size: 11px; color: #000 !important;
       text-transform: uppercase; width: 120px;
     }
     .legacy-checkbox { margin: 0 4px 0 0; vertical-align: middle; }
-    .legacy-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    .legacy-table { width: 100%; border-collapse: collapse; font-size: 11px; color: #000 !important; }
     .legacy-table th {
       background: #dde; border: 1px solid #a0a0a0; padding: 2px 4px;
-      text-align: left; font-size: 11px;
+      text-align: left; font-size: 11px; color: #000 !important;
     }
     .legacy-table td {
-      border: 1px solid #c0c0c0; padding: 2px 4px;
+      border: 1px solid #c0c0c0; padding: 2px 4px; color: #000 !important;
     }
-    .legacy-table tr:nth-child(even) td { background: #f8f8ff; }
+    .legacy-table tr:nth-child(even) td { background: #f8f8ff; color: #000 !important; }
     .legacy-table tr.selected td { background: #c8d8ff; }
     .legacy-table tr:hover td { background: #e8eeff; cursor:pointer; }
+
+    /* Garante que QUALQUER input/select/textarea dentro de modais e
+       container legacy nunca herde a cor clara do tema global do app. */
+    .legacy-container input,
+    .legacy-container select,
+    .legacy-container textarea,
+    .legacy-modal-scope input,
+    .legacy-modal-scope select,
+    .legacy-modal-scope textarea {
+      color: #000 !important;
+      -webkit-text-fill-color: #000;
+    }
+    .legacy-container input::placeholder,
+    .legacy-modal-scope input::placeholder {
+      color: #999 !important;
+      opacity: 1 !important;
+      -webkit-text-fill-color: #999;
+    }
   `;
 
   // ─── Render ───────────────────────────────────────────────────────────────
@@ -453,8 +499,8 @@ const LegacySystemPage: React.FC = () => {
 
       {/* ── Client Search Modal ─────────────────────────────────────────── */}
       {showClientModal && (
-        <div className="fixed inset-0 z-[80] bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white border border-gray-400 rounded shadow-lg w-full max-w-4xl" style={{ fontFamily: 'Tahoma,Arial,sans-serif', fontSize: 11 }}>
+        <div className="legacy-modal-scope fixed inset-0 z-[80] bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white border border-gray-400 rounded shadow-lg w-full max-w-4xl" style={{ fontFamily: 'Tahoma,Arial,sans-serif', fontSize: 11, color: '#000' }}>
             <div className="bg-[#dde] px-3 py-1 flex items-center justify-between border-b border-gray-400">
               <span className="font-bold text-xs">Pesquisa em Tela Cadastro de Clientes</span>
               <button onClick={() => setShowClientModal(false)} className="text-gray-600 hover:text-red-600"><X size={14} /></button>
@@ -484,9 +530,9 @@ const LegacySystemPage: React.FC = () => {
                   <input type="text" className="legacy-input w-full text-red-600 text-center" defaultValue="-" />
                 </div>
                 <div className="flex gap-1 mb-1">
-                  <button className="bg-green-100 border border-green-400 p-1 rounded-sm"><Plus size={16} className="text-green-600"/></button>
-                  <button className="bg-gray-100 border border-gray-400 p-1 rounded-sm"><Edit size={16} className="text-gray-600"/></button>
-                  <button className="bg-blue-100 border border-blue-400 p-1 rounded-sm"><Search size={16} className="text-blue-600"/></button>
+                  <button className="bg-green-100 border border-green-400 p-1 rounded-sm"><Plus size={16} className="text-green-600" /></button>
+                  <button className="bg-gray-100 border border-gray-400 p-1 rounded-sm"><Edit size={16} className="text-gray-600" /></button>
+                  <button className="bg-blue-100 border border-blue-400 p-1 rounded-sm"><Search size={16} className="text-blue-600" /></button>
                 </div>
               </div>
               <div style={{ height: 350, overflowY: 'auto', border: '1px solid #a0a0a0', backgroundColor: '#fff' }}>
@@ -510,8 +556,8 @@ const LegacySystemPage: React.FC = () => {
                         <td>{String(c.id).substring(0, 5).padStart(5, '0')}</td>
                         <td>{c.name.toUpperCase()}</td>
                         <td></td>
-                        <td>{c.phone ? `(${c.phone.slice(0,2)}) ${c.phone.slice(2,7)}-${c.phone.slice(7)}` : ''}</td>
-                        <td>{c.phone ? `(${c.phone.slice(0,2)}) ${c.phone.slice(2,7)}-${c.phone.slice(7)}` : ''}</td>
+                        <td>{c.phone ? `(${c.phone.slice(0, 2)}) ${c.phone.slice(2, 7)}-${c.phone.slice(7)}` : ''}</td>
+                        <td>{c.phone ? `(${c.phone.slice(0, 2)}) ${c.phone.slice(2, 7)}-${c.phone.slice(7)}` : ''}</td>
                         <td></td>
                       </tr>
                     ))}
@@ -525,8 +571,8 @@ const LegacySystemPage: React.FC = () => {
 
       {/* ── Payment Modal ───────────────────────────────────────────────── */}
       {showPaymentModal && (
-        <div className="fixed inset-0 z-[80] bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white border border-gray-400 rounded shadow-lg w-80" style={{ fontFamily: 'Tahoma,Arial,sans-serif', fontSize: 12 }}>
+        <div className="legacy-modal-scope fixed inset-0 z-[80] bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white border border-gray-400 rounded shadow-lg w-80" style={{ fontFamily: 'Tahoma,Arial,sans-serif', fontSize: 12, color: '#000' }}>
             <div className="bg-[#dde] px-3 py-2 flex items-center justify-between border-b border-gray-400">
               <span className="font-bold text-sm">Formas de Pagamento</span>
               <button onClick={() => setShowPaymentModal(false)}><X size={14} /></button>
@@ -548,14 +594,14 @@ const LegacySystemPage: React.FC = () => {
                 <div>
                   <label className="legacy-label block mb-1">Parcelas</label>
                   <select className="legacy-input w-full" value={paymentParcelas} onChange={e => setPaymentParcelas(+e.target.value)}>
-                    {[1,2,3,4,5,6,7,8,9,10,11,12].map(n => (
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(n => (
                       <option key={n} value={n}>{n}x de R$ {fmtMoney(total / n)}</option>
                     ))}
                   </select>
                 </div>
               )}
-              <div className="bg-yellow-50 border border-yellow-300 rounded p-2">
-                <p className="text-[11px] font-bold text-gray-600">🔑 Chaves PIX:</p>
+              <div className="bg-yellow-50 border border-yellow-300 rounded p-2 text-black">
+                <p className="text-[11px] font-bold text-gray-800">🔑 Chaves PIX:</p>
                 <p className="text-[11px]">CNPJ: 49.228.811/0001-33</p>
                 <p className="text-[11px]">E-mail: sdmoveis48@gmail.com</p>
                 <p className="text-[11px]">Cel (Itaú): 85 99760-2237</p>
@@ -575,14 +621,14 @@ const LegacySystemPage: React.FC = () => {
 
       {/* ── Calculator Modal ─────────────────────────────────────────────── */}
       {showCalc && (
-        <div className="fixed inset-0 z-[80] bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-[#e0e0e0] border-2 border-gray-500 rounded shadow-xl w-56" style={{ fontFamily: 'Tahoma,Arial,sans-serif' }}>
+        <div className="legacy-modal-scope fixed inset-0 z-[80] bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-[#e0e0e0] border-2 border-gray-500 rounded shadow-xl w-56" style={{ fontFamily: 'Tahoma,Arial,sans-serif', color: '#000' }}>
             <div className="bg-[#dde] px-3 py-1 flex items-center justify-between border-b border-gray-400">
               <span className="font-bold text-xs">Calculadora</span>
               <button onClick={() => setShowCalc(false)}><X size={13} /></button>
             </div>
             <div className="p-2">
-              <div className="bg-[#c8e8c8] border border-gray-500 text-right px-2 py-1 mb-2 font-bold text-lg font-mono" style={{ minHeight: 32 }}>
+              <div className="bg-[#c8e8c8] border border-gray-500 text-right px-2 py-1 mb-2 font-bold text-lg font-mono text-black" style={{ minHeight: 32 }}>
                 {calcDisplay}
               </div>
               {[
@@ -602,10 +648,9 @@ const LegacySystemPage: React.FC = () => {
                         key={ki}
                         onClick={() => calcPress(key)}
                         style={{ flex: wide ? 2 : 1 }}
-                        className={`legacy-button text-sm font-bold py-1 ${
-                          ['÷','×','-','+','='].includes(key) ? 'text-blue-700 font-bold' :
-                          key === 'C' ? 'text-red-600' : ''
-                        }`}
+                        className={`legacy-button text-sm font-bold py-1 ${['÷', '×', '-', '+', '='].includes(key) ? 'text-blue-700 font-bold' :
+                            key === 'C' ? 'text-red-600' : ''
+                          }`}
                       >
                         {key}
                       </button>
@@ -629,8 +674,8 @@ const LegacySystemPage: React.FC = () => {
 
       {/* ── Item Form Modal ───────────────────────────────────────────────── */}
       {showItemForm && (
-        <div className="fixed inset-0 z-[80] bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white border border-gray-400 rounded shadow-lg w-full max-w-md" style={{ fontFamily: 'Tahoma,Arial,sans-serif', fontSize: 12 }}>
+        <div className="legacy-modal-scope fixed inset-0 z-[80] bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white border border-gray-400 rounded shadow-lg w-full max-w-md" style={{ fontFamily: 'Tahoma,Arial,sans-serif', fontSize: 12, color: '#000' }}>
             <div className="bg-[#dde] px-3 py-2 flex items-center justify-between border-b border-gray-400">
               <span className="font-bold text-sm">{editingItem ? 'Alterar Item' : 'Incluir Novo Item'}</span>
               <button onClick={() => setShowItemForm(false)}><X size={14} /></button>
@@ -644,7 +689,7 @@ const LegacySystemPage: React.FC = () => {
                 <div>
                   <label className="legacy-label block mb-1">Unidade</label>
                   <select className="legacy-input w-full" value={itemForm.unit} onChange={e => setItemForm({ ...itemForm, unit: e.target.value })}>
-                    {['un','m²','m','pç','hr','vb','kg','l'].map(u => <option key={u}>{u}</option>)}
+                    {['un', 'm²', 'm', 'pç', 'hr', 'vb', 'kg', 'l'].map(u => <option key={u}>{u}</option>)}
                   </select>
                 </div>
                 <div>
@@ -684,8 +729,8 @@ const LegacySystemPage: React.FC = () => {
 
       {/* ── NEW: Customer Registration Modal ──────────────────────────────── */}
       {showCustomerRegistrationModal && (
-        <div className="fixed inset-0 z-[90] bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white border border-gray-400 rounded shadow-lg w-full max-w-5xl flex flex-col" style={{ fontFamily: 'Tahoma,Arial,sans-serif', fontSize: 11, height: '90vh' }}>
+        <div className="legacy-modal-scope fixed inset-0 z-[90] bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white border border-gray-400 rounded shadow-lg w-full max-w-5xl flex flex-col" style={{ fontFamily: 'Tahoma,Arial,sans-serif', fontSize: 11, height: '90vh', color: '#000' }}>
             <div className="bg-[#dde] px-3 py-2 flex items-center justify-between border-b border-gray-400">
               <span className="font-bold text-sm">Tela Cadastro de Clientes</span>
               <button onClick={() => setShowCustomerRegistrationModal(false)}><X size={14} /></button>
@@ -701,9 +746,9 @@ const LegacySystemPage: React.FC = () => {
                   <input className="legacy-input w-full text-center" value={format(new Date(), 'dd/MM/yyyy')} readOnly />
                 </div>
                 <div className="flex-1 flex gap-2 justify-center items-end ml-4">
-                  <button className="legacy-button h-6 w-32 flex justify-center items-center"><span className="w-4 h-1 bg-gray-400 mr-2" /> Pesquisar Vendas</button>
-                  <button className="legacy-button h-6 w-32 flex justify-center items-center"><span className="w-4 h-1 bg-gray-400 mr-2" /> Pesquisar Serviços</button>
-                  <button className="legacy-button h-6 w-36 flex justify-center items-center"><div className="rounded-full bg-gray-400 w-4 h-4 mr-2" /> Pesquisar Financeiro</button>
+                  <button className="legacy-button h-6 w-32 flex justify-center items-center" onClick={() => toast({ title: 'ℹ️ Pesquisa de Vendas ainda não implementada nesta versão.' })}><span className="w-4 h-1 bg-gray-400 mr-2" /> Pesquisar Vendas</button>
+                  <button className="legacy-button h-6 w-32 flex justify-center items-center" onClick={() => toast({ title: 'ℹ️ Pesquisa de Serviços ainda não implementada nesta versão.' })}><span className="w-4 h-1 bg-gray-400 mr-2" /> Pesquisar Serviços</button>
+                  <button className="legacy-button h-6 w-36 flex justify-center items-center" onClick={() => toast({ title: 'ℹ️ Pesquisa Financeira ainda não implementada nesta versão.' })}><div className="rounded-full bg-gray-400 w-4 h-4 mr-2" /> Pesquisar Financeiro</button>
                 </div>
               </div>
               <div className="flex gap-2 mt-2">
@@ -717,7 +762,7 @@ const LegacySystemPage: React.FC = () => {
                   <div className="flex gap-2 mb-2">
                     <div className="flex-1">
                       <span className="legacy-label text-[10px]">Nome / Razão Completo</span>
-                      <input className="legacy-input w-full font-bold bg-yellow-50" value={clientDesc || 'SAMUEL DAVID CARVALHO DOS SANTOS'} onChange={e => setClientDesc(e.target.value)} />
+                      <input className="legacy-input w-full font-bold bg-yellow-50" value={clientDesc} onChange={e => setClientDesc(e.target.value)} placeholder="SAMUEL DAVID CARVALHO DOS SANTOS" />
                     </div>
                     <div className="w-64">
                       <span className="legacy-label text-[10px]">Seguimento do Cliente ou Tipo</span>
@@ -726,7 +771,7 @@ const LegacySystemPage: React.FC = () => {
                       </select>
                     </div>
                   </div>
-                  
+
                   <div className="legacy-tab-bar mt-2">
                     <div className={`legacy-tab ${customerRegistrationTab === 'endereco' ? 'active' : ''}`} onClick={() => setCustomerRegistrationTab('endereco')}>Endereço e Contatos -&gt;</div>
                     <div className={`legacy-tab ${customerRegistrationTab === 'filiacao' ? 'active' : ''}`} onClick={() => setCustomerRegistrationTab('filiacao')}>Filiação e Avaliação Financeira -&gt;</div>
@@ -737,96 +782,96 @@ const LegacySystemPage: React.FC = () => {
                       <div className="space-y-2">
                         <div>
                           <span className="legacy-label text-[10px]">Nome Fantasia / Apelido</span>
-                          <input className="legacy-input w-full" defaultValue="SD MOVEIS" />
+                          <input className="legacy-input w-full" value={customerForm.fantasia} onChange={e => setCustomerForm({ ...customerForm, fantasia: e.target.value })} />
                         </div>
                         <div>
                           <span className="legacy-label text-[10px]">Nome da Rua / AV</span>
-                          <input className="legacy-input w-full" />
+                          <input className="legacy-input w-full" value={customerForm.rua} onChange={e => setCustomerForm({ ...customerForm, rua: e.target.value })} />
                         </div>
                         <div className="flex gap-2">
                           <div className="flex-1">
                             <span className="legacy-label text-[10px]">Bairro</span>
-                            <input className="legacy-input w-full" defaultValue="ITAITINGA" />
+                            <input className="legacy-input w-full" value={customerForm.bairro} onChange={e => setCustomerForm({ ...customerForm, bairro: e.target.value })} />
                           </div>
                           <div className="w-24">
                             <span className="legacy-label text-[10px]">Cidade</span>
-                            <input className="legacy-input w-full text-center" defaultValue="ITAITINGA" />
+                            <input className="legacy-input w-full text-center" value={customerForm.cidade} onChange={e => setCustomerForm({ ...customerForm, cidade: e.target.value })} />
                           </div>
                           <div className="w-16">
                             <span className="legacy-label text-[10px]">UF</span>
-                            <select className="legacy-input w-full"><option>CE</option></select>
+                            <select className="legacy-input w-full" value={customerForm.uf} onChange={e => setCustomerForm({ ...customerForm, uf: e.target.value })}><option>CE</option><option>SP</option><option>RJ</option><option>MG</option><option>RS</option></select>
                           </div>
                           <div className="w-24">
                             <span className="legacy-label text-[10px]">CEP</span>
-                            <input className="legacy-input w-full text-center" defaultValue="-" />
+                            <input className="legacy-input w-full text-center" value={customerForm.cep} onChange={e => setCustomerForm({ ...customerForm, cep: e.target.value })} />
                           </div>
                         </div>
                         <div className="flex gap-2">
                           <div className="w-24">
                             <span className="legacy-label text-[10px]">1º Telefone</span>
-                            <input className="legacy-input w-full text-center" defaultValue="( ) -" />
+                            <input className="legacy-input w-full text-center" value={customerForm.tel1} onChange={e => setCustomerForm({ ...customerForm, tel1: e.target.value })} />
                           </div>
                           <div className="w-24">
                             <span className="legacy-label text-[10px]">2º Telefone</span>
-                            <input className="legacy-input w-full text-center" defaultValue="( ) -" />
+                            <input className="legacy-input w-full text-center" value={customerForm.tel2} onChange={e => setCustomerForm({ ...customerForm, tel2: e.target.value })} />
                           </div>
                           <div className="w-24">
                             <span className="legacy-label text-[10px]">Nº Celular</span>
-                            <input className="legacy-input w-full text-center" defaultValue="( ) -" />
+                            <input className="legacy-input w-full text-center" value={customerForm.celular} onChange={e => setCustomerForm({ ...customerForm, celular: e.target.value })} />
                           </div>
                           <div className="w-24">
                             <span className="legacy-label text-[10px]">Whatsapp</span>
-                            <input className="legacy-input w-full text-center" defaultValue="( ) -" />
+                            <input className="legacy-input w-full text-center" value={customerForm.whatsapp} onChange={e => setCustomerForm({ ...customerForm, whatsapp: e.target.value })} />
                           </div>
                           <div className="flex-1">
                             <span className="legacy-label text-[10px]">Complemento</span>
-                            <input className="legacy-input w-full" />
+                            <input className="legacy-input w-full" value={customerForm.complemento} onChange={e => setCustomerForm({ ...customerForm, complemento: e.target.value })} />
                           </div>
                         </div>
                         <div className="flex gap-2 items-end">
                           <div className="flex-1">
                             <span className="legacy-label text-[10px]">E-mail</span>
-                            <div className="flex gap-1"><input className="legacy-input flex-1" /><button className="bg-gray-200 border px-2 text-gray-500">@</button></div>
+                            <div className="flex gap-1"><input className="legacy-input flex-1" value={customerForm.email} onChange={e => setCustomerForm({ ...customerForm, email: e.target.value })} /><button className="bg-gray-200 border px-2 text-gray-500">@</button></div>
                           </div>
                           <div className="w-48">
                             <span className="legacy-label text-[10px]">Contato</span>
-                            <div className="flex gap-1"><input className="legacy-input flex-1" /><button className="bg-gray-200 border px-2 text-gray-600 text-[10px]">CONTATOS</button></div>
+                            <div className="flex gap-1"><input className="legacy-input flex-1" value={customerForm.contato} onChange={e => setCustomerForm({ ...customerForm, contato: e.target.value })} /><button className="bg-gray-200 border px-2 text-gray-600 text-[10px]">CONTATOS</button></div>
                           </div>
                         </div>
                         <div className="flex gap-2">
                           <div className="flex-1">
                             <span className="legacy-label text-[10px]">SKYPE</span>
-                            <input className="legacy-input w-full" />
+                            <input className="legacy-input w-full" value={customerForm.skype} onChange={e => setCustomerForm({ ...customerForm, skype: e.target.value })} />
                           </div>
                           <div className="flex-1">
                             <span className="legacy-label text-[10px]">Rede Social</span>
-                            <input className="legacy-input w-full" />
+                            <input className="legacy-input w-full" value={customerForm.redeSocial} onChange={e => setCustomerForm({ ...customerForm, redeSocial: e.target.value })} />
                           </div>
                         </div>
                         <div className="flex gap-2">
                           <div className="flex-1">
                             <span className="legacy-label text-[10px]">Nº CNPJ</span>
-                            <input className="legacy-input w-full text-center" defaultValue="../-" />
+                            <input className="legacy-input w-full text-center" value={customerForm.cnpj} onChange={e => setCustomerForm({ ...customerForm, cnpj: e.target.value })} />
                           </div>
                           <div className="flex-1">
                             <span className="legacy-label text-[10px]">Nº IE</span>
-                            <input className="legacy-input w-full" />
+                            <input className="legacy-input w-full" value={customerForm.ie} onChange={e => setCustomerForm({ ...customerForm, ie: e.target.value })} />
                           </div>
                           <div className="flex-1">
                             <span className="legacy-label text-[10px]">Nº IM</span>
-                            <input className="legacy-input w-full" />
+                            <input className="legacy-input w-full" value={customerForm.im} onChange={e => setCustomerForm({ ...customerForm, im: e.target.value })} />
                           </div>
                           <div className="flex-1">
                             <span className="legacy-label text-[10px]">Nº CPF</span>
-                            <input className="legacy-input w-full" />
+                            <input className="legacy-input w-full" value={customerForm.cpf} onChange={e => setCustomerForm({ ...customerForm, cpf: e.target.value })} />
                           </div>
                           <div className="flex-1">
                             <span className="legacy-label text-[10px]">Nº RG</span>
-                            <input className="legacy-input w-full" />
+                            <input className="legacy-input w-full" value={customerForm.rg} onChange={e => setCustomerForm({ ...customerForm, rg: e.target.value })} />
                           </div>
                           <div className="flex-1">
                             <span className="legacy-label text-[10px]">Orgão Emissor</span>
-                            <input className="legacy-input w-full" />
+                            <input className="legacy-input w-full" value={customerForm.orgaoEmissor} onChange={e => setCustomerForm({ ...customerForm, orgaoEmissor: e.target.value })} />
                           </div>
                         </div>
                       </div>
@@ -848,9 +893,13 @@ const LegacySystemPage: React.FC = () => {
                       </div>
                     </div>
                     <div className="w-1/4 flex flex-col gap-1">
-                      <button className="legacy-button flex-1 flex items-center justify-center gap-2"><Printer size={16} className="text-orange-600"/> Imprimir Ficha</button>
-                      <button className="legacy-button flex-1 flex items-center justify-center gap-2" onClick={() => {toast({title:'Cliente salvo com sucesso!'}); setShowCustomerRegistrationModal(false);}}><CheckSquare size={16} className="text-green-600"/> Salvar Cadastro</button>
-                      <button className="legacy-button flex-1 flex items-center justify-center gap-2" onClick={() => setShowCustomerRegistrationModal(false)}><X size={16} className="text-blue-600"/> SAIR</button>
+                      <button className="legacy-button flex-1 flex items-center justify-center gap-2" onClick={() => { handlePrint(); }}><Printer size={16} className="text-orange-600" /> Imprimir Ficha</button>
+                      <button className="legacy-button flex-1 flex items-center justify-center gap-2" onClick={() => {
+                        toast({ title: '✅ Cliente salvo com sucesso!' });
+                        setPhone(customerForm.celular || customerForm.whatsapp || customerForm.tel1 || phone);
+                        setShowCustomerRegistrationModal(false);
+                      }}><CheckSquare size={16} className="text-green-600" /> Salvar Cadastro</button>
+                      <button className="legacy-button flex-1 flex items-center justify-center gap-2" onClick={() => setShowCustomerRegistrationModal(false)}><X size={16} className="text-blue-600" /> SAIR</button>
                     </div>
                   </div>
                 </div>
@@ -862,8 +911,8 @@ const LegacySystemPage: React.FC = () => {
 
       {/* ── NEW: Product Search Modal ─────────────────────────────────────── */}
       {showProductSearchModal && (
-        <div className="fixed inset-0 z-[90] bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white border border-gray-400 rounded shadow-lg w-full max-w-6xl flex flex-col" style={{ fontFamily: 'Tahoma,Arial,sans-serif', fontSize: 11, height: '90vh' }}>
+        <div className="legacy-modal-scope fixed inset-0 z-[90] bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white border border-gray-400 rounded shadow-lg w-full max-w-6xl flex flex-col" style={{ fontFamily: 'Tahoma,Arial,sans-serif', fontSize: 11, height: '90vh', color: '#000' }}>
             <div className="bg-[#dde] px-3 py-2 flex items-center justify-between border-b border-gray-400">
               <span className="font-bold text-sm">PESQUISA DOS PRODUTOS & SERVIÇOS CADASTRADOS &lt;&lt;&lt;</span>
               <button onClick={() => setShowProductSearchModal(false)}><X size={14} /></button>
@@ -883,9 +932,9 @@ const LegacySystemPage: React.FC = () => {
                   <select className="legacy-input w-full"><option>Pesquisar TODOS</option></select>
                 </div>
                 <div className="flex gap-2">
-                  <button className="legacy-button flex flex-col items-center justify-center w-12 h-12"><ImageIcon size={16} className="text-green-600" /><span className="text-[9px]">Imagem</span></button>
-                  <button className="legacy-button flex flex-col items-center justify-center w-12 h-12"><div className="w-4 h-3 bg-gray-500 mb-1" /><span className="text-[9px]">CodBarra</span></button>
-                  <button className="legacy-button flex flex-col items-center justify-center w-12 h-12"><Plus size={16} className="text-green-600" /><span className="text-[9px]">Incluir</span></button>
+                  <button className="legacy-button flex flex-col items-center justify-center w-12 h-12" onClick={() => toast({ title: 'ℹ️ Busca por imagem ainda não implementada nesta versão.' })}><ImageIcon size={16} className="text-green-600" /><span className="text-[9px]">Imagem</span></button>
+                  <button className="legacy-button flex flex-col items-center justify-center w-12 h-12" onClick={() => toast({ title: 'ℹ️ Leitura de código de barras ainda não implementada nesta versão.' })}><div className="w-4 h-3 bg-gray-500 mb-1" /><span className="text-[9px]">CodBarra</span></button>
+                  <button className="legacy-button flex flex-col items-center justify-center w-12 h-12" onClick={() => { setShowProductSearchModal(false); openItemForm(); }}><Plus size={16} className="text-green-600" /><span className="text-[9px]">Incluir</span></button>
                 </div>
                 <div className="w-12"></div>
                 <div className="w-12 text-right">
@@ -899,7 +948,7 @@ const LegacySystemPage: React.FC = () => {
                 </div>
                 <div className="flex-1">
                   <span className="legacy-label text-[10px]">Rastrear Palavras</span>
-                  <div className="flex"><input className="legacy-input flex-1" /><button className="bg-gray-200 border px-1"><Search size={12}/></button></div>
+                  <div className="flex"><input className="legacy-input flex-1" /><button className="bg-gray-200 border px-1"><Search size={12} /></button></div>
                 </div>
                 <div className="w-48">
                   <span className="legacy-label text-[10px]">Referencia</span>
@@ -910,7 +959,7 @@ const LegacySystemPage: React.FC = () => {
                   <label className="flex items-center gap-1 text-[11px]"><input type="radio" name="listType" /> Lista B</label>
                 </div>
               </div>
-              
+
               <div className="flex-1 border border-gray-400 bg-white overflow-hidden mt-1 flex flex-col">
                 <div className="flex-1 overflow-y-auto">
                   <table className="legacy-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -929,12 +978,12 @@ const LegacySystemPage: React.FC = () => {
                     </thead>
                     <tbody>
                       {/* Fake data since we may not have a populated products table */}
-                      {[...productsList, ...Array.from({length: 15})].map((prod, i) => (
+                      {[...productsList, ...Array.from({ length: 15 })].map((prod, i) => (
                         <tr key={prod?.id || i} style={{ backgroundColor: '#c8e6c9', borderBottom: '1px solid #a5d6a7', cursor: 'pointer' }} onClick={() => {
-                            openItemForm({ id: Date.now().toString(), description: prod?.name || `20 MTS FITA ${['SAFIRA', 'BRANCO DIAMANTE', 'ABSOLUTO', 'ACACIA', 'ALMERIA', 'ARAUCARIA', 'ARDOSIA', 'AREIA'][i % 8] || 'GENERIC'}`, unit: 'un', width: 0, height: 0, value: prod?.price || 95.55, quantity: 1, total_m2: 0, total_value: prod?.price || 95.55 });
-                            setShowProductSearchModal(false);
+                          openItemForm({ id: Date.now().toString(), description: prod?.name || `20 MTS FITA ${['SAFIRA', 'BRANCO DIAMANTE', 'ABSOLUTO', 'ACACIA', 'ALMERIA', 'ARAUCARIA', 'ARDOSIA', 'AREIA'][i % 8] || 'GENERIC'}`, unit: 'un', width: 0, height: 0, value: prod?.price || 95.55, quantity: 1, total_m2: 0, total_value: prod?.price || 95.55 });
+                          setShowProductSearchModal(false);
                         }}>
-                          <td style={{ width: 80 }}><div className="flex justify-between items-center"><Camera size={10} className="text-gray-500"/></div></td>
+                          <td style={{ width: 80 }}><div className="flex justify-between items-center"><Camera size={10} className="text-gray-500" /></div></td>
                           <td style={{ width: 60, textAlign: 'right' }}>{prod?.id || i + 1}</td>
                           <td>{prod?.name || `20 MTS FITA ${['SAFIRA', 'BRANCO DIAMANTE', 'ABSOLUTO', 'ACACIA', 'ALMERIA', 'ARAUCARIA', 'ARDOSIA', 'AREIA'][i % 8] || 'GENERIC'}`}</td>
                           <td style={{ width: 40, textAlign: 'center' }}>UNI</td>
@@ -968,8 +1017,8 @@ const LegacySystemPage: React.FC = () => {
 
       {/* ── NEW: OS Search Modal ──────────────────────────────────────────── */}
       {showOSSearchModal && (
-        <div className="fixed inset-0 z-[90] bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white border border-gray-400 rounded shadow-lg w-full max-w-6xl flex flex-col" style={{ fontFamily: 'Tahoma,Arial,sans-serif', fontSize: 11, height: '90vh' }}>
+        <div className="legacy-modal-scope fixed inset-0 z-[90] bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white border border-gray-400 rounded shadow-lg w-full max-w-6xl flex flex-col" style={{ fontFamily: 'Tahoma,Arial,sans-serif', fontSize: 11, height: '90vh', color: '#000' }}>
             <div className="bg-[#dde] px-3 py-2 flex items-center justify-between border-b border-gray-400">
               <span className="font-bold text-sm">Pesquisa Ordem de Serviços</span>
               <button onClick={() => setShowOSSearchModal(false)}><X size={14} /></button>
@@ -997,7 +1046,7 @@ const LegacySystemPage: React.FC = () => {
                   <input className="legacy-input w-full text-center font-bold text-green-700" defaultValue="22/07/2026" />
                 </div>
                 <div className="flex gap-1 mb-1">
-                  <button className="legacy-button px-2 py-1 bg-green-100 border border-green-400 rounded"><RefreshCw size={14} className="text-green-600" /></button>
+                  <button className="legacy-button px-2 py-1 bg-green-100 border border-green-400 rounded" onClick={() => toast({ title: '🔄 Lista atualizada.' })}><RefreshCw size={14} className="text-green-600" /></button>
                   <button className="legacy-button px-2 py-1"><div className="text-blue-600 font-bold text-sm">&lt;</div></button>
                   <button className="legacy-button px-2 py-1"><div className="text-blue-600 font-bold text-sm">&gt;</div></button>
                 </div>
@@ -1007,7 +1056,7 @@ const LegacySystemPage: React.FC = () => {
                   </button>
                 </div>
               </div>
-              
+
               <div className="flex-1 border border-gray-400 bg-white overflow-hidden mt-1 flex flex-col">
                 <div className="flex-1 overflow-y-auto">
                   <table className="legacy-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -1030,14 +1079,14 @@ const LegacySystemPage: React.FC = () => {
                     </thead>
                     <tbody>
                       {/* Fake data since we don't have enough OSs in mock */}
-                      {[...osList, ...Array.from({length: 15})].map((os, i) => (
+                      {[...osList, ...Array.from({ length: 15 })].map((os, i) => (
                         <tr key={os?.id || i} style={{ backgroundColor: i % 2 === 0 ? '#ffff99' : '#fff', cursor: 'pointer' }} onClick={() => {
-                            setOrderNo(os?.order_number || String(999+i));
-                            setClientDesc(os?.clients?.name || ['SONIA', 'CLAUDIA', 'MARLUCE', 'ATHENAS CONDOMINIUM', 'GISLENE', 'SAMUEL DAVID CARVALHO DOS SANTOS'][i % 6]);
-                            setPhone(os?.clients?.phone || '(85)99184-8975');
-                            setValorMaterial(fmtMoney(os?.total_value || (493.34 + i * 1000)));
-                            setSituacaoAtual(os?.status === 'concluida' ? 'Concluído' : os?.status === 'em_andamento' ? 'Em Andamento' : 'Aguardando Aprovação');
-                            setShowOSSearchModal(false);
+                          setOrderNo(os?.order_number || String(999 + i));
+                          setClientDesc(os?.clients?.name || ['SONIA', 'CLAUDIA', 'MARLUCE', 'ATHENAS CONDOMINIUM', 'GISLENE', 'SAMUEL DAVID CARVALHO DOS SANTOS'][i % 6]);
+                          setPhone(os?.clients?.phone || '(85)99184-8975');
+                          setValorMaterial(fmtMoney(os?.total_value || (493.34 + i * 1000)));
+                          setSituacaoAtual(os?.status === 'concluida' ? 'Concluído' : os?.status === 'em_andamento' ? 'Em Andamento' : 'Aguardando Aprovação');
+                          setShowOSSearchModal(false);
                         }}>
                           <td style={{ width: 40, textAlign: 'center', backgroundColor: '#008080', color: 'white' }}>{os?.order_number || (999 + i)}</td>
                           <td style={{ width: 70, textAlign: 'center' }}>{os?.created_at ? format(new Date(os.created_at), 'dd/MM/yyyy') : `23/05/2026`}</td>
@@ -1059,13 +1108,13 @@ const LegacySystemPage: React.FC = () => {
                 </div>
                 <div className="bg-[#f0f0f0] border-t border-gray-400 p-2 flex justify-between items-center text-[10px]">
                   <div className="flex gap-2">
-                    <button className="legacy-button h-8"><Plus size={14} className="mr-1 text-green-600"/> Nova</button>
-                    <button className="legacy-button h-8"><Edit size={14} className="mr-1 text-blue-600"/> Alterar</button>
-                    <button className="legacy-button h-8"><X size={14} className="mr-1 text-red-600"/> Cancelar</button>
-                    <button className="legacy-button h-8"><CheckSquare size={14} className="mr-1 text-green-600"/> Finalizar</button>
-                    <button className="legacy-button h-8"><Printer size={14} className="mr-1 text-blue-600"/> Emitir Jato</button>
-                    <button className="legacy-button h-8"><Printer size={14} className="mr-1 text-orange-600"/> Cupom</button>
-                    <button className="legacy-button h-8"><FileText size={14} className="mr-1 text-gray-600"/> Relatório</button>
+                    <button className="legacy-button h-8" onClick={() => { setShowOSSearchModal(false); }}><Plus size={14} className="mr-1 text-green-600" /> Nova</button>
+                    <button className="legacy-button h-8" onClick={() => toast({ title: 'ℹ️ Selecione uma OS na lista para alterar.' })}><Edit size={14} className="mr-1 text-blue-600" /> Alterar</button>
+                    <button className="legacy-button h-8" onClick={() => toast({ title: 'ℹ️ Cancelamento ainda não implementado nesta versão.' })}><X size={14} className="mr-1 text-red-600" /> Cancelar</button>
+                    <button className="legacy-button h-8" onClick={() => toast({ title: 'ℹ️ Selecione uma OS na lista para finalizar.' })}><CheckSquare size={14} className="mr-1 text-green-600" /> Finalizar</button>
+                    <button className="legacy-button h-8" onClick={() => { setShowOSSearchModal(false); handlePrint(); }}><Printer size={14} className="mr-1 text-blue-600" /> Emitir Jato</button>
+                    <button className="legacy-button h-8" onClick={() => { setShowOSSearchModal(false); handlePrint(); }}><Printer size={14} className="mr-1 text-orange-600" /> Cupom</button>
+                    <button className="legacy-button h-8" onClick={() => toast({ title: 'ℹ️ Relatório ainda não implementado nesta versão.' })}><FileText size={14} className="mr-1 text-gray-600" /> Relatório</button>
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-right">
@@ -1231,7 +1280,7 @@ const LegacySystemPage: React.FC = () => {
                     <Plus size={20} className="text-green-600" />
                     <span className="text-[11px] font-bold">Incluir</span>
                   </button>
-                  
+
                   <button className="flex flex-col items-center justify-center gap-1 border border-gray-300 p-2 bg-gradient-to-b from-white to-gray-100 rounded hover:from-gray-100 hover:to-gray-200" onClick={() => toast({ title: 'ℹ️ Função Automático não implementada nesta versão.' })}>
                     <div className="flex flex-col gap-[2px]">
                       <div className="w-6 h-[2px] bg-gray-600"></div>
