@@ -11,6 +11,8 @@ import {
 const db = supabase as any;
 
 // ─── Types ──────────────────────────────────────────────────────────────────
+type PriceTable = 'avista' | 'aprazo' | 'atacado';
+
 interface OSItem {
   id: string;
   description: string;
@@ -21,7 +23,17 @@ interface OSItem {
   value: number;
   quantity: number;
   total_value: number;
+  price_table: PriceTable;
+  price_avista?: number;
+  price_aprazo?: number;
+  price_atacado?: number;
 }
+
+const PRICE_TABLE_LABELS: Record<PriceTable, string> = {
+  avista: 'TABELA AVISTA',
+  aprazo: 'TABELA APRAZO',
+  atacado: 'TABELA ATACADO',
+};
 
 // ─── Parse helper (accepts "1.234,56" or "1234.56") ─────────────────────────
 const parseMoney = (v: string) =>
@@ -44,6 +56,13 @@ const LegacySystemPage: React.FC = () => {
   const [tabAvista, setTabAvista] = useState(true);
   const [tabAprazo, setTabAprazo] = useState(false);
   const [tabAtacado, setTabAtacado] = useState(false);
+  // tabela de preço ativa no momento (usada como padrão ao incluir itens)
+  const activePriceTable: PriceTable = tabAprazo ? 'aprazo' : tabAtacado ? 'atacado' : 'avista';
+  const setActivePriceTable = (t: PriceTable) => {
+    setTabAvista(t === 'avista');
+    setTabAprazo(t === 'aprazo');
+    setTabAtacado(t === 'atacado');
+  };
 
   // ── client state ──────────────────────────────────────────────────────────
   const [clientId, setClientId] = useState<string | null>(null);
@@ -76,6 +95,20 @@ const LegacySystemPage: React.FC = () => {
   const [productsList, setProductsList] = useState<any[]>([]);
   const [osList, setOsList] = useState<any[]>([]);
 
+  // ── product registration modal (Cadastro de Produtos de Venda) ─────────────
+  const [showProductRegistrationModal, setShowProductRegistrationModal] = useState(false);
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [productForm, setProductForm] = useState({
+    reference: '', barcode: '', name: '', unit: 'un', brand: '', category: '', location: '',
+    complement1: '', complement2: '',
+    control_stock: true, sell_zero_stock: true, update_cost_on_purchase: true,
+    min_stock: 0, current_stock: 0,
+    cost_price: 0, margin_avista: 15, margin_aprazo: 20, margin_atacado: 10,
+  });
+  const productPriceAvista = +(productForm.cost_price * (1 + productForm.margin_avista / 100)).toFixed(2);
+  const productPriceAprazo = +(productForm.cost_price * (1 + productForm.margin_aprazo / 100)).toFixed(2);
+  const productPriceAtacado = +(productForm.cost_price * (1 + productForm.margin_atacado / 100)).toFixed(2);
+
   // ── tabs ──────────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState('obs');
 
@@ -91,6 +124,8 @@ const LegacySystemPage: React.FC = () => {
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [itemForm, setItemForm] = useState({
     description: '', unit: 'un', width: 0, height: 0, value: 0, quantity: 1,
+    price_table: 'avista' as PriceTable,
+    price_avista: 0, price_aprazo: 0, price_atacado: 0,
   });
 
   // ── images tab ────────────────────────────────────────────────────────────
@@ -109,6 +144,7 @@ const LegacySystemPage: React.FC = () => {
   const [valorMaterial, setValorMaterial] = useState('0,00');
   const [valorServico, setValorServico] = useState('0,00');
   const [desconto, setDesconto] = useState('0,00');
+  const [taxaPercentual, setTaxaPercentual] = useState('0,00');
 
   // ── payment modal ─────────────────────────────────────────────────────────
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -126,7 +162,9 @@ const LegacySystemPage: React.FC = () => {
   const [editingOsId, setEditingOsId] = useState<string | null>(null);
 
   // ── computed total ────────────────────────────────────────────────────────
-  const total = parseMoney(valorMaterial) + parseMoney(valorServico) - parseMoney(desconto);
+  const totalGeralItens = osItems.reduce((s, i) => s + i.total_value, 0);
+  const valorTaxaCalculado = totalGeralItens * (parseMoney(taxaPercentual) / 100);
+  const total = parseMoney(valorMaterial) + parseMoney(valorServico) - parseMoney(desconto) + valorTaxaCalculado;
 
   // ─── On mount: load employees, clients, next order number ─────────────────
   useEffect(() => {
@@ -187,7 +225,7 @@ const LegacySystemPage: React.FC = () => {
       status: situacaoAtual === 'Concluído' ? 'concluida' : situacaoAtual === 'Em Andamento' ? 'em_andamento' : 'aberta',
       priority: 'normal',
       assigned_to: responsavel || null,
-      total_value: itemsTotal > 0 ? itemsTotal : (parseMoney(valorMaterial) + parseMoney(valorServico) - parseMoney(desconto)),
+      total_value: (itemsTotal > 0 ? itemsTotal : (parseMoney(valorMaterial) + parseMoney(valorServico) - parseMoney(desconto))) + valorTaxaCalculado,
       notes: notesArr || null,
       estimated_date: dataAprovacao ? (() => {
         const [d, m, y] = dataAprovacao.split('/');
@@ -240,12 +278,28 @@ const LegacySystemPage: React.FC = () => {
   const openItemForm = (item?: OSItem) => {
     if (item) {
       setEditingItem(item);
-      setItemForm({ description: item.description, unit: item.unit, width: item.width, height: item.height, value: item.value, quantity: item.quantity });
+      setItemForm({
+        description: item.description, unit: item.unit, width: item.width, height: item.height,
+        value: item.value, quantity: item.quantity,
+        price_table: item.price_table || 'avista',
+        price_avista: item.price_avista ?? item.value,
+        price_aprazo: item.price_aprazo ?? item.value,
+        price_atacado: item.price_atacado ?? item.value,
+      });
     } else {
       setEditingItem(null);
-      setItemForm({ description: '', unit: 'un', width: 0, height: 0, value: 0, quantity: 1 });
+      setItemForm({
+        description: '', unit: 'un', width: 0, height: 0, value: 0, quantity: 1,
+        price_table: activePriceTable, price_avista: 0, price_aprazo: 0, price_atacado: 0,
+      });
     }
     setShowItemForm(true);
+  };
+
+  // Troca a tabela de preço dentro do formulário de item, atualizando o valor usado
+  const selectItemPriceTable = (t: PriceTable) => {
+    const priceMap = { avista: itemForm.price_avista, aprazo: itemForm.price_aprazo, atacado: itemForm.price_atacado };
+    setItemForm(p => ({ ...p, price_table: t, value: priceMap[t] || p.value }));
   };
 
   const saveItem = () => {
@@ -264,13 +318,101 @@ const LegacySystemPage: React.FC = () => {
     setEditingItem(null);
   };
 
+  // Ao trocar a tabela ativa no topo (Avista/Aprazo/Atacado), recalcula automaticamente
+  // o valor de todos os itens da OS que possuem os 3 preços cadastrados
+  const recalcAllItemsForTable = (t: PriceTable) => {
+    setOsItems(prev => prev.map(it => {
+      const priceMap = { avista: it.price_avista, aprazo: it.price_aprazo, atacado: it.price_atacado };
+      const newValue = priceMap[t];
+      if (newValue == null) return it; // item sem tabela de preço cadastrada, mantém como está
+      const tv = calcTotal(newValue, it.quantity, it.total_m2);
+      return { ...it, value: newValue, price_table: t, total_value: tv };
+    }));
+  };
+
   const deleteItem = (id: string) => {
     if (!confirm('Excluir este item?')) return;
     setOsItems(p => p.filter(i => i.id !== id));
     if (selectedItemId === id) setSelectedItemId(null);
   };
 
-  const totalItems = osItems.reduce((s, i) => s + i.total_value, 0);
+  // ─── Product registration (Cadastro de Produtos de Venda) ──────────────────
+  const openProductRegistrationForm = (prod?: any) => {
+    if (prod) {
+      setEditingProductId(prod.id);
+      setProductForm({
+        reference: prod.reference || '', barcode: prod.barcode || '', name: prod.name || '',
+        unit: prod.unit || 'un', brand: prod.brand || '', category: prod.category || '', location: prod.location || '',
+        complement1: prod.complement1 || '', complement2: prod.complement2 || '',
+        control_stock: prod.control_stock ?? true, sell_zero_stock: prod.sell_zero_stock ?? true,
+        update_cost_on_purchase: prod.update_cost_on_purchase ?? true,
+        min_stock: prod.min_stock || 0, current_stock: prod.current_stock || 0,
+        cost_price: prod.cost_price || 0,
+        margin_avista: prod.margin_avista ?? 15, margin_aprazo: prod.margin_aprazo ?? 20, margin_atacado: prod.margin_atacado ?? 10,
+      });
+    } else {
+      setEditingProductId(null);
+      setProductForm({
+        reference: '', barcode: '', name: '', unit: 'un', brand: '', category: '', location: '',
+        complement1: '', complement2: '',
+        control_stock: true, sell_zero_stock: true, update_cost_on_purchase: true,
+        min_stock: 0, current_stock: 0,
+        cost_price: 0, margin_avista: 15, margin_aprazo: 20, margin_atacado: 10,
+      });
+    }
+    setShowProductRegistrationModal(true);
+  };
+
+  const saveProduct = async () => {
+    if (!productForm.name.trim()) {
+      toast({ title: '⚠️ Informe a descrição do produto', variant: 'destructive' });
+      return;
+    }
+    const payload = {
+      name: productForm.name.trim(),
+      reference: productForm.reference || null,
+      barcode: productForm.barcode || null,
+      unit: productForm.unit,
+      brand: productForm.brand || null,
+      category: productForm.category || null,
+      location: productForm.location || null,
+      complement1: productForm.complement1 || null,
+      complement2: productForm.complement2 || null,
+      control_stock: productForm.control_stock,
+      sell_zero_stock: productForm.sell_zero_stock,
+      update_cost_on_purchase: productForm.update_cost_on_purchase,
+      min_stock: productForm.min_stock,
+      current_stock: productForm.current_stock,
+      cost_price: productForm.cost_price,
+      margin_avista: productForm.margin_avista,
+      margin_aprazo: productForm.margin_aprazo,
+      margin_atacado: productForm.margin_atacado,
+      price_avista: productPriceAvista,
+      price_aprazo: productPriceAprazo,
+      price_atacado: productPriceAtacado,
+      // mantém compatibilidade com o campo antigo "price" (usado como fallback em outras telas)
+      price: productPriceAvista,
+    };
+
+    let error;
+    if (editingProductId) {
+      ({ error } = await db.from('inventory_items').update(payload).eq('id', editingProductId));
+    } else {
+      ({ error } = await db.from('inventory_items').insert(payload));
+    }
+
+    if (error) {
+      toast({ title: '❌ Erro ao salvar produto', description: error.message, variant: 'destructive' });
+      return;
+    }
+
+    toast({ title: '✅ Produto salvo com sucesso!' });
+    const { data: refreshed } = await db.from('inventory_items').select('*').limit(50);
+    if (refreshed) setProductsList(refreshed);
+    setShowProductRegistrationModal(false);
+  };
+
+  const totalItems = totalGeralItens;
 
   // ─── Images ────────────────────────────────────────────────────────────────
   const handleImageFiles = (files: FileList | null) => {
@@ -344,6 +486,7 @@ const LegacySystemPage: React.FC = () => {
         Material: R$ ${valorMaterial} &nbsp;|&nbsp;
         Serviço: R$ ${valorServico} &nbsp;|&nbsp;
         Desconto: R$ ${desconto} &nbsp;|&nbsp;
+        Taxa (${taxaPercentual}%): R$ ${fmtMoney(valorTaxaCalculado)} &nbsp;|&nbsp;
         <span style="font-size:16px">TOTAL: R$ ${fmtMoney(total)}</span>
       </p>
       </body></html>
@@ -649,7 +792,7 @@ const LegacySystemPage: React.FC = () => {
                         onClick={() => calcPress(key)}
                         style={{ flex: wide ? 2 : 1 }}
                         className={`legacy-button text-sm font-bold py-1 ${['÷', '×', '-', '+', '='].includes(key) ? 'text-blue-700 font-bold' :
-                            key === 'C' ? 'text-red-600' : ''
+                          key === 'C' ? 'text-red-600' : ''
                           }`}
                       >
                         {key}
@@ -701,10 +844,45 @@ const LegacySystemPage: React.FC = () => {
                   <input type="number" step="0.01" className="legacy-input w-full" value={itemForm.height} onChange={e => setItemForm({ ...itemForm, height: +e.target.value })} />
                 </div>
               </div>
+              <div className="bg-blue-50 border border-blue-200 rounded p-2">
+                <label className="legacy-label block mb-1 font-bold">Tabela de Preço</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <label className="flex flex-col items-center gap-1 border border-gray-300 rounded p-1 bg-white cursor-pointer" style={{ borderColor: itemForm.price_table === 'avista' ? '#0000aa' : undefined }}>
+                    <span className="flex items-center gap-1 text-[10px] font-bold">
+                      <input type="radio" name="itemPriceTable" checked={itemForm.price_table === 'avista'} onChange={() => selectItemPriceTable('avista')} /> Avista
+                    </span>
+                    <input
+                      type="number" step="0.01" className="legacy-input w-full text-center"
+                      value={itemForm.price_avista}
+                      onChange={e => setItemForm(p => ({ ...p, price_avista: +e.target.value, value: p.price_table === 'avista' ? +e.target.value : p.value }))}
+                    />
+                  </label>
+                  <label className="flex flex-col items-center gap-1 border border-gray-300 rounded p-1 bg-white cursor-pointer" style={{ borderColor: itemForm.price_table === 'aprazo' ? '#0000aa' : undefined }}>
+                    <span className="flex items-center gap-1 text-[10px] font-bold">
+                      <input type="radio" name="itemPriceTable" checked={itemForm.price_table === 'aprazo'} onChange={() => selectItemPriceTable('aprazo')} /> Aprazo
+                    </span>
+                    <input
+                      type="number" step="0.01" className="legacy-input w-full text-center"
+                      value={itemForm.price_aprazo}
+                      onChange={e => setItemForm(p => ({ ...p, price_aprazo: +e.target.value, value: p.price_table === 'aprazo' ? +e.target.value : p.value }))}
+                    />
+                  </label>
+                  <label className="flex flex-col items-center gap-1 border border-gray-300 rounded p-1 bg-white cursor-pointer" style={{ borderColor: itemForm.price_table === 'atacado' ? '#0000aa' : undefined }}>
+                    <span className="flex items-center gap-1 text-[10px] font-bold">
+                      <input type="radio" name="itemPriceTable" checked={itemForm.price_table === 'atacado'} onChange={() => selectItemPriceTable('atacado')} /> Atacado
+                    </span>
+                    <input
+                      type="number" step="0.01" className="legacy-input w-full text-center"
+                      value={itemForm.price_atacado}
+                      onChange={e => setItemForm(p => ({ ...p, price_atacado: +e.target.value, value: p.price_table === 'atacado' ? +e.target.value : p.value }))}
+                    />
+                  </label>
+                </div>
+              </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="legacy-label block mb-1">Valor Unitário (R$)</label>
-                  <input type="number" step="0.01" className="legacy-input w-full" value={itemForm.value} onChange={e => setItemForm({ ...itemForm, value: +e.target.value })} />
+                  <label className="legacy-label block mb-1">Valor Unitário Usado (R$)</label>
+                  <input type="number" step="0.01" className="legacy-input w-full font-bold" value={itemForm.value} onChange={e => setItemForm({ ...itemForm, value: +e.target.value })} />
                 </div>
                 <div>
                   <label className="legacy-label block mb-1">Quantidade</label>
@@ -721,6 +899,119 @@ const LegacySystemPage: React.FC = () => {
               <div className="flex gap-2 justify-end">
                 <button className="legacy-button" onClick={saveItem}><CheckSquare size={13} className="text-green-600" /> {editingItem ? 'Salvar' : 'Incluir'}</button>
                 <button className="legacy-button" onClick={() => setShowItemForm(false)}>Cancelar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── NEW: Product Registration Modal (Cadastro de Produtos de Venda) ── */}
+      {showProductRegistrationModal && (
+        <div className="legacy-modal-scope fixed inset-0 z-[95] bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white border border-gray-400 rounded shadow-lg w-full max-w-3xl" style={{ fontFamily: 'Tahoma,Arial,sans-serif', fontSize: 12, color: '#000' }}>
+            <div className="bg-[#dde] px-3 py-2 flex items-center justify-between border-b border-gray-400">
+              <span className="font-bold text-sm">Cadastro de Produtos de Venda</span>
+              <button onClick={() => setShowProductRegistrationModal(false)}><X size={14} /></button>
+            </div>
+            <div className="p-4 space-y-3" style={{ maxHeight: '80vh', overflowY: 'auto' }}>
+              <div className="flex gap-4 items-center">
+                <label className="flex items-center gap-1 text-[11px] font-bold"><input type="checkbox" checked readOnly /> Cadastro de Produtos</label>
+                <label className="flex items-center gap-1 text-[11px] font-bold"><input type="checkbox" disabled /> Cadastro de Serviço</label>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="legacy-label block mb-1">Referência do Produto</label>
+                  <input className="legacy-input w-full" value={productForm.reference} onChange={e => setProductForm({ ...productForm, reference: e.target.value })} />
+                </div>
+                <div>
+                  <label className="legacy-label block mb-1">Código de Barras</label>
+                  <input className="legacy-input w-full" value={productForm.barcode} onChange={e => setProductForm({ ...productForm, barcode: e.target.value })} />
+                </div>
+                <div>
+                  <label className="legacy-label block mb-1">Unidade</label>
+                  <select className="legacy-input w-full" value={productForm.unit} onChange={e => setProductForm({ ...productForm, unit: e.target.value })}>
+                    {['un', 'm²', 'm', 'pç', 'hr', 'vb', 'kg', 'l'].map(u => <option key={u}>{u}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="legacy-label block mb-1">Descrição do Produto ou Serviço *</label>
+                <input className="legacy-input w-full font-bold" value={productForm.name} onChange={e => setProductForm({ ...productForm, name: e.target.value })} />
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="legacy-label block mb-1">Marca</label>
+                  <input className="legacy-input w-full" value={productForm.brand} onChange={e => setProductForm({ ...productForm, brand: e.target.value })} />
+                </div>
+                <div>
+                  <label className="legacy-label block mb-1">Grupo / Categoria</label>
+                  <input className="legacy-input w-full" value={productForm.category} onChange={e => setProductForm({ ...productForm, category: e.target.value })} />
+                </div>
+                <div>
+                  <label className="legacy-label block mb-1">Localização Física</label>
+                  <input className="legacy-input w-full" value={productForm.location} onChange={e => setProductForm({ ...productForm, location: e.target.value })} />
+                </div>
+              </div>
+
+              <div>
+                <label className="legacy-label block mb-1">Complemento do Produto <span className="text-gray-400">(aparece somente em ordem de serviço)</span></label>
+                <input className="legacy-input w-full bg-yellow-50 mb-1" value={productForm.complement1} onChange={e => setProductForm({ ...productForm, complement1: e.target.value })} />
+                <input className="legacy-input w-full bg-yellow-50" value={productForm.complement2} onChange={e => setProductForm({ ...productForm, complement2: e.target.value })} />
+              </div>
+
+              <div className="flex gap-4 flex-wrap">
+                <label className="flex items-center gap-1 text-[11px]"><input type="checkbox" checked={productForm.control_stock} onChange={e => setProductForm({ ...productForm, control_stock: e.target.checked })} /> Controlar Estoque</label>
+                <label className="flex items-center gap-1 text-[11px]"><input type="checkbox" checked={productForm.sell_zero_stock} onChange={e => setProductForm({ ...productForm, sell_zero_stock: e.target.checked })} /> Vender com Estoque Zerado</label>
+                <label className="flex items-center gap-1 text-[11px]"><input type="checkbox" checked={productForm.update_cost_on_purchase} onChange={e => setProductForm({ ...productForm, update_cost_on_purchase: e.target.checked })} /> Atualizar Custo em Compras</label>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="legacy-label block mb-1">Estoque Mínimo</label>
+                    <input type="number" className="legacy-input w-full text-right" value={productForm.min_stock} onChange={e => setProductForm({ ...productForm, min_stock: +e.target.value })} />
+                  </div>
+                  <div>
+                    <label className="legacy-label block mb-1">Estoque Atual</label>
+                    <input type="number" className="legacy-input w-full text-right" value={productForm.current_stock} onChange={e => setProductForm({ ...productForm, current_stock: +e.target.value })} />
+                  </div>
+                </div>
+                <div>
+                  <label className="legacy-label block mb-1">Valor Custo (R$)</label>
+                  <input type="number" step="0.01" className="legacy-input w-full text-right font-bold" value={productForm.cost_price} onChange={e => setProductForm({ ...productForm, cost_price: +e.target.value })} />
+                </div>
+              </div>
+
+              <div className="bg-yellow-50 border border-yellow-300 rounded p-3">
+                <label className="legacy-label block mb-2 font-bold">Margens e Preços Calculados</label>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-white border border-gray-300 rounded p-2">
+                    <label className="legacy-label block mb-1">Margem Avista (%)</label>
+                    <input type="number" step="0.01" className="legacy-input w-full text-right mb-2" value={productForm.margin_avista} onChange={e => setProductForm({ ...productForm, margin_avista: +e.target.value })} />
+                    <div className="text-[10px] text-gray-500">Valor Avista</div>
+                    <div className="font-bold text-green-700 text-right">R$ {fmtMoney(productPriceAvista)}</div>
+                  </div>
+                  <div className="bg-white border border-gray-300 rounded p-2">
+                    <label className="legacy-label block mb-1">Margem Aprazo (%)</label>
+                    <input type="number" step="0.01" className="legacy-input w-full text-right mb-2" value={productForm.margin_aprazo} onChange={e => setProductForm({ ...productForm, margin_aprazo: +e.target.value })} />
+                    <div className="text-[10px] text-gray-500">Valor Aprazo</div>
+                    <div className="font-bold text-purple-700 text-right">R$ {fmtMoney(productPriceAprazo)}</div>
+                  </div>
+                  <div className="bg-white border border-gray-300 rounded p-2">
+                    <label className="legacy-label block mb-1">Margem Atacado (%)</label>
+                    <input type="number" step="0.01" className="legacy-input w-full text-right mb-2" value={productForm.margin_atacado} onChange={e => setProductForm({ ...productForm, margin_atacado: +e.target.value })} />
+                    <div className="text-[10px] text-gray-500">Valor Atacado</div>
+                    <div className="font-bold text-orange-700 text-right">R$ {fmtMoney(productPriceAtacado)}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-2 justify-end pt-2 border-t border-gray-200">
+                <button className="legacy-button" onClick={saveProduct}><CheckSquare size={13} className="text-green-600" /> Salvar</button>
+                <button className="legacy-button" onClick={() => setShowProductRegistrationModal(false)}><X size={13} className="text-blue-600" /> Sair</button>
               </div>
             </div>
           </div>
@@ -934,7 +1225,7 @@ const LegacySystemPage: React.FC = () => {
                 <div className="flex gap-2">
                   <button className="legacy-button flex flex-col items-center justify-center w-12 h-12" onClick={() => toast({ title: 'ℹ️ Busca por imagem ainda não implementada nesta versão.' })}><ImageIcon size={16} className="text-green-600" /><span className="text-[9px]">Imagem</span></button>
                   <button className="legacy-button flex flex-col items-center justify-center w-12 h-12" onClick={() => toast({ title: 'ℹ️ Leitura de código de barras ainda não implementada nesta versão.' })}><div className="w-4 h-3 bg-gray-500 mb-1" /><span className="text-[9px]">CodBarra</span></button>
-                  <button className="legacy-button flex flex-col items-center justify-center w-12 h-12" onClick={() => { setShowProductSearchModal(false); openItemForm(); }}><Plus size={16} className="text-green-600" /><span className="text-[9px]">Incluir</span></button>
+                  <button className="legacy-button flex flex-col items-center justify-center w-12 h-12" onClick={() => { openProductRegistrationForm(); }}><Plus size={16} className="text-green-600" /><span className="text-[9px]">Incluir</span></button>
                 </div>
                 <div className="w-12"></div>
                 <div className="w-12 text-right">
@@ -970,6 +1261,8 @@ const LegacySystemPage: React.FC = () => {
                         <th>Descrição do Produto</th>
                         <th>Uni</th>
                         <th>Valor Avista</th>
+                        <th>Valor Aprazo</th>
+                        <th>Valor Atacado</th>
                         <th>Est. Atual</th>
                         <th>Grupo / Categoria</th>
                         <th>Marca do Produto</th>
@@ -978,22 +1271,38 @@ const LegacySystemPage: React.FC = () => {
                     </thead>
                     <tbody>
                       {/* Fake data since we may not have a populated products table */}
-                      {[...productsList, ...Array.from({ length: 15 })].map((prod, i) => (
-                        <tr key={prod?.id || i} style={{ backgroundColor: '#c8e6c9', borderBottom: '1px solid #a5d6a7', cursor: 'pointer' }} onClick={() => {
-                          openItemForm({ id: Date.now().toString(), description: prod?.name || `20 MTS FITA ${['SAFIRA', 'BRANCO DIAMANTE', 'ABSOLUTO', 'ACACIA', 'ALMERIA', 'ARAUCARIA', 'ARDOSIA', 'AREIA'][i % 8] || 'GENERIC'}`, unit: 'un', width: 0, height: 0, value: prod?.price || 95.55, quantity: 1, total_m2: 0, total_value: prod?.price || 95.55 });
-                          setShowProductSearchModal(false);
-                        }}>
-                          <td style={{ width: 80 }}><div className="flex justify-between items-center"><Camera size={10} className="text-gray-500" /></div></td>
-                          <td style={{ width: 60, textAlign: 'right' }}>{prod?.id || i + 1}</td>
-                          <td>{prod?.name || `20 MTS FITA ${['SAFIRA', 'BRANCO DIAMANTE', 'ABSOLUTO', 'ACACIA', 'ALMERIA', 'ARAUCARIA', 'ARDOSIA', 'AREIA'][i % 8] || 'GENERIC'}`}</td>
-                          <td style={{ width: 40, textAlign: 'center' }}>UNI</td>
-                          <td style={{ width: 80, textAlign: 'right' }}>{fmtMoney(prod?.price || (90 + i))}</td>
-                          <td style={{ width: 80, textAlign: 'right' }}>{fmtMoney(1000 - i * 10)}</td>
-                          <td>FITA DE BORDO</td>
-                          <td>{i % 4 === 0 ? 'GUARARAPES' : ''}</td>
-                          <td></td>
-                        </tr>
-                      ))}
+                      {[...productsList, ...Array.from({ length: 15 })].map((prod, i) => {
+                        const fakeName = `20 MTS FITA ${['SAFIRA', 'BRANCO DIAMANTE', 'ABSOLUTO', 'ACACIA', 'ALMERIA', 'ARAUCARIA', 'ARDOSIA', 'AREIA'][i % 8] || 'GENERIC'}`;
+                        const pAvista = prod?.price_avista ?? prod?.price ?? (90 + i);
+                        const pAprazo = prod?.price_aprazo ?? +(pAvista * 1.15).toFixed(2);
+                        const pAtacado = prod?.price_atacado ?? +(pAvista * 0.9).toFixed(2);
+                        return (
+                          <tr key={prod?.id || i} style={{ backgroundColor: '#c8e6c9', borderBottom: '1px solid #a5d6a7', cursor: 'pointer' }}
+                            onClick={() => {
+                              const usedValue = activePriceTable === 'aprazo' ? pAprazo : activePriceTable === 'atacado' ? pAtacado : pAvista;
+                              openItemForm({
+                                id: Date.now().toString(), description: prod?.name || fakeName, unit: prod?.unit || 'un',
+                                width: 0, height: 0, value: usedValue, quantity: 1, total_m2: 0, total_value: usedValue,
+                                price_table: activePriceTable, price_avista: pAvista, price_aprazo: pAprazo, price_atacado: pAtacado,
+                              });
+                              setShowProductSearchModal(false);
+                            }}
+                            onDoubleClick={(e) => { e.stopPropagation(); openProductRegistrationForm(prod); }}
+                          >
+                            <td style={{ width: 80 }}><div className="flex justify-between items-center"><Camera size={10} className="text-gray-500" /></div></td>
+                            <td style={{ width: 60, textAlign: 'right' }}>{prod?.id ? String(prod.id).slice(0, 5) : i + 1}</td>
+                            <td>{prod?.name || fakeName}</td>
+                            <td style={{ width: 40, textAlign: 'center' }}>{(prod?.unit || 'UNI').toUpperCase()}</td>
+                            <td style={{ width: 75, textAlign: 'right' }}>{fmtMoney(pAvista)}</td>
+                            <td style={{ width: 75, textAlign: 'right' }}>{fmtMoney(pAprazo)}</td>
+                            <td style={{ width: 75, textAlign: 'right' }}>{fmtMoney(pAtacado)}</td>
+                            <td style={{ width: 80, textAlign: 'right' }}>{fmtMoney(prod?.current_stock ?? (1000 - i * 10))}</td>
+                            <td>{prod?.category || 'FITA DE BORDO'}</td>
+                            <td>{prod?.brand || (i % 4 === 0 ? 'GUARARAPES' : '')}</td>
+                            <td>{prod?.location || ''}</td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -1190,15 +1499,15 @@ const LegacySystemPage: React.FC = () => {
           <div className="flex flex-col mt-3 border border-gray-300 p-1">
             <label className="flex items-center text-[11px]">
               <span className="w-24">Tabela Avista</span>
-              <input type="checkbox" className="legacy-checkbox" checked={tabAvista} onChange={e => setTabAvista(e.target.checked)} />
+              <input type="checkbox" className="legacy-checkbox" checked={tabAvista} onChange={() => { setActivePriceTable('avista'); recalcAllItemsForTable('avista'); }} />
             </label>
             <label className="flex items-center text-[11px]">
               <span className="w-24">Tabela Aprazo</span>
-              <input type="checkbox" className="legacy-checkbox" checked={tabAprazo} onChange={e => setTabAprazo(e.target.checked)} />
+              <input type="checkbox" className="legacy-checkbox" checked={tabAprazo} onChange={() => { setActivePriceTable('aprazo'); recalcAllItemsForTable('aprazo'); }} />
             </label>
             <label className="flex items-center text-[11px]">
               <span className="w-24">Tabela Atacado</span>
-              <input type="checkbox" className="legacy-checkbox" checked={tabAtacado} onChange={e => setTabAtacado(e.target.checked)} />
+              <input type="checkbox" className="legacy-checkbox" checked={tabAtacado} onChange={() => { setActivePriceTable('atacado'); recalcAllItemsForTable('atacado'); }} />
             </label>
           </div>
 
@@ -1256,6 +1565,9 @@ const LegacySystemPage: React.FC = () => {
             </div>
             <div className={`legacy-tab ${activeTab === 'controle' ? 'active' : ''}`} onClick={() => setActiveTab('controle')}>
               Informações de Controle Interno / Registros Diversos
+            </div>
+            <div className={`legacy-tab ${activeTab === 'taxa' ? 'active' : ''}`} onClick={() => setActiveTab('taxa')}>
+              Taxa / Acréscimo (%) -&gt;
             </div>
             <div className="ml-auto">
               <button className="text-gray-500 font-bold border border-gray-400 px-2 rounded-sm text-xs bg-gray-200">?</button>
@@ -1330,12 +1642,13 @@ const LegacySystemPage: React.FC = () => {
                           <th>Valor</th>
                           <th>Quantia</th>
                           <th>Vlr Total</th>
+                          <th>Tabela de Preço</th>
                           <th>C...</th>
                         </tr>
                       </thead>
                       <tbody>
                         {osItems.length === 0 && (
-                          <tr><td colSpan={10} style={{ textAlign: 'center', color: '#888', padding: 8 }}>
+                          <tr><td colSpan={11} style={{ textAlign: 'center', color: '#888', padding: 8 }}>
                             Nenhum item. Clique em "Incluir".
                           </td></tr>
                         )}
@@ -1355,6 +1668,9 @@ const LegacySystemPage: React.FC = () => {
                             <td>R$ {fmtMoney(it.value)}</td>
                             <td>{it.quantity}</td>
                             <td style={{ fontWeight: 'bold', color: '#0000aa' }}>R$ {fmtMoney(it.total_value)}</td>
+                            <td style={{ fontSize: 10, fontWeight: 'bold', color: it.price_table === 'atacado' ? '#a05a00' : it.price_table === 'aprazo' ? '#8800aa' : '#006600' }}>
+                              {PRICE_TABLE_LABELS[it.price_table] || PRICE_TABLE_LABELS.avista}
+                            </td>
                             <td></td>
                           </tr>
                         ))}
@@ -1485,6 +1801,48 @@ const LegacySystemPage: React.FC = () => {
                 </div>
               </div>
             )}
+
+            {/* ── ABA: Taxa / Acréscimo (%) ──────────────────────────── */}
+            {activeTab === 'taxa' && (
+              <div className="flex flex-col gap-3 items-start p-2">
+                <div className="bg-yellow-50 border border-yellow-300 rounded p-3 w-full max-w-sm">
+                  <label className="legacy-label block mb-1 font-bold">Percentual de Acréscimo (%)</label>
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="text"
+                      className="legacy-input legacy-money-input w-24"
+                      value={taxaPercentual}
+                      onChange={e => setTaxaPercentual(e.target.value)}
+                      onBlur={e => setTaxaPercentual(fmtMoney(parseMoney(e.target.value)))}
+                    />
+                    <span className="text-[13px] font-bold">%</span>
+                  </div>
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    Calculado sobre o Total Geral da lista de produtos/serviços (R$ {fmtMoney(totalGeralItens)})
+                  </p>
+                </div>
+
+                <div className="bg-white border border-gray-300 rounded p-3 w-full max-w-sm">
+                  <div className="flex justify-between text-[12px] mb-1">
+                    <span>Total Geral (itens):</span>
+                    <span className="font-bold">R$ {fmtMoney(totalGeralItens)}</span>
+                  </div>
+                  <div className="flex justify-between text-[12px] mb-1">
+                    <span>Percentual aplicado:</span>
+                    <span className="font-bold">{taxaPercentual}%</span>
+                  </div>
+                  <div className="h-px w-full bg-gray-300 my-1" />
+                  <div className="flex justify-between text-[13px]">
+                    <span className="font-bold">Valor do Acréscimo:</span>
+                    <span className="font-bold text-green-700">R$ {fmtMoney(valorTaxaCalculado)}</span>
+                  </div>
+                </div>
+
+                <p className="text-[10px] text-gray-400 max-w-sm">
+                  Este valor é somado automaticamente ao campo TOTAL no painel inferior.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1590,6 +1948,16 @@ const LegacySystemPage: React.FC = () => {
                 value={desconto}
                 onChange={e => setDesconto(e.target.value)}
                 onBlur={e => setDesconto(fmtMoney(parseMoney(e.target.value)))}
+              />
+            </div>
+            <div className="flex items-center">
+              <div className="legacy-money-label flex items-center justify-end">TAXA (%)</div>
+              <span className="mx-1 text-[11px]">(+)</span>
+              <input
+                type="text" className="legacy-input legacy-money-input w-24 text-green-700"
+                value={fmtMoney(valorTaxaCalculado)}
+                readOnly
+                title={`${taxaPercentual}% sobre o Total Geral`}
               />
             </div>
             <div className="h-px w-full bg-gray-400 my-1" />
