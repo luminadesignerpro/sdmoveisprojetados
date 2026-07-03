@@ -808,63 +808,6 @@ const LegacySystemPage: React.FC = () => {
             </div>
           </div>
         </div>
-      )}                autoFocus
-                    type="text"
-                    value={clientSearch}
-                    onChange={e => setClientSearch(e.target.value)}
-                    className="legacy-input w-full bg-yellow-100"
-                  />
-                </div>
-                <div className="flex-1">
-                  <span className="legacy-label text-[10px]">Pesquisar por Nome Fantasia</span><br />
-                  <input type="text" className="legacy-input w-full bg-yellow-100" />
-                </div>
-                <div className="flex-1">
-                  <span className="legacy-label text-[10px]">Rastrear por Nome</span><br />
-                  <input type="text" className="legacy-input w-full" />
-                </div>
-                <div className="flex-1">
-                  <span className="legacy-label text-[10px]">Rastrear Telefone</span><br />
-                  <input type="text" className="legacy-input w-full text-red-600 text-center" defaultValue="-" />
-                </div>
-                <div className="flex gap-1 mb-1">
-                  <button className="bg-green-100 border border-green-400 p-1 rounded-sm"><Plus size={16} className="text-green-600" /></button>
-                  <button className="bg-gray-100 border border-gray-400 p-1 rounded-sm"><Edit size={16} className="text-gray-600" /></button>
-                  <button className="bg-blue-100 border border-blue-400 p-1 rounded-sm"><Search size={16} className="text-blue-600" /></button>
-                </div>
-              </div>
-              <div style={{ height: 350, overflowY: 'auto', border: '1px solid #a0a0a0', backgroundColor: '#fff' }}>
-                <table className="legacy-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr>
-                      <th style={{ width: '50px' }}>Código</th>
-                      <th>Nome do Cliente / Razão Social</th>
-                      <th>Fantasia/Apelido</th>
-                      <th style={{ width: '100px' }}>WhatsApp</th>
-                      <th style={{ width: '100px' }}>Telefone</th>
-                      <th style={{ width: '120px' }}>Tipo Cadastro -&gt;-&gt;-&gt;</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredClients.length === 0 && (
-                      <tr><td colSpan={6} style={{ textAlign: 'center', color: '#888', padding: 8 }}>Nenhum cliente encontrado</td></tr>
-                    )}
-                    {filteredClients.map(c => (
-                      <tr key={c.id} onClick={() => selectClient(c)} style={{ cursor: 'pointer', borderBottom: '1px solid #eee' }}>
-                        <td>{String(c.id).substring(0, 5).padStart(5, '0')}</td>
-                        <td>{c.name.toUpperCase()}</td>
-                        <td></td>
-                        <td>{c.phone ? `(${c.phone.slice(0, 2)}) ${c.phone.slice(2, 7)}-${c.phone.slice(7)}` : ''}</td>
-                        <td>{c.phone ? `(${c.phone.slice(0, 2)}) ${c.phone.slice(2, 7)}-${c.phone.slice(7)}` : ''}</td>
-                        <td></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
       )}
 
       {/* ── Payment Modal ───────────────────────────────────────────────── */}
