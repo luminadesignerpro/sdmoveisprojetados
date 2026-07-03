@@ -76,16 +76,22 @@ const LegacySystemPage: React.FC = () => {
   // ── client search modal ────────────────────────────────────────────────────
   const [showClientModal, setShowClientModal] = useState(false);
   const [clientSearch, setClientSearch] = useState('');
+  const [clientFantasiaSearch, setClientFantasiaSearch] = useState('');
+  const [clientPhoneSearch, setClientPhoneSearch] = useState('');
+  const [editingClientId, setEditingClientId] = useState<string | null>(null);
 
   // ── new modals state ────────────────────────────────────────────────────────
   const [showCustomerRegistrationModal, setShowCustomerRegistrationModal] = useState(false);
   const [customerRegistrationTab, setCustomerRegistrationTab] = useState('endereco');
+  const [savingCustomer, setSavingCustomer] = useState(false);
 
   // Customer Form State
   const [customerForm, setCustomerForm] = useState({
-    fantasia: 'SD MOVEIS', rua: '', bairro: 'ITAITINGA', cidade: 'ITAITINGA', uf: 'CE', cep: '',
+    name: '', fantasia: '', rua: '', bairro: '', cidade: '', uf: 'CE', cep: '',
     tel1: '', tel2: '', celular: '', whatsapp: '', complemento: '', email: '', contato: '', skype: '', redeSocial: '',
-    cnpj: '../-', ie: '', im: '', cpf: '', rg: '', orgaoEmissor: ''
+    cnpj: '', ie: '', im: '', cpf: '', rg: '', orgaoEmissor: '',
+    clientStatus: 'liberar' as 'liberar' | 'restringir' | 'bloquear',
+    seguimento: 'EMPRESARIO',
   });
 
   const [showProductSearchModal, setShowProductSearchModal] = useState(false);
@@ -141,9 +147,8 @@ const LegacySystemPage: React.FC = () => {
   const [showValoresImp, setShowValoresImp] = useState(false);
   const [situacaoAtual, setSituacaoAtual] = useState('Aguardando Aprovação');
   const [dataAprovacao, setDataAprovacao] = useState('');
-  const [valorMaterial, setValorMaterial] = useState('0,00');
-  const [valorServico, setValorServico] = useState('0,00');
   const [desconto, setDesconto] = useState('0,00');
+  const [frete, setFrete] = useState('0,00');
   const [taxaPercentual, setTaxaPercentual] = useState('0,00');
 
   // ── payment modal ─────────────────────────────────────────────────────────
@@ -162,9 +167,12 @@ const LegacySystemPage: React.FC = () => {
   const [editingOsId, setEditingOsId] = useState<string | null>(null);
 
   // ── computed total ────────────────────────────────────────────────────────
+  // VALOR MATERIAL = soma automática da Lista de Produtos e Serviços (Total Geral)
   const totalGeralItens = osItems.reduce((s, i) => s + i.total_value, 0);
-  const valorTaxaCalculado = totalGeralItens * (parseMoney(taxaPercentual) / 100);
-  const total = parseMoney(valorMaterial) + parseMoney(valorServico) - parseMoney(desconto) + valorTaxaCalculado;
+  const valorMaterialNum = totalGeralItens;
+  // VALOR SERVIÇO = Valor Material x Taxa (%)
+  const valorServicoCalculado = valorMaterialNum * (parseMoney(taxaPercentual) / 100);
+  const total = valorMaterialNum + valorServicoCalculado + parseMoney(frete) - parseMoney(desconto);
 
   // ─── On mount: load employees, clients, next order number ─────────────────
   useEffect(() => {
@@ -216,8 +224,6 @@ const LegacySystemPage: React.FC = () => {
       historicoServico ? `[Histórico]: ${historicoServico}` : '',
     ].filter(Boolean).join('\n');
 
-    const itemsTotal = osItems.reduce((s, i) => s + i.total_value, 0);
-
     const payload = {
       order_number: orderNo,
       client_id: cId,
@@ -225,7 +231,7 @@ const LegacySystemPage: React.FC = () => {
       status: situacaoAtual === 'Concluído' ? 'concluida' : situacaoAtual === 'Em Andamento' ? 'em_andamento' : 'aberta',
       priority: 'normal',
       assigned_to: responsavel || null,
-      total_value: (itemsTotal > 0 ? itemsTotal : (parseMoney(valorMaterial) + parseMoney(valorServico) - parseMoney(desconto))) + valorTaxaCalculado,
+      total_value: total,
       notes: notesArr || null,
       estimated_date: dataAprovacao ? (() => {
         const [d, m, y] = dataAprovacao.split('/');
@@ -259,9 +265,11 @@ const LegacySystemPage: React.FC = () => {
   };
 
   // ─── Client search ─────────────────────────────────────────────────────────
-  const filteredClients = clients.filter(c =>
-    c.name.toLowerCase().includes(clientSearch.toLowerCase())
-  );
+  const filteredClients = clients.filter(c => {
+    const nameMatch = c.name.toLowerCase().includes(clientSearch.toLowerCase());
+    const phoneMatch = !clientPhoneSearch || (c.phone || '').includes(clientPhoneSearch.replace(/\D/g, ''));
+    return nameMatch && phoneMatch;
+  });
 
   const selectClient = (c: any) => {
     setClientId(c.id);
@@ -269,6 +277,38 @@ const LegacySystemPage: React.FC = () => {
     setPhone(c.phone ? `(${c.phone.slice(0, 2)}) ${c.phone.slice(2, 7)}-${c.phone.slice(7)}` : '( ) -');
     setShowClientModal(false);
     setClientSearch('');
+    setClientFantasiaSearch('');
+    setClientPhoneSearch('');
+  };
+
+  const openNewClientForm = () => {
+    setEditingClientId(null);
+    setCustomerForm({
+      name: '', fantasia: '', rua: '', bairro: '', cidade: '', uf: 'CE', cep: '',
+      tel1: '', tel2: '', celular: '', whatsapp: '', complemento: '', email: '', contato: '', skype: '', redeSocial: '',
+      cnpj: '', ie: '', im: '', cpf: '', rg: '', orgaoEmissor: '',
+      clientStatus: 'liberar', seguimento: 'EMPRESARIO',
+    });
+    setCustomerRegistrationTab('endereco');
+    setShowCustomerRegistrationModal(true);
+  };
+
+  const openEditClientForm = (c: any) => {
+    setEditingClientId(c.id);
+    const ph = c.phone || '';
+    setCustomerForm({
+      name: c.name || '', fantasia: c.fantasia || '', rua: c.rua || '', bairro: c.bairro || '',
+      cidade: c.cidade || '', uf: c.uf || 'CE', cep: c.cep || '',
+      tel1: c.tel1 || (ph.length >= 10 ? `(${ph.slice(0,2)}) ${ph.slice(2,6)}-${ph.slice(6)}` : ph),
+      tel2: c.tel2 || '', celular: c.celular || '', whatsapp: c.whatsapp || ph,
+      complemento: c.complemento || '', email: c.email || '', contato: c.contato || '',
+      skype: c.skype || '', redeSocial: c.redeSocial || '',
+      cnpj: c.cnpj || '', ie: c.ie || '', im: c.im || '', cpf: c.cpf || '',
+      rg: c.rg || '', orgaoEmissor: c.orgaoEmissor || '',
+      clientStatus: c.client_status || 'liberar', seguimento: c.seguimento || 'EMPRESARIO',
+    });
+    setCustomerRegistrationTab('endereco');
+    setShowCustomerRegistrationModal(true);
   };
 
   // ─── Items ─────────────────────────────────────────────────────────────────
@@ -361,6 +401,51 @@ const LegacySystemPage: React.FC = () => {
       });
     }
     setShowProductRegistrationModal(true);
+  };
+
+  // ─── Save Customer to DB ────────────────────────────────────────────────────
+  const saveCustomer = async () => {
+    if (!customerForm.name.trim()) {
+      toast({ title: '⚠️ Informe o nome do cliente', variant: 'destructive' });
+      return;
+    }
+    setSavingCustomer(true);
+    const phoneVal = customerForm.celular || customerForm.whatsapp || customerForm.tel1 || '';
+    const payload = {
+      name: customerForm.name.trim().toUpperCase(),
+      phone: phoneVal.replace(/\D/g, '') || null,
+    };
+    try {
+      let error;
+      let savedClient: any = null;
+      if (editingClientId) {
+        const { error: e } = await db.from('clients').update(payload).eq('id', editingClientId);
+        error = e;
+        if (!e) savedClient = { id: editingClientId, ...payload };
+      } else {
+        const { data: nc, error: e } = await db.from('clients').insert(payload).select('id, name, phone').single();
+        error = e;
+        if (!e) savedClient = nc;
+      }
+      if (error) {
+        toast({ title: '❌ Erro ao salvar cliente', description: error.message, variant: 'destructive' });
+        return;
+      }
+      // Refresh clients list
+      const { data: updatedClients } = await db.from('clients').select('id, name, phone').order('name');
+      if (updatedClients) setClients(updatedClients);
+      // Auto-select this client in the OS
+      if (savedClient) {
+        setClientId(savedClient.id);
+        setClientDesc(savedClient.name.toUpperCase());
+        const ph = savedClient.phone || '';
+        setPhone(ph.length >= 10 ? `(${ph.slice(0,2)}) ${ph.slice(2,7)}-${ph.slice(7)}` : ph || '( ) -');
+      }
+      toast({ title: editingClientId ? '✅ Cliente atualizado com sucesso!' : '✅ Cliente cadastrado com sucesso!' });
+      setShowCustomerRegistrationModal(false);
+    } finally {
+      setSavingCustomer(false);
+    }
   };
 
   const saveProduct = async () => {
@@ -483,10 +568,10 @@ const LegacySystemPage: React.FC = () => {
       </tr>`).join('')}
       </table>
       <p class="total" style="text-align:right;margin-top:8px">
-        Material: R$ ${valorMaterial} &nbsp;|&nbsp;
-        Serviço: R$ ${valorServico} &nbsp;|&nbsp;
+        Material: R$ ${fmtMoney(valorMaterialNum)} &nbsp;|&nbsp;
+        Serviço (${taxaPercentual}%): R$ ${fmtMoney(valorServicoCalculado)} &nbsp;|&nbsp;
+        Frete: R$ ${frete} &nbsp;|&nbsp;
         Desconto: R$ ${desconto} &nbsp;|&nbsp;
-        Taxa (${taxaPercentual}%): R$ ${fmtMoney(valorTaxaCalculado)} &nbsp;|&nbsp;
         <span style="font-size:16px">TOTAL: R$ ${fmtMoney(total)}</span>
       </p>
       </body></html>
@@ -640,7 +725,7 @@ const LegacySystemPage: React.FC = () => {
     <>
       <style>{css}</style>
 
-      {/* ── Client Search Modal ─────────────────────────────────────────── */}
+      {/* ── Client Search Modal ─────────────────────────────────────── */}
       {showClientModal && (
         <div className="legacy-modal-scope fixed inset-0 z-[80] bg-black/50 flex items-center justify-center p-4">
           <div className="bg-white border border-gray-400 rounded shadow-lg w-full max-w-4xl" style={{ fontFamily: 'Tahoma,Arial,sans-serif', fontSize: 11, color: '#000' }}>
@@ -654,6 +739,76 @@ const LegacySystemPage: React.FC = () => {
                   <span className="legacy-label text-[10px]">Pesquisar por Nome Razão Social</span><br />
                   <input
                     autoFocus
+                    type="text"
+                    value={clientSearch}
+                    onChange={e => setClientSearch(e.target.value)}
+                    className="legacy-input w-full bg-yellow-100"
+                    placeholder="Digite o nome..."
+                  />
+                </div>
+                <div className="flex-1">
+                  <span className="legacy-label text-[10px]">Pesquisar por Nome Fantasia</span><br />
+                  <input type="text" value={clientFantasiaSearch} onChange={e => setClientFantasiaSearch(e.target.value)} className="legacy-input w-full bg-yellow-100" placeholder="Fantasia..." />
+                </div>
+                <div className="flex-1">
+                  <span className="legacy-label text-[10px]">Rastrear por Nome</span><br />
+                  <input type="text" className="legacy-input w-full" />
+                </div>
+                <div className="flex-1">
+                  <span className="legacy-label text-[10px]">Rastrear Telefone</span><br />
+                  <input type="text" value={clientPhoneSearch} onChange={e => setClientPhoneSearch(e.target.value)} className="legacy-input w-full text-red-600 text-center" placeholder="-" />
+                </div>
+                <div className="flex gap-1 mb-1">
+                  <button title="Novo Cliente" className="bg-green-100 border border-green-400 p-1 rounded-sm" onClick={() => { setShowClientModal(false); openNewClientForm(); }}><Plus size={16} className="text-green-600" /></button>
+                  <button title="Editar Cliente Selecionado" className="bg-gray-100 border border-gray-400 p-1 rounded-sm" onClick={() => {
+                    if (filteredClients.length > 0) { setShowClientModal(false); openEditClientForm(filteredClients[0]); }
+                    else toast({ title: '⚠️ Selecione um cliente para editar', variant: 'destructive' });
+                  }}><Edit size={16} className="text-gray-600" /></button>
+                  <button title="Pesquisar" className="bg-blue-100 border border-blue-400 p-1 rounded-sm" onClick={() => setClientSearch(clientSearch)}><Search size={16} className="text-blue-600" /></button>
+                </div>
+              </div>
+              <div style={{ height: 350, overflowY: 'auto', border: '1px solid #a0a0a0', backgroundColor: '#fff' }}>
+                <table className="legacy-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ width: '50px' }}>Código</th>
+                      <th>Nome do Cliente / Razão Social</th>
+                      <th>Fantasia/Apelido</th>
+                      <th style={{ width: '100px' }}>WhatsApp</th>
+                      <th style={{ width: '100px' }}>Telefone</th>
+                      <th style={{ width: '120px' }}>Tipo Cadastro -&gt;-&gt;-&gt;</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredClients.length === 0 && (
+                      <tr><td colSpan={6} style={{ textAlign: 'center', color: '#888', padding: 8 }}>Nenhum cliente encontrado</td></tr>
+                    )}
+                    {filteredClients.map(c => (
+                      <tr key={c.id}
+                        onClick={() => selectClient(c)}
+                        onDoubleClick={() => { setShowClientModal(false); openEditClientForm(c); }}
+                        style={{ cursor: 'pointer', borderBottom: '1px solid #eee' }}
+                        title="Clique para selecionar • Duplo clique para editar"
+                      >
+                        <td>{String(c.id).substring(0, 5).padStart(5, '0')}</td>
+                        <td>{c.name.toUpperCase()}</td>
+                        <td>{c.fantasia || ''}</td>
+                        <td>{c.phone ? `(${c.phone.slice(0, 2)}) ${c.phone.slice(2, 7)}-${c.phone.slice(7)}` : ''}</td>
+                        <td>{c.phone ? `(${c.phone.slice(0, 2)}) ${c.phone.slice(2, 7)}-${c.phone.slice(7)}` : ''}</td>
+                        <td>{c.seguimento || ''}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="flex justify-between items-center mt-2 text-[10px] text-gray-500">
+                <span>{filteredClients.length} cliente(s) encontrado(s)</span>
+                <span>Clique para selecionar • Duplo clique para editar • Botão + para novo</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}                autoFocus
                     type="text"
                     value={clientSearch}
                     onChange={e => setClientSearch(e.target.value)}
@@ -804,11 +959,11 @@ const LegacySystemPage: React.FC = () => {
               <button
                 className="legacy-button w-full text-xs mt-1"
                 onClick={() => {
-                  setValorMaterial(calcDisplay.replace('.', ','));
+                  setFrete(fmtMoney(parseFloat(calcDisplay) || 0));
                   setShowCalc(false);
                 }}
               >
-                → Usar no Material
+                → Usar no Frete
               </button>
             </div>
           </div>
@@ -1030,35 +1185,54 @@ const LegacySystemPage: React.FC = () => {
               <div className="flex gap-2">
                 <div className="w-16">
                   <span className="legacy-label text-[10px]">Registro</span>
-                  <input className="legacy-input w-full text-right font-bold" value="4" readOnly />
+                  <input className="legacy-input w-full text-right font-bold" value={editingClientId ? String(clients.findIndex(c => c.id === editingClientId) + 1) : clients.length + 1} readOnly />
                 </div>
                 <div className="w-24">
                   <span className="legacy-label text-[10px]">Data Cadastro</span>
                   <input className="legacy-input w-full text-center" value={format(new Date(), 'dd/MM/yyyy')} readOnly />
                 </div>
                 <div className="flex-1 flex gap-2 justify-center items-end ml-4">
-                  <button className="legacy-button h-6 w-32 flex justify-center items-center" onClick={() => toast({ title: 'ℹ️ Pesquisa de Vendas ainda não implementada nesta versão.' })}><span className="w-4 h-1 bg-gray-400 mr-2" /> Pesquisar Vendas</button>
-                  <button className="legacy-button h-6 w-32 flex justify-center items-center" onClick={() => toast({ title: 'ℹ️ Pesquisa de Serviços ainda não implementada nesta versão.' })}><span className="w-4 h-1 bg-gray-400 mr-2" /> Pesquisar Serviços</button>
-                  <button className="legacy-button h-6 w-36 flex justify-center items-center" onClick={() => toast({ title: 'ℹ️ Pesquisa Financeira ainda não implementada nesta versão.' })}><div className="rounded-full bg-gray-400 w-4 h-4 mr-2" /> Pesquisar Financeiro</button>
+                  <button className="legacy-button h-6 w-32 flex justify-center items-center" onClick={() => {
+                    if (editingClientId) { setShowProductSearchModal(false); setShowOSSearchModal(true); }
+                    else toast({ title: 'ℹ️ Salve o cliente primeiro para ver suas Ordens de Serviço.' });
+                  }}><span className="w-4 h-1 bg-gray-400 mr-2" /> Pesquisar Vendas</button>
+                  <button className="legacy-button h-6 w-32 flex justify-center items-center" onClick={() => {
+                    if (editingClientId) { setShowOSSearchModal(true); }
+                    else toast({ title: 'ℹ️ Salve o cliente primeiro para ver seus Serviços.' });
+                  }}><span className="w-4 h-1 bg-gray-400 mr-2" /> Pesquisar Serviços</button>
+                  <button className="legacy-button h-6 w-36 flex justify-center items-center" onClick={() => toast({ title: 'ℹ️ Módulo Financeiro disponível em breve.' })}><div className="rounded-full bg-gray-400 w-4 h-4 mr-2" /> Pesquisar Financeiro</button>
                 </div>
               </div>
               <div className="flex gap-2 mt-2">
                 <div className="w-48 flex flex-col gap-2">
-                  <div className="h-48 bg-gray-100 border border-gray-400"></div>
-                  <div className="flex justify-end gap-1"><button className="p-1 border bg-white"><Camera size={14} /></button><button className="p-1 border bg-white"><Search size={14} /></button><button className="p-1 border bg-white"><Plus size={14} className="text-green-600" /></button></div>
-                  <div className="h-48 bg-gray-100 border border-gray-400"></div>
-                  <div className="flex justify-end gap-1"><button className="p-1 border bg-white"><Camera size={14} /></button><button className="p-1 border bg-white"><Search size={14} /></button><button className="p-1 border bg-white"><Plus size={14} className="text-green-600" /></button></div>
+                  <div className="h-48 bg-gray-100 border border-gray-400 flex items-center justify-center text-gray-400 text-[10px]">Foto do Cliente</div>
+                  <div className="flex justify-end gap-1">
+                    <button title="Câmera" className="p-1 border bg-white hover:bg-gray-50"><Camera size={14} /></button>
+                    <button title="Pesquisar foto" className="p-1 border bg-white hover:bg-gray-50"><Search size={14} /></button>
+                    <button title="Adicionar foto" className="p-1 border bg-white hover:bg-gray-50"><Plus size={14} className="text-green-600" /></button>
+                  </div>
+                  <div className="h-48 bg-gray-100 border border-gray-400 flex items-center justify-center text-gray-400 text-[10px]">Assinatura</div>
+                  <div className="flex justify-end gap-1">
+                    <button title="Câmera" className="p-1 border bg-white hover:bg-gray-50"><Camera size={14} /></button>
+                    <button title="Pesquisar" className="p-1 border bg-white hover:bg-gray-50"><Search size={14} /></button>
+                    <button title="Adicionar" className="p-1 border bg-white hover:bg-gray-50"><Plus size={14} className="text-green-600" /></button>
+                  </div>
                 </div>
                 <div className="flex-1 bg-white border border-gray-400 p-2 flex flex-col">
                   <div className="flex gap-2 mb-2">
                     <div className="flex-1">
-                      <span className="legacy-label text-[10px]">Nome / Razão Completo</span>
-                      <input className="legacy-input w-full font-bold bg-yellow-50" value={clientDesc} onChange={e => setClientDesc(e.target.value)} placeholder="SAMUEL DAVID CARVALHO DOS SANTOS" />
+                      <span className="legacy-label text-[10px]">Nome / Razão Completo *</span>
+                      <input className="legacy-input w-full font-bold bg-yellow-50" value={customerForm.name} onChange={e => setCustomerForm({ ...customerForm, name: e.target.value.toUpperCase() })} placeholder="NOME COMPLETO DO CLIENTE" />
                     </div>
                     <div className="w-64">
                       <span className="legacy-label text-[10px]">Seguimento do Cliente ou Tipo</span>
-                      <select className="legacy-input w-full">
+                      <select className="legacy-input w-full" value={customerForm.seguimento} onChange={e => setCustomerForm({ ...customerForm, seguimento: e.target.value })}>
                         <option>EMPRESARIO</option>
+                        <option>PESSOA FISICA</option>
+                        <option>CLIENTE VIP</option>
+                        <option>PARCEIRO</option>
+                        <option>FORNECEDOR</option>
+                        <option>FUNCIONARIO</option>
                       </select>
                     </div>
                   </div>
@@ -1090,7 +1264,9 @@ const LegacySystemPage: React.FC = () => {
                           </div>
                           <div className="w-16">
                             <span className="legacy-label text-[10px]">UF</span>
-                            <select className="legacy-input w-full" value={customerForm.uf} onChange={e => setCustomerForm({ ...customerForm, uf: e.target.value })}><option>CE</option><option>SP</option><option>RJ</option><option>MG</option><option>RS</option></select>
+                            <select className="legacy-input w-full" value={customerForm.uf} onChange={e => setCustomerForm({ ...customerForm, uf: e.target.value })}>
+                              {['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'].map(uf => <option key={uf}>{uf}</option>)}
+                            </select>
                           </div>
                           <div className="w-24">
                             <span className="legacy-label text-[10px]">CEP</span>
@@ -1098,21 +1274,21 @@ const LegacySystemPage: React.FC = () => {
                           </div>
                         </div>
                         <div className="flex gap-2">
-                          <div className="w-24">
+                          <div className="w-28">
                             <span className="legacy-label text-[10px]">1º Telefone</span>
-                            <input className="legacy-input w-full text-center" value={customerForm.tel1} onChange={e => setCustomerForm({ ...customerForm, tel1: e.target.value })} />
+                            <input className="legacy-input w-full text-center" value={customerForm.tel1} onChange={e => setCustomerForm({ ...customerForm, tel1: e.target.value })} placeholder="(00) 0000-0000" />
                           </div>
-                          <div className="w-24">
+                          <div className="w-28">
                             <span className="legacy-label text-[10px]">2º Telefone</span>
                             <input className="legacy-input w-full text-center" value={customerForm.tel2} onChange={e => setCustomerForm({ ...customerForm, tel2: e.target.value })} />
                           </div>
-                          <div className="w-24">
+                          <div className="w-28">
                             <span className="legacy-label text-[10px]">Nº Celular</span>
-                            <input className="legacy-input w-full text-center" value={customerForm.celular} onChange={e => setCustomerForm({ ...customerForm, celular: e.target.value })} />
+                            <input className="legacy-input w-full text-center" value={customerForm.celular} onChange={e => setCustomerForm({ ...customerForm, celular: e.target.value })} placeholder="(00) 00000-0000" />
                           </div>
-                          <div className="w-24">
+                          <div className="w-28">
                             <span className="legacy-label text-[10px]">Whatsapp</span>
-                            <input className="legacy-input w-full text-center" value={customerForm.whatsapp} onChange={e => setCustomerForm({ ...customerForm, whatsapp: e.target.value })} />
+                            <input className="legacy-input w-full text-center" value={customerForm.whatsapp} onChange={e => setCustomerForm({ ...customerForm, whatsapp: e.target.value })} placeholder="(00) 00000-0000" />
                           </div>
                           <div className="flex-1">
                             <span className="legacy-label text-[10px]">Complemento</span>
@@ -1122,11 +1298,11 @@ const LegacySystemPage: React.FC = () => {
                         <div className="flex gap-2 items-end">
                           <div className="flex-1">
                             <span className="legacy-label text-[10px]">E-mail</span>
-                            <div className="flex gap-1"><input className="legacy-input flex-1" value={customerForm.email} onChange={e => setCustomerForm({ ...customerForm, email: e.target.value })} /><button className="bg-gray-200 border px-2 text-gray-500">@</button></div>
+                            <div className="flex gap-1"><input className="legacy-input flex-1" type="email" value={customerForm.email} onChange={e => setCustomerForm({ ...customerForm, email: e.target.value })} /><button className="bg-gray-200 border px-2 text-gray-500" onClick={() => customerForm.email && window.open(`mailto:${customerForm.email}`)}>@</button></div>
                           </div>
                           <div className="w-48">
                             <span className="legacy-label text-[10px]">Contato</span>
-                            <div className="flex gap-1"><input className="legacy-input flex-1" value={customerForm.contato} onChange={e => setCustomerForm({ ...customerForm, contato: e.target.value })} /><button className="bg-gray-200 border px-2 text-gray-600 text-[10px]">CONTATOS</button></div>
+                            <div className="flex gap-1"><input className="legacy-input flex-1" value={customerForm.contato} onChange={e => setCustomerForm({ ...customerForm, contato: e.target.value })} /><button className="bg-gray-200 border px-2 text-gray-600 text-[10px]" onClick={() => toast({ title: 'ℹ️ Gerenciamento de Contatos disponível em breve.' })}>CONTATOS</button></div>
                           </div>
                         </div>
                         <div className="flex gap-2">
@@ -1142,7 +1318,7 @@ const LegacySystemPage: React.FC = () => {
                         <div className="flex gap-2">
                           <div className="flex-1">
                             <span className="legacy-label text-[10px]">Nº CNPJ</span>
-                            <input className="legacy-input w-full text-center" value={customerForm.cnpj} onChange={e => setCustomerForm({ ...customerForm, cnpj: e.target.value })} />
+                            <input className="legacy-input w-full text-center" value={customerForm.cnpj} onChange={e => setCustomerForm({ ...customerForm, cnpj: e.target.value })} placeholder="00.000.000/0000-00" />
                           </div>
                           <div className="flex-1">
                             <span className="legacy-label text-[10px]">Nº IE</span>
@@ -1154,7 +1330,7 @@ const LegacySystemPage: React.FC = () => {
                           </div>
                           <div className="flex-1">
                             <span className="legacy-label text-[10px]">Nº CPF</span>
-                            <input className="legacy-input w-full" value={customerForm.cpf} onChange={e => setCustomerForm({ ...customerForm, cpf: e.target.value })} />
+                            <input className="legacy-input w-full" value={customerForm.cpf} onChange={e => setCustomerForm({ ...customerForm, cpf: e.target.value })} placeholder="000.000.000-00" />
                           </div>
                           <div className="flex-1">
                             <span className="legacy-label text-[10px]">Nº RG</span>
@@ -1167,29 +1343,68 @@ const LegacySystemPage: React.FC = () => {
                         </div>
                       </div>
                     )}
-                    {customerRegistrationTab !== 'endereco' && (
-                      <div className="flex items-center justify-center h-full text-gray-400">
-                        {customerRegistrationTab === 'filiacao' ? 'Aba Filiação e Avaliação Financeira' : 'Aba Informações e Observações'}
+                    {customerRegistrationTab === 'filiacao' && (
+                      <div className="space-y-2 p-2">
+                        <p className="text-[11px] text-gray-500 font-bold">Filiação e Avaliação Financeira</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div><span className="legacy-label text-[10px]">Nome do Pai</span><input className="legacy-input w-full" placeholder="Nome do pai" /></div>
+                          <div><span className="legacy-label text-[10px]">Nome da Mãe</span><input className="legacy-input w-full" placeholder="Nome da mãe" /></div>
+                          <div><span className="legacy-label text-[10px]">Data de Nascimento</span><input className="legacy-input w-full" placeholder="dd/mm/aaaa" /></div>
+                          <div><span className="legacy-label text-[10px]">Limite de Crédito (R$)</span><input type="number" className="legacy-input w-full text-right" defaultValue={0} /></div>
+                          <div><span className="legacy-label text-[10px]">Profissão</span><input className="legacy-input w-full" /></div>
+                          <div><span className="legacy-label text-[10px]">Empresa onde trabalha</span><input className="legacy-input w-full" /></div>
+                        </div>
+                      </div>
+                    )}
+                    {customerRegistrationTab === 'historico' && (
+                      <div className="space-y-2 p-2">
+                        <p className="text-[11px] text-gray-500 font-bold">Informações / Observações / Histórico</p>
+                        <textarea className="legacy-textarea w-full" rows={8} placeholder="Observações gerais, histórico de atendimento, registros importantes..." />
                       </div>
                     )}
                   </div>
 
-                  <div className="flex gap-2 mt-2 h-28">
+                  <div className="flex gap-2 mt-2" style={{ minHeight: 80 }}>
                     <div className="w-3/4 flex flex-col relative">
                       <span className="legacy-label text-[10px] absolute -top-2 left-2 bg-white px-1">Observações Gerais</span>
                       <div className="border border-gray-400 p-2 flex-1 bg-yellow-50 flex gap-4 mt-1">
-                        <label className="flex items-center gap-1 text-[11px] font-bold"><input type="radio" name="status" defaultChecked /> LIBERAR</label>
-                        <label className="flex items-center gap-1 text-[11px] font-bold"><input type="radio" name="status" /> RESTRINGIR</label>
-                        <label className="flex items-center gap-1 text-[11px] font-bold"><input type="radio" name="status" /> BLOQUEAR</label>
+                        <label className="flex items-center gap-1 text-[11px] font-bold cursor-pointer">
+                          <input type="radio" name="clientStatusRadio" value="liberar" checked={customerForm.clientStatus === 'liberar'} onChange={() => setCustomerForm({ ...customerForm, clientStatus: 'liberar' })} /> LIBERAR
+                        </label>
+                        <label className="flex items-center gap-1 text-[11px] font-bold cursor-pointer">
+                          <input type="radio" name="clientStatusRadio" value="restringir" checked={customerForm.clientStatus === 'restringir'} onChange={() => setCustomerForm({ ...customerForm, clientStatus: 'restringir' })} /> RESTRINGIR
+                        </label>
+                        <label className="flex items-center gap-1 text-[11px] font-bold cursor-pointer">
+                          <input type="radio" name="clientStatusRadio" value="bloquear" checked={customerForm.clientStatus === 'bloquear'} onChange={() => setCustomerForm({ ...customerForm, clientStatus: 'bloquear' })} /> BLOQUEAR
+                        </label>
                       </div>
                     </div>
                     <div className="w-1/4 flex flex-col gap-1">
-                      <button className="legacy-button flex-1 flex items-center justify-center gap-2" onClick={() => { handlePrint(); }}><Printer size={16} className="text-orange-600" /> Imprimir Ficha</button>
                       <button className="legacy-button flex-1 flex items-center justify-center gap-2" onClick={() => {
-                        toast({ title: '✅ Cliente salvo com sucesso!' });
-                        setPhone(customerForm.celular || customerForm.whatsapp || customerForm.tel1 || phone);
-                        setShowCustomerRegistrationModal(false);
-                      }}><CheckSquare size={16} className="text-green-600" /> Salvar Cadastro</button>
+                        const win = window.open('', '_blank', 'width=600,height=400');
+                        if (!win) return;
+                        win.document.write(`<html><head><title>Ficha do Cliente</title><style>body{font-family:Tahoma,Arial,sans-serif;font-size:12px;padding:16px}h2{margin:0 0 8px}p{margin:2px 0}.section{margin-top:12px;border-top:1px solid #ccc;padding-top:8px}</style></head><body>
+                          <h2>SD Móveis Projetados — Ficha de Cliente</h2>
+                          <p><b>Nome:</b> ${customerForm.name}</p>
+                          <p><b>Fantasia:</b> ${customerForm.fantasia}</p>
+                          <p><b>Endereço:</b> ${customerForm.rua}, ${customerForm.bairro} - ${customerForm.cidade}/${customerForm.uf} ${customerForm.cep}</p>
+                          <div class="section">
+                          <p><b>Tel 1:</b> ${customerForm.tel1} | <b>Cel:</b> ${customerForm.celular} | <b>WhatsApp:</b> ${customerForm.whatsapp}</p>
+                          <p><b>E-mail:</b> ${customerForm.email}</p>
+                          <p><b>CPF:</b> ${customerForm.cpf} | <b>CNPJ:</b> ${customerForm.cnpj}</p>
+                          <p><b>Seguimento:</b> ${customerForm.seguimento} | <b>Status:</b> ${customerForm.clientStatus.toUpperCase()}</p>
+                          </div>
+                          </body></html>`);
+                        win.document.close(); win.print();
+                      }}><Printer size={16} className="text-orange-600" /> Imprimir Ficha</button>
+                      <button
+                        className="legacy-button flex-1 flex items-center justify-center gap-2"
+                        disabled={savingCustomer}
+                        onClick={saveCustomer}
+                      >
+                        <CheckSquare size={16} className="text-green-600" />
+                        {savingCustomer ? 'Salvando...' : 'Salvar Cadastro'}
+                      </button>
                       <button className="legacy-button flex-1 flex items-center justify-center gap-2" onClick={() => setShowCustomerRegistrationModal(false)}><X size={16} className="text-blue-600" /> SAIR</button>
                     </div>
                   </div>
@@ -1393,7 +1608,6 @@ const LegacySystemPage: React.FC = () => {
                           setOrderNo(os?.order_number || String(999 + i));
                           setClientDesc(os?.clients?.name || ['SONIA', 'CLAUDIA', 'MARLUCE', 'ATHENAS CONDOMINIUM', 'GISLENE', 'SAMUEL DAVID CARVALHO DOS SANTOS'][i % 6]);
                           setPhone(os?.clients?.phone || '(85)99184-8975');
-                          setValorMaterial(fmtMoney(os?.total_value || (493.34 + i * 1000)));
                           setSituacaoAtual(os?.status === 'concluida' ? 'Concluído' : os?.status === 'em_andamento' ? 'Em Andamento' : 'Aguardando Aprovação');
                           setShowOSSearchModal(false);
                         }}>
@@ -1470,44 +1684,65 @@ const LegacySystemPage: React.FC = () => {
               </div>
             </div>
 
-            {/* OS / Orçamento checkboxes */}
+            {/* OS / Orçamento checkboxes — independentes entre si */}
             <div className="flex flex-col mt-1">
-              <label className="flex items-center text-[11px]">
-                <input type="checkbox" className="legacy-checkbox" checked={isOS} onChange={e => setIsOS(e.target.checked)} />
-                ORDEM DE SERVIÇO
+              <label className="flex items-center text-[11px] gap-1 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  className="legacy-checkbox"
+                  checked={isOS}
+                  onChange={e => setIsOS(e.target.checked)}
+                  style={{ accentColor: '#0000aa', width: 13, height: 13 }}
+                />
+                <span style={{ fontWeight: isOS ? 'bold' : 'normal', color: isOS ? '#000088' : '#333' }}>ORDEM DE SERVIÇO</span>
               </label>
-              <label className="flex items-center text-[11px] mt-1">
-                <input type="checkbox" className="legacy-checkbox" checked={isOrcamento} onChange={e => setIsOrcamento(e.target.checked)} />
-                EFETUAR ORÇAMENTO
+              <label className="flex items-center text-[11px] gap-1 mt-1 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  className="legacy-checkbox"
+                  checked={isOrcamento}
+                  onChange={e => setIsOrcamento(e.target.checked)}
+                  style={{ accentColor: '#0000aa', width: 13, height: 13 }}
+                />
+                <span style={{ fontWeight: isOrcamento ? 'bold' : 'normal', color: isOrcamento ? '#000088' : '#333' }}>EFETUAR ORÇAMENTO</span>
               </label>
             </div>
           </div>
 
           {/* 1 Via / 2 Vias */}
           <div className="flex flex-col mt-6 gap-1">
-            <label className="flex items-center text-[11px]">
-              <input type="radio" name="vias" className="legacy-checkbox" checked={vias === '1 Via'} onChange={() => setVias('1 Via')} />
+            <label className="flex items-center text-[11px] gap-1 cursor-pointer select-none">
+              <input type="radio" name="vias" className="legacy-checkbox" checked={vias === '1 Via'} onChange={() => setVias('1 Via')} style={{ accentColor: '#0000aa', width: 13, height: 13 }} />
               1 Via
             </label>
-            <label className="flex items-center text-[11px]">
-              <input type="radio" name="vias" className="legacy-checkbox" checked={vias === '2 Vias'} onChange={() => setVias('2 Vias')} />
+            <label className="flex items-center text-[11px] gap-1 cursor-pointer select-none">
+              <input type="radio" name="vias" className="legacy-checkbox" checked={vias === '2 Vias'} onChange={() => setVias('2 Vias')} style={{ accentColor: '#0000aa', width: 13, height: 13 }} />
               2 Vias
             </label>
           </div>
 
-          {/* Tabelas */}
+          {/* Tabelas — exclusivas (apenas uma ativa) */}
           <div className="flex flex-col mt-3 border border-gray-300 p-1">
-            <label className="flex items-center text-[11px]">
-              <span className="w-24">Tabela Avista</span>
-              <input type="checkbox" className="legacy-checkbox" checked={tabAvista} onChange={() => { setActivePriceTable('avista'); recalcAllItemsForTable('avista'); }} />
+            <label className="flex items-center text-[11px] gap-1 cursor-pointer select-none">
+              <input type="checkbox" className="legacy-checkbox" checked={tabAvista}
+                onChange={() => { setActivePriceTable('avista'); recalcAllItemsForTable('avista'); }}
+                style={{ accentColor: '#006600', width: 13, height: 13 }}
+              />
+              <span className="w-24" style={{ fontWeight: tabAvista ? 'bold' : 'normal', color: tabAvista ? '#006600' : '#333' }}>Tabela Avista</span>
             </label>
-            <label className="flex items-center text-[11px]">
-              <span className="w-24">Tabela Aprazo</span>
-              <input type="checkbox" className="legacy-checkbox" checked={tabAprazo} onChange={() => { setActivePriceTable('aprazo'); recalcAllItemsForTable('aprazo'); }} />
+            <label className="flex items-center text-[11px] gap-1 cursor-pointer select-none">
+              <input type="checkbox" className="legacy-checkbox" checked={tabAprazo}
+                onChange={() => { setActivePriceTable('aprazo'); recalcAllItemsForTable('aprazo'); }}
+                style={{ accentColor: '#8800aa', width: 13, height: 13 }}
+              />
+              <span className="w-24" style={{ fontWeight: tabAprazo ? 'bold' : 'normal', color: tabAprazo ? '#8800aa' : '#333' }}>Tabela Aprazo</span>
             </label>
-            <label className="flex items-center text-[11px]">
-              <span className="w-24">Tabela Atacado</span>
-              <input type="checkbox" className="legacy-checkbox" checked={tabAtacado} onChange={() => { setActivePriceTable('atacado'); recalcAllItemsForTable('atacado'); }} />
+            <label className="flex items-center text-[11px] gap-1 cursor-pointer select-none">
+              <input type="checkbox" className="legacy-checkbox" checked={tabAtacado}
+                onChange={() => { setActivePriceTable('atacado'); recalcAllItemsForTable('atacado'); }}
+                style={{ accentColor: '#a05a00', width: 13, height: 13 }}
+              />
+              <span className="w-24" style={{ fontWeight: tabAtacado ? 'bold' : 'normal', color: tabAtacado ? '#a05a00' : '#333' }}>Tabela Atacado</span>
             </label>
           </div>
 
@@ -1588,7 +1823,11 @@ const LegacySystemPage: React.FC = () => {
               <div className="flex gap-2 h-full">
                 {/* Left side buttons */}
                 <div className="flex flex-col gap-2 w-32 shrink-0 border border-gray-400 p-2 bg-white" style={{ minHeight: 250 }}>
-                  <button className="flex flex-col items-center justify-center gap-1 border border-blue-300 p-2 bg-gradient-to-b from-white to-blue-50 rounded hover:from-blue-50 hover:to-blue-100" onClick={() => openItemForm()}>
+                  <button
+                    title="Buscar produto no catálogo"
+                    className="flex flex-col items-center justify-center gap-1 border border-blue-300 p-2 bg-gradient-to-b from-white to-blue-50 rounded hover:from-blue-50 hover:to-blue-100"
+                    onClick={() => setShowProductSearchModal(true)}
+                  >
                     <Plus size={20} className="text-green-600" />
                     <span className="text-[11px] font-bold">Incluir</span>
                   </button>
@@ -1806,7 +2045,7 @@ const LegacySystemPage: React.FC = () => {
             {activeTab === 'taxa' && (
               <div className="flex flex-col gap-3 items-start p-2">
                 <div className="bg-yellow-50 border border-yellow-300 rounded p-3 w-full max-w-sm">
-                  <label className="legacy-label block mb-1 font-bold">Percentual de Acréscimo (%)</label>
+                  <label className="legacy-label block mb-1 font-bold">Percentual da Taxa (%)</label>
                   <div className="flex items-center gap-1">
                     <input
                       type="text"
@@ -1818,14 +2057,14 @@ const LegacySystemPage: React.FC = () => {
                     <span className="text-[13px] font-bold">%</span>
                   </div>
                   <p className="text-[10px] text-gray-500 mt-1">
-                    Calculado sobre o Total Geral da lista de produtos/serviços (R$ {fmtMoney(totalGeralItens)})
+                    Aplicada sobre o Valor Material (R$ {fmtMoney(valorMaterialNum)}) para gerar o Valor Serviço
                   </p>
                 </div>
 
                 <div className="bg-white border border-gray-300 rounded p-3 w-full max-w-sm">
                   <div className="flex justify-between text-[12px] mb-1">
-                    <span>Total Geral (itens):</span>
-                    <span className="font-bold">R$ {fmtMoney(totalGeralItens)}</span>
+                    <span>Valor Material (Total Geral dos itens):</span>
+                    <span className="font-bold">R$ {fmtMoney(valorMaterialNum)}</span>
                   </div>
                   <div className="flex justify-between text-[12px] mb-1">
                     <span>Percentual aplicado:</span>
@@ -1833,13 +2072,14 @@ const LegacySystemPage: React.FC = () => {
                   </div>
                   <div className="h-px w-full bg-gray-300 my-1" />
                   <div className="flex justify-between text-[13px]">
-                    <span className="font-bold">Valor do Acréscimo:</span>
-                    <span className="font-bold text-green-700">R$ {fmtMoney(valorTaxaCalculado)}</span>
+                    <span className="font-bold">Valor Serviço (calculado):</span>
+                    <span className="font-bold text-green-700">R$ {fmtMoney(valorServicoCalculado)}</span>
                   </div>
                 </div>
 
                 <p className="text-[10px] text-gray-400 max-w-sm">
-                  Este valor é somado automaticamente ao campo TOTAL no painel inferior.
+                  Fórmula: Valor Serviço = Valor Material × Taxa (%). O resultado aparece automaticamente
+                  no campo VALOR SERVIÇO do painel inferior e é somado ao TOTAL.
                 </p>
               </div>
             )}
@@ -1926,18 +2166,28 @@ const LegacySystemPage: React.FC = () => {
               <div className="legacy-money-label flex items-center justify-end">VALOR MATERIAL</div>
               <input
                 type="text" className="legacy-input legacy-money-input w-24 ml-1"
-                value={valorMaterial}
-                onChange={e => setValorMaterial(e.target.value)}
-                onBlur={e => setValorMaterial(fmtMoney(parseMoney(e.target.value)))}
+                value={fmtMoney(valorMaterialNum)}
+                readOnly
+                title="Somado automaticamente da Lista de Produtos e Serviços"
               />
             </div>
             <div className="flex items-center">
               <div className="legacy-money-label flex items-center justify-end">VALOR SERVIÇO</div>
               <input
-                type="text" className="legacy-input legacy-money-input w-24 ml-1"
-                value={valorServico}
-                onChange={e => setValorServico(e.target.value)}
-                onBlur={e => setValorServico(fmtMoney(parseMoney(e.target.value)))}
+                type="text" className="legacy-input legacy-money-input w-24 ml-1 text-green-700"
+                value={fmtMoney(valorServicoCalculado)}
+                readOnly
+                title={`Calculado: Valor Material x ${taxaPercentual}%`}
+              />
+            </div>
+            <div className="flex items-center">
+              <div className="legacy-money-label flex items-center justify-end">FRETE</div>
+              <span className="mx-1 text-[11px]">(+)</span>
+              <input
+                type="text" className="legacy-input legacy-money-input w-24"
+                value={frete}
+                onChange={e => setFrete(e.target.value)}
+                onBlur={e => setFrete(fmtMoney(parseMoney(e.target.value)))}
               />
             </div>
             <div className="flex items-center">
@@ -1948,16 +2198,6 @@ const LegacySystemPage: React.FC = () => {
                 value={desconto}
                 onChange={e => setDesconto(e.target.value)}
                 onBlur={e => setDesconto(fmtMoney(parseMoney(e.target.value)))}
-              />
-            </div>
-            <div className="flex items-center">
-              <div className="legacy-money-label flex items-center justify-end">TAXA (%)</div>
-              <span className="mx-1 text-[11px]">(+)</span>
-              <input
-                type="text" className="legacy-input legacy-money-input w-24 text-green-700"
-                value={fmtMoney(valorTaxaCalculado)}
-                readOnly
-                title={`${taxaPercentual}% sobre o Total Geral`}
               />
             </div>
             <div className="h-px w-full bg-gray-400 my-1" />
