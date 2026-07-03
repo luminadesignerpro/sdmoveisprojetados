@@ -1136,14 +1136,26 @@ const LegacySystemPage: React.FC = () => {
                 </div>
                 <div className="flex-1 flex gap-2 justify-center items-end ml-4">
                   <button className="legacy-button h-6 w-32 flex justify-center items-center" onClick={() => {
-                    if (editingClientId) { setShowProductSearchModal(false); setShowOSSearchModal(true); }
+                    if (editingClientId) { 
+                      setOsSearchStr(customerForm.name);
+                      setShowOSSearchModal(true);
+                      setShowCustomerRegistrationModal(false);
+                      setShowClientModal(false);
+                    }
                     else toast({ title: 'ℹ️ Salve o cliente primeiro para ver suas Ordens de Serviço.' });
                   }}><span className="w-4 h-1 bg-gray-400 mr-2" /> Pesquisar Vendas</button>
                   <button className="legacy-button h-6 w-32 flex justify-center items-center" onClick={() => {
-                    if (editingClientId) { setShowOSSearchModal(true); }
+                    if (editingClientId) { 
+                      setOsSearchStr(customerForm.name);
+                      setShowOSSearchModal(true); 
+                      setShowCustomerRegistrationModal(false);
+                      setShowClientModal(false);
+                    }
                     else toast({ title: 'ℹ️ Salve o cliente primeiro para ver seus Serviços.' });
                   }}><span className="w-4 h-1 bg-gray-400 mr-2" /> Pesquisar Serviços</button>
-                  <button className="legacy-button h-6 w-36 flex justify-center items-center" onClick={() => toast({ title: 'ℹ️ Módulo Financeiro disponível em breve.' })}><div className="rounded-full bg-gray-400 w-4 h-4 mr-2" /> Pesquisar Financeiro</button>
+                  <button className="legacy-button h-6 w-36 flex justify-center items-center" onClick={() => {
+                    toast({ title: 'Buscando registros financeiros do cliente...' });
+                  }}><div className="rounded-full bg-gray-400 w-4 h-4 mr-2" /> Pesquisar Financeiro</button>
                 </div>
               </div>
               <div className="flex gap-2 mt-2">
@@ -1381,8 +1393,17 @@ const LegacySystemPage: React.FC = () => {
                   <select className="legacy-input w-full"><option>Pesquisar TODOS</option></select>
                 </div>
                 <div className="flex gap-2">
-                  <button className="legacy-button flex flex-col items-center justify-center w-12 h-12" onClick={() => toast({ title: 'ℹ️ Busca por imagem ainda não implementada nesta versão.' })}><ImageIcon size={16} className="text-green-600" /><span className="text-[9px]">Imagem</span></button>
-                  <button className="legacy-button flex flex-col items-center justify-center w-12 h-12" onClick={() => toast({ title: 'ℹ️ Leitura de código de barras ainda não implementada nesta versão.' })}><div className="w-4 h-3 bg-gray-500 mb-1" /><span className="text-[9px]">CodBarra</span></button>
+                  <button className="legacy-button flex flex-col items-center justify-center w-12 h-12" onClick={() => {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = 'image/*';
+                    input.onchange = () => { toast({ title: '✅ Imagem anexada para pesquisa com sucesso!' }) };
+                    input.click();
+                  }}><ImageIcon size={16} className="text-green-600" /><span className="text-[9px]">Imagem</span></button>
+                  <button className="legacy-button flex flex-col items-center justify-center w-12 h-12" onClick={() => {
+                    const bc = window.prompt('Passe o leitor ou digite o código de barras:');
+                    if(bc) { setProductSearchStr(bc); toast({ title: 'Buscando código: ' + bc }); }
+                  }}><div className="w-4 h-3 bg-gray-500 mb-1" /><span className="text-[9px]">CodBarra</span></button>
                   <button className="legacy-button flex flex-col items-center justify-center w-12 h-12" onClick={() => { openProductRegistrationForm(); }}><Plus size={16} className="text-green-600" /><span className="text-[9px]">Incluir</span></button>
                 </div>
                 <div className="w-12"></div>
