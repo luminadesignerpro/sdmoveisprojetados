@@ -239,21 +239,52 @@ const LegacySystemPage: React.FC = () => {
       })() : null,
     };
 
+    let osId = editingOsId;
     let error;
-    if (editingOsId) {
-      ({ error } = await db.from('service_orders').update(payload).eq('id', editingOsId));
+    if (osId) {
+      ({ error } = await db.from('service_orders').update(payload).eq('id', osId));
       if (!error) toast({ title: '✅ OS atualizada com sucesso!' });
     } else {
       const { data: newOs, error: e2 } = await db.from('service_orders').insert(payload).select('id').single();
       error = e2;
       if (!error) {
-        setEditingOsId(newOs.id);
+        osId = newOs.id;
+        setEditingOsId(osId);
         toast({ title: `✅ OS #${orderNo} salva com sucesso!` });
       }
     }
 
     if (error) {
       toast({ title: '❌ Erro ao salvar', description: error.message, variant: 'destructive' });
+      return;
+    }
+
+    // ─── Salvar itens da OS na tabela itens_projeto ────────────────────────
+    if (osId && osItems.length > 0) {
+      // Apaga os itens antigos e re-insere (upsert simples)
+      await db.from('itens_projeto').delete().eq('service_order_id', osId);
+      const itemsPayload = osItems.map(it => ({
+        service_order_id: osId,
+        description: it.description,
+        unit: it.unit,
+        unit_value: it.value,
+        quantity: it.quantity,
+        total_value: it.total_value,
+        width: it.width,
+        height: it.height,
+        total_m2: it.total_m2,
+        price_table: it.price_table,
+        price_avista: it.price_avista ?? null,
+        price_aprazo: it.price_aprazo ?? null,
+        price_atacado: it.price_atacado ?? null,
+      }));
+      const { error: itemErr } = await db.from('itens_projeto').insert(itemsPayload);
+      if (itemErr) {
+        toast({ title: '⚠️ OS salva, mas erro ao salvar itens', description: itemErr.message, variant: 'destructive' });
+      }
+    } else if (osId && osItems.length === 0) {
+      // Remove todos os itens se a lista estiver vazia
+      await db.from('itens_projeto').delete().eq('service_order_id', osId);
     }
   };
 
@@ -1566,30 +1597,71 @@ const LegacySystemPage: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {/* Fake data since we don't have enough OSs in mock */}
-                      {[...osList, ...Array.from({ length: 15 })].map((os, i) => (
-                        <tr key={os?.id || i} style={{ backgroundColor: i % 2 === 0 ? '#ffff99' : '#fff', cursor: 'pointer' }} onClick={() => {
-                          setOrderNo(os?.order_number || String(999 + i));
-                          setClientDesc(os?.clients?.name || ['SONIA', 'CLAUDIA', 'MARLUCE', 'ATHENAS CONDOMINIUM', 'GISLENE', 'SAMUEL DAVID CARVALHO DOS SANTOS'][i % 6]);
-                          setPhone(os?.clients?.phone || '(85)99184-8975');
+                      {osList.filter(os =>
+                        !osSearchStr ||
+                        (os?.clients?.name || '').toLowerCase().includes(osSearchStr.toLowerCase()) ||
+                        String(os?.order_number || '').includes(osSearchStr)
+                      ).map((os, i) => (
+                        <tr key={os?.id || i} style={{ backgroundColor: i % 2 === 0 ? '#ffff99' : '#fff', cursor: 'pointer' }} onClick={async () => {
+                          if (!os?.id) return;
+                          // Carrega os dados da OS selecionada
+                          setOrderNo(String(os.order_number || ''));
+                          setClientDesc((os?.clients?.name || '').toUpperCase());
+                          const ph = os?.clients?.phone || '';
+                          setPhone(ph ? `(${ph.slice(0,2)}) ${ph.slice(2,7)}-${ph.slice(7)}` : '( ) -');
+                          setClientId(os.client_id || null);
                           setSituacaoAtual(os?.status === 'concluida' ? 'Concluído' : os?.status === 'em_andamento' ? 'Em Andamento' : 'Aguardando Aprovação');
+                          setEditingOsId(os.id);
+                          // Carrega os itens desta OS do banco
+                          const { data: itens } = await db.from('itens_projeto').select('*').eq('service_order_id', os.id);
+                          if (itens) {
+                            setOsItems(itens.map((it: any) => ({
+                              id: it.id,
+                              description: it.description,
+                              unit: it.unit || 'un',
+                              width: it.width || 0,
+                              height: it.height || 0,
+                              total_m2: it.total_m2 || 0,
+                              value: it.unit_value || 0,
+                              quantity: it.quantity || 1,
+                              total_value: it.total_value || 0,
+                              price_table: (it.price_table || 'avista') as PriceTable,
+                              price_avista: it.price_avista ?? undefined,
+                              price_aprazo: it.price_aprazo ?? undefined,
+                              price_atacado: it.price_atacado ?? undefined,
+                            })));
+                          }
+                          // Carrega notas da OS
+                          const notes = os.notes || '';
+                          const extractNote = (tag: string) => {
+                            const m = notes.match(new RegExp(`\\[${tag}\\]: ([^\\[]*)`));
+                            return m ? m[1].trim() : '';
+                          };
+                          setServicoRealizado(extractNote('Serviço a ser Realizado'));
+                          setProblemasReparos(extractNote('Problemas a Reparar'));
+                          setEtapaServico(extractNote('Etapa do Serviço'));
+                          setNotasInternas(extractNote('Notas Internas'));
+                          setHistoricoServico(extractNote('Histórico'));
                           setShowOSSearchModal(false);
                         }}>
-                          <td style={{ width: 40, textAlign: 'center', backgroundColor: '#008080', color: 'white' }}>{os?.order_number || (999 + i)}</td>
-                          <td style={{ width: 70, textAlign: 'center' }}>{os?.created_at ? format(new Date(os.created_at), 'dd/MM/yyyy') : `23/05/2026`}</td>
-                          <td style={{ width: 40, textAlign: 'center' }}>10:08</td>
-                          <td>{os?.clients?.name || ['SONIA', 'CLAUDIA', 'MARLUCE', 'ATHENAS CONDOMINIUM', 'GISLENE', 'SAMUEL DAVID CARVALHO DOS SANTOS'][i % 6]}</td>
-                          <td style={{ width: 100 }}>{os?.clients?.phone || '(85)99184-8975'}</td>
-                          <td style={{ width: 70, textAlign: 'right' }}>{fmtMoney(os?.total_value || (493.34 + i * 1000))}</td>
-                          <td style={{ width: 70, textAlign: 'right' }}>{i % 2 === 0 ? '' : fmtMoney(1200)}</td>
+                          <td style={{ width: 40, textAlign: 'center', backgroundColor: '#008080', color: 'white' }}>{os?.order_number}</td>
+                          <td style={{ width: 70, textAlign: 'center' }}>{os?.created_at ? format(new Date(os.created_at), 'dd/MM/yyyy') : ''}</td>
+                          <td style={{ width: 40, textAlign: 'center' }}>{os?.created_at ? format(new Date(os.created_at), 'HH:mm') : ''}</td>
+                          <td>{(os?.clients?.name || '').toUpperCase()}</td>
+                          <td style={{ width: 100 }}>{os?.clients?.phone || ''}</td>
+                          <td style={{ width: 70, textAlign: 'right' }}>{fmtMoney(os?.total_value || 0)}</td>
+                          <td style={{ width: 70, textAlign: 'right' }}></td>
                           <td style={{ width: 50, textAlign: 'right' }}></td>
-                          <td style={{ width: 50, textAlign: 'right' }}>{i % 3 === 0 ? fmtMoney(132) : ''}</td>
-                          <td style={{ width: 70, textAlign: 'right', fontWeight: 'bold' }}>{fmtMoney(os?.total_value || (493.34 + i * 1000))}</td>
-                          <td style={{ width: 40, textAlign: 'center' }}>/ /</td>
+                          <td style={{ width: 50, textAlign: 'right' }}></td>
+                          <td style={{ width: 70, textAlign: 'right', fontWeight: 'bold' }}>{fmtMoney(os?.total_value || 0)}</td>
                           <td style={{ width: 40, textAlign: 'center' }}></td>
-                          <td style={{ width: 120 }}>{os?.status === 'concluida' ? 'Concluído' : 'Aguardando Aprovação'}</td>
+                          <td style={{ width: 40, textAlign: 'center' }}></td>
+                          <td style={{ width: 120 }}>{os?.status === 'concluida' ? 'Concluído' : os?.status === 'em_andamento' ? 'Em Andamento' : 'Aguardando Aprovação'}</td>
                         </tr>
                       ))}
+                      {osList.length === 0 && (
+                        <tr><td colSpan={13} style={{ textAlign: 'center', padding: 12, color: '#666' }}>Nenhuma OS encontrada</td></tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
