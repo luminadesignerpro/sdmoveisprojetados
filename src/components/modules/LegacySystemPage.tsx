@@ -199,7 +199,7 @@ const LegacySystemPage: React.FC = () => {
   }, []);
 
   // ─── Save to DB ────────────────────────────────────────────────────────────
-  const handleSave = async () => {
+  const handleSave = async (itemsOverride?: OSItem[]) => {
     if (!clientDesc.trim()) {
       toast({ title: '⚠️ Informe o cliente', variant: 'destructive' });
       return;
@@ -260,10 +260,11 @@ const LegacySystemPage: React.FC = () => {
     }
 
     // ─── Salvar itens da OS na tabela itens_projeto ────────────────────────
-    if (osId && osItems.length > 0) {
+    const itemsToSave = itemsOverride ?? osItems;
+    if (osId && itemsToSave.length > 0) {
       // Apaga os itens antigos e re-insere (upsert simples)
       await db.from('itens_projeto').delete().eq('service_order_id', osId);
-      const itemsPayload = osItems.map(it => ({
+      const itemsPayload = itemsToSave.map(it => ({
         service_order_id: osId,
         description: it.description,
         unit: it.unit,
@@ -282,7 +283,7 @@ const LegacySystemPage: React.FC = () => {
       if (itemErr) {
         toast({ title: '⚠️ OS salva, mas erro ao salvar itens', description: itemErr.message, variant: 'destructive' });
       }
-    } else if (osId && osItems.length === 0) {
+    } else if (osId && itemsToSave.length === 0) {
       // Remove todos os itens se a lista estiver vazia
       await db.from('itens_projeto').delete().eq('service_order_id', osId);
     }
@@ -293,6 +294,43 @@ const LegacySystemPage: React.FC = () => {
     setDataAprovacao(format(new Date(), 'dd/MM/yyyy'));
     await handleSave();
     toast({ title: '🏁 OS Finalizada!', description: 'Status alterado para Concluído.' });
+  };
+
+  // ─── Nova OS: limpa o formulário para uma nova OS ──────────────────────────
+  const handleNovaOS = async () => {
+    // Busca o próximo número de ordem
+    const { data: osRes } = await db.from('service_orders').select('order_number').order('order_number', { ascending: false }).limit(1);
+    const lastNo = osRes?.[0]?.order_number;
+    const nextNo = lastNo ? String(Number(lastNo) + 1) : '1001';
+
+    setOrderNo(nextNo);
+    setDate(format(new Date(), 'dd/MM/yyyy'));
+    setTime(format(new Date(), 'HH:mm'));
+    setIsOS(true);
+    setIsOrcamento(false);
+    setVias('1 Via');
+    setTabAvista(true); setTabAprazo(false); setTabAtacado(false);
+    setClientId(null);
+    setClientDesc('');
+    setContactName('');
+    setPhone('( ) -');
+    setResponsavel('');
+    setOsItems([]);
+    setOsImages([]);
+    setServicoRealizado('');
+    setProblemasReparos('');
+    setEtapaServico('');
+    setNotasInternas('');
+    setHistoricoServico('');
+    setSituacaoAtual('Aguardando Aprovação');
+    setDataAprovacao('');
+    setDesconto('0,00');
+    setFrete('0,00');
+    setTaxaPercentual('0,00');
+    setEditingOsId(null);
+    setActiveTab('obs');
+    setShowOSSearchModal(false);
+    toast({ title: `📄 Nova OS #${nextNo} pronta para preenchimento.` });
   };
 
   // ─── Client search ─────────────────────────────────────────────────────────
@@ -373,20 +411,53 @@ const LegacySystemPage: React.FC = () => {
     setItemForm(p => ({ ...p, price_table: t, value: priceMap[t] || p.value }));
   };
 
-  const saveItem = () => {
+  const saveItem = async () => {
     if (!itemForm.description.trim()) {
       toast({ title: '⚠️ Informe a descrição', variant: 'destructive' });
       return;
     }
     const m2 = calcM2(itemForm.width, itemForm.height);
     const tv = calcTotal(itemForm.value, itemForm.quantity, m2);
+    let updatedItems: OSItem[];
     if (editingItem) {
-      setOsItems(p => p.map(i => i.id === editingItem.id ? { ...editingItem, ...itemForm, total_m2: m2, total_value: tv } : i));
+      updatedItems = osItems.map(i => i.id === editingItem.id ? { ...editingItem, ...itemForm, total_m2: m2, total_value: tv } : i);
     } else {
-      setOsItems(p => [...p, { id: Date.now().toString(), ...itemForm, total_m2: m2, total_value: tv }]);
+      updatedItems = [...osItems, { id: Date.now().toString(), ...itemForm, total_m2: m2, total_value: tv }];
     }
+    setOsItems(updatedItems);
     setShowItemForm(false);
     setEditingItem(null);
+
+    // ── Auto-salvar itens no banco ─────────────────────────────────────────
+    if (editingOsId) {
+      // OS já existe: salva apenas os itens
+      await db.from('itens_projeto').delete().eq('service_order_id', editingOsId);
+      const payload = updatedItems.map(it => ({
+        service_order_id: editingOsId,
+        description: it.description,
+        unit: it.unit,
+        unit_value: it.value,
+        quantity: it.quantity,
+        total_value: it.total_value,
+        width: it.width,
+        height: it.height,
+        total_m2: it.total_m2,
+        price_table: it.price_table,
+        price_avista: it.price_avista ?? null,
+        price_aprazo: it.price_aprazo ?? null,
+        price_atacado: it.price_atacado ?? null,
+      }));
+      const { error } = await db.from('itens_projeto').insert(payload);
+      if (error) {
+        toast({ title: '⚠️ Erro ao salvar item', description: error.message, variant: 'destructive' });
+      } else {
+        toast({ title: '✅ Item salvo!' });
+      }
+    } else {
+      // OS ainda não existe: chama o handleSave completo para criar a OS + itens
+      toast({ title: '💾 Salvando OS e itens...' });
+      await handleSave(updatedItems);
+    }
   };
 
   // Ao trocar a tabela ativa no topo (Avista/Aprazo/Atacado), recalcula automaticamente
@@ -1480,10 +1551,12 @@ const LegacySystemPage: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {/* Fake data since we may not have a populated products table */}
-                      {[...productsList, ...Array.from({ length: 15 })].map((prod, i) => {
-                        const fakeName = `20 MTS FITA ${['SAFIRA', 'BRANCO DIAMANTE', 'ABSOLUTO', 'ACACIA', 'ALMERIA', 'ARAUCARIA', 'ARDOSIA', 'AREIA'][i % 8] || 'GENERIC'}`;
-                        const pAvista = prod?.price_avista ?? prod?.price ?? (90 + i);
+                      {productsList.filter(prod =>
+                        !productSearchStr ||
+                        (prod?.name || '').toLowerCase().includes(productSearchStr.toLowerCase()) ||
+                        (prod?.reference || '').toLowerCase().includes(productSearchStr.toLowerCase())
+                      ).map((prod, i) => {
+                        const pAvista = prod?.price_avista ?? prod?.price ?? 0;
                         const pAprazo = prod?.price_aprazo ?? +(pAvista * 1.15).toFixed(2);
                         const pAtacado = prod?.price_atacado ?? +(pAvista * 0.9).toFixed(2);
                         return (
@@ -1491,7 +1564,7 @@ const LegacySystemPage: React.FC = () => {
                             onClick={() => {
                               const usedValue = activePriceTable === 'aprazo' ? pAprazo : activePriceTable === 'atacado' ? pAtacado : pAvista;
                               openItemForm({
-                                id: Date.now().toString(), description: prod?.name || fakeName, unit: prod?.unit || 'un',
+                                id: Date.now().toString(), description: prod?.name || '', unit: prod?.unit || 'un',
                                 width: 0, height: 0, value: usedValue, quantity: 1, total_m2: 0, total_value: usedValue,
                                 price_table: activePriceTable, price_avista: pAvista, price_aprazo: pAprazo, price_atacado: pAtacado,
                               });
@@ -1500,19 +1573,22 @@ const LegacySystemPage: React.FC = () => {
                             onDoubleClick={(e) => { e.stopPropagation(); openProductRegistrationForm(prod); }}
                           >
                             <td style={{ width: 80 }}><div className="flex justify-between items-center"><Camera size={10} className="text-gray-500" /></div></td>
-                            <td style={{ width: 60, textAlign: 'right' }}>{prod?.id ? String(prod.id).slice(0, 5) : i + 1}</td>
-                            <td>{prod?.name || fakeName}</td>
-                            <td style={{ width: 40, textAlign: 'center' }}>{(prod?.unit || 'UNI').toUpperCase()}</td>
+                            <td style={{ width: 60, textAlign: 'right' }}>{prod?.reference || String(i + 1)}</td>
+                            <td>{prod?.name || ''}</td>
+                            <td style={{ width: 40, textAlign: 'center' }}>{(prod?.unit || 'UN').toUpperCase()}</td>
                             <td style={{ width: 75, textAlign: 'right' }}>{fmtMoney(pAvista)}</td>
                             <td style={{ width: 75, textAlign: 'right' }}>{fmtMoney(pAprazo)}</td>
                             <td style={{ width: 75, textAlign: 'right' }}>{fmtMoney(pAtacado)}</td>
-                            <td style={{ width: 80, textAlign: 'right' }}>{fmtMoney(prod?.current_stock ?? (1000 - i * 10))}</td>
-                            <td>{prod?.category || 'FITA DE BORDO'}</td>
-                            <td>{prod?.brand || (i % 4 === 0 ? 'GUARARAPES' : '')}</td>
+                            <td style={{ width: 80, textAlign: 'right' }}>{fmtMoney(prod?.current_stock ?? 0)}</td>
+                            <td>{prod?.category || ''}</td>
+                            <td>{prod?.brand || ''}</td>
                             <td>{prod?.location || ''}</td>
                           </tr>
                         );
                       })}
+                      {productsList.length === 0 && (
+                        <tr><td colSpan={10} style={{ textAlign: 'center', padding: 12, color: '#666' }}>Nenhum produto cadastrado. Cadastre produtos na aba de produtos.</td></tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -1667,7 +1743,7 @@ const LegacySystemPage: React.FC = () => {
                 </div>
                 <div className="bg-[#f0f0f0] border-t border-gray-400 p-2 flex justify-between items-center text-[10px]">
                   <div className="flex gap-2">
-                    <button className="legacy-button h-8" onClick={() => { setShowOSSearchModal(false); }}><Plus size={14} className="mr-1 text-green-600" /> Nova</button>
+                    <button className="legacy-button h-8" onClick={handleNovaOS}><Plus size={14} className="mr-1 text-green-600" /> Nova</button>
                     <button className="legacy-button h-8" onClick={() => toast({ title: 'ℹ️ Selecione uma OS na lista para alterar.' })}><Edit size={14} className="mr-1 text-blue-600" /> Alterar</button>
                     <button className="legacy-button h-8" onClick={() => toast({ title: 'ℹ️ Cancelamento ainda não implementado nesta versão.' })}><X size={14} className="mr-1 text-red-600" /> Cancelar</button>
                     <button className="legacy-button h-8" onClick={() => toast({ title: 'ℹ️ Selecione uma OS na lista para finalizar.' })}><CheckSquare size={14} className="mr-1 text-green-600" /> Finalizar</button>
