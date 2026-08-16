@@ -181,14 +181,19 @@ const LegacySystemPage: React.FC = () => {
         db.from('employees').select('id, name').eq('active', true).order('name'),
         db.from('clients').select('id, name, phone').order('name'),
         db.from('service_orders').select('order_number').order('order_number', { ascending: false }).limit(1),
-        db.from('inventory_items').select('*').limit(50),
+        db.from('products').select('*').order('name'),
         db.from('service_orders').select('*, clients(name, phone)').order('created_at', { ascending: false }).limit(50)
       ]);
       setEmployees(empRes.data || []);
       setClients(cliRes.data || []);
       const lastNo = osRes.data?.[0]?.order_number;
       setOrderNo(lastNo ? String(Number(lastNo) + 1) : '1001');
-      if (prodRes && !prodRes.error) setProductsList(prodRes.data);
+      if (prodRes && !prodRes.error && prodRes.data?.length > 0) {
+        setProductsList(prodRes.data);
+      } else {
+        const { data: invData } = await db.from('inventory_items').select('*').limit(100);
+        if (invData) setProductsList(invData);
+      }
       if (allOsRes && !allOsRes.error) setOsList(allOsRes.data);
     };
     init();
@@ -561,8 +566,31 @@ const LegacySystemPage: React.FC = () => {
       toast({ title: '⚠️ Informe a descrição do produto', variant: 'destructive' });
       return;
     }
-    const payload = {
-      name: productForm.name.trim(),
+    const name = productForm.name.trim();
+    const costPrice = productForm.cost_price || 0;
+    const sellPrice = productPriceAvista || 0;
+    const stockQty = productForm.current_stock || 0;
+    const minStock = productForm.min_stock || 0;
+    const skuVal = productForm.reference || productForm.barcode || '';
+    const descVal = [productForm.complement1, productForm.complement2].filter(Boolean).join(' ') || '';
+
+    // Standard payload for Supabase 'products' table
+    const productsPayload = {
+      name,
+      description: descVal,
+      sku: skuVal,
+      category: productForm.category || 'MDF',
+      unit: productForm.unit || 'un',
+      cost_price: costPrice,
+      sell_price: sellPrice,
+      stock_quantity: stockQty,
+      min_stock: minStock,
+      active: true,
+    };
+
+    // Full legacy payload (for fallback if inventory_items table is present)
+    const legacyPayload = {
+      name,
       reference: productForm.reference || null,
       barcode: productForm.barcode || null,
       unit: productForm.unit,
@@ -574,24 +602,33 @@ const LegacySystemPage: React.FC = () => {
       control_stock: productForm.control_stock,
       sell_zero_stock: productForm.sell_zero_stock,
       update_cost_on_purchase: productForm.update_cost_on_purchase,
-      min_stock: productForm.min_stock,
-      current_stock: productForm.current_stock,
-      cost_price: productForm.cost_price,
+      min_stock: minStock,
+      current_stock: stockQty,
+      cost_price: costPrice,
       margin_avista: productForm.margin_avista,
       margin_aprazo: productForm.margin_aprazo,
       margin_atacado: productForm.margin_atacado,
       price_avista: productPriceAvista,
       price_aprazo: productPriceAprazo,
       price_atacado: productPriceAtacado,
-      // mantém compatibilidade com o campo antigo "price" (usado como fallback em outras telas)
       price: productPriceAvista,
     };
 
-    let error;
+    let error: any = null;
     if (editingProductId) {
-      ({ error } = await db.from('inventory_items').update(payload).eq('id', editingProductId));
+      const { error: e1 } = await db.from('products').update(productsPayload).eq('id', editingProductId);
+      error = e1;
+      if (e1 && e1.message?.includes('inventory_items')) {
+        const { error: e2 } = await db.from('inventory_items').update(legacyPayload).eq('id', editingProductId);
+        error = e2;
+      }
     } else {
-      ({ error } = await db.from('inventory_items').insert(payload));
+      const { error: e1 } = await db.from('products').insert(productsPayload);
+      error = e1;
+      if (e1 && (e1.message?.includes('inventory_items') || e1.code === 'PGRST204')) {
+        const { error: e2 } = await db.from('inventory_items').insert(legacyPayload);
+        error = e2;
+      }
     }
 
     if (error) {
@@ -600,7 +637,11 @@ const LegacySystemPage: React.FC = () => {
     }
 
     toast({ title: '✅ Produto salvo com sucesso!' });
-    const { data: refreshed } = await db.from('inventory_items').select('*').limit(50);
+    let { data: refreshed } = await db.from('products').select('*').order('name');
+    if (!refreshed || refreshed.length === 0) {
+      const { data: invData } = await db.from('inventory_items').select('*').limit(100);
+      if (invData) refreshed = invData;
+    }
     if (refreshed) setProductsList(refreshed);
     setShowProductRegistrationModal(false);
   };
