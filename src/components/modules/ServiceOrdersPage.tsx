@@ -147,20 +147,41 @@ const ServiceOrdersPage: React.FC = () => {
       estimated_date: form.estimated_date || null,
     };
 
+    let targetOsId = editingId;
     let error;
     if (editingId) {
       const res = await db.from('service_orders').update(payload).eq('id', editingId);
       error = res.error;
       if (!error) toast({ title: '✅ OS atualizada' });
     } else {
-      const res = await db.from('service_orders').insert(payload);
+      const res = await db.from('service_orders').insert(payload).select('id').single();
       error = res.error;
-      if (!error) toast({ title: '✅ OS criada com sucesso' });
+      if (!error && res.data) {
+        targetOsId = res.data.id;
+        toast({ title: '✅ OS criada com sucesso' });
+      }
     }
 
     if (error) {
       toast({ title: '❌ Erro ao salvar OS', description: error.message, variant: 'destructive' });
       return;
+    }
+
+    // Salva ou atualiza os itens na tabela itens_projeto
+    if (targetOsId && osItems.length > 0) {
+      await db.from('itens_projeto').delete().eq('service_order_id', targetOsId);
+      const itemsPayload = osItems.map(it => ({
+        service_order_id: targetOsId,
+        description: it.description,
+        unit: it.unit || 'un',
+        unit_value: it.value,
+        quantity: it.quantity,
+        total_value: it.total_value,
+        width: it.width || 0,
+        height: it.height || 0,
+        total_m2: it.total_m2 || 0,
+      }));
+      await db.from('itens_projeto').insert(itemsPayload);
     }
 
     // Se concluiu a OS, finalizar qualquer viagem ativa do funcionário
@@ -359,7 +380,7 @@ const ServiceOrdersPage: React.FC = () => {
     (o.employees?.name || '').toLowerCase().includes(search.toLowerCase())
   );
 
-  const openForm = (o?: any) => {
+  const openForm = async (o?: any) => {
     if (o) {
       setEditingId(o.id);
       setForm(resetForm({
@@ -376,16 +397,45 @@ const ServiceOrdersPage: React.FC = () => {
         estimated_date: o.estimated_date ? o.estimated_date.slice(0, 10) : '',
         meeting_time: '09:00',
       }));
+
+      // Extrai os blocos das observações do campo notes
+      const notesStr = o.notes || '';
+      const extractNote = (tag: string) => {
+        const m = notesStr.match(new RegExp(`\\[${tag}\\]: ([^\\[]*)`));
+        return m ? m[1].trim() : '';
+      };
+      setServiceToPerform(extractNote('Serviço a ser Realizado'));
+      setProblemsToFix(extractNote('Problemas a Reparar'));
+      setCurrentStage(extractNote('Etapa do Serviço'));
+      setInternalNotes(extractNote('Notas Internas'));
+
+      // Carrega os itens gravados da tabela itens_projeto
+      const { data: itens } = await db.from('itens_projeto').select('*').eq('service_order_id', o.id);
+      if (itens && itens.length > 0) {
+        setOsItems(itens.map((it: any) => ({
+          id: it.id,
+          description: it.description,
+          unit: it.unit || 'un',
+          width: it.width || 0,
+          height: it.height || 0,
+          total_m2: it.total_m2 || 0,
+          value: it.unit_value || 0,
+          quantity: it.quantity || 1,
+          total_value: it.total_value || 0,
+        })));
+      } else {
+        setOsItems([]);
+      }
     } else {
       setEditingId(null);
       setForm(resetForm());
+      setOsItems([]);
+      setServiceToPerform('');
+      setProblemsToFix('');
+      setCurrentStage('');
+      setInternalNotes('');
     }
-    setOsItems([]);
     setOsImages([]);
-    setServiceToPerform('');
-    setProblemsToFix('');
-    setCurrentStage('');
-    setInternalNotes('');
     setActiveTab('obs');
     setShowForm(true);
   };
@@ -625,7 +675,7 @@ const ServiceOrdersPage: React.FC = () => {
                     </button>
                     <div className="ml-auto text-right">
                       <p className="text-xs text-gray-400 uppercase font-bold">Valor Total dos Itens</p>
-                      <p className="text-lg font-black text-amber-400">R$ {totalItemsValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                      <p className="text-lg font-black text-amber-400">R$ {(totalItemsValue > 0 ? totalItemsValue : (form.total_value || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                     </div>
                   </div>
 
