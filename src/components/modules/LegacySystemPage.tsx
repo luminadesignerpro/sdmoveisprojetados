@@ -1843,14 +1843,22 @@ const LegacySystemPage: React.FC = () => {
               </div>
             </div>
 
-            {/* OS / Orçamento checkboxes — independentes entre si */}
+            {/* OS / Orçamento checkboxes — exclusivas entre si */}
             <div className="flex flex-col mt-1">
               <label className="flex items-center text-[11px] gap-1 cursor-pointer select-none">
                 <input
                   type="checkbox"
                   className="legacy-checkbox"
                   checked={isOS}
-                  onChange={e => setIsOS(e.target.checked)}
+                  onChange={e => {
+                    if (e.target.checked) {
+                      setIsOS(true);
+                      setIsOrcamento(false);
+                    } else {
+                      setIsOS(false);
+                      setIsOrcamento(true);
+                    }
+                  }}
                   style={{ accentColor: '#0000aa', width: 13, height: 13 }}
                 />
                 <span style={{ fontWeight: isOS ? 'bold' : 'normal', color: isOS ? '#000088' : '#333' }}>ORDEM DE SERVIÇO</span>
@@ -1860,7 +1868,15 @@ const LegacySystemPage: React.FC = () => {
                   type="checkbox"
                   className="legacy-checkbox"
                   checked={isOrcamento}
-                  onChange={e => setIsOrcamento(e.target.checked)}
+                  onChange={e => {
+                    if (e.target.checked) {
+                      setIsOrcamento(true);
+                      setIsOS(false);
+                    } else {
+                      setIsOrcamento(false);
+                      setIsOS(true);
+                    }
+                  }}
                   style={{ accentColor: '#0000aa', width: 13, height: 13 }}
                 />
                 <span style={{ fontWeight: isOrcamento ? 'bold' : 'normal', color: isOrcamento ? '#000088' : '#333' }}>EFETUAR ORÇAMENTO</span>
