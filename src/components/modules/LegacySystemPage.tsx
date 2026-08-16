@@ -386,11 +386,12 @@ const LegacySystemPage: React.FC = () => {
 
   const openItemForm = (item?: OSItem) => {
     if (item) {
-      setEditingItem(item);
+      const isExistingInList = osItems.some(i => i.id === item.id);
+      setEditingItem(isExistingInList ? item : null);
       setItemForm({
         description: item.description, unit: item.unit, width: item.width, height: item.height,
         value: item.value, quantity: item.quantity,
-        price_table: item.price_table || 'avista',
+        price_table: item.price_table || activePriceTable,
         price_avista: item.price_avista ?? item.value,
         price_aprazo: item.price_aprazo ?? item.value,
         price_atacado: item.price_atacado ?? item.value,
@@ -419,7 +420,8 @@ const LegacySystemPage: React.FC = () => {
     const m2 = calcM2(itemForm.width, itemForm.height);
     const tv = calcTotal(itemForm.value, itemForm.quantity, m2);
     let updatedItems: OSItem[];
-    if (editingItem) {
+    const isExisting = editingItem && osItems.some(i => i.id === editingItem.id);
+    if (isExisting && editingItem) {
       updatedItems = osItems.map(i => i.id === editingItem.id ? { ...editingItem, ...itemForm, total_m2: m2, total_value: tv } : i);
     } else {
       updatedItems = [...osItems, { id: Date.now().toString(), ...itemForm, total_m2: m2, total_value: tv }];
@@ -454,9 +456,13 @@ const LegacySystemPage: React.FC = () => {
         toast({ title: '✅ Item salvo!' });
       }
     } else {
-      // OS ainda não existe: chama o handleSave completo para criar a OS + itens
-      toast({ title: '💾 Salvando OS e itens...' });
-      await handleSave(updatedItems);
+      // OS ainda não existe: chama handleSave apenas se houver cliente preenchido, senão mantém na lista local
+      if (clientDesc.trim()) {
+        toast({ title: '💾 Salvando OS e itens...' });
+        await handleSave(updatedItems);
+      } else {
+        toast({ title: '✅ Item adicionado à lista!', description: 'Preencha o cliente e salve a OS para gravar no banco.' });
+      }
     }
   };
 

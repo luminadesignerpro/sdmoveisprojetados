@@ -212,7 +212,8 @@ const ServiceOrdersPage: React.FC = () => {
 
   const openItemForm = (item?: OSItem) => {
     if (item) {
-      setEditingItem(item);
+      const isExistingInList = osItems.some(it => it.id === item.id);
+      setEditingItem(isExistingInList ? item : null);
       setItemForm({
         description: item.description,
         unit: item.unit,
@@ -236,7 +237,8 @@ const ServiceOrdersPage: React.FC = () => {
     const total_m2 = calcItemTotalM2(itemForm.width, itemForm.height);
     const total_value = calcItemTotal(itemForm.value, itemForm.quantity, total_m2);
 
-    if (editingItem) {
+    const isExisting = editingItem && osItems.some(it => it.id === editingItem.id);
+    if (isExisting && editingItem) {
       setOsItems(prev => prev.map(it => it.id === editingItem.id ? {
         ...editingItem, ...itemForm, total_m2, total_value
       } : it));
