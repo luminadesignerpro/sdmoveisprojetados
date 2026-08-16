@@ -98,6 +98,7 @@ const LegacySystemPage: React.FC = () => {
   const [productSearchStr, setProductSearchStr] = useState('');
   const [showOSSearchModal, setShowOSSearchModal] = useState(false);
   const [osSearchStr, setOsSearchStr] = useState('');
+  const [searchFolder, setSearchFolder] = useState<'todos' | 'os' | 'orcamento'>('todos');
   const [productsList, setProductsList] = useState<any[]>([]);
   const [osList, setOsList] = useState<any[]>([]);
 
@@ -1284,24 +1285,26 @@ const LegacySystemPage: React.FC = () => {
                   <input className="legacy-input w-full text-center" value={format(new Date(), 'dd/MM/yyyy')} readOnly />
                 </div>
                 <div className="flex-1 flex gap-2 justify-center items-end ml-4">
-                  <button className="legacy-button h-6 w-32 flex justify-center items-center" onClick={() => {
+                  <button className="legacy-button h-6 w-36 flex justify-center items-center" onClick={() => {
                     if (editingClientId) { 
                       setOsSearchStr(customerForm.name);
+                      setSearchFolder('orcamento');
                       setShowOSSearchModal(true);
                       setShowCustomerRegistrationModal(false);
                       setShowClientModal(false);
                     }
-                    else toast({ title: 'ℹ️ Salve o cliente primeiro para ver suas Ordens de Serviço.' });
-                  }}><span className="w-4 h-1 bg-gray-400 mr-2" /> Pesquisar Vendas</button>
-                  <button className="legacy-button h-6 w-32 flex justify-center items-center" onClick={() => {
+                    else toast({ title: 'ℹ️ Salve o cliente primeiro para ver seus Orçamentos.' });
+                  }}><span className="w-4 h-1 bg-amber-500 mr-2" /> 📁 Pasta Orçamentos</button>
+                  <button className="legacy-button h-6 w-36 flex justify-center items-center" onClick={() => {
                     if (editingClientId) { 
                       setOsSearchStr(customerForm.name);
+                      setSearchFolder('os');
                       setShowOSSearchModal(true); 
                       setShowCustomerRegistrationModal(false);
                       setShowClientModal(false);
                     }
-                    else toast({ title: 'ℹ️ Salve o cliente primeiro para ver seus Serviços.' });
-                  }}><span className="w-4 h-1 bg-gray-400 mr-2" /> Pesquisar Serviços</button>
+                    else toast({ title: 'ℹ️ Salve o cliente primeiro para ver suas Ordens de Serviço.' });
+                  }}><span className="w-4 h-1 bg-blue-600 mr-2" /> 📁 Pasta Ordens de Serviço</button>
                   <button className="legacy-button h-6 w-36 flex justify-center items-center" onClick={() => {
                     toast({ title: 'Buscando registros financeiros do cliente...' });
                   }}><div className="rounded-full bg-gray-400 w-4 h-4 mr-2" /> Pesquisar Financeiro</button>
@@ -1658,39 +1661,73 @@ const LegacySystemPage: React.FC = () => {
       )}
 
       {/* ── NEW: OS Search Modal ──────────────────────────────────────────── */}
-      {showOSSearchModal && (
+      {showOSSearchModal && (() => {
+        const osCount = osList.filter(o => (o?.description || '').toUpperCase().includes('ORDEM DE SERVIÇO')).length;
+        const orcCount = osList.filter(o => (o?.description || '').toUpperCase().includes('ORÇAMENTO')).length;
+        return (
         <div className="legacy-modal-scope fixed inset-0 z-[90] bg-black/50 flex items-center justify-center p-4">
           <div className="bg-white border border-gray-400 rounded shadow-lg w-full max-w-6xl flex flex-col" style={{ fontFamily: 'Tahoma,Arial,sans-serif', fontSize: 11, height: '90vh', color: '#000' }}>
             <div className="bg-[#dde] px-3 py-2 flex items-center justify-between border-b border-gray-400">
-              <span className="font-bold text-sm">Pesquisa Ordem de Serviços</span>
+              <span className="font-bold text-sm">Pesquisa e Consultas de Registros (Ordens de Serviço e Orçamentos)</span>
               <button onClick={() => setShowOSSearchModal(false)}><X size={14} /></button>
             </div>
             <div className="p-2 bg-[#f0f0f0] flex-1 flex flex-col gap-2">
+              
+              {/* 📁 PASTA TABS DE SELEÇÃO DE REGISTROS */}
+              <div className="flex gap-2 bg-[#d8d8d8] p-1.5 rounded border border-gray-300">
+                <button
+                  className={`px-3 py-1.5 text-xs font-bold rounded flex items-center gap-1.5 transition-all ${
+                    searchFolder === 'os'
+                      ? 'bg-[#0000aa] text-white shadow-md'
+                      : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                  }`}
+                  onClick={() => setSearchFolder('os')}
+                >
+                  <ClipboardList size={13} /> 📁 Pasta: Ordens de Serviço ({osCount})
+                </button>
+
+                <button
+                  className={`px-3 py-1.5 text-xs font-bold rounded flex items-center gap-1.5 transition-all ${
+                    searchFolder === 'orcamento'
+                      ? 'bg-[#aa5500] text-white shadow-md'
+                      : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                  }`}
+                  onClick={() => setSearchFolder('orcamento')}
+                >
+                  <FileText size={13} /> 📁 Pasta: Orçamentos ({orcCount})
+                </button>
+
+                <button
+                  className={`px-3 py-1.5 text-xs font-bold rounded flex items-center gap-1.5 transition-all ${
+                    searchFolder === 'todos'
+                      ? 'bg-gray-700 text-white shadow-md'
+                      : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                  }`}
+                  onClick={() => setSearchFolder('todos')}
+                >
+                  <Folder size={13} /> 📂 Todos os Registros ({osList.length})
+                </button>
+              </div>
+
               <div className="flex gap-2 items-end">
-                <div className="font-bold text-sm flex gap-4 mr-4 mb-1">
-                  <span>ORÇAMENTO</span>
-                  <span>PENDENTE</span>
-                </div>
                 <div className="w-48">
-                  <span className="legacy-label text-[10px]">Filtrar por Nome</span>
-                  <select className="legacy-input w-full"><option>&gt;&gt; TODOS &lt;&lt;</option></select>
+                  <span className="legacy-label text-[10px]">Filtrar por Pasta</span>
+                  <select className="legacy-input w-full" value={searchFolder} onChange={e => setSearchFolder(e.target.value as any)}>
+                    <option value="todos">📂 TODOS OS REGISTROS</option>
+                    <option value="os">📁 PASTA: ORDENS DE SERVIÇO</option>
+                    <option value="orcamento">📁 PASTA: ORÇAMENTOS</option>
+                  </select>
                 </div>
                 <div className="flex-1">
-                  <span className="legacy-label text-[10px]">Pesquisar por Nome</span>
-                  <input className="legacy-input w-full bg-yellow-50" value={osSearchStr} onChange={e => setOsSearchStr(e.target.value)} />
-                </div>
-                <div className="w-24">
-                  <span className="legacy-label text-[10px]">Data Inicial</span>
-                  <input className="legacy-input w-full text-center font-bold text-green-700" defaultValue="23/05/2026" />
-                </div>
-                <div className="w-24">
-                  <span className="legacy-label text-[10px]">Data Final</span>
-                  <input className="legacy-input w-full text-center font-bold text-green-700" defaultValue="22/07/2026" />
+                  <span className="legacy-label text-[10px]">Pesquisar por Nome / Nº</span>
+                  <input className="legacy-input w-full bg-yellow-50 font-bold" value={osSearchStr} onChange={e => setOsSearchStr(e.target.value)} placeholder="Digite o nome do cliente ou número..." />
                 </div>
                 <div className="flex gap-1 mb-1">
-                  <button className="legacy-button px-2 py-1 bg-green-100 border border-green-400 rounded" onClick={() => toast({ title: '🔄 Lista atualizada.' })}><RefreshCw size={14} className="text-green-600" /></button>
-                  <button className="legacy-button px-2 py-1"><div className="text-blue-600 font-bold text-sm">&lt;</div></button>
-                  <button className="legacy-button px-2 py-1"><div className="text-blue-600 font-bold text-sm">&gt;</div></button>
+                  <button className="legacy-button px-2 py-1 bg-green-100 border border-green-400 rounded flex items-center gap-1" onClick={async () => {
+                    const { data } = await db.from('service_orders').select('*, clients(name, phone)').order('created_at', { ascending: false }).limit(50);
+                    if (data) setOsList(data);
+                    toast({ title: '🔄 Lista atualizada com sucesso!' });
+                  }}><RefreshCw size={14} className="text-green-600" /> Atualizar</button>
                 </div>
                 <div className="ml-auto mb-1">
                   <button className="legacy-button flex items-center justify-center rounded-full w-8 h-8 p-0" onClick={() => setShowOSSearchModal(false)}>
@@ -1705,6 +1742,7 @@ const LegacySystemPage: React.FC = () => {
                     <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
                       <tr>
                         <th>Nº</th>
+                        <th>Tipo / Pasta</th>
                         <th>Data</th>
                         <th>Hora</th>
                         <th>Nome do Cliente</th>
@@ -1714,19 +1752,35 @@ const LegacySystemPage: React.FC = () => {
                         <th>Outros</th>
                         <th>Desconto</th>
                         <th>TOTAL</th>
-                        <th>Entrega</th>
-                        <th>Hora</th>
                         <th>Situação Atual -&gt;</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {osList.filter(os =>
-                        !osSearchStr ||
-                        (os?.clients?.name || '').toLowerCase().includes(osSearchStr.toLowerCase()) ||
-                        String(os?.order_number || '').includes(osSearchStr)
-                      ).map((os, i) => (
-                        <tr key={os?.id || i} style={{ backgroundColor: i % 2 === 0 ? '#ffff99' : '#fff', cursor: 'pointer' }} onClick={async () => {
+                      {osList.filter(os => {
+                        const nameMatch = !osSearchStr ||
+                          (os?.clients?.name || '').toLowerCase().includes(osSearchStr.toLowerCase()) ||
+                          String(os?.order_number || '').includes(osSearchStr);
+                        const descUpper = (os?.description || '').toUpperCase();
+                        const isOSRecord = descUpper.includes('ORDEM DE SERVIÇO');
+                        const isOrcamentoRecord = descUpper.includes('ORÇAMENTO');
+                        const folderMatch =
+                          searchFolder === 'os' ? (isOSRecord || (!isOSRecord && !isOrcamentoRecord)) :
+                          searchFolder === 'orcamento' ? isOrcamentoRecord : true;
+                        return nameMatch && folderMatch;
+                      }).map((os, i) => {
+                        const descUpper = (os?.description || '').toUpperCase();
+                        const isOrc = descUpper.includes('ORÇAMENTO');
+                        return (
+                        <tr key={os?.id || i} style={{ backgroundColor: isOrc ? '#fff3e0' : i % 2 === 0 ? '#ffff99' : '#fff', cursor: 'pointer' }} onClick={async () => {
                           if (!os?.id) return;
+                          // Ajusta os checkboxes conforme a pasta do registro carregado
+                          if (isOrc) {
+                            setIsOrcamento(true);
+                            setIsOS(false);
+                          } else {
+                            setIsOS(true);
+                            setIsOrcamento(false);
+                          }
                           // Carrega os dados da OS selecionada
                           setOrderNo(String(os.order_number || ''));
                           setClientDesc((os?.clients?.name || '').toUpperCase());
@@ -1766,28 +1820,38 @@ const LegacySystemPage: React.FC = () => {
                           setNotasInternas(extractNote('Notas Internas'));
                           setHistoricoServico(extractNote('Histórico'));
                           setShowOSSearchModal(false);
+                          toast({ title: `📄 ${isOrc ? 'Orçamento' : 'Ordem de Serviço'} #${os.order_number} carregado(a)!` });
                         }}>
-                          <td style={{ width: 40, textAlign: 'center', backgroundColor: '#008080', color: 'white' }}>{os?.order_number}</td>
+                          <td style={{ width: 40, textAlign: 'center', backgroundColor: isOrc ? '#e65100' : '#008080', color: 'white', fontWeight: 'bold' }}>{os?.order_number}</td>
+                          <td style={{ width: 100, fontWeight: 'bold', color: isOrc ? '#e65100' : '#0000aa' }}>
+                            {isOrc ? '📁 ORÇAMENTO' : '📁 OS'}
+                          </td>
                           <td style={{ width: 70, textAlign: 'center' }}>{os?.created_at ? format(new Date(os.created_at), 'dd/MM/yyyy') : ''}</td>
                           <td style={{ width: 40, textAlign: 'center' }}>{os?.created_at ? format(new Date(os.created_at), 'HH:mm') : ''}</td>
                           <td>{(os?.clients?.name || '').toUpperCase()}</td>
                           <td style={{ width: 100 }}>{os?.clients?.phone || ''}</td>
                           <td style={{ width: 70, textAlign: 'right' }}>{fmtMoney(os?.total_value || 0)}</td>
-                          <td style={{ width: 70, textAlign: 'right' }}></td>
+                          <td style={{ width: 50, textAlign: 'right' }}></td>
                           <td style={{ width: 50, textAlign: 'right' }}></td>
                           <td style={{ width: 50, textAlign: 'right' }}></td>
                           <td style={{ width: 70, textAlign: 'right', fontWeight: 'bold' }}>{fmtMoney(os?.total_value || 0)}</td>
-                          <td style={{ width: 40, textAlign: 'center' }}></td>
-                          <td style={{ width: 40, textAlign: 'center' }}></td>
                           <td style={{ width: 120 }}>{os?.status === 'concluida' ? 'Concluído' : os?.status === 'em_andamento' ? 'Em Andamento' : 'Aguardando Aprovação'}</td>
                         </tr>
-                      ))}
+                      );
+                      })}
                       {osList.length === 0 && (
-                        <tr><td colSpan={13} style={{ textAlign: 'center', padding: 12, color: '#666' }}>Nenhuma OS encontrada</td></tr>
+                        <tr><td colSpan={12} style={{ textAlign: 'center', padding: 12, color: '#666' }}>Nenhum registro encontrado nesta pasta.</td></tr>
                       )}
                     </tbody>
                   </table>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        );
+      })()}
+
                 <div className="bg-[#f0f0f0] border-t border-gray-400 p-2 flex justify-between items-center text-[10px]">
                   <div className="flex gap-2">
                     <button className="legacy-button h-8" onClick={handleNovaOS}><Plus size={14} className="mr-1 text-green-600" /> Nova</button>
