@@ -249,19 +249,8 @@ const SuppliersPage: React.FC = () => {
         await page.render({ canvasContext: context, viewport }).promise;
         return canvas.toDataURL('image/jpeg', 0.92);
       } catch (pdfErr) {
-        console.warn("Fall back para FileReader base64 direto para o PDF:", pdfErr);
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            let res = reader.result as string;
-            if (res.startsWith('data:application/pdf')) {
-              res = res.replace(/^data:application\/pdf;base64,/, 'data:image/jpeg;base64,');
-            }
-            resolve(res);
-          };
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
+        console.error("Erro ao renderizar PDF com PDF.js:", pdfErr);
+        throw new Error('Não foi possível ler o PDF. Por favor, tire uma foto do documento com a câmera.');
       }
     } else {
       return new Promise((resolve, reject) => {
@@ -426,9 +415,16 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
         toast({ title: '⚠️ Não foi possível extrair a lista de produtos do documento', variant: 'destructive' });
       }
 
-    } catch (err) {
+    } catch (err: any) {
       console.error("Erro no processamento do documento:", err);
-      toast({ title: '❌ Erro ao ler PDF/Foto com IA', variant: 'destructive' });
+      const msg = err?.message || 'Erro desconhecido';
+      toast({ 
+        title: '❌ Erro ao processar documento', 
+        description: msg.includes('PDF') 
+          ? 'Não foi possível renderizar o PDF. Tente tirar uma foto da folha impressa com a câmera do celular.' 
+          : `Falha na leitura com IA: ${msg.slice(0, 120)}`,
+        variant: 'destructive' 
+      });
     } finally {
       setAnalyzingImage(false);
     }

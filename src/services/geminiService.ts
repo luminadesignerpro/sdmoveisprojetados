@@ -94,11 +94,13 @@ export async function analyzeImageWithGemini(base64Image: string, prompt: string
     for (const img of images) {
       let cleanBase64 = img;
       
-      if (cleanBase64.startsWith("data:application/pdf")) {
-        cleanBase64 = cleanBase64.replace(/^data:application\/pdf;base64,/, "data:image/jpeg;base64,");
-      } else if (cleanBase64.startsWith("data:application/octet-stream")) {
-        cleanBase64 = cleanBase64.replace(/^data:application\/octet-stream;base64,/, "data:image/jpeg;base64,");
-      } else if (!cleanBase64.startsWith("data:")) {
+      // Skip non-image data (raw PDF bytes can't be sent as image)
+      if (cleanBase64.startsWith("data:application/pdf") || cleanBase64.startsWith("data:application/octet-stream")) {
+        console.warn("Skipping non-image data URL in vision request");
+        continue;
+      }
+      
+      if (!cleanBase64.startsWith("data:")) {
         cleanBase64 = `data:image/jpeg;base64,${cleanBase64}`;
       }
       
@@ -125,7 +127,7 @@ export async function analyzeImageWithGemini(base64Image: string, prompt: string
           },
         ],
         temperature: 0.1,
-        max_tokens: 1024,
+        max_tokens: 4096,
       }),
     });
 
