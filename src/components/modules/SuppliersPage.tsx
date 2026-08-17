@@ -7,7 +7,7 @@ import {
   TrendingDown, DollarSign, Award, CheckCircle2,
   BarChart3, ShoppingBag, Tag, Maximize2, ClipboardList,
   Printer, ShoppingCart, CheckSquare, Sparkles, Camera, Eye, X, Loader2,
-  FileText, ExternalLink, Check, Download
+  FileText, ExternalLink, Check, Download, User
 } from 'lucide-react';
 
 declare global {
@@ -36,7 +36,7 @@ interface PriceQuote {
   brand: string;
   pricePerM2: number | null;
   unitPrice: number;
-  price: number; // for backwards compat
+  price: number;
   updatedAt: string;
   photoUrl?: string | null;
   specifications?: string | null;
@@ -129,6 +129,7 @@ const SuppliersPage: React.FC = () => {
   // Batch PDF / Image Confirmation Modal State
   const [batchImportModal, setBatchImportModal] = useState<{
     isOpen: boolean;
+    clientName: string;
     supplierName: string;
     fileUrl: string;
     isPdf: boolean;
@@ -211,38 +212,57 @@ const SuppliersPage: React.FC = () => {
 
   useEffect(() => { fetchSuppliers(); }, []);
 
-  // ─── Helper to render PDF page 1 or Image to JPEG Base64 ─────────────────
+  // ─── PDF Render & Conversion Helper ────────────────────────────────────
   const convertFileToImageBase64 = async (file: File): Promise<string> => {
     const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
     
     if (isPdf) {
-      if (!window.pdfjsLib) {
-        await new Promise((resolve, reject) => {
-          const script = document.createElement('script');
-          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-          script.onload = () => {
-            if (window.pdfjsLib) {
-              window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      try {
+        if (!window.pdfjsLib) {
+          await new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+            script.onload = () => {
+              if (window.pdfjsLib) {
+                window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                resolve(true);
+              } else {
+                reject(new Error('pdfjsLib não disponível'));
+              }
+            };
+            script.onerror = () => reject(new Error('Erro ao baixar PDF.js CDN'));
+            document.head.appendChild(script);
+          });
+        }
+
+        const arrayBuffer = await file.arrayBuffer();
+        const loadingTask = window.pdfjsLib.getDocument({ data: arrayBuffer });
+        const pdf = await loadingTask.promise;
+        const page = await pdf.getPage(1);
+        const viewport = page.getViewport({ scale: 2.0 });
+
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
+        await page.render({ canvasContext: context, viewport }).promise;
+        return canvas.toDataURL('image/jpeg', 0.92);
+      } catch (pdfErr) {
+        console.warn("Fall back para FileReader base64 direto para o PDF:", pdfErr);
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            let res = reader.result as string;
+            if (res.startsWith('data:application/pdf')) {
+              res = res.replace(/^data:application\/pdf;base64,/, 'data:image/jpeg;base64,');
             }
-            resolve(true);
+            resolve(res);
           };
-          script.onerror = () => reject(new Error('Erro ao carregar biblioteca PDF.js'));
-          document.head.appendChild(script);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
         });
       }
-
-      const arrayBuffer = await file.arrayBuffer();
-      const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      const page = await pdf.getPage(1);
-      const viewport = page.getViewport({ scale: 2.0 });
-
-      const canvas = document.createElement('canvas');
-      const context = canvas.getContext('2d');
-      canvas.height = viewport.height;
-      canvas.width = viewport.width;
-
-      await page.render({ canvasContext: context, viewport }).promise;
-      return canvas.toDataURL('image/jpeg', 0.95);
     } else {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -334,23 +354,25 @@ Extraia e retorne EXATAMENTE um JSON válido neste formato:
     setAnalyzingImage(true);
     toast({ 
       title: isPdf ? '📄 Lendo Arquivo PDF com IA...' : '📸 Lendo Foto de Orçamento com IA...', 
-      description: 'Extraindo todos os itens, quantidades e valores...' 
+      description: 'Identificando cliente, produtos, quantidades e valores unitários...' 
     });
 
     try {
       const base64Image = await convertFileToImageBase64(file);
 
-      const prompt = `Analise esta foto ou página de PDF de um orçamento, pedido de compra ou nota fiscal de materiais de marcenaria.
-Identifique o Nome do Fornecedor ou Cliente se constar, e extraia TODOS os itens/produtos listados com suas respectivas quantidades e valores unitários.
+      const prompt = `Analise esta foto ou arquivo PDF de uma folha de orçamento, pedido de compra ou lista de materiais de marcenaria.
+Localize o Nome do Cliente (ex: "SANDRA", "SANDRA - COZINHA") ou Fornecedor no topo do documento.
+Extraia SOMENTE a lista de produtos/materiais, suas quantidades e seus valores unitários.
 
 Retorne EXATAMENTE um JSON válido com esta estrutura:
 {
-  "supplierName": "Nome do fornecedor ou cliente encontrado na nota ou 'Orçamento Lido'",
+  "clientName": "Nome do cliente encontrado na nota ex: SANDRA",
+  "supplierName": "Nome do fornecedor ou 'Orçamento Importado'",
   "items": [
     {
-      "productName": "Nome do produto/material ex: MDF 15 2F BRANCO TX",
+      "productName": "Nome exato do produto ex: MDF 15 2F BRANCO TX",
       "category": "MDF/MDP ou Ferragens ou Acessórios ou Outros",
-      "brand": "Marca se houver ou Geral",
+      "brand": "Marca se constar ou Geral",
       "unitPrice": 259.64,
       "quantity": 9
     }
@@ -370,11 +392,15 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
       if (parsedData && Array.isArray(parsedData.items)) {
         parsedData.items.forEach((it: any) => {
           if (!it.productName) return;
+          const uVal = typeof it.unitPrice === 'number' 
+            ? it.unitPrice 
+            : parseFloat(String(it.unitPrice).replace('R$', '').replace(/\./g, '').replace(',', '.').trim()) || 0;
+          
           extractedItems.push({
             productName: String(it.productName).trim(),
             category: it.category || 'MDF/MDP',
             brand: it.brand || 'Geral',
-            unitPrice: parseFloat(String(it.unitPrice).replace(',', '.')) || 0,
+            unitPrice: uVal,
             quantity: Math.max(1, parseInt(String(it.quantity)) || 1)
           });
         });
@@ -384,6 +410,7 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
         // Opens Modal for Side-by-Side PDF/Photo preview & validation!
         setBatchImportModal({
           isOpen: true,
+          clientName: parsedData.clientName || 'Cliente Importado',
           supplierName: parsedData.supplierName || 'Orçamento Importado',
           fileUrl: objectUrl,
           isPdf: isPdf,
@@ -392,11 +419,11 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
         });
 
         toast({ 
-          title: `📄 Documento Lido: ${extractedItems.length} produtos encontrados!`, 
-          description: 'Visualize o PDF/Foto ao lado da lista e confirme a importação!' 
+          title: `📄 ${extractedItems.length} Produtos lidos no documento!`, 
+          description: 'Visualize o PDF ao lado e confirme para criar a Lista de Compras!' 
         });
       } else {
-        toast({ title: '⚠️ Não foi possível extrair os produtos do PDF/Foto', variant: 'destructive' });
+        toast({ title: '⚠️ Não foi possível extrair a lista de produtos do documento', variant: 'destructive' });
       }
 
     } catch (err) {
@@ -407,7 +434,7 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
     }
   };
 
-  // Save Modal Batch Confirmation
+  // Save Modal Batch Confirmation (Creates Material List AND Comparativo Quotes!)
   const handleConfirmBatchImport = () => {
     if (!batchImportModal || batchImportModal.items.length === 0) return;
 
@@ -416,6 +443,7 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
     let newMaterialItems: MaterialListItem[] = [];
 
     batchImportModal.items.forEach(it => {
+      // Find existing product in comparisons by name
       const existingIndex = newComparisons.findIndex(c => 
         c.productName.toLowerCase().trim() === it.productName.toLowerCase().trim()
       );
@@ -428,7 +456,7 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
         unitPrice: it.unitPrice,
         price: it.unitPrice,
         updatedAt: new Date().toISOString().split('T')[0],
-        specifications: `Importado via foto/PDF do orçamento. Qtd original: ${it.quantity}`
+        specifications: `Importado via PDF/Orçamento de ${batchImportModal.clientName}. Qtd: ${it.quantity}`
       };
 
       let prodId = '';
@@ -451,17 +479,24 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
         });
       }
 
+      // Add to Material Purchase List with Cheapest Quote Selection
       if (batchImportModal.addToMaterialList) {
+        // Check if there is an even cheaper quote among all suppliers for this product
+        const allQuotes = existingIndex >= 0 ? newComparisons[existingIndex].quotes : [quote];
+        const cheapestQuote = allQuotes.reduce((prev, curr) => 
+          (curr.unitPrice || curr.price) < (prev.unitPrice || prev.price) ? curr : prev
+        );
+
         newMaterialItems.push({
           id: Date.now().toString() + Math.random().toString().slice(2, 6),
           productId: prodId,
           productName: it.productName,
           category: it.category || 'MDF/MDP',
-          selectedSupplierName: suppName,
-          selectedBrand: it.brand || 'Geral',
-          selectedUnitPrice: it.unitPrice,
+          selectedSupplierName: cheapestQuote.supplierName,
+          selectedBrand: cheapestQuote.brand || 'Geral',
+          selectedUnitPrice: cheapestQuote.unitPrice || cheapestQuote.price,
           quantity: it.quantity,
-          total: it.quantity * it.unitPrice,
+          total: it.quantity * (cheapestQuote.unitPrice || cheapestQuote.price),
           isCheapestSelected: true
         });
       }
@@ -473,11 +508,11 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
     }
 
     setBatchImportModal(null);
+    setActiveTab('material_list'); // Auto navigate to client's Material Purchase List!
+
     toast({ 
-      title: `🎉 ${batchImportModal.items.length} Produtos salvos!`, 
-      description: batchImportModal.addToMaterialList 
-        ? 'Os produtos foram salvos no Comparativo e também adicionados à sua Lista de Compras!' 
-        : 'Os produtos foram salvos no Comparativo de Preços com sucesso!' 
+      title: `🎉 Lista de Compras do Cliente (${batchImportModal.clientName}) criada!`, 
+      description: `Os ${batchImportModal.items.length} produtos foram comparados com os melhores preços do mercado!` 
     });
   };
 
@@ -928,9 +963,9 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
           <div className="w-16 h-16 rounded-full bg-purple-600/20 border-2 border-purple-500 flex items-center justify-center animate-pulse">
             <Loader2 className="w-8 h-8 text-purple-400 animate-spin" />
           </div>
-          <h2 className="text-xl font-bold text-purple-300">🤖 Inteligência Artificial Analisando PDF / Foto...</h2>
+          <h2 className="text-xl font-bold text-purple-300">🤖 Leitura Inteligente do Orçamento (IA)...</h2>
           <p className="text-sm text-gray-400 text-center max-w-md">
-            Extraindo nomes de produtos, especificações, quantidades e preços do orçamento. Por favor, aguarde alguns segundos!
+            Extraindo produtos, quantidades e valores unitários do documento. Gerando lista e comparativo automático!
           </p>
         </div>
       )}
@@ -942,7 +977,7 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
             <Building className="w-8 h-8 text-amber-500" />
             Gestão de Fornecedores & Compras
           </h1>
-          <p className="text-gray-400 mt-1 text-sm">Cadastros, Comparativo do Menor Preço e Leitura de PDF/Foto por IA</p>
+          <p className="text-gray-400 mt-1 text-sm">Leitura de Orçamentos (PDF/Foto), Comparativo do Menor Preço e Lista do Cliente</p>
         </div>
 
         {/* Action Buttons */}
@@ -960,7 +995,7 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
             <button 
               onClick={() => batchFileInputRef.current?.click()}
               className="bg-purple-600 text-white px-5 py-3 rounded-2xl font-bold hover:bg-purple-700 transition-colors flex items-center gap-2 shadow-lg flex-1 sm:flex-none justify-center text-sm"
-              title="Abra um PDF ou tire foto de uma folha de orçamento/nota para visualizar e importar todos os produtos"
+              title="Abra um PDF ou tire foto de uma folha de orçamento/nota para ler produtos e criar a lista do cliente"
             >
               <FileText className="w-5 h-5" /> 📄 Abrir PDF / Tirar Foto do Orçamento (IA)
             </button>
@@ -1041,7 +1076,6 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
       {/* ─── TAB 1: SUPPLIERS LIST ────────────────────────────────────────── */}
       {activeTab === 'suppliers' && (
         <div className="space-y-6">
-          {/* Search */}
           <div className="relative max-w-md">
             <Search className="absolute left-4 top-3.5 w-5 h-5 text-gray-400" />
             <input 
@@ -1052,7 +1086,6 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
             />
           </div>
 
-          {/* Form Modal */}
           {showForm && (
             <div className="bg-[#111111] border border-white/10 rounded-3xl p-6 shadow-xl space-y-4 text-white">
               <h3 className="font-bold text-lg text-amber-500">{editingId ? 'Editar' : 'Novo'} Fornecedor</h3>
@@ -1074,7 +1107,6 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
             </div>
           )}
 
-          {/* Table */}
           <div className="bg-[#111111] border border-white/10 rounded-3xl shadow-xl overflow-x-auto text-white">
             <table className="w-full min-w-[700px]">
               <thead className="bg-[#1a1a1a] border-b border-white/10">
@@ -1159,9 +1191,9 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
                 <Sparkles className="w-6 h-6 animate-pulse" />
               </div>
               <div>
-                <h3 className="font-bold text-white text-base">Importação & Visualização de PDF / Fotos por IA</h3>
+                <h3 className="font-bold text-white text-base">Leitura Automática de Orçamento (PDF / Foto)</h3>
                 <p className="text-xs text-purple-200/80">
-                  Abra um PDF de orçamento ou foto de nota impressa. A IA lê **todos os produtos e preços**, exibe o PDF lado a lado na tela e cadastra direto no comparativo!
+                  Importe um PDF de orçamento ou foto. A IA lê **somente os produtos, quantidades e preços**, cria a **Lista de Compras do Cliente** e já faz a **comparação de preços**!
                 </p>
               </div>
             </div>
@@ -1452,7 +1484,6 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
                     </div>
 
                     <div className="flex items-center gap-2 flex-wrap">
-                      {/* DETAILED VIEW BUTTON */}
                       <button
                         onClick={() => setSelectedProdDetail(item)}
                         className="bg-purple-600/20 border border-purple-500/40 text-purple-300 hover:bg-purple-600/40 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all"
@@ -1964,7 +1995,7 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
         </div>
       )}
 
-      {/* ─── MODAL VISUALIZADOR DE PDF / FOTO & VALIDAÇÃO DE LOTES (IA) ───────── */}
+      {/* ─── MODAL VISUALIZADOR DE PDF / FOTO & GERADOR DA LISTA DO CLIENTE ───────── */}
       {batchImportModal && batchImportModal.isOpen && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6">
           <div className="bg-[#111111] border border-purple-500/40 rounded-3xl p-5 shadow-2xl text-white w-full max-w-6xl h-[90vh] flex flex-col space-y-4">
@@ -2032,19 +2063,36 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
 
               {/* RIGHT COLUMN: PARSED ITEMS TABLE & EDITING */}
               <div className="bg-[#181818] border border-white/10 rounded-2xl p-4 flex flex-col overflow-hidden space-y-3">
-                <div className="shrink-0 space-y-2">
-                  <label className="text-xs text-amber-400 font-bold block">Fornecedor / Origem do Orçamento *</label>
-                  <input 
-                    value={batchImportModal.supplierName} 
-                    onChange={e => setBatchImportModal({ ...batchImportModal, supplierName: e.target.value })}
-                    placeholder="Ex: SD Móveis / Madeireira X..." 
-                    className="w-full p-2.5 rounded-xl border border-white/10 bg-[#111] text-white text-xs font-bold focus:ring-1 focus:ring-purple-500"
-                  />
+                
+                <div className="grid grid-cols-2 gap-2 shrink-0">
+                  <div>
+                    <label className="text-xs text-amber-400 font-bold block mb-1 flex items-center gap-1">
+                      <User className="w-3.5 h-3.5" /> Nome do Cliente *
+                    </label>
+                    <input 
+                      value={batchImportModal.clientName} 
+                      onChange={e => setBatchImportModal({ ...batchImportModal, clientName: e.target.value })}
+                      placeholder="Ex: SANDRA..." 
+                      className="w-full p-2.5 rounded-xl border border-white/10 bg-[#111] text-white text-xs font-bold focus:ring-1 focus:ring-purple-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs text-blue-400 font-bold block mb-1 flex items-center gap-1">
+                      <Building className="w-3.5 h-3.5" /> Fornecedor / Origem
+                    </label>
+                    <input 
+                      value={batchImportModal.supplierName} 
+                      onChange={e => setBatchImportModal({ ...batchImportModal, supplierName: e.target.value })}
+                      placeholder="Ex: Madeireira X..." 
+                      className="w-full p-2.5 rounded-xl border border-white/10 bg-[#111] text-white text-xs font-bold focus:ring-1 focus:ring-purple-500"
+                    />
+                  </div>
                 </div>
 
                 <div className="flex justify-between items-center shrink-0 border-b border-white/10 pb-2 pt-1">
                   <span className="text-xs font-bold text-emerald-400">
-                    Produtos Encontrados ({batchImportModal.items.length})
+                    Produtos Extraídos ({batchImportModal.items.length} itens)
                   </span>
                   <button 
                     onClick={() => {
@@ -2125,17 +2173,12 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
                   ))}
                 </div>
 
-                {/* Option to also insert to Material List */}
-                <div className="shrink-0 pt-2 border-t border-white/10 flex items-center justify-between">
-                  <label className="flex items-center gap-2 cursor-pointer text-xs text-blue-300 font-bold">
-                    <input 
-                      type="checkbox" 
-                      checked={batchImportModal.addToMaterialList} 
-                      onChange={e => setBatchImportModal({ ...batchImportModal, addToMaterialList: e.target.checked })} 
-                      className="w-4 h-4 rounded accent-blue-600 cursor-pointer"
-                    />
-                    <span>Incluir também na Lista de Compras ({batchImportModal.items.length} itens)</span>
-                  </label>
+                {/* Info Alert */}
+                <div className="shrink-0 pt-2 border-t border-white/10 bg-emerald-950/40 border border-emerald-500/30 p-2.5 rounded-xl text-[11px] text-emerald-300 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>
+                    <b>Ação Automática:</b> A Lista do Cliente será criada e todos os preços serão comparados entre os fornecedores!
+                  </span>
                 </div>
 
               </div>
@@ -2155,7 +2198,7 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
                 onClick={handleConfirmBatchImport}
                 className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-2.5 rounded-xl text-sm flex items-center gap-2 shadow-lg"
               >
-                <Check className="w-4 h-4" /> Confirmar e Salvar Produtos no Comparativo
+                <Check className="w-4 h-4" /> Criar Lista de Compras do Cliente & Comparar Preços
               </button>
             </div>
 

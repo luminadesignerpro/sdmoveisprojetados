@@ -94,7 +94,11 @@ export async function analyzeImageWithGemini(base64Image: string, prompt: string
     for (const img of images) {
       let cleanBase64 = img;
       
-      if (!cleanBase64.startsWith("data:")) {
+      if (cleanBase64.startsWith("data:application/pdf")) {
+        cleanBase64 = cleanBase64.replace(/^data:application\/pdf;base64,/, "data:image/jpeg;base64,");
+      } else if (cleanBase64.startsWith("data:application/octet-stream")) {
+        cleanBase64 = cleanBase64.replace(/^data:application\/octet-stream;base64,/, "data:image/jpeg;base64,");
+      } else if (!cleanBase64.startsWith("data:")) {
         cleanBase64 = `data:image/jpeg;base64,${cleanBase64}`;
       }
       
