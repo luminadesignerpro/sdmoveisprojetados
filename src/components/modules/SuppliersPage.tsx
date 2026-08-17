@@ -7,8 +7,14 @@ import {
   TrendingDown, DollarSign, Award, CheckCircle2,
   BarChart3, ShoppingBag, Tag, Maximize2, ClipboardList,
   Printer, ShoppingCart, CheckSquare, Sparkles, Camera, Eye, X, Loader2,
-  FileSpreadsheet, UploadCloud
+  FileText, ExternalLink, Check, Download
 } from 'lucide-react';
+
+declare global {
+  interface Window {
+    pdfjsLib?: any;
+  }
+}
 
 const db = supabase as any;
 
@@ -56,6 +62,14 @@ interface MaterialListItem {
   quantity: number;
   total: number;
   isCheapestSelected: boolean;
+}
+
+interface BatchImportItem {
+  productName: string;
+  category: string;
+  brand: string;
+  unitPrice: number;
+  quantity: number;
 }
 
 const DEFAULT_COMPARISONS: ProductComparison[] = [
@@ -111,6 +125,16 @@ const SuppliersPage: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const batchFileInputRef = useRef<HTMLInputElement>(null);
   const [analyzingImage, setAnalyzingImage] = useState(false);
+
+  // Batch PDF / Image Confirmation Modal State
+  const [batchImportModal, setBatchImportModal] = useState<{
+    isOpen: boolean;
+    supplierName: string;
+    fileUrl: string;
+    isPdf: boolean;
+    items: BatchImportItem[];
+    addToMaterialList: boolean;
+  } | null>(null);
 
   // New Product Modal State
   const [showProdForm, setShowProdForm] = useState(false);
@@ -187,107 +211,141 @@ const SuppliersPage: React.FC = () => {
 
   useEffect(() => { fetchSuppliers(); }, []);
 
-  // ─── Camera / AI Single Image Processing ──────────────────────────────────
+  // ─── Helper to render PDF page 1 or Image to JPEG Base64 ─────────────────
+  const convertFileToImageBase64 = async (file: File): Promise<string> => {
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    
+    if (isPdf) {
+      if (!window.pdfjsLib) {
+        await new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+          script.onload = () => {
+            if (window.pdfjsLib) {
+              window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+            }
+            resolve(true);
+          };
+          script.onerror = () => reject(new Error('Erro ao carregar biblioteca PDF.js'));
+          document.head.appendChild(script);
+        });
+      }
+
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const page = await pdf.getPage(1);
+      const viewport = page.getViewport({ scale: 2.0 });
+
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+
+      await page.render({ canvasContext: context, viewport }).promise;
+      return canvas.toDataURL('image/jpeg', 0.95);
+    } else {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+  };
+
+  // ─── Single Photo Capture (AI extraction) ──────────────────────────────
   const handleCapturePhoto = async (e: React.ChangeEvent<HTMLInputElement>, targetForm: 'prod' | 'quote' | 'newMat') => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setAnalyzingImage(true);
-    toast({ title: '📸 Lendo foto com IA...', description: 'Extraindo nome do produto, marca, especificações e valor!' });
+    toast({ title: '📸 Lendo arquivo com IA...', description: 'Extraindo dados do produto, marca, especificações e valor!' });
 
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      const base64 = reader.result as string;
+    try {
+      const base64Image = await convertFileToImageBase64(file);
 
-      try {
-        const prompt = `Analise esta foto de um produto/material de marcenaria ou etiqueta/nota fiscal.
+      const prompt = `Analise este documento/foto de um produto/material de marcenaria.
 Extraia e retorne EXATAMENTE um JSON válido neste formato:
 {
-  "productName": "Nome do produto encontrado ou aproximado",
-  "brand": "Marca ou fabricante se visível",
+  "productName": "Nome do produto",
+  "brand": "Marca ou fabricante se houver",
   "unitPrice": "Preço em numero com ponto ou vazio",
   "pricePerM2": "Preço por m2 se houver ou vazio",
-  "specifications": "Resumo detalhado das características, dimensões ou especificações encontradas na foto"
+  "specifications": "Resumo detalhado das características"
 }`;
 
-        const aiResponse = await analyzeImageWithGemini(base64, prompt);
-        let extractedData: any = {};
-        try {
-          const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            extractedData = JSON.parse(jsonMatch[0]);
-          }
-        } catch (err) {
-          console.warn("Não foi possível parsear JSON direto da IA:", aiResponse);
-        }
-
-        if (targetForm === 'prod') {
-          setProdForm(prev => ({
-            ...prev,
-            productName: extractedData.productName || prev.productName,
-            brand: extractedData.brand || prev.brand,
-            unitPrice: extractedData.unitPrice ? String(extractedData.unitPrice) : prev.unitPrice,
-            pricePerM2: extractedData.pricePerM2 ? String(extractedData.pricePerM2) : prev.pricePerM2,
-            specifications: extractedData.specifications || prev.specifications || aiResponse.slice(0, 150),
-            photoUrl: base64
-          }));
-        } else if (targetForm === 'quote') {
-          setQuoteForm(prev => ({
-            ...prev,
-            brand: extractedData.brand || prev.brand,
-            unitPrice: extractedData.unitPrice ? String(extractedData.unitPrice) : prev.unitPrice,
-            pricePerM2: extractedData.pricePerM2 ? String(extractedData.pricePerM2) : prev.pricePerM2,
-            specifications: extractedData.specifications || prev.specifications || aiResponse.slice(0, 150),
-            photoUrl: base64
-          }));
-        } else if (targetForm === 'newMat') {
-          setNewMatForm(prev => ({
-            ...prev,
-            productName: extractedData.productName || prev.productName,
-            brand: extractedData.brand || prev.brand,
-            unitPrice: extractedData.unitPrice ? String(extractedData.unitPrice) : prev.unitPrice,
-            pricePerM2: extractedData.pricePerM2 ? String(extractedData.pricePerM2) : prev.pricePerM2,
-            specifications: extractedData.specifications || prev.specifications || aiResponse.slice(0, 150),
-            photoUrl: base64
-          }));
-        }
-
-        toast({ title: '✨ Dados extraídos com sucesso da foto!', description: 'Os campos foram preenchidos automaticamente.' });
+      const aiResponse = await analyzeImageWithGemini(base64Image, prompt);
+      let extractedData: any = {};
+      try {
+        const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+        if (jsonMatch) extractedData = JSON.parse(jsonMatch[0]);
       } catch (err) {
-        console.error("Erro na leitura da imagem:", err);
-        if (targetForm === 'prod') setProdForm(prev => ({ ...prev, photoUrl: base64 }));
-        if (targetForm === 'quote') setQuoteForm(prev => ({ ...prev, photoUrl: base64 }));
-        if (targetForm === 'newMat') setNewMatForm(prev => ({ ...prev, photoUrl: base64 }));
-        toast({ title: '📸 Foto anexada com sucesso!' });
-      } finally {
-        setAnalyzingImage(false);
+        console.warn("Parse error:", aiResponse);
       }
-    };
-    reader.readAsDataURL(file);
+
+      if (targetForm === 'prod') {
+        setProdForm(prev => ({
+          ...prev,
+          productName: extractedData.productName || prev.productName,
+          brand: extractedData.brand || prev.brand,
+          unitPrice: extractedData.unitPrice ? String(extractedData.unitPrice) : prev.unitPrice,
+          pricePerM2: extractedData.pricePerM2 ? String(extractedData.pricePerM2) : prev.pricePerM2,
+          specifications: extractedData.specifications || prev.specifications || aiResponse.slice(0, 150),
+          photoUrl: base64Image
+        }));
+      } else if (targetForm === 'quote') {
+        setQuoteForm(prev => ({
+          ...prev,
+          brand: extractedData.brand || prev.brand,
+          unitPrice: extractedData.unitPrice ? String(extractedData.unitPrice) : prev.unitPrice,
+          pricePerM2: extractedData.pricePerM2 ? String(extractedData.pricePerM2) : prev.pricePerM2,
+          specifications: extractedData.specifications || prev.specifications || aiResponse.slice(0, 150),
+          photoUrl: base64Image
+        }));
+      } else if (targetForm === 'newMat') {
+        setNewMatForm(prev => ({
+          ...prev,
+          productName: extractedData.productName || prev.productName,
+          brand: extractedData.brand || prev.brand,
+          unitPrice: extractedData.unitPrice ? String(extractedData.unitPrice) : prev.unitPrice,
+          pricePerM2: extractedData.pricePerM2 ? String(extractedData.pricePerM2) : prev.pricePerM2,
+          specifications: extractedData.specifications || prev.specifications || aiResponse.slice(0, 150),
+          photoUrl: base64Image
+        }));
+      }
+
+      toast({ title: '✨ Dados extraídos com sucesso!', description: 'Os campos foram preenchidos automaticamente.' });
+    } catch (err) {
+      console.error("Erro na leitura:", err);
+      toast({ title: '📸 Foto anexada com sucesso!' });
+    } finally {
+      setAnalyzingImage(false);
+    }
   };
 
-  // ─── Camera / AI Batch Budget Scan Processing ────────────────────────────
+  // ─── Batch PDF & Photo Budget Scan Processing ────────────────────────────
   const handleImportBatchFromBudgetPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    const objectUrl = URL.createObjectURL(file);
+
     setAnalyzingImage(true);
     toast({ 
-      title: '🤖 Lendo Folha de Orçamento com IA...', 
-      description: 'Processando todos os produtos, quantidades e valores impressos na folha...' 
+      title: isPdf ? '📄 Lendo Arquivo PDF com IA...' : '📸 Lendo Foto de Orçamento com IA...', 
+      description: 'Extraindo todos os itens, quantidades e valores...' 
     });
 
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      const base64 = reader.result as string;
+    try {
+      const base64Image = await convertFileToImageBase64(file);
 
-      try {
-        const prompt = `Analise esta foto de uma folha de orçamento, pedido de compra ou nota fiscal de materiais de marcenaria.
+      const prompt = `Analise esta foto ou página de PDF de um orçamento, pedido de compra ou nota fiscal de materiais de marcenaria.
 Identifique o Nome do Fornecedor ou Cliente se constar, e extraia TODOS os itens/produtos listados com suas respectivas quantidades e valores unitários.
 
 Retorne EXATAMENTE um JSON válido com esta estrutura:
 {
-  "supplierName": "Nome do fornecedor ou cliente encontrado ou 'Orçamento Lido via Foto'",
+  "supplierName": "Nome do fornecedor ou cliente encontrado na nota ou 'Orçamento Lido'",
   "items": [
     {
       "productName": "Nome do produto/material ex: MDF 15 2F BRANCO TX",
@@ -299,78 +357,128 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
   ]
 }`;
 
-        const aiResponse = await analyzeImageWithGemini(base64, prompt);
-        let parsedData: any = {};
-        try {
-          const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            parsedData = JSON.parse(jsonMatch[0]);
-          }
-        } catch (err) {
-          console.warn("Parse error em lote:", aiResponse);
-        }
-
-        if (parsedData && Array.isArray(parsedData.items) && parsedData.items.length > 0) {
-          const suppName = parsedData.supplierName || 'Orçamento Importado';
-          
-          let newComparisons = [...comparisons];
-          let importedCount = 0;
-
-          parsedData.items.forEach((it: any) => {
-            if (!it.productName) return;
-            importedCount++;
-
-            const unitVal = parseFloat(String(it.unitPrice).replace(',', '.')) || 0;
-
-            const existingIndex = newComparisons.findIndex(c => 
-              c.productName.toLowerCase().trim() === it.productName.toLowerCase().trim()
-            );
-
-            const quote: PriceQuote = {
-              supplierId: Date.now().toString() + Math.random().toString().slice(2, 6),
-              supplierName: suppName,
-              brand: it.brand || 'Geral',
-              pricePerM2: null,
-              unitPrice: unitVal,
-              price: unitVal,
-              updatedAt: new Date().toISOString().split('T')[0],
-              specifications: `Importado de foto de orçamento. Qtd registrada na nota: ${it.quantity || 1}`
-            };
-
-            if (existingIndex >= 0) {
-              const existingQuotes = newComparisons[existingIndex].quotes.filter(q => q.supplierName.toLowerCase() !== suppName.toLowerCase());
-              newComparisons[existingIndex] = {
-                ...newComparisons[existingIndex],
-                quotes: [...existingQuotes, quote]
-              };
-            } else {
-              newComparisons.unshift({
-                id: Date.now().toString() + Math.random().toString().slice(2, 6),
-                productName: it.productName.trim(),
-                category: it.category || 'MDF/MDP',
-                unit: 'Un',
-                quotes: [quote]
-              });
-            }
-          });
-
-          setComparisons(newComparisons);
-          toast({ 
-            title: `🎉 ${importedCount} produtos extraídos da foto!`, 
-            description: `Todos os itens e preços do orçamento foram cadastrados e comparados no sistema!` 
-          });
-        } else {
-          toast({ title: '⚠️ Não foi possível extrair a lista de produtos da foto', variant: 'destructive' });
-        }
-
+      const aiResponse = await analyzeImageWithGemini(base64Image, prompt);
+      let parsedData: any = {};
+      try {
+        const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+        if (jsonMatch) parsedData = JSON.parse(jsonMatch[0]);
       } catch (err) {
-        console.error("Erro na leitura de lote:", err);
-        toast({ title: '❌ Erro ao processar a imagem com a IA', variant: 'destructive' });
-      } finally {
-        setAnalyzingImage(false);
+        console.warn("Parse error em lote:", aiResponse);
       }
-    };
-    reader.readAsDataURL(file);
+
+      const extractedItems: BatchImportItem[] = [];
+      if (parsedData && Array.isArray(parsedData.items)) {
+        parsedData.items.forEach((it: any) => {
+          if (!it.productName) return;
+          extractedItems.push({
+            productName: String(it.productName).trim(),
+            category: it.category || 'MDF/MDP',
+            brand: it.brand || 'Geral',
+            unitPrice: parseFloat(String(it.unitPrice).replace(',', '.')) || 0,
+            quantity: Math.max(1, parseInt(String(it.quantity)) || 1)
+          });
+        });
+      }
+
+      if (extractedItems.length > 0) {
+        // Opens Modal for Side-by-Side PDF/Photo preview & validation!
+        setBatchImportModal({
+          isOpen: true,
+          supplierName: parsedData.supplierName || 'Orçamento Importado',
+          fileUrl: objectUrl,
+          isPdf: isPdf,
+          items: extractedItems,
+          addToMaterialList: true
+        });
+
+        toast({ 
+          title: `📄 Documento Lido: ${extractedItems.length} produtos encontrados!`, 
+          description: 'Visualize o PDF/Foto ao lado da lista e confirme a importação!' 
+        });
+      } else {
+        toast({ title: '⚠️ Não foi possível extrair os produtos do PDF/Foto', variant: 'destructive' });
+      }
+
+    } catch (err) {
+      console.error("Erro no processamento do documento:", err);
+      toast({ title: '❌ Erro ao ler PDF/Foto com IA', variant: 'destructive' });
+    } finally {
+      setAnalyzingImage(false);
+    }
+  };
+
+  // Save Modal Batch Confirmation
+  const handleConfirmBatchImport = () => {
+    if (!batchImportModal || batchImportModal.items.length === 0) return;
+
+    const suppName = batchImportModal.supplierName.trim() || 'Orçamento Importado';
+    let newComparisons = [...comparisons];
+    let newMaterialItems: MaterialListItem[] = [];
+
+    batchImportModal.items.forEach(it => {
+      const existingIndex = newComparisons.findIndex(c => 
+        c.productName.toLowerCase().trim() === it.productName.toLowerCase().trim()
+      );
+
+      const quote: PriceQuote = {
+        supplierId: Date.now().toString() + Math.random().toString().slice(2, 6),
+        supplierName: suppName,
+        brand: it.brand || 'Geral',
+        pricePerM2: null,
+        unitPrice: it.unitPrice,
+        price: it.unitPrice,
+        updatedAt: new Date().toISOString().split('T')[0],
+        specifications: `Importado via foto/PDF do orçamento. Qtd original: ${it.quantity}`
+      };
+
+      let prodId = '';
+
+      if (existingIndex >= 0) {
+        prodId = newComparisons[existingIndex].id;
+        const existingQuotes = newComparisons[existingIndex].quotes.filter(q => q.supplierName.toLowerCase() !== suppName.toLowerCase());
+        newComparisons[existingIndex] = {
+          ...newComparisons[existingIndex],
+          quotes: [...existingQuotes, quote]
+        };
+      } else {
+        prodId = Date.now().toString() + Math.random().toString().slice(2, 6);
+        newComparisons.unshift({
+          id: prodId,
+          productName: it.productName,
+          category: it.category || 'MDF/MDP',
+          unit: 'Un',
+          quotes: [quote]
+        });
+      }
+
+      if (batchImportModal.addToMaterialList) {
+        newMaterialItems.push({
+          id: Date.now().toString() + Math.random().toString().slice(2, 6),
+          productId: prodId,
+          productName: it.productName,
+          category: it.category || 'MDF/MDP',
+          selectedSupplierName: suppName,
+          selectedBrand: it.brand || 'Geral',
+          selectedUnitPrice: it.unitPrice,
+          quantity: it.quantity,
+          total: it.quantity * it.unitPrice,
+          isCheapestSelected: true
+        });
+      }
+    });
+
+    setComparisons(newComparisons);
+    if (newMaterialItems.length > 0) {
+      setMaterialList([...newMaterialItems, ...materialList]);
+    }
+
+    setBatchImportModal(null);
+    toast({ 
+      title: `🎉 ${batchImportModal.items.length} Produtos salvos!`, 
+      description: batchImportModal.addToMaterialList 
+        ? 'Os produtos foram salvos no Comparativo e também adicionados à sua Lista de Compras!' 
+        : 'Os produtos foram salvos no Comparativo de Preços com sucesso!' 
+    });
   };
 
   const handleSaveSupplier = async () => {
@@ -509,8 +617,7 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
     toast({ title: '🗑️ Cotação removida' });
   };
 
-  // ─── Material List Handlers ─────────────────────────────────────────────
-  
+  // Material List Handlers
   const handleSelectProductForMatList = (prodId: string) => {
     const prod = comparisons.find(c => c.id === prodId);
     if (!prod || prod.quotes.length === 0) {
@@ -805,11 +912,11 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
   return (
     <div className="p-4 sm:p-8 space-y-6 overflow-auto h-full bg-[#0f0f0f] relative w-full pt-16">
       
-      {/* Hidden File Input for Batch Orçamento Photo Scan */}
+      {/* Hidden File Input for Batch Orçamento Photo & PDF Scan */}
       <input 
         type="file" 
         ref={batchFileInputRef} 
-        accept="image/*" 
+        accept="image/*,application/pdf,.pdf" 
         capture="environment" 
         onChange={handleImportBatchFromBudgetPhoto}
         className="hidden" 
@@ -821,9 +928,9 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
           <div className="w-16 h-16 rounded-full bg-purple-600/20 border-2 border-purple-500 flex items-center justify-center animate-pulse">
             <Loader2 className="w-8 h-8 text-purple-400 animate-spin" />
           </div>
-          <h2 className="text-xl font-bold text-purple-300">🤖 Inteligência Artificial Analisando Imagem...</h2>
+          <h2 className="text-xl font-bold text-purple-300">🤖 Inteligência Artificial Analisando PDF / Foto...</h2>
           <p className="text-sm text-gray-400 text-center max-w-md">
-            Extraindo nomes de produtos, especificações, quantidades e preços do orçamento/etiqueta. Por favor, aguarde alguns segundos!
+            Extraindo nomes de produtos, especificações, quantidades e preços do orçamento. Por favor, aguarde alguns segundos!
           </p>
         </div>
       )}
@@ -835,7 +942,7 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
             <Building className="w-8 h-8 text-amber-500" />
             Gestão de Fornecedores & Compras
           </h1>
-          <p className="text-gray-400 mt-1 text-sm">Cadastros, Comparativo do Menor Preço e Detalhamento por Foto/IA</p>
+          <p className="text-gray-400 mt-1 text-sm">Cadastros, Comparativo do Menor Preço e Leitura de PDF/Foto por IA</p>
         </div>
 
         {/* Action Buttons */}
@@ -853,9 +960,9 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
             <button 
               onClick={() => batchFileInputRef.current?.click()}
               className="bg-purple-600 text-white px-5 py-3 rounded-2xl font-bold hover:bg-purple-700 transition-colors flex items-center gap-2 shadow-lg flex-1 sm:flex-none justify-center text-sm"
-              title="Tire foto de uma folha de orçamento/nota impressa e importe todos os itens de uma vez"
+              title="Abra um PDF ou tire foto de uma folha de orçamento/nota para visualizar e importar todos os produtos"
             >
-              <Camera className="w-5 h-5" /> 📸 Importar Orçamento/Nota em Foto (IA)
+              <FileText className="w-5 h-5" /> 📄 Abrir PDF / Tirar Foto do Orçamento (IA)
             </button>
 
             <button 
@@ -1052,9 +1159,9 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
                 <Sparkles className="w-6 h-6 animate-pulse" />
               </div>
               <div>
-                <h3 className="font-bold text-white text-base">Importação Inteligente de Orçamentos por Foto</h3>
+                <h3 className="font-bold text-white text-base">Importação & Visualização de PDF / Fotos por IA</h3>
                 <p className="text-xs text-purple-200/80">
-                  Tire foto de uma folha de orçamento inteira ou nota impressa. A Inteligência Artificial lê **todos os produtos, quantidades e preços** e cadastra direto no comparativo!
+                  Abra um PDF de orçamento ou foto de nota impressa. A IA lê **todos os produtos e preços**, exibe o PDF lado a lado na tela e cadastra direto no comparativo!
                 </p>
               </div>
             </div>
@@ -1063,7 +1170,7 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
               onClick={() => batchFileInputRef.current?.click()}
               className="bg-purple-600 hover:bg-purple-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-lg shrink-0 transition-all"
             >
-              <Camera className="w-4 h-4" /> 📸 Tirar Foto do Orçamento Inteiro
+              <FileText className="w-4 h-4" /> 📄 Abrir PDF / Tirar Foto do Orçamento
             </button>
           </div>
 
@@ -1080,7 +1187,7 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
             </div>
           </div>
 
-          {/* Form Modal: Add New Product (with Camera Button & AI Auto-fill) */}
+          {/* Form Modal: Add New Product */}
           {showProdForm && (
             <div className="bg-[#111111] border border-emerald-500/40 rounded-3xl p-6 shadow-2xl space-y-4 text-white">
               <div className="flex justify-between items-center border-b border-white/10 pb-3">
@@ -1088,13 +1195,12 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
                   <Plus className="w-5 h-5" /> Cadastrar Produto & Primeiros Preços no Comparativo
                 </h3>
 
-                {/* CAMERA BUTTON FOR PROD FORM */}
                 <label className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow transition-all shrink-0">
                   {analyzingImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
-                  <span>{analyzingImage ? 'Lendo com IA...' : '📸 Tirar Foto / Ler Etiqueta com IA'}</span>
+                  <span>{analyzingImage ? 'Lendo com IA...' : '📸 Tirar Foto / PDF com IA'}</span>
                   <input 
                     type="file" 
-                    accept="image/*" 
+                    accept="image/*,application/pdf,.pdf" 
                     capture="environment" 
                     onChange={e => handleCapturePhoto(e, 'prod')} 
                     className="hidden" 
@@ -1176,10 +1282,9 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
                   />
                 </div>
 
-                {/* Especificações & Foto Preview */}
                 <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-3 bg-[#181818] p-3 rounded-2xl border border-white/5">
                   <div className="md:col-span-2">
-                    <label className="text-xs text-gray-300 font-bold block mb-1">Detalhamento & Especificações Técnicas (ou Extraído da Foto)</label>
+                    <label className="text-xs text-gray-300 font-bold block mb-1">Detalhamento & Especificações Técnicas (ou Extraído da Foto/PDF)</label>
                     <textarea 
                       rows={2} 
                       value={prodForm.specifications} 
@@ -1198,7 +1303,7 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
                       </div>
                     ) : (
                       <div className="text-center p-2 text-xs text-gray-500 border border-dashed border-white/10 rounded-xl h-16 flex items-center justify-center">
-                        Nenhuma foto capturada
+                        Nenhum arquivo capturado
                       </div>
                     )}
                   </div>
@@ -1223,10 +1328,10 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
 
                 <label className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow transition-all shrink-0">
                   {analyzingImage ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
-                  <span>Foto / IA</span>
+                  <span>Foto / PDF</span>
                   <input 
                     type="file" 
-                    accept="image/*" 
+                    accept="image/*,application/pdf,.pdf" 
                     capture="environment" 
                     onChange={e => handleCapturePhoto(e, 'quote')} 
                     className="hidden" 
@@ -1437,7 +1542,7 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
                               )}
                               {q.photoUrl && (
                                 <span className="inline-flex items-center gap-1 text-[10px] bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full border border-purple-500/30">
-                                  <Camera className="w-3 h-3" /> Foto anexada
+                                  <Camera className="w-3 h-3" /> Foto/Anexo
                                 </span>
                               )}
                             </div>
@@ -1524,7 +1629,6 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
           {showAddMatForm && (
             <div className="bg-[#111111] border border-blue-500/40 rounded-3xl p-6 shadow-2xl space-y-4 text-white max-w-2xl mx-auto">
               
-              {/* Modal Header & Mode Switcher */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-white/10 pb-3">
                 <h3 className="font-bold text-lg text-blue-400 flex items-center gap-2">
                   <ShoppingCart className="w-5 h-5" /> Adicionar Produto à Lista de Compras
@@ -1623,10 +1727,10 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
 
                     <label className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition-all shrink-0">
                       {analyzingImage ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
-                      <span>Foto / IA</span>
+                      <span>Foto / PDF</span>
                       <input 
                         type="file" 
-                        accept="image/*" 
+                        accept="image/*,application/pdf,.pdf" 
                         capture="environment" 
                         onChange={e => handleCapturePhoto(e, 'newMat')} 
                         className="hidden" 
@@ -1783,7 +1887,6 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#111111] border border-purple-500/40 rounded-3xl p-6 shadow-2xl space-y-5 text-white w-full max-w-3xl max-h-[90vh] overflow-y-auto">
             
-            {/* Header */}
             <div className="flex justify-between items-start border-b border-white/10 pb-4">
               <div>
                 <span className="bg-purple-500/20 text-purple-300 border border-purple-500/30 px-3 py-1 rounded-full text-xs font-bold">
@@ -1803,7 +1906,6 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
               </button>
             </div>
 
-            {/* List of Quotes with Photos & Specifications */}
             <div className="space-y-4">
               <h3 className="text-sm font-bold text-amber-400 uppercase tracking-wider">
                 Detalhamento Completo das Cotações ({selectedProdDetail.quotes.length} Fornecedores)
@@ -1822,7 +1924,6 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* Photo */}
                     {q.photoUrl ? (
                       <div className="rounded-xl overflow-hidden border border-white/10 h-36 bg-black">
                         <img src={q.photoUrl} alt={q.supplierName} className="w-full h-full object-cover" />
@@ -1833,7 +1934,6 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
                       </div>
                     )}
 
-                    {/* Technical Specs */}
                     <div className="md:col-span-2 space-y-2 text-xs">
                       <p className="text-gray-400">
                         <b className="text-gray-200">Especificações / Observações:</b><br />
@@ -1857,6 +1957,205 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
                 className="bg-white/10 hover:bg-white/20 text-white font-bold px-6 py-2.5 rounded-xl text-sm"
               >
                 Fechar Detalhes
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ─── MODAL VISUALIZADOR DE PDF / FOTO & VALIDAÇÃO DE LOTES (IA) ───────── */}
+      {batchImportModal && batchImportModal.isOpen && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6">
+          <div className="bg-[#111111] border border-purple-500/40 rounded-3xl p-5 shadow-2xl text-white w-full max-w-6xl h-[90vh] flex flex-col space-y-4">
+            
+            {/* Modal Header */}
+            <div className="flex justify-between items-center border-b border-white/10 pb-3 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-300">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-black text-lg text-white flex items-center gap-2">
+                    Visualizador de Orçamento & Produtos Extraídos pela IA
+                  </h3>
+                  <p className="text-xs text-gray-400">
+                    Confira o documento original do lado esquerdo e a lista de produtos identificados do lado direito.
+                  </p>
+                </div>
+              </div>
+
+              <button 
+                onClick={() => setBatchImportModal(null)}
+                className="w-9 h-9 bg-white/10 text-gray-400 hover:text-white rounded-full flex items-center justify-center"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body: Grid Side by Side */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 overflow-hidden">
+              
+              {/* LEFT COLUMN: PDF / PHOTO VIEWER */}
+              <div className="bg-[#181818] border border-white/10 rounded-2xl p-3 flex flex-col overflow-hidden">
+                <div className="flex justify-between items-center mb-2 px-1 shrink-0">
+                  <span className="text-xs font-bold text-purple-300 flex items-center gap-1.5">
+                    {batchImportModal.isPdf ? <FileText className="w-4 h-4 text-purple-400" /> : <Camera className="w-4 h-4 text-purple-400" />}
+                    {batchImportModal.isPdf ? '📄 Documento PDF Original' : '📸 Foto do Orçamento'}
+                  </span>
+                  <a 
+                    href={batchImportModal.fileUrl} 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    className="text-[11px] text-purple-400 hover:underline flex items-center gap-1"
+                  >
+                    Abrir em Nova Aba <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+
+                <div className="flex-1 rounded-xl overflow-hidden bg-black/60 border border-white/5 flex items-center justify-center relative">
+                  {batchImportModal.isPdf ? (
+                    <iframe 
+                      src={batchImportModal.fileUrl} 
+                      title="PDF Visualizer" 
+                      className="w-full h-full border-none rounded-xl"
+                    />
+                  ) : (
+                    <img 
+                      src={batchImportModal.fileUrl} 
+                      alt="Orçamento" 
+                      className="w-full h-full object-contain max-h-[60vh]" 
+                    />
+                  )}
+                </div>
+              </div>
+
+              {/* RIGHT COLUMN: PARSED ITEMS TABLE & EDITING */}
+              <div className="bg-[#181818] border border-white/10 rounded-2xl p-4 flex flex-col overflow-hidden space-y-3">
+                <div className="shrink-0 space-y-2">
+                  <label className="text-xs text-amber-400 font-bold block">Fornecedor / Origem do Orçamento *</label>
+                  <input 
+                    value={batchImportModal.supplierName} 
+                    onChange={e => setBatchImportModal({ ...batchImportModal, supplierName: e.target.value })}
+                    placeholder="Ex: SD Móveis / Madeireira X..." 
+                    className="w-full p-2.5 rounded-xl border border-white/10 bg-[#111] text-white text-xs font-bold focus:ring-1 focus:ring-purple-500"
+                  />
+                </div>
+
+                <div className="flex justify-between items-center shrink-0 border-b border-white/10 pb-2 pt-1">
+                  <span className="text-xs font-bold text-emerald-400">
+                    Produtos Encontrados ({batchImportModal.items.length})
+                  </span>
+                  <button 
+                    onClick={() => {
+                      const newIt: BatchImportItem = { productName: 'Novo Produto', category: 'MDF/MDP', brand: 'Geral', unitPrice: 0, quantity: 1 };
+                      setBatchImportModal({ ...batchImportModal, items: [...batchImportModal.items, newIt] });
+                    }}
+                    className="text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-1 rounded-lg hover:bg-emerald-500/30 flex items-center gap-1 font-bold"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Adicionar Item
+                  </button>
+                </div>
+
+                {/* Items Editable Table */}
+                <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+                  {batchImportModal.items.map((it, i) => (
+                    <div key={i} className="bg-[#111] p-3 rounded-xl border border-white/10 space-y-2">
+                      <div className="flex gap-2">
+                        <input 
+                          value={it.productName} 
+                          onChange={e => {
+                            const updated = [...batchImportModal.items];
+                            updated[i].productName = e.target.value;
+                            setBatchImportModal({ ...batchImportModal, items: updated });
+                          }}
+                          placeholder="Nome do produto" 
+                          className="flex-1 p-2 rounded-lg border border-white/10 bg-[#181818] text-white text-xs font-bold"
+                        />
+                        <button 
+                          onClick={() => {
+                            const updated = batchImportModal.items.filter((_, idx) => idx !== i);
+                            setBatchImportModal({ ...batchImportModal, items: updated });
+                          }}
+                          className="text-gray-500 hover:text-red-400 p-1"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2 text-xs">
+                        <div>
+                          <span className="text-[10px] text-gray-400 block mb-0.5">Qtd</span>
+                          <input 
+                            type="number"
+                            min="1"
+                            value={it.quantity} 
+                            onChange={e => {
+                              const updated = [...batchImportModal.items];
+                              updated[i].quantity = Math.max(1, parseInt(e.target.value) || 1);
+                              setBatchImportModal({ ...batchImportModal, items: updated });
+                            }}
+                            className="w-full p-2 rounded-lg border border-white/10 bg-[#181818] text-amber-400 text-xs font-bold text-center"
+                          />
+                        </div>
+
+                        <div>
+                          <span className="text-[10px] text-gray-400 block mb-0.5">Valor Unit. (R$)</span>
+                          <input 
+                            type="number"
+                            step="0.01"
+                            value={it.unitPrice} 
+                            onChange={e => {
+                              const updated = [...batchImportModal.items];
+                              updated[i].unitPrice = parseFloat(e.target.value) || 0;
+                              setBatchImportModal({ ...batchImportModal, items: updated });
+                            }}
+                            className="w-full p-2 rounded-lg border border-white/10 bg-[#181818] text-emerald-400 text-xs font-bold"
+                          />
+                        </div>
+
+                        <div>
+                          <span className="text-[10px] text-gray-400 block mb-0.5">Subtotal</span>
+                          <div className="p-2 rounded-lg bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 font-black text-xs text-right truncate">
+                            R$ {(it.quantity * it.unitPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Option to also insert to Material List */}
+                <div className="shrink-0 pt-2 border-t border-white/10 flex items-center justify-between">
+                  <label className="flex items-center gap-2 cursor-pointer text-xs text-blue-300 font-bold">
+                    <input 
+                      type="checkbox" 
+                      checked={batchImportModal.addToMaterialList} 
+                      onChange={e => setBatchImportModal({ ...batchImportModal, addToMaterialList: e.target.checked })} 
+                      className="w-4 h-4 rounded accent-blue-600 cursor-pointer"
+                    />
+                    <span>Incluir também na Lista de Compras ({batchImportModal.items.length} itens)</span>
+                  </label>
+                </div>
+
+              </div>
+
+            </div>
+
+            {/* Modal Footer Actions */}
+            <div className="flex gap-3 justify-end shrink-0 border-t border-white/10 pt-3">
+              <button 
+                onClick={() => setBatchImportModal(null)}
+                className="bg-white/10 hover:bg-white/20 text-white font-bold px-5 py-2.5 rounded-xl text-sm"
+              >
+                Cancelar
+              </button>
+
+              <button 
+                onClick={handleConfirmBatchImport}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-2.5 rounded-xl text-sm flex items-center gap-2 shadow-lg"
+              >
+                <Check className="w-4 h-4" /> Confirmar e Salvar Produtos no Comparativo
               </button>
             </div>
 
