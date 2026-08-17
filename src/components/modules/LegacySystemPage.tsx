@@ -1087,11 +1087,11 @@ const LegacySystemPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="legacy-label block mb-1">Largura (m)</label>
-                  <input type="number" step="0.01" className="legacy-input w-full" value={itemForm.width} onChange={e => setItemForm({ ...itemForm, width: +e.target.value })} />
+                  <input type="number" step="0.01" className="legacy-input w-full" value={itemForm.width || ''} onChange={e => setItemForm({ ...itemForm, width: +e.target.value })} />
                 </div>
                 <div>
                   <label className="legacy-label block mb-1">Altura (m)</label>
-                  <input type="number" step="0.01" className="legacy-input w-full" value={itemForm.height} onChange={e => setItemForm({ ...itemForm, height: +e.target.value })} />
+                  <input type="number" step="0.01" className="legacy-input w-full" value={itemForm.height || ''} onChange={e => setItemForm({ ...itemForm, height: +e.target.value })} />
                 </div>
               </div>
               <div className="bg-blue-50 border border-blue-200 rounded p-2">
@@ -1103,7 +1103,7 @@ const LegacySystemPage: React.FC = () => {
                     </span>
                     <input
                       type="number" step="0.01" className="legacy-input w-full text-center"
-                      value={itemForm.price_avista}
+                      value={itemForm.price_avista || ''}
                       onChange={e => setItemForm(p => ({ ...p, price_avista: +e.target.value, value: p.price_table === 'avista' ? +e.target.value : p.value }))}
                     />
                   </label>
@@ -1113,7 +1113,7 @@ const LegacySystemPage: React.FC = () => {
                     </span>
                     <input
                       type="number" step="0.01" className="legacy-input w-full text-center"
-                      value={itemForm.price_aprazo}
+                      value={itemForm.price_aprazo || ''}
                       onChange={e => setItemForm(p => ({ ...p, price_aprazo: +e.target.value, value: p.price_table === 'aprazo' ? +e.target.value : p.value }))}
                     />
                   </label>
@@ -1123,7 +1123,7 @@ const LegacySystemPage: React.FC = () => {
                     </span>
                     <input
                       type="number" step="0.01" className="legacy-input w-full text-center"
-                      value={itemForm.price_atacado}
+                      value={itemForm.price_atacado || ''}
                       onChange={e => setItemForm(p => ({ ...p, price_atacado: +e.target.value, value: p.price_table === 'atacado' ? +e.target.value : p.value }))}
                     />
                   </label>
@@ -1132,11 +1132,11 @@ const LegacySystemPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="legacy-label block mb-1">Valor Unitário Usado (R$)</label>
-                  <input type="number" step="0.01" className="legacy-input w-full font-bold" value={itemForm.value} onChange={e => setItemForm({ ...itemForm, value: +e.target.value })} />
+                  <input type="number" step="0.01" className="legacy-input w-full font-bold" value={itemForm.value || ''} onChange={e => setItemForm({ ...itemForm, value: +e.target.value })} />
                 </div>
                 <div>
                   <label className="legacy-label block mb-1">Quantidade</label>
-                  <input type="number" min="1" className="legacy-input w-full" value={itemForm.quantity} onChange={e => setItemForm({ ...itemForm, quantity: +e.target.value })} />
+                  <input type="number" min="1" className="legacy-input w-full" value={itemForm.quantity || ''} onChange={e => setItemForm({ ...itemForm, quantity: +e.target.value })} />
                 </div>
               </div>
               <div className="bg-yellow-50 border border-yellow-300 rounded p-2 text-right">
