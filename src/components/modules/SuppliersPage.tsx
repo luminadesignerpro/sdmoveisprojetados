@@ -3,8 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Building, Plus, Search, Edit, Trash2, Phone, Mail, 
-  TrendingDown, DollarSign, Award, ArrowDown, Tag, CheckCircle2,
-  BarChart3, Layers, ShoppingBag
+  TrendingDown, DollarSign, Award, CheckCircle2,
+  BarChart3, ShoppingBag, Tag, Maximize2
 } from 'lucide-react';
 
 const db = supabase as any;
@@ -24,7 +24,10 @@ interface Supplier {
 interface PriceQuote {
   supplierId: string;
   supplierName: string;
-  price: number;
+  brand: string;
+  pricePerM2: number | null;
+  unitPrice: number;
+  price: number; // for backwards compat
   updatedAt: string;
 }
 
@@ -43,41 +46,31 @@ const DEFAULT_COMPARISONS: ProductComparison[] = [
     category: 'MDF/MDP',
     unit: 'Chapa',
     quotes: [
-      { supplierId: 's1', supplierName: 'Leo Madeiras', price: 219.00, updatedAt: '2026-08-15' },
-      { supplierId: 's2', supplierName: 'Gmad', price: 198.50, updatedAt: '2026-08-16' },
-      { supplierId: 's3', supplierName: 'Duratex Distribuidora', price: 210.00, updatedAt: '2026-08-14' },
+      { supplierId: 's1', supplierName: 'Leo Madeiras', brand: 'Duratex', pricePerM2: 39.00, unitPrice: 198.50, price: 198.50, updatedAt: '2026-08-16' },
+      { supplierId: 's2', supplierName: 'Gmad', brand: 'Arauco', pricePerM2: 43.00, unitPrice: 219.00, price: 219.00, updatedAt: '2026-08-15' },
+      { supplierId: 's3', supplierName: 'Eucatex Distribuidora', brand: 'Eucatex', pricePerM2: 41.20, unitPrice: 210.00, price: 210.00, updatedAt: '2026-08-14' },
     ]
   },
   {
     id: '2',
-    productName: 'Dobradiça 35mm Curva c/ Amortecedor (Par)',
+    productName: 'Dobradiça 35mm Curva c/ Amortecedor',
     category: 'Ferragens',
     unit: 'Par',
     quotes: [
-      { supplierId: 's1', supplierName: 'Leo Madeiras', price: 8.50, updatedAt: '2026-08-15' },
-      { supplierId: 's2', supplierName: 'Gmad', price: 6.90, updatedAt: '2026-08-16' },
-      { supplierId: 's4', supplierName: 'FGV Central', price: 7.20, updatedAt: '2026-08-10' },
+      { supplierId: 's1', supplierName: 'Gmad', brand: 'FGV TN', pricePerM2: null, unitPrice: 6.90, price: 6.90, updatedAt: '2026-08-16' },
+      { supplierId: 's2', supplierName: 'FGV Central', brand: 'FGV TN', pricePerM2: null, unitPrice: 7.20, price: 7.20, updatedAt: '2026-08-10' },
+      { supplierId: 's3', supplierName: 'Leo Madeiras', brand: 'Häfele', pricePerM2: null, unitPrice: 8.50, price: 8.50, updatedAt: '2026-08-15' },
     ]
   },
   {
     id: '3',
-    productName: 'Corrediça Telescópica 45cm 35kg (Par)',
+    productName: 'Corrediça Telescópica 45cm 35kg',
     category: 'Ferragens',
     unit: 'Par',
     quotes: [
-      { supplierId: 's1', supplierName: 'Leo Madeiras', price: 18.90, updatedAt: '2026-08-15' },
-      { supplierId: 's2', supplierName: 'Gmad', price: 16.50, updatedAt: '2026-08-16' },
-      { supplierId: 's4', supplierName: 'FGV Central', price: 15.80, updatedAt: '2026-08-12' },
-    ]
-  },
-  {
-    id: '4',
-    productName: 'Fita de Borda PVC 22mm x 20m Branco TX',
-    category: 'Acessórios',
-    unit: 'Rolo',
-    quotes: [
-      { supplierId: 's1', supplierName: 'Leo Madeiras', price: 28.00, updatedAt: '2026-08-15' },
-      { supplierId: 's2', supplierName: 'Gmad', price: 24.90, updatedAt: '2026-08-16' },
+      { supplierId: 's1', supplierName: 'FGV Central', brand: 'FGV', pricePerM2: null, unitPrice: 15.80, price: 15.80, updatedAt: '2026-08-12' },
+      { supplierId: 's2', supplierName: 'Gmad', brand: 'Light', pricePerM2: null, unitPrice: 16.50, price: 16.50, updatedAt: '2026-08-16' },
+      { supplierId: 's3', supplierName: 'Leo Madeiras', brand: 'Häfele', pricePerM2: null, unitPrice: 18.90, price: 18.90, updatedAt: '2026-08-15' },
     ]
   }
 ];
@@ -96,17 +89,35 @@ const SuppliersPage: React.FC = () => {
 
   // Comparisons state
   const [comparisons, setComparisons] = useState<ProductComparison[]>(() => {
-    const saved = localStorage.getItem('sd_supplier_comparisons');
+    const saved = localStorage.getItem('sd_supplier_comparisons_v2');
     return saved ? JSON.parse(saved) : DEFAULT_COMPARISONS;
   });
   const [compSearch, setCompSearch] = useState('');
+  
+  // New Product Modal State (includes all 5 requested fields)
   const [showProdForm, setShowProdForm] = useState(false);
-  const [prodForm, setProdForm] = useState({ productName: '', category: 'MDF/MDP', unit: 'Un' });
+  const [prodForm, setProdForm] = useState({
+    supplierName: '',
+    supplierId: '',
+    productName: '',
+    brand: '',
+    pricePerM2: '',
+    unitPrice: '',
+    category: 'MDF/MDP'
+  });
+
+  // New Quote Modal State (for adding quote to existing product)
   const [quoteModalProdId, setQuoteModalProdId] = useState<string | null>(null);
-  const [quoteForm, setQuoteForm] = useState({ supplierId: '', supplierName: '', price: '' });
+  const [quoteForm, setQuoteForm] = useState({
+    supplierId: '',
+    supplierName: '',
+    brand: '',
+    pricePerM2: '',
+    unitPrice: ''
+  });
 
   useEffect(() => {
-    localStorage.setItem('sd_supplier_comparisons', JSON.stringify(comparisons));
+    localStorage.setItem('sd_supplier_comparisons_v2', JSON.stringify(comparisons));
   }, [comparisons]);
 
   const fetchSuppliers = async () => {
@@ -119,7 +130,7 @@ const SuppliersPage: React.FC = () => {
   useEffect(() => { fetchSuppliers(); }, []);
 
   const handleSaveSupplier = async () => {
-    if (!form.name.trim()) { toast({ title: '⚠️ Nome obrigatório', variant: 'destructive' }); return; }
+    if (!form.name.trim()) { toast({ title: '⚠️ Nome do fornecedor obrigatório', variant: 'destructive' }); return; }
 
     if (editingId) {
       await db.from('suppliers').update(form).eq('id', editingId);
@@ -146,23 +157,53 @@ const SuppliersPage: React.FC = () => {
     fetchSuppliers();
   };
 
-  // Product Comparison Handlers
-  const handleAddProduct = () => {
+  // Product + First Quote Handler
+  const handleAddProductWithQuote = () => {
     if (!prodForm.productName.trim()) {
       toast({ title: '⚠️ Informe o nome do produto', variant: 'destructive' });
       return;
     }
+
+    const unitPriceNum = parseFloat(prodForm.unitPrice.replace(',', '.'));
+    if (isNaN(unitPriceNum) || unitPriceNum <= 0) {
+      toast({ title: '⚠️ Informe um valor unitário válido', variant: 'destructive' });
+      return;
+    }
+
+    let sName = prodForm.supplierName.trim();
+    if (prodForm.supplierId) {
+      const found = suppliers.find(s => s.id === prodForm.supplierId);
+      if (found) sName = found.name;
+    }
+    if (!sName) {
+      toast({ title: '⚠️ Informe o nome do fornecedor', variant: 'destructive' });
+      return;
+    }
+
+    const m2Num = prodForm.pricePerM2 ? parseFloat(prodForm.pricePerM2.replace(',', '.')) : null;
+
+    const firstQuote: PriceQuote = {
+      supplierId: prodForm.supplierId || Date.now().toString(),
+      supplierName: sName,
+      brand: prodForm.brand.trim() || 'Geral',
+      pricePerM2: isNaN(m2Num as number) ? null : m2Num,
+      unitPrice: unitPriceNum,
+      price: unitPriceNum,
+      updatedAt: new Date().toISOString().split('T')[0]
+    };
+
     const newProd: ProductComparison = {
       id: Date.now().toString(),
       productName: prodForm.productName.trim(),
       category: prodForm.category,
-      unit: prodForm.unit,
-      quotes: []
+      unit: 'Un',
+      quotes: [firstQuote]
     };
+
     setComparisons([newProd, ...comparisons]);
-    setProdForm({ productName: '', category: 'MDF/MDP', unit: 'Un' });
+    setProdForm({ supplierName: '', supplierId: '', productName: '', brand: '', pricePerM2: '', unitPrice: '', category: 'MDF/MDP' });
     setShowProdForm(false);
-    toast({ title: '✅ Produto adicionado ao comparativo!' });
+    toast({ title: '✅ Produto e Cotação cadastrados no comparativo!' });
   };
 
   const handleDeleteProduct = (id: string) => {
@@ -170,15 +211,15 @@ const SuppliersPage: React.FC = () => {
     toast({ title: '🗑️ Produto removido do comparativo' });
   };
 
+  // Quote Only Handler (adding quote to existing product)
   const handleAddQuote = () => {
     if (!quoteModalProdId) return;
-    const priceNum = parseFloat(quoteForm.price.replace(',', '.'));
-    if (isNaN(priceNum) || priceNum <= 0) {
-      toast({ title: '⚠️ Informe um preço válido', variant: 'destructive' });
+    const unitPriceNum = parseFloat(quoteForm.unitPrice.replace(',', '.'));
+    if (isNaN(unitPriceNum) || unitPriceNum <= 0) {
+      toast({ title: '⚠️ Informe um valor unitário válido', variant: 'destructive' });
       return;
     }
-    
-    // Nome do fornecedor (digitado ou selecionado)
+
     let sName = quoteForm.supplierName.trim();
     if (quoteForm.supplierId) {
       const found = suppliers.find(s => s.id === quoteForm.supplierId);
@@ -189,21 +230,26 @@ const SuppliersPage: React.FC = () => {
       return;
     }
 
+    const m2Num = quoteForm.pricePerM2 ? parseFloat(quoteForm.pricePerM2.replace(',', '.')) : null;
+
     setComparisons(prev => prev.map(p => {
       if (p.id !== quoteModalProdId) return p;
-      const existingFilter = p.quotes.filter(q => q.supplierName.toLowerCase() !== sName.toLowerCase());
+      const filteredQuotes = p.quotes.filter(q => q.supplierName.toLowerCase() !== sName.toLowerCase());
       const newQuote: PriceQuote = {
         supplierId: quoteForm.supplierId || Date.now().toString(),
         supplierName: sName,
-        price: priceNum,
+        brand: quoteForm.brand.trim() || 'Geral',
+        pricePerM2: isNaN(m2Num as number) ? null : m2Num,
+        unitPrice: unitPriceNum,
+        price: unitPriceNum,
         updatedAt: new Date().toISOString().split('T')[0]
       };
-      return { ...p, quotes: [...existingFilter, newQuote] };
+      return { ...p, quotes: [...filteredQuotes, newQuote] };
     }));
 
     setQuoteModalProdId(null);
-    setQuoteForm({ supplierId: '', supplierName: '', price: '' });
-    toast({ title: '💰 Cotação registrada com sucesso!' });
+    setQuoteForm({ supplierId: '', supplierName: '', brand: '', pricePerM2: '', unitPrice: '' });
+    toast({ title: '💰 Cotação do fornecedor cadastrada com sucesso!' });
   };
 
   const handleDeleteQuote = (prodId: string, supplierName: string) => {
@@ -223,20 +269,22 @@ const SuppliersPage: React.FC = () => {
     c.category.toLowerCase().includes(compSearch.toLowerCase())
   );
 
-  // Statistics calculation for comparison view
+  // Statistics calculation
   const totalProducts = comparisons.length;
   let totalSavingsPotential = 0;
   const supplierWinCount: Record<string, number> = {};
 
   comparisons.forEach(c => {
     if (c.quotes.length >= 2) {
-      const prices = c.quotes.map(q => q.price);
+      const prices = c.quotes.map(q => q.unitPrice || q.price);
       const min = Math.min(...prices);
       const max = Math.max(...prices);
       totalSavingsPotential += (max - min);
     }
     if (c.quotes.length > 0) {
-      const cheapest = c.quotes.reduce((prev, curr) => curr.price < prev.price ? curr : prev);
+      const cheapest = c.quotes.reduce((prev, curr) => 
+        (curr.unitPrice || curr.price) < (prev.unitPrice || prev.price) ? curr : prev
+      );
       supplierWinCount[cheapest.supplierName] = (supplierWinCount[cheapest.supplierName] || 0) + 1;
     }
   });
@@ -435,91 +483,171 @@ const SuppliersPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Form Modal: Add New Product */}
+          {/* Form Modal: Add New Product (with 5 fields requested by user) */}
           {showProdForm && (
-            <div className="bg-[#111111] border border-emerald-500/30 rounded-3xl p-6 shadow-2xl space-y-4 text-white">
-              <h3 className="font-bold text-lg text-emerald-400 flex items-center gap-2">
-                <Plus className="w-5 h-5" /> Adicionar Novo Produto para Comparação de Preços
+            <div className="bg-[#111111] border border-emerald-500/40 rounded-3xl p-6 shadow-2xl space-y-4 text-white">
+              <h3 className="font-bold text-lg text-emerald-400 flex items-center gap-2 border-b border-white/10 pb-3">
+                <Plus className="w-5 h-5" /> Cadastrar Produto & Primeiros Preços no Comparativo
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="sm:col-span-2">
-                  <label className="text-xs text-gray-400 block mb-1">Nome do Produto / Material *</label>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
+                {/* 1. Nome do Fornecedor */}
+                <div>
+                  <label className="text-xs text-amber-400 font-bold block mb-1">1. Nome do Fornecedor *</label>
+                  <select 
+                    value={prodForm.supplierId} 
+                    onChange={e => {
+                      const sel = suppliers.find(s => s.id === e.target.value);
+                      setProdForm({ ...prodForm, supplierId: e.target.value, supplierName: sel ? sel.name : prodForm.supplierName });
+                    }} 
+                    className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm mb-1"
+                  >
+                    <option value="">-- Selecione ou digite abaixo --</option>
+                    {suppliers.map(s => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                  <input 
+                    value={prodForm.supplierName} 
+                    onChange={e => setProdForm({ ...prodForm, supplierName: e.target.value, supplierId: '' })} 
+                    placeholder="Ou digite o Fornecedor..." 
+                    className="w-full p-2.5 rounded-xl border border-white/10 bg-[#1a1a1a] text-white placeholder-gray-500 focus:ring-2 focus:ring-emerald-500 focus:outline-none text-xs" 
+                  />
+                </div>
+
+                {/* 2. Nome do Produto */}
+                <div>
+                  <label className="text-xs text-emerald-400 font-bold block mb-1">2. Produto / Material *</label>
                   <input 
                     value={prodForm.productName} 
                     onChange={e => setProdForm({ ...prodForm, productName: e.target.value })} 
-                    placeholder="Ex: Dobradiça 35mm Amortecedor, MDF 18mm Louro Freijó..." 
+                    placeholder="Ex: MDF 15mm Branco TX 2,75x1,85m..." 
                     className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white placeholder-gray-500 focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm" 
                   />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-400 block mb-1">Categoria</label>
                   <select 
                     value={prodForm.category} 
                     onChange={e => setProdForm({ ...prodForm, category: e.target.value })} 
-                    className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm"
+                    className="w-full p-2.5 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none text-xs mt-1"
                   >
                     <option>MDF/MDP</option><option>Ferragens</option><option>Vidros</option><option>Pedras</option><option>Tintas</option><option>Acessórios</option><option>Outros</option>
                   </select>
                 </div>
+
+                {/* 3. Marca */}
+                <div>
+                  <label className="text-xs text-blue-400 font-bold block mb-1">3. Marca / Fabricante</label>
+                  <input 
+                    value={prodForm.brand} 
+                    onChange={e => setProdForm({ ...prodForm, brand: e.target.value })} 
+                    placeholder="Ex: Duratex, Arauco, FGV, Häfele..." 
+                    className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white placeholder-gray-500 focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm" 
+                  />
+                </div>
+
+                {/* 4. Valor Metro Quadrado */}
+                <div>
+                  <label className="text-xs text-purple-400 font-bold block mb-1">4. Valor Metro Quadrado (R$/m²)</label>
+                  <input 
+                    type="text" 
+                    value={prodForm.pricePerM2} 
+                    onChange={e => setProdForm({ ...prodForm, pricePerM2: e.target.value })} 
+                    placeholder="Ex: 39,00 (opcional)" 
+                    className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white placeholder-gray-500 focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm" 
+                  />
+                </div>
+
+                {/* 5. Valor Unitario */}
+                <div>
+                  <label className="text-xs text-emerald-400 font-bold block mb-1">5. Valor Unitário (R$) *</label>
+                  <input 
+                    type="text" 
+                    value={prodForm.unitPrice} 
+                    onChange={e => setProdForm({ ...prodForm, unitPrice: e.target.value })} 
+                    placeholder="Ex: 198,50" 
+                    className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white placeholder-gray-500 focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm font-bold text-emerald-400" 
+                  />
+                </div>
+
               </div>
-              <div className="flex gap-3">
-                <button onClick={handleAddProduct} className="bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-emerald-700 transition-colors text-sm">Criar Produto</button>
+
+              <div className="flex gap-3 pt-2">
+                <button onClick={handleAddProductWithQuote} className="bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-emerald-700 transition-colors text-sm">Salvar Produto e Preço</button>
                 <button onClick={() => setShowProdForm(false)} className="bg-white/10 border border-white/20 text-white px-6 py-3 rounded-xl font-bold hover:bg-white/20 transition-colors text-sm">Cancelar</button>
               </div>
             </div>
           )}
 
-          {/* Form Modal: Add Quote to a Product */}
+          {/* Form Modal: Add Quote to Existing Product */}
           {quoteModalProdId && (
-            <div className="bg-[#111111] border border-amber-500/30 rounded-3xl p-6 shadow-2xl space-y-4 text-white max-w-lg mx-auto">
-              <h3 className="font-bold text-lg text-amber-400 flex items-center gap-2">
-                <DollarSign className="w-5 h-5" /> Adicionar Cotação de Preço
+            <div className="bg-[#111111] border border-amber-500/30 rounded-3xl p-6 shadow-2xl space-y-4 text-white max-w-xl mx-auto">
+              <h3 className="font-bold text-lg text-amber-400 flex items-center gap-2 border-b border-white/10 pb-3">
+                <DollarSign className="w-5 h-5" /> Adicionar Cotação de Outro Fornecedor
               </h3>
               
-              <div>
-                <label className="text-xs text-gray-400 block mb-1">Selecionar Fornecedor Cadastrado</label>
-                <select 
-                  value={quoteForm.supplierId} 
-                  onChange={e => {
-                    const sel = suppliers.find(s => s.id === e.target.value);
-                    setQuoteForm({ 
-                      ...quoteForm, 
-                      supplierId: e.target.value, 
-                      supplierName: sel ? sel.name : quoteForm.supplierName 
-                    });
-                  }} 
-                  className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none text-sm mb-2"
-                >
-                  <option value="">-- Ou digite o nome abaixo --</option>
-                  {suppliers.map(s => (
-                    <option key={s.id} value={s.id}>{s.name} ({s.category})</option>
-                  ))}
-                </select>
-              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Fornecedor */}
+                <div className="sm:col-span-2">
+                  <label className="text-xs text-amber-400 font-bold block mb-1">Nome do Fornecedor *</label>
+                  <select 
+                    value={quoteForm.supplierId} 
+                    onChange={e => {
+                      const sel = suppliers.find(s => s.id === e.target.value);
+                      setQuoteForm({ ...quoteForm, supplierId: e.target.value, supplierName: sel ? sel.name : quoteForm.supplierName });
+                    }} 
+                    className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none text-sm mb-1"
+                  >
+                    <option value="">-- Selecione ou digite abaixo --</option>
+                    {suppliers.map(s => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                  <input 
+                    value={quoteForm.supplierName} 
+                    onChange={e => setQuoteForm({ ...quoteForm, supplierName: e.target.value, supplierId: '' })} 
+                    placeholder="Ou digite o nome do Fornecedor..." 
+                    className="w-full p-2.5 rounded-xl border border-white/10 bg-[#1a1a1a] text-white placeholder-gray-500 focus:ring-2 focus:ring-amber-500 focus:outline-none text-xs" 
+                  />
+                </div>
 
-              <div>
-                <label className="text-xs text-gray-400 block mb-1">Nome do Fornecedor / Loja *</label>
-                <input 
-                  value={quoteForm.supplierName} 
-                  onChange={e => setQuoteForm({ ...quoteForm, supplierName: e.target.value, supplierId: '' })} 
-                  placeholder="Ex: Leo Madeiras, Gmad, Fornecedor X..." 
-                  className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white placeholder-gray-500 focus:ring-2 focus:ring-amber-500 focus:outline-none text-sm" 
-                />
-              </div>
+                {/* Marca */}
+                <div>
+                  <label className="text-xs text-gray-400 block mb-1">Marca / Fabricante</label>
+                  <input 
+                    value={quoteForm.brand} 
+                    onChange={e => setQuoteForm({ ...quoteForm, brand: e.target.value })} 
+                    placeholder="Ex: Duratex, Arauco..." 
+                    className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white placeholder-gray-500 focus:ring-2 focus:ring-amber-500 focus:outline-none text-sm" 
+                  />
+                </div>
 
-              <div>
-                <label className="text-xs text-gray-400 block mb-1">Preço Cotado (R$) *</label>
-                <input 
-                  type="text" 
-                  value={quoteForm.price} 
-                  onChange={e => setQuoteForm({ ...quoteForm, price: e.target.value })} 
-                  placeholder="Ex: 198,50" 
-                  className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white placeholder-gray-500 focus:ring-2 focus:ring-amber-500 focus:outline-none text-sm font-bold text-emerald-400" 
-                />
+                {/* Valor m2 */}
+                <div>
+                  <label className="text-xs text-gray-400 block mb-1">Valor Metro Quadrado (R$/m²)</label>
+                  <input 
+                    type="text" 
+                    value={quoteForm.pricePerM2} 
+                    onChange={e => setQuoteForm({ ...quoteForm, pricePerM2: e.target.value })} 
+                    placeholder="Ex: 39,00" 
+                    className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white placeholder-gray-500 focus:ring-2 focus:ring-amber-500 focus:outline-none text-sm" 
+                  />
+                </div>
+
+                {/* Valor Unitario */}
+                <div className="sm:col-span-2">
+                  <label className="text-xs text-emerald-400 font-bold block mb-1">Valor Unitário (R$) *</label>
+                  <input 
+                    type="text" 
+                    value={quoteForm.unitPrice} 
+                    onChange={e => setQuoteForm({ ...quoteForm, unitPrice: e.target.value })} 
+                    placeholder="Ex: 198,50" 
+                    className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white placeholder-gray-500 focus:ring-2 focus:ring-amber-500 focus:outline-none text-sm font-bold text-emerald-400" 
+                  />
+                </div>
               </div>
 
               <div className="flex gap-3 pt-2">
-                <button onClick={handleAddQuote} className="bg-amber-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-amber-700 transition-colors text-sm w-full">Salvar Preço</button>
+                <button onClick={handleAddQuote} className="bg-amber-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-amber-700 transition-colors text-sm w-full">Salvar Cotação</button>
                 <button onClick={() => setQuoteModalProdId(null)} className="bg-white/10 border border-white/20 text-white px-6 py-3 rounded-xl font-bold hover:bg-white/20 transition-colors text-sm">Cancelar</button>
               </div>
             </div>
@@ -530,17 +658,20 @@ const SuppliersPage: React.FC = () => {
             {filteredComparisons.map(item => {
               const hasQuotes = item.quotes.length > 0;
               const cheapest = hasQuotes 
-                ? item.quotes.reduce((prev, curr) => curr.price < prev.price ? curr : prev)
+                ? item.quotes.reduce((prev, curr) => (curr.unitPrice || curr.price) < (prev.unitPrice || prev.price) ? curr : prev)
                 : null;
               const expensive = hasQuotes 
-                ? item.quotes.reduce((prev, curr) => curr.price > prev.price ? curr : prev)
+                ? item.quotes.reduce((prev, curr) => (curr.unitPrice || curr.price) > (prev.unitPrice || prev.price) ? curr : prev)
                 : null;
               
+              const cheapestVal = cheapest ? (cheapest.unitPrice || cheapest.price) : 0;
+              const expensiveVal = expensive ? (expensive.unitPrice || expensive.price) : 0;
+
               const diff = (cheapest && expensive && cheapest !== expensive) 
-                ? expensive.price - cheapest.price 
+                ? expensiveVal - cheapestVal 
                 : 0;
-              const percEconomy = (expensive && diff > 0) 
-                ? Math.round((diff / expensive.price) * 100) 
+              const percEconomy = (expensiveVal > 0 && diff > 0) 
+                ? Math.round((diff / expensiveVal) * 100) 
                 : 0;
 
               return (
@@ -561,7 +692,7 @@ const SuppliersPage: React.FC = () => {
                       <button 
                         onClick={() => {
                           setQuoteModalProdId(item.id);
-                          setQuoteForm({ supplierId: '', supplierName: '', price: '' });
+                          setQuoteForm({ supplierId: '', supplierName: '', brand: '', pricePerM2: '', unitPrice: '' });
                         }}
                         className="bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all"
                       >
@@ -586,9 +717,12 @@ const SuppliersPage: React.FC = () => {
                           <CheckCircle2 className="w-6 h-6" />
                         </div>
                         <div>
-                          <p className="text-xs text-emerald-400/80 font-bold uppercase tracking-wider">🏆 MAIS BARATO AQUI!</p>
+                          <p className="text-xs text-emerald-400/80 font-bold uppercase tracking-wider">🏆 PRODUTO MAIS BARATO AQUI!</p>
                           <p className="text-lg font-black text-emerald-300">
-                            {cheapest.supplierName} — <span className="text-white">R$ {cheapest.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                            {cheapest.supplierName} 
+                            {cheapest.brand && <span className="text-gray-400 text-xs font-normal ml-2">[{cheapest.brand}]</span>}
+                            {' '}— <span className="text-white">R$ {cheapestVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} /un</span>
+                            {cheapest.pricePerM2 && <span className="text-purple-300 text-xs font-normal ml-2">(R$ {cheapest.pricePerM2.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/m²)</span>}
                           </p>
                         </div>
                       </div>
@@ -608,7 +742,8 @@ const SuppliersPage: React.FC = () => {
                   {hasQuotes ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-2">
                       {item.quotes.map((q, idx) => {
-                        const isCheapest = cheapest && q.supplierName === cheapest.supplierName && q.price === cheapest.price;
+                        const val = q.unitPrice || q.price;
+                        const isCheapest = cheapest && q.supplierName === cheapest.supplierName && val === cheapestVal;
                         return (
                           <div 
                             key={idx} 
@@ -618,18 +753,31 @@ const SuppliersPage: React.FC = () => {
                                 : 'bg-[#1a1a1a] border-white/5 hover:border-white/20'
                             }`}
                           >
-                            <div>
-                              <p className="font-bold text-sm text-white flex items-center gap-1.5">
+                            <div className="space-y-1">
+                              <p className="font-bold text-sm text-white flex items-center gap-1.5 flex-wrap">
                                 {q.supplierName}
-                                {isCheapest && <span className="text-emerald-400 text-xs"> (Mais Barato)</span>}
+                                {isCheapest && <span className="text-emerald-400 text-xs font-extrabold">🏆 MAIS BARATO</span>}
                               </p>
-                              <p className="text-xs text-gray-500 mt-0.5">Atualizado em: {q.updatedAt}</p>
+                              {q.brand && (
+                                <p className="text-xs text-blue-400 flex items-center gap-1">
+                                  <Tag className="w-3 h-3" /> Marca: <span className="font-bold">{q.brand}</span>
+                                </p>
+                              )}
+                              {q.pricePerM2 && (
+                                <p className="text-xs text-purple-400 flex items-center gap-1">
+                                  <Maximize2 className="w-3 h-3" /> R$ {q.pricePerM2.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/m²
+                                </p>
+                              )}
+                              <p className="text-[10px] text-gray-500">Atualizado: {q.updatedAt}</p>
                             </div>
 
-                            <div className="flex items-center gap-3">
-                              <span className={`font-black text-base ${isCheapest ? 'text-emerald-400' : 'text-gray-300'}`}>
-                                R$ {q.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                              </span>
+                            <div className="flex items-center gap-3 text-right">
+                              <div>
+                                <p className="text-[10px] text-gray-400 uppercase font-semibold">Valor Unitário</p>
+                                <span className={`font-black text-base ${isCheapest ? 'text-emerald-400' : 'text-gray-200'}`}>
+                                  R$ {val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </span>
+                              </div>
                               <button 
                                 onClick={() => handleDeleteQuote(item.id, q.supplierName)}
                                 className="text-gray-500 hover:text-red-400 transition-colors p-1"
@@ -644,7 +792,7 @@ const SuppliersPage: React.FC = () => {
                     </div>
                   ) : (
                     <div className="p-6 text-center text-gray-500 bg-[#161616] rounded-2xl border border-dashed border-white/10">
-                      Nenhuma cotação cadastrada para este produto ainda. Clicque em <b>+ Adicionar Cotação</b> para incluir os preços dos fornecedores.
+                      Nenhuma cotação cadastrada para este produto ainda. Clique em <b>+ Adicionar Cotação</b> para incluir os preços dos fornecedores.
                     </div>
                   )}
 
