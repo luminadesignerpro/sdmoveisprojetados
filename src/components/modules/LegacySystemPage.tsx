@@ -726,8 +726,9 @@ const LegacySystemPage: React.FC = () => {
   const handlePrint = () => {
     const win = window.open('', '_blank', 'width=800,height=600');
     if (!win) return;
+    const docTitle = `${clientDesc.trim() ? clientDesc.trim() + ' - ' : ''}${isOrcamento ? 'Orçamento' : 'OS'} #${orderNo}`;
     win.document.write(`
-      <html><head><title>OS #${orderNo}</title>
+      <html><head><title>${docTitle}</title>
       <style>body{font-family:Tahoma,Arial,sans-serif;font-size:12px;padding:16px}
       h2{margin:0 0 8px}table{width:100%;border-collapse:collapse}
       th,td{border:1px solid #999;padding:4px 8px;text-align:left}
