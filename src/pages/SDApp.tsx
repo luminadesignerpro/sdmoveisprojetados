@@ -618,7 +618,7 @@ const App: React.FC = () => {
           )}
           {/* LEGACY SYSTEM */}
           {view === ViewMode.LEGACY_SYSTEM && authState === 'ADMIN' && (
-            <div className="w-full h-full relative" style={{ background: '#0f0f0f' }}>
+            <div className="w-full h-full relative overflow-hidden" style={{ background: '#0f0f0f' }}>
               <LegacySystemPage />
             </div>
           )}

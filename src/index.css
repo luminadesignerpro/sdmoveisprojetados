@@ -396,6 +396,19 @@
   display: none;
 }
 
+/* Hide scrollbar for legacy OS system page */
+.legacy-container,
+.legacy-container *,
+.overflow-hidden > .legacy-container {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+.legacy-container::-webkit-scrollbar,
+.legacy-container *::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+}
+
 /* Hide number input arrows/spinners */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {

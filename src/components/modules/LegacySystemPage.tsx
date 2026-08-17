@@ -743,10 +743,12 @@ const LegacySystemPage: React.FC = () => {
       color: #000 !important;
       width: 100%;
       height: 100%;
-      overflow-y: hidden;
+      overflow: hidden;
+      scrollbar-width: none;
       padding: 4px;
       font-size: 11px;
     }
+    .legacy-container::-webkit-scrollbar { display: none; }
     .legacy-header {
       background-color: #fce4ec;
       color: #880e4f !important;
