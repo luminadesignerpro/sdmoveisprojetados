@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast'
-import { ClipboardList, Plus, Search, Edit, Calendar, Clock, Phone, MapPin, User, DollarSign, StickyNote, MessageCircle, X, Eye, FileDown, Trash, Trash2, Image, FileText, Info, List, Camera, ChevronRight } from 'lucide-react';
+import { ClipboardList, Plus, Search, Edit, Calendar, Clock, Phone, MapPin, User, DollarSign, StickyNote, MessageCircle, X, Eye, FileDown, Trash, Trash2, Image, FileText, Info, List, Camera, ChevronRight, Printer } from 'lucide-react';
 import PdfUploader from '../admin/PdfUploader';
 import { format } from 'date-fns';
 
@@ -972,6 +972,127 @@ const ServiceOrdersPage: React.FC = () => {
                   </div>
                 )}
               </div>
+              {/* Botão Imprimir */}
+              {editingId && (
+                <button
+                  onClick={() => {
+                    const printWindow = window.open('', '_blank', 'width=800,height=600');
+                    if (!printWindow) return;
+                    const itemsRows = osItems.map((it, idx) => `
+                      <tr style="border-bottom:1px solid #eee">
+                        <td style="padding:6px 8px;text-align:center">${idx + 1}</td>
+                        <td style="padding:6px 8px">${it.description}</td>
+                        <td style="padding:6px 8px;text-align:center">${it.unit}</td>
+                        <td style="padding:6px 8px;text-align:right">${it.width > 0 ? it.width.toFixed(2) : '-'}</td>
+                        <td style="padding:6px 8px;text-align:right">${it.height > 0 ? it.height.toFixed(2) : '-'}</td>
+                        <td style="padding:6px 8px;text-align:right">${it.total_m2 > 0 ? it.total_m2.toFixed(3) : '-'}</td>
+                        <td style="padding:6px 8px;text-align:right">R$ ${it.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                        <td style="padding:6px 8px;text-align:center">${it.quantity}</td>
+                        <td style="padding:6px 8px;text-align:right;font-weight:bold">R$ ${it.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                      </tr>`).join('');
+                    const totalValue = totalItemsValue > 0 ? totalItemsValue : (form.total_value || 0);
+                    printWindow.document.write(`
+                      <!DOCTYPE html><html><head>
+                        <meta charset="UTF-8" />
+                        <title>OS - ${form.description || 'Ordem de Servi\u00e7o'}</title>
+                        <style>
+                          * { box-sizing: border-box; margin: 0; padding: 0; }
+                          body { font-family: Arial, sans-serif; font-size: 12px; color: #111; padding: 20px; }
+                          .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #D4AF37; padding-bottom: 12px; margin-bottom: 16px; }
+                          .company { font-size: 20px; font-weight: 900; color: #222; }
+                          .subtitle { color: #666; font-size: 11px; margin-top: 2px; }
+                          .os-badge { background: #D4AF37; color: #111; padding: 6px 14px; border-radius: 6px; font-weight: bold; font-size: 14px; }
+                          .section { margin-bottom: 14px; }
+                          .section-title { font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #D4AF37; border-bottom: 1px solid #D4AF37; padding-bottom: 4px; margin-bottom: 8px; font-size: 11px; }
+                          .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+                          .grid4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; }
+                          .field label { font-size: 10px; color: #888; text-transform: uppercase; font-weight: bold; }
+                          .field p { font-size: 13px; color: #111; font-weight: 600; margin-top: 2px; border-bottom: 1px solid #eee; padding-bottom: 3px; }
+                          table { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 11px; }
+                          thead { background: #222; color: white; }
+                          thead th { padding: 7px 8px; text-align: left; font-size: 10px; text-transform: uppercase; }
+                          tbody tr:nth-child(even) { background: #f9f9f9; }
+                          .total-row { background: #D4AF37 !important; font-weight: bold; }
+                          .total-row td { padding: 8px; font-size: 13px; }
+                          .obs-box { background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; padding: 10px; font-size: 12px; white-space: pre-wrap; }
+                          .footer { margin-top: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+                          .sign-line { border-top: 1px solid #555; padding-top: 6px; text-align: center; color: #666; font-size: 11px; }
+                          @media print { body { padding: 10px; } button { display: none; } }
+                        </style>
+                      </head><body>
+                        <div class="header">
+                          <div>
+                            <div class="company">SD M\u00f3veis Projetados</div>
+                            <div class="subtitle">Marcenaria e M\u00f3veis Planejados</div>
+                          </div>
+                          <div class="os-badge">OS #${orders.find(o => o.id === editingId)?.order_number || ''}</div>
+                        </div>
+
+                        <div class="section">
+                          <div class="section-title">Dados do Cliente</div>
+                          <div class="grid4">
+                            <div class="field"><label>Cliente</label><p>${form.client_name || '-'}</p></div>
+                            <div class="field"><label>Celular</label><p>${form.client_phone || '-'}</p></div>
+                            <div class="field"><label>Endere\u00e7o</label><p>${form.client_address || '-'}</p></div>
+                            <div class="field"><label>Descri\u00e7\u00e3o do Servi\u00e7o</label><p>${form.description || '-'}</p></div>
+                          </div>
+                        </div>
+
+                        <div class="section">
+                          <div class="section-title">Informa\u00e7\u00f5es da Ordem</div>
+                          <div class="grid4">
+                            <div class="field"><label>Data</label><p>${form.estimated_date ? form.estimated_date : '-'}</p></div>
+                            <div class="field"><label>Hor\u00e1rio</label><p>${form.meeting_time || '-'}</p></div>
+                            <div class="field"><label>Status</label><p>${form.status === 'concluida' ? 'Concu\u00edda' : form.status === 'em_andamento' ? 'Em Andamento' : form.status === 'cancelada' ? 'Cancelada' : 'Aberta'}</p></div>
+                            <div class="field"><label>Valor Total</label><p>R$ ${totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p></div>
+                          </div>
+                        </div>
+
+                        ${osItems.length > 0 ? `
+                        <div class="section">
+                          <div class="section-title">Lista de Produtos e Servi\u00e7os</div>
+                          <table>
+                            <thead><tr>
+                              <th style="width:35px">N\u00ba</th>
+                              <th>Descri\u00e7\u00e3o</th>
+                              <th style="width:40px">Un</th>
+                              <th style="width:55px;text-align:right">Larg.</th>
+                              <th style="width:55px;text-align:right">Alt.</th>
+                              <th style="width:60px;text-align:right">M\u00b2</th>
+                              <th style="width:80px;text-align:right">Valor Un.</th>
+                              <th style="width:45px;text-align:center">Qtd</th>
+                              <th style="width:90px;text-align:right">Total</th>
+                            </tr></thead>
+                            <tbody>${itemsRows}
+                              <tr class="total-row">
+                                <td colspan="8" style="text-align:right">TOTAL GERAL:</td>
+                                <td style="text-align:right">R$ ${totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>` : ''}
+
+                        ${serviceToPerform || problemsToFix || currentStage ? `
+                        <div class="section">
+                          <div class="section-title">Observa\u00e7\u00f5es do Servi\u00e7o</div>
+                          ${serviceToPerform ? `<p style="font-weight:bold;margin-bottom:4px">Servi\u00e7o a ser Realizado:</p><div class="obs-box" style="margin-bottom:10px">${serviceToPerform}</div>` : ''}
+                          ${problemsToFix ? `<p style="font-weight:bold;margin-bottom:4px">Problemas e Reparos:</p><div class="obs-box" style="margin-bottom:10px">${problemsToFix}</div>` : ''}
+                          ${currentStage ? `<p style="font-weight:bold;margin-bottom:4px">Etapa do Servi\u00e7o:</p><div class="obs-box">${currentStage}</div>` : ''}
+                        </div>` : ''}
+
+                        <div class="footer">
+                          <div class="sign-line">Assinatura do Cliente</div>
+                          <div class="sign-line">Assinatura do Respons\u00e1vel</div>
+                        </div>
+                        <script>window.onload = () => window.print();<\/script>
+                      </body></html>`);
+                    printWindow.document.close();
+                  }}
+                  className="h-11 px-5 bg-blue-600/20 border border-blue-500/30 text-blue-400 rounded-xl font-bold flex items-center gap-2 hover:bg-blue-600/40 transition-all"
+                >
+                  <Printer className="w-4 h-4" /> Imprimir
+                </button>
+              )}
               <button onClick={() => { setShowForm(false); setEditingId(null); resetFormState(); }}
                 className="h-11 px-5 bg-white/10 border border-white/10 text-white rounded-xl font-bold hover:bg-white/20 transition-all">
                 Cancelar
