@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { analyzeImageWithGemini } from '@/services/geminiService';
 import { 
   Building, Plus, Search, Edit, Trash2, Phone, Mail, 
   TrendingDown, DollarSign, Award, CheckCircle2,
   BarChart3, ShoppingBag, Tag, Maximize2, ClipboardList,
-  Printer, ShoppingCart, ArrowRight, CheckSquare, Sparkles
+  Printer, ShoppingCart, CheckSquare, Sparkles, Camera, Eye, X, Loader2
 } from 'lucide-react';
 
 const db = supabase as any;
@@ -30,6 +31,8 @@ interface PriceQuote {
   unitPrice: number;
   price: number; // for backwards compat
   updatedAt: string;
+  photoUrl?: string | null;
+  specifications?: string | null;
 }
 
 interface ProductComparison {
@@ -37,6 +40,7 @@ interface ProductComparison {
   productName: string;
   category: string;
   unit: string;
+  description?: string;
   quotes: PriceQuote[];
 }
 
@@ -59,9 +63,10 @@ const DEFAULT_COMPARISONS: ProductComparison[] = [
     productName: 'Chapa MDF 15mm Branco TX 2,75x1,85m',
     category: 'MDF/MDP',
     unit: 'Chapa',
+    description: 'MDF melamínico de alta densidade 15mm com revestimento Texturizado Branco.',
     quotes: [
-      { supplierId: 's1', supplierName: 'Leo Madeiras', brand: 'Duratex', pricePerM2: 39.00, unitPrice: 198.50, price: 198.50, updatedAt: '2026-08-16' },
-      { supplierId: 's2', supplierName: 'Gmad', brand: 'Arauco', pricePerM2: 43.00, unitPrice: 219.00, price: 219.00, updatedAt: '2026-08-15' },
+      { supplierId: 's1', supplierName: 'Leo Madeiras', brand: 'Duratex', pricePerM2: 39.00, unitPrice: 198.50, price: 198.50, updatedAt: '2026-08-16', specifications: 'Chapa inteira. Entrega em até 2 dias.' },
+      { supplierId: 's2', supplierName: 'Gmad', brand: 'Arauco', pricePerM2: 43.00, unitPrice: 219.00, price: 219.00, updatedAt: '2026-08-15', specifications: 'Melamina resistente a riscos.' },
       { supplierId: 's3', supplierName: 'Eucatex Distribuidora', brand: 'Eucatex', pricePerM2: 41.20, unitPrice: 210.00, price: 210.00, updatedAt: '2026-08-14' },
     ]
   },
@@ -70,21 +75,11 @@ const DEFAULT_COMPARISONS: ProductComparison[] = [
     productName: 'Dobradiça 35mm Curva c/ Amortecedor',
     category: 'Ferragens',
     unit: 'Par',
+    description: 'Dobradiça caneco 35mm pistão de amortecimento soft-close.',
     quotes: [
-      { supplierId: 's1', supplierName: 'Gmad', brand: 'FGV TN', pricePerM2: null, unitPrice: 6.90, price: 6.90, updatedAt: '2026-08-16' },
+      { supplierId: 's1', supplierName: 'Gmad', brand: 'FGV TN', pricePerM2: null, unitPrice: 6.90, price: 6.90, updatedAt: '2026-08-16', specifications: 'Acompanha calço 4 furos e parafusos.' },
       { supplierId: 's2', supplierName: 'FGV Central', brand: 'FGV TN', pricePerM2: null, unitPrice: 7.20, price: 7.20, updatedAt: '2026-08-10' },
       { supplierId: 's3', supplierName: 'Leo Madeiras', brand: 'Häfele', pricePerM2: null, unitPrice: 8.50, price: 8.50, updatedAt: '2026-08-15' },
-    ]
-  },
-  {
-    id: '3',
-    productName: 'Corrediça Telescópica 45cm 35kg',
-    category: 'Ferragens',
-    unit: 'Par',
-    quotes: [
-      { supplierId: 's1', supplierName: 'FGV Central', brand: 'FGV', pricePerM2: null, unitPrice: 15.80, price: 15.80, updatedAt: '2026-08-12' },
-      { supplierId: 's2', supplierName: 'Gmad', brand: 'Light', pricePerM2: null, unitPrice: 16.50, price: 16.50, updatedAt: '2026-08-16' },
-      { supplierId: 's3', supplierName: 'Leo Madeiras', brand: 'Häfele', pricePerM2: null, unitPrice: 18.90, price: 18.90, updatedAt: '2026-08-15' },
     ]
   }
 ];
@@ -103,11 +98,18 @@ const SuppliersPage: React.FC = () => {
 
   // Comparisons state
   const [comparisons, setComparisons] = useState<ProductComparison[]>(() => {
-    const saved = localStorage.getItem('sd_supplier_comparisons_v2');
+    const saved = localStorage.getItem('sd_supplier_comparisons_v3');
     return saved ? JSON.parse(saved) : DEFAULT_COMPARISONS;
   });
   const [compSearch, setCompSearch] = useState('');
   
+  // Detail Modal State
+  const [selectedProdDetail, setSelectedProdDetail] = useState<ProductComparison | null>(null);
+
+  // Photo & AI Extraction State
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [analyzingImage, setAnalyzingImage] = useState(false);
+
   // New Product Modal State
   const [showProdForm, setShowProdForm] = useState(false);
   const [prodForm, setProdForm] = useState({
@@ -117,7 +119,10 @@ const SuppliersPage: React.FC = () => {
     brand: '',
     pricePerM2: '',
     unitPrice: '',
-    category: 'MDF/MDP'
+    category: 'MDF/MDP',
+    description: '',
+    specifications: '',
+    photoUrl: ''
   });
 
   // New Quote Modal State
@@ -127,10 +132,12 @@ const SuppliersPage: React.FC = () => {
     supplierName: '',
     brand: '',
     pricePerM2: '',
-    unitPrice: ''
+    unitPrice: '',
+    specifications: '',
+    photoUrl: ''
   });
 
-  // ─── Material List State (Tab 3) ──────────────────────────────────────────
+  // Material List State (Tab 3)
   const [materialList, setMaterialList] = useState<MaterialListItem[]>(() => {
     const saved = localStorage.getItem('sd_material_list_v1');
     return saved ? JSON.parse(saved) : [];
@@ -156,11 +163,13 @@ const SuppliersPage: React.FC = () => {
     pricePerM2: '',
     unitPrice: '',
     quantity: 1,
-    category: 'MDF/MDP'
+    category: 'MDF/MDP',
+    photoUrl: '',
+    specifications: ''
   });
 
   useEffect(() => {
-    localStorage.setItem('sd_supplier_comparisons_v2', JSON.stringify(comparisons));
+    localStorage.setItem('sd_supplier_comparisons_v3', JSON.stringify(comparisons));
   }, [comparisons]);
 
   useEffect(() => {
@@ -175,6 +184,85 @@ const SuppliersPage: React.FC = () => {
   };
 
   useEffect(() => { fetchSuppliers(); }, []);
+
+  // ─── Camera / AI Image Processing ─────────────────────────────────────────
+  const handleCapturePhoto = async (e: React.ChangeEvent<HTMLInputElement>, targetForm: 'prod' | 'quote' | 'newMat') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setAnalyzingImage(true);
+    toast({ title: '📸 Lendo foto com IA...', description: 'Extraindo nome do produto, marca, especificações e valor!' });
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64 = reader.result as string;
+
+      try {
+        const prompt = `Analise esta foto de um produto/material de marcenaria ou etiqueta/nota fiscal.
+Extraia e retorne EXATAMENTE um JSON válido neste formato:
+{
+  "productName": "Nome do produto encontrado ou aproximado",
+  "brand": "Marca ou fabricante se visível",
+  "unitPrice": "Preço em numero com ponto ou vazio",
+  "pricePerM2": "Preço por m2 se houver ou vazio",
+  "specifications": "Resumo detalhado das características, dimensões ou especificações encontradas na foto"
+}`;
+
+        const aiResponse = await analyzeImageWithGemini(base64, prompt);
+        let extractedData: any = {};
+        try {
+          const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            extractedData = JSON.parse(jsonMatch[0]);
+          }
+        } catch (err) {
+          console.warn("Não foi possível parsear JSON direto da IA:", aiResponse);
+        }
+
+        if (targetForm === 'prod') {
+          setProdForm(prev => ({
+            ...prev,
+            productName: extractedData.productName || prev.productName,
+            brand: extractedData.brand || prev.brand,
+            unitPrice: extractedData.unitPrice ? String(extractedData.unitPrice) : prev.unitPrice,
+            pricePerM2: extractedData.pricePerM2 ? String(extractedData.pricePerM2) : prev.pricePerM2,
+            specifications: extractedData.specifications || prev.specifications || aiResponse.slice(0, 150),
+            photoUrl: base64
+          }));
+        } else if (targetForm === 'quote') {
+          setQuoteForm(prev => ({
+            ...prev,
+            brand: extractedData.brand || prev.brand,
+            unitPrice: extractedData.unitPrice ? String(extractedData.unitPrice) : prev.unitPrice,
+            pricePerM2: extractedData.pricePerM2 ? String(extractedData.pricePerM2) : prev.pricePerM2,
+            specifications: extractedData.specifications || prev.specifications || aiResponse.slice(0, 150),
+            photoUrl: base64
+          }));
+        } else if (targetForm === 'newMat') {
+          setNewMatForm(prev => ({
+            ...prev,
+            productName: extractedData.productName || prev.productName,
+            brand: extractedData.brand || prev.brand,
+            unitPrice: extractedData.unitPrice ? String(extractedData.unitPrice) : prev.unitPrice,
+            pricePerM2: extractedData.pricePerM2 ? String(extractedData.pricePerM2) : prev.pricePerM2,
+            specifications: extractedData.specifications || prev.specifications || aiResponse.slice(0, 150),
+            photoUrl: base64
+          }));
+        }
+
+        toast({ title: '✨ Dados extraídos com sucesso da foto!', description: 'Os campos foram preenchidos automaticamente.' });
+      } catch (err) {
+        console.error("Erro na leitura da imagem:", err);
+        if (targetForm === 'prod') setProdForm(prev => ({ ...prev, photoUrl: base64 }));
+        if (targetForm === 'quote') setQuoteForm(prev => ({ ...prev, photoUrl: base64 }));
+        if (targetForm === 'newMat') setNewMatForm(prev => ({ ...prev, photoUrl: base64 }));
+        toast({ title: '📸 Foto anexada com sucesso!' });
+      } finally {
+        setAnalyzingImage(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSaveSupplier = async () => {
     if (!form.name.trim()) { toast({ title: '⚠️ Nome do fornecedor obrigatório', variant: 'destructive' }); return; }
@@ -236,7 +324,9 @@ const SuppliersPage: React.FC = () => {
       pricePerM2: isNaN(m2Num as number) ? null : m2Num,
       unitPrice: unitPriceNum,
       price: unitPriceNum,
-      updatedAt: new Date().toISOString().split('T')[0]
+      updatedAt: new Date().toISOString().split('T')[0],
+      photoUrl: prodForm.photoUrl || null,
+      specifications: prodForm.specifications || null
     };
 
     const newProd: ProductComparison = {
@@ -244,13 +334,14 @@ const SuppliersPage: React.FC = () => {
       productName: prodForm.productName.trim(),
       category: prodForm.category,
       unit: 'Un',
+      description: prodForm.description || undefined,
       quotes: [firstQuote]
     };
 
     setComparisons([newProd, ...comparisons]);
-    setProdForm({ supplierName: '', supplierId: '', productName: '', brand: '', pricePerM2: '', unitPrice: '', category: 'MDF/MDP' });
+    setProdForm({ supplierName: '', supplierId: '', productName: '', brand: '', pricePerM2: '', unitPrice: '', category: 'MDF/MDP', description: '', specifications: '', photoUrl: '' });
     setShowProdForm(false);
-    toast({ title: '✅ Produto e Cotação cadastrados no comparativo!' });
+    toast({ title: '✅ Produto e Cotação cadastrados com foto e detalhes!' });
   };
 
   const handleDeleteProduct = (id: string) => {
@@ -258,7 +349,7 @@ const SuppliersPage: React.FC = () => {
     toast({ title: '🗑️ Produto removido do comparativo' });
   };
 
-  // Quote Only Handler (adding quote to existing product)
+  // Quote Only Handler
   const handleAddQuote = () => {
     if (!quoteModalProdId) return;
     const unitPriceNum = parseFloat(quoteForm.unitPrice.replace(',', '.'));
@@ -289,14 +380,16 @@ const SuppliersPage: React.FC = () => {
         pricePerM2: isNaN(m2Num as number) ? null : m2Num,
         unitPrice: unitPriceNum,
         price: unitPriceNum,
-        updatedAt: new Date().toISOString().split('T')[0]
+        updatedAt: new Date().toISOString().split('T')[0],
+        photoUrl: quoteForm.photoUrl || null,
+        specifications: quoteForm.specifications || null
       };
       return { ...p, quotes: [...filteredQuotes, newQuote] };
     }));
 
     setQuoteModalProdId(null);
-    setQuoteForm({ supplierId: '', supplierName: '', brand: '', pricePerM2: '', unitPrice: '' });
-    toast({ title: '💰 Cotação do fornecedor cadastrada com sucesso!' });
+    setQuoteForm({ supplierId: '', supplierName: '', brand: '', pricePerM2: '', unitPrice: '', specifications: '', photoUrl: '' });
+    toast({ title: '💰 Cotação com detalhamento cadastrada!' });
   };
 
   const handleDeleteQuote = (prodId: string, supplierName: string) => {
@@ -385,7 +478,6 @@ const SuppliersPage: React.FC = () => {
     toast({ title: '📦 Produto adicionado à Lista de Materiais com sucesso!' });
   };
 
-  // Handler to create a NEW product on the fly from inside the Material List Modal
   const handleAddNewProductDirectlyToMaterialList = () => {
     if (!newMatForm.productName.trim()) {
       toast({ title: '⚠️ Informe o nome do produto', variant: 'destructive' });
@@ -419,7 +511,9 @@ const SuppliersPage: React.FC = () => {
       pricePerM2: isNaN(m2Num as number) ? null : m2Num,
       unitPrice: unitPriceNum,
       price: unitPriceNum,
-      updatedAt: new Date().toISOString().split('T')[0]
+      updatedAt: new Date().toISOString().split('T')[0],
+      photoUrl: newMatForm.photoUrl || null,
+      specifications: newMatForm.specifications || null
     };
 
     const newProdId = Date.now().toString();
@@ -431,10 +525,8 @@ const SuppliersPage: React.FC = () => {
       quotes: [firstQuote]
     };
 
-    // 1. Cadastra no comparativo
     setComparisons([newProd, ...comparisons]);
 
-    // 2. Insere na lista de compras
     const newItem: MaterialListItem = {
       id: (Date.now() + 1).toString(),
       productId: newProdId,
@@ -450,8 +542,8 @@ const SuppliersPage: React.FC = () => {
 
     setMaterialList([newItem, ...materialList]);
     setShowAddMatForm(false);
-    setNewMatForm({ supplierName: '', supplierId: '', productName: '', brand: '', pricePerM2: '', unitPrice: '', quantity: 1, category: 'MDF/MDP' });
-    toast({ title: '🚀 Produto criado e adicionado à Lista de Compras!' });
+    setNewMatForm({ supplierName: '', supplierId: '', productName: '', brand: '', pricePerM2: '', unitPrice: '', quantity: 1, category: 'MDF/MDP', photoUrl: '', specifications: '' });
+    toast({ title: '🚀 Produto criado com foto e adicionado à Lista de Compras!' });
   };
 
   const handleQuickAddFromComparison = (prod: ProductComparison) => {
@@ -604,6 +696,15 @@ const SuppliersPage: React.FC = () => {
   return (
     <div className="p-4 sm:p-8 space-y-6 overflow-auto h-full bg-[#0f0f0f] relative w-full pt-16">
       
+      {/* Hidden File Input for Camera/Upload */}
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        accept="image/*" 
+        capture="environment" 
+        className="hidden" 
+      />
+
       {/* Header */}
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -611,10 +712,10 @@ const SuppliersPage: React.FC = () => {
             <Building className="w-8 h-8 text-amber-500" />
             Gestão de Fornecedores & Compras
           </h1>
-          <p className="text-gray-400 mt-1 text-sm">Cadastros, Comparativo do Menor Preço e Lista de Materiais</p>
+          <p className="text-gray-400 mt-1 text-sm">Cadastros, Comparativo do Menor Preço e Detalhamento por Foto/IA</p>
         </div>
 
-        {/* Action Button depending on tab */}
+        {/* Action Buttons */}
         {activeTab === 'suppliers' && (
           <button 
             onClick={() => { setShowForm(true); setEditingId(null); setForm({ name: '', cnpj: '', phone: '', email: '', address: '', category: 'Geral', notes: '' }); }} 
@@ -811,7 +912,7 @@ const SuppliersPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Search + Add Product */}
+          {/* Search Bar */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="relative max-w-md w-full">
               <Search className="absolute left-4 top-3.5 w-5 h-5 text-gray-400" />
@@ -824,12 +925,27 @@ const SuppliersPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Form Modal: Add New Product */}
+          {/* Form Modal: Add New Product (with Camera Button & AI Auto-fill) */}
           {showProdForm && (
             <div className="bg-[#111111] border border-emerald-500/40 rounded-3xl p-6 shadow-2xl space-y-4 text-white">
-              <h3 className="font-bold text-lg text-emerald-400 flex items-center gap-2 border-b border-white/10 pb-3">
-                <Plus className="w-5 h-5" /> Cadastrar Produto & Primeiros Preços no Comparativo
-              </h3>
+              <div className="flex justify-between items-center border-b border-white/10 pb-3">
+                <h3 className="font-bold text-lg text-emerald-400 flex items-center gap-2">
+                  <Plus className="w-5 h-5" /> Cadastrar Produto & Primeiros Preços no Comparativo
+                </h3>
+
+                {/* CAMERA BUTTON FOR PROD FORM */}
+                <label className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow transition-all shrink-0">
+                  {analyzingImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
+                  <span>{analyzingImage ? 'Lendo com IA...' : '📸 Tirar Foto / Ler Etiqueta com IA'}</span>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    capture="environment" 
+                    onChange={e => handleCapturePhoto(e, 'prod')} 
+                    className="hidden" 
+                  />
+                </label>
+              </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 
@@ -905,6 +1021,34 @@ const SuppliersPage: React.FC = () => {
                   />
                 </div>
 
+                {/* Especificações & Foto Preview */}
+                <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-3 bg-[#181818] p-3 rounded-2xl border border-white/5">
+                  <div className="md:col-span-2">
+                    <label className="text-xs text-gray-300 font-bold block mb-1">Detalhamento & Especificações Técnicas (ou Extraído da Foto)</label>
+                    <textarea 
+                      rows={2} 
+                      value={prodForm.specifications} 
+                      onChange={e => setProdForm({ ...prodForm, specifications: e.target.value })} 
+                      placeholder="Ex: Revestimento melamínico, espessura 15mm, calço 4 furos..." 
+                      className="w-full p-2.5 rounded-xl border border-white/10 bg-[#111] text-white text-xs placeholder-gray-500 focus:ring-1 focus:ring-emerald-500" 
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs text-gray-300 font-bold block mb-1">Foto / Anexo do Produto</label>
+                    {prodForm.photoUrl ? (
+                      <div className="relative rounded-xl overflow-hidden h-16 border border-emerald-500/50">
+                        <img src={prodForm.photoUrl} alt="Preview" className="w-full h-full object-cover" />
+                        <button onClick={() => setProdForm({ ...prodForm, photoUrl: '' })} className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-0.5"><X className="w-3 h-3" /></button>
+                      </div>
+                    ) : (
+                      <div className="text-center p-2 text-xs text-gray-500 border border-dashed border-white/10 rounded-xl h-16 flex items-center justify-center">
+                        Nenhuma foto capturada
+                      </div>
+                    )}
+                  </div>
+                </div>
+
               </div>
 
               <div className="flex gap-3 pt-2">
@@ -914,12 +1058,26 @@ const SuppliersPage: React.FC = () => {
             </div>
           )}
 
-          {/* Form Modal: Add Quote to Existing Product */}
+          {/* Form Modal: Add Quote to Existing Product (With Camera Button) */}
           {quoteModalProdId && (
             <div className="bg-[#111111] border border-amber-500/30 rounded-3xl p-6 shadow-2xl space-y-4 text-white max-w-xl mx-auto">
-              <h3 className="font-bold text-lg text-amber-400 flex items-center gap-2 border-b border-white/10 pb-3">
-                <DollarSign className="w-5 h-5" /> Adicionar Cotação de Outro Fornecedor
-              </h3>
+              <div className="flex justify-between items-center border-b border-white/10 pb-3">
+                <h3 className="font-bold text-lg text-amber-400 flex items-center gap-2">
+                  <DollarSign className="w-5 h-5" /> Adicionar Cotação de Outro Fornecedor
+                </h3>
+
+                <label className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow transition-all shrink-0">
+                  {analyzingImage ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
+                  <span>Foto / IA</span>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    capture="environment" 
+                    onChange={e => handleCapturePhoto(e, 'quote')} 
+                    className="hidden" 
+                  />
+                </label>
+              </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
@@ -976,6 +1134,16 @@ const SuppliersPage: React.FC = () => {
                     className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white placeholder-gray-500 focus:ring-2 focus:ring-amber-500 focus:outline-none text-sm font-bold text-emerald-400" 
                   />
                 </div>
+
+                <div className="sm:col-span-2">
+                  <label className="text-xs text-gray-300 font-bold block mb-1">Detalhamento / Observações desta Cotação</label>
+                  <input 
+                    value={quoteForm.specifications} 
+                    onChange={e => setQuoteForm({ ...quoteForm, specifications: e.target.value })} 
+                    placeholder="Ex: Prazo de entrega 3 dias, inclui frete..." 
+                    className="w-full p-2.5 rounded-xl border border-white/10 bg-[#1a1a1a] text-white placeholder-gray-500 text-xs" 
+                  />
+                </div>
               </div>
 
               <div className="flex gap-3 pt-2">
@@ -1012,27 +1180,38 @@ const SuppliersPage: React.FC = () => {
                   {/* Top Bar of Card */}
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-white/10 pb-4">
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-3 py-0.5 rounded-full text-xs font-bold">
                           {item.category}
                         </span>
                         <h3 className="text-lg font-black text-white">{item.productName}</h3>
                       </div>
+                      {item.description && (
+                        <p className="text-xs text-gray-400 mt-1">{item.description}</p>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-2 flex-wrap">
+                      {/* DETAILED VIEW BUTTON */}
+                      <button
+                        onClick={() => setSelectedProdDetail(item)}
+                        className="bg-purple-600/20 border border-purple-500/40 text-purple-300 hover:bg-purple-600/40 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all"
+                        title="Ver todo o detalhamento e fotos deste produto"
+                      >
+                        <Eye className="w-4 h-4 text-purple-400" /> Detalhes & Fotos
+                      </button>
+
                       <button 
                         onClick={() => handleQuickAddFromComparison(item)}
                         className="bg-blue-600/20 border border-blue-500/40 text-blue-300 hover:bg-blue-600/40 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all"
-                        title="Adicionar este produto à Lista de Materiais de Compra com o Menor Preço"
                       >
-                        <ShoppingCart className="w-4 h-4 text-blue-400" /> + Add à Lista de Compras
+                        <ShoppingCart className="w-4 h-4 text-blue-400" /> + Add à Lista
                       </button>
 
                       <button 
                         onClick={() => {
                           setQuoteModalProdId(item.id);
-                          setQuoteForm({ supplierId: '', supplierName: '', brand: '', pricePerM2: '', unitPrice: '' });
+                          setQuoteForm({ supplierId: '', supplierName: '', brand: '', pricePerM2: '', unitPrice: '', specifications: '', photoUrl: '' });
                         }}
                         className="bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all"
                       >
@@ -1062,7 +1241,6 @@ const SuppliersPage: React.FC = () => {
                             {cheapest.supplierName} 
                             {cheapest.brand && <span className="text-gray-400 text-xs font-normal ml-2">[{cheapest.brand}]</span>}
                             {' '}— <span className="text-white">R$ {cheapestVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} /un</span>
-                            {cheapest.pricePerM2 && <span className="text-purple-300 text-xs font-normal ml-2">(R$ {cheapest.pricePerM2.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/m²)</span>}
                           </p>
                         </div>
                       </div>
@@ -1072,7 +1250,6 @@ const SuppliersPage: React.FC = () => {
                           <span className="bg-emerald-500 text-black font-black text-xs px-3 py-1 rounded-full inline-block mb-1">
                             Economia de R$ {diff.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ({percEconomy}%)
                           </span>
-                          <p className="text-[11px] text-gray-400">Em relação ao fornecedor mais caro</p>
                         </div>
                       )}
                     </div>
@@ -1103,12 +1280,11 @@ const SuppliersPage: React.FC = () => {
                                   <Tag className="w-3 h-3" /> Marca: <span className="font-bold">{q.brand}</span>
                                 </p>
                               )}
-                              {q.pricePerM2 && (
-                                <p className="text-xs text-purple-400 flex items-center gap-1">
-                                  <Maximize2 className="w-3 h-3" /> R$ {q.pricePerM2.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/m²
-                                </p>
+                              {q.photoUrl && (
+                                <span className="inline-flex items-center gap-1 text-[10px] bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full border border-purple-500/30">
+                                  <Camera className="w-3 h-3" /> Foto anexada
+                                </span>
                               )}
-                              <p className="text-[10px] text-gray-500">Atualizado: {q.updatedAt}</p>
                             </div>
 
                             <div className="flex items-center gap-3 text-right">
@@ -1132,7 +1308,7 @@ const SuppliersPage: React.FC = () => {
                     </div>
                   ) : (
                     <div className="p-6 text-center text-gray-500 bg-[#161616] rounded-2xl border border-dashed border-white/10">
-                      Nenhuma cotação cadastrada para este produto ainda. Clique em <b>+ Adicionar Cotação</b> para incluir os preços dos fornecedores.
+                      Nenhuma cotação cadastrada para este produto ainda.
                     </div>
                   )}
 
@@ -1142,7 +1318,7 @@ const SuppliersPage: React.FC = () => {
 
             {filteredComparisons.length === 0 && (
               <div className="p-12 text-center text-gray-500 bg-[#111111] rounded-3xl border border-white/10">
-                Nenhum produto cadastrado no comparativo ainda. Clique em <b>+ Adicionar Produto ao Comparativo</b> acima para começar a cotar!
+                Nenhum produto cadastrado no comparativo ainda.
               </div>
             )}
           </div>
@@ -1150,7 +1326,7 @@ const SuppliersPage: React.FC = () => {
         </div>
       )}
 
-      {/* ─── TAB 3: LISTA DE MATERIAIS DA COMPRA (MENOR PREÇO) ──────────────── */}
+      {/* ─── TAB 3: LISTA DE MATERIAIS DA COMPRA ────────────────────────────── */}
       {activeTab === 'material_list' && (
         <div className="space-y-6">
 
@@ -1189,7 +1365,7 @@ const SuppliersPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Form Modal: Add Item to Material List (Includes both Select mode & Direct New Product mode) */}
+          {/* Form Modal: Add Item to Material List */}
           {showAddMatForm && (
             <div className="bg-[#111111] border border-blue-500/40 rounded-3xl p-6 shadow-2xl space-y-4 text-white max-w-2xl mx-auto">
               
@@ -1282,16 +1458,28 @@ const SuppliersPage: React.FC = () => {
                 </div>
               )}
 
-              {/* MODE 2: CREATE & ADD NEW PRODUCT DIRECTLY */}
+              {/* MODE 2: CREATE & ADD NEW PRODUCT DIRECTLY (WITH CAMERA) */}
               {addMatMode === 'new' && (
                 <div className="space-y-4 bg-[#181818] p-4 rounded-2xl border border-emerald-500/30">
-                  <p className="text-xs text-emerald-400 font-bold flex items-center gap-1">
-                    <Sparkles className="w-4 h-4" /> Preencha para Cadastrar o Produto e Adicionar à Lista:
-                  </p>
+                  <div className="flex justify-between items-center border-b border-white/10 pb-2">
+                    <p className="text-xs text-emerald-400 font-bold flex items-center gap-1">
+                      <Sparkles className="w-4 h-4" /> Preencha para Cadastrar o Produto:
+                    </p>
+
+                    <label className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition-all shrink-0">
+                      {analyzingImage ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
+                      <span>Foto / IA</span>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        capture="environment" 
+                        onChange={e => handleCapturePhoto(e, 'newMat')} 
+                        className="hidden" 
+                      />
+                    </label>
+                  </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    
-                    {/* Fornecedor */}
                     <div>
                       <label className="text-xs text-amber-400 font-bold block mb-1">1. Nome do Fornecedor *</label>
                       <select 
@@ -1300,7 +1488,7 @@ const SuppliersPage: React.FC = () => {
                           const sel = suppliers.find(s => s.id === e.target.value);
                           setNewMatForm({ ...newMatForm, supplierId: e.target.value, supplierName: sel ? sel.name : newMatForm.supplierName });
                         }} 
-                        className="w-full p-2.5 rounded-xl border border-white/10 bg-[#111] text-white text-xs mb-1 focus:ring-1 focus:ring-emerald-500"
+                        className="w-full p-2.5 rounded-xl border border-white/10 bg-[#111] text-white text-xs mb-1"
                       >
                         <option value="">-- Selecione ou digite abaixo --</option>
                         {suppliers.map(s => (
@@ -1311,95 +1499,52 @@ const SuppliersPage: React.FC = () => {
                         value={newMatForm.supplierName} 
                         onChange={e => setNewMatForm({ ...newMatForm, supplierName: e.target.value, supplierId: '' })} 
                         placeholder="Ou digite o Fornecedor..." 
-                        className="w-full p-2.5 rounded-xl border border-white/10 bg-[#111] text-white placeholder-gray-500 text-xs focus:ring-1 focus:ring-emerald-500" 
+                        className="w-full p-2.5 rounded-xl border border-white/10 bg-[#111] text-white text-xs" 
                       />
                     </div>
 
-                    {/* Produto */}
                     <div>
                       <label className="text-xs text-emerald-400 font-bold block mb-1">2. Nome do Produto *</label>
                       <input 
                         value={newMatForm.productName} 
                         onChange={e => setNewMatForm({ ...newMatForm, productName: e.target.value })} 
                         placeholder="Ex: MDF 15mm Louro Freijó..." 
-                        className="w-full p-2.5 rounded-xl border border-white/10 bg-[#111] text-white placeholder-gray-500 text-xs focus:ring-1 focus:ring-emerald-500" 
+                        className="w-full p-2.5 rounded-xl border border-white/10 bg-[#111] text-white text-xs" 
                       />
-                      <select 
-                        value={newMatForm.category} 
-                        onChange={e => setNewMatForm({ ...newMatForm, category: e.target.value })} 
-                        className="w-full p-2.5 rounded-xl border border-white/10 bg-[#111] text-white text-xs mt-1"
-                      >
-                        <option>MDF/MDP</option><option>Ferragens</option><option>Vidros</option><option>Pedras</option><option>Tintas</option><option>Acessórios</option><option>Outros</option>
-                      </select>
                     </div>
 
-                    {/* Marca */}
                     <div>
                       <label className="text-xs text-blue-400 font-bold block mb-1">3. Marca / Fabricante</label>
                       <input 
                         value={newMatForm.brand} 
                         onChange={e => setNewMatForm({ ...newMatForm, brand: e.target.value })} 
-                        placeholder="Ex: Duratex, FGV, Häfele..." 
-                        className="w-full p-2.5 rounded-xl border border-white/10 bg-[#111] text-white placeholder-gray-500 text-xs focus:ring-1 focus:ring-emerald-500" 
+                        placeholder="Ex: Duratex, FGV..." 
+                        className="w-full p-2.5 rounded-xl border border-white/10 bg-[#111] text-white text-xs" 
                       />
                     </div>
 
-                    {/* Valor m2 */}
                     <div>
-                      <label className="text-xs text-purple-400 font-bold block mb-1">4. Valor R$/m² (opcional)</label>
-                      <input 
-                        type="text" 
-                        value={newMatForm.pricePerM2} 
-                        onChange={e => setNewMatForm({ ...newMatForm, pricePerM2: e.target.value })} 
-                        placeholder="Ex: 39,00" 
-                        className="w-full p-2.5 rounded-xl border border-white/10 bg-[#111] text-white placeholder-gray-500 text-xs focus:ring-1 focus:ring-emerald-500" 
-                      />
-                    </div>
-
-                    {/* Valor Unitario */}
-                    <div>
-                      <label className="text-xs text-emerald-400 font-bold block mb-1">5. Valor Unitário (R$) *</label>
+                      <label className="text-xs text-emerald-400 font-bold block mb-1">4. Valor Unitário (R$) *</label>
                       <input 
                         type="text" 
                         value={newMatForm.unitPrice} 
                         onChange={e => setNewMatForm({ ...newMatForm, unitPrice: e.target.value })} 
                         placeholder="Ex: 198,50" 
-                        className="w-full p-2.5 rounded-xl border border-white/10 bg-[#111] text-white placeholder-gray-500 text-xs font-bold text-emerald-400 focus:ring-1 focus:ring-emerald-500" 
+                        className="w-full p-2.5 rounded-xl border border-white/10 bg-[#111] text-white text-xs font-bold text-emerald-400" 
                       />
                     </div>
 
-                    {/* Quantidade */}
                     <div>
-                      <label className="text-xs text-amber-400 font-bold block mb-1">6. Quantidade Desejada *</label>
+                      <label className="text-xs text-amber-400 font-bold block mb-1">5. Quantidade Desejada *</label>
                       <input 
                         type="number" 
                         min="1"
                         value={newMatForm.quantity} 
                         onChange={e => setNewMatForm({ ...newMatForm, quantity: Math.max(1, parseInt(e.target.value) || 1) })} 
-                        className="w-full p-2.5 rounded-xl border border-white/10 bg-[#111] text-white text-xs font-bold focus:ring-1 focus:ring-emerald-500" 
+                        className="w-full p-2.5 rounded-xl border border-white/10 bg-[#111] text-white text-xs font-bold" 
                       />
                     </div>
-
                   </div>
-                </div>
-              )}
-
-              {/* Total Preview */}
-              {addMatMode === 'select' && matForm.productId && matForm.unitPrice > 0 && (
-                <div className="bg-blue-950/40 border border-blue-500/30 p-3.5 rounded-2xl flex justify-between items-center text-sm">
-                  <span className="text-gray-300">Subtotal do Item ({matForm.quantity}x):</span>
-                  <span className="font-black text-lg text-emerald-400">
-                    R$ {(matForm.quantity * matForm.unitPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </span>
-                </div>
-              )}
-
-              {addMatMode === 'new' && newMatForm.unitPrice && (
-                <div className="bg-emerald-950/40 border border-emerald-500/30 p-3.5 rounded-2xl flex justify-between items-center text-sm">
-                  <span className="text-gray-300">Subtotal do Item ({newMatForm.quantity}x):</span>
-                  <span className="font-black text-lg text-emerald-400">
-                    R$ {(newMatForm.quantity * (parseFloat(newMatForm.unitPrice.replace(',', '.')) || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </span>
                 </div>
               )}
 
@@ -1467,8 +1612,7 @@ const SuppliersPage: React.FC = () => {
                 {materialList.length === 0 && (
                   <tr>
                     <td colSpan={7} className="p-12 text-center text-gray-500">
-                      Sua Lista de Materiais da Compra está vazia no momento.<br />
-                      Vá na aba <b>📊 Comparativo de Preços</b> e clique em <b>+ Add à Lista de Compras</b> no produto desejado!
+                      Sua Lista de Materiais da Compra está vazia no momento.
                     </td>
                   </tr>
                 )}
@@ -1476,48 +1620,92 @@ const SuppliersPage: React.FC = () => {
             </table>
           </div>
 
-          {/* Grouped Breakdown by Supplier */}
-          {materialList.length > 0 && (
-            <div className="space-y-4 pt-4">
-              <h3 className="font-black text-lg text-white flex items-center gap-2">
-                <ShoppingCart className="w-5 h-5 text-emerald-400" /> O que comprar em cada Fornecedor:
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {(() => {
-                  const grouped: Record<string, MaterialListItem[]> = {};
-                  materialList.forEach(item => {
-                    if (!grouped[item.selectedSupplierName]) grouped[item.selectedSupplierName] = [];
-                    grouped[item.selectedSupplierName].push(item);
-                  });
+        </div>
+      )}
 
-                  return Object.entries(grouped).map(([suppName, items], idx) => {
-                    const suppTotal = items.reduce((acc, curr) => acc + curr.total, 0);
-                    return (
-                      <div key={idx} className="bg-[#111111] border border-white/10 p-5 rounded-3xl space-y-3 shadow-xl">
-                        <div className="flex justify-between items-center border-b border-white/10 pb-3">
-                          <h4 className="font-bold text-amber-400 text-base flex items-center gap-2">
-                            <Building className="w-4 h-4" /> {suppName}
-                          </h4>
-                          <span className="font-black text-emerald-400 text-sm">
-                            Total: R$ {suppTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                          </span>
-                        </div>
-                        <ul className="space-y-2 text-xs">
-                          {items.map((it, i) => (
-                            <li key={i} className="flex justify-between items-center text-gray-300 bg-white/5 p-2 rounded-xl">
-                              <span><b>{it.quantity}x</b> {it.productName} ({it.selectedBrand})</span>
-                              <span className="font-bold text-white">R$ {it.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    );
-                  });
-                })()}
+      {/* ─── MODAL DETALHAMENTO DO PRODUTO & FOTOS ──────────────────────────── */}
+      {selectedProdDetail && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#111111] border border-purple-500/40 rounded-3xl p-6 shadow-2xl space-y-5 text-white w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+            
+            {/* Header */}
+            <div className="flex justify-between items-start border-b border-white/10 pb-4">
+              <div>
+                <span className="bg-purple-500/20 text-purple-300 border border-purple-500/30 px-3 py-1 rounded-full text-xs font-bold">
+                  {selectedProdDetail.category}
+                </span>
+                <h2 className="text-2xl font-black text-white mt-2">{selectedProdDetail.productName}</h2>
+                {selectedProdDetail.description && (
+                  <p className="text-xs text-gray-400 mt-1">{selectedProdDetail.description}</p>
+                )}
               </div>
-            </div>
-          )}
 
+              <button 
+                onClick={() => setSelectedProdDetail(null)}
+                className="w-9 h-9 bg-white/10 text-gray-400 hover:text-white rounded-full flex items-center justify-center"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* List of Quotes with Photos & Specifications */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-bold text-amber-400 uppercase tracking-wider">
+                Detalhamento Completo das Cotações ({selectedProdDetail.quotes.length} Fornecedores)
+              </h3>
+
+              {selectedProdDetail.quotes.map((q, idx) => (
+                <div key={idx} className="bg-[#181818] border border-white/10 p-5 rounded-2xl space-y-3">
+                  <div className="flex justify-between items-center border-b border-white/10 pb-2">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-bold text-white text-base">{q.supplierName}</h4>
+                      {q.brand && <span className="bg-blue-500/20 text-blue-300 text-xs px-2 py-0.5 rounded-md border border-blue-500/30">Marca: {q.brand}</span>}
+                    </div>
+                    <span className="font-black text-emerald-400 text-lg">
+                      R$ {(q.unitPrice || q.price).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} /un
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Photo */}
+                    {q.photoUrl ? (
+                      <div className="rounded-xl overflow-hidden border border-white/10 h-36 bg-black">
+                        <img src={q.photoUrl} alt={q.supplierName} className="w-full h-full object-cover" />
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border border-dashed border-white/10 h-36 flex flex-col items-center justify-center text-gray-500 text-xs p-2">
+                        <Camera className="w-6 h-6 mb-1 opacity-50" /> Sem foto cadastrada
+                      </div>
+                    )}
+
+                    {/* Technical Specs */}
+                    <div className="md:col-span-2 space-y-2 text-xs">
+                      <p className="text-gray-400">
+                        <b className="text-gray-200">Especificações / Observações:</b><br />
+                        {q.specifications || 'Nenhum detalhe adicional informado.'}
+                      </p>
+                      {q.pricePerM2 && (
+                        <p className="text-purple-300 font-bold">
+                          📐 Valor por m²: R$ {q.pricePerM2.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/m²
+                        </p>
+                      )}
+                      <p className="text-gray-500 text-[10px]">Data da cotação: {q.updatedAt}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <button 
+                onClick={() => setSelectedProdDetail(null)}
+                className="bg-white/10 hover:bg-white/20 text-white font-bold px-6 py-2.5 rounded-xl text-sm"
+              >
+                Fechar Detalhes
+              </button>
+            </div>
+
+          </div>
         </div>
       )}
 
