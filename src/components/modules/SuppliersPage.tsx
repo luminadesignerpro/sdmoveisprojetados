@@ -4,7 +4,8 @@ import { useToast } from '@/hooks/use-toast';
 import { 
   Building, Plus, Search, Edit, Trash2, Phone, Mail, 
   TrendingDown, DollarSign, Award, CheckCircle2,
-  BarChart3, ShoppingBag, Tag, Maximize2
+  BarChart3, ShoppingBag, Tag, Maximize2, ClipboardList,
+  Printer, ShoppingCart, ArrowRight, CheckSquare
 } from 'lucide-react';
 
 const db = supabase as any;
@@ -37,6 +38,19 @@ interface ProductComparison {
   category: string;
   unit: string;
   quotes: PriceQuote[];
+}
+
+interface MaterialListItem {
+  id: string;
+  productId: string;
+  productName: string;
+  category: string;
+  selectedSupplierName: string;
+  selectedBrand: string;
+  selectedUnitPrice: number;
+  quantity: number;
+  total: number;
+  isCheapestSelected: boolean;
 }
 
 const DEFAULT_COMPARISONS: ProductComparison[] = [
@@ -77,7 +91,7 @@ const DEFAULT_COMPARISONS: ProductComparison[] = [
 
 const SuppliersPage: React.FC = () => {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<'suppliers' | 'comparison'>('suppliers');
+  const [activeTab, setActiveTab] = useState<'suppliers' | 'comparison' | 'material_list'>('suppliers');
   
   // Suppliers state
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -94,7 +108,7 @@ const SuppliersPage: React.FC = () => {
   });
   const [compSearch, setCompSearch] = useState('');
   
-  // New Product Modal State (includes all 5 requested fields)
+  // New Product Modal State
   const [showProdForm, setShowProdForm] = useState(false);
   const [prodForm, setProdForm] = useState({
     supplierName: '',
@@ -106,7 +120,7 @@ const SuppliersPage: React.FC = () => {
     category: 'MDF/MDP'
   });
 
-  // New Quote Modal State (for adding quote to existing product)
+  // New Quote Modal State
   const [quoteModalProdId, setQuoteModalProdId] = useState<string | null>(null);
   const [quoteForm, setQuoteForm] = useState({
     supplierId: '',
@@ -116,9 +130,29 @@ const SuppliersPage: React.FC = () => {
     unitPrice: ''
   });
 
+  // ─── Material List State (Tab 3) ──────────────────────────────────────────
+  const [materialList, setMaterialList] = useState<MaterialListItem[]>(() => {
+    const saved = localStorage.getItem('sd_material_list_v1');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [showAddMatForm, setShowAddMatForm] = useState(false);
+  const [matForm, setMatForm] = useState({
+    productId: '',
+    supplierName: '',
+    brand: '',
+    unitPrice: 0,
+    quantity: 1,
+    isCheapest: true
+  });
+
   useEffect(() => {
     localStorage.setItem('sd_supplier_comparisons_v2', JSON.stringify(comparisons));
   }, [comparisons]);
+
+  useEffect(() => {
+    localStorage.setItem('sd_material_list_v1', JSON.stringify(materialList));
+  }, [materialList]);
 
   const fetchSuppliers = async () => {
     setLoading(true);
@@ -260,6 +294,193 @@ const SuppliersPage: React.FC = () => {
     toast({ title: '🗑️ Cotação removida' });
   };
 
+  // ─── Material List Handlers ─────────────────────────────────────────────
+  
+  // When user picks a product in the Material List form, automatically select the CHEAPEST supplier!
+  const handleSelectProductForMatList = (prodId: string) => {
+    const prod = comparisons.find(c => c.id === prodId);
+    if (!prod || prod.quotes.length === 0) {
+      setMatForm({ productId: prodId, supplierName: '', brand: '', unitPrice: 0, quantity: 1, isCheapest: true });
+      return;
+    }
+
+    // Encontra a cotação MAIS BARATA (menor unitPrice)
+    const cheapestQuote = prod.quotes.reduce((prev, curr) => 
+      (curr.unitPrice || curr.price) < (prev.unitPrice || prev.price) ? curr : prev
+    );
+
+    setMatForm({
+      productId: prodId,
+      supplierName: cheapestQuote.supplierName,
+      brand: cheapestQuote.brand || 'Geral',
+      unitPrice: cheapestQuote.unitPrice || cheapestQuote.price,
+      quantity: 1,
+      isCheapest: true
+    });
+  };
+
+  const handleSelectQuoteForMatList = (supplierName: string) => {
+    const prod = comparisons.find(c => c.id === matForm.productId);
+    if (!prod) return;
+    const q = prod.quotes.find(item => item.supplierName === supplierName);
+    if (!q) return;
+
+    const cheapestQuote = prod.quotes.reduce((prev, curr) => 
+      (curr.unitPrice || curr.price) < (prev.unitPrice || prev.price) ? curr : prev
+    );
+    const isCheapest = (q.supplierName === cheapestQuote.supplierName && (q.unitPrice || q.price) === (cheapestQuote.unitPrice || cheapestQuote.price));
+
+    setMatForm({
+      ...matForm,
+      supplierName: q.supplierName,
+      brand: q.brand || 'Geral',
+      unitPrice: q.unitPrice || q.price,
+      isCheapest: isCheapest
+    });
+  };
+
+  const handleAddMaterialToList = () => {
+    if (!matForm.productId) {
+      toast({ title: '⚠️ Selecione um produto', variant: 'destructive' });
+      return;
+    }
+    const prod = comparisons.find(c => c.id === matForm.productId);
+    if (!prod) return;
+
+    if (!matForm.supplierName) {
+      toast({ title: '⚠️ Nenhuma cotação cadastrada para este produto ainda', variant: 'destructive' });
+      return;
+    }
+
+    const qty = Math.max(1, Number(matForm.quantity) || 1);
+    const total = qty * matForm.unitPrice;
+
+    const newItem: MaterialListItem = {
+      id: Date.now().toString(),
+      productId: prod.id,
+      productName: prod.productName,
+      category: prod.category,
+      selectedSupplierName: matForm.supplierName,
+      selectedBrand: matForm.brand,
+      selectedUnitPrice: matForm.unitPrice,
+      quantity: qty,
+      total: total,
+      isCheapestSelected: matForm.isCheapest
+    };
+
+    setMaterialList([newItem, ...materialList]);
+    setShowAddMatForm(false);
+    setMatForm({ productId: '', supplierName: '', brand: '', unitPrice: 0, quantity: 1, isCheapest: true });
+    toast({ title: '📦 Produto adicionado à Lista de Materiais com sucesso!' });
+  };
+
+  // Direct shortcut: Add directly from Comparison Tab card
+  const handleQuickAddFromComparison = (prod: ProductComparison) => {
+    if (prod.quotes.length === 0) {
+      toast({ title: '⚠️ Cadastre ao menos uma cotação para este produto antes de incluir na lista', variant: 'destructive' });
+      return;
+    }
+    const cheapestQuote = prod.quotes.reduce((prev, curr) => 
+      (curr.unitPrice || curr.price) < (prev.unitPrice || prev.price) ? curr : prev
+    );
+
+    const newItem: MaterialListItem = {
+      id: Date.now().toString(),
+      productId: prod.id,
+      productName: prod.productName,
+      category: prod.category,
+      selectedSupplierName: cheapestQuote.supplierName,
+      selectedBrand: cheapestQuote.brand || 'Geral',
+      selectedUnitPrice: cheapestQuote.unitPrice || cheapestQuote.price,
+      quantity: 1,
+      total: cheapestQuote.unitPrice || cheapestQuote.price,
+      isCheapestSelected: true
+    };
+
+    setMaterialList([newItem, ...materialList]);
+    toast({ 
+      title: '🏆 Adicionado com o MENOR PREÇO!', 
+      description: `${prod.productName} — ${cheapestQuote.supplierName} (R$ ${(cheapestQuote.unitPrice || cheapestQuote.price).toFixed(2)})` 
+    });
+  };
+
+  const handleDeleteMaterialItem = (id: string) => {
+    setMaterialList(materialList.filter(m => m.id !== id));
+    toast({ title: '🗑️ Item removido da lista' });
+  };
+
+  const handlePrintMaterialList = () => {
+    const win = window.open('', '_blank', 'width=800,height=600');
+    if (!win) return;
+
+    // Group items by supplier for neat printout
+    const grouped: Record<string, MaterialListItem[]> = {};
+    materialList.forEach(item => {
+      if (!grouped[item.selectedSupplierName]) grouped[item.selectedSupplierName] = [];
+      grouped[item.selectedSupplierName].push(item);
+    });
+
+    let totalGeral = materialList.reduce((acc, curr) => acc + curr.total, 0);
+
+    win.document.write(`
+      <html><head><title>Lista de Materiais de Compra — SD Móveis</title>
+      <style>
+        body{font-family:Tahoma,Arial,sans-serif;font-size:12px;padding:20px;color:#111}
+        h2{margin:0 0 4px;color:#000}
+        .header{border-b:2px solid #333;padding-bottom:12px;margin-bottom:16px}
+        .supplier-box{border:1px solid #ccc;border-radius:6px;padding:12px;margin-bottom:16px;background:#fdfdfd}
+        .supplier-title{font-size:14px;font-weight:bold;color:#0066cc;margin-bottom:8px;border-bottom:1px solid #eee;padding-bottom:4px}
+        table{width:100%;border-collapse:collapse;margin-top:4px}
+        th,td{border:1px solid #ddd;padding:6px 10px;text-align:left}
+        th{background:#f0f0f0;font-size:11px}
+        .total-row{text-align:right;font-weight:bold;font-size:14px;margin-top:16px;padding:10px;background:#e8f5e9;border:1px solid #a5d6a7;border-radius:6px}
+      </style>
+      </head><body>
+      <div class="header">
+        <h2>SD MÓVEIS PROJETADOS — LISTA DE MATERIAIS PARA COMPRA</h2>
+        <p>Data do Pedido: ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
+      </div>
+      
+      ${Object.entries(grouped).map(([suppName, items]) => {
+        const suppTotal = items.reduce((acc, curr) => acc + curr.total, 0);
+        return `
+          <div class="supplier-box">
+            <div class="supplier-title">🛒 Fornecedor: ${suppName} (Total: R$ ${suppTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Produto / Material</th>
+                  <th>Marca</th>
+                  <th>Qtd</th>
+                  <th>Valor Unit.</th>
+                  <th>Total Item</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${items.map(it => `
+                  <tr>
+                    <td><b>${it.productName}</b></td>
+                    <td>${it.selectedBrand}</td>
+                    <td>${it.quantity}</td>
+                    <td>R$ ${it.selectedUnitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                    <td><b>R$ ${it.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</b></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }).join('')}
+
+      <div class="total-row">
+        VALOR TOTAL ESTIMADO DA COMPRA: R$ ${totalGeral.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+      </div>
+      </body></html>
+    `);
+    win.document.close();
+    win.print();
+  };
+
   const filteredSuppliers = suppliers.filter(s => 
     s.name.toLowerCase().includes(search.toLowerCase()) || (s.cnpj || '').includes(search)
   );
@@ -298,6 +519,10 @@ const SuppliersPage: React.FC = () => {
     }
   });
 
+  // Material list summary calculations
+  const totalMaterialListValue = materialList.reduce((acc, item) => acc + item.total, 0);
+  const materialListSuppliersCount = new Set(materialList.map(m => m.selectedSupplierName)).size;
+
   return (
     <div className="p-4 sm:p-8 space-y-6 overflow-auto h-full bg-[#0f0f0f] relative w-full pt-16">
       
@@ -306,20 +531,22 @@ const SuppliersPage: React.FC = () => {
         <div>
           <h1 className="text-3xl sm:text-4xl font-black text-white flex items-center gap-3">
             <Building className="w-8 h-8 text-amber-500" />
-            Gestão de Fornecedores
+            Gestão de Fornecedores & Compras
           </h1>
-          <p className="text-gray-400 mt-1 text-sm">Cadastros e Cotação/Comparativo de Preços de Materiais</p>
+          <p className="text-gray-400 mt-1 text-sm">Cadastros, Comparativo do Menor Preço e Lista de Materiais</p>
         </div>
 
         {/* Action Button depending on tab */}
-        {activeTab === 'suppliers' ? (
+        {activeTab === 'suppliers' && (
           <button 
             onClick={() => { setShowForm(true); setEditingId(null); setForm({ name: '', cnpj: '', phone: '', email: '', address: '', category: 'Geral', notes: '' }); }} 
             className="bg-amber-600 text-white px-6 py-3 rounded-2xl font-bold hover:bg-amber-700 transition-colors flex items-center gap-2 shadow-lg shrink-0 w-full sm:w-auto justify-center"
           >
             <Plus className="w-5 h-5" /> Novo Fornecedor
           </button>
-        ) : (
+        )}
+
+        {activeTab === 'comparison' && (
           <button 
             onClick={() => setShowProdForm(true)} 
             className="bg-emerald-600 text-white px-6 py-3 rounded-2xl font-bold hover:bg-emerald-700 transition-colors flex items-center gap-2 shadow-lg shrink-0 w-full sm:w-auto justify-center"
@@ -327,10 +554,33 @@ const SuppliersPage: React.FC = () => {
             <Plus className="w-5 h-5" /> Adicionar Produto ao Comparativo
           </button>
         )}
+
+        {activeTab === 'material_list' && (
+          <div className="flex gap-2 w-full sm:w-auto">
+            <button 
+              onClick={() => {
+                setShowAddMatForm(true);
+                if (comparisons.length > 0) handleSelectProductForMatList(comparisons[0].id);
+              }} 
+              className="bg-blue-600 text-white px-5 py-3 rounded-2xl font-bold hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-lg flex-1 sm:flex-none justify-center text-sm"
+            >
+              <Plus className="w-5 h-5" /> Adicionar Material à Lista
+            </button>
+            {materialList.length > 0 && (
+              <button 
+                onClick={handlePrintMaterialList}
+                className="bg-gray-800 border border-white/20 text-white px-4 py-3 rounded-2xl font-bold hover:bg-gray-700 transition-colors flex items-center gap-2 text-sm"
+                title="Imprimir Pedido de Compra"
+              >
+                <Printer className="w-4 h-4 text-emerald-400" /> Imprimir Lista
+              </button>
+            )}
+          </div>
+        )}
       </header>
 
       {/* Navigation Tabs */}
-      <div className="flex border-b border-white/10 gap-2">
+      <div className="flex border-b border-white/10 gap-2 flex-wrap">
         <button
           onClick={() => setActiveTab('suppliers')}
           className={`flex items-center gap-2 px-5 py-3 font-bold text-sm rounded-t-2xl transition-all border-b-2 ${
@@ -353,6 +603,18 @@ const SuppliersPage: React.FC = () => {
         >
           <BarChart3 className="w-4 h-4" />
           📊 Comparativo de Preços (Mais Barato)
+        </button>
+
+        <button
+          onClick={() => setActiveTab('material_list')}
+          className={`flex items-center gap-2 px-5 py-3 font-bold text-sm rounded-t-2xl transition-all border-b-2 ${
+            activeTab === 'material_list'
+              ? 'bg-blue-500/10 text-blue-400 border-blue-500'
+              : 'text-gray-400 hover:text-white border-transparent'
+          }`}
+        >
+          <ClipboardList className="w-4 h-4 text-blue-400" />
+          📦 Lista de Materiais da Compra ({materialList.length})
         </button>
       </div>
 
@@ -483,7 +745,7 @@ const SuppliersPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Form Modal: Add New Product (with 5 fields requested by user) */}
+          {/* Form Modal: Add New Product */}
           {showProdForm && (
             <div className="bg-[#111111] border border-emerald-500/40 rounded-3xl p-6 shadow-2xl space-y-4 text-white">
               <h3 className="font-bold text-lg text-emerald-400 flex items-center gap-2 border-b border-white/10 pb-3">
@@ -492,7 +754,6 @@ const SuppliersPage: React.FC = () => {
               
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 
-                {/* 1. Nome do Fornecedor */}
                 <div>
                   <label className="text-xs text-amber-400 font-bold block mb-1">1. Nome do Fornecedor *</label>
                   <select 
@@ -516,7 +777,6 @@ const SuppliersPage: React.FC = () => {
                   />
                 </div>
 
-                {/* 2. Nome do Produto */}
                 <div>
                   <label className="text-xs text-emerald-400 font-bold block mb-1">2. Produto / Material *</label>
                   <input 
@@ -534,7 +794,6 @@ const SuppliersPage: React.FC = () => {
                   </select>
                 </div>
 
-                {/* 3. Marca */}
                 <div>
                   <label className="text-xs text-blue-400 font-bold block mb-1">3. Marca / Fabricante</label>
                   <input 
@@ -545,7 +804,6 @@ const SuppliersPage: React.FC = () => {
                   />
                 </div>
 
-                {/* 4. Valor Metro Quadrado */}
                 <div>
                   <label className="text-xs text-purple-400 font-bold block mb-1">4. Valor Metro Quadrado (R$/m²)</label>
                   <input 
@@ -557,7 +815,6 @@ const SuppliersPage: React.FC = () => {
                   />
                 </div>
 
-                {/* 5. Valor Unitario */}
                 <div>
                   <label className="text-xs text-emerald-400 font-bold block mb-1">5. Valor Unitário (R$) *</label>
                   <input 
@@ -586,7 +843,6 @@ const SuppliersPage: React.FC = () => {
               </h3>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Fornecedor */}
                 <div className="sm:col-span-2">
                   <label className="text-xs text-amber-400 font-bold block mb-1">Nome do Fornecedor *</label>
                   <select 
@@ -610,7 +866,6 @@ const SuppliersPage: React.FC = () => {
                   />
                 </div>
 
-                {/* Marca */}
                 <div>
                   <label className="text-xs text-gray-400 block mb-1">Marca / Fabricante</label>
                   <input 
@@ -621,7 +876,6 @@ const SuppliersPage: React.FC = () => {
                   />
                 </div>
 
-                {/* Valor m2 */}
                 <div>
                   <label className="text-xs text-gray-400 block mb-1">Valor Metro Quadrado (R$/m²)</label>
                   <input 
@@ -633,7 +887,6 @@ const SuppliersPage: React.FC = () => {
                   />
                 </div>
 
-                {/* Valor Unitario */}
                 <div className="sm:col-span-2">
                   <label className="text-xs text-emerald-400 font-bold block mb-1">Valor Unitário (R$) *</label>
                   <input 
@@ -688,13 +941,22 @@ const SuppliersPage: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {/* Direct button to add product to Material List using Cheapest Supplier */}
+                      <button 
+                        onClick={() => handleQuickAddFromComparison(item)}
+                        className="bg-blue-600/20 border border-blue-500/40 text-blue-300 hover:bg-blue-600/40 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all"
+                        title="Adicionar este produto à Lista de Materiais de Compra com o Menor Preço"
+                      >
+                        <ShoppingCart className="w-4 h-4 text-blue-400" /> + Add à Lista de Compras
+                      </button>
+
                       <button 
                         onClick={() => {
                           setQuoteModalProdId(item.id);
                           setQuoteForm({ supplierId: '', supplierName: '', brand: '', pricePerM2: '', unitPrice: '' });
                         }}
-                        className="bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all"
+                        className="bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all"
                       >
                         <Plus className="w-4 h-4" /> Adicionar Cotação
                       </button>
@@ -806,6 +1068,232 @@ const SuppliersPage: React.FC = () => {
               </div>
             )}
           </div>
+
+        </div>
+      )}
+
+      {/* ─── TAB 3: LISTA DE MATERIAIS DA COMPRA (MENOR PREÇO) ──────────────── */}
+      {activeTab === 'material_list' && (
+        <div className="space-y-6">
+
+          {/* Stats Bar */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="bg-[#111111] border border-white/10 p-5 rounded-3xl shadow-xl flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
+                <ClipboardList className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-gray-400 text-xs font-semibold">Itens na Lista de Compras</p>
+                <p className="text-2xl font-black text-white mt-0.5">{materialList.length}</p>
+              </div>
+            </div>
+
+            <div className="bg-[#111111] border border-white/10 p-5 rounded-3xl shadow-xl flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+                <DollarSign className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-gray-400 text-xs font-semibold">Valor Total Estimado</p>
+                <p className="text-2xl font-black text-emerald-400 mt-0.5">
+                  R$ {totalMaterialListValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-[#111111] border border-white/10 p-5 rounded-3xl shadow-xl flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 shrink-0">
+                <Building className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-gray-400 text-xs font-semibold">Fornecedores a Comprar</p>
+                <p className="text-2xl font-black text-purple-300 mt-0.5">{materialListSuppliersCount}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Form Modal: Add Item to Material List */}
+          {showAddMatForm && (
+            <div className="bg-[#111111] border border-blue-500/40 rounded-3xl p-6 shadow-2xl space-y-4 text-white max-w-2xl mx-auto">
+              <h3 className="font-bold text-lg text-blue-400 flex items-center gap-2 border-b border-white/10 pb-3">
+                <ShoppingCart className="w-5 h-5" /> Adicionar Produto à Lista de Compras
+              </h3>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                
+                {/* Product Dropdown */}
+                <div className="sm:col-span-2">
+                  <label className="text-xs text-blue-300 font-bold block mb-1">1. Selecionar Produto do Comparativo *</label>
+                  <select 
+                    value={matForm.productId}
+                    onChange={e => handleSelectProductForMatList(e.target.value)}
+                    className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-bold"
+                  >
+                    <option value="">-- Escolha o produto cotado --</option>
+                    {comparisons.map(p => (
+                      <option key={p.id} value={p.id}>{p.productName} ({p.quotes.length} cotações)</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Supplier Selection (Auto-selected cheapest) */}
+                {matForm.productId && (
+                  <>
+                    <div>
+                      <label className="text-xs text-emerald-400 font-bold block mb-1">
+                        2. Fornecedor & Preço {matForm.isCheapest && '🏆 (Menor Preço Padrão)'}
+                      </label>
+                      {(() => {
+                        const selectedProd = comparisons.find(c => c.id === matForm.productId);
+                        if (!selectedProd || selectedProd.quotes.length === 0) {
+                          return <p className="text-xs text-red-400 p-2">Nenhuma cotação cadastrada neste produto ainda.</p>;
+                        }
+                        return (
+                          <select
+                            value={matForm.supplierName}
+                            onChange={e => handleSelectQuoteForMatList(e.target.value)}
+                            className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm font-bold"
+                          >
+                            {selectedProd.quotes.map((q, idx) => (
+                              <option key={idx} value={q.supplierName}>
+                                {q.supplierName} — R$ {(q.unitPrice || q.price).toFixed(2)} {q.brand ? `[${q.brand}]` : ''}
+                              </option>
+                            ))}
+                          </select>
+                        );
+                      })()}
+                    </div>
+
+                    <div>
+                      <label className="text-xs text-gray-400 font-bold block mb-1">3. Quantidade</label>
+                      <input 
+                        type="number" 
+                        min="1"
+                        value={matForm.quantity}
+                        onChange={e => setMatForm({ ...matForm, quantity: Math.max(1, parseInt(e.target.value) || 1) })}
+                        className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-bold"
+                      />
+                    </div>
+                  </>
+                )}
+
+              </div>
+
+              {/* Total Preview */}
+              {matForm.productId && matForm.unitPrice > 0 && (
+                <div className="bg-blue-950/40 border border-blue-500/30 p-3.5 rounded-2xl flex justify-between items-center text-sm">
+                  <span className="text-gray-300">Subtotal do Item ({matForm.quantity}x):</span>
+                  <span className="font-black text-lg text-emerald-400">
+                    R$ {(matForm.quantity * matForm.unitPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-2">
+                <button onClick={handleAddMaterialToList} className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors text-sm w-full">Adicionar à Lista de Compras</button>
+                <button onClick={() => setShowAddMatForm(false)} className="bg-white/10 border border-white/20 text-white px-6 py-3 rounded-xl font-bold hover:bg-white/20 transition-colors text-sm">Cancelar</button>
+              </div>
+            </div>
+          )}
+
+          {/* Table / List of Materials */}
+          <div className="bg-[#111111] border border-white/10 rounded-3xl shadow-xl overflow-x-auto text-white">
+            <table className="w-full min-w-[750px]">
+              <thead className="bg-[#1a1a1a] border-b border-white/10">
+                <tr>
+                  <th className="text-left p-4 text-xs font-black text-blue-400 uppercase">Produto / Material</th>
+                  <th className="text-left p-4 text-xs font-black text-emerald-400 uppercase">Fornecedor Selecionado</th>
+                  <th className="text-left p-4 text-xs font-black text-gray-400 uppercase">Marca</th>
+                  <th className="text-center p-4 text-xs font-black text-gray-400 uppercase">Qtd</th>
+                  <th className="text-right p-4 text-xs font-black text-gray-400 uppercase">Valor Unit.</th>
+                  <th className="text-right p-4 text-xs font-black text-emerald-400 uppercase">Subtotal</th>
+                  <th className="text-center p-4 text-xs font-black text-gray-400 uppercase">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {materialList.map(item => (
+                  <tr key={item.id} className="border-t border-white/5 hover:bg-white/5 transition-colors">
+                    <td className="p-4 font-bold text-white">
+                      {item.productName}
+                      <span className="block text-[10px] text-amber-500/80 font-normal">{item.category}</span>
+                    </td>
+                    <td className="p-4">
+                      <span className="font-bold text-emerald-300 flex items-center gap-1.5">
+                        {item.selectedSupplierName}
+                        {item.isCheapestSelected && (
+                          <span className="bg-emerald-500/20 text-emerald-400 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-emerald-500/30">
+                            🏆 MENOR PREÇO
+                          </span>
+                        )}
+                      </span>
+                    </td>
+                    <td className="p-4 text-gray-300 text-sm">{item.selectedBrand || 'Geral'}</td>
+                    <td className="p-4 text-center font-bold text-amber-400">{item.quantity}</td>
+                    <td className="p-4 text-right text-gray-300">R$ {item.selectedUnitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                    <td className="p-4 text-right font-black text-emerald-400">R$ {item.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                    <td className="p-4 text-center">
+                      <button 
+                        onClick={() => handleDeleteMaterialItem(item.id)} 
+                        className="w-8 h-8 bg-white/5 border border-white/10 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl flex items-center justify-center transition-all mx-auto"
+                        title="Remover item da lista"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {materialList.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="p-12 text-center text-gray-500">
+                      Sua Lista de Materiais da Compra está vazia no momento.<br />
+                      Vá na aba <b>📊 Comparativo de Preços</b> e clique em <b>+ Add à Lista de Compras</b> no produto desejado!
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Grouped Breakdown by Supplier */}
+          {materialList.length > 0 && (
+            <div className="space-y-4 pt-4">
+              <h3 className="font-black text-lg text-white flex items-center gap-2">
+                <ShoppingCart className="w-5 h-5 text-emerald-400" /> O que comprar em cada Fornecedor:
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {(() => {
+                  const grouped: Record<string, MaterialListItem[]> = {};
+                  materialList.forEach(item => {
+                    if (!grouped[item.selectedSupplierName]) grouped[item.selectedSupplierName] = [];
+                    grouped[item.selectedSupplierName].push(item);
+                  });
+
+                  return Object.entries(grouped).map(([suppName, items], idx) => {
+                    const suppTotal = items.reduce((acc, curr) => acc + curr.total, 0);
+                    return (
+                      <div key={idx} className="bg-[#111111] border border-white/10 p-5 rounded-3xl space-y-3 shadow-xl">
+                        <div className="flex justify-between items-center border-b border-white/10 pb-3">
+                          <h4 className="font-bold text-amber-400 text-base flex items-center gap-2">
+                            <Building className="w-4 h-4" /> {suppName}
+                          </h4>
+                          <span className="font-black text-emerald-400 text-sm">
+                            Total: R$ {suppTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                        <ul className="space-y-2 text-xs">
+                          {items.map((it, i) => (
+                            <li key={i} className="flex justify-between items-center text-gray-300 bg-white/5 p-2 rounded-xl">
+                              <span><b>{it.quantity}x</b> {it.productName} ({it.selectedBrand})</span>
+                              <span className="font-bold text-white">R$ {it.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            </div>
+          )}
 
         </div>
       )}
