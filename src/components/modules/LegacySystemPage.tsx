@@ -96,6 +96,7 @@ const LegacySystemPage: React.FC = () => {
 
   const [showProductSearchModal, setShowProductSearchModal] = useState(false);
   const [productSearchStr, setProductSearchStr] = useState('');
+  const [productsList, setProductsList] = useState<any[]>([]);
   const [showOSSearchModal, setShowOSSearchModal] = useState(false);
   const [osSearchStr, setOsSearchStr] = useState('');
   const [searchFolder, setSearchFolder] = useState<'todos' | 'os' | 'orcamento'>('todos');
