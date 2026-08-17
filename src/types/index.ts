@@ -34,6 +34,7 @@ export enum ViewMode {
   TRACKING = 'TRACKING',
   PLAYCANVAS = 'PLAYCANVAS',
   LEGACY_SYSTEM = 'LEGACY_SYSTEM',
+  OS_REPORT = 'OS_REPORT',
 }
 
 export enum ToolMode {

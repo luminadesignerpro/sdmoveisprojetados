@@ -19,6 +19,7 @@ import PromobEditor from '@/components/promob/PromobEditor';
 import SuppliersPage from '@/components/modules/SuppliersPage';
 import ProductsPage from '@/components/modules/ProductsPage';
 import ServiceOrdersPage from '@/components/modules/ServiceOrdersPage';
+import OSReportPage from '@/components/modules/OSReportPage';
 import LegacySystemPage from '@/components/modules/LegacySystemPage';
 import CashRegisterPage from '@/components/modules/CashRegisterPage';
 import AccountsPage from '@/components/modules/AccountsPage';
@@ -491,6 +492,7 @@ const App: React.FC = () => {
                 <NavIcon icon="building" label="Fornecedores" active={view === ViewMode.SUPPLIERS} onClick={() => setView(ViewMode.SUPPLIERS)} />
                 <NavIcon icon="package" label="Estoque" active={view === ViewMode.PRODUCTS} onClick={() => setView(ViewMode.PRODUCTS)} />
                 <NavIcon icon="clipboard-list" label="OS" active={view === ViewMode.SERVICE_ORDERS} onClick={() => setView(ViewMode.SERVICE_ORDERS)} />
+                <NavIcon icon="file-text" label="Relatório OS" active={view === ViewMode.OS_REPORT} onClick={() => setView(ViewMode.OS_REPORT)} />
                 <NavIcon icon="laptop" label="OS Clássica" active={view === ViewMode.LEGACY_SYSTEM} onClick={() => setView(ViewMode.LEGACY_SYSTEM)} />
                 <NavIcon icon="banknote" label="Caixa" active={view === ViewMode.CASH_REGISTER} onClick={() => setView(ViewMode.CASH_REGISTER)} />
                 <NavIcon icon="trending-down" label="A Pagar" active={view === ViewMode.ACCOUNTS_PAYABLE} onClick={() => setView(ViewMode.ACCOUNTS_PAYABLE)} />
@@ -899,6 +901,8 @@ const App: React.FC = () => {
           {view === ViewMode.SUPPLIERS && authState === 'ADMIN' && <SuppliersPage />}
           {view === ViewMode.PRODUCTS && authState === 'ADMIN' && <ProductsPage />}
           {view === ViewMode.SERVICE_ORDERS && authState === 'ADMIN' && <ServiceOrdersPage />}
+          {view === ViewMode.OS_REPORT && authState === 'ADMIN' && <OSReportPage />}
+          {view === ViewMode.LEGACY_SYSTEM && authState === 'ADMIN' && <LegacySystemPage />}
           {view === ViewMode.CASH_REGISTER && authState === 'ADMIN' && <CashRegisterPage />}
           {view === ViewMode.ACCOUNTS_PAYABLE && authState === 'ADMIN' && <AccountsPage type="payable" />}
           {view === ViewMode.ACCOUNTS_RECEIVABLE && authState === 'ADMIN' && <AccountsPage type="receivable" />}
