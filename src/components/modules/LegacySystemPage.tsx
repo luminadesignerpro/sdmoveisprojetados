@@ -99,8 +99,9 @@ const LegacySystemPage: React.FC = () => {
   const [showOSSearchModal, setShowOSSearchModal] = useState(false);
   const [osSearchStr, setOsSearchStr] = useState('');
   const [searchFolder, setSearchFolder] = useState<'todos' | 'os' | 'orcamento'>('todos');
-  const [productsList, setProductsList] = useState<any[]>([]);
   const [osList, setOsList] = useState<any[]>([]);
+  const osSearchOsCount = osList.filter(o => (o?.description || '').toUpperCase().includes('ORDEM DE SERVIÇO')).length;
+  const osSearchOrcCount = osList.filter(o => (o?.description || '').toUpperCase().includes('ORÇAMENTO')).length;
 
   // ── product registration modal (Cadastro de Produtos de Venda) ─────────────
   const [showProductRegistrationModal, setShowProductRegistrationModal] = useState(false);
@@ -1661,10 +1662,7 @@ const LegacySystemPage: React.FC = () => {
       )}
 
       {/* ── NEW: OS Search Modal ──────────────────────────────────────────── */}
-      {showOSSearchModal && (() => {
-        const osCount = osList.filter(o => (o?.description || '').toUpperCase().includes('ORDEM DE SERVIÇO')).length;
-        const orcCount = osList.filter(o => (o?.description || '').toUpperCase().includes('ORÇAMENTO')).length;
-        return (
+      {showOSSearchModal && (
         <div className="legacy-modal-scope fixed inset-0 z-[90] bg-black/50 flex items-center justify-center p-4">
           <div className="bg-white border border-gray-400 rounded shadow-lg w-full max-w-6xl flex flex-col" style={{ fontFamily: 'Tahoma,Arial,sans-serif', fontSize: 11, height: '90vh', color: '#000' }}>
             <div className="bg-[#dde] px-3 py-2 flex items-center justify-between border-b border-gray-400">
@@ -1683,7 +1681,7 @@ const LegacySystemPage: React.FC = () => {
                   }`}
                   onClick={() => setSearchFolder('os')}
                 >
-                  <ClipboardList size={13} /> 📁 Pasta: Ordens de Serviço ({osCount})
+                  <ClipboardList size={13} /> 📁 Pasta: Ordens de Serviço ({osSearchOsCount})
                 </button>
 
                 <button
@@ -1694,7 +1692,7 @@ const LegacySystemPage: React.FC = () => {
                   }`}
                   onClick={() => setSearchFolder('orcamento')}
                 >
-                  <FileText size={13} /> 📁 Pasta: Orçamentos ({orcCount})
+                  <FileText size={13} /> 📁 Pasta: Orçamentos ({osSearchOrcCount})
                 </button>
 
                 <button
@@ -1845,12 +1843,6 @@ const LegacySystemPage: React.FC = () => {
                     </tbody>
                   </table>
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        );
-      })()}
 
                 <div className="bg-[#f0f0f0] border-t border-gray-400 p-2 flex justify-between items-center text-[10px]">
                   <div className="flex gap-2">
@@ -1864,8 +1856,8 @@ const LegacySystemPage: React.FC = () => {
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-right">
-                      <span className="legacy-label text-[10px] block mb-0">VALOR TOTAL</span>
-                      <span className="font-bold text-blue-700 text-sm">160.199,07</span>
+                      <span className="legacy-label text-[10px] block mb-0">TOTAL REGISTROS</span>
+                      <span className="font-bold text-blue-700 text-sm">{osList.length}</span>
                     </div>
                     <span className="text-gray-500 font-bold ml-4">System</span>
                   </div>
