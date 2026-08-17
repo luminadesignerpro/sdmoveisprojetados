@@ -6,7 +6,8 @@ import {
   Building, Plus, Search, Edit, Trash2, Phone, Mail, 
   TrendingDown, DollarSign, Award, CheckCircle2,
   BarChart3, ShoppingBag, Tag, Maximize2, ClipboardList,
-  Printer, ShoppingCart, CheckSquare, Sparkles, Camera, Eye, X, Loader2
+  Printer, ShoppingCart, CheckSquare, Sparkles, Camera, Eye, X, Loader2,
+  FileSpreadsheet, UploadCloud
 } from 'lucide-react';
 
 const db = supabase as any;
@@ -108,6 +109,7 @@ const SuppliersPage: React.FC = () => {
 
   // Photo & AI Extraction State
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const batchFileInputRef = useRef<HTMLInputElement>(null);
   const [analyzingImage, setAnalyzingImage] = useState(false);
 
   // New Product Modal State
@@ -185,7 +187,7 @@ const SuppliersPage: React.FC = () => {
 
   useEffect(() => { fetchSuppliers(); }, []);
 
-  // ─── Camera / AI Image Processing ─────────────────────────────────────────
+  // ─── Camera / AI Single Image Processing ──────────────────────────────────
   const handleCapturePhoto = async (e: React.ChangeEvent<HTMLInputElement>, targetForm: 'prod' | 'quote' | 'newMat') => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -257,6 +259,113 @@ Extraia e retorne EXATAMENTE um JSON válido neste formato:
         if (targetForm === 'quote') setQuoteForm(prev => ({ ...prev, photoUrl: base64 }));
         if (targetForm === 'newMat') setNewMatForm(prev => ({ ...prev, photoUrl: base64 }));
         toast({ title: '📸 Foto anexada com sucesso!' });
+      } finally {
+        setAnalyzingImage(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // ─── Camera / AI Batch Budget Scan Processing ────────────────────────────
+  const handleImportBatchFromBudgetPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setAnalyzingImage(true);
+    toast({ 
+      title: '🤖 Lendo Folha de Orçamento com IA...', 
+      description: 'Processando todos os produtos, quantidades e valores impressos na folha...' 
+    });
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64 = reader.result as string;
+
+      try {
+        const prompt = `Analise esta foto de uma folha de orçamento, pedido de compra ou nota fiscal de materiais de marcenaria.
+Identifique o Nome do Fornecedor ou Cliente se constar, e extraia TODOS os itens/produtos listados com suas respectivas quantidades e valores unitários.
+
+Retorne EXATAMENTE um JSON válido com esta estrutura:
+{
+  "supplierName": "Nome do fornecedor ou cliente encontrado ou 'Orçamento Lido via Foto'",
+  "items": [
+    {
+      "productName": "Nome do produto/material ex: MDF 15 2F BRANCO TX",
+      "category": "MDF/MDP ou Ferragens ou Acessórios ou Outros",
+      "brand": "Marca se houver ou Geral",
+      "unitPrice": 259.64,
+      "quantity": 9
+    }
+  ]
+}`;
+
+        const aiResponse = await analyzeImageWithGemini(base64, prompt);
+        let parsedData: any = {};
+        try {
+          const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            parsedData = JSON.parse(jsonMatch[0]);
+          }
+        } catch (err) {
+          console.warn("Parse error em lote:", aiResponse);
+        }
+
+        if (parsedData && Array.isArray(parsedData.items) && parsedData.items.length > 0) {
+          const suppName = parsedData.supplierName || 'Orçamento Importado';
+          
+          let newComparisons = [...comparisons];
+          let importedCount = 0;
+
+          parsedData.items.forEach((it: any) => {
+            if (!it.productName) return;
+            importedCount++;
+
+            const unitVal = parseFloat(String(it.unitPrice).replace(',', '.')) || 0;
+
+            const existingIndex = newComparisons.findIndex(c => 
+              c.productName.toLowerCase().trim() === it.productName.toLowerCase().trim()
+            );
+
+            const quote: PriceQuote = {
+              supplierId: Date.now().toString() + Math.random().toString().slice(2, 6),
+              supplierName: suppName,
+              brand: it.brand || 'Geral',
+              pricePerM2: null,
+              unitPrice: unitVal,
+              price: unitVal,
+              updatedAt: new Date().toISOString().split('T')[0],
+              specifications: `Importado de foto de orçamento. Qtd registrada na nota: ${it.quantity || 1}`
+            };
+
+            if (existingIndex >= 0) {
+              const existingQuotes = newComparisons[existingIndex].quotes.filter(q => q.supplierName.toLowerCase() !== suppName.toLowerCase());
+              newComparisons[existingIndex] = {
+                ...newComparisons[existingIndex],
+                quotes: [...existingQuotes, quote]
+              };
+            } else {
+              newComparisons.unshift({
+                id: Date.now().toString() + Math.random().toString().slice(2, 6),
+                productName: it.productName.trim(),
+                category: it.category || 'MDF/MDP',
+                unit: 'Un',
+                quotes: [quote]
+              });
+            }
+          });
+
+          setComparisons(newComparisons);
+          toast({ 
+            title: `🎉 ${importedCount} produtos extraídos da foto!`, 
+            description: `Todos os itens e preços do orçamento foram cadastrados e comparados no sistema!` 
+          });
+        } else {
+          toast({ title: '⚠️ Não foi possível extrair a lista de produtos da foto', variant: 'destructive' });
+        }
+
+      } catch (err) {
+        console.error("Erro na leitura de lote:", err);
+        toast({ title: '❌ Erro ao processar a imagem com a IA', variant: 'destructive' });
       } finally {
         setAnalyzingImage(false);
       }
@@ -696,14 +805,28 @@ Extraia e retorne EXATAMENTE um JSON válido neste formato:
   return (
     <div className="p-4 sm:p-8 space-y-6 overflow-auto h-full bg-[#0f0f0f] relative w-full pt-16">
       
-      {/* Hidden File Input for Camera/Upload */}
+      {/* Hidden File Input for Batch Orçamento Photo Scan */}
       <input 
         type="file" 
-        ref={fileInputRef} 
+        ref={batchFileInputRef} 
         accept="image/*" 
         capture="environment" 
+        onChange={handleImportBatchFromBudgetPhoto}
         className="hidden" 
       />
+
+      {/* AI Processing Overlay */}
+      {analyzingImage && (
+        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex flex-col items-center justify-center text-white space-y-4 p-6">
+          <div className="w-16 h-16 rounded-full bg-purple-600/20 border-2 border-purple-500 flex items-center justify-center animate-pulse">
+            <Loader2 className="w-8 h-8 text-purple-400 animate-spin" />
+          </div>
+          <h2 className="text-xl font-bold text-purple-300">🤖 Inteligência Artificial Analisando Imagem...</h2>
+          <p className="text-sm text-gray-400 text-center max-w-md">
+            Extraindo nomes de produtos, especificações, quantidades e preços do orçamento/etiqueta. Por favor, aguarde alguns segundos!
+          </p>
+        </div>
+      )}
 
       {/* Header */}
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -726,12 +849,22 @@ Extraia e retorne EXATAMENTE um JSON válido neste formato:
         )}
 
         {activeTab === 'comparison' && (
-          <button 
-            onClick={() => setShowProdForm(true)} 
-            className="bg-emerald-600 text-white px-6 py-3 rounded-2xl font-bold hover:bg-emerald-700 transition-colors flex items-center gap-2 shadow-lg shrink-0 w-full sm:w-auto justify-center"
-          >
-            <Plus className="w-5 h-5" /> Adicionar Produto ao Comparativo
-          </button>
+          <div className="flex gap-2 flex-wrap w-full sm:w-auto">
+            <button 
+              onClick={() => batchFileInputRef.current?.click()}
+              className="bg-purple-600 text-white px-5 py-3 rounded-2xl font-bold hover:bg-purple-700 transition-colors flex items-center gap-2 shadow-lg flex-1 sm:flex-none justify-center text-sm"
+              title="Tire foto de uma folha de orçamento/nota impressa e importe todos os itens de uma vez"
+            >
+              <Camera className="w-5 h-5" /> 📸 Importar Orçamento/Nota em Foto (IA)
+            </button>
+
+            <button 
+              onClick={() => setShowProdForm(true)} 
+              className="bg-emerald-600 text-white px-5 py-3 rounded-2xl font-bold hover:bg-emerald-700 transition-colors flex items-center gap-2 shadow-lg flex-1 sm:flex-none justify-center text-sm"
+            >
+              <Plus className="w-5 h-5" /> Adicionar Produto ao Comparativo
+            </button>
+          </div>
         )}
 
         {activeTab === 'material_list' && (
@@ -912,6 +1045,28 @@ Extraia e retorne EXATAMENTE um JSON válido neste formato:
             </div>
           </div>
 
+          {/* Banner Promocional IA Import Batch */}
+          <div className="bg-gradient-to-r from-purple-900/40 via-purple-950/60 to-indigo-900/40 border border-purple-500/30 p-4 rounded-3xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-xl">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-300 shrink-0">
+                <Sparkles className="w-6 h-6 animate-pulse" />
+              </div>
+              <div>
+                <h3 className="font-bold text-white text-base">Importação Inteligente de Orçamentos por Foto</h3>
+                <p className="text-xs text-purple-200/80">
+                  Tire foto de uma folha de orçamento inteira ou nota impressa. A Inteligência Artificial lê **todos os produtos, quantidades e preços** e cadastra direto no comparativo!
+                </p>
+              </div>
+            </div>
+
+            <button 
+              onClick={() => batchFileInputRef.current?.click()}
+              className="bg-purple-600 hover:bg-purple-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-lg shrink-0 transition-all"
+            >
+              <Camera className="w-4 h-4" /> 📸 Tirar Foto do Orçamento Inteiro
+            </button>
+          </div>
+
           {/* Search Bar */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="relative max-w-md w-full">
@@ -1058,7 +1213,7 @@ Extraia e retorne EXATAMENTE um JSON válido neste formato:
             </div>
           )}
 
-          {/* Form Modal: Add Quote to Existing Product (With Camera Button) */}
+          {/* Form Modal: Add Quote to Existing Product */}
           {quoteModalProdId && (
             <div className="bg-[#111111] border border-amber-500/30 rounded-3xl p-6 shadow-2xl space-y-4 text-white max-w-xl mx-auto">
               <div className="flex justify-between items-center border-b border-white/10 pb-3">
@@ -1458,7 +1613,7 @@ Extraia e retorne EXATAMENTE um JSON válido neste formato:
                 </div>
               )}
 
-              {/* MODE 2: CREATE & ADD NEW PRODUCT DIRECTLY (WITH CAMERA) */}
+              {/* MODE 2: CREATE & ADD NEW PRODUCT DIRECTLY */}
               {addMatMode === 'new' && (
                 <div className="space-y-4 bg-[#181818] p-4 rounded-2xl border border-emerald-500/30">
                   <div className="flex justify-between items-center border-b border-white/10 pb-2">
