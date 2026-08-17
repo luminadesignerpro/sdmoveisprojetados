@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 import {
   Users, Search, Printer, Save, CheckSquare, Calculator,
   CreditCard, X, Plus, Trash2, Edit, Camera, Image as ImageIcon,
-  LogOut, FileText, RefreshCw,
+  LogOut, FileText, RefreshCw, MessageCircle
 } from 'lucide-react';
 
 const db = supabase as any;
@@ -214,6 +214,16 @@ const LegacySystemPage: React.FC = () => {
       document.body.style.overflow = originalOverflow;
     };
   }, []);
+
+  const handleWhatsApp = () => {
+    const number = phone.replace(/\D/g, '');
+    if (!number) {
+      toast({ title: '⚠️ Adicione um telefone válido para enviar WhatsApp', variant: 'destructive' });
+      return;
+    }
+    const text = `Olá${contactName ? ' ' + contactName : ''}, segue a confirmação do seu ${isOrcamento ? 'Orçamento' : 'Pedido de Serviço'} Nº ${orderNo} no valor de R$ ${fmtMoney(total)}.`;
+    window.open(`https://wa.me/55${number}?text=${encodeURIComponent(text)}`, '_blank');
+  };
 
   // ─── Save to DB ────────────────────────────────────────────────────────────
   const handleSave = async (itemsOverride?: OSItem[]) => {
@@ -2400,6 +2410,10 @@ const LegacySystemPage: React.FC = () => {
             <button className="legacy-button h-10" onClick={handleFinalizar}>
               <CheckSquare size={16} className="text-green-600" />
               <span className="font-bold">FINALIZAR</span>
+            </button>
+            <button className="legacy-button h-10 col-span-3 mt-1 bg-green-50 border border-green-300 hover:bg-green-100" onClick={handleWhatsApp}>
+              <MessageCircle size={16} className="text-green-600" />
+              <span className="font-bold text-green-700">ENVIAR WHATSAPP</span>
             </button>
           </div>
 
