@@ -1057,7 +1057,7 @@ const LegacySystemPage: React.FC = () => {
                   setShowCalc(false);
                 }}
               >
-                → Usar no Frete
+                Usar no Frete
               </button>
             </div>
           </div>
@@ -1750,7 +1750,7 @@ const LegacySystemPage: React.FC = () => {
                         <th>Outros</th>
                         <th>Desconto</th>
                         <th>TOTAL</th>
-                        <th>Situação Atual -&gt;</th>
+                        <th>Situação Atual</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -2021,19 +2021,19 @@ const LegacySystemPage: React.FC = () => {
         <div>
           <div className="legacy-tab-bar">
             <div className={`legacy-tab ${activeTab === 'obs' ? 'active' : ''}`} onClick={() => setActiveTab('obs')}>
-              Observações Gerais do Serviço -&gt;
+              Observações Gerais do Serviço
             </div>
             <div className={`legacy-tab ${activeTab === 'produtos' ? 'active' : ''}`} onClick={() => setActiveTab('produtos')}>
-              Lista de Produtos e Serviços -&gt;
+              Lista de Produtos e Serviços
             </div>
             <div className={`legacy-tab ${activeTab === 'imagens' ? 'active' : ''}`} onClick={() => setActiveTab('imagens')}>
-              Imagens do Trabalho / Serviço -&gt;
+              Imagens do Trabalho / Serviço
             </div>
             <div className={`legacy-tab ${activeTab === 'controle' ? 'active' : ''}`} onClick={() => setActiveTab('controle')}>
               Informações de Controle Interno / Registros Diversos
             </div>
             <div className={`legacy-tab ${activeTab === 'taxa' ? 'active' : ''}`} onClick={() => setActiveTab('taxa')}>
-              Taxa / Acréscimo (%) -&gt;
+              Taxa / Acréscimo (%)
             </div>
             <div className="ml-auto">
               <button className="text-gray-500 font-bold border border-gray-400 px-2 rounded-sm text-xs bg-gray-200">?</button>
