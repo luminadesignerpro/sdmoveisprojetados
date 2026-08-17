@@ -64,19 +64,19 @@ export const NavIcon: React.FC<NavIconProps> = ({ icon, label, active, onClick, 
     <button
       onClick={onClick}
       className={cn(
-        "group flex flex-col items-center gap-0.5 sm:gap-1 py-2 sm:py-3 px-1.5 sm:px-2 rounded-xl transition-all duration-300 flex-shrink-0",
+        "group flex flex-col items-center justify-center gap-0.5 py-1 px-1.5 rounded-xl transition-all duration-300 flex-shrink-0 min-w-[52px]",
         active
-          ? "text-primary"
-          : "text-sidebar-foreground/75 hover:text-sidebar-foreground"
+          ? "text-amber-400"
+          : "text-gray-400 hover:text-white"
       )}
       style={{ perspective: "600px" }}
     >
       <div
         className={cn(
-          "w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-2xl flex items-center justify-center transition-all duration-300 ease-out",
+          "w-8 h-8 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl flex items-center justify-center transition-all duration-300 ease-out",
           active
-            ? "bg-primary text-primary-foreground shadow-glow"
-            : "bg-sidebar-accent/40 backdrop-blur-sm border border-sidebar-border/30 group-hover:bg-sidebar-accent/70 group-hover:border-primary/30 group-hover:shadow-[0_0_15px_hsl(var(--primary)/0.2)]"
+            ? "bg-gradient-to-br from-amber-400 to-amber-600 text-black shadow-lg shadow-amber-500/30 scale-105"
+            : "bg-white/5 border border-white/10 group-hover:bg-white/10 group-hover:border-amber-500/30"
         )}
         style={{
           transformStyle: "preserve-3d",
@@ -85,9 +85,9 @@ export const NavIcon: React.FC<NavIconProps> = ({ icon, label, active, onClick, 
       >
         <IconComponent
           className={cn(
-            "w-3.5 h-3.5 sm:w-5 sm:h-5 transition-all duration-300 ease-out",
+            "w-4 h-4 sm:w-5 sm:h-5 transition-all duration-300 ease-out",
             "group-hover:scale-110",
-            active && "drop-shadow-[0_0_6px_hsl(var(--primary-foreground)/0.5)]"
+            active ? "text-black drop-shadow-sm font-bold" : "text-gray-300 group-hover:text-amber-400"
           )}
           style={{
             transition: "transform 0.3s cubic-bezier(0.23, 1, 0.32, 1)",
@@ -95,8 +95,8 @@ export const NavIcon: React.FC<NavIconProps> = ({ icon, label, active, onClick, 
         />
       </div>
       <span className={cn(
-        "text-[7px] sm:text-[9px] font-bold uppercase tracking-tighter sm:tracking-wider transition-all duration-300 text-center leading-[1.1] max-w-[60px] sm:max-w-none break-words line-clamp-2",
-        active ? "text-primary" : "text-sidebar-foreground/75 group-hover:text-sidebar-foreground"
+        "text-[8px] sm:text-[9px] font-bold uppercase tracking-tight transition-all duration-300 text-center leading-tight whitespace-nowrap max-w-[64px] truncate",
+        active ? "text-amber-400" : "text-gray-400 group-hover:text-gray-200"
       )}>
         {label}
       </span>

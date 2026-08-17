@@ -1144,125 +1144,162 @@ const ServiceOrdersPage: React.FC = () => {
         </div>
       )}
 
-      {/* Table */}
-      <div className="bg-[#111111] border border-white/10 rounded-3xl shadow-xl overflow-x-auto text-white">
-        <table className="w-full min-w-[900px]">
-          <thead className="bg-[#1a1a1a] border-b border-white/10">
-            <tr>
-              <th className="text-left p-4 text-xs font-black text-gray-400 uppercase">OS #</th>
-              <th className="text-left p-4 text-xs font-black text-gray-400 uppercase">Cliente</th>
-              <th className="text-left p-4 text-xs font-black text-gray-400 uppercase">Contato</th>
-              <th className="text-left p-4 text-xs font-black text-gray-400 uppercase">Responsável</th>
-              <th className="text-left p-4 text-xs font-black text-gray-400 uppercase">Descrição</th>
-              <th className="text-left p-4 text-xs font-black text-gray-400 uppercase">Prioridade</th>
-              <th className="text-left p-4 text-xs font-black text-gray-400 uppercase">Status</th>
-              <th className="text-left p-4 text-xs font-black text-gray-400 uppercase">Previsto</th>
-              <th className="text-left p-4 text-xs font-black text-gray-400 uppercase">Valor</th>
-              <th className="text-left p-4 text-xs font-black text-gray-400 uppercase">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map(o => (
-              <tr key={o.id} className="border-t border-white/5 hover:bg-white/5 transition-colors">
-                <td className="p-4 font-bold text-white">#{o.order_number}</td>
-                <td className="p-4">
-                  <div className="font-bold text-white">{o.clients?.name || o.client_name || '-'}</div>
-                  {(o.clients?.address || o.client_address) && (
-                    <div className="text-[10px] text-gray-500 leading-tight max-w-[140px] truncate flex items-center gap-1 mt-0.5">
-                      <MapPin className="w-2.5 h-2.5 text-red-400 flex-shrink-0" />
-                      {o.clients?.address || o.client_address}
-                    </div>
-                  )}
-                </td>
-                <td className="p-4">
-                  {(o.clients?.phone || o.client_phone) && (
-                    <p className="text-sm text-gray-400 flex items-center gap-1"><Phone className="w-3 h-3 text-green-500" /> {o.clients?.phone || o.client_phone}</p>
-                  )}
-                </td>
-                <td className="p-4 text-gray-400 text-sm">{o.employees?.name || <span className="text-gray-600 italic">Não atribuído</span>}</td>
-                <td className="p-4 text-gray-400 text-sm max-w-xs truncate">{o.description || '-'}</td>
-                <td className="p-4"><span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${priorityColors[o.priority] || ''}`}>{priorityLabels[o.priority] || o.priority}</span></td>
-                <td className="p-4"><span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusColors[o.status] || ''}`}>{statusLabels[o.status] || o.status}</span></td>
-                <td className="p-4 text-xs text-gray-400">
-                  {o.estimated_date
-                    ? format(new Date(o.estimated_date), 'dd/MM/yyyy')
-                    : <span className="text-gray-600">—</span>}
-                </td>
-                <td className="p-4 font-bold text-white">R$ {(o.total_value || 0).toLocaleString('pt-BR')}</td>
-                <td className="p-4">
-                  <div className="flex gap-2">
-                    <button onClick={() => setSelectedOrder(o)}
-                      className="w-9 h-9 bg-white/5 border border-white/5 rounded-xl flex items-center justify-center text-gray-400 hover:text-amber-500 hover:bg-amber-900/20 transition-all" title="Ver detalhes">
-                      <Eye className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => handleWhatsAppShare(o)}
-                      className="w-9 h-9 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all shadow-lg shadow-emerald-500/10" title="Mandar texto via WhatsApp">
-                      <MessageCircle className="w-4 h-4" />
-                    </button>
-                    {o.pdf_url && (
-                      <button onClick={async () => {
-                        const phone = o.clients?.phone || o.client_phone;
-                        if (!phone) {
-                          toast({ title: '⚠️ Cliente sem telefone', variant: 'destructive' });
-                          return;
-                        }
-                        
-                        const cleanPhone = phone.replace(/\D/g, '');
-                        const target = cleanPhone.length > 11 ? cleanPhone : '55' + cleanPhone;
-                        
-                        try {
-                          toast({ title: '⏳ Enviando PDF...', description: 'Aguarde um momento.' });
-                          const { data: conv } = await db.from('whatsapp_conversations').select('id').eq('phone_number', target).maybeSingle();
-                          
-                          let convId = conv?.id;
-                          if (!convId) {
-                             const { data: newConv } = await db.from('whatsapp_conversations').insert({ 
-                               phone_number: target, 
-                               contact_name: o.clients?.name || o.client_name 
-                             }).select('id').single();
-                             convId = newConv.id;
-                          }
+      {/* Table & Horizontal Scroll Controls */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between px-2 text-xs text-gray-400">
+          <span className="flex items-center gap-1.5 font-medium">
+            <span className="inline-block w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+            ↔ Deslize para o lado para ver todas as colunas e ações
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                const el = document.getElementById('os-table-container');
+                if (el) el.scrollBy({ left: -300, behavior: 'smooth' });
+              }}
+              className="px-3 py-1.5 bg-[#1a1a1a] hover:bg-amber-500/20 hover:text-amber-400 border border-white/10 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all"
+              title="Rolar para a esquerda"
+            >
+              ◀ Esquerda
+            </button>
+            <button
+              onClick={() => {
+                const el = document.getElementById('os-table-container');
+                if (el) el.scrollBy({ left: 300, behavior: 'smooth' });
+              }}
+              className="px-3 py-1.5 bg-[#1a1a1a] hover:bg-amber-500/20 hover:text-amber-400 border border-white/10 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all"
+              title="Rolar para a direita"
+            >
+              Direita ▶
+            </button>
+          </div>
+        </div>
 
-                          const res = await supabase.functions.invoke('whatsapp-send', {
-                            body: { 
-                              conversationId: convId, 
-                              message: `Segue o PDF da OS #${o.order_number}: *${o.description}*`,
-                              mediaUrl: o.pdf_url,
-                              fileName: `OS_${o.order_number}.pdf`
-                            }
-                          });
-
-                          if (res.error) throw res.error;
-                          toast({ title: '✅ PDF Enviado!', description: 'A OS foi enviada para o WhatsApp do cliente.' });
-                        } catch (e: any) {
-                          toast({ title: '❌ Erro ao enviar', description: e.message, variant: 'destructive' });
-                        }
-                      }}
-                        className="w-9 h-9 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-center text-amber-500 hover:bg-amber-500 hover:text-white transition-all shadow-lg shadow-amber-500/10" title="Enviar PDF p/ WhatsApp">
-                        <FileDown className="w-4 h-4" />
-                      </button>
-                    )}
-                    <button onClick={() => openForm(o)} disabled={formLoading}
-                      className="w-9 h-9 bg-white/5 border border-white/5 rounded-xl flex items-center justify-center hover:bg-white/10 hover:border-amber-500/30 transition-all text-gray-400 hover:text-blue-400 disabled:opacity-50 disabled:cursor-wait" title="Editar">
-                      {formLoading ? (
-                        <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
-                      ) : (
-                        <Edit className="w-4 h-4" />
-                      )}
-                    </button>
-                    <button onClick={() => handleDelete(o.id)}
-                      className="w-9 h-9 bg-white/5 border border-white/5 rounded-xl flex items-center justify-center text-gray-400 hover:text-red-400 hover:bg-red-900/20 transition-all" title="Excluir">
-                      <Trash className="w-4 h-4" />
-                    </button>
-                  </div>
-                </td>
+        <div
+          id="os-table-container"
+          className="bg-[#111111] border border-white/10 rounded-3xl shadow-xl overflow-x-auto text-white scrollbar-thin scrollbar-thumb-amber-500/40 w-full block touch-pan-x"
+          style={{ WebkitOverflowScrolling: 'touch', overscrollBehaviorX: 'contain' }}
+        >
+          <table className="w-full min-w-[1050px]">
+            <thead className="bg-[#1a1a1a] border-b border-white/10 sticky top-0 z-10">
+              <tr>
+                <th className="text-left p-4 text-xs font-black text-gray-400 uppercase">OS #</th>
+                <th className="text-left p-4 text-xs font-black text-gray-400 uppercase">Cliente</th>
+                <th className="text-left p-4 text-xs font-black text-gray-400 uppercase">Contato</th>
+                <th className="text-left p-4 text-xs font-black text-gray-400 uppercase">Responsável</th>
+                <th className="text-left p-4 text-xs font-black text-gray-400 uppercase">Descrição</th>
+                <th className="text-left p-4 text-xs font-black text-gray-400 uppercase">Prioridade</th>
+                <th className="text-left p-4 text-xs font-black text-gray-400 uppercase">Status</th>
+                <th className="text-left p-4 text-xs font-black text-gray-400 uppercase">Previsto</th>
+                <th className="text-left p-4 text-xs font-black text-gray-400 uppercase">Valor</th>
+                <th className="text-left p-4 text-xs font-black text-gray-400 uppercase sticky right-0 bg-[#1a1a1a] shadow-[-6px_0_12px_rgba(0,0,0,0.5)]">Ações</th>
               </tr>
-            ))}
-            {filtered.length === 0 && (
-              <tr><td colSpan={10} className="p-8 text-center text-gray-500">{loading ? 'Carregando...' : 'Nenhuma OS encontrada'}</td></tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filtered.map(o => (
+                <tr key={o.id} className="border-t border-white/5 hover:bg-white/5 transition-colors">
+                  <td className="p-4 font-bold text-white whitespace-nowrap">#{o.order_number}</td>
+                  <td className="p-4 min-w-[180px]">
+                    <div className="font-bold text-white">{o.clients?.name || o.client_name || '-'}</div>
+                    {(o.clients?.address || o.client_address) && (
+                      <div className="text-[10px] text-gray-500 leading-tight max-w-[180px] truncate flex items-center gap-1 mt-0.5" title={o.clients?.address || o.client_address}>
+                        <MapPin className="w-2.5 h-2.5 text-red-400 flex-shrink-0" />
+                        {o.clients?.address || o.client_address}
+                      </div>
+                    )}
+                  </td>
+                  <td className="p-4 whitespace-nowrap">
+                    {(o.clients?.phone || o.client_phone) ? (
+                      <p className="text-sm text-gray-400 flex items-center gap-1"><Phone className="w-3 h-3 text-green-500" /> {o.clients?.phone || o.client_phone}</p>
+                    ) : (
+                      <span className="text-xs text-gray-600">—</span>
+                    )}
+                  </td>
+                  <td className="p-4 text-gray-400 text-sm whitespace-nowrap">{o.employees?.name || <span className="text-gray-600 italic">Não atribuído</span>}</td>
+                  <td className="p-4 text-gray-400 text-sm max-w-xs min-w-[200px] truncate" title={o.description}>{o.description || '-'}</td>
+                  <td className="p-4 whitespace-nowrap"><span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${priorityColors[o.priority] || ''}`}>{priorityLabels[o.priority] || o.priority}</span></td>
+                  <td className="p-4 whitespace-nowrap"><span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusColors[o.status] || ''}`}>{statusLabels[o.status] || o.status}</span></td>
+                  <td className="p-4 text-xs text-gray-400 whitespace-nowrap">
+                    {o.estimated_date
+                      ? format(new Date(o.estimated_date), 'dd/MM/yyyy')
+                      : <span className="text-gray-600">—</span>}
+                  </td>
+                  <td className="p-4 font-bold text-amber-400 whitespace-nowrap">R$ {(o.total_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                  <td className="p-4 sticky right-0 bg-[#111111] shadow-[-6px_0_12px_rgba(0,0,0,0.5)]">
+                    <div className="flex gap-2 items-center">
+                      <button onClick={() => setSelectedOrder(o)}
+                        className="w-9 h-9 bg-white/5 border border-white/5 rounded-xl flex items-center justify-center text-gray-400 hover:text-amber-500 hover:bg-amber-900/20 transition-all" title="Ver detalhes">
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => handleWhatsAppShare(o)}
+                        className="w-9 h-9 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all shadow-lg shadow-emerald-500/10" title="Mandar texto via WhatsApp">
+                        <MessageCircle className="w-4 h-4" />
+                      </button>
+                      {o.pdf_url && (
+                        <button onClick={async () => {
+                          const phone = o.clients?.phone || o.client_phone;
+                          if (!phone) {
+                            toast({ title: '⚠️ Cliente sem telefone', variant: 'destructive' });
+                            return;
+                          }
+                          
+                          const cleanPhone = phone.replace(/\D/g, '');
+                          const target = cleanPhone.length > 11 ? cleanPhone : '55' + cleanPhone;
+                          
+                          try {
+                            toast({ title: '⏳ Enviando PDF...', description: 'Aguarde um momento.' });
+                            const { data: conv } = await db.from('whatsapp_conversations').select('id').eq('phone_number', target).maybeSingle();
+                            
+                            let convId = conv?.id;
+                            if (!convId) {
+                               const { data: newConv } = await db.from('whatsapp_conversations').insert({ 
+                                 phone_number: target, 
+                                 contact_name: o.clients?.name || o.client_name 
+                               }).select('id').single();
+                               convId = newConv.id;
+                            }
+
+                            const res = await supabase.functions.invoke('whatsapp-send', {
+                              body: { 
+                                conversationId: convId, 
+                                message: `Segue o PDF da OS #${o.order_number}: *${o.description}*`,
+                                mediaUrl: o.pdf_url,
+                                fileName: `OS_${o.order_number}.pdf`
+                              }
+                            });
+
+                            if (res.error) throw res.error;
+                            toast({ title: '✅ PDF Enviado!', description: 'A OS foi enviada para o WhatsApp do cliente.' });
+                          } catch (e: any) {
+                            toast({ title: '❌ Erro ao enviar', description: e.message, variant: 'destructive' });
+                          }
+                        }}
+                          className="w-9 h-9 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-center text-amber-500 hover:bg-amber-500 hover:text-white transition-all shadow-lg shadow-amber-500/10" title="Enviar PDF p/ WhatsApp">
+                          <FileDown className="w-4 h-4" />
+                        </button>
+                      )}
+                      <button onClick={() => openForm(o)} disabled={formLoading}
+                        className="w-9 h-9 bg-white/5 border border-white/5 rounded-xl flex items-center justify-center hover:bg-white/10 hover:border-amber-500/30 transition-all text-gray-400 hover:text-blue-400 disabled:opacity-50 disabled:cursor-wait" title="Editar">
+                        {formLoading ? (
+                          <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+                        ) : (
+                          <Edit className="w-4 h-4" />
+                        )}
+                      </button>
+                      <button onClick={() => handleDelete(o.id)}
+                        className="w-9 h-9 bg-white/5 border border-white/5 rounded-xl flex items-center justify-center text-gray-400 hover:text-red-400 hover:bg-red-900/20 transition-all" title="Excluir">
+                        <Trash className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {filtered.length === 0 && (
+                <tr><td colSpan={10} className="p-8 text-center text-gray-500">{loading ? 'Carregando...' : 'Nenhuma OS encontrada'}</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

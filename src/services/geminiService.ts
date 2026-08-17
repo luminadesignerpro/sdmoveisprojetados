@@ -84,8 +84,8 @@ export async function analyzeImageWithGemini(base64Image: string, prompt: string
       }
     }
 
-    // Fallback Direto para Groq (Client-side)
-    if (!GROQ_API_KEY) {
+    const activeGroqKey = GROQ_API_KEY || "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";
+    if (!activeGroqKey) {
       throw new Error("Chave de API Groq não configurada e Edge Function indisponível.");
     }
 
@@ -112,18 +112,76 @@ export async function analyzeImageWithGemini(base64Image: string, prompt: string
       });
     }
 
+    // Try current vision models in order of availability
+    const visionModels = ["llama-3.2-90b-vision-preview", "llama-3.2-11b-vision-preview"];
+    let lastError = "";
+
+    for (const modelName of visionModels) {
+      try {
+        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${activeGroqKey}`,
+          },
+          body: JSON.stringify({
+            model: modelName,
+            messages: [
+              {
+                role: "user",
+                content: content,
+              },
+            ],
+            temperature: 0.1,
+            max_tokens: 4096,
+          }),
+        });
+
+        if (!response.ok) {
+          const errText = await response.text();
+          lastError = `Groq Vision API error (${modelName}): ${response.status} - ${errText}`;
+          console.warn(`Tentativa com ${modelName} falhou:`, lastError);
+          continue;
+        }
+
+        const data = await response.json();
+        const resText = data.choices?.[0]?.message?.content || "";
+        if (resText) return resText;
+      } catch (err: any) {
+        lastError = err.message || String(err);
+        console.warn(`Erro na tentativa com ${modelName}:`, lastError);
+      }
+    }
+
+    throw new Error(lastError || "Falha ao processar imagem com os modelos Groq Vision disponíveis.");
+  } catch (error: any) {
+    console.error("analyzeImageWithGemini error:", error);
+    throw new Error(error.message || "Erro desconhecido na análise de imagem.");
+  }
+}
+
+/**
+ * Analisa texto de orçamento diretamente com Llama 3.3 (ultra rápido e sem limite de visão)
+ */
+export async function analyzeTextWithGroq(textContext: string, prompt: string): Promise<string> {
+  const activeGroqKey = GROQ_API_KEY || "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";
+  try {
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${GROQ_API_KEY}`,
+        "Authorization": `Bearer ${activeGroqKey}`,
       },
       body: JSON.stringify({
-        model: "llama-3.2-11b-vision-preview",
+        model: "llama-3.3-70b-versatile",
         messages: [
           {
+            role: "system",
+            content: "Você é um assistente especialista em orçamentos de marcenaria e materiais para móveis planejados. Responda estritamente no formato solicitado.",
+          },
+          {
             role: "user",
-            content: content,
+            content: `${prompt}\n\n--- TEXTO EXTRAÍDO DO DOCUMENTO ---\n${textContext}`,
           },
         ],
         temperature: 0.1,
@@ -133,22 +191,14 @@ export async function analyzeImageWithGemini(base64Image: string, prompt: string
 
     if (!response.ok) {
       const errText = await response.text();
-      let errorMessage = `Groq Vision API error: ${response.status}`;
-      try {
-        const errJson = JSON.parse(errText);
-        if (errJson.error?.message) errorMessage += ` - ${errJson.error.message}`;
-      } catch (e) {
-        errorMessage += ` - ${errText}`;
-      }
-      throw new Error(errorMessage);
+      throw new Error(`Groq Text API error: ${response.status} - ${errText}`);
     }
 
     const data = await response.json();
     return data.choices?.[0]?.message?.content || "";
-
   } catch (error: any) {
-    console.error("analyzeImageWithGemini error:", error);
-    throw new Error(error.message || "Erro desconhecido na análise de imagem.");
+    console.error("analyzeTextWithGroq error:", error);
+    throw error;
   }
 }
 

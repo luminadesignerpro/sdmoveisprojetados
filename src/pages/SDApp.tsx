@@ -437,22 +437,24 @@ const App: React.FC = () => {
   const inProduction = (contracts || []).filter(c => c?.status === 'producao').length;
 
   return (
-    <div className={`h-screen w-screen flex ${isCompactLayout ? 'flex-col' : 'flex-col sm:flex-row'} bg-background overflow-hidden relative`}>
-      {/* SIDEBAR */}
+    <div className={`h-[100dvh] max-h-[100dvh] w-screen flex ${isCompactLayout ? 'flex-col' : 'flex-col sm:flex-row'} bg-background overflow-hidden relative`}>
+      {/* SIDEBAR / MOBILE BOTTOM BAR */}
       {(authState === 'ADMIN' || authState === 'CLIENT' || authState === 'EMPLOYEE') && (
         <aside
           className={isCompactLayout
-            ? 'order-2 w-full h-auto min-h-[4.5rem] flex items-center gap-0 overflow-x-auto overflow-y-hidden relative z-10 backdrop-blur-xl border-t border-sidebar-border/30 flex-nowrap'
+            ? 'order-2 w-full h-16 min-h-[4rem] max-h-16 flex-shrink-0 flex items-center justify-between px-2 overflow-hidden relative z-40 bg-[#0a0a0a]/98 backdrop-blur-2xl border-t border-amber-500/20 shadow-[0_-6px_25px_rgba(0,0,0,0.85)] flex-nowrap'
             : 'order-none w-24 h-auto flex flex-col items-center py-4 gap-2 min-h-0 overflow-hidden relative z-10 backdrop-blur-xl border-r border-sidebar-border/30'
           }
           style={{
-            background: 'linear-gradient(180deg, hsl(var(--sidebar-background) / 0.95) 0%, hsl(var(--sidebar-background) / 0.98) 100%)',
-            boxShadow: '0 -4px 30px rgba(0,0,0,0.3)',
+            background: isCompactLayout 
+              ? 'linear-gradient(180deg, #0e0e0e 0%, #080808 100%)'
+              : 'linear-gradient(180deg, hsl(var(--sidebar-background) / 0.95) 0%, hsl(var(--sidebar-background) / 0.98) 100%)',
+            boxShadow: isCompactLayout ? '0 -8px 30px rgba(0,0,0,0.85)' : '0 -4px 30px rgba(0,0,0,0.3)',
             ...(isCompactLayout
               ? {
                 WebkitOverflowScrolling: 'touch',
-                paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 4px)',
-                paddingTop: '4px',
+                paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 4px)',
+                paddingTop: '2px',
               }
               : {}),
           }}
@@ -466,7 +468,7 @@ const App: React.FC = () => {
 
           <nav
             className={isCompactLayout
-              ? 'flex-1 flex items-center justify-start gap-1 px-2 w-full min-w-0 overflow-x-auto overflow-y-hidden flex-nowrap scrollbar-hide touch-pan-x'
+              ? 'flex-1 flex items-center justify-start gap-1.5 px-2 w-full min-w-0 overflow-x-auto overflow-y-hidden flex-nowrap scrollbar-none touch-pan-x overscroll-x-contain'
               : 'flex-1 flex flex-col items-center justify-start gap-2 mt-6 px-0 w-full min-w-0 overflow-x-hidden overflow-y-auto'
             }
             style={isCompactLayout
@@ -476,8 +478,8 @@ const App: React.FC = () => {
                 msOverflowStyle: 'none',
                 touchAction: 'pan-x',
                 overscrollBehaviorX: 'contain',
-                paddingLeft: '12px',
-                paddingRight: '12px',
+                paddingLeft: '8px',
+                paddingRight: '8px',
               }
               : undefined
             }
@@ -586,17 +588,19 @@ const App: React.FC = () => {
 
       {/* WORSHIP PLAYER GLOBAL - Aparece em todas as áreas logadas */}
       {(authState === 'ADMIN' || authState === 'CLIENT' || authState === 'EMPLOYEE') && (
-        <WorshipPlayer
-          currentLouvor={currentLouvor}
-          isPlaying={isPlaying}
-          onPlay={playLouvor}
-          onStop={stopLouvor}
-          onNext={nextLouvor}
-        />
+        <div className="flex-shrink-0 z-30">
+          <WorshipPlayer
+            currentLouvor={currentLouvor}
+            isPlaying={isPlaying}
+            onPlay={playLouvor}
+            onStop={stopLouvor}
+            onNext={nextLouvor}
+          />
+        </div>
       )}
 
       <main
-        className={`flex-1 overflow-x-hidden relative min-w-0 w-full ${isCompactLayout ? 'order-1 h-[calc(100vh-4rem)]' : 'order-none h-screen'} ${view === ViewMode.LEGACY_SYSTEM ? 'overflow-y-hidden' : ''}`}
+        className={`flex-1 min-h-0 overflow-x-hidden overflow-y-auto relative min-w-0 w-full ${isCompactLayout ? 'order-1' : 'order-none h-screen'} ${view === ViewMode.LEGACY_SYSTEM ? 'overflow-y-hidden' : ''}`}
       >
         {/* Animated particle background */}
         {(authState === 'ADMIN' || authState === 'CLIENT' || authState === 'EMPLOYEE') && (

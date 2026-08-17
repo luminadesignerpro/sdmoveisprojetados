@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { analyzeImageWithGemini } from '@/services/geminiService';
+import { analyzeImageWithGemini, analyzeTextWithGroq } from '@/services/geminiService';
 import { 
   Building, Plus, Search, Edit, Trash2, Phone, Mail, 
   TrendingDown, DollarSign, Award, CheckCircle2,
@@ -212,8 +212,8 @@ const SuppliersPage: React.FC = () => {
 
   useEffect(() => { fetchSuppliers(); }, []);
 
-  // ─── PDF Render & Conversion Helper ────────────────────────────────────
-  const convertFileToImageBase64 = async (file: File): Promise<string> => {
+  // ─── PDF Render & Text Extraction Helper ────────────────────────────────────
+  const convertFileToImageAndText = async (file: File): Promise<{ base64Image: string; text: string }> => {
     const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
     
     if (isPdf) {
@@ -238,6 +238,19 @@ const SuppliersPage: React.FC = () => {
         const arrayBuffer = await file.arrayBuffer();
         const loadingTask = window.pdfjsLib.getDocument({ data: arrayBuffer });
         const pdf = await loadingTask.promise;
+        
+        let fullText = '';
+        for (let p = 1; p <= Math.min(pdf.numPages, 5); p++) {
+          try {
+            const pageObj = await pdf.getPage(p);
+            const textContent = await pageObj.getTextContent();
+            const pageStrings = textContent.items.map((it: any) => it.str).filter(Boolean);
+            fullText += `\n--- PÁGINA ${p} ---\n` + pageStrings.join(' ');
+          } catch (e) {
+            console.warn(`Erro ao extrair texto da página ${p}:`, e);
+          }
+        }
+
         const page = await pdf.getPage(1);
         const viewport = page.getViewport({ scale: 2.0 });
 
@@ -247,19 +260,26 @@ const SuppliersPage: React.FC = () => {
         canvas.width = viewport.width;
 
         await page.render({ canvasContext: context, viewport }).promise;
-        return canvas.toDataURL('image/jpeg', 0.92);
+        const imgData = canvas.toDataURL('image/jpeg', 0.92);
+        return { base64Image: imgData, text: fullText.trim() };
       } catch (pdfErr) {
         console.error("Erro ao renderizar PDF com PDF.js:", pdfErr);
         throw new Error('Não foi possível ler o PDF. Por favor, tire uma foto do documento com a câmera.');
       }
     } else {
-      return new Promise((resolve, reject) => {
+      const base64 = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onloadend = () => resolve(reader.result as string);
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
+      return { base64Image: base64, text: '' };
     }
+  };
+
+  const convertFileToImageBase64 = async (file: File): Promise<string> => {
+    const res = await convertFileToImageAndText(file);
+    return res.base64Image;
   };
 
   // ─── Single Photo Capture (AI extraction) ──────────────────────────────
@@ -271,7 +291,7 @@ const SuppliersPage: React.FC = () => {
     toast({ title: '📸 Lendo arquivo com IA...', description: 'Extraindo dados do produto, marca, especificações e valor!' });
 
     try {
-      const base64Image = await convertFileToImageBase64(file);
+      const { base64Image, text } = await convertFileToImageAndText(file);
 
       const prompt = `Analise este documento/foto de um produto/material de marcenaria.
 Extraia e retorne EXATAMENTE um JSON válido neste formato:
@@ -283,7 +303,18 @@ Extraia e retorne EXATAMENTE um JSON válido neste formato:
   "specifications": "Resumo detalhado das características"
 }`;
 
-      const aiResponse = await analyzeImageWithGemini(base64Image, prompt);
+      let aiResponse = "";
+      if (text && text.length > 30) {
+        try {
+          aiResponse = await analyzeTextWithGroq(text, prompt);
+        } catch (tErr) {
+          console.warn("Falha ao analisar texto do PDF, tentando visão:", tErr);
+        }
+      }
+      if (!aiResponse) {
+        aiResponse = await analyzeImageWithGemini(base64Image, prompt);
+      }
+
       let extractedData: any = {};
       try {
         const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
@@ -347,7 +378,7 @@ Extraia e retorne EXATAMENTE um JSON válido neste formato:
     });
 
     try {
-      const base64Image = await convertFileToImageBase64(file);
+      const { base64Image, text } = await convertFileToImageAndText(file);
 
       const prompt = `Analise esta foto ou arquivo PDF de uma folha de orçamento, pedido de compra ou lista de materiais de marcenaria.
 Localize o Nome do Cliente (ex: "SANDRA", "SANDRA - COZINHA") ou Fornecedor no topo do documento.
@@ -368,7 +399,17 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
   ]
 }`;
 
-      const aiResponse = await analyzeImageWithGemini(base64Image, prompt);
+      let aiResponse = "";
+      if (text && text.length > 30) {
+        try {
+          aiResponse = await analyzeTextWithGroq(text, prompt);
+        } catch (tErr) {
+          console.warn("Falha ao analisar texto do PDF com Groq, tentando visão:", tErr);
+        }
+      }
+      if (!aiResponse) {
+        aiResponse = await analyzeImageWithGemini(base64Image, prompt);
+      }
       let parsedData: any = {};
       try {
         const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
