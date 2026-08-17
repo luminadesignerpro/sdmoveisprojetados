@@ -206,6 +206,15 @@ const LegacySystemPage: React.FC = () => {
     return () => clearInterval(tick);
   }, []);
 
+  // Bloquear scroll global da página enquanto a tela OS Clássica (Legacy) estiver ativa
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
+
   // ─── Save to DB ────────────────────────────────────────────────────────────
   const handleSave = async (itemsOverride?: OSItem[]) => {
     if (!clientDesc.trim()) {
