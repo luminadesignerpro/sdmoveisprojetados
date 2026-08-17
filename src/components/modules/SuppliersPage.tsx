@@ -5,7 +5,7 @@ import {
   Building, Plus, Search, Edit, Trash2, Phone, Mail, 
   TrendingDown, DollarSign, Award, CheckCircle2,
   BarChart3, ShoppingBag, Tag, Maximize2, ClipboardList,
-  Printer, ShoppingCart, ArrowRight, CheckSquare
+  Printer, ShoppingCart, ArrowRight, CheckSquare, Sparkles
 } from 'lucide-react';
 
 const db = supabase as any;
@@ -137,6 +137,8 @@ const SuppliersPage: React.FC = () => {
   });
 
   const [showAddMatForm, setShowAddMatForm] = useState(false);
+  const [addMatMode, setAddMatMode] = useState<'select' | 'new'>('select');
+
   const [matForm, setMatForm] = useState({
     productId: '',
     supplierName: '',
@@ -144,6 +146,17 @@ const SuppliersPage: React.FC = () => {
     unitPrice: 0,
     quantity: 1,
     isCheapest: true
+  });
+
+  const [newMatForm, setNewMatForm] = useState({
+    supplierName: '',
+    supplierId: '',
+    productName: '',
+    brand: '',
+    pricePerM2: '',
+    unitPrice: '',
+    quantity: 1,
+    category: 'MDF/MDP'
   });
 
   useEffect(() => {
@@ -296,7 +309,6 @@ const SuppliersPage: React.FC = () => {
 
   // ─── Material List Handlers ─────────────────────────────────────────────
   
-  // When user picks a product in the Material List form, automatically select the CHEAPEST supplier!
   const handleSelectProductForMatList = (prodId: string) => {
     const prod = comparisons.find(c => c.id === prodId);
     if (!prod || prod.quotes.length === 0) {
@@ -304,7 +316,6 @@ const SuppliersPage: React.FC = () => {
       return;
     }
 
-    // Encontra a cotação MAIS BARATA (menor unitPrice)
     const cheapestQuote = prod.quotes.reduce((prev, curr) => 
       (curr.unitPrice || curr.price) < (prev.unitPrice || prev.price) ? curr : prev
     );
@@ -374,7 +385,75 @@ const SuppliersPage: React.FC = () => {
     toast({ title: '📦 Produto adicionado à Lista de Materiais com sucesso!' });
   };
 
-  // Direct shortcut: Add directly from Comparison Tab card
+  // Handler to create a NEW product on the fly from inside the Material List Modal
+  const handleAddNewProductDirectlyToMaterialList = () => {
+    if (!newMatForm.productName.trim()) {
+      toast({ title: '⚠️ Informe o nome do produto', variant: 'destructive' });
+      return;
+    }
+
+    const unitPriceNum = parseFloat(newMatForm.unitPrice.replace(',', '.'));
+    if (isNaN(unitPriceNum) || unitPriceNum <= 0) {
+      toast({ title: '⚠️ Informe um valor unitário válido', variant: 'destructive' });
+      return;
+    }
+
+    let sName = newMatForm.supplierName.trim();
+    if (newMatForm.supplierId) {
+      const found = suppliers.find(s => s.id === newMatForm.supplierId);
+      if (found) sName = found.name;
+    }
+    if (!sName) {
+      toast({ title: '⚠️ Informe o nome do fornecedor', variant: 'destructive' });
+      return;
+    }
+
+    const m2Num = newMatForm.pricePerM2 ? parseFloat(newMatForm.pricePerM2.replace(',', '.')) : null;
+    const qty = Math.max(1, Number(newMatForm.quantity) || 1);
+    const total = qty * unitPriceNum;
+
+    const firstQuote: PriceQuote = {
+      supplierId: newMatForm.supplierId || Date.now().toString(),
+      supplierName: sName,
+      brand: newMatForm.brand.trim() || 'Geral',
+      pricePerM2: isNaN(m2Num as number) ? null : m2Num,
+      unitPrice: unitPriceNum,
+      price: unitPriceNum,
+      updatedAt: new Date().toISOString().split('T')[0]
+    };
+
+    const newProdId = Date.now().toString();
+    const newProd: ProductComparison = {
+      id: newProdId,
+      productName: newMatForm.productName.trim(),
+      category: newMatForm.category,
+      unit: 'Un',
+      quotes: [firstQuote]
+    };
+
+    // 1. Cadastra no comparativo
+    setComparisons([newProd, ...comparisons]);
+
+    // 2. Insere na lista de compras
+    const newItem: MaterialListItem = {
+      id: (Date.now() + 1).toString(),
+      productId: newProdId,
+      productName: newProd.productName,
+      category: newProd.category,
+      selectedSupplierName: sName,
+      selectedBrand: firstQuote.brand,
+      selectedUnitPrice: unitPriceNum,
+      quantity: qty,
+      total: total,
+      isCheapestSelected: true
+    };
+
+    setMaterialList([newItem, ...materialList]);
+    setShowAddMatForm(false);
+    setNewMatForm({ supplierName: '', supplierId: '', productName: '', brand: '', pricePerM2: '', unitPrice: '', quantity: 1, category: 'MDF/MDP' });
+    toast({ title: '🚀 Produto criado e adicionado à Lista de Compras!' });
+  };
+
   const handleQuickAddFromComparison = (prod: ProductComparison) => {
     if (prod.quotes.length === 0) {
       toast({ title: '⚠️ Cadastre ao menos uma cotação para este produto antes de incluir na lista', variant: 'destructive' });
@@ -413,7 +492,6 @@ const SuppliersPage: React.FC = () => {
     const win = window.open('', '_blank', 'width=800,height=600');
     if (!win) return;
 
-    // Group items by supplier for neat printout
     const grouped: Record<string, MaterialListItem[]> = {};
     materialList.forEach(item => {
       if (!grouped[item.selectedSupplierName]) grouped[item.selectedSupplierName] = [];
@@ -560,6 +638,7 @@ const SuppliersPage: React.FC = () => {
             <button 
               onClick={() => {
                 setShowAddMatForm(true);
+                setAddMatMode('select');
                 if (comparisons.length > 0) handleSelectProductForMatList(comparisons[0].id);
               }} 
               className="bg-blue-600 text-white px-5 py-3 rounded-2xl font-bold hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-lg flex-1 sm:flex-none justify-center text-sm"
@@ -942,7 +1021,6 @@ const SuppliersPage: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-2 flex-wrap">
-                      {/* Direct button to add product to Material List using Cheapest Supplier */}
                       <button 
                         onClick={() => handleQuickAddFromComparison(item)}
                         className="bg-blue-600/20 border border-blue-500/40 text-blue-300 hover:bg-blue-600/40 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all"
@@ -1111,75 +1189,203 @@ const SuppliersPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Form Modal: Add Item to Material List */}
+          {/* Form Modal: Add Item to Material List (Includes both Select mode & Direct New Product mode) */}
           {showAddMatForm && (
             <div className="bg-[#111111] border border-blue-500/40 rounded-3xl p-6 shadow-2xl space-y-4 text-white max-w-2xl mx-auto">
-              <h3 className="font-bold text-lg text-blue-400 flex items-center gap-2 border-b border-white/10 pb-3">
-                <ShoppingCart className="w-5 h-5" /> Adicionar Produto à Lista de Compras
-              </h3>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                
-                {/* Product Dropdown */}
-                <div className="sm:col-span-2">
-                  <label className="text-xs text-blue-300 font-bold block mb-1">1. Selecionar Produto do Comparativo *</label>
-                  <select 
-                    value={matForm.productId}
-                    onChange={e => handleSelectProductForMatList(e.target.value)}
-                    className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-bold"
-                  >
-                    <option value="">-- Escolha o produto cotado --</option>
-                    {comparisons.map(p => (
-                      <option key={p.id} value={p.id}>{p.productName} ({p.quotes.length} cotações)</option>
-                    ))}
-                  </select>
-                </div>
+              {/* Modal Header & Mode Switcher */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-white/10 pb-3">
+                <h3 className="font-bold text-lg text-blue-400 flex items-center gap-2">
+                  <ShoppingCart className="w-5 h-5" /> Adicionar Produto à Lista de Compras
+                </h3>
 
-                {/* Supplier Selection (Auto-selected cheapest) */}
-                {matForm.productId && (
-                  <>
+                <div className="flex bg-[#1a1a1a] p-1 rounded-xl border border-white/10">
+                  <button 
+                    onClick={() => setAddMatMode('select')}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                      addMatMode === 'select' 
+                        ? 'bg-blue-600 text-white shadow' 
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    Selecionar Existente
+                  </button>
+                  <button 
+                    onClick={() => setAddMatMode('new')}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1 ${
+                      addMatMode === 'new' 
+                        ? 'bg-emerald-600 text-white shadow' 
+                        : 'text-gray-400 hover:text-emerald-400'
+                    }`}
+                  >
+                    <Plus className="w-3.5 h-3.5" /> + Cadastrar Novo Produto
+                  </button>
+                </div>
+              </div>
+
+              {/* MODE 1: SELECT EXISTING PRODUCT */}
+              {addMatMode === 'select' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="sm:col-span-2">
+                    <label className="text-xs text-blue-300 font-bold block mb-1">1. Selecionar Produto do Comparativo *</label>
+                    <select 
+                      value={matForm.productId}
+                      onChange={e => handleSelectProductForMatList(e.target.value)}
+                      className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-bold"
+                    >
+                      <option value="">-- Escolha o produto cotado --</option>
+                      {comparisons.map(p => (
+                        <option key={p.id} value={p.id}>{p.productName} ({p.quotes.length} cotações)</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {matForm.productId && (
+                    <>
+                      <div>
+                        <label className="text-xs text-emerald-400 font-bold block mb-1">
+                          2. Fornecedor & Preço {matForm.isCheapest && '🏆 (Menor Preço Padrão)'}
+                        </label>
+                        {(() => {
+                          const selectedProd = comparisons.find(c => c.id === matForm.productId);
+                          if (!selectedProd || selectedProd.quotes.length === 0) {
+                            return <p className="text-xs text-red-400 p-2">Nenhuma cotação cadastrada neste produto ainda.</p>;
+                          }
+                          return (
+                            <select
+                              value={matForm.supplierName}
+                              onChange={e => handleSelectQuoteForMatList(e.target.value)}
+                              className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm font-bold"
+                            >
+                              {selectedProd.quotes.map((q, idx) => (
+                                <option key={idx} value={q.supplierName}>
+                                  {q.supplierName} — R$ {(q.unitPrice || q.price).toFixed(2)} {q.brand ? `[${q.brand}]` : ''}
+                                </option>
+                              ))}
+                            </select>
+                          );
+                        })()}
+                      </div>
+
+                      <div>
+                        <label className="text-xs text-gray-400 font-bold block mb-1">3. Quantidade</label>
+                        <input 
+                          type="number" 
+                          min="1"
+                          value={matForm.quantity}
+                          onChange={e => setMatForm({ ...matForm, quantity: Math.max(1, parseInt(e.target.value) || 1) })}
+                          className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-bold"
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* MODE 2: CREATE & ADD NEW PRODUCT DIRECTLY */}
+              {addMatMode === 'new' && (
+                <div className="space-y-4 bg-[#181818] p-4 rounded-2xl border border-emerald-500/30">
+                  <p className="text-xs text-emerald-400 font-bold flex items-center gap-1">
+                    <Sparkles className="w-4 h-4" /> Preencha para Cadastrar o Produto e Adicionar à Lista:
+                  </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    
+                    {/* Fornecedor */}
                     <div>
-                      <label className="text-xs text-emerald-400 font-bold block mb-1">
-                        2. Fornecedor & Preço {matForm.isCheapest && '🏆 (Menor Preço Padrão)'}
-                      </label>
-                      {(() => {
-                        const selectedProd = comparisons.find(c => c.id === matForm.productId);
-                        if (!selectedProd || selectedProd.quotes.length === 0) {
-                          return <p className="text-xs text-red-400 p-2">Nenhuma cotação cadastrada neste produto ainda.</p>;
-                        }
-                        return (
-                          <select
-                            value={matForm.supplierName}
-                            onChange={e => handleSelectQuoteForMatList(e.target.value)}
-                            className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm font-bold"
-                          >
-                            {selectedProd.quotes.map((q, idx) => (
-                              <option key={idx} value={q.supplierName}>
-                                {q.supplierName} — R$ {(q.unitPrice || q.price).toFixed(2)} {q.brand ? `[${q.brand}]` : ''}
-                              </option>
-                            ))}
-                          </select>
-                        );
-                      })()}
+                      <label className="text-xs text-amber-400 font-bold block mb-1">1. Nome do Fornecedor *</label>
+                      <select 
+                        value={newMatForm.supplierId} 
+                        onChange={e => {
+                          const sel = suppliers.find(s => s.id === e.target.value);
+                          setNewMatForm({ ...newMatForm, supplierId: e.target.value, supplierName: sel ? sel.name : newMatForm.supplierName });
+                        }} 
+                        className="w-full p-2.5 rounded-xl border border-white/10 bg-[#111] text-white text-xs mb-1 focus:ring-1 focus:ring-emerald-500"
+                      >
+                        <option value="">-- Selecione ou digite abaixo --</option>
+                        {suppliers.map(s => (
+                          <option key={s.id} value={s.id}>{s.name}</option>
+                        ))}
+                      </select>
+                      <input 
+                        value={newMatForm.supplierName} 
+                        onChange={e => setNewMatForm({ ...newMatForm, supplierName: e.target.value, supplierId: '' })} 
+                        placeholder="Ou digite o Fornecedor..." 
+                        className="w-full p-2.5 rounded-xl border border-white/10 bg-[#111] text-white placeholder-gray-500 text-xs focus:ring-1 focus:ring-emerald-500" 
+                      />
                     </div>
 
+                    {/* Produto */}
                     <div>
-                      <label className="text-xs text-gray-400 font-bold block mb-1">3. Quantidade</label>
+                      <label className="text-xs text-emerald-400 font-bold block mb-1">2. Nome do Produto *</label>
+                      <input 
+                        value={newMatForm.productName} 
+                        onChange={e => setNewMatForm({ ...newMatForm, productName: e.target.value })} 
+                        placeholder="Ex: MDF 15mm Louro Freijó..." 
+                        className="w-full p-2.5 rounded-xl border border-white/10 bg-[#111] text-white placeholder-gray-500 text-xs focus:ring-1 focus:ring-emerald-500" 
+                      />
+                      <select 
+                        value={newMatForm.category} 
+                        onChange={e => setNewMatForm({ ...newMatForm, category: e.target.value })} 
+                        className="w-full p-2.5 rounded-xl border border-white/10 bg-[#111] text-white text-xs mt-1"
+                      >
+                        <option>MDF/MDP</option><option>Ferragens</option><option>Vidros</option><option>Pedras</option><option>Tintas</option><option>Acessórios</option><option>Outros</option>
+                      </select>
+                    </div>
+
+                    {/* Marca */}
+                    <div>
+                      <label className="text-xs text-blue-400 font-bold block mb-1">3. Marca / Fabricante</label>
+                      <input 
+                        value={newMatForm.brand} 
+                        onChange={e => setNewMatForm({ ...newMatForm, brand: e.target.value })} 
+                        placeholder="Ex: Duratex, FGV, Häfele..." 
+                        className="w-full p-2.5 rounded-xl border border-white/10 bg-[#111] text-white placeholder-gray-500 text-xs focus:ring-1 focus:ring-emerald-500" 
+                      />
+                    </div>
+
+                    {/* Valor m2 */}
+                    <div>
+                      <label className="text-xs text-purple-400 font-bold block mb-1">4. Valor R$/m² (opcional)</label>
+                      <input 
+                        type="text" 
+                        value={newMatForm.pricePerM2} 
+                        onChange={e => setNewMatForm({ ...newMatForm, pricePerM2: e.target.value })} 
+                        placeholder="Ex: 39,00" 
+                        className="w-full p-2.5 rounded-xl border border-white/10 bg-[#111] text-white placeholder-gray-500 text-xs focus:ring-1 focus:ring-emerald-500" 
+                      />
+                    </div>
+
+                    {/* Valor Unitario */}
+                    <div>
+                      <label className="text-xs text-emerald-400 font-bold block mb-1">5. Valor Unitário (R$) *</label>
+                      <input 
+                        type="text" 
+                        value={newMatForm.unitPrice} 
+                        onChange={e => setNewMatForm({ ...newMatForm, unitPrice: e.target.value })} 
+                        placeholder="Ex: 198,50" 
+                        className="w-full p-2.5 rounded-xl border border-white/10 bg-[#111] text-white placeholder-gray-500 text-xs font-bold text-emerald-400 focus:ring-1 focus:ring-emerald-500" 
+                      />
+                    </div>
+
+                    {/* Quantidade */}
+                    <div>
+                      <label className="text-xs text-amber-400 font-bold block mb-1">6. Quantidade Desejada *</label>
                       <input 
                         type="number" 
                         min="1"
-                        value={matForm.quantity}
-                        onChange={e => setMatForm({ ...matForm, quantity: Math.max(1, parseInt(e.target.value) || 1) })}
-                        className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-bold"
+                        value={newMatForm.quantity} 
+                        onChange={e => setNewMatForm({ ...newMatForm, quantity: Math.max(1, parseInt(e.target.value) || 1) })} 
+                        className="w-full p-2.5 rounded-xl border border-white/10 bg-[#111] text-white text-xs font-bold focus:ring-1 focus:ring-emerald-500" 
                       />
                     </div>
-                  </>
-                )}
 
-              </div>
+                  </div>
+                </div>
+              )}
 
               {/* Total Preview */}
-              {matForm.productId && matForm.unitPrice > 0 && (
+              {addMatMode === 'select' && matForm.productId && matForm.unitPrice > 0 && (
                 <div className="bg-blue-950/40 border border-blue-500/30 p-3.5 rounded-2xl flex justify-between items-center text-sm">
                   <span className="text-gray-300">Subtotal do Item ({matForm.quantity}x):</span>
                   <span className="font-black text-lg text-emerald-400">
@@ -1188,8 +1394,25 @@ const SuppliersPage: React.FC = () => {
                 </div>
               )}
 
+              {addMatMode === 'new' && newMatForm.unitPrice && (
+                <div className="bg-emerald-950/40 border border-emerald-500/30 p-3.5 rounded-2xl flex justify-between items-center text-sm">
+                  <span className="text-gray-300">Subtotal do Item ({newMatForm.quantity}x):</span>
+                  <span className="font-black text-lg text-emerald-400">
+                    R$ {(newMatForm.quantity * (parseFloat(newMatForm.unitPrice.replace(',', '.')) || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+              )}
+
               <div className="flex gap-3 pt-2">
-                <button onClick={handleAddMaterialToList} className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors text-sm w-full">Adicionar à Lista de Compras</button>
+                {addMatMode === 'select' ? (
+                  <button onClick={handleAddMaterialToList} className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors text-sm w-full">
+                    Adicionar à Lista de Compras
+                  </button>
+                ) : (
+                  <button onClick={handleAddNewProductDirectlyToMaterialList} className="bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-emerald-700 transition-colors text-sm w-full">
+                    Salvar e Adicionar à Lista
+                  </button>
+                )}
                 <button onClick={() => setShowAddMatForm(false)} className="bg-white/10 border border-white/20 text-white px-6 py-3 rounded-xl font-bold hover:bg-white/20 transition-colors text-sm">Cancelar</button>
               </div>
             </div>
