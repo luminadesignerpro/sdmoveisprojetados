@@ -596,7 +596,7 @@ const App: React.FC = () => {
       )}
 
       <main
-        className={`flex-1 overflow-x-hidden relative min-w-0 w-full ${isCompactLayout ? 'order-1 h-[calc(100vh-4rem)]' : 'order-none h-screen'}`}
+        className={`flex-1 overflow-x-hidden relative min-w-0 w-full ${isCompactLayout ? 'order-1 h-[calc(100vh-4rem)]' : 'order-none h-screen'} ${view === ViewMode.LEGACY_SYSTEM ? 'overflow-y-hidden' : ''}`}
       >
         {/* Animated particle background */}
         {(authState === 'ADMIN' || authState === 'CLIENT' || authState === 'EMPLOYEE') && (
