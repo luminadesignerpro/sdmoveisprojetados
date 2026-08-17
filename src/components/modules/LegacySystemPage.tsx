@@ -221,8 +221,22 @@ const LegacySystemPage: React.FC = () => {
       toast({ title: '⚠️ Adicione um telefone válido para enviar WhatsApp', variant: 'destructive' });
       return;
     }
-    const text = `Olá${contactName ? ' ' + contactName : ''}, segue a confirmação do seu ${isOrcamento ? 'Orçamento' : 'Pedido de Serviço'} Nº ${orderNo} no valor de R$ ${fmtMoney(total)}.`;
-    window.open(`https://wa.me/55${number}?text=${encodeURIComponent(text)}`, '_blank');
+    const text = `Olá${contactName ? ' ' + contactName : ''}, segue em anexo o PDF com o seu ${isOrcamento ? 'Orçamento' : 'Pedido de Serviço'} Nº ${orderNo} no valor total de R$ ${fmtMoney(total)}.`;
+    
+    // 1. Abre a janela de impressão/PDF
+    handlePrint();
+
+    // 2. Notificação amigável
+    toast({ 
+      title: '📄 PDF + WhatsApp Web', 
+      description: 'Escolha "Salvar como PDF" na tela de impressão e anexe o arquivo na conversa do WhatsApp que abriu!',
+      duration: 6000,
+    });
+
+    // 3. Abre o WhatsApp em seguida
+    setTimeout(() => {
+      window.open(`https://wa.me/55${number}?text=${encodeURIComponent(text)}`, '_blank');
+    }, 400);
   };
 
   // ─── Save to DB ────────────────────────────────────────────────────────────
