@@ -31,6 +31,9 @@ const ServiceOrdersPage: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
   const [showPdfUploader, setShowPdfUploader] = useState(false);
+  const [formLoading, setFormLoading] = useState(false);
+  // Flag que indica se os itens do form foram carregados do banco (para evitar deleção acidental)
+  const [itemsLoaded, setItemsLoaded] = useState(false);
 
   // Tabs dentro do formulário
   const [activeTab, setActiveTab] = useState<'obs' | 'produtos' | 'imagens' | 'controle'>('obs');
@@ -38,6 +41,7 @@ const ServiceOrdersPage: React.FC = () => {
   // Itens da lista de produtos/serviços
   const [osItems, setOsItems] = useState<OSItem[]>([]);
   const [editingItem, setEditingItem] = useState<OSItem | null>(null);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [showItemForm, setShowItemForm] = useState(false);
   const [itemForm, setItemForm] = useState({
     description: '',
@@ -168,8 +172,28 @@ const ServiceOrdersPage: React.FC = () => {
     }
 
     // Salva ou atualiza os itens na tabela itens_projeto
-    if (targetOsId && osItems.length > 0) {
-      await db.from('itens_projeto').delete().eq('service_order_id', targetOsId);
+    // Só altera os itens se eles foram explicitamente carregados/editados nesta sessão
+    if (targetOsId && itemsLoaded) {
+      if (osItems.length > 0) {
+        await db.from('itens_projeto').delete().eq('service_order_id', targetOsId);
+        const itemsPayload = osItems.map(it => ({
+          service_order_id: targetOsId,
+          description: it.description,
+          unit: it.unit || 'un',
+          unit_value: it.value,
+          quantity: it.quantity,
+          total_value: it.total_value,
+          width: it.width || 0,
+          height: it.height || 0,
+          total_m2: it.total_m2 || 0,
+        }));
+        await db.from('itens_projeto').insert(itemsPayload);
+      } else {
+        // Itens foram carregados mas lista está vazia = usuário deletou todos os itens
+        await db.from('itens_projeto').delete().eq('service_order_id', targetOsId);
+      }
+    } else if (targetOsId && !editingId && osItems.length > 0) {
+      // Nova OS sem editingId anterior — insere normalmente
       const itemsPayload = osItems.map(it => ({
         service_order_id: targetOsId,
         description: it.description,
@@ -216,12 +240,14 @@ const ServiceOrdersPage: React.FC = () => {
   const resetFormState = () => {
     setForm(resetForm());
     setOsItems([]);
+    setSelectedItemId(null);
     setOsImages([]);
     setServiceToPerform('');
     setProblemsToFix('');
     setCurrentStage('');
     setInternalNotes('');
     setActiveTab('obs');
+    setItemsLoaded(false);
   };
 
   // ===================== ITEMS (Produtos/Serviços) =====================
@@ -381,6 +407,7 @@ const ServiceOrdersPage: React.FC = () => {
   );
 
   const openForm = async (o?: any) => {
+    setFormLoading(true);
     if (o) {
       setEditingId(o.id);
       setForm(resetForm({
@@ -401,7 +428,7 @@ const ServiceOrdersPage: React.FC = () => {
       // Extrai os blocos das observações do campo notes
       const notesStr = o.notes || '';
       const extractNote = (tag: string) => {
-        const m = notesStr.match(new RegExp(`\\[${tag}\\]: ([^\\[]*)`));
+        const m = notesStr.match(new RegExp(`\\[${tag}\\]: ([^\\[]*)`))
         return m ? m[1].trim() : '';
       };
       setServiceToPerform(extractNote('Serviço a ser Realizado'));
@@ -410,7 +437,10 @@ const ServiceOrdersPage: React.FC = () => {
       setInternalNotes(extractNote('Notas Internas'));
 
       // Carrega os itens gravados da tabela itens_projeto
-      const { data: itens } = await db.from('itens_projeto').select('*').eq('service_order_id', o.id);
+      const { data: itens, error: itensError } = await db.from('itens_projeto').select('*').eq('service_order_id', o.id).order('created_at', { ascending: true });
+      if (itensError) {
+        console.error('Erro ao carregar itens:', itensError);
+      }
       if (itens && itens.length > 0) {
         setOsItems(itens.map((it: any) => ({
           id: it.id,
@@ -423,22 +453,30 @@ const ServiceOrdersPage: React.FC = () => {
           quantity: it.quantity || 1,
           total_value: it.total_value || 0,
         })));
+        setActiveTab('produtos');
       } else {
         setOsItems([]);
+        setActiveTab('obs');
       }
+      // Marca que os itens foram carregados do banco nesta sessão de edição
+      setItemsLoaded(true);
     } else {
       setEditingId(null);
       setForm(resetForm());
       setOsItems([]);
+      setItemsLoaded(true); // Nova OS: itens começam vazios, pode salvar vazio
       setServiceToPerform('');
       setProblemsToFix('');
       setCurrentStage('');
       setInternalNotes('');
+      setActiveTab('obs');
     }
+    setSelectedItemId(null);
     setOsImages([]);
-    setActiveTab('obs');
+    setFormLoading(false);
     setShowForm(true);
   };
+
 
   const inputCls = "w-full h-11 bg-[#1a1a1a] rounded-xl px-4 border border-white/10 text-white placeholder:text-gray-600 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500/40 outline-none transition-all";
   const labelCls = "text-sm font-semibold text-gray-300 flex items-center gap-2 mb-1";
@@ -519,6 +557,11 @@ const ServiceOrdersPage: React.FC = () => {
                 {editingId && (
                   <span className="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded border border-amber-500/30 font-mono">
                     Editando
+                  </span>
+                )}
+                {(totalItemsValue > 0 || form.total_value > 0) && (
+                  <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2.5 py-1 rounded-lg border border-emerald-500/30 font-bold flex items-center gap-1">
+                    💰 R$ {(totalItemsValue > 0 ? totalItemsValue : form.total_value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </span>
                 )}
               </div>
@@ -657,8 +700,8 @@ const ServiceOrdersPage: React.FC = () => {
                     </button>
                     <button
                       onClick={() => {
-                        const selected = osItems[osItems.length - 1];
-                        if (selected) openItemForm(selected);
+                        const target = osItems.find(it => it.id === selectedItemId) || osItems[osItems.length - 1];
+                        if (target) openItemForm(target);
                         else toast({ title: '⚠️ Selecione um item para alterar', variant: 'destructive' });
                       }}
                       className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600/20 border border-blue-500/30 text-blue-400 text-sm font-bold hover:bg-blue-600/30 transition-all">
@@ -666,8 +709,8 @@ const ServiceOrdersPage: React.FC = () => {
                     </button>
                     <button
                       onClick={() => {
-                        const last = osItems[osItems.length - 1];
-                        if (last) deleteItem(last.id);
+                        const target = osItems.find(it => it.id === selectedItemId) || osItems[osItems.length - 1];
+                        if (target) deleteItem(target.id);
                         else toast({ title: '⚠️ Nenhum item para excluir', variant: 'destructive' });
                       }}
                       className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-600/20 border border-red-500/30 text-red-400 text-sm font-bold hover:bg-red-600/30 transition-all">
@@ -702,31 +745,40 @@ const ServiceOrdersPage: React.FC = () => {
                             Nenhum item adicionado. Clique em "Incluir" para adicionar produtos ou serviços.
                           </td></tr>
                         )}
-                        {osItems.map((item, idx) => (
-                          <tr key={item.id} className="border-t border-white/5 hover:bg-white/5 transition-colors">
-                            <td className="p-3 text-gray-500 font-bold text-xs">{String(idx + 1).padStart(4, '0')}</td>
-                            <td className="p-3 text-white font-medium text-sm max-w-[200px] truncate">{item.description}</td>
-                            <td className="p-3 text-gray-400 text-xs">{item.unit}</td>
-                            <td className="p-3 text-gray-400 text-xs">{item.width > 0 ? item.width.toFixed(2) : '-'}</td>
-                            <td className="p-3 text-gray-400 text-xs">{item.height > 0 ? item.height.toFixed(2) : '-'}</td>
-                            <td className="p-3 text-gray-400 text-xs">{item.total_m2 > 0 ? item.total_m2.toFixed(3) : '-'}</td>
-                            <td className="p-3 text-gray-300 text-xs">R$ {item.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                            <td className="p-3 text-gray-400 text-xs">{item.quantity}</td>
-                            <td className="p-3 font-bold text-amber-400 text-sm">R$ {item.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                            <td className="p-3">
-                              <div className="flex gap-1.5">
-                                <button onClick={() => openItemForm(item)}
-                                  className="w-7 h-7 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-center justify-center text-blue-400 hover:bg-blue-500/20 transition-all" title="Alterar">
-                                  <Edit className="w-3.5 h-3.5" />
-                                </button>
-                                <button onClick={() => deleteItem(item.id)}
-                                  className="w-7 h-7 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center justify-center text-red-400 hover:bg-red-500/20 transition-all" title="Excluir">
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
+                        {osItems.map((item, idx) => {
+                          const isSelected = selectedItemId === item.id;
+                          return (
+                            <tr
+                              key={item.id}
+                              onClick={() => setSelectedItemId(item.id)}
+                              className={`border-t border-white/5 cursor-pointer transition-colors ${
+                                isSelected ? 'bg-amber-500/15 border-l-2 border-l-amber-500' : 'hover:bg-white/5'
+                              }`}
+                            >
+                              <td className="p-3 text-gray-500 font-bold text-xs">{String(idx + 1).padStart(4, '0')}</td>
+                              <td className="p-3 text-white font-medium text-sm max-w-[200px] truncate">{item.description}</td>
+                              <td className="p-3 text-gray-400 text-xs">{item.unit}</td>
+                              <td className="p-3 text-gray-400 text-xs">{item.width > 0 ? item.width.toFixed(2) : '-'}</td>
+                              <td className="p-3 text-gray-400 text-xs">{item.height > 0 ? item.height.toFixed(2) : '-'}</td>
+                              <td className="p-3 text-gray-400 text-xs">{item.total_m2 > 0 ? item.total_m2.toFixed(3) : '-'}</td>
+                              <td className="p-3 text-gray-300 text-xs">R$ {item.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                              <td className="p-3 text-gray-400 text-xs">{item.quantity}</td>
+                              <td className="p-3 font-bold text-amber-400 text-sm">R$ {item.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                              <td className="p-3">
+                                <div className="flex gap-1.5" onClick={e => e.stopPropagation()}>
+                                  <button onClick={() => openItemForm(item)}
+                                    className="w-7 h-7 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-center justify-center text-blue-400 hover:bg-blue-500/20 transition-all" title="Alterar">
+                                    <Edit className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button onClick={() => deleteItem(item.id)}
+                                    className="w-7 h-7 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center justify-center text-red-400 hover:bg-red-500/20 transition-all" title="Excluir">
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                       {osItems.length > 0 && (
                         <tfoot className="border-t border-amber-500/20 bg-[#1a1a1a]">
@@ -1061,9 +1113,13 @@ const ServiceOrdersPage: React.FC = () => {
                         <FileDown className="w-4 h-4" />
                       </button>
                     )}
-                    <button onClick={() => openForm(o)}
-                      className="w-9 h-9 bg-white/5 border border-white/5 rounded-xl flex items-center justify-center hover:bg-white/10 hover:border-amber-500/30 transition-all text-gray-400 hover:text-blue-400" title="Editar">
-                      <Edit className="w-4 h-4" />
+                    <button onClick={() => openForm(o)} disabled={formLoading}
+                      className="w-9 h-9 bg-white/5 border border-white/5 rounded-xl flex items-center justify-center hover:bg-white/10 hover:border-amber-500/30 transition-all text-gray-400 hover:text-blue-400 disabled:opacity-50 disabled:cursor-wait" title="Editar">
+                      {formLoading ? (
+                        <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+                      ) : (
+                        <Edit className="w-4 h-4" />
+                      )}
                     </button>
                     <button onClick={() => handleDelete(o.id)}
                       className="w-9 h-9 bg-white/5 border border-white/5 rounded-xl flex items-center justify-center text-gray-400 hover:text-red-400 hover:bg-red-900/20 transition-all" title="Excluir">
