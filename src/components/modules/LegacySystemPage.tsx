@@ -762,7 +762,8 @@ const LegacySystemPage: React.FC = () => {
       color: #000 !important;
       width: 100%;
       height: 100%;
-      overflow: hidden;
+      overflow-y: auto;
+      overflow-x: hidden;
       scrollbar-width: none;
       padding: 4px;
       font-size: 11px;
