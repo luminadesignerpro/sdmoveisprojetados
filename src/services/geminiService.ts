@@ -151,7 +151,7 @@ export async function analyzeImageWithGemini(base64Image: string, prompt: string
             "Authorization": `Bearer ${activeGroqKey}`,
           },
           body: JSON.stringify({
-            model: "llama-3.3-70b-versatile",
+            model: "openai/gpt-oss-120b",
             messages: [
               {
                 role: "system",
@@ -197,7 +197,7 @@ export async function analyzeTextWithGroq(textContext: string, prompt: string): 
         "Authorization": `Bearer ${activeGroqKey}`,
       },
       body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
+        model: "openai/gpt-oss-120b",
         messages: [
           {
             role: "system",
@@ -255,3 +255,4 @@ export async function generateAiChatResponse(messages: ChatMessage[]): Promise<s
     return "Erro ao processar mensagem com Groq. Verifique a conexão.";
   }
 }
+    .
