@@ -84,56 +84,59 @@ export async function analyzeImageWithGemini(base64Image: string, prompt: string
       }
     }
 
-    // 1. Tentar via Google Gemini 1.5 Flash (Oficial e Ultra Preciso para Imagens e Documentos)
-    const geminiApiKey = (import.meta.env.VITE_GEMINI_API_KEY || "AIzaSyCv3n-NwYyL4qghfbkAWvqCIXyio18mQsA").trim();
+    // 1. Tentar via Google Gemini (1.5 Flash / 2.0 Flash)
+    const geminiApiKey = (import.meta.env.VITE_GEMINI_API_KEY || "AIzaSyCv3n-NwYyL4qghfbkAWvqCIXyio18mQsA").trim().replace(/[\r\n\s]/g, "");
     if (geminiApiKey) {
-      try {
-        const parts: any[] = [{ text: prompt }];
+      const geminiModels = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-flash-8b"];
+      
+      const parts: any[] = [{ text: prompt }];
+      for (const img of images) {
+        let cleanBase64 = img;
+        let mimeType = "image/jpeg";
 
-        for (const img of images) {
-          let cleanBase64 = img;
-          let mimeType = "image/jpeg";
+        if (cleanBase64.startsWith("data:")) {
+          const commaIdx = cleanBase64.indexOf(",");
+          const header = cleanBase64.slice(0, commaIdx);
+          cleanBase64 = cleanBase64.slice(commaIdx + 1);
+          if (header.includes("image/png")) mimeType = "image/png";
+          else if (header.includes("image/webp")) mimeType = "image/webp";
+          else if (header.includes("image/gif")) mimeType = "image/gif";
+        }
 
-          if (cleanBase64.startsWith("data:")) {
-            const commaIdx = cleanBase64.indexOf(",");
-            const header = cleanBase64.slice(0, commaIdx);
-            cleanBase64 = cleanBase64.slice(commaIdx + 1);
-            if (header.includes("image/png")) mimeType = "image/png";
-            else if (header.includes("image/webp")) mimeType = "image/webp";
-            else if (header.includes("image/gif")) mimeType = "image/gif";
+        parts.push({
+          inline_data: {
+            mime_type: mimeType,
+            data: cleanBase64
           }
-
-          parts.push({
-            inlineData: {
-              mimeType: mimeType,
-              data: cleanBase64
-            }
-          });
-        }
-
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
-        const res = await fetch(geminiUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts }],
-            generationConfig: {
-              temperature: 0.1,
-              maxOutputTokens: 4096,
-            }
-          }),
         });
+      }
 
-        if (res.ok) {
-          const data = await res.json();
-          const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (text) return text;
-        } else {
-          const errText = await res.text();
-          console.warn("Gemini API error:", res.status, errText);
+      for (const model of geminiModels) {
+        try {
+          const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiApiKey}`;
+          const res = await fetch(geminiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ parts }],
+              generationConfig: {
+                temperature: 0.1,
+                maxOutputTokens: 4096,
+              }
+            }),
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (text) return text;
+          } else {
+            const errText = await res.text();
+            console.warn(`Gemini (${model}) API error:`, res.status, errText);
+          }
+        } catch (geminiErr) {
+          console.warn(`Falha no Gemini (${model}):`, geminiErr);
         }
-      } catch (geminiErr) {
-        console.warn("Falha no Gemini Flash:", geminiErr);
       }
     }
 

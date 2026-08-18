@@ -4,6 +4,7 @@ import { useToast } from '@/hooks/use-toast'
 import { ClipboardList, Plus, Search, Edit, Calendar, Clock, Phone, MapPin, User, DollarSign, StickyNote, MessageCircle, X, Eye, FileDown, Trash, Trash2, Image, FileText, Info, List, Camera, ChevronRight, Printer } from 'lucide-react';
 import PdfUploader from '../admin/PdfUploader';
 import { format } from 'date-fns';
+import logoSD from '@/assets/logo-sd.jpeg';
 
 const db = supabase as any;
 
@@ -1029,9 +1030,12 @@ const ServiceOrdersPage: React.FC = () => {
                         </style>
                       </head><body>
                         <div class="header">
-                          <div>
-                            <div class="company">SD M\u00f3veis Projetados</div>
-                            <div class="subtitle">Marcenaria e M\u00f3veis Planejados</div>
+                          <div style="display:flex;align-items:center;gap:14px;">
+                            <img src="${logoSD}" alt="SD" style="width:55px;height:55px;object-fit:cover;border-radius:10px;border:2px solid #D4AF37;" />
+                            <div>
+                              <div class="company">SD Móveis Projetados</div>
+                              <div class="subtitle">Marcenaria e Móveis Planejados</div>
+                            </div>
                           </div>
                           <div class="os-badge">OS #${orders.find(o => o.id === editingId)?.order_number || ''}</div>
                         </div>

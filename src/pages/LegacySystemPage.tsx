@@ -7,6 +7,7 @@ import {
   CreditCard, X, Plus, Trash2, Edit, Camera, Image as ImageIcon,
   LogOut, FileText, RefreshCw, MessageCircle
 } from 'lucide-react';
+import logoSD from '@/assets/logo-sd.jpeg';
 
 const db = supabase as any;
 
@@ -720,20 +721,31 @@ const LegacySystemPage: React.FC = () => {
     const docTitle = `${clientDesc.trim() ? clientDesc.trim() + ' - ' : ''}${isOrcamento ? 'Orçamento' : 'OS'} #${orderNo}`;
     win.document.write(`
       <html><head><title>${docTitle}</title>
-      <style>body{font-family:Tahoma,Arial,sans-serif;font-size:12px;padding:16px}
-      h2{margin:0 0 8px}table{width:100%;border-collapse:collapse}
-      th,td{border:1px solid #999;padding:4px 8px;text-align:left}
-      th{background:#eee}.total{font-weight:bold;font-size:14px}</style>
+      <style>
+        body{font-family:Tahoma,Arial,sans-serif;font-size:12px;padding:16px}
+        h2{margin:0 0 4px;font-size:18px}
+        table{width:100%;border-collapse:collapse;margin-top:10px}
+        th,td{border:1px solid #999;padding:5px 8px;text-align:left}
+        th{background:#eee}.total{font-weight:bold;font-size:14px}
+        .header-box{display:flex;align-items:center;gap:14px;margin-bottom:12px;border-bottom:2px solid #111;padding-bottom:10px}
+        .logo-img{width:60px;height:60px;object-fit:cover;border-radius:12px;border:2px solid #d4af37}
+      </style>
       </head><body>
-      <h2>SD Móveis Projetados — OS #${orderNo}</h2>
+      <div class="header-box">
+        <img class="logo-img" src="${logoSD}" alt="SD Móveis" />
+        <div>
+          <h2>SD Móveis Projetados</h2>
+          <div style="font-size:13px;font-weight:bold;color:#444;">${isOrcamento ? 'Orçamento' : 'Ordem de Serviço'} #${orderNo}</div>
+        </div>
+      </div>
       <p><b>Data:</b> ${date} ${time} | <b>Status:</b> ${situacaoAtual}</p>
       <p><b>Cliente:</b> ${clientDesc} | <b>Tel:</b> ${phone}</p>
       <p><b>Responsável:</b> ${employees.find(e => e.id === responsavel)?.name || '-'}</p>
-      <hr/>
+      <hr style="margin:8px 0;border:none;border-top:1px solid #ccc"/>
       <p><b>Serviço a realizar:</b> ${servicoRealizado || '-'}</p>
       <p><b>Problemas/Reparos:</b> ${problemasReparos || '-'}</p>
       <p><b>Etapa atual:</b> ${etapaServico || '-'}</p>
-      <hr/>
+      <hr style="margin:8px 0;border:none;border-top:1px solid #ccc"/>
       <table><tr><th>#</th><th>Descrição</th><th>Un</th><th>Larg</th><th>Alt</th><th>M²</th><th>Valor</th><th>Qtd</th><th>Total</th></tr>
       ${osItems.map((it, i) => `<tr>
         <td>${i + 1}</td><td>${it.description}</td><td>${it.unit}</td>
@@ -744,12 +756,12 @@ const LegacySystemPage: React.FC = () => {
         <td>R$ ${fmtMoney(it.total_value)}</td>
       </tr>`).join('')}
       </table>
-      <p class="total" style="text-align:right;margin-top:8px">
+      <p class="total" style="text-align:right;margin-top:12px">
         Material: R$ ${fmtMoney(valorMaterialNum)} &nbsp;|&nbsp;
         Serviço (${taxaPercentual}%): R$ ${fmtMoney(valorServicoCalculado)} &nbsp;|&nbsp;
         Frete: R$ ${frete} &nbsp;|&nbsp;
         Desconto: R$ ${desconto} &nbsp;|&nbsp;
-        <span style="font-size:16px">TOTAL: R$ ${fmtMoney(total)}</span>
+        <span style="font-size:16px;color:#000">TOTAL: R$ ${fmtMoney(total)}</span>
       </p>
       </body></html>
     `);

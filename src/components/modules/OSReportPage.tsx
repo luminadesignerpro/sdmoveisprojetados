@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { FileText, Search, TrendingUp, CheckCircle, Clock, Calendar, Eye, Edit2, MessageCircle, Printer, X, Phone, MapPin, User, DollarSign, StickyNote } from 'lucide-react';
+import { FileText, Search, TrendingUp, CheckCircle, Clock, Calendar, Eye, Edit2, MessageCircle, Printer, X, Phone, MapPin, User, DollarSign, StickyNote, Save, Check } from 'lucide-react';
 import { format } from 'date-fns';
+import logoSD from '@/assets/logo-sd.jpeg';
 
 const db = supabase as any;
 
-/* ----------- Função de Impressão ----------- */
+/* ----------- Função de Impressão com Logo ----------- */
 const printOS = (os: any) => {
   const win = window.open('', '_blank', 'width=900,height=700');
   if (!win) return;
@@ -23,9 +24,11 @@ const printOS = (os: any) => {
       *{box-sizing:border-box;margin:0;padding:0}
       body{font-family:'Segoe UI',Arial,sans-serif;background:#f8fafc;color:#1e293b;padding:40px}
       .card{background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.08);overflow:hidden;max-width:800px;margin:0 auto}
-      .header{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);padding:32px 40px;display:flex;justify-content:space-between;align-items:center}
-      .logo{color:#f59e0b;font-size:24px;font-weight:900;letter-spacing:1px}
-      .os-num{color:#fff;font-size:36px;font-weight:900}
+      .header{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);padding:28px 36px;display:flex;justify-content:space-between;align-items:center}
+      .logo-box{display:flex;align-items:center;gap:14px}
+      .logo-img{width:56px;height:56px;object-fit:cover;border-radius:10px;border:2px solid #f59e0b}
+      .logo-text{color:#f59e0b;font-size:20px;font-weight:900;letter-spacing:0.5px}
+      .os-num{color:#fff;font-size:32px;font-weight:900}
       .body{padding:32px 40px}
       .badge{display:inline-block;padding:6px 18px;border-radius:99px;font-size:13px;font-weight:700;color:#fff;background:${statusColor};margin-bottom:20px}
       .section-title{font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;margin-top:24px}
@@ -41,7 +44,13 @@ const printOS = (os: any) => {
     </style></head><body>
     <div class="card">
       <div class="header">
-        <div class="logo">SD MÓVEIS</div>
+        <div class="logo-box">
+          <img src="${logoSD}" class="logo-img" alt="SD Móveis" />
+          <div>
+            <div class="logo-text">SD MÓVEIS PROJETADOS</div>
+            <div style="color:#94a3b8;font-size:11px;">Marcenaria e Móveis Planejados</div>
+          </div>
+        </div>
         <div class="os-num">#${os.order_number}</div>
       </div>
       <div class="body">
@@ -76,6 +85,21 @@ const OSReportPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [viewOS, setViewOS] = useState<any | null>(null);
+  
+  // Estado de Edição Direta de OS
+  const [editingOS, setEditingOS] = useState<any | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [editForm, setEditForm] = useState({
+    client_name: '',
+    client_phone: '',
+    client_address: '',
+    description: '',
+    status: 'aberta',
+    priority: 'normal',
+    total_value: 0,
+    estimated_date: '',
+    notes: '',
+  });
 
   useEffect(() => {
     fetchOrders();
@@ -86,7 +110,7 @@ const OSReportPage: React.FC = () => {
       setLoading(true);
       const { data, error } = await db
         .from('service_orders')
-        .select('*, clients(name)')
+        .select('*, clients(name, phone, address)')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -98,9 +122,52 @@ const OSReportPage: React.FC = () => {
     }
   };
 
+  const handleOpenEdit = (os: any) => {
+    setEditingOS(os);
+    setEditForm({
+      client_name: os.clients?.name || os.client_name || '',
+      client_phone: os.client_phone || os.clients?.phone || '',
+      client_address: os.client_address || os.clients?.address || '',
+      description: os.description || '',
+      status: os.status || 'aberta',
+      priority: os.priority || 'normal',
+      total_value: os.total_value || 0,
+      estimated_date: os.estimated_date ? os.estimated_date.slice(0, 10) : '',
+      notes: os.notes || '',
+    });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingOS) return;
+    setSavingEdit(true);
+    try {
+      const { error } = await db.from('service_orders').update({
+        client_name: editForm.client_name,
+        client_phone: editForm.client_phone,
+        client_address: editForm.client_address,
+        description: editForm.description,
+        status: editForm.status,
+        priority: editForm.priority,
+        total_value: Number(editForm.total_value) || 0,
+        estimated_date: editForm.estimated_date || null,
+        notes: editForm.notes,
+      }).eq('id', editingOS.id);
+
+      if (error) throw error;
+      toast({ title: '✅ OS atualizada com sucesso!', description: `OS #${editingOS.order_number} foi salva.` });
+      setEditingOS(null);
+      fetchOrders();
+    } catch (err: any) {
+      toast({ title: '❌ Erro ao salvar OS', description: err.message, variant: 'destructive' });
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
   const filteredOrders = orders.filter(o => 
     (o.order_number?.toString().includes(search)) ||
     (o.clients?.name?.toLowerCase().includes(search.toLowerCase())) ||
+    (o.client_name?.toLowerCase().includes(search.toLowerCase())) ||
     (o.description?.toLowerCase().includes(search.toLowerCase()))
   );
 
@@ -110,7 +177,6 @@ const OSReportPage: React.FC = () => {
 
   return (
     <div className="p-6 h-full flex flex-col bg-background relative overflow-hidden">
-      {/* Background decoration */}
       <div className="absolute top-[-10%] right-[-5%] w-96 h-96 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-[-10%] left-[-5%] w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
 
@@ -220,10 +286,8 @@ const OSReportPage: React.FC = () => {
                          os.status === 'em_andamento' ? 'EM ANDAMENTO' : 'PENDENTE'}
                       </span>
                     </td>
-                    {/* ── BOTÕES DE AÇÃO ── */}
                     <td className="py-3 px-4">
                       <div className="flex items-center justify-center gap-1">
-                        {/* Visualizar */}
                         <button
                           onClick={() => setViewOS(os)}
                           title="Visualizar OS"
@@ -231,15 +295,13 @@ const OSReportPage: React.FC = () => {
                         >
                           <Eye className="w-3.5 h-3.5" />
                         </button>
-                        {/* Editar */}
                         <button
-                          onClick={() => toast({ title: `Editando OS #${os.order_number}`, description: 'Abra a aba Ordens de Serviço para editar.' })}
-                          title="Editar OS"
+                          onClick={() => handleOpenEdit(os)}
+                          title="Editar OS Diretamente"
                           className="flex items-center justify-center w-8 h-8 rounded-lg bg-amber-500/10 hover:bg-amber-500/25 border border-amber-500/20 hover:border-amber-400/50 text-amber-400 hover:text-amber-300 transition-all duration-200 hover:scale-110"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
-                        {/* WhatsApp */}
                         <a
                           href={whatsappUrl}
                           target="_blank"
@@ -249,7 +311,6 @@ const OSReportPage: React.FC = () => {
                         >
                           <MessageCircle className="w-3.5 h-3.5" />
                         </a>
-                        {/* Imprimir */}
                         <button
                           onClick={() => printOS(os)}
                           title="Imprimir OS"
@@ -267,6 +328,176 @@ const OSReportPage: React.FC = () => {
           )}
         </div>
       </div>
+      
+      {/* ── MODAL DE EDIÇÃO DIRETA DA OS ── */}
+      {editingOS && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4"
+          style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)' }}
+          onClick={() => setEditingOS(null)}
+        >
+          <div
+            className="bg-[#111111] border border-amber-500/30 rounded-3xl shadow-2xl w-full max-w-xl max-h-[95vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200 text-white"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-6 py-5 border-b border-white/10 bg-gradient-to-r from-amber-500/15 to-transparent sticky top-0 bg-[#111111] z-10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-400">
+                  <Edit2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-xs text-amber-400 font-semibold uppercase tracking-wider">Editar Ordem de Serviço</p>
+                  <h2 className="text-xl font-black text-white">OS #{editingOS.order_number}</h2>
+                </div>
+              </div>
+              <button onClick={() => setEditingOS(null)} className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 uppercase mb-1 flex items-center gap-1">
+                    <User className="w-3.5 h-3.5 text-amber-400" /> Cliente
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.client_name}
+                    onChange={e => setEditForm({ ...editForm, client_name: e.target.value })}
+                    placeholder="Nome do cliente"
+                    className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-3.5 py-2.5 text-white focus:border-amber-500 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 uppercase mb-1 flex items-center gap-1">
+                    <Phone className="w-3.5 h-3.5 text-green-400" /> Telefone / WhatsApp
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.client_phone}
+                    onChange={e => setEditForm({ ...editForm, client_phone: e.target.value })}
+                    placeholder="(00) 00000-0000"
+                    className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-3.5 py-2.5 text-white focus:border-amber-500 outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-400 uppercase mb-1 flex items-center gap-1">
+                  <MapPin className="w-3.5 h-3.5 text-red-400" /> Endereço
+                </label>
+                <input
+                  type="text"
+                  value={editForm.client_address}
+                  onChange={e => setEditForm({ ...editForm, client_address: e.target.value })}
+                  placeholder="Rua, número, bairro..."
+                  className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-3.5 py-2.5 text-white focus:border-amber-500 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-400 uppercase mb-1 flex items-center gap-1">
+                  <StickyNote className="w-3.5 h-3.5 text-amber-400" /> Descrição do Serviço
+                </label>
+                <input
+                  type="text"
+                  value={editForm.description}
+                  onChange={e => setEditForm({ ...editForm, description: e.target.value })}
+                  placeholder="Ex: Fabricação de armário de cozinha..."
+                  className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-3.5 py-2.5 text-white focus:border-amber-500 outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 uppercase mb-1">Status</label>
+                  <select
+                    value={editForm.status}
+                    onChange={e => setEditForm({ ...editForm, status: e.target.value })}
+                    className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-3.5 py-2.5 text-white focus:border-amber-500 outline-none"
+                  >
+                    <option value="aberta">Aberta / Pendente</option>
+                    <option value="em_andamento">Em Andamento</option>
+                    <option value="concluida">Concluída</option>
+                    <option value="cancelada">Cancelada</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 uppercase mb-1">Prioridade</label>
+                  <select
+                    value={editForm.priority}
+                    onChange={e => setEditForm({ ...editForm, priority: e.target.value })}
+                    className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-3.5 py-2.5 text-white focus:border-amber-500 outline-none"
+                  >
+                    <option value="baixa">Baixa</option>
+                    <option value="normal">Normal</option>
+                    <option value="alta">Alta</option>
+                    <option value="urgente">Urgente</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 uppercase mb-1 flex items-center gap-1">
+                    <DollarSign className="w-3.5 h-3.5 text-green-400" /> Valor Total (R$)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={editForm.total_value}
+                    onChange={e => setEditForm({ ...editForm, total_value: parseFloat(e.target.value) || 0 })}
+                    className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-3.5 py-2.5 text-white focus:border-amber-500 outline-none font-bold text-green-400"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-400 uppercase mb-1 flex items-center gap-1">
+                  <Calendar className="w-3.5 h-3.5 text-amber-400" /> Data Prevista
+                </label>
+                <input
+                  type="date"
+                  value={editForm.estimated_date}
+                  onChange={e => setEditForm({ ...editForm, estimated_date: e.target.value })}
+                  className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-3.5 py-2.5 text-white focus:border-amber-500 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-400 uppercase mb-1">Observações Internas</label>
+                <textarea
+                  rows={3}
+                  value={editForm.notes}
+                  onChange={e => setEditForm({ ...editForm, notes: e.target.value })}
+                  placeholder="Anotações sobre materiais, medidas, prazos..."
+                  className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl p-3 text-white focus:border-amber-500 outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-white/10 flex items-center justify-end gap-3 sticky bottom-0 bg-[#111111]">
+              <button
+                type="button"
+                onClick={() => setEditingOS(null)}
+                className="px-5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 font-semibold text-sm transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveEdit}
+                disabled={savingEdit}
+                className="px-6 py-2.5 rounded-xl text-black font-bold text-sm flex items-center gap-2 shadow-lg hover:opacity-90 transition-all disabled:opacity-50"
+                style={{ background: 'linear-gradient(135deg, #D4AF37, #F5E583)' }}
+              >
+                <Save className="w-4 h-4" /> {savingEdit ? 'Salvando...' : 'Salvar Alterações'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── MODAL DE VISUALIZAÇÃO DA OS ── */}
       {viewOS && (
         <div
@@ -278,7 +509,6 @@ const OSReportPage: React.FC = () => {
             className="bg-[#111111] border border-white/10 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200"
             onClick={e => e.stopPropagation()}
           >
-            {/* Header */}
             <div className="flex items-center justify-between px-6 py-5 border-b border-white/10 bg-gradient-to-r from-amber-500/10 to-transparent">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
@@ -303,9 +533,7 @@ const OSReportPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Body */}
             <div className="p-6 space-y-4">
-              {/* Grid de infos */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-white/5 rounded-2xl p-4">
                   <p className="text-[10px] text-muted-foreground uppercase font-semibold mb-1 flex items-center gap-1"><User className="w-3 h-3" /> Cliente</p>
@@ -329,7 +557,6 @@ const OSReportPage: React.FC = () => {
                 )}
               </div>
 
-              {/* Descrição */}
               {viewOS.description && (
                 <div className="bg-white/5 rounded-2xl p-4">
                   <p className="text-[10px] text-muted-foreground uppercase font-semibold mb-2 flex items-center gap-1"><StickyNote className="w-3 h-3" /> Descrição</p>
@@ -337,7 +564,6 @@ const OSReportPage: React.FC = () => {
                 </div>
               )}
 
-              {/* Observações */}
               {viewOS.notes && (
                 <div className="bg-white/5 rounded-2xl p-4">
                   <p className="text-[10px] text-muted-foreground uppercase font-semibold mb-2">Observações</p>
@@ -345,14 +571,12 @@ const OSReportPage: React.FC = () => {
                 </div>
               )}
 
-              {/* Valor total */}
               <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/5 border border-green-500/20 rounded-2xl p-4 flex items-center justify-between">
                 <span className="text-sm font-semibold text-green-300 flex items-center gap-2"><DollarSign className="w-4 h-4" /> Valor Total</span>
                 <span className="text-2xl font-black text-green-400">R$ {viewOS.total_value ? viewOS.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00'}</span>
               </div>
             </div>
 
-            {/* Footer actions */}
             <div className="px-6 py-4 border-t border-white/10 flex items-center justify-end gap-2">
               <button
                 onClick={() => { printOS(viewOS); }}
