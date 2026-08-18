@@ -84,52 +84,79 @@ export async function analyzeImageWithGemini(base64Image: string, prompt: string
       }
     }
 
-    const activeGroqKey = GROQ_API_KEY || "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";
-    if (!activeGroqKey) {
-      throw new Error("Chave de API Groq não configurada e Edge Function indisponível.");
-    }
-
-    const content: any[] = [{ type: "text", text: prompt }];
-
-    for (const img of images) {
-      let cleanBase64 = img;
-      
-      // Skip non-image data (raw PDF bytes can't be sent as image)
-      if (cleanBase64.startsWith("data:application/pdf") || cleanBase64.startsWith("data:application/octet-stream")) {
-        console.warn("Skipping non-image data URL in vision request");
-        continue;
-      }
-      
-      if (!cleanBase64.startsWith("data:")) {
-        cleanBase64 = `data:image/jpeg;base64,${cleanBase64}`;
-      }
-      
-      content.push({
-        type: "image_url",
-        image_url: {
-          url: cleanBase64,
-        },
-      });
-    }
-
-    // Try current vision models in order of availability
-    const visionModels = ["llama-3.2-90b-vision-preview", "llama-3.2-11b-vision-preview"];
-    let lastError = "";
-
-    for (const modelName of visionModels) {
+    // 1. Tentar via Google Gemini 1.5 Flash (Oficial e Ultra Preciso para Imagens e Documentos)
+    const geminiApiKey = (import.meta.env.VITE_GEMINI_API_KEY || "AIzaSyCv3n-NwYyL4qghfbkAWvqCIXyio18mQsA").trim();
+    if (geminiApiKey) {
       try {
-        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        const parts: any[] = [{ text: prompt }];
+
+        for (const img of images) {
+          let cleanBase64 = img;
+          let mimeType = "image/jpeg";
+
+          if (cleanBase64.startsWith("data:")) {
+            const commaIdx = cleanBase64.indexOf(",");
+            const header = cleanBase64.slice(0, commaIdx);
+            cleanBase64 = cleanBase64.slice(commaIdx + 1);
+            if (header.includes("image/png")) mimeType = "image/png";
+            else if (header.includes("image/webp")) mimeType = "image/webp";
+            else if (header.includes("image/gif")) mimeType = "image/gif";
+          }
+
+          parts.push({
+            inlineData: {
+              mimeType: mimeType,
+              data: cleanBase64
+            }
+          });
+        }
+
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
+        const res = await fetch(geminiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts }],
+            generationConfig: {
+              temperature: 0.1,
+              maxOutputTokens: 4096,
+            }
+          }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (text) return text;
+        } else {
+          const errText = await res.text();
+          console.warn("Gemini API error:", res.status, errText);
+        }
+      } catch (geminiErr) {
+        console.warn("Falha no Gemini Flash:", geminiErr);
+      }
+    }
+
+    // 2. Fallback: Llama 3.3 Text na Groq
+    const activeGroqKey = GROQ_API_KEY || "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";
+    if (activeGroqKey) {
+      try {
+        const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${activeGroqKey}`,
           },
           body: JSON.stringify({
-            model: modelName,
+            model: "llama-3.3-70b-versatile",
             messages: [
               {
+                role: "system",
+                content: "Você é um assistente especialista em orçamentos de marcenaria e materiais para móveis planejados. Responda estritamente no formato JSON solicitado.",
+              },
+              {
                 role: "user",
-                content: content,
+                content: prompt,
               },
             ],
             temperature: 0.1,
@@ -137,23 +164,17 @@ export async function analyzeImageWithGemini(base64Image: string, prompt: string
           }),
         });
 
-        if (!response.ok) {
-          const errText = await response.text();
-          lastError = `Groq Vision API error (${modelName}): ${response.status} - ${errText}`;
-          console.warn(`Tentativa com ${modelName} falhou:`, lastError);
-          continue;
+        if (groqRes.ok) {
+          const groqData = await groqRes.json();
+          const out = groqData.choices?.[0]?.message?.content;
+          if (out) return out;
         }
-
-        const data = await response.json();
-        const resText = data.choices?.[0]?.message?.content || "";
-        if (resText) return resText;
-      } catch (err: any) {
-        lastError = err.message || String(err);
-        console.warn(`Erro na tentativa com ${modelName}:`, lastError);
+      } catch (gErr) {
+        console.warn("Falha no fallback Groq:", gErr);
       }
     }
 
-    throw new Error(lastError || "Falha ao processar imagem com os modelos Groq Vision disponíveis.");
+    throw new Error("Não foi possível processar a imagem. Verifique a conexão com a internet.");
   } catch (error: any) {
     console.error("analyzeImageWithGemini error:", error);
     throw new Error(error.message || "Erro desconhecido na análise de imagem.");
