@@ -6,8 +6,8 @@ const APP_SHELL = [
   "/",
   "/index.html",
   "/manifest.json",
-  "/icons/icon-192x192.png",
-  "/icons/icon-512x512.png"
+  "/icon-192x192.png",
+  "/icon-512x512.png"
 ];
 
 // Instala o SW e guarda o "app shell" em cache
