@@ -1150,18 +1150,18 @@ const ServiceOrdersPage: React.FC = () => {
 
       {/* Table & Horizontal Scroll Controls */}
       <div className="space-y-2">
-        <div className="flex items-center justify-between px-2 text-xs text-gray-400">
+        <div className="flex items-center justify-between flex-wrap gap-2 px-2 text-xs text-gray-400">
           <span className="flex items-center gap-1.5 font-medium">
-            <span className="inline-block w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-            ↔ Deslize para o lado para ver todas as colunas e ações
+            <span className="inline-block w-2 h-2 rounded-full bg-amber-500 animate-pulse flex-shrink-0"></span>
+            <span>↔ Deslize para o lado para ver todas as colunas e ações</span>
           </span>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <button
               onClick={() => {
                 const el = document.getElementById('os-table-container');
                 if (el) el.scrollBy({ left: -300, behavior: 'smooth' });
               }}
-              className="px-3 py-1.5 bg-[#1a1a1a] hover:bg-amber-500/20 hover:text-amber-400 border border-white/10 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all"
+              className="px-3 py-1.5 bg-[#1a1a1a] hover:bg-amber-500/20 hover:text-amber-400 border border-white/10 rounded-lg text-xs font-semibold flex items-center gap-1 whitespace-nowrap transition-all"
               title="Rolar para a esquerda"
             >
               ◀ Esquerda
@@ -1171,7 +1171,7 @@ const ServiceOrdersPage: React.FC = () => {
                 const el = document.getElementById('os-table-container');
                 if (el) el.scrollBy({ left: 300, behavior: 'smooth' });
               }}
-              className="px-3 py-1.5 bg-[#1a1a1a] hover:bg-amber-500/20 hover:text-amber-400 border border-white/10 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all"
+              className="px-3 py-1.5 bg-[#1a1a1a] hover:bg-amber-500/20 hover:text-amber-400 border border-white/10 rounded-lg text-xs font-semibold flex items-center gap-1 whitespace-nowrap transition-all"
               title="Rolar para a direita"
             >
               Direita ▶
