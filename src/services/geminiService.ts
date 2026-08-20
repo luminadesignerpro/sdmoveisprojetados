@@ -85,7 +85,7 @@ export async function analyzeImageWithGemini(base64Image: string, prompt: string
     }
 
     // 1. Tentar via Google Gemini (1.5 Flash / 2.0 Flash)
-    const geminiApiKey = (import.meta.env.VITE_GEMINI_API_KEY || "AIzaSyCv3n-NwYyL4qghfbkAWvqCIXyio18mQsA").trim().replace(/[\r\n\s]/g, "");
+    const geminiApiKey = (import.meta.env.VITE_GEMINI_API_KEY || "").trim().replace(/[\r\n\s]/g, "");
     if (geminiApiKey) {
       const geminiModels = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-flash-8b"];
       
@@ -141,7 +141,7 @@ export async function analyzeImageWithGemini(base64Image: string, prompt: string
     }
 
     // 2. Fallback: Llama 3.3 Text na Groq
-    const activeGroqKey = GROQ_API_KEY || "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";
+    const activeGroqKey = GROQ_API_KEY || "";
     if (activeGroqKey) {
       try {
         const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -188,7 +188,7 @@ export async function analyzeImageWithGemini(base64Image: string, prompt: string
  * Analisa texto de orçamento diretamente com Llama 3.3 (ultra rápido e sem limite de visão)
  */
 export async function analyzeTextWithGroq(textContext: string, prompt: string): Promise<string> {
-  const activeGroqKey = GROQ_API_KEY || "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";
+  const activeGroqKey = GROQ_API_KEY || "";
   try {
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
