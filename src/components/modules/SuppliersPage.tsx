@@ -110,6 +110,8 @@ const SuppliersPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: '', cnpj: '', phone: '', email: '', address: '', category: 'Geral', notes: '' });
+  const [quickAddSupplierName, setQuickAddSupplierName] = useState('');
+  const [showQuickAddSupplier, setShowQuickAddSupplier] = useState(false);
 
   // Comparisons state
   const [comparisons, setComparisons] = useState<ProductComparison[]>(() => {
@@ -1370,6 +1372,16 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
     fetchSuppliers();
   };
 
+  const handleQuickAddSupplier = async () => {
+    const name = quickAddSupplierName.trim();
+    if (!name) { toast({ title: '⚠️ Digite o nome do fornecedor', variant: 'destructive' }); return; }
+    await db.from('suppliers').insert({ name, cnpj: null, phone: null, email: null, address: null, category: 'Geral', notes: null, active: true });
+    toast({ title: `✅ Fornecedor "${name}" criado!` });
+    setQuickAddSupplierName('');
+    setShowQuickAddSupplier(false);
+    fetchSuppliers();
+  };
+
   const handleEditSupplier = (s: Supplier) => {
     setForm({ name: s.name, cnpj: s.cnpj || '', phone: s.phone || '', email: s.email || '', address: s.address || '', category: s.category, notes: s.notes || '' });
     setEditingId(s.id);
@@ -1921,12 +1933,37 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
           </button>
         ))}
 
-        <button
-          onClick={() => { setActiveTab('suppliers_overview'); setShowForm(true); setEditingId(null); setForm({ name: '', cnpj: '', phone: '', email: '', address: '', category: 'Geral', notes: '' }); }}
-          className="flex items-center gap-2 px-5 py-3 font-bold text-sm rounded-t-2xl text-emerald-400 hover:bg-emerald-500/10 transition-all border-b-2 border-transparent"
-        >
-          + Novo Fornecedor
-        </button>
+        {!showQuickAddSupplier ? (
+          <button
+            onClick={() => setShowQuickAddSupplier(true)}
+            className="flex items-center gap-2 px-5 py-3 font-bold text-sm rounded-t-2xl text-emerald-400 hover:bg-emerald-500/10 transition-all border-b-2 border-transparent"
+          >
+            + Novo Fornecedor
+          </button>
+        ) : (
+          <div className="flex items-center gap-2 px-2 py-1.5">
+            <input
+              autoFocus
+              value={quickAddSupplierName}
+              onChange={e => setQuickAddSupplierName(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleQuickAddSupplier(); if (e.key === 'Escape') { setShowQuickAddSupplier(false); setQuickAddSupplierName(''); } }}
+              placeholder="Nome do fornecedor..."
+              className="px-3 py-2 rounded-xl border border-emerald-500/40 bg-[#1a1a1a] text-white text-sm placeholder-gray-500 focus:ring-2 focus:ring-emerald-500 focus:outline-none w-48"
+            />
+            <button
+              onClick={handleQuickAddSupplier}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-2 rounded-xl text-xs transition-all"
+            >
+              Salvar
+            </button>
+            <button
+              onClick={() => { setShowQuickAddSupplier(false); setQuickAddSupplierName(''); }}
+              className="text-gray-400 hover:text-white px-2 py-2 text-xs"
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
         <button
           onClick={() => setActiveTab('comparison')}
