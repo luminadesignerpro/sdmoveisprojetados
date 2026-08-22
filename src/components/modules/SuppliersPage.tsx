@@ -220,12 +220,12 @@ const SuppliersPage: React.FC = () => {
 
   useEffect(() => { fetchSuppliers(); }, []);
 
-  // --- INÍCIO IMPORTAÇÃO AUTOMÁTICA ITAIPU (PARTE 6) ---
+  // --- INÍCIO IMPORTAÇÃO AUTOMÁTICA ITAIPU (PARTE 7) ---
   useEffect(() => {
-    if (!localStorage.getItem('itaipu_products_imported_v6') && suppliers.length > 0) {
+    if (!localStorage.getItem('itaipu_products_imported_v7') && suppliers.length > 0) {
       const itaipu = suppliers.find(s => s.name.toUpperCase().includes('ITAIPU'));
       if (itaipu) {
-        const newProducts6 = [
+        const newProducts7 = [
           // DA IMAGEM ANTERIOR (v2)
           { name: 'MDF 15 CARVALHO BATHUR', price: 477.73 },
           { name: 'MDF 15 CARVALHO BERLIM', price: 477.73 },
@@ -261,8 +261,6 @@ const SuppliersPage: React.FC = () => {
           { name: 'MDF 15 FRAPE', price: 477.73 },
           { name: 'MDF 15 FREIJO', price: 477.73 },
           { name: 'MDF 15 GALIANO', price: 477.73 },
-          
-          // IMAGEM 1
           { name: 'MDF 15 GEPPETTO', price: 483.00 },
           { name: 'MDF 15 GIANDUIA CRISTALLO', price: 597.15 },
           { name: 'MDF 15 GIANDUIA NATURAL', price: 477.73 },
@@ -298,8 +296,6 @@ const SuppliersPage: React.FC = () => {
           { name: 'MDF 15 NIQUEL', price: 489.67 },
           { name: 'MDF 15 NOBLE TRAMA', price: 464.59 },
           { name: 'MDF 15 NOCE AMENDOA', price: 477.73 },
-
-          // IMAGEM 2
           { name: '20 MTS AL AMENDUADU 22 MM', price: 109.05 },
           { name: 'BRANCO TX 20 MTS FITA', price: 82.98 },
           { name: 'BRANCO TX MDF 06', price: 238.87 },
@@ -333,8 +329,6 @@ const SuppliersPage: React.FC = () => {
           { name: '20 MTS FITA BRANCO TRAMA', price: 95.55 },
           { name: '20 MTS FITA BRANCO TX 22MM', price: 109.05 },
           { name: '20 MTS FITA BRANCO TX 6,5', price: 167.21 },
-
-          // IMAGEM 3
           { name: '20 MTS FITA BRONZE', price: 95.55 },
           { name: '20 MTS FITA CACAU NATURAL', price: 95.55 },
           { name: '20 MTS FITA CARVALHO AMERICANO', price: 107.49 },
@@ -371,8 +365,6 @@ const SuppliersPage: React.FC = () => {
           { name: '20 MTS FITA FONTANA', price: 107.37 },
           { name: '20 MTS FITA FRAPE', price: 95.55 },
           { name: '20 MTS FITA FREIJO', price: 95.55 },
-
-          // IMAGEM 4
           { name: '20 MTS FITA GEPPETTO', price: 94.30 },
           { name: '20 MTS FITA GIANDUIA CRISTALLO', price: 218.09 },
           { name: '20 MTS FITA GIANDUIA NATURAL', price: 95.55 },
@@ -410,8 +402,6 @@ const SuppliersPage: React.FC = () => {
           { name: '20 MTS FITA NOCE AMENDOA', price: 95.55 },
           { name: '20 MTS FITA NOCE MARE', price: 95.55 },
           { name: '20 MTS FITA NOGAL MALAGA', price: 95.55 },
-
-          // IMAGEM 5
           { name: '20 MTS FITA NOGUEIRA CADIZ', price: 95.55 },
           { name: '20 MTS FITA NOGUEIRA FLORIDA', price: 92.00 },
           { name: '20 MTS FITA NOGUEIRA THAR', price: 95.55 },
@@ -447,8 +437,6 @@ const SuppliersPage: React.FC = () => {
           { name: '20 MTS FITA TOKAI', price: 95.55 },
           { name: '20 MTS FITA VERDE JADE', price: 95.55 },
           { name: '20 MTS FITA VERMELHO', price: 107.49 },
-
-          // IMAGEM 6 
           { name: '20 MTS FITA VERSALHES', price: 95.55 },
           { name: '20 MTS FITA VERTI', price: 95.55 },
           { name: '20 MTS FITA VIENA', price: 95.55 },
@@ -482,8 +470,6 @@ const SuppliersPage: React.FC = () => {
           { name: 'BEGE MDF 15', price: 460.00 },
           { name: 'BI CAMA MADEIRADO', price: 2269.19 },
           { name: 'BOX INCOLOR', price: 399.84 },
-          
-          // IMAGENS PARTE 5
           { name: 'BOX INCOLOR C/ PELICULA DE PROTEÇAO', price: 503.69 },
           { name: 'CAIXA 4 X 25', price: 62.11 },
           { name: 'CAIXA BUCHA 08', price: 59.60 },
@@ -644,8 +630,6 @@ const SuppliersPage: React.FC = () => {
           { name: 'MDF 06 CARVALHO MALVA', price: 334.41 },
           { name: 'MDF 06 CARVALHO TREVISO', price: 262.75 },
           { name: 'MDF 06 CILIEGIO', price: 394.13 },
-
-          // IMAGENS PARTE 6
           { name: 'MDF 06 CINZA A DEFINIR', price: 358.29 },
           { name: 'MDF 06 CINZA COBALTO', price: 358.29 },
           { name: 'MDF 06 CINZA CRISTAL', price: 370.24 },
@@ -797,15 +781,120 @@ const SuppliersPage: React.FC = () => {
           { name: 'PAINEL TV LACCA', price: 955.44 },
           { name: 'PAINEL TV MADEIRADO', price: 597.15 },
           { name: 'PEDRA VERDE UBATUBA', price: 358.29 },
-          { name: 'PELICULA DE PROTEÇAO', price: 143.32 }
+          { name: 'PELICULA DE PROTEÇAO', price: 143.32 },
+          { name: 'PILAR EM MADEIRA MUIRACATIARA', price: 534.75 },
+          { name: 'PINTURA EM BOISERIE EM LACA BRANCA', price: 65.69 },
+          { name: 'PINTURA EM LACCA ( MOVEIS )', price: 830.82 },
+          { name: 'PINTURA EM LACCA ( PORTAS )', price: 623.11 },
+          { name: 'PISTAO COM TRAVA', price: 345.15 },
+          { name: 'PISTAO INVERSO', price: 13.14 },
+          { name: 'PISTAO SUPERIOR', price: 13.14 },
+          { name: 'POLICARBONATO', price: 724.50 },
+          { name: 'PONTEIRAS PUXADOR FACETATO', price: 17.20 },
+          { name: 'PORTA C/ACABAMENTO DE VIDRO', price: 1074.88 },
+          { name: 'PORTA C/ACABAMENTO EM MDF', price: 1433.17 },
+          { name: 'PORTA C/FORRAMENTO EM MADEIRA CUMARU', price: 2269.19 },
+          { name: 'PORTA DE ALUMINIO C/VIDRO PINTADO', price: 1552.60 },
+          { name: 'PORTA DE ALUMINIO PRETO C/VIDRO PRETO', price: 1313.75 },
+          { name: 'PORTA DE CORRER BRANCO TX', price: 1194.31 },
+          { name: 'PORTA DE CORRER LACCA', price: 1910.90 },
+          { name: 'PORTA DE CORRER MADEIRADO', price: 1313.75 },
+          { name: 'PORTA DE GIRO BRANCO TX', price: 716.59 },
+          { name: 'PORTA DE GIRO LACCA', price: 1910.90 },
+          { name: 'PORTA DE GIRO MADEIRADO', price: 1074.88 },
+          { name: 'PORTA DE VIDRO 08MM INCOLOR', price: 529.65 },
+          { name: 'PORTA EM MDF BRANCO TX', price: 200.00 },
+          { name: 'PORTA EM PERFIL ALUMINIO BRANCO', price: 1194.31 },
+          { name: 'PORTA EM PERFIL ALUMINIO BRONZE C/VIDRO INCOLOR', price: 1181.33 },
+          { name: 'PORTA EM PERFIL ALUMINIO C/ESPELHO BRONZE', price: 1368.28 },
+          { name: 'PORTA EM PERFIL ALUMINIO C/ESPELHO PRATA', price: 1313.75 },
+          { name: 'PORTA EM PERFIL ALUMINIO C/VIDRO CANELADO', price: 1074.88 },
+          { name: 'PORTA EM PERFIL ALUMINIO C/VIDRO REFLECTA CHUMBO', price: 1194.31 },
+          { name: 'PORTA EM PERFIL ALUMINIO C/VIDRO REFLECTA PRATA', price: 1194.31 },
+          { name: 'PORTA EM PERFIL ALUMINIO COM VIDRO FUME', price: 1194.31 },
+          { name: 'PORTA EM PERFIL ALUMINIO COM VIDRO INCOLOR', price: 955.44 },
+          { name: 'PORTA EM PERFIL ALUMINIO PRETO C/VIDRO JATEADO PRETO', price: 1731.76 },
+          { name: 'PORTA MRB 80 CM', price: 316.74 },
+          { name: 'PORTA P/BOX 08MM', price: 238.87 },
+          { name: 'PORTA PARANA 70 CM', price: 358.29 },
+          { name: 'PORTA PARANA 100 CM', price: 453.83 },
+          { name: 'PORTA PARANA 80 CM', price: 394.13 },
+          { name: 'PORTA PERFIL ALUM.DOURADO C/VID.REF.FUME', price: 1869.35 },
+          { name: 'PORTAS DE ALMUNIO COM VIDRO REFLECTA SHAMPANHE', price: 1181.33 },
+          { name: 'PORTAS EM PERFIL ALUMINIO COM VIDRO REFLECTA BRONZE', price: 1181.33 },
+          { name: 'PRATELEIRA BRANCO TX', price: 955.44 },
+          { name: 'PRATELEIRA BRANCO TX ULTRA', price: 1027.11 },
+          { name: 'PRATELEIRA MADEIRADO', price: 1074.88 },
+          { name: 'PRENDEDOR DE PORTA MAGNETICO', price: 35.83 },
+          { name: 'PROMETAIS', price: 5.97 },
+          { name: 'PROMETAIS QUADRADO', price: 8.25 },
+          { name: 'PUXADOR BOLINHA', price: 14.33 },
+          { name: 'PUXADOR CONCHA', price: 33.44 },
+          { name: 'PUXADOR DUPLO P/PORTA DE VIDRO', price: 238.87 },
+          { name: 'PUXADOR P/BOX', price: 8.36 },
+          { name: 'PUXADOR SLIM 20 CM', price: 23.89 },
+          { name: 'PUXADOR ZEEN DIETRO 2P5711 PRETO', price: 115.00 },
+          { name: 'PVC 15 EXPANDIDO BRANCO', price: 782.00 },
+          { name: 'PVC BRANCO TX', price: 109.05 },
+          { name: 'PVC EXPANDIDO 06 AREIA', price: 437.00 },
+          { name: 'PVC EXPANDIDO 06 BRANCO', price: 437.00 },
+          { name: 'PVC EXPANDIDO 15 AREIA', price: 782.00 },
+          { name: 'QUARTZITO PERLA SANTANA', price: 2328.91 },
+          { name: 'REFLETOR DE LED', price: 36.25 },
+          { name: 'RODA PÉ EM NANO GLASS', price: 197.06 },
+          { name: 'RODA PÉ VERDE UBATUBA', price: 89.58 },
+          { name: 'RODIZIOS COM FREIO', price: 13.14 },
+          { name: 'ROLDANAS P/BOX', price: 17.92 },
+          { name: 'ROLETES DE PORTA', price: 3.58 },
+          { name: 'SAPATA DE REGULAGEM', price: 4.78 },
+          { name: 'SAPATA P/MOVEIS', price: 17.92 },
+          { name: 'SELADOR P/PAREDE', price: 31.16 },
+          { name: 'SERVIÇO DE ABERTURA P/VIDRO EM PORTA', price: 716.59 },
+          { name: 'SERVIÇO DE PINTURA LACA BRANCA', price: 358.29 },
+          { name: 'SILICONE INCOLOR', price: 26.29 },
+          { name: 'SOLVENTE', price: 29.86 },
+          { name: 'SPOT LED MINI', price: 16.61 },
+          { name: 'SPOT LUMAX REDONDO', price: 17.64 },
+          { name: 'SUPORTE ALUMINIO', price: 8.36 },
+          { name: 'SUPORTE BICO DE TUCANO', price: 29.86 },
+          { name: 'SUPORTE DE PRATELEIRA BRANCO', price: 0.36 },
+          { name: 'SUPORTE INOX', price: 19.11 },
+          { name: 'SUPORTE MÃO FRANCESA', price: 29.86 },
+          { name: 'SUPORTE OCULTO', price: 17.92 },
+          { name: 'SUPORTE PROLONGADOR CROMADO', price: 14.33 },
+          { name: 'TABLADO MADEIRA MAÇARANDUBA', price: 1910.90 },
+          { name: 'TABLADO MADEIRA MUIRACTIARA', price: 1791.47 },
+          { name: 'TABLADO MADEIRA YPE', price: 4180.09 },
+          { name: 'TAMPO DE MESA', price: 537.44 },
+          { name: 'TAPA FUROS BRANCO TX', price: 9.08 },
+          { name: 'TINTA BRANCO NEVE', price: 135.01 },
+          { name: 'TINTA FOSCA', price: 186.93 },
+          { name: 'TOQUE MAGICO EXTERNO', price: 8.00 },
+          { name: 'TUBO EM AÇO', price: 47.77 },
+          { name: 'VIDRO 04 MM PINTADO', price: 358.29 },
+          { name: 'VIDRO 04MM PRETO', price: 537.44 },
+          { name: 'VIDRO 06MM REFLECTA BRONZE', price: 1194.31 },
+          { name: 'VIDRO 06MM TEMPERADO', price: 363.49 },
+          { name: 'VIDRO 06MM TRANSLUCIDO', price: 441.78 },
+          { name: 'VIDRO 10 MM TRANSLUCIDO', price: 573.27 },
+          { name: 'VIDRO 10MM INCOLOR TEMPERADO', price: 716.49 },
+          { name: 'VIDRO BRANCO 04 MM', price: 459.81 },
+          { name: 'VIDRO BRANCO 06MM', price: 597.15 },
+          { name: 'VIDRO CANELADO', price: 363.49 },
+          { name: 'VIDRO INCOLOR 04MM', price: 274.69 },
+          { name: 'VIDRO INCOLOR 06MM TEMPERADO', price: 507.59 },
+          { name: 'VIDRO INCOLOR 08 MM', price: 573.27 },
+          { name: 'VIDRO INCOLOR 10 MM', price: 654.27 },
+          { name: 'VIDRO INCOLOR 12MM', price: 656.88 },
+          { name: 'VIDRO REFLECTA BRONZE 04 MM', price: 897.00 }
         ];
 
         setComparisons(prev => {
           const updated = [...prev];
-          newProducts6.forEach((prod, idx) => {
+          newProducts7.forEach((prod, idx) => {
             if (!updated.some(p => p.productName === prod.name && p.quotes[0].unitPrice === prod.price)) {
               updated.push({
-                id: 'import6_' + Date.now() + '_' + idx,
+                id: 'import7_' + Date.now() + '_' + idx,
                 productName: prod.name,
                 category: 'MDF/MDP',
                 unit: 'Unidade',
@@ -824,13 +913,13 @@ const SuppliersPage: React.FC = () => {
             }
           });
           localStorage.setItem('sd_supplier_comparisons_v3', JSON.stringify(updated));
-          localStorage.setItem('itaipu_products_imported_v6', 'true');
+          localStorage.setItem('itaipu_products_imported_v7', 'true');
           return updated;
         });
       }
     }
   }, [suppliers]);
-  // --- FIM IMPORTAÇÃO AUTOMÁTICA ITAIPU (PARTE 6) ---
+  // --- FIM IMPORTAÇÃO AUTOMÁTICA ITAIPU (PARTE 7) ---
 
   // ─── PDF Render & Text Extraction Helper ────────────────────────────────────
   const convertFileToImageAndText = async (file: File): Promise<{ base64Image: string; text: string }> => {
