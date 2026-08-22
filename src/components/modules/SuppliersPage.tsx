@@ -220,73 +220,80 @@ const SuppliersPage: React.FC = () => {
 
   useEffect(() => { fetchSuppliers(); }, []);
 
-  // --- INÍCIO IMPORTAÇÃO AUTOMÁTICA ITAIPU ---
+  // --- INÍCIO IMPORTAÇÃO AUTOMÁTICA ITAIPU (PARTE 2) ---
   useEffect(() => {
-    if (!localStorage.getItem('itaipu_products_imported_v1') && suppliers.length > 0) {
+    if (!localStorage.getItem('itaipu_products_imported_v2') && suppliers.length > 0) {
       const itaipu = suppliers.find(s => s.name.toUpperCase().includes('ITAIPU'));
       if (itaipu) {
-        const newProducts = [
-          { name: 'MDF 15 FURADO', price: 690.00 },
-          { name: 'MDF 15 2F ULTRA', price: 360.14 },
-          { name: 'MDF 15 ABSOLUTO', price: 464.59 },
-          { name: 'MDF 15 ACACIA', price: 489.67 },
-          { name: 'MDF 15 ALMERIA', price: 477.73 },
-          { name: 'MDF 15 ARAUCARIA', price: 495.63 },
-          { name: 'MDF 15 ARDOSIA', price: 453.39 },
-          { name: 'MDF 15 AREIA', price: 477.73 },
-          { name: 'MDF 15 AREIA NORONHA', price: 489.67 },
-          { name: 'MDF 15 AREIA RUC', price: 495.63 },
-          { name: 'MDF 15 ARENITO', price: 477.73 },
-          { name: 'MDF 15 ARGILA', price: 415.42 },
-          { name: 'MDF 15 AURORA', price: 477.73 },
-          { name: 'MDF 15 AZUL ASTRAL', price: 477.73 },
-          { name: 'MDF 15 AZUL PETROLEO', price: 464.59 },
-          { name: 'MDF 15 AZUL SECRETO', price: 477.73 },
-          { name: 'MDF 15 AZUL SERENO MATT', price: 477.73 },
-          { name: 'MDF 15 AZUL SKY VEL', price: 477.73 },
-          { name: 'MDF 15 BEGE ESCURO A DEFINIR', price: 448.65 },
-          { name: 'MDF 15 BILBAO', price: 477.73 },
-          { name: 'MDF 15 BLUE SKY', price: 481.88 },
-          { name: 'MDF 15 BOLEIRO', price: 477.73 },
-          { name: 'MDF 15 BRANCO DIAMANTE CRISTALLO', price: 597.15 },
-          { name: 'MDF 15 BRANCO DIAMANTE ESSENCIAL', price: 477.73 },
-          { name: 'MDF 15 BRANCO DIAMANTE ESSENCIAL ULTRA', price: 501.61 },
-          { name: 'MDF 15 BRANCO SUPREMO', price: 698.67 },
-          { name: 'MDF 15 BRANCO TRAMA', price: 477.73 },
-          { name: 'MDF 15 BRONZE', price: 477.73 },
-          { name: 'MDF 15 CACAU NATURAL', price: 477.73 },
-          { name: 'MDF 15 CARVALHO AMERICANO', price: 477.73 }
+        const newProducts2 = [
+          { name: 'MDF 15 CARVALHO BATHUR', price: 477.73 },
+          { name: 'MDF 15 CARVALHO BERLIM', price: 477.73 },
+          { name: 'MDF 15 CARVALHO ETERNO', price: 477.73 },
+          { name: 'MDF 15 CARVALHO HARNOVER', price: 489.67 },
+          { name: 'MDF 15 CARVALHO JAPONI', price: 477.73 },
+          { name: 'MDF 15 CARVALHO MALVA', price: 477.73 },
+          { name: 'MDF 15 CARVALHO TREVISO', price: 477.73 },
+          { name: 'MDF 15 CHUMBO', price: 477.73 },
+          { name: 'MDF 15 CILIEGIO', price: 501.61 },
+          { name: 'MDF 15 CINZA A DEFINIR', price: 477.73 },
+          { name: 'MDF 15 CINZA COBALTO', price: 477.73 },
+          { name: 'MDF 15 CINZA CRISTAL', price: 489.67 },
+          { name: 'MDF 15 CINZA ESSENCIAL', price: 477.73 },
+          { name: 'MDF 15 CINZA ITALIA', price: 501.61 },
+          { name: 'MDF 15 CINZA SAGRADO', price: 477.73 },
+          { name: 'MDF 15 CINZA SAGRADO ESSENCIAL', price: 394.13 },
+          { name: 'MDF 15 CINZA SAGRADO CRISTALLO', price: 573.27 },
+          { name: 'MDF 15 CINZA URBANO', price: 477.73 },
+          { name: 'MDF 15 CINZA VEL', price: 477.73 },
+          { name: 'MDF 15 CONCRETE', price: 483.00 },
+          { name: 'MDF 15 COR TX A DEFINIR', price: 477.73 },
+          { name: 'MDF 15 CRIPES', price: 437.00 },
+          { name: 'MDF 15 CRISTALLO', price: 597.15 },
+          { name: 'MDF 15 CUMARU NATIVO', price: 513.56 },
+          { name: 'MDF 15 CUMARU RAIZ', price: 477.73 },
+          { name: 'MDF 15 CURUPIXA RIPADO', price: 477.73 },
+          { name: 'MDF 15 FAIA', price: 477.73 },
+          { name: 'MDF 15 FASANO', price: 367.85 },
+          { name: 'MDF 15 FENDI', price: 561.21 },
+          { name: 'MDF 15 FOG MAGMA', price: 501.61 },
+          { name: 'MDF 15 FONTANA', price: 477.73 },
+          { name: 'MDF 15 FRAPE', price: 477.73 },
+          { name: 'MDF 15 FREIJO', price: 477.73 },
+          { name: 'MDF 15 GALIANO', price: 477.73 }
         ];
 
         setComparisons(prev => {
           const updated = [...prev];
-          newProducts.forEach((prod, idx) => {
-            updated.push({
-              id: 'import_' + Date.now() + '_' + idx,
-              productName: prod.name,
-              category: 'MDF/MDP',
-              unit: 'Unidade',
-              quotes: [
-                {
-                  supplierId: itaipu.id,
-                  supplierName: itaipu.name,
-                  brand: 'Geral',
-                  pricePerM2: null,
-                  unitPrice: prod.price,
-                  price: prod.price,
-                  updatedAt: new Date().toISOString().split('T')[0]
-                }
-              ]
-            });
+          newProducts2.forEach((prod, idx) => {
+            // Verifica se o produto já foi adicionado pra não duplicar caso o usuário atualize rápido
+            if (!updated.some(p => p.productName === prod.name && p.quotes[0].unitPrice === prod.price)) {
+              updated.push({
+                id: 'import2_' + Date.now() + '_' + idx,
+                productName: prod.name,
+                category: 'MDF/MDP',
+                unit: 'Unidade',
+                quotes: [
+                  {
+                    supplierId: itaipu.id,
+                    supplierName: itaipu.name,
+                    brand: 'Geral',
+                    pricePerM2: null,
+                    unitPrice: prod.price,
+                    price: prod.price,
+                    updatedAt: new Date().toISOString().split('T')[0]
+                  }
+                ]
+              });
+            }
           });
           localStorage.setItem('sd_supplier_comparisons_v3', JSON.stringify(updated));
-          localStorage.setItem('itaipu_products_imported_v1', 'true');
+          localStorage.setItem('itaipu_products_imported_v2', 'true');
           return updated;
         });
       }
     }
   }, [suppliers]);
-  // --- FIM IMPORTAÇÃO AUTOMÁTICA ITAIPU ---
+  // --- FIM IMPORTAÇÃO AUTOMÁTICA ITAIPU (PARTE 2) ---
 
   // ─── PDF Render & Text Extraction Helper ────────────────────────────────────
   const convertFileToImageAndText = async (file: File): Promise<{ base64Image: string; text: string }> => {
