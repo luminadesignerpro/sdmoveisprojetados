@@ -165,6 +165,7 @@ const SuppliersPage: React.FC = () => {
   const [quoteForm, setQuoteForm] = useState({
     supplierId: '',
     supplierName: '',
+    productName: '',
     brand: '',
     pricePerM2: '',
     unitPrice: '',
@@ -2157,6 +2158,7 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
                                   setQuoteForm({
                                     supplierId: currentSupplier.id,
                                     supplierName: currentSupplier.name,
+                                    productName: prod.productName,
                                     brand: thisQuote.brand || '',
                                     pricePerM2: thisQuote.pricePerM2?.toString() || '',
                                     unitPrice: thisPrice.toString(),
@@ -2314,7 +2316,7 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
                       <button
                         onClick={() => {
                           setQuoteModalProdId(item.id);
-                          setQuoteForm({ supplierId: '', supplierName: '', brand: '', pricePerM2: '', unitPrice: '', specifications: '', photoUrl: '' });
+                          setQuoteForm({ supplierId: '', supplierName: '', productName: item.productName, brand: '', pricePerM2: '', unitPrice: '', specifications: '', photoUrl: '' });
                         }}
                         className="bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-400 font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 transition-all"
                         title="Adicionar cotação de outro fornecedor para comparar"
@@ -2932,17 +2934,12 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
 
               <div>
                 <label className="text-xs text-emerald-400 font-bold block mb-1">2. Produto / Material *</label>
-                {(() => {
-                  const prod = comparisons.find(c => c.id === quoteModalProdId);
-                  return prod ? (
-                    <div className="w-full p-3 rounded-xl border border-emerald-500/30 bg-[#0f1f17] text-emerald-300 text-sm font-bold min-h-[48px]">
-                      {prod.productName}
-                      <span className="block text-xs text-gray-400 font-normal mt-0.5">{prod.category}</span>
-                    </div>
-                  ) : (
-                    <div className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a]/50 text-gray-500 text-sm">Produto não selecionado</div>
-                  );
-                })()}
+                <input 
+                  value={quoteForm.productName}
+                  onChange={e => setQuoteForm({ ...quoteForm, productName: e.target.value })}
+                  placeholder="Nome do produto ou material..."
+                  className="w-full p-3 rounded-xl border border-emerald-500/40 bg-[#0f1f17] text-emerald-200 placeholder-gray-500 focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm font-bold" 
+                />
               </div>
 
               <div>
