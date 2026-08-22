@@ -1494,14 +1494,22 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
       quotes: [firstQuote]
     };
 
-    setComparisons([newProd, ...comparisons]);
+    setComparisons(prev => {
+      const updated = [newProd, ...prev];
+      localStorage.setItem('sd_supplier_comparisons_v3', JSON.stringify(updated));
+      return updated;
+    });
     setProdForm({ supplierName: '', supplierId: '', productName: '', brand: '', pricePerM2: '', unitPrice: '', category: 'MDF/MDP', description: '', specifications: '', photoUrl: '' });
     setShowProdForm(false);
-    toast({ title: '✅ Produto e Cotação cadastrados com foto e detalhes!' });
+    toast({ title: '✅ Produto e Cotação cadastrados e salvos!' });
   };
 
   const handleDeleteProduct = (id: string) => {
-    setComparisons(comparisons.filter(c => c.id !== id));
+    setComparisons(prev => {
+      const updated = prev.filter(c => c.id !== id);
+      localStorage.setItem('sd_supplier_comparisons_v3', JSON.stringify(updated));
+      return updated;
+    });
     toast({ title: '🗑️ Produto removido do comparativo' });
   };
 
@@ -1526,33 +1534,41 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
 
     const m2Num = quoteForm.pricePerM2 ? parseFloat(quoteForm.pricePerM2.replace(',', '.')) : null;
 
-    setComparisons(prev => prev.map(p => {
-      if (p.id !== quoteModalProdId) return p;
-      const filteredQuotes = p.quotes.filter(q => q.supplierName.toLowerCase() !== sName.toLowerCase());
-      const newQuote: PriceQuote = {
-        supplierId: quoteForm.supplierId || Date.now().toString(),
-        supplierName: sName,
-        brand: quoteForm.brand.trim() || 'Geral',
-        pricePerM2: isNaN(m2Num as number) ? null : m2Num,
-        unitPrice: unitPriceNum,
-        price: unitPriceNum,
-        updatedAt: new Date().toISOString().split('T')[0],
-        photoUrl: quoteForm.photoUrl || null,
-        specifications: quoteForm.specifications || null
-      };
-      return { ...p, quotes: [...filteredQuotes, newQuote] };
-    }));
+    setComparisons(prev => {
+      const updated = prev.map(p => {
+        if (p.id !== quoteModalProdId) return p;
+        const filteredQuotes = p.quotes.filter(q => q.supplierName.toLowerCase() !== sName.toLowerCase());
+        const newQuote: PriceQuote = {
+          supplierId: quoteForm.supplierId || Date.now().toString(),
+          supplierName: sName,
+          brand: quoteForm.brand.trim() || 'Geral',
+          pricePerM2: isNaN(m2Num as number) ? null : m2Num,
+          unitPrice: unitPriceNum,
+          price: unitPriceNum,
+          updatedAt: new Date().toISOString().split('T')[0],
+          photoUrl: quoteForm.photoUrl || null,
+          specifications: quoteForm.specifications || null
+        };
+        return { ...p, productName: quoteForm.productName.trim() || p.productName, quotes: [...filteredQuotes, newQuote] };
+      });
+      localStorage.setItem('sd_supplier_comparisons_v3', JSON.stringify(updated));
+      return updated;
+    });
 
     setQuoteModalProdId(null);
-    setQuoteForm({ supplierId: '', supplierName: '', brand: '', pricePerM2: '', unitPrice: '', specifications: '', photoUrl: '' });
-    toast({ title: '💰 Cotação com detalhamento cadastrada!' });
+    setQuoteForm({ supplierId: '', supplierName: '', productName: '', brand: '', pricePerM2: '', unitPrice: '', specifications: '', photoUrl: '' });
+    toast({ title: '💰 Cotação salva com sucesso!' });
   };
 
   const handleDeleteQuote = (prodId: string, supplierName: string) => {
-    setComparisons(prev => prev.map(p => {
-      if (p.id !== prodId) return p;
-      return { ...p, quotes: p.quotes.filter(q => q.supplierName !== supplierName) };
-    }));
+    setComparisons(prev => {
+      const updated = prev.map(p => {
+        if (p.id !== prodId) return p;
+        return { ...p, quotes: p.quotes.filter(q => q.supplierName !== supplierName) };
+      });
+      localStorage.setItem('sd_supplier_comparisons_v3', JSON.stringify(updated));
+      return updated;
+    });
     toast({ title: '🗑️ Cotação removida' });
   };
 
