@@ -217,7 +217,76 @@ const SuppliersPage: React.FC = () => {
     setLoading(false);
   };
 
+
   useEffect(() => { fetchSuppliers(); }, []);
+
+  // --- INÍCIO IMPORTAÇÃO AUTOMÁTICA ITAIPU ---
+  useEffect(() => {
+    if (!localStorage.getItem('itaipu_products_imported_v1') && suppliers.length > 0) {
+      const itaipu = suppliers.find(s => s.name.toUpperCase().includes('ITAIPU'));
+      if (itaipu) {
+        const newProducts = [
+          { name: 'MDF 15 FURADO', price: 690.00 },
+          { name: 'MDF 15 2F ULTRA', price: 360.14 },
+          { name: 'MDF 15 ABSOLUTO', price: 464.59 },
+          { name: 'MDF 15 ACACIA', price: 489.67 },
+          { name: 'MDF 15 ALMERIA', price: 477.73 },
+          { name: 'MDF 15 ARAUCARIA', price: 495.63 },
+          { name: 'MDF 15 ARDOSIA', price: 453.39 },
+          { name: 'MDF 15 AREIA', price: 477.73 },
+          { name: 'MDF 15 AREIA NORONHA', price: 489.67 },
+          { name: 'MDF 15 AREIA RUC', price: 495.63 },
+          { name: 'MDF 15 ARENITO', price: 477.73 },
+          { name: 'MDF 15 ARGILA', price: 415.42 },
+          { name: 'MDF 15 AURORA', price: 477.73 },
+          { name: 'MDF 15 AZUL ASTRAL', price: 477.73 },
+          { name: 'MDF 15 AZUL PETROLEO', price: 464.59 },
+          { name: 'MDF 15 AZUL SECRETO', price: 477.73 },
+          { name: 'MDF 15 AZUL SERENO MATT', price: 477.73 },
+          { name: 'MDF 15 AZUL SKY VEL', price: 477.73 },
+          { name: 'MDF 15 BEGE ESCURO A DEFINIR', price: 448.65 },
+          { name: 'MDF 15 BILBAO', price: 477.73 },
+          { name: 'MDF 15 BLUE SKY', price: 481.88 },
+          { name: 'MDF 15 BOLEIRO', price: 477.73 },
+          { name: 'MDF 15 BRANCO DIAMANTE CRISTALLO', price: 597.15 },
+          { name: 'MDF 15 BRANCO DIAMANTE ESSENCIAL', price: 477.73 },
+          { name: 'MDF 15 BRANCO DIAMANTE ESSENCIAL ULTRA', price: 501.61 },
+          { name: 'MDF 15 BRANCO SUPREMO', price: 698.67 },
+          { name: 'MDF 15 BRANCO TRAMA', price: 477.73 },
+          { name: 'MDF 15 BRONZE', price: 477.73 },
+          { name: 'MDF 15 CACAU NATURAL', price: 477.73 },
+          { name: 'MDF 15 CARVALHO AMERICANO', price: 477.73 }
+        ];
+
+        setComparisons(prev => {
+          const updated = [...prev];
+          newProducts.forEach((prod, idx) => {
+            updated.push({
+              id: 'import_' + Date.now() + '_' + idx,
+              productName: prod.name,
+              category: 'MDF/MDP',
+              unit: 'Unidade',
+              quotes: [
+                {
+                  supplierId: itaipu.id,
+                  supplierName: itaipu.name,
+                  brand: 'Geral',
+                  pricePerM2: null,
+                  unitPrice: prod.price,
+                  price: prod.price,
+                  updatedAt: new Date().toISOString().split('T')[0]
+                }
+              ]
+            });
+          });
+          localStorage.setItem('sd_supplier_comparisons_v3', JSON.stringify(updated));
+          localStorage.setItem('itaipu_products_imported_v1', 'true');
+          return updated;
+        });
+      }
+    }
+  }, [suppliers]);
+  // --- FIM IMPORTAÇÃO AUTOMÁTICA ITAIPU ---
 
   // ─── PDF Render & Text Extraction Helper ────────────────────────────────────
   const convertFileToImageAndText = async (file: File): Promise<{ base64Image: string; text: string }> => {
