@@ -2883,16 +2883,15 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
       {/* ─── OVERLAY GLOBAL: COTAÇÃO DE OUTRO FORNECEDOR ──────────────────── */}
       {quoteModalProdId && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#111111] border border-amber-500/30 rounded-3xl p-6 shadow-2xl space-y-4 text-white max-w-xl w-full max-h-[95vh] overflow-y-auto">
+          <div className="bg-[#111111] border border-amber-500/30 rounded-3xl p-6 shadow-2xl space-y-4 text-white max-w-4xl w-full max-h-[95vh] overflow-y-auto">
             <div className="flex justify-between items-center border-b border-white/10 pb-3">
               <h3 className="font-bold text-lg text-amber-400 flex items-center gap-2">
                 <DollarSign className="w-5 h-5" /> Adicionar Cotação de Outro Fornecedor
               </h3>
-
               <div className="flex items-center gap-2">
-                <label className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow transition-all shrink-0">
-                  {analyzingImage ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
-                  <span>Foto / PDF</span>
+                <label className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow transition-all shrink-0">
+                  {analyzingImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
+                  <span>{analyzingImage ? 'Lendo com IA...' : '📸 Tirar Foto / PDF com IA'}</span>
                   <input 
                     type="file" 
                     accept="image/*,application/pdf,.pdf" 
@@ -2907,9 +2906,9 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
               </div>
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="sm:col-span-2">
-                <label className="text-xs text-amber-400 font-bold block mb-1">Nome do Fornecedor *</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div>
+                <label className="text-xs text-amber-400 font-bold block mb-1">1. Nome do Fornecedor *</label>
                 <select 
                   value={quoteForm.supplierId} 
                   onChange={e => {
@@ -2926,13 +2925,28 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
                 <input 
                   value={quoteForm.supplierName} 
                   onChange={e => setQuoteForm({ ...quoteForm, supplierName: e.target.value, supplierId: '' })} 
-                  placeholder="Ou digite o nome do Fornecedor..." 
+                  placeholder="Ou digite o Fornecedor..." 
                   className="w-full p-2.5 rounded-xl border border-white/10 bg-[#1a1a1a] text-white placeholder-gray-500 focus:ring-2 focus:ring-amber-500 focus:outline-none text-xs" 
                 />
               </div>
 
               <div>
-                <label className="text-xs text-gray-400 block mb-1">Marca / Fabricante</label>
+                <label className="text-xs text-emerald-400 font-bold block mb-1">2. Produto / Material *</label>
+                {(() => {
+                  const prod = comparisons.find(c => c.id === quoteModalProdId);
+                  return prod ? (
+                    <div className="w-full p-3 rounded-xl border border-emerald-500/30 bg-[#0f1f17] text-emerald-300 text-sm font-bold min-h-[48px]">
+                      {prod.productName}
+                      <span className="block text-xs text-gray-400 font-normal mt-0.5">{prod.category}</span>
+                    </div>
+                  ) : (
+                    <div className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a]/50 text-gray-500 text-sm">Produto não selecionado</div>
+                  );
+                })()}
+              </div>
+
+              <div>
+                <label className="text-xs text-blue-400 font-bold block mb-1">3. Marca / Fabricante</label>
                 <input 
                   value={quoteForm.brand} 
                   onChange={e => setQuoteForm({ ...quoteForm, brand: e.target.value })} 
@@ -2942,7 +2956,7 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
               </div>
 
               <div>
-                <label className="text-xs text-gray-400 block mb-1">Valor Metro Quadrado (R$/m²)</label>
+                <label className="text-xs text-purple-400 font-bold block mb-1">4. Valor Metro Quadrado (R$/m²)</label>
                 <input 
                   type="text" 
                   value={quoteForm.pricePerM2} 
@@ -2952,8 +2966,8 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
                 />
               </div>
 
-              <div className="sm:col-span-2">
-                <label className="text-xs text-emerald-400 font-bold block mb-1">Valor Unitário (R$) *</label>
+              <div>
+                <label className="text-xs text-emerald-400 font-bold block mb-1">5. Valor Unitário (R$) *</label>
                 <input 
                   type="text" 
                   value={quoteForm.unitPrice} 
@@ -2963,15 +2977,33 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
                 />
               </div>
 
-              <div className="sm:col-span-2">
-                <label className="text-xs text-gray-300 font-bold block mb-1">Detalhamento / Observações desta Cotação</label>
-                <input 
-                  value={quoteForm.specifications} 
-                  onChange={e => setQuoteForm({ ...quoteForm, specifications: e.target.value })} 
-                  placeholder="Ex: Prazo de entrega 3 dias, inclui frete..." 
-                  className="w-full p-2.5 rounded-xl border border-white/10 bg-[#1a1a1a] text-white placeholder-gray-500 text-xs" 
-                />
+              <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-3 bg-[#181818] p-3 rounded-2xl border border-white/5">
+                <div className="md:col-span-2">
+                  <label className="text-xs text-gray-300 font-bold block mb-1">Detalhamento &amp; Especificações Técnicas (ou Extraído da Foto/PDF)</label>
+                  <textarea 
+                    rows={2} 
+                    value={quoteForm.specifications} 
+                    onChange={e => setQuoteForm({ ...quoteForm, specifications: e.target.value })} 
+                    placeholder="Ex: Prazo de entrega 3 dias, inclui frete..." 
+                    className="w-full p-2.5 rounded-xl border border-white/10 bg-[#111] text-white text-xs placeholder-gray-500 focus:ring-1 focus:ring-amber-500" 
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs text-gray-300 font-bold block mb-1">Foto / Anexo do Produto</label>
+                  {quoteForm.photoUrl ? (
+                    <div className="relative rounded-xl overflow-hidden h-16 border border-amber-500/50">
+                      <img src={quoteForm.photoUrl} alt="Preview" className="w-full h-full object-cover" />
+                      <button onClick={() => setQuoteForm({ ...quoteForm, photoUrl: '' })} className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-0.5"><X className="w-3 h-3" /></button>
+                    </div>
+                  ) : (
+                    <div className="text-center p-2 text-xs text-gray-500 border border-dashed border-white/10 rounded-xl h-16 flex items-center justify-center">
+                      Nenhum arquivo capturado
+                    </div>
+                  )}
+                </div>
               </div>
+
             </div>
 
             <div className="flex gap-3 pt-2">
