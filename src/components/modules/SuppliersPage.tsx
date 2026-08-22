@@ -220,12 +220,12 @@ const SuppliersPage: React.FC = () => {
 
   useEffect(() => { fetchSuppliers(); }, []);
 
-  // --- INÍCIO IMPORTAÇÃO AUTOMÁTICA ITAIPU (PARTE 3) ---
+  // --- INÍCIO IMPORTAÇÃO AUTOMÁTICA ITAIPU (PARTE 4) ---
   useEffect(() => {
-    if (!localStorage.getItem('itaipu_products_imported_v3') && suppliers.length > 0) {
+    if (!localStorage.getItem('itaipu_products_imported_v4') && suppliers.length > 0) {
       const itaipu = suppliers.find(s => s.name.toUpperCase().includes('ITAIPU'));
       if (itaipu) {
-        const newProducts3 = [
+        const newProducts4 = [
           // DA IMAGEM ANTERIOR (v2)
           { name: 'MDF 15 CARVALHO BATHUR', price: 477.73 },
           { name: 'MDF 15 CARVALHO BERLIM', price: 477.73 },
@@ -446,15 +446,50 @@ const SuppliersPage: React.FC = () => {
           { name: '20 MTS FITA TITANIO TRAMA', price: 95.55 },
           { name: '20 MTS FITA TOKAI', price: 95.55 },
           { name: '20 MTS FITA VERDE JADE', price: 95.55 },
-          { name: '20 MTS FITA VERMELHO', price: 107.49 }
+          { name: '20 MTS FITA VERMELHO', price: 107.49 },
+
+          // IMAGEM 6 (Última imagem enviada)
+          { name: '20 MTS FITA VERSALHES', price: 95.55 },
+          { name: '20 MTS FITA VERTI', price: 95.55 },
+          { name: '20 MTS FITA VIENA', price: 95.55 },
+          { name: '20 MTS FITA VOLAKAS', price: 95.55 },
+          { name: '3 MTS PUX RM - 52', price: 41.80 },
+          { name: '3 MTS PUXADOR 047', price: 125.40 },
+          { name: '3 MTS PUXADOR COLEGATO', price: 179.15 },
+          { name: '3 MTS PUXADOR FACETATO INOX', price: 137.35 },
+          { name: '3 MTS TRILHO SUPERIOR P/PORTA CAMARAO', price: 143.32 },
+          { name: '300 15 2F BRANCO TX ULTRA', price: 383.22 },
+          { name: '6 MTS METALON 20X20', price: 71.66 },
+          { name: '6 MTS PERFIL ALUMINIO INOX', price: 429.95 },
+          { name: 'ARMARIO SUPERIOR E INFERIOR', price: 895.74 },
+          { name: 'AZUL PROFUNDO FITA 20 MTS', price: 92.00 },
+          { name: 'AZUL PROFUNDO MDF 06', price: 345.00 },
+          { name: 'AZUL PROFUNDO MDF 15', price: 460.00 },
+          { name: 'AZUL PROFUNDO MDF 15 PERFURADO', price: 575.00 },
+          { name: 'BANCADA EM CINZA ANDORINHA', price: 1731.76 },
+          { name: 'BANCADA QUARTZO CINZA', price: 4621.99 },
+          { name: 'BANCADA VERDE UBATUBA', price: 955.44 },
+          { name: 'BANDEJA EM ALUMINIO COM ESPELHO BRONZE 45 X 35', price: 298.59 },
+          { name: 'BANDEJA EM ALUMINIO COM VIDRO PRETO 45 X 35', price: 155.26 },
+          { name: 'BANDEJA QUADRADA EM MDF E ESPELHO PRATA 45 X 35', price: 149.28 },
+          { name: 'BANDEJA REDONDA EM MDF COM ESPELHO BRONZE 30 CM', price: 59.73 },
+          { name: 'BANDEJA REDONDA EM MDF COM ESPELHO BRONZE 40 CM', price: 77.62 },
+          { name: 'BARROTE EM MADEIRA MUIRACATIARA 5 X 5', price: 69.00 },
+          { name: 'BASE EM MELAON 50 X 30', price: 41.53 },
+          { name: 'BASE EM METALON NA COR BRONZE', price: 623.11 },
+          { name: 'BEGE FITA 20 MTS', price: 92.00 },
+          { name: 'BEGE MDF 06', price: 345.00 },
+          { name: 'BEGE MDF 15', price: 460.00 },
+          { name: 'BI CAMA MADEIRADO', price: 2269.19 },
+          { name: 'BOX INCOLOR', price: 399.84 }
         ];
 
         setComparisons(prev => {
           const updated = [...prev];
-          newProducts3.forEach((prod, idx) => {
+          newProducts4.forEach((prod, idx) => {
             if (!updated.some(p => p.productName === prod.name && p.quotes[0].unitPrice === prod.price)) {
               updated.push({
-                id: 'import3_' + Date.now() + '_' + idx,
+                id: 'import4_' + Date.now() + '_' + idx,
                 productName: prod.name,
                 category: 'MDF/MDP',
                 unit: 'Unidade',
@@ -473,13 +508,13 @@ const SuppliersPage: React.FC = () => {
             }
           });
           localStorage.setItem('sd_supplier_comparisons_v3', JSON.stringify(updated));
-          localStorage.setItem('itaipu_products_imported_v3', 'true');
+          localStorage.setItem('itaipu_products_imported_v4', 'true');
           return updated;
         });
       }
     }
   }, [suppliers]);
-  // --- FIM IMPORTAÇÃO AUTOMÁTICA ITAIPU (PARTE 3) ---
+  // --- FIM IMPORTAÇÃO AUTOMÁTICA ITAIPU (PARTE 4) ---
 
   // ─── PDF Render & Text Extraction Helper ────────────────────────────────────
   const convertFileToImageAndText = async (file: File): Promise<{ base64Image: string; text: string }> => {
