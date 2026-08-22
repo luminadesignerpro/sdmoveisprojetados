@@ -101,8 +101,7 @@ const DEFAULT_COMPARISONS: ProductComparison[] = [
 
 const SuppliersPage: React.FC = () => {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<'suppliers' | 'comparison' | 'material_list'>('suppliers');
-  const [selectedSupplierTab, setSelectedSupplierTab] = useState<string>('overview');
+  const [activeTab, setActiveTab] = useState<string>('suppliers_overview');
   
   // Suppliers state
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -1190,18 +1189,39 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
         )}
       </header>
 
-      {/* Navigation Tabs */}
-      <div className="flex border-b border-white/10 gap-2 flex-wrap">
+      {/* Navigation Tabs - Flat Structure */}
+      <div className="flex border-b border-white/10 gap-2 flex-wrap pb-2 mb-6">
         <button
-          onClick={() => setActiveTab('suppliers')}
+          onClick={() => setActiveTab('suppliers_overview')}
           className={`flex items-center gap-2 px-5 py-3 font-bold text-sm rounded-t-2xl transition-all border-b-2 ${
-            activeTab === 'suppliers'
+            activeTab === 'suppliers_overview'
               ? 'bg-amber-500/10 text-amber-400 border-amber-500'
               : 'text-gray-400 hover:text-white border-transparent'
           }`}
         >
           <Building className="w-4 h-4" />
-          Fornecedores Cadastrados ({suppliers.length})
+          Visão Geral ({suppliers.length})
+        </button>
+
+        {suppliers.map(s => (
+          <button
+            key={s.id}
+            onClick={() => setActiveTab(`supplier_${s.id}`)}
+            className={`flex items-center gap-2 px-5 py-3 font-bold text-sm rounded-t-2xl transition-all border-b-2 ${
+              activeTab === `supplier_${s.id}`
+                ? 'bg-amber-500/10 text-amber-400 border-amber-500'
+                : 'text-gray-400 hover:text-white border-transparent'
+            }`}
+          >
+            🏢 {s.name}
+          </button>
+        ))}
+
+        <button
+          onClick={() => { setActiveTab('suppliers_overview'); setShowForm(true); setEditingId(null); setForm({ name: '', cnpj: '', phone: '', email: '', address: '', category: 'Geral', notes: '' }); }}
+          className="flex items-center gap-2 px-5 py-3 font-bold text-sm rounded-t-2xl text-emerald-400 hover:bg-emerald-500/10 transition-all border-b-2 border-transparent"
+        >
+          + Novo Fornecedor
         </button>
 
         <button
@@ -1229,44 +1249,9 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
         </button>
       </div>
 
-      {/* ─── TAB 1: SUPPLIERS LIST ────────────────────────────────────────── */}
-      {activeTab === 'suppliers' && (
+      {/* ─── TAB: VISÃO GERAL ────────────────────────────────────────────── */}
+      {activeTab === 'suppliers_overview' && (
         <div className="space-y-6">
-          {/* Sub-Tabs de Fornecedores */}
-          <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-thin">
-            <button
-              onClick={() => setSelectedSupplierTab('overview')}
-              className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-colors border ${
-                selectedSupplierTab === 'overview'
-                  ? 'bg-amber-500/20 text-amber-400 border-amber-500/50'
-                  : 'bg-[#111] text-gray-400 border-white/10 hover:bg-white/5'
-              }`}
-            >
-              🏢 Visão Geral dos Fornecedores
-            </button>
-            {suppliers.map(s => (
-              <button
-                key={s.id}
-                onClick={() => setSelectedSupplierTab(s.id)}
-                className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-colors border ${
-                  selectedSupplierTab === s.id
-                    ? 'bg-amber-500/20 text-amber-400 border-amber-500/50'
-                    : 'bg-[#111] text-gray-400 border-white/10 hover:bg-white/5'
-                }`}
-              >
-                🏢 {s.name}
-              </button>
-            ))}
-            <button
-              onClick={() => { setSelectedSupplierTab('overview'); setShowForm(true); setEditingId(null); setForm({ name: '', cnpj: '', phone: '', email: '', address: '', category: 'Geral', notes: '' }); }}
-              className="px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap bg-emerald-600/20 text-emerald-400 border-emerald-500/50 border hover:bg-emerald-600/30 transition-colors"
-            >
-              + Novo Fornecedor
-            </button>
-          </div>
-
-          {selectedSupplierTab === 'overview' ? (
-            <>
               <div className="relative max-w-md">
                 <Search className="absolute left-4 top-3.5 w-5 h-5 text-gray-400" />
                 <input 
@@ -1331,19 +1316,23 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
               </tbody>
             </table>
           </div>
-            </>
-          ) : (
-            (() => {
-              const currentSupplier = suppliers.find(s => s.id === selectedSupplierTab);
-              if (!currentSupplier) return null;
-              
-              // Extrair todos os produtos que possuem cotação para ESTE fornecedor
-              const supplierProducts = comparisons.filter(c => 
-                c.quotes.some(q => q.supplierId === currentSupplier.id || q.supplierName.toLowerCase() === currentSupplier.name.toLowerCase())
-              );
+        </div>
+      )}
 
-              return (
-                <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300">
+      {/* ─── TAB: PRODUTOS DO FORNECEDOR ESPECÍFICO ─────────────────────── */}
+      {activeTab.startsWith('supplier_') && activeTab !== 'suppliers_overview' && (
+        (() => {
+          const supplierId = activeTab.replace('supplier_', '');
+          const currentSupplier = suppliers.find(s => s.id === supplierId);
+          if (!currentSupplier) return null;
+          
+          // Extrair todos os produtos que possuem cotação para ESTE fornecedor
+          const supplierProducts = comparisons.filter(c => 
+            c.quotes.some(q => q.supplierId === currentSupplier.id || q.supplierName.toLowerCase() === currentSupplier.name.toLowerCase())
+          );
+
+          return (
+            <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300">
                   {/* Fornecedor Header */}
                   <div className="bg-[#111] border border-white/10 p-6 rounded-3xl shadow-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
@@ -1466,8 +1455,6 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
                 </div>
               );
             })()
-          )}
-        </div>
       )}
 
       {/* ─── TAB 2: COMPARATIVO DE PREÇOS (PRODUTO MAIS BARATO) ───────────── */}
