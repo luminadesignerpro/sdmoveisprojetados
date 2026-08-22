@@ -392,6 +392,27 @@ const LegacySystemPage: React.FC = () => {
     setClientPhoneSearch('');
   };
 
+  const handleDeleteClient = async (c: any, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const confirmed = window.confirm(`Tem certeza que deseja excluir o cliente "${c.name?.toUpperCase() || 'Selecionado'}"?`);
+    if (!confirmed) return;
+
+    try {
+      const { error } = await db.from('clients').delete().eq('id', c.id);
+      if (error) throw error;
+      setClients((prev: any[]) => prev.filter(item => item.id !== c.id));
+      if (clientId === c.id) {
+        setClientId('');
+        setClientDesc('');
+        setPhone('( ) -');
+      }
+      setShowCustomerRegistrationModal(false);
+      toast({ title: '✅ Cliente excluído com sucesso!' });
+    } catch (err: any) {
+      toast({ title: '❌ Erro ao excluir cliente', description: err.message, variant: 'destructive' });
+    }
+  };
+
   const openNewClientForm = () => {
     setEditingClientId(null);
     setCustomerForm({
@@ -961,12 +982,16 @@ const LegacySystemPage: React.FC = () => {
                   <input type="text" value={clientPhoneSearch} onChange={e => setClientPhoneSearch(e.target.value)} className="legacy-input w-full text-red-600 text-center" placeholder="-" />
                 </div>
                 <div className="flex gap-1 mb-1">
-                  <button title="Novo Cliente" className="bg-green-100 border border-green-400 p-1 rounded-sm" onClick={() => { setShowClientModal(false); openNewClientForm(); }}><Plus size={16} className="text-green-600" /></button>
-                  <button title="Editar Cliente Selecionado" className="bg-gray-100 border border-gray-400 p-1 rounded-sm" onClick={() => {
+                  <button title="Novo Cliente" className="bg-green-100 hover:bg-green-200 border border-green-400 p-1 rounded-sm transition-colors" onClick={() => { setShowClientModal(false); openNewClientForm(); }}><Plus size={16} className="text-green-600" /></button>
+                  <button title="Editar Cliente Selecionado" className="bg-gray-100 hover:bg-gray-200 border border-gray-400 p-1 rounded-sm transition-colors" onClick={() => {
                     if (filteredClients.length > 0) { setShowClientModal(false); openEditClientForm(filteredClients[0]); }
                     else toast({ title: '⚠️ Selecione um cliente para editar', variant: 'destructive' });
                   }}><Edit size={16} className="text-gray-600" /></button>
-                  <button title="Pesquisar" className="bg-blue-100 border border-blue-400 p-1 rounded-sm" onClick={() => setClientSearch(clientSearch)}><Search size={16} className="text-blue-600" /></button>
+                  <button title="Excluir Cliente Selecionado" className="bg-red-100 hover:bg-red-200 border border-red-400 p-1 rounded-sm transition-colors" onClick={() => {
+                    if (filteredClients.length > 0) { handleDeleteClient(filteredClients[0]); }
+                    else toast({ title: '⚠️ Selecione um cliente para excluir', variant: 'destructive' });
+                  }}><Trash2 size={16} className="text-red-600" /></button>
+                  <button title="Pesquisar" className="bg-blue-100 hover:bg-blue-200 border border-blue-400 p-1 rounded-sm transition-colors" onClick={() => setClientSearch(clientSearch)}><Search size={16} className="text-blue-600" /></button>
                 </div>
               </div>
               <div style={{ height: 350, overflow: 'auto', border: '1px solid #a0a0a0', backgroundColor: '#fff' }}>
@@ -979,11 +1004,12 @@ const LegacySystemPage: React.FC = () => {
                       <th style={{ width: '100px' }}>WhatsApp</th>
                       <th style={{ width: '100px' }}>Telefone</th>
                       <th style={{ width: '120px' }}>Tipo Cadastro -&gt;-&gt;-&gt;</th>
+                      <th style={{ width: '50px', textAlign: 'center' }}>Excluir</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredClients.length === 0 && (
-                      <tr><td colSpan={6} style={{ textAlign: 'center', color: '#888', padding: 8 }}>Nenhum cliente encontrado</td></tr>
+                      <tr><td colSpan={7} style={{ textAlign: 'center', color: '#888', padding: 8 }}>Nenhum cliente encontrado</td></tr>
                     )}
                     {filteredClients.map(c => (
                       <tr key={c.id}
@@ -998,6 +1024,15 @@ const LegacySystemPage: React.FC = () => {
                         <td>{c.phone ? `(${c.phone.slice(0, 2)}) ${c.phone.slice(2, 7)}-${c.phone.slice(7)}` : ''}</td>
                         <td>{c.phone ? `(${c.phone.slice(0, 2)}) ${c.phone.slice(2, 7)}-${c.phone.slice(7)}` : ''}</td>
                         <td>{c.seguimento || ''}</td>
+                        <td style={{ textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+                          <button
+                            title="Excluir este cliente"
+                            className="p-1 hover:bg-red-100 rounded text-red-600 border border-transparent hover:border-red-300 transition-colors"
+                            onClick={(e) => handleDeleteClient(c, e)}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -1005,7 +1040,7 @@ const LegacySystemPage: React.FC = () => {
               </div>
               <div className="flex justify-between items-center mt-2 text-[10px] text-gray-500">
                 <span>{filteredClients.length} cliente(s) encontrado(s)</span>
-                <span>Clique para selecionar • Duplo clique para editar • Botão + para novo</span>
+                <span>Clique para selecionar • Duplo clique para editar • Botão lixeira para excluir • Botão + para novo</span>
               </div>
             </div>
           </div>
@@ -1564,6 +1599,18 @@ const LegacySystemPage: React.FC = () => {
                         <CheckSquare size={16} className="text-green-600" />
                         {savingCustomer ? 'Salvando...' : 'Salvar Cadastro'}
                       </button>
+                      {editingClientId && (
+                        <button
+                          type="button"
+                          className="legacy-button flex-1 flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 border-red-300 text-red-700"
+                          onClick={() => {
+                            const c = clients.find(item => item.id === editingClientId);
+                            if (c) handleDeleteClient(c);
+                          }}
+                        >
+                          <Trash2 size={16} className="text-red-600" /> EXCLUIR CLIENTE
+                        </button>
+                      )}
                       <button className="legacy-button flex-1 flex items-center justify-center gap-2" onClick={() => setShowCustomerRegistrationModal(false)}><X size={16} className="text-blue-600" /> SAIR</button>
                     </div>
                   </div>
