@@ -385,20 +385,35 @@ const LegacySystemPage: React.FC = () => {
 
   const handleDeleteClient = async (c: any, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    const confirmed = window.confirm(`Tem certeza que deseja excluir o cliente "${c.name?.toUpperCase() || 'Selecionado'}"?\n\nAs ordens de serviço existentes permanecerão salvas.`);
+    const confirmed = window.confirm(`Tem certeza que deseja excluir o cliente "${c.name?.toUpperCase() || 'Selecionado'}"?\n\nO cliente e seus vínculos serão removidos.`);
     if (!confirmed) return;
 
     try {
-      // 1. Desvincular das ordens de serviço preservando o nome do cliente no histórico
-      await db.from('service_orders').update({ client_id: null, client_name: c.name }).eq('client_id', c.id);
+      // 1. Desvincular de service_orders preservando o nome do cliente no histórico
+      try { await db.from('service_orders').update({ client_id: null, client_name: c.name }).eq('client_id', c.id); } catch (_) {}
 
-      // 2. Desvincular de outras tabelas relacionadas caso existam
-      try { await db.from('appointments').update({ client_id: null }).eq('client_id', c.id); } catch (_) {}
+      // 2. Limpar projetos do portal do cliente (client_projects) e suas etapas/feedbacks
+      try {
+        const { data: projs } = await db.from('client_projects').select('id').eq('client_id', c.id);
+        if (projs && projs.length > 0) {
+          const projIds = projs.map((p: any) => p.id);
+          try { await db.from('project_updates').delete().in('project_id', projIds); } catch (_) {}
+          try { await db.from('client_feedback').delete().in('project_id', projIds); } catch (_) {}
+          await db.from('client_projects').delete().eq('client_id', c.id);
+        }
+      } catch (_) {}
+
+      // 3. Desvincular contracts e accounts_receivable
       try { await db.from('contracts').update({ client_id: null }).eq('client_id', c.id); } catch (_) {}
+      try { await db.from('accounts_receivable').update({ client_id: null }).eq('client_id', c.id); } catch (_) {}
+
+      // 4. Desvincular outras tabelas caso existam
+      try { await db.from('appointments').update({ client_id: null }).eq('client_id', c.id); } catch (_) {}
       try { await db.from('budgets').update({ client_id: null }).eq('client_id', c.id); } catch (_) {}
       try { await db.from('financial_transactions').update({ client_id: null }).eq('client_id', c.id); } catch (_) {}
+      try { await db.from('client_feedback').delete().eq('client_id', c.id); } catch (_) {}
 
-      // 3. Excluir da tabela de clientes
+      // 5. Excluir o cliente da tabela clients
       const { error } = await db.from('clients').delete().eq('id', c.id);
       if (error) throw error;
 
