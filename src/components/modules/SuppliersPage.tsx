@@ -117,6 +117,7 @@ const SuppliersPage: React.FC = () => {
     return saved ? JSON.parse(saved) : DEFAULT_COMPARISONS;
   });
   const [compSearch, setCompSearch] = useState('');
+  const [supplierProdSearch, setSupplierProdSearch] = useState('');
   
   // Detail Modal State
   const [selectedProdDetail, setSelectedProdDetail] = useState<ProductComparison | null>(null);
@@ -2029,9 +2030,19 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
           if (!currentSupplier) return null;
           
           // Extrair todos os produtos que possuem cotação para ESTE fornecedor
-          const supplierProducts = comparisons.filter(c => 
+          let supplierProducts = comparisons.filter(c => 
             c.quotes.some(q => q.supplierId === currentSupplier.id || q.supplierName.toLowerCase() === currentSupplier.name.toLowerCase())
           );
+
+          if (supplierProdSearch.trim()) {
+            supplierProducts = supplierProducts.filter(c => 
+              c.productName.toLowerCase().includes(supplierProdSearch.toLowerCase()) || 
+              c.category.toLowerCase().includes(supplierProdSearch.toLowerCase())
+            );
+          }
+
+          // Ordem alfabética/numérica
+          supplierProducts.sort((a, b) => a.productName.localeCompare(b.productName, 'pt-BR', { numeric: true }));
 
           return (
             <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300">
@@ -2077,6 +2088,17 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
                         <Sparkles className="w-4 h-4" /> Importar Orçamento Rápido
                       </button>
                     </div>
+                  </div>
+
+                  {/* Barra de Busca de Produtos deste Fornecedor */}
+                  <div className="relative max-w-md w-full">
+                    <Search className="absolute left-4 top-3.5 w-5 h-5 text-gray-400" />
+                    <input 
+                      value={supplierProdSearch} 
+                      onChange={e => setSupplierProdSearch(e.target.value)} 
+                      placeholder={`Buscar produto em ${currentSupplier.name}...`} 
+                      className="w-full pl-12 pr-4 py-3 rounded-2xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-500 text-sm" 
+                    />
                   </div>
 
                   {/* Tabela de Produtos deste fornecedor */}
