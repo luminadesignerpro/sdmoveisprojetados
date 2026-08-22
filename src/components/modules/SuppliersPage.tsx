@@ -1473,9 +1473,28 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
 
     const m2Num = prodForm.pricePerM2 ? parseFloat(prodForm.pricePerM2.replace(',', '.')) : null;
 
-    const firstQuote: PriceQuote = {
-      supplierId: prodForm.supplierId || Date.now().toString(),
-      supplierName: sName,
+    // Criar cotações automaticamente para todos os fornecedores (ITAIPU, REVESTI, GEOVANE, RIO BRANCO e demais)
+    let allTargetSuppliers = [...suppliers];
+    const defaultNames = ['ITAIPU', 'REVESTI', 'GEOVANE', 'RIO BRANCO'];
+    defaultNames.forEach(dName => {
+      if (!allTargetSuppliers.some(s => s.name.toUpperCase().includes(dName))) {
+        allTargetSuppliers.push({
+          id: dName.toLowerCase(),
+          name: dName,
+          cnpj: null,
+          phone: null,
+          email: null,
+          address: null,
+          category: 'Geral',
+          notes: null,
+          active: true
+        });
+      }
+    });
+
+    const quotesList: PriceQuote[] = allTargetSuppliers.map(s => ({
+      supplierId: s.id,
+      supplierName: s.name,
       brand: prodForm.brand.trim() || 'Geral',
       pricePerM2: isNaN(m2Num as number) ? null : m2Num,
       unitPrice: unitPriceNum,
@@ -1483,7 +1502,7 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
       updatedAt: new Date().toISOString().split('T')[0],
       photoUrl: prodForm.photoUrl || null,
       specifications: prodForm.specifications || null
-    };
+    }));
 
     const newProd: ProductComparison = {
       id: Date.now().toString(),
@@ -1491,7 +1510,7 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
       category: prodForm.category,
       unit: 'Un',
       description: prodForm.description || undefined,
-      quotes: [firstQuote]
+      quotes: quotesList
     };
 
     setComparisons(prev => {
@@ -1501,7 +1520,7 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
     });
     setProdForm({ supplierName: '', supplierId: '', productName: '', brand: '', pricePerM2: '', unitPrice: '', category: 'MDF/MDP', description: '', specifications: '', photoUrl: '' });
     setShowProdForm(false);
-    toast({ title: '✅ Produto e Cotação cadastrados e salvos!' });
+    toast({ title: '✅ Produto salvo automaticamente em todos os fornecedores (ITAIPU, REVESTI, GEOVANE, RIO BRANCO)!' });
   };
 
   const handleDeleteProduct = (id: string) => {
