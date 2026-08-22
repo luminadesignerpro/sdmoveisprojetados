@@ -1609,149 +1609,148 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
           )}
 
           {/* Product Comparison Cards */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             {filteredComparisons.map(item => {
-              const hasQuotes = item.quotes.length > 0;
-              const cheapest = hasQuotes 
-                ? item.quotes.reduce((prev, curr) => (curr.unitPrice || curr.price) < (prev.unitPrice || prev.price) ? curr : prev)
-                : null;
-              const expensive = hasQuotes 
-                ? item.quotes.reduce((prev, curr) => (curr.unitPrice || curr.price) > (prev.unitPrice || prev.price) ? curr : prev)
-                : null;
-              
-              const cheapestVal = cheapest ? (cheapest.unitPrice || cheapest.price) : 0;
-              const expensiveVal = expensive ? (expensive.unitPrice || expensive.price) : 0;
+              const hasQuotes = item.quotes && item.quotes.length > 0;
+              // Ordenar cotações da mais barata para a mais cara
+              const sortedQuotes = [...(item.quotes || [])].sort((a, b) => {
+                const valA = a.unitPrice || a.price || 0;
+                const valB = b.unitPrice || b.price || 0;
+                return valA - valB;
+              });
 
-              const diff = (cheapest && expensive && cheapest !== expensive) 
-                ? expensiveVal - cheapestVal 
-                : 0;
-              const percEconomy = (expensiveVal > 0 && diff > 0) 
-                ? Math.round((diff / expensiveVal) * 100) 
-                : 0;
+              const cheapest = sortedQuotes[0] || null;
+              const expensive = sortedQuotes[sortedQuotes.length - 1] || null;
+              const cheapestVal = cheapest ? (cheapest.unitPrice || cheapest.price || 0) : 0;
+              const expensiveVal = expensive ? (expensive.unitPrice || expensive.price || 0) : 0;
+              const diff = (sortedQuotes.length > 1 && cheapestVal > 0) ? expensiveVal - cheapestVal : 0;
+              const percEconomy = (expensiveVal > 0 && diff > 0) ? Math.round((diff / expensiveVal) * 100) : 0;
 
               return (
-                <div key={item.id} className="bg-[#111111] border border-white/10 rounded-3xl p-6 shadow-xl space-y-4">
+                <div key={item.id} className="bg-[#121418] border border-white/10 hover:border-amber-500/30 transition-all rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
                   
-                  {/* Top Bar of Card */}
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-white/10 pb-4">
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-3 py-0.5 rounded-full text-xs font-bold">
-                          {item.category}
+                  {/* 1. Top Bar: Nome do Produto e Ações Rápidas */}
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        <span className="bg-amber-500/15 text-amber-300 border border-amber-500/30 px-3 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider">
+                          {item.category || 'Geral'}
                         </span>
-                        <h3 className="text-lg font-black text-white">{item.productName}</h3>
+                        <h3 className="text-xl font-black text-white">{item.productName}</h3>
                       </div>
                       {item.description && (
-                        <p className="text-xs text-gray-400 mt-1">{item.description}</p>
+                        <p className="text-xs text-gray-400">{item.description}</p>
                       )}
                     </div>
 
-                    <div className="flex items-center gap-2 flex-wrap">
+                    {/* Ações do Card */}
+                    <div className="flex items-center gap-2 flex-wrap self-end md:self-center">
                       <button
-                        onClick={() => setSelectedProdDetail(item)}
-                        className="bg-purple-600/20 border border-purple-500/40 text-purple-300 hover:bg-purple-600/40 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all"
-                        title="Ver todo o detalhamento e fotos deste produto"
-                      >
-                        <Eye className="w-4 h-4 text-purple-400" /> Detalhes & Fotos
-                      </button>
-
-                      <button 
                         onClick={() => handleQuickAddFromComparison(item)}
-                        className="bg-blue-600/20 border border-blue-500/40 text-blue-300 hover:bg-blue-600/40 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all"
+                        className="bg-emerald-500 hover:bg-emerald-600 text-black font-extrabold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-950/50 transition-all active:scale-95"
+                        title="Adicionar este produto à Lista de Compras com o melhor preço"
                       >
-                        <ShoppingCart className="w-4 h-4 text-blue-400" /> + Add à Lista
+                        <ShoppingCart className="w-4 h-4" /> Comprar no Melhor Preço
                       </button>
 
-                      <button 
+                      <button
                         onClick={() => {
                           setQuoteModalProdId(item.id);
                           setQuoteForm({ supplierId: '', supplierName: '', brand: '', pricePerM2: '', unitPrice: '', specifications: '', photoUrl: '' });
                         }}
-                        className="bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all"
+                        className="bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-400 font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 transition-all"
+                        title="Adicionar cotação de outro fornecedor para comparar"
                       >
-                        <Plus className="w-4 h-4" /> Adicionar Cotação
+                        <Plus className="w-4 h-4" /> + Cotação
                       </button>
 
-                      <button 
-                        onClick={() => handleDeleteProduct(item.id)} 
-                        className="w-9 h-9 bg-white/5 border border-white/10 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl flex items-center justify-center transition-all"
-                        title="Excluir produto"
+                      <button
+                        onClick={() => setSelectedProdDetail(item)}
+                        className="bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all"
+                        title="Ver fotos e detalhes"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Eye className="w-3.5 h-3.5" /> Detalhes
+                      </button>
+
+                      <button
+                        onClick={() => handleDeleteProduct(item.id)}
+                        className="w-8 h-8 bg-white/5 hover:bg-red-500/20 border border-white/10 hover:border-red-500/30 text-gray-400 hover:text-red-400 rounded-xl flex items-center justify-center transition-all"
+                        title="Excluir este produto do comparativo"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
 
-                  {/* Highlight Banner for Cheapest Supplier */}
-                  {cheapest && (
-                    <div className="bg-emerald-950/40 border border-emerald-500/40 p-4 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0">
-                          <CheckCircle2 className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <p className="text-xs text-emerald-400/80 font-bold uppercase tracking-wider">🏆 PRODUTO MAIS BARATO AQUI!</p>
-                          <p className="text-lg font-black text-emerald-300">
-                            {cheapest.supplierName} 
-                            {cheapest.brand && <span className="text-gray-400 text-xs font-normal ml-2">[{cheapest.brand}]</span>}
-                            {' '}— <span className="text-white">R$ {cheapestVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} /un</span>
-                          </p>
-                        </div>
+                  {/* 2. Destaque de Economia (quando há 2 ou mais fornecedores concorrentes) */}
+                  {sortedQuotes.length > 1 && diff > 0 && (
+                    <div className="bg-emerald-500/10 border border-emerald-500/30 px-4 py-2.5 rounded-2xl flex items-center justify-between flex-wrap gap-2">
+                      <div className="flex items-center gap-2">
+                        <TrendingDown className="w-4 h-4 text-emerald-400" />
+                        <span className="text-xs font-bold text-emerald-300">
+                          Economia de <b>R$ {diff.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</b> ({percEconomy}%) comprando na <b>{cheapest?.supplierName}</b>
+                        </span>
                       </div>
-
-                      {diff > 0 && (
-                        <div className="text-left sm:text-right">
-                          <span className="bg-emerald-500 text-black font-black text-xs px-3 py-1 rounded-full inline-block mb-1">
-                            Economia de R$ {diff.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ({percEconomy}%)
-                          </span>
-                        </div>
-                      )}
+                      <span className="text-[11px] bg-emerald-500 text-black font-black px-2.5 py-0.5 rounded-full uppercase">
+                        {percEconomy}% mais barato
+                      </span>
                     </div>
                   )}
 
-                  {/* Quotes Grid / Table */}
+                  {/* 3. Grade Clara e Direta de Preços por Fornecedor (Sem repetições) */}
                   {hasQuotes ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-2">
-                      {item.quotes.map((q, idx) => {
-                        const val = q.unitPrice || q.price;
-                        const isCheapest = cheapest && q.supplierName === cheapest.supplierName && val === cheapestVal;
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {sortedQuotes.map((q, idx) => {
+                        const val = q.unitPrice || q.price || 0;
+                        const isWinner = idx === 0;
+                        const priceDifference = isWinner ? 0 : val - cheapestVal;
+
                         return (
-                          <div 
-                            key={idx} 
+                          <div
+                            key={idx}
                             className={`p-4 rounded-2xl border transition-all flex justify-between items-center ${
-                              isCheapest 
-                                ? 'bg-emerald-900/20 border-emerald-500/50 shadow-lg shadow-emerald-950/50' 
-                                : 'bg-[#1a1a1a] border-white/5 hover:border-white/20'
+                              isWinner
+                                ? 'bg-gradient-to-br from-emerald-950/40 to-emerald-900/20 border-emerald-500/60 shadow-lg shadow-emerald-950/40'
+                                : 'bg-[#181b20] border-white/5 hover:border-white/20'
                             }`}
                           >
                             <div className="space-y-1">
-                              <p className="font-bold text-sm text-white flex items-center gap-1.5 flex-wrap">
-                                {q.supplierName}
-                                {isCheapest && <span className="text-emerald-400 text-xs font-extrabold">🏆 MAIS BARATO</span>}
-                              </p>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className={`font-black text-sm ${isWinner ? 'text-emerald-300' : 'text-white'}`}>
+                                  {isWinner && '🥇 '}{q.supplierName}
+                                </span>
+                                {isWinner && (
+                                  <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-black px-2 py-0.5 rounded-full uppercase">
+                                    Mais Barato
+                                  </span>
+                                )}
+                              </div>
+
                               {q.brand && (
-                                <p className="text-xs text-blue-400 flex items-center gap-1">
-                                  <Tag className="w-3 h-3" /> Marca: <span className="font-bold">{q.brand}</span>
+                                <p className="text-[11px] text-gray-400 flex items-center gap-1">
+                                  <Tag className="w-3 h-3 text-gray-500" /> Marca: <span className="text-gray-300 font-semibold">{q.brand}</span>
                                 </p>
                               )}
-                              {q.photoUrl && (
-                                <span className="inline-flex items-center gap-1 text-[10px] bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full border border-purple-500/30">
-                                  <Camera className="w-3 h-3" /> Foto/Anexo
-                                </span>
+
+                              {!isWinner && priceDifference > 0 && (
+                                <p className="text-[10px] text-amber-400/80 font-bold">
+                                  + R$ {priceDifference.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} mais caro
+                                </p>
                               )}
                             </div>
 
                             <div className="flex items-center gap-3 text-right">
                               <div>
-                                <p className="text-[10px] text-gray-400 uppercase font-semibold">Valor Unitário</p>
-                                <span className={`font-black text-base ${isCheapest ? 'text-emerald-400' : 'text-gray-200'}`}>
+                                <span className="text-[10px] text-gray-400 uppercase font-semibold block">Preço</span>
+                                <span className={`font-black text-base ${isWinner ? 'text-emerald-400 text-lg' : 'text-gray-200'}`}>
                                   R$ {val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                 </span>
                               </div>
-                              <button 
+
+                              <button
                                 onClick={() => handleDeleteQuote(item.id, q.supplierName)}
-                                className="text-gray-500 hover:text-red-400 transition-colors p-1"
-                                title="Remover cotação"
+                                className="text-gray-500 hover:text-red-400 p-1.5 rounded-lg hover:bg-red-500/10 transition-colors"
+                                title="Remover esta cotação"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -1761,8 +1760,17 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
                       })}
                     </div>
                   ) : (
-                    <div className="p-6 text-center text-gray-500 bg-[#161616] rounded-2xl border border-dashed border-white/10">
-                      Nenhuma cotação cadastrada para este produto ainda.
+                    <div className="p-6 text-center text-gray-400 bg-[#16181d] rounded-2xl border border-dashed border-white/10 flex flex-col items-center justify-center gap-2">
+                      <p className="text-xs">Nenhuma cotação cadastrada para este produto.</p>
+                      <button
+                        onClick={() => {
+                          setQuoteModalProdId(item.id);
+                          setQuoteForm({ supplierId: '', supplierName: '', brand: '', pricePerM2: '', unitPrice: '', specifications: '', photoUrl: '' });
+                        }}
+                        className="text-xs text-amber-400 hover:underline font-bold"
+                      >
+                        + Adicionar primeira cotação de preço
+                      </button>
                     </div>
                   )}
 
