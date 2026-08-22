@@ -220,12 +220,12 @@ const SuppliersPage: React.FC = () => {
 
   useEffect(() => { fetchSuppliers(); }, []);
 
-  // --- INÍCIO IMPORTAÇÃO AUTOMÁTICA ITAIPU (PARTE 4) ---
+  // --- INÍCIO IMPORTAÇÃO AUTOMÁTICA ITAIPU (PARTE 5) ---
   useEffect(() => {
-    if (!localStorage.getItem('itaipu_products_imported_v4') && suppliers.length > 0) {
+    if (!localStorage.getItem('itaipu_products_imported_v5') && suppliers.length > 0) {
       const itaipu = suppliers.find(s => s.name.toUpperCase().includes('ITAIPU'));
       if (itaipu) {
-        const newProducts4 = [
+        const newProducts5 = [
           // DA IMAGEM ANTERIOR (v2)
           { name: 'MDF 15 CARVALHO BATHUR', price: 477.73 },
           { name: 'MDF 15 CARVALHO BERLIM', price: 477.73 },
@@ -448,7 +448,7 @@ const SuppliersPage: React.FC = () => {
           { name: '20 MTS FITA VERDE JADE', price: 95.55 },
           { name: '20 MTS FITA VERMELHO', price: 107.49 },
 
-          // IMAGEM 6 (Última imagem enviada)
+          // IMAGEM 6 
           { name: '20 MTS FITA VERSALHES', price: 95.55 },
           { name: '20 MTS FITA VERTI', price: 95.55 },
           { name: '20 MTS FITA VIENA', price: 95.55 },
@@ -481,15 +481,177 @@ const SuppliersPage: React.FC = () => {
           { name: 'BEGE MDF 06', price: 345.00 },
           { name: 'BEGE MDF 15', price: 460.00 },
           { name: 'BI CAMA MADEIRADO', price: 2269.19 },
-          { name: 'BOX INCOLOR', price: 399.84 }
+          { name: 'BOX INCOLOR', price: 399.84 },
+          
+          // IMAGENS PARTE 5
+          { name: 'BOX INCOLOR C/ PELICULA DE PROTEÇAO', price: 503.69 },
+          { name: 'CAIXA 4 X 25', price: 62.11 },
+          { name: 'CAIXA BUCHA 08', price: 59.60 },
+          { name: 'CAIXA DE BUCHA P/GESSO', price: 65.69 },
+          { name: 'CAIXA DE MADEIRA MAÇARANDUBA', price: 11.35 },
+          { name: 'CAIXA DE PARAFUSOS 6 X 60', price: 72.60 },
+          { name: 'CAIXA PARAFUSO 4 X 40', price: 72.60 },
+          { name: 'CARIBE 20 MTS FITA', price: 93.15 },
+          { name: 'CARIBE MDF 15', price: 471.50 },
+          { name: 'CHAPA DE ESPELHO 320 X 220 BRONZE 04MM', price: 2243.23 },
+          { name: 'CHAPA DE ESPELHO 320 X 220 PRATA', price: 1495.48 },
+          { name: 'CHAPA DE ESPELHO 320 X 240 BRONZE 04MM', price: 2617.10 },
+          { name: 'CHAPA DE ESPELHO 320 X 240 PRATA 04MM', price: 1495.48 },
+          { name: 'CHAPA DE VIDRO 320 X 220 FUME 04MM', price: 1495.48 },
+          { name: 'CHAPA DE VIDRO 320 X 220 INCOLOR 04 MM', price: 747.75 },
+          { name: 'CHAPA DE VIDRO 320 X 220 INCOLOR 06MM', price: 1028.15 },
+          { name: 'CHAPA DE VIDRO 320 X 220 INCOLOR 08MM', price: 1121.62 },
+          { name: 'CHAPA DE VIDRO 320 X 220 REFLECTA BRONZE 04MM', price: 1682.42 },
+          { name: 'CINZA ITALIA', price: 501.61 },
+          { name: 'CLOSET MADEIRADO', price: 1313.75 },
+          { name: 'CLOSET LACCA', price: 1552.60 },
+          { name: 'CLOSET BRANCO TX', price: 1074.88 },
+          { name: 'COALA AMRELA', price: 29.86 },
+          { name: 'COLA AMARELA', price: 33.44 },
+          { name: 'COLA FORMICA', price: 105.93 },
+          { name: 'COLA P/ LAMINA DE MADEIRA', price: 197.22 },
+          { name: 'COLA STANTANEA', price: 29.86 },
+          { name: 'COMPENSADO 15 MM', price: 225.72 },
+          { name: 'CORREDIÇA', price: 35.83 },
+          { name: 'CORREDIÇA COM AMORTECEDOR INOX', price: 145.40 },
+          { name: 'CORREDIÇA OCULTA', price: 93.96 },
+          { name: 'CORREDIÇA TOQUE CLICK', price: 197.22 },
+          { name: 'CORREDIÇA TOQUE MAGICO', price: 101.52 },
+          { name: 'CORREDIÇAS C/AMORTECEDOR', price: 81.01 },
+          { name: 'CORTE DO MDF', price: 2.76 },
+          { name: 'COZINHA INFERIOR BRANCO TX', price: 1074.88 },
+          { name: 'COZINHA INFERIOR LACCA', price: 1672.04 },
+          { name: 'COZINHA MOVEL INFERIOR MADEIRADO', price: 1313.75 },
+          { name: 'COZINHA SUPERIOR BRANCO TX', price: 1074.88 },
+          { name: 'COZINHA SUPERIOR LACCA', price: 1791.47 },
+          { name: 'COZINHA SUPERIOR MADEIRADO', price: 1433.17 },
+          { name: 'DOBRADIÇA DE 3 \'\'', price: 26.29 },
+          { name: 'DOBRADIÇA SIMPLES', price: 4.78 },
+          { name: 'DOBRADIÇAS C/AMORTECEDOR', price: 15.52 },
+          { name: 'DOBRADIÇAS C/AMORTECEDOR INOX', price: 19.11 },
+          { name: 'DOBRADIÇAS S/AMORTECEDOR', price: 6.57 },
+          { name: 'ESCARIADOR C/BROCA', price: 61.27 },
+          { name: 'ESPELHO BRONZE 04MM LAPIDAÇAO', price: 495.63 },
+          { name: 'ESPELHO BRONZE BIZOTADO', price: 501.61 },
+          { name: 'ESPELHO FUME 04MM LAPIDADO', price: 513.56 },
+          { name: 'ESPELHO FUME PROJETADO', price: 519.27 },
+          { name: 'ESPELHO PRATA 04MM ( SO CORTADO )', price: 334.41 },
+          { name: 'ESPELHO PRATA 04MM LAPIDADOS', price: 406.07 },
+          { name: 'ESPELHO PRATA 04MM PROJETADO', price: 597.15 },
+          { name: 'ESPELHO PRATA BIZOTADO', price: 489.67 },
+          { name: 'ESPELHO PRATA C/BORDA DOURADO FOSCO', price: 1027.11 },
+          { name: 'ESPELHO PRATA C/DETALHE A RECEBER FITA LED', price: 513.56 },
+          { name: 'ESPELHO PRATA C/MOLDURA CIRCULAR PRETA', price: 358.29 },
+          { name: 'ESPELHO PRATA COM MOLDURA EM ALUMINIO 70 X 54', price: 269.91 },
+          { name: 'ESPELHO PRATA COM MOLDURA EM ALUMINIO INOX 60 X 43', price: 191.09 },
+          { name: 'ESPELHO PRATA COM MOLDURA EM MADEIRA', price: 143.32 },
+          { name: 'ESPELHO PRATA COM MOLDURA EM MDF 31 X 21', price: 25.08 },
+          { name: 'ESPELHO PRATA COM MOLDURA EM MDF 37 X 19', price: 26.29 },
+          { name: 'ESPELHO PRATA COM MOLDURA EM MDF 42 X 26', price: 33.44 },
+          { name: 'ESPELHO PRATA COM MOLDURA EM MDF 50 X 40', price: 51.36 },
+          { name: 'ESPELHO PRATA COM MOLDURA EM MDF 52 X 27', price: 47.77 },
+          { name: 'ESPELHO PRATA COM MOLDURA EM MDF 63 X 27', price: 53.74 },
+          { name: 'ESPELHO PRATA COM MOLDURA EM MDF 63 X 27', price: 56.14 },
+          { name: 'ESPELHO PRATA COM MOLDURA EM MDF 62 X 47', price: 77.62 },
+          { name: 'ESPELHO PRATA DETALHADO 90 X 74', price: 418.01 },
+          { name: 'ESPELHO PRATA EM MOLDURA ALUMINIO INOX 153 X 60', price: 597.15 },
+          { name: 'ESPELHO PRATA ORGANICO', price: 704.54 },
+          { name: 'ESPELHO PRATA ORGANICO C/BORDA', price: 931.56 },
+          { name: 'ESPELHO PRATA PROJETADO E BIZOTADO', price: 597.15 },
+          { name: 'ESPELHO REFLECTA CHUMBO', price: 477.73 },
+          { name: 'ESPLHO FUME BIZOTADO PROJETADO', price: 602.35 },
+          { name: 'ESTILETE EMBORRACHADO', price: 26.90 },
+          { name: 'ESTOPA', price: 9.55 },
+          { name: 'ESTRUTURA EM METALON 20X20 C/VIDRO INCOLOR 06MM', price: 716.59 },
+          { name: 'ESTRUTURA EM METALON COM ACABAMENTO BRONZE', price: 1313.75 },
+          { name: 'ESTRUTURA EM METALON DOURADO FOSCO', price: 923.26 },
+          { name: 'ESTRUTURA EM METALON PRETO FOSCO', price: 955.44 },
+          { name: 'ESTRUTURA MT LINEAR', price: 830.82 },
+          { name: 'FAIXADA C/PORTA DE REFLECTA', price: 1433.17 },
+          { name: 'FAIXADA C/PORTA DE VIDRO INCOLOR', price: 895.74 },
+          { name: 'FAIXADA EM PERFIL ALUMINIO COM VIDRO REFLECTA', price: 1433.17 },
+          { name: 'FAIXADA EM PERFIL COM VIDRO INCOLOR', price: 853.94 },
+          { name: 'FECHADURA DE CILINDRO', price: 17.92 },
+          { name: 'FECHADURA P/CORTINA DE VIDRO', price: 119.42 },
+          { name: 'FECHADURA P/PORTA DE VIDRO', price: 119.42 },
+          { name: 'FECHADURA STAN', price: 109.05 },
+          { name: 'FITA CONCRETE 20 MTS', price: 98.90 },
+          { name: 'FITA GRIS 20 MTS', price: 92.00 },
+          { name: 'FITA LED VERDE', price: 93.37 },
+          { name: 'FITA LOURO FREIJO', price: 92.00 },
+          { name: 'FONTE ( DRIVER ) P/ FITA LED', price: 83.51 },
+          { name: 'FORMICA BRANCO TX', price: 145.71 },
+          { name: 'FORMICA COMPENSADO MD23', price: 477.73 },
+          { name: 'FORMICA CROMO REAL L523', price: 537.44 },
+          { name: 'FORMICA LARANJA FOSCA', price: 537.44 },
+          { name: 'FORMICA LARANJA FOSCA', price: 456.23 },
+          { name: 'FORMICA OVO', price: 250.81 },
+          { name: 'GUARDA ROUPAS C/PORTAS DE CORRER MADEIRADO', price: 1552.60 },
+          { name: 'GUARDA ROUPAS C/PORTAS DE CORRER LACCA', price: 1910.90 },
+          { name: 'GUARDA ROUPAS C/PORTAS DE GIRO LACCA', price: 1791.47 },
+          { name: 'GUARDA ROUPAS C/PORTAS DE GIRO MADEIRADO', price: 1433.17 },
+          { name: 'INSTALAÇAO DE PORTA DE CORRER', price: 179.15 },
+          { name: 'INSTALAÇAO DE PORTA GIRO', price: 135.01 },
+          { name: 'INSTALAÇAO DE PORTAS', price: 155.26 },
+          { name: 'INSTALAÇAO FECHADURA', price: 95.55 },
+          { name: 'INSTALAÇAO SUPORTE TV', price: 119.42 },
+          { name: 'INTALAÇAO DE ALIZAR', price: 143.32 },
+          { name: 'JANELA EM PERFIL ALUMINIO C/ VIDRO INCOLOR', price: 597.15 },
+          { name: 'JARROS P/ PLANTAS EM ESPELHO PRATA', price: 23.89 },
+          { name: 'JEQUITIBA BRASIL 20 MTS FITA', price: 92.00 },
+          { name: 'JEQUITIBA BRASIL MDF 06', price: 368.00 },
+          { name: 'JOGO DE DOBRADIÇAS', price: 109.05 },
+          { name: 'JOGO DOBRADIÇAS INOX', price: 109.05 },
+          { name: 'KIT P/ PORTA CAMARAO', price: 107.37 },
+          { name: 'KIT PIVOTANTE', price: 382.18 },
+          { name: 'KIT RO 65', price: 59.73 },
+          { name: 'KIT ROLDANA P/BOX', price: 71.66 },
+          { name: 'KIT ROLDANAS P/PORTA DE CORRER', price: 57.33 },
+          { name: 'LAMINA DE ESTILETE CAIXA C/10 UNID.', price: 11.32 },
+          { name: 'LAMINA DE MADEIRA CUMARU', price: 107.37 },
+          { name: 'LAMINA PLAINA ELETRICA', price: 72.60 },
+          { name: 'LAMPADA DE FOCO LED', price: 5.19 },
+          { name: 'LINHA EM MUIRACATIARA 15 X 5', price: 150.65 },
+          { name: 'LINHEIRO GRIS FITA 20 MTS', price: 92.00 },
+          { name: 'LINHEIRO GRIS MDF 06', price: 345.00 },
+          { name: 'LINHEIRO GRIS MDF 15', price: 460.00 },
+          { name: 'LIXA 150 PAREDE', price: 3.12 },
+          { name: 'LIXA 180 PAREDE', price: 3.12 },
+          { name: 'MAO FRANCESA EM PAU MARFIM', price: 298.59 },
+          { name: 'MASSA CORRIDA', price: 62.31 },
+          { name: 'MDF 03 MM CRU ULTRA', price: 207.00 },
+          { name: 'MDF 06 2F BRANCO TX ULTRA', price: 259.64 },
+          { name: 'MDF 06 ABSOLUTO', price: 345.15 },
+          { name: 'MDF 06 ACACIA', price: 358.29 },
+          { name: 'MDF 06 ALMERIA', price: 358.29 },
+          { name: 'MDF 06 ARAUCARIA', price: 358.29 },
+          { name: 'MDF 06 ARDOSIA', price: 360.53 },
+          { name: 'MDF 06 AREIA', price: 358.29 },
+          { name: 'MDF 06 ARGILA', price: 311.56 },
+          { name: 'MDF 06 AURORA', price: 358.29 },
+          { name: 'MDF 06 AZUL ASTRAL', price: 358.29 },
+          { name: 'MDF 06 AZUL SECRETO', price: 358.29 },
+          { name: 'MDF 06 BILBAO', price: 358.29 },
+          { name: 'MDF 06 BOLEIRO', price: 358.29 },
+          { name: 'MDF 06 BRANCO CRISTALLO', price: 382.18 },
+          { name: 'MDF 06 BRANCO DIAMANTE ESSENCIAL ULTRA', price: 358.29 },
+          { name: 'MDF 06 BRANCO ESSENCIAL', price: 358.29 },
+          { name: 'MDF 06 BRANCO TRAMA', price: 358.29 },
+          { name: 'MDF 06 BRONZE', price: 358.29 },
+          { name: 'MDF 06 CACAU NATURAL', price: 358.29 },
+          { name: 'MDF 06 CARVALHO BATHUR', price: 358.29 },
+          { name: 'MDF 06 CARVALHO BERLIM', price: 358.29 },
+          { name: 'MDF 06 CARVALHO MALVA', price: 334.41 },
+          { name: 'MDF 06 CARVALHO TREVISO', price: 262.75 },
+          { name: 'MDF 06 CILIEGIO', price: 394.13 }
         ];
 
         setComparisons(prev => {
           const updated = [...prev];
-          newProducts4.forEach((prod, idx) => {
+          newProducts5.forEach((prod, idx) => {
             if (!updated.some(p => p.productName === prod.name && p.quotes[0].unitPrice === prod.price)) {
               updated.push({
-                id: 'import4_' + Date.now() + '_' + idx,
+                id: 'import5_' + Date.now() + '_' + idx,
                 productName: prod.name,
                 category: 'MDF/MDP',
                 unit: 'Unidade',
@@ -508,13 +670,13 @@ const SuppliersPage: React.FC = () => {
             }
           });
           localStorage.setItem('sd_supplier_comparisons_v3', JSON.stringify(updated));
-          localStorage.setItem('itaipu_products_imported_v4', 'true');
+          localStorage.setItem('itaipu_products_imported_v5', 'true');
           return updated;
         });
       }
     }
   }, [suppliers]);
-  // --- FIM IMPORTAÇÃO AUTOMÁTICA ITAIPU (PARTE 4) ---
+  // --- FIM IMPORTAÇÃO AUTOMÁTICA ITAIPU (PARTE 5) ---
 
   // ─── PDF Render & Text Extraction Helper ────────────────────────────────────
   const convertFileToImageAndText = async (file: File): Promise<{ base64Image: string; text: string }> => {
