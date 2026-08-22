@@ -1442,6 +1442,7 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
   };
 
   const handleDeleteSupplier = async (id: string) => {
+    if (activeTab === `supplier_${id}`) setActiveTab('suppliers_overview');
     await db.from('suppliers').update({ active: false }).eq('id', id);
     toast({ title: '🗑️ Fornecedor removido' });
     fetchSuppliers();
@@ -1973,17 +1974,29 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
         </button>
 
         {suppliers.map(s => (
-          <button
-            key={s.id}
-            onClick={() => setActiveTab(`supplier_${s.id}`)}
-            className={`flex items-center gap-2 px-5 py-3 font-bold text-sm rounded-t-2xl transition-all border-b-2 ${
-              activeTab === `supplier_${s.id}`
-                ? 'bg-amber-500/10 text-amber-400 border-amber-500'
-                : 'text-gray-400 hover:text-white border-transparent'
-            }`}
-          >
-            🏢 {s.name}
-          </button>
+          <div key={s.id} className={`flex items-center rounded-t-2xl border-b-2 transition-all ${
+            activeTab === `supplier_${s.id}`
+              ? 'bg-amber-500/10 border-amber-500'
+              : 'border-transparent'
+          }`}>
+            <button
+              onClick={() => setActiveTab(`supplier_${s.id}`)}
+              className={`flex items-center gap-2 pl-4 pr-2 py-3 font-bold text-sm transition-all ${
+                activeTab === `supplier_${s.id}`
+                  ? 'text-amber-400'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              🏢 {s.name}
+            </button>
+            <button
+              onClick={e => { e.stopPropagation(); handleDeleteSupplier(s.id); }}
+              className="w-6 h-6 mr-2 flex items-center justify-center rounded-full text-gray-500 hover:bg-red-500/20 hover:text-red-400 transition-all text-xs"
+              title={`Excluir fornecedor ${s.name}`}
+            >
+              ✕
+            </button>
+          </div>
         ))}
 
         {!showQuickAddSupplier ? (
