@@ -394,12 +394,23 @@ const LegacySystemPage: React.FC = () => {
 
   const handleDeleteClient = async (c: any, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    const confirmed = window.confirm(`Tem certeza que deseja excluir o cliente "${c.name?.toUpperCase() || 'Selecionado'}"?`);
+    const confirmed = window.confirm(`Tem certeza que deseja excluir o cliente "${c.name?.toUpperCase() || 'Selecionado'}"?\n\nAs ordens de serviço existentes permanecerão salvas.`);
     if (!confirmed) return;
 
     try {
+      // 1. Desvincular das ordens de serviço preservando o nome do cliente no histórico
+      await db.from('service_orders').update({ client_id: null, client_name: c.name }).eq('client_id', c.id);
+
+      // 2. Desvincular de outras tabelas relacionadas caso existam
+      try { await db.from('appointments').update({ client_id: null }).eq('client_id', c.id); } catch (_) {}
+      try { await db.from('contracts').update({ client_id: null }).eq('client_id', c.id); } catch (_) {}
+      try { await db.from('budgets').update({ client_id: null }).eq('client_id', c.id); } catch (_) {}
+      try { await db.from('financial_transactions').update({ client_id: null }).eq('client_id', c.id); } catch (_) {}
+
+      // 3. Excluir da tabela de clientes
       const { error } = await db.from('clients').delete().eq('id', c.id);
       if (error) throw error;
+
       setClients((prev: any[]) => prev.filter(item => item.id !== c.id));
       if (clientId === c.id) {
         setClientId('');
@@ -409,6 +420,7 @@ const LegacySystemPage: React.FC = () => {
       setShowCustomerRegistrationModal(false);
       toast({ title: '✅ Cliente excluído com sucesso!' });
     } catch (err: any) {
+      console.error('Erro ao excluir cliente:', err);
       toast({ title: '❌ Erro ao excluir cliente', description: err.message, variant: 'destructive' });
     }
   };
