@@ -1461,38 +1461,44 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
       return;
     }
 
+    let isAll = prodForm.supplierId === 'ALL_SUPPLIERS' || prodForm.supplierName.toUpperCase().includes('TODOS');
     let sName = prodForm.supplierName.trim();
-    if (prodForm.supplierId) {
+    if (!isAll && prodForm.supplierId) {
       const found = suppliers.find(s => s.id === prodForm.supplierId);
       if (found) sName = found.name;
     }
-    if (!sName) {
+    if (!sName && !isAll) {
       toast({ title: '⚠️ Informe o nome do fornecedor', variant: 'destructive' });
       return;
     }
 
     const m2Num = prodForm.pricePerM2 ? parseFloat(prodForm.pricePerM2.replace(',', '.')) : null;
 
-    // Criar cotações automaticamente para todos os fornecedores (ITAIPU, REVESTI, GEOVANE, RIO BRANCO e demais)
-    let allTargetSuppliers = [...suppliers];
-    const defaultNames = ['ITAIPU', 'REVESTI', 'GEOVANE', 'RIO BRANCO'];
-    defaultNames.forEach(dName => {
-      if (!allTargetSuppliers.some(s => s.name.toUpperCase().includes(dName))) {
-        allTargetSuppliers.push({
-          id: dName.toLowerCase(),
-          name: dName,
-          cnpj: null,
-          phone: null,
-          email: null,
-          address: null,
-          category: 'Geral',
-          notes: null,
-          active: true
-        });
-      }
-    });
+    let targetSuppliers: { id: string; name: string }[] = [];
+    if (isAll) {
+      let all = [...suppliers];
+      const defaultNames = ['ITAIPU', 'REVESTI', 'GEOVANE', 'RIO BRANCO'];
+      defaultNames.forEach(dName => {
+        if (!all.some(s => s.name.toUpperCase().includes(dName))) {
+          all.push({
+            id: dName.toLowerCase(),
+            name: dName,
+            cnpj: null,
+            phone: null,
+            email: null,
+            address: null,
+            category: 'Geral',
+            notes: null,
+            active: true
+          });
+        }
+      });
+      targetSuppliers = all.map(s => ({ id: s.id, name: s.name }));
+    } else {
+      targetSuppliers = [{ id: prodForm.supplierId || Date.now().toString(), name: sName }];
+    }
 
-    const quotesList: PriceQuote[] = allTargetSuppliers.map(s => ({
+    const quotesList: PriceQuote[] = targetSuppliers.map(s => ({
       supplierId: s.id,
       supplierName: s.name,
       brand: prodForm.brand.trim() || 'Geral',
@@ -1520,7 +1526,7 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
     });
     setProdForm({ supplierName: '', supplierId: '', productName: '', brand: '', pricePerM2: '', unitPrice: '', category: 'MDF/MDP', description: '', specifications: '', photoUrl: '' });
     setShowProdForm(false);
-    toast({ title: '✅ Produto salvo automaticamente em todos os fornecedores (ITAIPU, REVESTI, GEOVANE, RIO BRANCO)!' });
+    toast({ title: isAll ? '✅ Produto cadastrado em TODOS os fornecedores!' : `✅ Produto salvo para ${sName}!` });
   };
 
   const handleDeleteProduct = (id: string) => {
@@ -1541,12 +1547,13 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
       return;
     }
 
+    let isAll = quoteForm.supplierId === 'ALL_SUPPLIERS' || quoteForm.supplierName.toUpperCase().includes('TODOS');
     let sName = quoteForm.supplierName.trim();
-    if (quoteForm.supplierId) {
+    if (!isAll && quoteForm.supplierId) {
       const found = suppliers.find(s => s.id === quoteForm.supplierId);
       if (found) sName = found.name;
     }
-    if (!sName) {
+    if (!sName && !isAll) {
       toast({ title: '⚠️ Informe o fornecedor', variant: 'destructive' });
       return;
     }
@@ -1556,19 +1563,44 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
     setComparisons(prev => {
       const updated = prev.map(p => {
         if (p.id !== quoteModalProdId) return p;
-        const filteredQuotes = p.quotes.filter(q => q.supplierName.toLowerCase() !== sName.toLowerCase());
-        const newQuote: PriceQuote = {
-          supplierId: quoteForm.supplierId || Date.now().toString(),
-          supplierName: sName,
-          brand: quoteForm.brand.trim() || 'Geral',
-          pricePerM2: isNaN(m2Num as number) ? null : m2Num,
-          unitPrice: unitPriceNum,
-          price: unitPriceNum,
-          updatedAt: new Date().toISOString().split('T')[0],
-          photoUrl: quoteForm.photoUrl || null,
-          specifications: quoteForm.specifications || null
-        };
-        return { ...p, productName: quoteForm.productName.trim() || p.productName, quotes: [...filteredQuotes, newQuote] };
+        let newQuotes = [...p.quotes];
+        if (isAll) {
+          let all = [...suppliers];
+          const defaultNames = ['ITAIPU', 'REVESTI', 'GEOVANE', 'RIO BRANCO'];
+          defaultNames.forEach(dName => {
+            if (!all.some(s => s.name.toUpperCase().includes(dName))) {
+              all.push({ id: dName.toLowerCase(), name: dName, cnpj: null, phone: null, email: null, address: null, category: 'Geral', notes: null, active: true });
+            }
+          });
+          all.forEach(target => {
+            newQuotes = newQuotes.filter(q => q.supplierName.toLowerCase() !== target.name.toLowerCase());
+            newQuotes.push({
+              supplierId: target.id,
+              supplierName: target.name,
+              brand: quoteForm.brand.trim() || 'Geral',
+              pricePerM2: isNaN(m2Num as number) ? null : m2Num,
+              unitPrice: unitPriceNum,
+              price: unitPriceNum,
+              updatedAt: new Date().toISOString().split('T')[0],
+              photoUrl: quoteForm.photoUrl || null,
+              specifications: quoteForm.specifications || null
+            });
+          });
+        } else {
+          newQuotes = newQuotes.filter(q => q.supplierName.toLowerCase() !== sName.toLowerCase());
+          newQuotes.push({
+            supplierId: quoteForm.supplierId || Date.now().toString(),
+            supplierName: sName,
+            brand: quoteForm.brand.trim() || 'Geral',
+            pricePerM2: isNaN(m2Num as number) ? null : m2Num,
+            unitPrice: unitPriceNum,
+            price: unitPriceNum,
+            updatedAt: new Date().toISOString().split('T')[0],
+            photoUrl: quoteForm.photoUrl || null,
+            specifications: quoteForm.specifications || null
+          });
+        }
+        return { ...p, productName: quoteForm.productName.trim() || p.productName, quotes: newQuotes };
       });
       localStorage.setItem('sd_supplier_comparisons_v3', JSON.stringify(updated));
       return updated;
@@ -1576,7 +1608,7 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
 
     setQuoteModalProdId(null);
     setQuoteForm({ supplierId: '', supplierName: '', productName: '', brand: '', pricePerM2: '', unitPrice: '', specifications: '', photoUrl: '' });
-    toast({ title: '💰 Cotação salva com sucesso!' });
+    toast({ title: isAll ? '💰 Cotação salva em TODOS os fornecedores!' : `💰 Cotação salva para ${sName}!` });
   };
 
   const handleDeleteQuote = (prodId: string, supplierName: string) => {
@@ -2916,12 +2948,17 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
                 <select 
                   value={prodForm.supplierId} 
                   onChange={e => {
-                    const sel = suppliers.find(s => s.id === e.target.value);
-                    setProdForm({ ...prodForm, supplierId: e.target.value, supplierName: sel ? sel.name : prodForm.supplierName });
+                    if (e.target.value === 'ALL_SUPPLIERS') {
+                      setProdForm({ ...prodForm, supplierId: 'ALL_SUPPLIERS', supplierName: 'TODOS' });
+                    } else {
+                      const sel = suppliers.find(s => s.id === e.target.value);
+                      setProdForm({ ...prodForm, supplierId: e.target.value, supplierName: sel ? sel.name : prodForm.supplierName });
+                    }
                   }} 
-                  className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm mb-1"
+                  className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm mb-1 font-semibold"
                 >
                   <option value="">-- Selecione ou digite abaixo --</option>
+                  <option value="ALL_SUPPLIERS" className="font-black text-amber-400">🌟 TODOS OS FORNECEDORES</option>
                   {suppliers.map(s => (
                     <option key={s.id} value={s.id}>{s.name}</option>
                   ))}
@@ -3052,12 +3089,17 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
                 <select 
                   value={quoteForm.supplierId} 
                   onChange={e => {
-                    const sel = suppliers.find(s => s.id === e.target.value);
-                    setQuoteForm({ ...quoteForm, supplierId: e.target.value, supplierName: sel ? sel.name : quoteForm.supplierName });
+                    if (e.target.value === 'ALL_SUPPLIERS') {
+                      setQuoteForm({ ...quoteForm, supplierId: 'ALL_SUPPLIERS', supplierName: 'TODOS' });
+                    } else {
+                      const sel = suppliers.find(s => s.id === e.target.value);
+                      setQuoteForm({ ...quoteForm, supplierId: e.target.value, supplierName: sel ? sel.name : quoteForm.supplierName });
+                    }
                   }} 
-                  className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none text-sm mb-1"
+                  className="w-full p-3 rounded-xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:outline-none text-sm mb-1 font-semibold"
                 >
                   <option value="">-- Selecione ou digite abaixo --</option>
+                  <option value="ALL_SUPPLIERS" className="font-black text-amber-400">🌟 TODOS OS FORNECEDORES</option>
                   {suppliers.map(s => (
                     <option key={s.id} value={s.id}>{s.name}</option>
                   ))}
