@@ -220,12 +220,13 @@ const SuppliersPage: React.FC = () => {
 
   useEffect(() => { fetchSuppliers(); }, []);
 
-  // --- INÍCIO IMPORTAÇÃO AUTOMÁTICA ITAIPU (PARTE 2) ---
+  // --- INÍCIO IMPORTAÇÃO AUTOMÁTICA ITAIPU (PARTE 3) ---
   useEffect(() => {
-    if (!localStorage.getItem('itaipu_products_imported_v2') && suppliers.length > 0) {
+    if (!localStorage.getItem('itaipu_products_imported_v3') && suppliers.length > 0) {
       const itaipu = suppliers.find(s => s.name.toUpperCase().includes('ITAIPU'));
       if (itaipu) {
-        const newProducts2 = [
+        const newProducts3 = [
+          // DA IMAGEM ANTERIOR (v2)
           { name: 'MDF 15 CARVALHO BATHUR', price: 477.73 },
           { name: 'MDF 15 CARVALHO BERLIM', price: 477.73 },
           { name: 'MDF 15 CARVALHO ETERNO', price: 477.73 },
@@ -259,16 +260,201 @@ const SuppliersPage: React.FC = () => {
           { name: 'MDF 15 FONTANA', price: 477.73 },
           { name: 'MDF 15 FRAPE', price: 477.73 },
           { name: 'MDF 15 FREIJO', price: 477.73 },
-          { name: 'MDF 15 GALIANO', price: 477.73 }
+          { name: 'MDF 15 GALIANO', price: 477.73 },
+          
+          // IMAGEM 1
+          { name: 'MDF 15 GEPPETTO', price: 483.00 },
+          { name: 'MDF 15 GIANDUIA CRISTALLO', price: 597.15 },
+          { name: 'MDF 15 GIANDUIA NATURAL', price: 477.73 },
+          { name: 'MDF 15 GIANDUIA TRAMA', price: 477.73 },
+          { name: 'MDF 15 GIANDUIA TRAMA ULTRA', price: 501.61 },
+          { name: 'MDF 15 GOBI CONCEITO', price: 477.73 },
+          { name: 'MDF 15 GRAFITE ACETINATTA', price: 836.02 },
+          { name: 'MDF 15 GRIS', price: 460.00 },
+          { name: 'MDF 15 HONG KONG', price: 481.31 },
+          { name: 'MDF 15 ITAPUA', price: 477.73 },
+          { name: 'MDF 15 ITAPUA ULTRA', price: 546.25 },
+          { name: 'MDF 15 JEQUITIBA ROSA', price: 477.73 },
+          { name: 'MDF 15 LACCA DESERT ROSE', price: 464.59 },
+          { name: 'MDF 15 LACCA LARANJA FOSCA', price: 597.15 },
+          { name: 'MDF 15 LANA VEL', price: 477.73 },
+          { name: 'MDF 15 LENHA', price: 469.78 },
+          { name: 'MDF 15 LINEO TEXTIL', price: 477.73 },
+          { name: 'MDF 15 LINHO', price: 477.73 },
+          { name: 'MDF 15 LINHO BELGA', price: 489.67 },
+          { name: 'MDF 15 LOURO FREIJO', price: 460.00 },
+          { name: 'MDF 15 MADEIRADO', price: 477.73 },
+          { name: 'MDF 15 MADEIRADO A DEFINIR', price: 477.73 },
+          { name: 'MDF 15 MAGEO CARVALHO', price: 477.73 },
+          { name: 'MDF 15 MARAGOGI', price: 477.73 },
+          { name: 'MDF 15 MARAU', price: 477.73 },
+          { name: 'MDF 15 MAXI BRANCO', price: 477.73 },
+          { name: 'MDF 15 MELANIAL', price: 477.73 },
+          { name: 'MDF 15 METALLIC SUEDE', price: 477.73 },
+          { name: 'MDF 15 MINT', price: 477.73 },
+          { name: 'MDF 15 MOSTARDA', price: 477.73 },
+          { name: 'MDF 15 NEBLINA', price: 489.67 },
+          { name: 'MDF 15 NEVADA', price: 513.56 },
+          { name: 'MDF 15 NIQUEL', price: 489.67 },
+          { name: 'MDF 15 NOBLE TRAMA', price: 464.59 },
+          { name: 'MDF 15 NOCE AMENDOA', price: 477.73 },
+
+          // IMAGEM 2
+          { name: '20 MTS AL AMENDUADU 22 MM', price: 109.05 },
+          { name: 'BRANCO TX 20 MTS FITA', price: 82.98 },
+          { name: 'BRANCO TX MDF 06', price: 238.87 },
+          { name: 'BRANCO TX MDF 15 2F', price: 259.64 },
+          { name: 'JEQUITIBA BRASIL MDF 15', price: 483.00 },
+          { name: '1,5 MTS LINHA 10 X 5 MAÇARANDUBA', price: 53.74 },
+          { name: '20 MST FITA SAFIRA', price: 95.45 },
+          { name: '20 MTS BRANCO DIAMANTE ESSENCIAL', price: 95.55 },
+          { name: '20 MTS FITA ABSOLUTO', price: 97.95 },
+          { name: '20 MTS FITA ACACIA', price: 95.55 },
+          { name: '20 MTS FITA ALMERIA', price: 95.55 },
+          { name: '20 MTS FITA ARAUCARIA', price: 95.55 },
+          { name: '20 MTS FITA ARDOSIA', price: 88.49 },
+          { name: '20 MTS FITA AREIA', price: 95.55 },
+          { name: '20 MTS FITA AREIA RUC', price: 96.74 },
+          { name: '20 MTS FITA ARENITO', price: 93.47 },
+          { name: '20 MTS FITA ARGILA', price: 83.09 },
+          { name: '20 MTS FITA AURORA', price: 95.55 },
+          { name: '20 MTS FITA AZUL ASTRAL', price: 95.55 },
+          { name: '20 MTS FITA AZUL PETROLEO', price: 95.55 },
+          { name: '20 MTS FITA AZUL SECRETO', price: 95.55 },
+          { name: '20 MTS FITA AZUL SERENO', price: 95.55 },
+          { name: '20 MTS FITA AZUL SKY VEL', price: 95.55 },
+          { name: '20 MTS FITA AZUL VEL', price: 95.55 },
+          { name: '20 MTS FITA BILBAO', price: 95.55 },
+          { name: '20 MTS FITA BLUE SKY', price: 96.74 },
+          { name: '20 MTS FITA BOLEIRO', price: 95.55 },
+          { name: '20 MTS FITA BRANCO CRISTALLO', price: 101.52 },
+          { name: '20 MTS FITA BRANCO DIAMANTE ESSENCIAL', price: 95.55 },
+          { name: '20 MTS FITA BRANCO SUPREMO', price: 107.49 },
+          { name: '20 MTS FITA BRANCO TRAMA', price: 95.55 },
+          { name: '20 MTS FITA BRANCO TX 22MM', price: 109.05 },
+          { name: '20 MTS FITA BRANCO TX 6,5', price: 167.21 },
+
+          // IMAGEM 3
+          { name: '20 MTS FITA BRONZE', price: 95.55 },
+          { name: '20 MTS FITA CACAU NATURAL', price: 95.55 },
+          { name: '20 MTS FITA CARVALHO AMERICANO', price: 107.49 },
+          { name: '20 MTS FITA CARVALHO BATHUR', price: 95.55 },
+          { name: '20 MTS FITA CARVALHO BERLIM', price: 95.55 },
+          { name: '20 MTS FITA CARVALHO ETERNO', price: 95.55 },
+          { name: '20 MTS FITA CARVALHO HARNOVER', price: 97.95 },
+          { name: '20 MTS FITA CARVALHO JAPANDI', price: 95.55 },
+          { name: '20 MTS FITA CARVALHO MALVA', price: 95.55 },
+          { name: '20 MTS FITA CARVALHO TREVISO', price: 95.55 },
+          { name: '20 MTS FITA CHUMBO', price: 95.55 },
+          { name: '20 MTS FITA CILIEGIO', price: 100.32 },
+          { name: '20 MTS FITA CINZA', price: 95.55 },
+          { name: '20 MTS FITA CINZA A DEFINIR', price: 95.55 },
+          { name: '20 MTS FITA CINZA COBALTO', price: 95.55 },
+          { name: '20 MTS FITA CINZA CRISTAL', price: 97.95 },
+          { name: '20 MTS FITA CINZA ESSENCIAL', price: 95.55 },
+          { name: '20 MTS FITA CINZA SAGRADO', price: 95.55 },
+          { name: '20 MTS FITA CINZA SAGRADO CRISTALLO', price: 95.55 },
+          { name: '20 MTS FITA CINZA SAGRADO ESSENCIAL', price: 95.55 },
+          { name: '20 MTS FITA CINZA URBANO', price: 95.55 },
+          { name: '20 MTS FITA CINZA VEL', price: 95.55 },
+          { name: '20 MTS FITA COMPENSADO', price: 95.55 },
+          { name: '20 MTS FITA CONCRETE', price: 92.00 },
+          { name: '20 MTS FITA CRIPES', price: 87.40 },
+          { name: '20 MTS FITA CRISTALLO', price: 119.42 },
+          { name: '20 MTS FITA CUMARU NATIVO', price: 97.95 },
+          { name: '20 MTS FITA CUMARU RAIZ', price: 95.55 },
+          { name: '20 MTS FITA CURUPIXA RIPADO', price: 95.55 },
+          { name: '20 MTS FITA FAIA', price: 95.55 },
+          { name: '20 MTS FITA FASANO', price: 99.13 },
+          { name: '20 MTS FITA FENDI', price: 102.70 },
+          { name: '20 MTS FITA FOG MAGMA', price: 95.55 },
+          { name: '20 MTS FITA FONTANA', price: 107.37 },
+          { name: '20 MTS FITA FRAPE', price: 95.55 },
+          { name: '20 MTS FITA FREIJO', price: 95.55 },
+
+          // IMAGEM 4
+          { name: '20 MTS FITA GEPPETTO', price: 94.30 },
+          { name: '20 MTS FITA GIANDUIA CRISTALLO', price: 218.09 },
+          { name: '20 MTS FITA GIANDUIA NATURAL', price: 95.55 },
+          { name: '20 MTS FITA GIANDUIA TRAMA', price: 95.56 },
+          { name: '20 MTS FITA GOBI CONCEITO', price: 95.55 },
+          { name: '20 MTS FITA GRAFITE', price: 95.55 },
+          { name: '20 MTS FITA GRAFITE ACETINATTA', price: 119.42 },
+          { name: '20 MTS FITA GRIS CHESS', price: 95.55 },
+          { name: '20 MTS FITA HONG KONG', price: 95.55 },
+          { name: '20 MTS FITA IBIZA', price: 95.55 },
+          { name: '20 MTS FITA ITAPUA', price: 95.55 },
+          { name: '20 MTS FITA JALAPAO', price: 87.40 },
+          { name: '20 MTS FITA JEQUITIBA ROSA', price: 95.55 },
+          { name: '20 MTS FITA LACCA DESERT ROSE', price: 101.52 },
+          { name: '20 MTS FITA LANA VEL', price: 95.55 },
+          { name: '20 MTS FITA LENHA', price: 87.40 },
+          { name: '20 MTS FITA LINEO TEXTIL', price: 95.55 },
+          { name: '20 MTS FITA LINHO', price: 95.55 },
+          { name: '20 MTS FITA LINHO BELGA', price: 100.32 },
+          { name: '20 MTS FITA MADEIRADO A DEFINIR', price: 95.55 },
+          { name: '20 MTS FITA MADEIRADOO', price: 95.55 },
+          { name: '20 MTS FITA MARAGOGI', price: 95.55 },
+          { name: '20 MTS FITA MARAU', price: 95.55 },
+          { name: '20 MTS FITA MARGEO CARVALHO', price: 95.55 },
+          { name: '20 MTS FITA MAXI BRANCO', price: 96.74 },
+          { name: '20 MTS FITA MELANIAL', price: 95.55 },
+          { name: '20 MTS FITA MELENIAL', price: 95.55 },
+          { name: '20 MTS FITA METALLIC SUEDE', price: 95.55 },
+          { name: '20 MTS FITA MINT', price: 95.55 },
+          { name: '20 MTS FITA MOSTARDA', price: 95.55 },
+          { name: '20 MTS FITA NEBLINA', price: 97.95 },
+          { name: '20 MTS FITA NEVADA', price: 95.55 },
+          { name: '20 MTS FITA NIQUEL', price: 95.55 },
+          { name: '20 MTS FITA NOBLE TRAMA', price: 95.55 },
+          { name: '20 MTS FITA NOCE AMENDOA', price: 95.55 },
+          { name: '20 MTS FITA NOCE MARE', price: 95.55 },
+          { name: '20 MTS FITA NOGAL MALAGA', price: 95.55 },
+
+          // IMAGEM 5
+          { name: '20 MTS FITA NOGUEIRA CADIZ', price: 95.55 },
+          { name: '20 MTS FITA NOGUEIRA FLORIDA', price: 92.00 },
+          { name: '20 MTS FITA NOGUEIRA THAR', price: 95.55 },
+          { name: '20 MTS FITA NOITE', price: 97.95 },
+          { name: '20 MTS FITA NUDE', price: 95.55 },
+          { name: '20 MTS FITA OCRE SOLAR', price: 100.32 },
+          { name: '20 MTS FITA OPALA', price: 107.49 },
+          { name: '20 MTS FITA OPALA CRISTALLO', price: 113.46 },
+          { name: '20 MTS FITA OURO', price: 100.32 },
+          { name: '20 MTS FITA OVO', price: 95.55 },
+          { name: '20 MTS FITA PALHA', price: 95.55 },
+          { name: '20 MTS FITA PAPIRUS', price: 95.55 },
+          { name: '20 MTS FITA PAU FERRO', price: 107.49 },
+          { name: '20 MTS FITA PEROLA URBANO', price: 95.55 },
+          { name: '20 MTS FITA PRATA', price: 95.55 },
+          { name: '20 MTS FITA PRETO LACCA', price: 143.32 },
+          { name: '20 MTS FITA PRETO TX', price: 101.52 },
+          { name: '20 MTS FITA QUARTZO', price: 91.01 },
+          { name: '20 MTS FITA ROCHA RARA', price: 95.55 },
+          { name: '20 MTS FITA ROSA AZUL', price: 95.55 },
+          { name: '20 MTS FITA ROSA MILKSHEK', price: 95.55 },
+          { name: '20 MTS FITA ROVERE SERENO', price: 95.55 },
+          { name: '20 MTS FITA SAFIRA', price: 92.00 },
+          { name: '20 MTS FITA SAL ROSA', price: 95.55 },
+          { name: '20 MTS FITA SALVIA', price: 95.55 },
+          { name: '20 MTS FITA SERENO 4', price: 89.59 },
+          { name: '20 MTS FITA SIBERIA', price: 95.55 },
+          { name: '20 MTS FITA TAUPE MICRO', price: 95.55 },
+          { name: '20 MTS FITA TERRAZO', price: 95.55 },
+          { name: '20 MTS FITA TERRINO', price: 87.40 },
+          { name: '20 MTS FITA TESSELATI', price: 95.55 },
+          { name: '20 MTS FITA TITANIO TRAMA', price: 95.55 },
+          { name: '20 MTS FITA TOKAI', price: 95.55 },
+          { name: '20 MTS FITA VERDE JADE', price: 95.55 },
+          { name: '20 MTS FITA VERMELHO', price: 107.49 }
         ];
 
         setComparisons(prev => {
           const updated = [...prev];
-          newProducts2.forEach((prod, idx) => {
-            // Verifica se o produto já foi adicionado pra não duplicar caso o usuário atualize rápido
+          newProducts3.forEach((prod, idx) => {
             if (!updated.some(p => p.productName === prod.name && p.quotes[0].unitPrice === prod.price)) {
               updated.push({
-                id: 'import2_' + Date.now() + '_' + idx,
+                id: 'import3_' + Date.now() + '_' + idx,
                 productName: prod.name,
                 category: 'MDF/MDP',
                 unit: 'Unidade',
@@ -287,13 +473,13 @@ const SuppliersPage: React.FC = () => {
             }
           });
           localStorage.setItem('sd_supplier_comparisons_v3', JSON.stringify(updated));
-          localStorage.setItem('itaipu_products_imported_v2', 'true');
+          localStorage.setItem('itaipu_products_imported_v3', 'true');
           return updated;
         });
       }
     }
   }, [suppliers]);
-  // --- FIM IMPORTAÇÃO AUTOMÁTICA ITAIPU (PARTE 2) ---
+  // --- FIM IMPORTAÇÃO AUTOMÁTICA ITAIPU (PARTE 3) ---
 
   // ─── PDF Render & Text Extraction Helper ────────────────────────────────────
   const convertFileToImageAndText = async (file: File): Promise<{ base64Image: string; text: string }> => {
