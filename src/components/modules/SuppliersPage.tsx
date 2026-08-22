@@ -102,6 +102,7 @@ const DEFAULT_COMPARISONS: ProductComparison[] = [
 const SuppliersPage: React.FC = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'suppliers' | 'comparison' | 'material_list'>('suppliers');
+  const [selectedSupplierTab, setSelectedSupplierTab] = useState<string>('overview');
   
   // Suppliers state
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -1231,15 +1232,50 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
       {/* ─── TAB 1: SUPPLIERS LIST ────────────────────────────────────────── */}
       {activeTab === 'suppliers' && (
         <div className="space-y-6">
-          <div className="relative max-w-md">
-            <Search className="absolute left-4 top-3.5 w-5 h-5 text-gray-400" />
-            <input 
-              value={search} 
-              onChange={e => setSearch(e.target.value)} 
-              placeholder="Buscar fornecedor por nome ou CNPJ..." 
-              className="w-full pl-12 pr-4 py-3 rounded-2xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent placeholder-gray-500 text-sm" 
-            />
+          {/* Sub-Tabs de Fornecedores */}
+          <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-thin">
+            <button
+              onClick={() => setSelectedSupplierTab('overview')}
+              className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-colors border ${
+                selectedSupplierTab === 'overview'
+                  ? 'bg-amber-500/20 text-amber-400 border-amber-500/50'
+                  : 'bg-[#111] text-gray-400 border-white/10 hover:bg-white/5'
+              }`}
+            >
+              🏢 Visão Geral dos Fornecedores
+            </button>
+            {suppliers.map(s => (
+              <button
+                key={s.id}
+                onClick={() => setSelectedSupplierTab(s.id)}
+                className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-colors border ${
+                  selectedSupplierTab === s.id
+                    ? 'bg-amber-500/20 text-amber-400 border-amber-500/50'
+                    : 'bg-[#111] text-gray-400 border-white/10 hover:bg-white/5'
+                }`}
+              >
+                🏢 {s.name}
+              </button>
+            ))}
+            <button
+              onClick={() => { setSelectedSupplierTab('overview'); setShowForm(true); setEditingId(null); setForm({ name: '', cnpj: '', phone: '', email: '', address: '', category: 'Geral', notes: '' }); }}
+              className="px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap bg-emerald-600/20 text-emerald-400 border-emerald-500/50 border hover:bg-emerald-600/30 transition-colors"
+            >
+              + Novo Fornecedor
+            </button>
           </div>
+
+          {selectedSupplierTab === 'overview' ? (
+            <>
+              <div className="relative max-w-md">
+                <Search className="absolute left-4 top-3.5 w-5 h-5 text-gray-400" />
+                <input 
+                  value={search} 
+                  onChange={e => setSearch(e.target.value)} 
+                  placeholder="Buscar fornecedor por nome ou CNPJ..." 
+                  className="w-full pl-12 pr-4 py-3 rounded-2xl border border-white/10 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent placeholder-gray-500 text-sm" 
+                />
+              </div>
 
           {showForm && (
             <div className="bg-[#111111] border border-white/10 rounded-3xl p-6 shadow-xl space-y-4 text-white">
@@ -1295,6 +1331,142 @@ Retorne EXATAMENTE um JSON válido com esta estrutura:
               </tbody>
             </table>
           </div>
+            </>
+          ) : (
+            (() => {
+              const currentSupplier = suppliers.find(s => s.id === selectedSupplierTab);
+              if (!currentSupplier) return null;
+              
+              // Extrair todos os produtos que possuem cotação para ESTE fornecedor
+              const supplierProducts = comparisons.filter(c => 
+                c.quotes.some(q => q.supplierId === currentSupplier.id || q.supplierName.toLowerCase() === currentSupplier.name.toLowerCase())
+              );
+
+              return (
+                <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300">
+                  {/* Fornecedor Header */}
+                  <div className="bg-[#111] border border-white/10 p-6 rounded-3xl shadow-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                      <h2 className="text-2xl font-black text-white flex items-center gap-2">
+                        🏢 {currentSupplier.name}
+                      </h2>
+                      <p className="text-gray-400 text-sm mt-1">
+                        {currentSupplier.category} {currentSupplier.cnpj && `• CNPJ: ${currentSupplier.cnpj}`} {currentSupplier.phone && `• 📞 ${currentSupplier.phone}`}
+                      </p>
+                    </div>
+                    
+                    <div className="flex gap-2 flex-wrap shrink-0">
+                      <button 
+                        onClick={() => {
+                          setProdForm({ ...prodForm, supplierId: currentSupplier.id, supplierName: currentSupplier.name });
+                          setShowProdForm(true);
+                        }}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-sm flex items-center gap-2 shadow-lg transition-all"
+                      >
+                        <Plus className="w-4 h-4" /> Adicionar Produto / Preço
+                      </button>
+                      <button 
+                        onClick={() => {
+                          setBatchImportModal({
+                            isOpen: true,
+                            clientName: '',
+                            supplierName: currentSupplier.name,
+                            fileUrl: '',
+                            isPdf: false,
+                            sourceType: 'text',
+                            sourceText: '',
+                            items: [],
+                            addToMaterialList: false
+                          });
+                          setShowTextImportModal(true);
+                          setTextImportInput('');
+                        }}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-xl text-sm flex items-center gap-2 shadow-lg transition-all"
+                      >
+                        <Sparkles className="w-4 h-4" /> Importar Orçamento Rápido
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Tabela de Produtos deste fornecedor */}
+                  <div className="bg-[#111] border border-white/10 rounded-3xl shadow-xl overflow-x-auto">
+                    <table className="w-full min-w-[700px]">
+                      <thead className="bg-[#1a1a1a] border-b border-white/10">
+                        <tr>
+                          <th className="text-left p-4 text-xs font-black text-amber-500/80 uppercase">Produto</th>
+                          <th className="text-left p-4 text-xs font-black text-amber-500/80 uppercase">Preço Cadastrado (Unit.)</th>
+                          <th className="text-left p-4 text-xs font-black text-amber-500/80 uppercase">Comparativo no Mercado</th>
+                          <th className="text-left p-4 text-xs font-black text-amber-500/80 uppercase">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {supplierProducts.map(prod => {
+                          const thisQuote = prod.quotes.find(q => q.supplierId === currentSupplier.id || q.supplierName.toLowerCase() === currentSupplier.name.toLowerCase());
+                          if (!thisQuote) return null;
+
+                          // Lógica para saber se ele é o mais barato
+                          let minPrice = Infinity;
+                          let cheapestSupplier = '';
+                          prod.quotes.forEach(q => {
+                            const p = q.unitPrice || q.price;
+                            if (p < minPrice) {
+                              minPrice = p;
+                              cheapestSupplier = q.supplierName;
+                            }
+                          });
+
+                          const thisPrice = thisQuote.unitPrice || thisQuote.price;
+                          const isCheapest = thisPrice <= minPrice;
+                          const diff = thisPrice - minPrice;
+
+                          return (
+                            <tr key={prod.id} className="border-t border-white/5 hover:bg-white/5 transition-colors">
+                              <td className="p-4">
+                                <p className="font-bold text-white text-sm">{prod.productName}</p>
+                                <p className="text-xs text-gray-500">{prod.category} {thisQuote.brand && thisQuote.brand !== 'Geral' ? `• ${thisQuote.brand}` : ''}</p>
+                              </td>
+                              <td className="p-4 font-black text-emerald-400">
+                                R$ {thisPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </td>
+                              <td className="p-4">
+                                {prod.quotes.length === 1 ? (
+                                  <span className="text-xs text-gray-400 bg-white/5 px-2 py-1 rounded-md">Única Cotação</span>
+                                ) : isCheapest ? (
+                                  <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 rounded-md">🥇 Mais Barato</span>
+                                ) : (
+                                  <span className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 px-2 py-1 rounded-md">
+                                    + R$ {diff.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (Vencedor: {cheapestSupplier})
+                                  </span>
+                                )}
+                              </td>
+                              <td className="p-4 flex gap-2">
+                                <button onClick={() => {
+                                  setQuoteForm({
+                                    supplierId: currentSupplier.id,
+                                    supplierName: currentSupplier.name,
+                                    brand: thisQuote.brand || '',
+                                    pricePerM2: thisQuote.pricePerM2?.toString() || '',
+                                    unitPrice: thisPrice.toString(),
+                                    specifications: thisQuote.specifications || '',
+                                    photoUrl: thisQuote.photoUrl || ''
+                                  });
+                                  setQuoteModalProdId(prod.id);
+                                }} className="w-8 h-8 bg-white/5 border border-white/10 text-white rounded-lg flex items-center justify-center hover:bg-blue-500/10 hover:text-blue-400 transition-all" title="Editar Preço"><Edit className="w-4 h-4" /></button>
+                                <button onClick={() => handleDeleteQuote(prod.id, currentSupplier.name)} className="w-8 h-8 bg-white/5 border border-white/10 text-white rounded-lg flex items-center justify-center hover:bg-red-500/10 hover:text-red-400 transition-all" title="Excluir Cotação"><Trash2 className="w-4 h-4" /></button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        {supplierProducts.length === 0 && (
+                          <tr><td colSpan={4} className="p-8 text-center text-gray-500">Nenhum produto cadastrado para este fornecedor ainda. Adicione o primeiro!</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              );
+            })()
+          )}
         </div>
       )}
 
