@@ -925,6 +925,59 @@ const SuppliersPage: React.FC = () => {
   }, [suppliers]);
   // --- FIM IMPORTAÇÃO AUTOMÁTICA ITAIPU (PARTE 7) ---
 
+  // --- INÍCIO CLONAGEM ITAIPU → REVESTI, RIO BRANCO, GEOVANE (v8) ---
+  useEffect(() => {
+    if (!localStorage.getItem('clone_itaipu_to_others_v8') && suppliers.length > 0) {
+      const itaipu = suppliers.find(s => s.name.toUpperCase().includes('ITAIPU'));
+      const revesti = suppliers.find(s => s.name.toUpperCase().includes('REVESTI'));
+      const rioBranco = suppliers.find(s => s.name.toUpperCase().includes('RIO BRANCO'));
+      const geovane = suppliers.find(s => s.name.toUpperCase().includes('GEOVANE'));
+
+      const targets = [
+        revesti ? { id: revesti.id, name: revesti.name } : null,
+        rioBranco ? { id: rioBranco.id, name: rioBranco.name } : null,
+        geovane ? { id: geovane.id, name: geovane.name } : null,
+      ].filter(Boolean) as { id: string; name: string }[];
+
+      if (itaipu && targets.length > 0) {
+        setComparisons(prev => {
+          const updated = prev.map(comp => {
+            const itaipuQuote = comp.quotes.find(
+              q => q.supplierId === itaipu.id || q.supplierName.toUpperCase().includes('ITAIPU')
+            );
+            if (!itaipuQuote) return comp;
+
+            const newQuotes = [...comp.quotes];
+            targets.forEach(target => {
+              const alreadyExists = newQuotes.some(
+                q => q.supplierId === target.id || q.supplierName.toUpperCase() === target.name.toUpperCase()
+              );
+              if (!alreadyExists) {
+                newQuotes.push({
+                  supplierId: target.id,
+                  supplierName: target.name,
+                  brand: itaipuQuote.brand || 'Geral',
+                  pricePerM2: itaipuQuote.pricePerM2,
+                  unitPrice: itaipuQuote.unitPrice,
+                  price: itaipuQuote.price,
+                  updatedAt: new Date().toISOString().split('T')[0],
+                  photoUrl: itaipuQuote.photoUrl || null,
+                  specifications: itaipuQuote.specifications || null
+                });
+              }
+            });
+
+            return { ...comp, quotes: newQuotes };
+          });
+          localStorage.setItem('sd_supplier_comparisons_v3', JSON.stringify(updated));
+          localStorage.setItem('clone_itaipu_to_others_v8', 'true');
+          return updated;
+        });
+      }
+    }
+  }, [suppliers]);
+  // --- FIM CLONAGEM ITAIPU → REVESTI, RIO BRANCO, GEOVANE (v8) ---
+
   // ─── PDF Render & Text Extraction Helper ────────────────────────────────────
   const convertFileToImageAndText = async (file: File): Promise<{ base64Image: string; text: string }> => {
     const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
