@@ -220,12 +220,12 @@ const SuppliersPage: React.FC = () => {
 
   useEffect(() => { fetchSuppliers(); }, []);
 
-  // --- INÍCIO IMPORTAÇÃO AUTOMÁTICA ITAIPU (PARTE 5) ---
+  // --- INÍCIO IMPORTAÇÃO AUTOMÁTICA ITAIPU (PARTE 6) ---
   useEffect(() => {
-    if (!localStorage.getItem('itaipu_products_imported_v5') && suppliers.length > 0) {
+    if (!localStorage.getItem('itaipu_products_imported_v6') && suppliers.length > 0) {
       const itaipu = suppliers.find(s => s.name.toUpperCase().includes('ITAIPU'));
       if (itaipu) {
-        const newProducts5 = [
+        const newProducts6 = [
           // DA IMAGEM ANTERIOR (v2)
           { name: 'MDF 15 CARVALHO BATHUR', price: 477.73 },
           { name: 'MDF 15 CARVALHO BERLIM', price: 477.73 },
@@ -643,15 +643,169 @@ const SuppliersPage: React.FC = () => {
           { name: 'MDF 06 CARVALHO BERLIM', price: 358.29 },
           { name: 'MDF 06 CARVALHO MALVA', price: 334.41 },
           { name: 'MDF 06 CARVALHO TREVISO', price: 262.75 },
-          { name: 'MDF 06 CILIEGIO', price: 394.13 }
+          { name: 'MDF 06 CILIEGIO', price: 394.13 },
+
+          // IMAGENS PARTE 6
+          { name: 'MDF 06 CINZA A DEFINIR', price: 358.29 },
+          { name: 'MDF 06 CINZA COBALTO', price: 358.29 },
+          { name: 'MDF 06 CINZA CRISTAL', price: 370.24 },
+          { name: 'MDF 06 CINZA ITALIA', price: 370.24 },
+          { name: 'MDF 06 CINZA SAGRADO', price: 358.29 },
+          { name: 'MDF 06 CINZA SAGRADO CRISTALLO', price: 394.13 },
+          { name: 'MDF 06 CINZA SAGRADO ESSENCIAL', price: 297.38 },
+          { name: 'MDF 06 CINZA URBANO', price: 358.29 },
+          { name: 'MDF 06 CONCRETE', price: 395.60 },
+          { name: 'MDF 06 COR TX A DEFINIR', price: 358.29 },
+          { name: 'MDF 06 CUMARU NATIVO', price: 358.29 },
+          { name: 'MDF 06 CUMARU RAIZ', price: 358.29 },
+          { name: 'MDF 06 FAIA', price: 358.29 },
+          { name: 'MDF 06 FENDI', price: 362.25 },
+          { name: 'MDF 06 FOG MAGMA', price: 394.13 },
+          { name: 'MDF 06 FREIJO', price: 358.29 },
+          { name: 'MDF 06 GEPPETTO', price: 345.00 },
+          { name: 'MDF 06 GIANDUIA TRAMA', price: 358.29 },
+          { name: 'MDF 06 GRIS', price: 345.00 },
+          { name: 'MDF 06 GRIS CHESS', price: 358.29 },
+          { name: 'MDF 06 HONG KONG', price: 358.29 },
+          { name: 'MDF 06 IBIZA', price: 358.29 },
+          { name: 'MDF 06 ITAPUA', price: 358.29 },
+          { name: 'MDF 06 JEQUITIBA ROSA', price: 358.29 },
+          { name: 'MDF 06 LACCA DESERT ROSE', price: 292.60 },
+          { name: 'MDF 06 LACCA LARANJA FOSCA', price: 394.13 },
+          { name: 'MDF 06 LENHA', price: 344.14 },
+          { name: 'MDF 06 LINEO TEXTIL', price: 358.29 },
+          { name: 'MDF 06 LINHO BELGA', price: 358.29 },
+          { name: 'MDF 06 LOURO FREIJO', price: 345.00 },
+          { name: 'MDF 06 MADEIRADO', price: 358.29 },
+          { name: 'MDF 06 MADEIRADO A DEFINIR', price: 358.29 },
+          { name: 'MDF 06 MALAGA', price: 358.29 },
+          { name: 'MDF 06 MARAGOGI', price: 358.29 },
+          { name: 'MDF 06 MARAU', price: 358.29 },
+          { name: 'MDF 06 MAXI BRANCO', price: 358.29 },
+          { name: 'MDF 06 METALLIC SUEDE', price: 358.29 },
+          { name: 'MDF 06 MINT', price: 358.29 },
+          { name: 'MDF 06 NEVADA', price: 394.13 },
+          { name: 'MDF 06 NIQUEL', price: 342.72 },
+          { name: 'MDF 06 NOBILE TRAMA', price: 358.29 },
+          { name: 'MDF 06 NOBLE TRAMA', price: 345.15 },
+          { name: 'MDF 06 NOCE AMENDOA', price: 358.29 },
+          { name: 'MDF 06 NOGAL AMENDOADO', price: 445.27 },
+          { name: 'MDF 06 NOGAL MALAGA', price: 361.41 },
+          { name: 'MDF 06 NOGUEIRA CAIENA', price: 415.42 },
+          { name: 'MDF 06 NOGUEIRA FLORIDA', price: 345.00 },
+          { name: 'MDF 06 NOGUEIRA THAR', price: 358.29 },
+          { name: 'MDF 06 NOITE', price: 370.24 },
+          { name: 'MDF 06 NUDE', price: 340.38 },
+          { name: 'MDF 06 OAISIS', price: 358.29 },
+          { name: 'MDF 06 OCRE', price: 376.21 },
+          { name: 'MDF 06 OURO', price: 348.74 },
+          { name: 'MDF 06 PALHA', price: 358.29 },
+          { name: 'MDF 06 PAU FERRO', price: 561.33 },
+          { name: 'MDF 06 PRETO TX', price: 376.21 },
+          { name: 'MDF 06 ROSA AZUL', price: 345.15 },
+          { name: 'MDF 06 ROSA MILKSHEK', price: 358.29 },
+          { name: 'MDF 06 SAFIRA', price: 362.25 },
+          { name: 'MDF 06 SALVIA', price: 358.29 },
+          { name: 'MDF 06 SERENO', price: 331.03 },
+          { name: 'MDF 06 TAUPE MICRO', price: 358.29 },
+          { name: 'MDF 06 TERRINO', price: 360.53 },
+          { name: 'MDF 06 TESSELATE', price: 460.00 },
+          { name: 'MDF 06 TESSELATI', price: 358.29 },
+          { name: 'MDF 06 TITANIO TRAMA', price: 358.29 },
+          { name: 'MDF 06 TOKAI', price: 358.29 },
+          { name: 'MDF 06 VERDE JADE', price: 358.29 },
+          { name: 'MDF 06 VERMELHO', price: 418.01 },
+          { name: 'MDF 06 VIENA SUPER MATT', price: 394.13 },
+          { name: 'MDF 06 VOLAKAS', price: 477.73 },
+          { name: 'MDF 06 VOLAKAS', price: 358.29 },
+          { name: 'MDF 15 FURADO', price: 690.00 },
+          { name: 'MDF 15 2F ULTRA', price: 360.14 },
+          { name: 'MDF 15 ABSOLUTO', price: 464.59 },
+          { name: 'MDF 15 ACACIA', price: 489.67 },
+          { name: 'MDF 15 ACACIA', price: 477.73 },
+          { name: 'MDF 15 ALMERIA', price: 477.73 },
+          { name: 'MDF 15 ARAUCARIA', price: 495.63 },
+          { name: 'MDF 15 ARDOSIA', price: 453.39 },
+          { name: 'MDF 15 AREIA', price: 477.73 },
+          { name: 'MDF 15 AREIA NORONHA', price: 489.67 },
+          { name: 'MDF 15 AREIA RUC', price: 495.63 },
+          { name: 'MDF 15 ARENITO', price: 477.73 },
+          { name: 'MDF 15 ARGILA', price: 415.42 },
+          { name: 'MDF 15 AURORA', price: 477.73 },
+          { name: 'MDF 15 AZUL ASTRAL', price: 477.73 },
+          { name: 'MDF 15 AZUL PETROLEO', price: 464.59 },
+          { name: 'MDF 15 AZUL SECRETO', price: 477.73 },
+          { name: 'MDF 15 AZUL SERENO MATT', price: 477.73 },
+          { name: 'MDF 15 AZUL SKY VEL', price: 477.73 },
+          { name: 'MDF 15 BEGE ESCURO A DEFINIR', price: 448.65 },
+          { name: 'MDF 15 BILBAO', price: 477.73 },
+          { name: 'MDF 15 BLUE SKY', price: 481.88 },
+          { name: 'MDF 15 BOLEIRO', price: 477.73 },
+          { name: 'MDF 15 BRANCO DIAMANTE CRISTALLO', price: 597.15 },
+          { name: 'MDF 15 BRANCO DIAMANTE ESSENCIAL', price: 477.73 },
+          { name: 'MDF 15 BRANCO DIAMANTE ESSENCIAL ULTRA', price: 501.61 },
+          { name: 'MDF 15 BRANCO SUPREMO', price: 698.67 },
+          { name: 'MDF 15 BRANCO TRAMA', price: 477.73 },
+          { name: 'MDF GRIS CHESS 15', price: 477.73 },
+          { name: 'MDF NOGAL AFRICANO 15', price: 460.00 },
+          { name: 'MESA BRANCO TX', price: 955.44 },
+          { name: 'MESA MADEIRADO', price: 1074.88 },
+          { name: 'MESINHA DE CABECEIRA EM MDF BRANCO TX', price: 489.90 },
+          { name: 'METALON COM ACABAMENTO BRONZE', price: 623.11 },
+          { name: 'MONTAGEM DE PORTA', price: 207.71 },
+          { name: 'MOVEL DA SALA', price: 6927.00 },
+          { name: 'MOVEL INFERIOR MADEIRADO', price: 2375.48 },
+          { name: 'MOVEL INFERIOR MDF BRANCO TX ULTRA', price: 2269.19 },
+          { name: 'MOVEL P/TV BRANCO TX', price: 1194.31 },
+          { name: 'MOVEL P/TV LACCA', price: 1791.47 },
+          { name: 'MOVEL P/TV MADEIRADO', price: 1552.60 },
+          { name: 'MOVEL SUPERIOR MDF BRANCO TX ULTRA', price: 1910.90 },
+          { name: 'MOVEL SUPERIOR MADEIRADO', price: 2030.32 },
+          { name: 'MT 2 MDF 15 2F BRANCO TX', price: 58.05 },
+          { name: 'MT BARRA METALICA 2CM', price: 71.66 },
+          { name: 'MT LINEAR DO SERVIÇO DE BIZOTE', price: 29.86 },
+          { name: 'MT2 MDF 06 2F BRANCO TX', price: 51.83 },
+          { name: 'MTS CALHA REFORÇADA', price: 54.53 },
+          { name: 'MTS FITA AREIA', price: 95.55 },
+          { name: 'MTS FITA COR TX A DEFINIR', price: 95.55 },
+          { name: 'MTS FITA LARANJA FOSCA', price: 107.49 },
+          { name: 'MTS FITA LED', price: 87.40 },
+          { name: 'MTS FITA OASIS', price: 95.55 },
+          { name: 'MTS FITA RIVIERA CROSS', price: 95.55 },
+          { name: 'MTS FITA ROSA INFINITO', price: 95.55 },
+          { name: 'MTS LINHA 10 X 5 MAÇARANDUBA', price: 41.80 },
+          { name: 'MTS PERIL LED', price: 163.88 },
+          { name: 'MTS TRILHO SUP. INF.', price: 131.39 },
+          { name: 'MTS TUBO ALUMINIO', price: 20.30 },
+          { name: 'MTS TUBO INOX', price: 51.36 },
+          { name: 'MTS TUBO TRABALHADO', price: 71.66 },
+          { name: 'NOGAL AFRICANO FITA 20 MTS', price: 92.00 },
+          { name: 'PAINEL C/PORTA DE CORRER BRANCO TX', price: 1074.88 },
+          { name: 'PAINEL C/PORTA DE CORRER LACCA', price: 1552.60 },
+          { name: 'PAINEL C/PORTA DE CORRER MADEIRADO', price: 1313.75 },
+          { name: 'PAINEL C/PORTA DE GIRO BRANCO TX', price: 955.44 },
+          { name: 'PAINEL C/PORTA DE GIRO LACCA', price: 1433.17 },
+          { name: 'PAINEL C/PORTA DE GIRO MADEIRADO', price: 1194.31 },
+          { name: 'PAINEL CABECEIRA BRANCO TX', price: 358.29 },
+          { name: 'PAINEL CABECEIRA LACCA', price: 836.02 },
+          { name: 'PAINEL CABECEIRA MADEIRADO', price: 537.44 },
+          { name: 'PAINEL EM MADEIRA CUMARU', price: 2030.32 },
+          { name: 'PAINEL EM MDF CARVALHO ETRNO E NICHOS EM MDF PRATA', price: 3419.32 },
+          { name: 'PAINEL RIPADO BRANCO TX', price: 955.44 },
+          { name: 'PAINEL RIPADO MADEIRADO', price: 1134.60 },
+          { name: 'PAINEL TV BRANCO TX', price: 418.01 },
+          { name: 'PAINEL TV LACCA', price: 955.44 },
+          { name: 'PAINEL TV MADEIRADO', price: 597.15 },
+          { name: 'PEDRA VERDE UBATUBA', price: 358.29 },
+          { name: 'PELICULA DE PROTEÇAO', price: 143.32 }
         ];
 
         setComparisons(prev => {
           const updated = [...prev];
-          newProducts5.forEach((prod, idx) => {
+          newProducts6.forEach((prod, idx) => {
             if (!updated.some(p => p.productName === prod.name && p.quotes[0].unitPrice === prod.price)) {
               updated.push({
-                id: 'import5_' + Date.now() + '_' + idx,
+                id: 'import6_' + Date.now() + '_' + idx,
                 productName: prod.name,
                 category: 'MDF/MDP',
                 unit: 'Unidade',
@@ -670,13 +824,13 @@ const SuppliersPage: React.FC = () => {
             }
           });
           localStorage.setItem('sd_supplier_comparisons_v3', JSON.stringify(updated));
-          localStorage.setItem('itaipu_products_imported_v5', 'true');
+          localStorage.setItem('itaipu_products_imported_v6', 'true');
           return updated;
         });
       }
     }
   }, [suppliers]);
-  // --- FIM IMPORTAÇÃO AUTOMÁTICA ITAIPU (PARTE 5) ---
+  // --- FIM IMPORTAÇÃO AUTOMÁTICA ITAIPU (PARTE 6) ---
 
   // ─── PDF Render & Text Extraction Helper ────────────────────────────────────
   const convertFileToImageAndText = async (file: File): Promise<{ base64Image: string; text: string }> => {
