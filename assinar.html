@@ -1,0 +1,1341 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SD Móveis Projetados – Assinatura Digital do Contrato</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0b0f17;
+    color: #f1f5f9;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+  }
+  .container {
+    width: 100%;
+    max-width: 520px;
+    display: flex;
+    flex-direction: column;
+  }
+  .header-brand {
+    text-align: center;
+    margin-bottom: 18px;
+  }
+  .brand-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: #f1f5f9;
+    letter-spacing: 0.04em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .brand-badge {
+    color: #c9a038;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-top: 4px;
+  }
+  .card {
+    background: #141b27;
+    border: 1px solid #243046;
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.35);
+  }
+  .doc-info-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #243046;
+    margin-bottom: 14px;
+  }
+  .doc-num {
+    font-size: 16px;
+    font-weight: 700;
+    color: #f1f5f9;
+  }
+  .status-pill {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .status-pendente {
+    background: rgba(201, 160, 56, 0.15);
+    color: #f3c760;
+    border: 1px solid rgba(201, 160, 56, 0.3);
+  }
+  .status-aprovado {
+    background: rgba(34, 197, 94, 0.15);
+    color: #4ade80;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+  }
+  .client-row {
+    font-size: 13.5px;
+    color: #cbd5e1;
+    line-height: 1.5;
+  }
+  .client-row strong {
+    color: #f1f5f9;
+  }
+  .contrato-box {
+    background: #0f1521;
+    border: 1px solid #1e293b;
+    border-radius: 10px;
+    padding: 14px;
+    max-height: 280px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    font-family: monospace;
+    font-size: 11.5px;
+    line-height: 1.55;
+    color: #cbd5e1;
+    margin-top: 12px;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 14px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-gold {
+    background: linear-gradient(135deg, #c9a038, #b08827);
+    color: #0b0f17;
+  }
+  .btn-green {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: #fff;
+  }
+  .btn-outline {
+    background: transparent;
+    border: 1px solid #334155;
+    color: #cbd5e1;
+  }
+  .btn-whats {
+    background: #25D366;
+    color: #fff;
+  }
+  .btn-sm {
+    padding: 9px 14px;
+    font-size: 13px;
+    width: auto;
+  }
+  .signature-card {
+    background: #141b27;
+    border: 1px solid #243046;
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 20px;
+  }
+  label {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+  input[type="text"] {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 8px;
+    border: 1px solid #334155;
+    background: #0f1521;
+    color: #f1f5f9;
+    font-size: 15px;
+    margin-bottom: 16px;
+  }
+  input[type="text"]:focus {
+    outline: none;
+    border-color: #c9a038;
+  }
+  canvas {
+    width: 100%;
+    height: 180px;
+    background: #ffffff;
+    border-radius: 8px;
+    touch-action: none;
+    display: block;
+  }
+  .canvas-wrap {
+    position: relative;
+    border: 2px dashed #475569;
+    border-radius: 10px;
+    padding: 4px;
+    background: #fff;
+  }
+  .canvas-tools {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+    margin-bottom: 16px;
+  }
+  .btn-limpar {
+    background: transparent;
+    border: 1px solid #334155;
+    color: #94a3b8;
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .hint {
+    font-size: 11.5px;
+    color: #64748b;
+  }
+  .msg {
+    text-align: center;
+    margin-top: 12px;
+    font-size: 13.5px;
+    line-height: 1.5;
+  }
+  .msg.erro { color: #f87171; }
+  .msg.sucesso { color: #4ade80; }
+  .hidden { display: none !important; }
+  .sucesso-tela {
+    text-align: center;
+    padding: 24px 12px;
+  }
+  .sucesso-icon {
+    font-size: 52px;
+    margin-bottom: 10px;
+    animation: popIcon 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  @keyframes popIcon {
+    0% { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .portal-promo-card {
+    background: linear-gradient(145deg, rgba(201,168,76,0.14), rgba(18,24,38,0.98));
+    border: 1.5px solid rgba(201,168,76,0.45);
+    border-radius: 16px;
+    padding: 18px 16px;
+    margin: 18px 0;
+    text-align: left;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.55), 0 0 24px rgba(201,168,76,0.12);
+    position: relative;
+    overflow: hidden;
+  }
+  .portal-promo-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, #c9a038, #f3c760, #c9a038);
+  }
+  .portal-promo-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .portal-promo-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(201,168,76,0.2);
+    border: 1px solid rgba(201,168,76,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+  .portal-promo-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: #f3c760;
+    letter-spacing: 0.02em;
+  }
+  .portal-badge-new {
+    background: #22c55e;
+    color: #000;
+    font-size: 10px;
+    font-weight: 900;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 999px;
+    letter-spacing: 0.04em;
+  }
+  .portal-promo-sub {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-top: 3px;
+    line-height: 1.4;
+  }
+  .portal-promo-features {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin: 14px 0;
+  }
+  .portal-feature-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    color: #e2e8f0;
+    background: rgba(0,0,0,0.3);
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.06);
+    font-weight: 600;
+  }
+  .btn-portal-gold {
+    background: linear-gradient(135deg, #f3c760, #c9a038);
+    color: #000 !important;
+    font-size: 15px;
+    font-weight: 900;
+    padding: 14px 18px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-decoration: none;
+    box-shadow: 0 6px 20px rgba(201,168,76,0.35);
+    transition: all 0.2s;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .btn-portal-gold:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(201,168,76,0.5);
+  }
+  .portal-link-input-wrap {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+  }
+  .portal-link-input {
+    flex: 1;
+    background: #090d14;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 12px;
+    color: #cbd5e1;
+    font-family: monospace;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+    min-width: 0;
+  }
+  .btn-copiar-link {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid #475569;
+    color: #fff;
+    border-radius: 8px;
+    padding: 9px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  .btn-copiar-link:hover {
+    background: rgba(201,168,76,0.2);
+    border-color: #c9a038;
+    color: #f3c760;
+  }
+  .portal-hint-pass {
+    margin-top: 12px;
+    font-size: 11.5px;
+    color: #94a3b8;
+    background: rgba(0,0,0,0.35);
+    padding: 9px 12px;
+    border-radius: 8px;
+    line-height: 1.4;
+    border-left: 3px solid #c9a038;
+  }
+  .actions-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 14px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Brand Header -->
+  <div class="header-brand">
+    <div class="brand-title" id="header-brand-title">
+      <span>🪟</span> SD VIDROS
+    </div>
+    <div class="brand-badge" id="header-brand-badge">Soluções em Vidros & Esquadrias de Alumínio</div>
+  </div>
+
+  <!-- Loading State -->
+  <div id="tela-loading" style="text-align:center;padding:40px 0;">
+    <p style="color:#94a3b8;font-size:15px;">Carregando orçamento e proposta comercial...</p>
+  </div>
+
+  <!-- Error State -->
+  <div id="tela-erro" class="hidden">
+    <div class="card" style="text-align:center;">
+      <div style="font-size:40px;margin-bottom:10px;">⚠️</div>
+      <h2 style="font-size:18px;color:#f87171;margin-bottom:8px;">Não foi possível carregar</h2>
+      <p id="erro-texto" style="font-size:13.5px;color:#94a3b8;margin-bottom:16px;"></p>
+      <a href="https://wa.me/5585996119824" class="btn btn-whats">Falar com SD Vidros no WhatsApp</a>
+    </div>
+  </div>
+
+  <!-- Success State -->
+  <div id="tela-sucesso" class="card sucesso-tela hidden">
+    <div class="sucesso-icon">✅</div>
+    <h1 style="color:#4ade80;font-size:20px;margin-bottom:6px;">Orçamento Aprovado com Sucesso!</h1>
+    <p style="color:#cbd5e1;font-size:13.5px;line-height:1.5;margin-bottom:16px;" id="msg-sucesso">
+      Sua <strong>Ordem de Serviço foi autorizada</strong> com validade jurídica digital.<br>
+      Nossa equipe já foi notificada para iniciar os preparativos e a produção.
+    </p>
+
+    <!-- CARD VIP: LINK PARA A ÁREA DO CLIENTE -->
+    <div class="portal-promo-card" id="card-link-portal">
+      <div class="portal-promo-header">
+        <div class="portal-promo-icon">👤</div>
+        <div style="flex:1;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div class="portal-promo-title">Área Exclusiva do Cliente</div>
+            <span class="portal-badge-new">Liberada</span>
+          </div>
+          <div class="portal-promo-sub" id="portal-promo-desc">
+            Acompanhe o status da sua obra em tempo real, fotos, pagamentos e chat:
+          </div>
+        </div>
+      </div>
+
+      <!-- Recursos Rápidos do Portal -->
+      <div class="portal-promo-features">
+        <div class="portal-feature-item"><span>📊</span> Status da Obra</div>
+        <div class="portal-feature-item"><span>📸</span> Fotos do Projeto</div>
+        <div class="portal-feature-item"><span>💳</span> Chave PIX & Recibos</div>
+        <div class="portal-feature-item"><span>💬</span> Suporte & Mensagens</div>
+      </div>
+
+      <!-- Botão Principal: Acessar Área do Cliente -->
+      <a id="btn-acessar-cliente" href="cliente.html" class="btn-portal-gold">
+        🚀 Acessar Minha Área do Cliente ➔
+      </a>
+
+      <!-- Caixa para Copiar Link de Acesso -->
+      <div style="margin-top:14px;">
+        <div style="font-size:11px;color:#94a3b8;margin-bottom:4px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;">
+          Seu Link de Acesso Exclusivo:
+        </div>
+        <div class="portal-link-input-wrap">
+          <input type="text" id="input-link-cliente" class="portal-link-input" readonly value="" onclick="copiarLinkCliente()" title="Clique para copiar">
+          <button type="button" id="btn-copiar-link-cliente" class="btn-copiar-link" onclick="copiarLinkCliente()">
+            📋 Copiar Link
+          </button>
+        </div>
+      </div>
+
+      <div class="portal-hint-pass">
+        💡 <strong>Como acessar:</strong> Seu identificador é o seu WhatsApp e a senha inicial são os <strong>4 últimos dígitos do seu telefone</strong>.
+      </div>
+    </div>
+
+    <!-- Ações Secundárias: WhatsApp e PDF -->
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:14px;">
+      <a id="btn-notificar-sdv" href="#" target="_blank" class="btn btn-whats" style="display:none;">
+        📱 Enviar Confirmação & Link no WhatsApp
+      </a>
+      <button id="btn-baixar-pdf-sucesso" class="btn btn-outline" onclick="baixarPdfAtual()">
+        📄 Baixar Cópia do Contrato (PDF)
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Proposal & Signing View -->
+  <div id="tela-form" class="hidden">
+    <!-- Document Card -->
+    <div class="card">
+      <div class="doc-info-bar">
+        <div class="doc-num" id="display-numero">Orçamento</div>
+        <div id="display-status" class="status-pill status-pendente">Aguardando Aprovação</div>
+      </div>
+
+      <div class="client-row">
+        <div>Cliente: <strong id="display-cliente">-</strong></div>
+        <div style="margin-top:4px;">Documento: <strong id="subtitulo">SD Vidros</strong></div>
+      </div>
+
+      <!-- Actions: Download PDF or Review -->
+      <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
+        <button class="btn btn-outline btn-sm" onclick="baixarPdfAtual()" style="flex:1;">
+          📄 Baixar Contrato em PDF
+        </button>
+        <button class="btn btn-green btn-sm" onclick="irParaAssinatura()" style="flex:1;">
+          ✍️ Aprovar & Assinar
+        </button>
+      </div>
+
+      <!-- Scrollable Contract / Proposal text -->
+      <div class="contrato-box" id="contrato-texto"></div>
+    </div>
+
+    <!-- Interactive Decision Area -->
+    <div class="card" id="card-decisao" style="text-align:center;">
+      <h3 style="font-size:16px;color:#f1f5f9;margin-bottom:6px;">Deseja autorizar este serviço?</h3>
+      <p style="font-size:13px;color:#94a3b8;margin-bottom:14px;">
+        Ao aprovar, sua proposta será convertida em Ordem de Serviço para início da produção.
+      </p>
+
+      <div class="actions-grid">
+        <button class="btn btn-green" onclick="irParaAssinatura()">
+          ✅ Aprovar e Assinar Orçamento
+        </button>
+        <a id="btn-ajustar-zap" href="https://wa.me/5585996119824" target="_blank" class="btn btn-outline">
+          💬 Falar com SD Vidros / Solicitar Ajustes
+        </a>
+      </div>
+    </div>
+
+    <!-- Signature Pad Card -->
+    <div class="signature-card" id="card-assinatura">
+      <h3 style="font-size:16px;color:#f3c760;margin-bottom:4px;display:flex;align-items:center;gap:6px;">
+        ✍️ Assinatura do Cliente
+      </h3>
+      <p style="font-size:12.5px;color:#94a3b8;margin-bottom:16px;">
+        Digite seu nome completo e assine na tela com o dedo para autorizar a Ordem de Serviço.
+      </p>
+
+      <label for="nome-input">Nome Completo do Responsável</label>
+      <input type="text" id="nome-input" placeholder="Digite seu nome completo" autocomplete="name">
+
+      <label>Rubrica / Assinatura Digital</label>
+      <div class="canvas-wrap">
+        <canvas id="signature-pad"></canvas>
+      </div>
+
+      <div class="canvas-tools">
+        <span class="hint">Use o dedo para desenhar sua assinatura</span>
+        <button class="btn-limpar" id="btn-limpar" type="button">✕ Limpar Assinatura</button>
+      </div>
+
+      <button class="btn btn-gold" id="btn-confirmar" disabled>
+        ✍️ Confirmar Aprovação e Autorizar O.S.
+      </button>
+
+      <p class="msg erro hidden" id="form-erro"></p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  function extractParam(key) {
+    try {
+      const s = new URLSearchParams(window.location.search).get(key);
+      if (s) return s;
+    } catch (_) {}
+    try {
+      if (window.location.hash) {
+        const h = window.location.hash.replace(/^#\/?/, '');
+        const qIdx = h.indexOf('?');
+        const qs = qIdx !== -1 ? h.slice(qIdx + 1) : (h.includes('=') ? h : '');
+        if (qs) {
+          const val = new URLSearchParams(qs).get(key);
+          if (val) return val;
+        }
+      }
+    } catch (_) {}
+    try {
+      const match = window.location.href.match(new RegExp('[?&#]' + key + '=([^&#]*)'));
+      if (match && match[1]) return decodeURIComponent(match[1]);
+    } catch (_) {}
+    return null;
+  }
+
+  const contratoId = extractParam('id');
+  const dParam = extractParam('d') || extractParam('data');
+  const osParam = extractParam('os') || extractParam('numero');
+
+  const telaLoading = document.getElementById('tela-loading');
+  const telaErro = document.getElementById('tela-erro');
+  const telaSucesso = document.getElementById('tela-sucesso');
+  const telaForm = document.getElementById('tela-form');
+  const erroTexto = document.getElementById('erro-texto');
+
+  let contratoCache = null;
+
+  function mostrarErro(msg) {
+    if (telaLoading) telaLoading.classList.add('hidden');
+    if (telaForm) telaForm.classList.add('hidden');
+    if (erroTexto) erroTexto.textContent = msg;
+    if (telaErro) telaErro.classList.remove('hidden');
+  }
+
+  function obterLicencaAtiva() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const empParam = (urlParams.get('empresa') || urlParams.get('lic') || '').toLowerCase().trim();
+
+    // Se o texto do contrato já foi carregado, verifica o conteúdo do contrato
+    const textoContrato = (contratoCache && contratoCache.texto) ? contratoCache.texto.toLowerCase() : '';
+    const ehContratoVidros = textoContrato.includes('vidraçaria') || textoContrato.includes('vidros') || textoContrato.includes('esquadrias') || textoContrato.includes('box') || textoContrato.includes('@sdvidros');
+    const ehContratoMoveis = (textoContrato.includes('móveis') || textoContrato.includes('moveis') || textoContrato.includes('marcenaria')) && !ehContratoVidros;
+
+    if (ehContratoVidros || empParam === 'sdvidros' || empParam.includes('vidros')) {
+      return {
+        id: 'sdvidros',
+        nome: 'SD Vidros',
+        segmento: 'Alumínio, Vidros & Esquadrias',
+        slogan: 'Box, Espelhos, Portas, Janelas & Guarda-Corpo',
+        telefone: '(85) 99611-9824',
+        cidade: 'Itaitinga - CE',
+        pix: '85996119824',
+        tipoContrato: 'vidros'
+      };
+    }
+
+    const empNomeParam = urlParams.get('empNome') || '';
+    const empTipoParam = (urlParams.get('empTipo') || '').toLowerCase().trim();
+
+    if (
+      empParam === 'emp_1789700331599' ||
+      empParam.includes('moveis') ||
+      empParam === 'sdmoveis' ||
+      empParam === 'sd-moveis' ||
+      empTipoParam === 'moveis' ||
+      empNomeParam.toLowerCase().includes('móveis') ||
+      empNomeParam.toLowerCase().includes('moveis') ||
+      ehContratoMoveis
+    ) {
+      return {
+        id: empParam || 'sdmoveis',
+        nome: empNomeParam || 'SD Móveis Projetados',
+        segmento: urlParams.get('empSeg') || 'Móveis Planejados & Ambientes Sob Medida',
+        slogan: 'Cozinhas Planejadas, Closets & Ambientes Sob Medida',
+        telefone: urlParams.get('empTel') || '(85) 99611-9824',
+        cidade: 'Itaitinga - CE',
+        pix: urlParams.get('empPix') || '85996119824',
+        tipoContrato: 'moveis'
+      };
+    }
+
+    try {
+      const lista = JSON.parse(localStorage.getItem('sdv_licencas') || '[]');
+      const idAtivo = empParam || localStorage.getItem('sdv_licenca_ativa') || 'sdvidros';
+      if (Array.isArray(lista) && lista.length) {
+        const encontrada = lista.find(l => l.id === idAtivo || (empParam && (l.id.toLowerCase() === empParam || l.nome.toLowerCase().includes(empParam))));
+        if (encontrada) {
+          if (encontrada.id === 'samuel-david' || encontrada.nome === 'Samuel David') {
+            encontrada.id = 'sdvidros';
+            encontrada.nome = 'SD Vidros';
+          }
+          return encontrada;
+        }
+      }
+    } catch (_) {}
+
+    if (empParam && empParam !== 'sdvidros' && empParam !== 'sdmoveis') {
+      return {
+        id: empParam,
+        nome: empParam.toUpperCase(),
+        segmento: 'Alumínio, Vidros & Esquadrias',
+        telefone: '(85) 99611-9824',
+        tipoContrato: 'vidros'
+      };
+    }
+
+    return {
+      id: 'sdvidros',
+      nome: 'SD Vidros',
+      segmento: 'Alumínio, Vidros & Esquadrias',
+      slogan: 'Box, Espelhos, Portas, Janelas & Guarda-Corpo',
+      telefone: '(85) 99611-9824',
+      cidade: 'Itaitinga - CE',
+      pix: '85996119824',
+      tipoContrato: 'vidros'
+    };
+  }
+
+  function aplicarBrandingLicenca() {
+    const lic = obterLicencaAtiva();
+    const titleEl = document.getElementById('header-brand-title');
+    const badgeEl = document.getElementById('header-brand-badge');
+    const subTit = document.getElementById('subtitulo');
+    const btnAjustar = document.getElementById('btn-ajustar-zap');
+    const zapLimpo = String(lic.telefone || '85996119824').replace(/\D/g, '');
+    const zapHref = 'https://wa.me/' + (zapLimpo.startsWith('55') ? zapLimpo : '55' + zapLimpo);
+
+    if (titleEl) {
+      const ehMoveis = (lic.id === 'sdmoveis' || String(lic.nome).toLowerCase().includes('móveis') || String(lic.nome).toLowerCase().includes('moveis'));
+      const icone = ehMoveis ? '🛋️' : '🪟';
+      titleEl.innerHTML = `<span>${icone}</span> ${lic.nome.toUpperCase()}`;
+    }
+    if (badgeEl && lic.segmento) {
+      badgeEl.textContent = lic.segmento;
+    }
+    if (subTit) {
+      subTit.textContent = lic.nome;
+    }
+    if (btnAjustar) {
+      btnAjustar.href = zapHref;
+      btnAjustar.textContent = `💬 Falar com ${lic.nome} / Solicitar Ajustes`;
+
+    if (btnAjustar) {
+      btnAjustar.addEventListener('click', function() {
+        try {
+          const numLimpo = String(numeroOs || '').replace(/\D/g, '');
+          const ordens = JSON.parse(localStorage.getItem('sdv_ordens') || '[]');
+          const idx = ordens.findIndex(x => String(x.numero || '').replace(/\D/g, '') === numLimpo);
+          if (idx !== -1 && ordens[idx].status !== 'aprovado') {
+            ordens[idx].status = 'reajustar';
+            ordens[idx].reajuste_solicitado_em = new Date().toISOString();
+            localStorage.setItem('sdv_ordens', JSON.stringify(ordens));
+          }
+        } catch (_) {}
+      });
+    }
+
+    }
+    document.title = `Aprovação & Assinatura Digital — ${lic.nome}`;
+  }
+
+  try { aplicarBrandingLicenca(); } catch (_) {}
+
+  function atualizarCardPortalCliente(numOs, cliNome, cliTel) {
+    const lic = obterLicencaAtiva();
+    const osFormatada = numOs ? (String(numOs).startsWith('#') ? String(numOs) : '#' + numOs) : '#0001';
+    const telLimpo = String(cliTel || '').replace(/\D/g, '');
+    const osLimpa = String(numOs || '').replace(/[^0-9a-zA-Z]/g, '');
+
+    const params = new URLSearchParams();
+    if (osLimpa) params.set('os', osLimpa);
+    if (telLimpo) params.set('tel', telLimpo);
+    if (cliNome && cliNome !== 'Não informado') params.set('nome', cliNome);
+    params.set('auto', '1');
+
+    params.set('empresa', lic.id || 'sdvidros');
+    const urlRelativa = 'cliente.html?' + params.toString();
+    const urlCompleta = window.location.origin + '/' + urlRelativa;
+
+    const btnAcessar = document.getElementById('btn-acessar-cliente');
+    if (btnAcessar) {
+      btnAcessar.href = urlRelativa;
+    }
+
+    const inputLink = document.getElementById('input-link-cliente');
+    if (inputLink) {
+      inputLink.value = urlCompleta;
+    }
+
+    const descEl = document.getElementById('portal-promo-desc');
+    if (descEl) {
+      descEl.innerHTML = `Olá, <strong>${cliNome || 'Cliente'}</strong>! Acompanhe o status da sua obra <strong>${osFormatada}</strong>, fotos e pagamentos:`;
+    }
+
+    // Grava sessão no localStorage para login imediato
+    try {
+      const sessaoCli = {
+        nome: cliNome || 'Cliente Especial',
+        telefone: cliTel || '',
+        os: osFormatada,
+        ordem: {
+          numero: osFormatada,
+          nome: cliNome || 'Cliente Especial',
+          dados: { tel: cliTel, nome: cliNome },
+          etapa_servico: 2,
+          status_servico_texto: 'O.S. Aprovada & Em Produção',
+          status_obs: 'Assinatura digital confirmada com sucesso. Materiais enviados para fábrica.',
+          previsao_instalacao: 'Em agendamento com a equipe'
+        }
+      };
+      localStorage.setItem('sdv_cliente_sessao', JSON.stringify(sessaoCli));
+      if (cliTel) localStorage.setItem('sdv_cli_tel', cliTel);
+      if (cliNome) localStorage.setItem('sdv_cliente_ativo', cliNome);
+
+      // Salva ordem na lista de ordens para cliente.html reconhecer
+      const ordens = JSON.parse(localStorage.getItem('sdv_ordens') || '[]');
+      const idx = ordens.findIndex(o => String(o.numero) === String(osFormatada));
+      if (idx === -1) {
+        ordens.push(sessaoCli.ordem);
+        localStorage.setItem('sdv_ordens', JSON.stringify(ordens));
+      }
+    } catch (_) {}
+
+    return { urlRelativa, urlCompleta, lic, osFormatada };
+  }
+
+  window.copiarLinkCliente = function() {
+    const input = document.getElementById('input-link-cliente');
+    const url = input && input.value ? input.value : (window.location.origin + '/cliente.html');
+    const btn = document.getElementById('btn-copiar-link-cliente');
+
+    function feedbackSucesso() {
+      if (btn) {
+        btn.textContent = '✅ Link Copiado!';
+        btn.style.borderColor = '#4ade80';
+        btn.style.color = '#4ade80';
+        setTimeout(() => {
+          btn.textContent = '📋 Copiar Link';
+          btn.style.borderColor = '';
+          btn.style.color = '';
+        }, 3000);
+      }
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(feedbackSucesso).catch(() => {
+        fallbackCopy(url);
+      });
+    } else {
+      fallbackCopy(url);
+    }
+
+    function fallbackCopy(val) {
+      if (input) {
+        input.select();
+        document.execCommand('copy');
+      } else {
+        prompt('Copie o link da sua Área do Cliente abaixo:', val);
+      }
+      feedbackSucesso();
+    }
+  };
+
+  window.irParaAssinatura = function() {
+    const el = document.getElementById('card-assinatura');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+      const inp = document.getElementById('nome-input');
+      if (inp && !inp.value) inp.focus();
+    }
+  };
+
+  window.baixarPdfAtual = function() {
+    const licParaPdf = (typeof obterLicencaAtiva === 'function') ? obterLicencaAtiva() : { id: 'sdvidros', nome: 'SD Vidros' };
+    const empParamPdf = '&empresa=' + encodeURIComponent(licParaPdf.id || 'sdvidros')
+      + '&empNome=' + encodeURIComponent(licParaPdf.nome || '')
+      + '&empTipo=' + encodeURIComponent(licParaPdf.tipoContrato || '');
+    if (dParam) {
+      window.open('/api/gerar-pdf-orcamento?d=' + encodeURIComponent(dParam) + empParamPdf, '_blank');
+    } else if (contratoId) {
+      window.open('/api/gerar-pdf-orcamento?id=' + encodeURIComponent(contratoId) + empParamPdf, '_blank');
+    } else if (contratoCache && contratoCache.texto) {
+      fetch('/api/gerar-pdf-contrato-texto', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          texto: contratoCache.texto,
+          numero: contratoCache.numero_os || '0001'
+        })
+      })
+        .then(r => { if (!r.ok) throw new Error(); return r.blob(); })
+        .then(blob => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'Contrato-' + (contratoCache.numero_os || '0001').replace('#', '') + '.pdf';
+          a.click();
+          setTimeout(() => URL.revokeObjectURL(url), 2000);
+        })
+        .catch(() => alert('Erro ao gerar PDF do contrato.'));
+    } else {
+      alert('Informações do orçamento não encontradas.');
+    }
+  };
+
+  function renderizarProposta(data) {
+    contratoCache = data;
+    try { aplicarBrandingLicenca(); } catch (_) {}
+
+    if (data.assinado) {
+      if (telaLoading) telaLoading.classList.add('hidden');
+      if (telaSucesso) {
+        telaSucesso.classList.remove('hidden');
+        const msgSuc = telaSucesso.querySelector('#msg-sucesso');
+        if (msgSuc) {
+          msgSuc.innerHTML =
+            'Esta proposta/contrato já foi <strong>aprovada e assinada</strong> por <strong>' + (data.assinante_nome || '') + '</strong>' +
+            (data.assinado_em ? ' em ' + new Date(data.assinado_em).toLocaleDateString('pt-BR') : '') + '.';
+        }
+        const telCli = data.cliente_tel || data.tel || data.t || '';
+        const nomeFinal = data.assinante_nome || data.cliente_nome || 'Cliente';
+        const info = atualizarCardPortalCliente(data.numero_os, nomeFinal, telCli);
+        const btnNotif = document.getElementById('btn-notificar-sdv');
+        if (btnNotif) {
+          const numZap = (info.lic.telefone ? info.lic.telefone.replace(/\D/g, '') : '5585996119824');
+          const licNomeSanitizado = (info.lic && info.lic.nome) ? info.lic.nome : 'Empresa';
+          const iconeAprov = (info.lic && (info.lic.id === 'sdmoveis' || licNomeSanitizado.toLowerCase().includes('móveis') || licNomeSanitizado.toLowerCase().includes('moveis'))) ? '🛋️' : '🪟';
+          const zapMsg = '✅ *ORÇAMENTO APROVADO E AUTORIZADO!* ' + iconeAprov + '\n\n'
+            + 'Olá ' + licNomeSanitizado + '! Já confirmei a aprovação da Ordem de Serviço ' + info.osFormatada + '!\n'
+            + '👤 *Assinado por:* ' + nomeFinal + '\n\n'
+            + '🔗 *Área Exclusiva do Cliente:* ' + info.urlCompleta + '\n'
+            + '💡 _Acesse para acompanhar a produção, fotos e pagamentos._';
+          btnNotif.href = 'https://wa.me/' + (numZap.startsWith('55') ? numZap : '55' + numZap) + '?text=' + encodeURIComponent(zapMsg);
+          btnNotif.style.display = 'inline-flex';
+        }
+      }
+      return;
+    }
+
+    const numOs = data.numero_os || 'Proposta';
+    const cliNome = data.cliente_nome || 'Cliente';
+
+    const setTxt = (id, txt) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = txt;
+    };
+
+    setTxt('display-numero', 'Orçamento ' + numOs);
+    setTxt('display-cliente', cliNome);
+    setTxt('subtitulo', 'Ordem de Serviço ' + numOs);
+    setTxt('contrato-texto', data.texto || '');
+
+    // Link de ajuste via WhatsApp pré-configurado
+    const btnAjustar = document.getElementById('btn-ajustar-zap');
+    if (btnAjustar) {
+      const licAtivaAjuste = obterLicencaAtiva();
+    const zapMsg = 'Olá ' + (licAtivaAjuste.nome || 'SD Vidros') + '! Recebi a proposta ' + numOs + ' (' + cliNome + '), mas gostaria de tirar algumas dúvidas e falar sobre ajustes antes de aprovar.';
+      btnAjustar.href = 'https://wa.me/5585996119824?text=' + encodeURIComponent(zapMsg);
+    }
+
+    if (telaLoading) telaLoading.classList.add('hidden');
+    if (telaForm) telaForm.classList.remove('hidden');
+
+    requestAnimationFrame(() => iniciarCanvas(numOs, cliNome));
+  }
+
+  function montarTextoContrato(d) {
+    d = d || {};
+    const hoje = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+    const endCliente = [d.end || d.e, d.num, d.apto, d.bairro || d.b].filter(Boolean).join(', ');
+
+    let itensRaw = Array.isArray(d.itens) ? d.itens : (Array.isArray(d.i) ? d.i : []);
+    const itensStr = itensRaw.map((it, i) => {
+      if (Array.isArray(it)) {
+        // Formato compacto [desc, qtd, larg, alt, m2, v_unit, total, cor, bizt]
+        const desc = it[0] || '';
+        const qtd = it[1] || 1;
+        const larg = it[2] || '';
+        const alt = it[3] || '';
+        const m2 = it[4] || '';
+        const tot = it[6] || it[it.length - 1] || '';
+        let detalhe = '';
+        if (alt && larg) detalhe += ` [Dimensões: ${alt}m x ${larg}m${m2 ? ' = ' + m2 : ''}]`;
+        return `  ${i + 1}. ${desc}${detalhe} - Qtd: ${qtd} - Total: ${tot}`;
+      } else if (it && typeof it === 'object') {
+        const desc = it.d || it.desc || '';
+        const qtd = it.q || it.qtd || 1;
+        const larg = it.l || it.larg || '';
+        const alt = it.a || it.alt || '';
+        const m2 = it.m || it.m2 || '';
+        const tot = it.t || it.total || '';
+        const cor = it.c || it.cor || '';
+        const bizt = it.z || it.bizt || '';
+        let detalhe = '';
+        if (alt && larg) detalhe += ` [Dimensões: ${alt}m x ${larg}m${m2 ? ' = ' + m2 : ''}]`;
+        if (cor) detalhe += ` [Cor: ${cor}]`;
+        if (bizt) detalhe += ` [Lapidação/Bizotê: ${bizt}]`;
+        return `  ${i + 1}. ${desc}${detalhe} - Qtd: ${qtd} - Total: ${tot}`;
+      }
+      return `  ${i + 1}. ${String(it)}`;
+    }).join('\n') || '  (itens conforme orçamento aprovado)';
+
+    return `CONTRATO DE PRESTAÇÃO DE SERVIÇOS
+N° ${d.numero || d.n || '0001'}
+Itaitinga - CE, ${hoje}
+
+══════════════════════════════════════════════════════════════
+
+CONTRATADA:
+Razão Social.....: ${(obterLicencaAtiva().nome || 'SD Vidros')}
+WhatsApp.........: (85) 99611-9824
+Instagram........: @sdvidros
+Cidade...........: Itaitinga - CE
+
+CONTRATANTE (CLIENTE):
+Nome.............: ${d.nome || d.c || 'Não informado'}
+${(d.cnpj) ? 'CPF/CNPJ.........: ' + d.cnpj + '\n' : ''}WhatsApp/Tel.....: ${d.tel || d.t || 'Não informado'}
+Endereço.........: ${endCliente || 'Não informado'}
+${(d.resp) ? 'Responsável......: ' + d.resp : ''}
+
+══════════════════════════════════════════════════════════════
+
+CLÁUSULA 1ª – DO OBJETO
+
+A CONTRATADA obriga-se a fornecer e instalar ao CONTRATANTE os seguintes
+serviços de vidraçaria e esquadrias:
+
+${itensStr}
+
+══════════════════════════════════════════════════════════════
+
+CLÁUSULA 2ª – DO VALOR E FORMA DE PAGAMENTO
+
+Valor Total: ${d.total || d.v || 'R$ 0,00'}
+Forma de Pagamento: ${d.forma || d.f || 'À vista'}
+${(d.obs || d.o) ? '\nObservações: ' + (d.obs || d.o) : ''}
+
+A CONTRATANTE efetuará o pagamento conforme a forma descrita acima.
+Chave Pix para pagamento: (85) 99760-2237
+
+══════════════════════════════════════════════════════════════
+
+CLÁUSULA 3ª – DO PRAZO DE ENTREGA E EXECUÇÃO
+
+O prazo para execução e entrega dos serviços é de ${d.prazo || d.p || '15 dias úteis'},
+contados a partir da confirmação do pagamento/sinal e da aprovação de
+todos os detalhes técnicos do projeto.
+
+══════════════════════════════════════════════════════════════
+
+CLÁUSULA 4ª – DA GARANTIA
+
+A CONTRATADA oferece garantia de ${d.garantia || d.g || '1 (um) ano'} contra defeitos de
+fabricação e instalação, excluindo danos causados por mau uso, vandalismo,
+acidentes ou fenômenos naturais.
+
+══════════════════════════════════════════════════════════════
+
+CLÁUSULA 5ª – DAS OBRIGAÇÕES DAS PARTES
+
+5.1 – A CONTRATADA executará os serviços com materiais de alta qualidade e mão de obra especializada;
+5.2 – A CONTRATANTE garantirá o acesso ao local nos dias combinados e efetuará o pagamento acordado.
+
+══════════════════════════════════════════════════════════════
+
+Itaitinga - CE, ${hoje}
+
+
+_________________________________________________
+CONTRATADA: ${(obterLicencaAtiva().nome || 'SD Vidros')}
+WhatsApp: (85) 99611-9824
+
+
+_________________________________________________
+CONTRATANTE: ${d.nome || d.c || '_______________________________'}
+WhatsApp: ${d.tel || d.t || '_________________________________'}`;
+  }
+
+  function safeDecodeB64(str) {
+    if (!str) return null;
+    let s = String(str).trim();
+    while (s.includes('%')) {
+      try { s = decodeURIComponent(s); } catch(_) { break; }
+    }
+    s = s.replace(/ /g, '+').replace(/-/g, '+').replace(/_/g, '/');
+    while (s.length % 4 !== 0) s += '=';
+
+    let jsonParsed = null;
+
+    // Tentativa 1: UTF-8 moderno via TextDecoder
+    try {
+      const binary = atob(s);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      jsonParsed = JSON.parse(new TextDecoder().decode(bytes));
+    } catch (_) {}
+
+    // Tentativa 2: decodeURIComponent(escape(atob(s)))
+    if (!jsonParsed) {
+      try {
+        jsonParsed = JSON.parse(decodeURIComponent(escape(atob(s))));
+      } catch (_) {}
+    }
+
+    // Tentativa 3: atob direto
+    if (!jsonParsed) {
+      try {
+        jsonParsed = JSON.parse(atob(s));
+      } catch (_) {}
+    }
+
+    // Tentativa 4: Recuperação de payload parcial caso o link tenha sido truncado no WhatsApp
+    if (!jsonParsed) {
+      try {
+        const raw = atob(s);
+        const res = {};
+        const nM = raw.match(/"n"\s*:\s*"([^"]+)"/);
+        if (nM) res.n = nM[1];
+        const cM = raw.match(/"c"\s*:\s*"([^"]+)"/);
+        if (cM) res.c = cM[1];
+        const tM = raw.match(/"t"\s*:\s*"([^"]+)"/);
+        if (tM) res.t = tM[1];
+        const vM = raw.match(/"v"\s*:\s*"([^"]+)"/);
+        if (vM) res.v = vM[1];
+        const fM = raw.match(/"f"\s*:\s*"([^"]+)"/);
+        if (fM) res.f = fM[1];
+        if (res.n || res.c || res.v) jsonParsed = res;
+      } catch (_) {}
+    }
+
+    return jsonParsed;
+  }
+
+  if (dParam) {
+    try {
+      const parsed = safeDecodeB64(dParam);
+      if (parsed) {
+        let textoFinal = parsed.x || parsed.texto;
+        if (!textoFinal) {
+          textoFinal = montarTextoContrato(parsed);
+        }
+        const data = {
+          numero_os: parsed.n || parsed.numero_os || 'Proposta',
+          cliente_nome: parsed.c || parsed.cliente_nome || 'Cliente',
+          cliente_tel: parsed.t || parsed.cliente_tel || '',
+          texto: textoFinal,
+          assinado: false
+        };
+        renderizarProposta(data);
+        return;
+      }
+    } catch (e) {
+      console.warn('Falha ao decodificar link direto:', e);
+    }
+  }
+
+  if (!contratoId) {
+    mostrarErro('Link inválido ou expirado. Solicite um novo link via WhatsApp.');
+    return;
+  }
+
+  fetch('/api/contrato?id=' + encodeURIComponent(contratoId))
+    .then(r => r.json().then(data => ({ ok: r.ok, data })))
+    .then(({ ok, data }) => {
+      if (!ok) throw new Error(data.error || 'Erro ao carregar proposta.');
+      renderizarProposta(data);
+    })
+    .catch(err => {
+      let msg = err.message || 'Erro ao carregar proposta.';
+      if (msg.includes('fetch failed')) {
+        msg = 'Servidor temporariamente indisponível. Entre em contato via WhatsApp com a SD Vidros.';
+      }
+      mostrarErro(msg);
+    });
+
+  function iniciarCanvas(numeroOs, clienteNome) {
+    const canvas = document.getElementById('signature-pad');
+    const ctx = canvas.getContext('2d');
+    const nomeInput = document.getElementById('nome-input');
+    const btnConfirmar = document.getElementById('btn-confirmar');
+    const btnLimpar = document.getElementById('btn-limpar');
+    const formErro = document.getElementById('form-erro');
+
+    let desenhando = false;
+    let temTraco = false;
+
+    if (clienteNome && clienteNome !== 'Não informado') {
+      nomeInput.value = clienteNome;
+    }
+
+    function fillWhite() {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function resize() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+      ctx.lineWidth = 2.5;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = '#111827';
+      fillWhite();
+      temTraco = false;
+      atualizarBotao();
+    }
+
+    resize();
+    window.addEventListener('resize', resize);
+
+    function getPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return {
+        x: clientX - rect.left,
+        y: clientY - rect.top
+      };
+    }
+
+    function start(e) {
+      e.preventDefault();
+      desenhando = true;
+      const pos = getPos(e);
+      ctx.beginPath();
+      ctx.moveTo(pos.x, pos.y);
+    }
+
+    function draw(e) {
+      if (!desenhando) return;
+      e.preventDefault();
+      const pos = getPos(e);
+      ctx.lineTo(pos.x, pos.y);
+      ctx.stroke();
+      temTraco = true;
+      atualizarBotao();
+    }
+
+    function stop() {
+      desenhando = false;
+    }
+
+    canvas.addEventListener('mousedown', start);
+    canvas.addEventListener('mousemove', draw);
+    window.addEventListener('mouseup', stop);
+
+    canvas.addEventListener('touchstart', start, { passive: false });
+    canvas.addEventListener('touchmove', draw, { passive: false });
+    window.addEventListener('touchend', stop);
+
+    btnLimpar.addEventListener('click', () => {
+      fillWhite();
+      temTraco = false;
+      atualizarBotao();
+    });
+
+    function atualizarBotao() {
+      btnConfirmar.disabled = !(temTraco && nomeInput.value.trim().length >= 2);
+    }
+    nomeInput.addEventListener('input', atualizarBotao);
+
+    btnConfirmar.addEventListener('click', () => {
+      try {
+        formErro.classList.add('hidden');
+        btnConfirmar.disabled = true;
+        btnConfirmar.textContent = 'Enviando assinatura...';
+
+        let assinaturaBase64 = '';
+        try {
+          assinaturaBase64 = canvas.toDataURL('image/jpeg', 0.65);
+        } catch (e) {
+          assinaturaBase64 = canvas.toDataURL('image/png');
+        }
+
+        const nomeAssinante = nomeInput.value.trim();
+
+        const concluirAssinatura = () => {
+          telaForm.classList.add('hidden');
+          telaSucesso.classList.remove('hidden');
+
+          const telCli = (contratoCache && (contratoCache.cliente_tel || contratoCache.tel || contratoCache.t)) || '';
+          const nomeFinal = nomeAssinante || clienteNome || 'Cliente';
+          const info = atualizarCardPortalCliente(numeroOs, nomeFinal, telCli);
+
+          try {
+            const numLimpo = String(numeroOs || '').replace(/\D/g, '');
+            const regAssinatura = {
+              nome: nomeFinal,
+              rubrica: assinaturaBase64,
+              data: new Date().toISOString(),
+              os: info.osFormatada || numeroOs
+            };
+            localStorage.setItem('sdv_assinatura_' + numLimpo, JSON.stringify(regAssinatura));
+            const assinaturasGerais = JSON.parse(localStorage.getItem('sdv_assinaturas_map') || '{}');
+            assinaturasGerais[numLimpo] = regAssinatura;
+            localStorage.setItem('sdv_assinaturas_map', JSON.stringify(assinaturasGerais));
+
+            const ordens = JSON.parse(localStorage.getItem('sdv_ordens') || '[]');
+            const idx = ordens.findIndex(x => String(x.numero || '').replace(/\D/g, '') === numLimpo);
+            if (idx !== -1) {
+              ordens[idx].status = 'aprovado';
+              ordens[idx].assinado_por = nomeFinal;
+              ordens[idx].assinado_em = new Date().toISOString();
+              ordens[idx].assinatura_digital = regAssinatura;
+              localStorage.setItem('sdv_ordens', JSON.stringify(ordens));
+            }
+          } catch (e) {
+            console.warn('Aviso storage assinatura:', e);
+          }
+
+          const licNomeSanitizado = (info.lic && info.lic.nome) ? info.lic.nome : 'Empresa';
+          const iconeAprov = (info.lic && (info.lic.id === 'sdmoveis' || licNomeSanitizado.toLowerCase().includes('móveis') || licNomeSanitizado.toLowerCase().includes('moveis'))) ? '🛋️' : '🪟';
+          const zapMsg = '✅ *ORÇAMENTO APROVADO E AUTORIZADO!* ' + iconeAprov + '\n\n'
+            + 'Olá ' + licNomeSanitizado + '! Acabei de aprovar e assinar a Ordem de Serviço ' + info.osFormatada + '!\n'
+            + '👤 *Assinado por:* ' + nomeFinal + '\n\n'
+            + '🔗 *Área Exclusiva do Cliente:* ' + info.urlCompleta + '\n'
+            + '💡 _Acompanhamento em tempo real da produção, fotos e pagamentos._\n\n'
+            + 'A Ordem de Serviço está autorizada. Podemos iniciar a produção!';
+
+          const btnNotif = document.getElementById('btn-notificar-sdv');
+          if (btnNotif) {
+            const numZap = (info.lic.telefone ? info.lic.telefone.replace(/\D/g, '') : '5585996119824');
+            btnNotif.href = 'https://wa.me/' + (numZap.startsWith('55') ? numZap : '55' + numZap) + '?text=' + encodeURIComponent(zapMsg);
+            btnNotif.style.display = 'inline-flex';
+          }
+        };
+
+        if (contratoId) {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+          fetch('/api/assinar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: contratoId,
+              assinante_nome: nomeAssinante,
+              assinatura_base64: assinaturaBase64
+            }),
+            signal: controller.signal
+          })
+            .then(r => r.json().catch(() => ({})).then(data => ({ ok: r.ok, data })))
+            .then(({ ok, data }) => {
+              clearTimeout(timeoutId);
+              concluirAssinatura();
+            })
+            .catch(err => {
+              clearTimeout(timeoutId);
+              console.warn('Aviso ao registrar na nuvem, concluindo confirmação direta:', err);
+              concluirAssinatura();
+            });
+        } else {
+          concluirAssinatura();
+        }
+      } catch (err) {
+        formErro.textContent = err.message || 'Erro ao preparar assinatura.';
+        formErro.classList.remove('hidden');
+        btnConfirmar.disabled = false;
+        btnConfirmar.textContent = '✍️ Confirmar Aprovação e Autorizar O.S.';
+      }
+    });
+  }
+})();
+</script>
+</body>
+</html>

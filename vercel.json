@@ -1,0 +1,37 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/login.html"
+    },
+    {
+      "source": "/app",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/cliente",
+      "destination": "/cliente.html"
+    },
+    {
+      "source": "/funcionario",
+      "destination": "/funcionario.html"
+    },
+    {
+      "source": "/assinar",
+      "destination": "/assinar.html"
+    },
+    {
+      "source": "/sdmoveis",
+      "destination": "/cliente.html?empresa=sdmoveis&nome=SD%20M%C3%B3veis%20Projetados&instalar=1&auto=1"
+    },
+    {
+      "source": "/moveis",
+      "destination": "/cliente.html?empresa=sdmoveis&nome=SD%20M%C3%B3veis%20Projetados&instalar=1&auto=1"
+    },
+    {
+      "source": "/samuel",
+      "destination": "/cliente.html?empresa=sdmoveis&nome=SD%20M%C3%B3veis%20Projetados&instalar=1&auto=1"
+    }
+  ]
+}

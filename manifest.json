@@ -1,0 +1,26 @@
+{
+  "id": "/sdmoveis",
+  "name": "SD Móveis Projetados",
+  "short_name": "SD Móveis",
+  "description": "Sistema Oficial SD Móveis Projetados – Ambientes Sob Medida",
+  "start_url": "/cliente.html?empresa=sdmoveis&nome=SD%20M%C3%B3veis%20Projetados",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#080811",
+  "theme_color": "#080811",
+  "icons": [
+    {
+      "src": "/logo_moveis.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo_moveis.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}

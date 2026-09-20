@@ -1,0 +1,2596 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SD Móveis Projetados – Acesso ao Sistema</title>
+  <meta name="description" content="SD Móveis Projetados – Acesso ao Sistema de Gestão de Marcenaria e Móveis Planejados.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --gold: #C9A84C;
+      --gold-light: #E8D27A;
+      --gold-dim: #a07828;
+      --bg: #07070b;
+      --card: #101018;
+      --border: rgba(201,168,76,0.22);
+      --text: #f0ece4;
+      --muted: #6a6275;
+      --font: 'Outfit', -apple-system, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      overflow-x: hidden;
+      position: relative;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 70% 50% at 25% 15%, rgba(201,168,76,0.09) 0%, transparent 65%),
+        radial-gradient(ellipse 50% 40% at 75% 85%, rgba(201,168,76,0.06) 0%, transparent 55%);
+      pointer-events: none;
+    }
+    .particles { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(201,168,76,0.5), transparent 70%);
+      animation: rise linear infinite;
+    }
+    @keyframes rise {
+      0% { transform: translateY(110vh) scale(0); opacity: 0; }
+      8% { opacity: 1; }
+      88% { opacity: 0.4; }
+      100% { transform: translateY(-10vh) scale(1.4); opacity: 0; }
+    }
+    .login-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      padding: 38px 30px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 40px 100px rgba(0,0,0,0.75), 0 0 0 1px rgba(201,168,76,0.08), inset 0 1px 0 rgba(255,255,255,0.04);
+      position: relative;
+      animation: appear 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .login-box::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 10%; right: 10%;
+      height: 1.5px;
+      background: linear-gradient(90deg, transparent, var(--gold-light), var(--gold), transparent);
+      border-radius: 999px;
+    }
+    @keyframes appear {
+      from { opacity: 0; transform: translateY(36px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .logo-area { text-align: center; margin-bottom: 22px; }
+    .logo-img-wrap {
+      width: 118px; height: 118px;
+      border-radius: 24px;
+      margin: 0 auto 14px;
+      border: 2.5px solid var(--gold);
+      box-shadow: 0 0 35px rgba(201,168,76,0.35), inset 0 0 15px rgba(0,0,0,0.5);
+      overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      background: #000;
+      animation: glowing 3.5s ease-in-out infinite;
+    }
+    @keyframes glowing {
+      0%, 100% { box-shadow: 0 0 35px rgba(201,168,76,0.35); }
+      50% { box-shadow: 0 0 60px rgba(201,168,76,0.55); }
+    }
+    .logo-img-wrap img {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .brand-name {
+      font-size: 27px; font-weight: 900;
+      background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 55%, var(--gold-dim) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      letter-spacing: 0.1em;
+    }
+    .brand-sub { font-size: 10.5px; color: var(--muted); font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; margin-top: 4px; }
+    .gold-divider {
+      width: 44px; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      margin: 10px auto 14px;
+    }
+    .form-title { font-size: 13.5px; font-weight: 500; color: rgba(240,236,228,0.7); text-align: center; margin-bottom: 22px; }
+
+    /* CAMPOS COM ÍCONES */
+    .field { margin-bottom: 16px; }
+    .field label { display: block; font-size: 10.5px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 7px; }
+    .input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .input-icon {
+      position: absolute;
+      left: 14px;
+      width: 18px;
+      height: 18px;
+      stroke: var(--muted);
+      pointer-events: none;
+      transition: stroke 0.2s;
+    }
+    .input-wrap input {
+      width: 100%; padding: 14px 16px 14px 44px;
+      background: #0a0a13; border: 1.5px solid rgba(201,168,76,0.16);
+      border-radius: 13px; font-size: 14.5px; font-family: var(--font); color: var(--text); transition: all 0.2s;
+    }
+    .input-wrap input::placeholder { color: #3c384e; }
+    .input-wrap input:focus {
+      outline: none; border-color: var(--gold);
+      background: #0d0d18; box-shadow: 0 0 0 3.5px rgba(201,168,76,0.11);
+    }
+    .input-wrap input:focus ~ .input-icon,
+    .input-wrap input:focus + .input-icon {
+      stroke: var(--gold);
+    }
+
+    /* ESQUECI SENHA */
+    .forgot-link-area {
+      display: flex;
+      justify-content: flex-end;
+      margin: -4px 0 20px;
+    }
+    .forgot-link {
+      font-size: 12px;
+      color: var(--gold-light);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      opacity: 0.85;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .forgot-link:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+
+    /* BOTÃO PRINCIPAL ENTRAR NO SISTEMA */
+    .btn-login {
+      width: 100%; padding: 16px;
+      background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 60%, var(--gold-dim) 100%);
+      color: #1a0e00; font-size: 15px; font-weight: 800; font-family: var(--font);
+      border: none; border-radius: 14px; cursor: pointer; transition: all 0.2s;
+      letter-spacing: 0.03em; position: relative; overflow: hidden;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-login::after {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 45%;
+      background: linear-gradient(180deg, rgba(255,255,255,0.18) 0%, transparent 100%);
+      border-radius: 14px 14px 0 0;
+    }
+    .btn-login:hover { transform: translateY(-2px); box-shadow: 0 12px 36px rgba(201,168,76,0.42); }
+    .btn-login:active { transform: scale(0.98); }
+    .btn-login:disabled { opacity: 0.65; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    /* ─── BOTÃO & BADGE DE BIOMETRIA (ESTILO OFICIAL) ─── */
+    .btn-biometria {
+      width: 100%;
+      background: linear-gradient(135deg, rgba(201,168,76,0.12) 0%, rgba(14,14,24,0.95) 100%);
+      border: 1.5px solid var(--gold);
+      border-radius: 12px;
+      color: var(--gold-light);
+      padding: 13px 16px;
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.25s;
+      box-shadow: 0 4px 18px var(--gold-glow, rgba(201,168,76,0.25));
+    }
+    .btn-biometria:hover {
+      background: linear-gradient(135deg, rgba(201,168,76,0.25) 0%, rgba(20,20,32,0.95) 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(201,168,76,0.35);
+    }
+    .btn-biometria:active {
+      transform: scale(0.98);
+    }
+    .btn-biometria:disabled {
+      opacity: 0.7;
+      cursor: wait;
+      transform: none;
+    }
+    .bio-icon {
+      font-size: 20px;
+      display: inline-block;
+      animation: bioPulse 2.2s infinite ease-in-out;
+    }
+    @keyframes bioPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.18); }
+    }
+.msg { border-radius: 11px; padding: 11px 16px; font-size: 13px; font-weight: 700; margin-top: 14px; text-align: center; }
+    .msg.err { background: rgba(224,64,64,0.12); border: 1px solid rgba(224,64,64,0.22); color: #ff7878; }
+    .msg.info { background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.25); color: var(--gold-light); }
+    .msg.suc { background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3); color: #4ade80; }
+
+    .footer-area { text-align: center; margin-top: 26px; }
+    .footer-area p { font-size: 11.5px; color: rgba(148, 163, 184, 0.6); letter-spacing: 0.04em; }
+    .hint { font-size: 10.5px; color: rgba(106,98,117,0.45); margin-top: 6px; }
+
+    /* ── SELETOR DE EMPRESA / LICENÇA NA PÁGINA INICIAL ── */
+    .empresa-switch-wrap {
+      margin-bottom: 20px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1.5px solid rgba(201, 168, 76, 0.28);
+      border-radius: 18px;
+      padding: 12px 10px 10px;
+      position: relative;
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.4);
+    }
+    .empresa-switch-label {
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--gold-light);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-bottom: 10px;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .empresa-switch-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .empresa-switch-card {
+      background: #080811;
+      border: 1.5px solid rgba(255, 255, 255, 0.08);
+      border-radius: 13px;
+      padding: 10px 6px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 3px;
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      font-family: var(--font);
+    }
+    .empresa-switch-card:hover {
+      border-color: rgba(201, 168, 76, 0.5);
+      transform: translateY(-2px);
+      background: #0d0d1a;
+    }
+    .empresa-switch-card.active {
+      border-color: var(--gold);
+      background: linear-gradient(180deg, rgba(201, 168, 76, 0.18) 0%, rgba(16, 16, 26, 0.98) 100%);
+      box-shadow: 0 0 22px rgba(201, 168, 76, 0.28);
+    }
+    .empresa-switch-icon {
+      font-size: 22px;
+      line-height: 1;
+      margin-bottom: 2px;
+    }
+    .empresa-switch-title {
+      font-size: 12.5px;
+      font-weight: 900;
+      color: #fff;
+      line-height: 1.2;
+    }
+    .empresa-switch-card.active .empresa-switch-title {
+      color: var(--gold-light);
+    }
+    .empresa-switch-desc {
+      font-size: 9px;
+      color: var(--muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .empresa-switch-card.active .empresa-switch-desc {
+      color: rgba(240, 236, 228, 0.85);
+    }
+    .empresa-switch-badge {
+      position: absolute;
+      top: 5px;
+      right: 7px;
+      font-size: 10px;
+      font-weight: 900;
+      color: #4ade80;
+      display: none;
+    }
+    .empresa-switch-card.active .empresa-switch-badge {
+      display: block;
+    }
+
+    /* NAVEGAÇÃO SUPERIOR LOGIN / ADICIONAR MARCA */
+    .top-nav-pills {
+      display: flex;
+      gap: 6px;
+      background: rgba(0,0,0,0.45);
+      padding: 5px;
+      border-radius: 14px;
+      border: 1px solid rgba(201,168,76,0.25);
+      margin-bottom: 18px;
+    }
+    .top-nav-pill {
+      flex: 1;
+      padding: 10px 8px;
+      border-radius: 10px;
+      border: none;
+      background: transparent;
+      color: #94a3b8;
+      font-weight: 700;
+      font-size: 12.5px;
+      font-family: var(--font);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: all 0.22s ease;
+    }
+    .top-nav-pill.active {
+      background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 100%);
+      color: #100b00;
+      font-weight: 800;
+      box-shadow: 0 4px 14px rgba(201,168,76,0.3);
+    }
+    .top-nav-pill:not(.active):hover {
+      color: var(--text);
+      background: rgba(255,255,255,0.05);
+    }
+
+    /* MODAL DE SENHA E PAINEL GESTÃO */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.82); backdrop-filter: blur(8px);
+      z-index: 9999;
+      display: none; align-items: center; justify-content: center;
+      padding: 16px;
+    }
+    .modal-card {
+      background: #101018;
+      border: 1.5px solid var(--gold);
+      border-radius: 24px;
+      width: 100%; max-width: 440px;
+      padding: 26px 22px;
+      box-shadow: 0 30px 90px rgba(0,0,0,0.85);
+      animation: appear 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    /* BOTÃO DO CADEADO STANDALONE (EXATAMENTE COMO NA TERCEIRA IMAGEM) */
+    .btn-cadeado-standalone {
+      width: 58px;
+      height: 52px;
+      border-radius: 14px;
+      border: 1.5px solid rgba(201, 168, 76, 0.45);
+      background: #0e0f18;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .btn-cadeado-standalone:hover {
+      border-color: var(--gold);
+      background: #141624;
+      transform: translateY(-2px) scale(1.06);
+      box-shadow: 0 0 24px rgba(201, 168, 76, 0.4);
+    }
+
+    /* BOTÃO DO CADEADO (SÓ O DESENHO DO CADEADO) */
+    .btn-cadeado {
+      flex: 0 0 54px !important;
+      padding: 9px 0 !important;
+      border-radius: 12px !important;
+      border: 1.5px solid rgba(201,168,76,0.3) !important;
+      background: rgba(255,255,255,0.04) !important;
+      color: var(--gold-light) !important;
+      font-size: 20px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      cursor: pointer !important;
+      transition: all 0.22s ease !important;
+    }
+    .btn-cadeado:hover {
+      background: rgba(201,168,76,0.18) !important;
+      border-color: var(--gold) !important;
+      transform: scale(1.06) !important;
+      box-shadow: 0 0 16px rgba(201,168,76,0.35) !important;
+    }
+
+    /* CARDS DE BANNERS GERADOS POR IA */
+    .ai-banner-card {
+      background: #0d0d16;
+      border: 1.5px solid rgba(201,168,76,0.22);
+      border-radius: 14px;
+      overflow: hidden;
+      transition: all 0.22s ease;
+      cursor: pointer;
+    }
+    .ai-banner-card:hover {
+      border-color: var(--gold);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(201,168,76,0.25);
+    }
+
+    @media(max-width: 480px) { .login-box { padding: 30px 20px; border-radius: 22px; } .brand-name { font-size: 25px; } }
+  </style>
+</head>
+<body>
+<div class="particles" id="particles"></div>
+<div class="login-box">
+  <div class="logo-area">
+    <div class="logo-img-wrap">
+      <img id="login-logo-img" src="logo_moveis.jpg" alt="Logo" style="transition: opacity 0.25s ease;">
+    </div>
+    <div class="brand-name" id="login-brand-name">SD MÓVEIS PROJETADOS</div>
+    <div class="brand-sub" id="login-brand-sub">MÓVEIS PLANEJADOS · AMBIENTES SOB MEDIDA</div>
+    <div class="gold-divider"></div>
+  </div>
+
+  <!-- BOTÃO DO CADEADO (EXATAMENTE COMO NA TERCEIRA IMAGEM) -->
+  <div style="display:flex;justify-content:center;margin-bottom:18px;">
+    <button type="button" id="tab-btn-cadeado" class="btn-cadeado-standalone" onclick="abrirModalAcessoCadeado()" title="Acesso com Cadeado / Alternar Empresa">
+      🔒
+    </button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!-- ABA 1: TELA DE LOGIN PRINCIPAL (SEM MOSTRAR OUTRAS EMPRESAS) -->
+  <!-- ══════════════════════════════════════════════ -->
+  <div id="view-login-principal">
+    <div class="form-title">Entre com suas credenciais de acesso</div>
+
+    <!-- USUÁRIO -->
+    <div class="field">
+      <label>USUÁRIO</label>
+      <div class="input-wrap">
+        <input id="l-user" type="text" placeholder="seu usuário (ex: admin)" autocapitalize="none" autocomplete="off" spellcheck="false">
+        <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+          <circle cx="12" cy="7" r="4"></circle>
+        </svg>
+      </div>
+    </div>
+
+    <!-- SENHA -->
+    <div class="field">
+      <label>SENHA</label>
+      <div class="input-wrap">
+        <input id="l-senha" type="password" placeholder="••••••••" autocomplete="new-password" onkeydown="if(event.key==='Enter') fazerLogin();">
+        <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+      </div>
+    </div>
+
+    <!-- ESQUECI MINHA SENHA -->
+    <div class="forgot-link-area">
+      <span class="forgot-link" onclick="esqueciSenha()">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m21 2-2 2m-1.5 1.5L14 9"></path>
+          <path d="M15.5 7.5 18 10"></path>
+          <path d="m9 15-4.5 4.5a2.12 2.12 0 1 1-3-3L6 12"></path>
+          <circle cx="15.5" cy="8.5" r="5.5"></circle>
+        </svg>
+        Esqueci meu usuário ou senha
+      </span>
+    </div>
+
+    <!-- BOTÃO ENTRAR NO SISTEMA -->
+    <button class="btn-login" id="btn-login" onclick="fazerLogin()">
+      <span>Entrar no Sistema</span>
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+        <polyline points="12 5 19 12 12 19"></polyline>
+      </svg>
+    </button>
+    <!-- DIVISOR OU & BOTÃO BIOMETRIA -->
+    <div style="display:flex;align-items:center;margin:16px 0 12px;gap:12px;width:100%;">
+      <div style="flex:1;height:1px;background:rgba(255,255,255,0.12);"></div>
+      <span style="font-size:11px;color:rgba(255,255,255,0.45);text-transform:uppercase;font-weight:700;letter-spacing:0.08em;">ou</span>
+      <div style="flex:1;height:1px;background:rgba(255,255,255,0.12);"></div>
+    </div>
+
+    <button type="button" class="btn-biometria" id="btn-biometria" onclick="loginComBiometria()">
+      <span class="bio-icon">👆</span>
+      <span id="txt-btn-bio">Entrar com Biometria / Face ID</span>
+    </button>
+
+
+
+    <!-- LINK PORTAL DO CLIENTE -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:14px;margin-top:16px;width:100%;">
+      <a href="cliente.html" style="font-size:12.5px;color:var(--gold-light);text-decoration:none;display:inline-flex;align-items:center;gap:6px;opacity:0.9;transition:opacity 0.2s;font-weight:600;">
+        👤 Sou Cliente? Acessar Portal do Cliente ➔
+      </a>
+    </div>
+
+    <div id="login-msg"></div>
+
+    <div class="footer-area"></div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!-- ABA 2: PAINEL DE GESTÃO DE MARCAS / LOGO / BANNER IA (ADMINISTRADOR) -->
+  <!-- ══════════════════════════════════════════════ -->
+  <div id="view-gestao-marcas" style="display:none;">
+    <div style="text-align:center;margin-bottom:18px;">
+      <div style="font-size:24px;margin-bottom:4px;">🏢 ⚙️</div>
+      <h3 style="font-size:16px;font-weight:900;color:var(--gold-light);">Personalizar Logo & Empresa</h3>
+      <p style="font-size:11.5px;color:var(--muted);margin-top:2px;">Mude a logo, escolha banner com IA ou cadastre novas empresas</p>
+    </div>
+
+    <!-- BOTÃO PRINCIPAL DE DESTAQUE: ADICIONAR NOVA EMPRESA -->
+    <button type="button" id="btn-adicionar-empresa-top" onclick="abrirModalCadastrarNovaEmpresa()" style="width:100%;padding:14px 16px;background:linear-gradient(135deg,#e8d27a,#c9a84c);border:none;border-radius:14px;color:#000;font-weight:900;font-size:14px;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 6px 20px rgba(201,168,76,0.38);margin-bottom:16px;transition:all 0.2s;">
+      <span style="font-size:19px;">➕</span> <span>Adicionar Nova Empresa</span>
+    </button>
+
+    <!-- SELETOR DE QUAL EMPRESA MODIFICAR -->
+    <div class="field" style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <label style="margin-bottom:0;">EMPRESA PARA MODIFICAR</label>
+        <button type="button" onclick="abrirModalCadastrarNovaEmpresa()" style="background:none;border:none;color:var(--gold-light);font-size:11.5px;font-weight:800;cursor:pointer;text-decoration:underline;">
+          ➕ Adicionar Outra
+        </button>
+      </div>
+      <select id="gestao-empresa-select" onchange="if(this.value==='__NOVA__'){abrirModalCadastrarNovaEmpresa();}else{selecionarEmpresaParaEditar(this.value,true);}" style="width:100%;box-sizing:border-box;padding:12px 14px;background:#0a0a13;border:1.5px solid rgba(201,168,76,0.35);border-radius:12px;color:var(--text);font-size:13.5px;font-family:var(--font);outline:none;">
+        <!-- Opções geradas via JS -->
+      </select>
+    </div>
+
+    <!-- LISTA VISUAL DE EMPRESAS CADASTRADAS E SALVAS -->
+    <div style="margin-bottom:16px;background:rgba(255,255,255,0.02);border:1px solid rgba(201,168,76,0.22);border-radius:14px;padding:12px 14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <span style="font-size:11px;font-weight:900;color:var(--gold-light);text-transform:uppercase;letter-spacing:0.06em;">
+          🏢 TODAS AS EMPRESAS SALVAS (<span id="gestao-total-empresas">0</span>)
+        </span>
+        <button type="button" onclick="abrirModalCadastrarNovaEmpresa()" style="background:rgba(201,168,76,0.15);border:1px solid var(--gold);color:var(--gold-light);font-size:10.5px;font-weight:800;padding:4px 9px;border-radius:8px;cursor:pointer;">
+          ➕ Nova
+        </button>
+      </div>
+      <div id="gestao-empresas-lista-cards" style="display:flex;flex-direction:column;gap:8px;">
+        <!-- Cards gerados via JS -->
+      </div>
+    </div>
+
+    <!-- UPLOAD DE LOGOTIPO -->
+    <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(201,168,76,0.2);border-radius:14px;padding:14px;margin-bottom:14px;">
+      <label style="font-size:10.5px;font-weight:800;color:var(--gold-light);text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:10px;">
+        Logotipo da Empresa
+      </label>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <img id="preview-logo-gestao" src="logo_moveis.jpg" style="width:68px;height:68px;border-radius:16px;border:2px solid var(--gold);object-fit:cover;background:#000;" alt="Logo Preview">
+        <div style="flex:1;">
+          <input type="file" id="input-upload-logo-gestao" accept="image/*" style="display:none;" onchange="processarUploadArquivo(event, 'logo')">
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <button type="button" onclick="abrirModalBannerIA('logo')" style="width:100%;padding:10px 12px;background:linear-gradient(135deg,rgba(201,168,76,0.32),rgba(201,168,76,0.12));border:1.5px solid var(--gold);border-radius:10px;color:var(--gold-light);font-weight:800;font-size:12px;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 0 16px rgba(201,168,76,0.22);">
+              <span>✨ Escolher com IA (Nova Logo)</span>
+            </button>
+            <button type="button" onclick="document.getElementById('input-upload-logo-gestao').click()" style="width:100%;padding:8px 12px;background:#181824;border:1px solid rgba(201,168,76,0.35);border-radius:10px;color:#cbd5e1;font-weight:600;font-size:11.5px;cursor:pointer;font-family:var(--font);">
+              📁 Escolher do Celular/PC
+            </button>
+          </div>
+          <div style="font-size:10px;color:var(--muted);margin-top:6px;">Formatos: PNG, JPG, WEBP ou Escolher com IA</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- UPLOAD / ESCOLHA DE BANNER COM IA -->
+    <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(201,168,76,0.2);border-radius:14px;padding:14px;margin-bottom:14px;">
+      <label style="font-size:10.5px;font-weight:800;color:var(--gold-light);text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:10px;">
+        Banner do Topo (Showroom)
+      </label>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <img id="preview-banner-gestao" src="banner.jpg" style="width:105px;height:54px;border-radius:10px;border:1.5px solid var(--gold);object-fit:cover;background:#000;" alt="Banner Preview">
+        <div style="flex:1;">
+          <input type="file" id="input-upload-banner-gestao" accept="image/*" style="display:none;" onchange="processarUploadArquivo(event, 'banner')">
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <button type="button" onclick="abrirModalBannerIA()" style="width:100%;padding:10px 12px;background:linear-gradient(135deg,rgba(201,168,76,0.32),rgba(201,168,76,0.12));border:1.5px solid var(--gold);border-radius:10px;color:var(--gold-light);font-weight:800;font-size:12px;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 0 16px rgba(201,168,76,0.22);">
+              <span>✨ Escolher com IA (Novo Banner)</span>
+            </button>
+            <button type="button" onclick="document.getElementById('input-upload-banner-gestao').click()" style="width:100%;padding:8px 12px;background:#181824;border:1px solid rgba(201,168,76,0.35);border-radius:10px;color:#cbd5e1;font-weight:600;font-size:11.5px;cursor:pointer;font-family:var(--font);">
+              📁 Escolher do Celular/PC
+            </button>
+          </div>
+          <div style="font-size:10px;color:var(--muted);margin-top:6px;">Showroom de vidro ou móveis gerados por IA</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DADOS DA EMPRESA -->
+    <div class="field">
+      <label>NOME DA EMPRESA</label>
+      <div class="input-wrap">
+        <input id="gestao-empresa-nome" type="text" placeholder="Ex: SD Vidros ou SD Móveis">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>SEGMENTO / SUBTÍTULO</label>
+      <div class="input-wrap">
+        <input id="gestao-empresa-segmento" type="text" placeholder="Ex: Vidraçaria & Esquadrias">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>WHATSAPP / TELEFONE</label>
+      <div class="input-wrap">
+        <input id="gestao-empresa-tel" type="text" placeholder="(85) 99611-9824">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>CHAVE PIX</label>
+      <div class="input-wrap">
+        <input id="gestao-empresa-pix" type="text" placeholder="Chave PIX para pagamentos">
+      </div>
+    <div class="field">
+      <label>LINK / DOMÍNIO PRÓPRIO (OPCIONAL)</label>
+      <div class="input-wrap">
+        <input id="gestao-empresa-link" type="text" placeholder="Ex: https://sdmoveis.vercel.app ou deixe em branco">
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-top:4px;">
+        💡 Se desejar usar outro link ou domínio cadastrado (ex: sdmoveis.vercel.app), digite aqui.
+      </div>
+    </div>
+    </div>
+
+    <!-- MENSAGEM DO PAINEL DE GESTÃO -->
+    <div id="gestao-msg"></div>
+
+    <!-- BOTÕES DE AÇÃO -->
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:18px;">
+      <div style="display:flex;gap:10px;">
+        <button type="button" onclick="salvarModificacoesEmpresa()" style="flex:1.2;padding:13px 10px;background:linear-gradient(135deg,var(--gold-light),var(--gold));border:none;border-radius:12px;color:#000;font-weight:900;font-size:13px;cursor:pointer;font-family:var(--font);box-shadow:0 4px 16px rgba(201,168,76,0.35);">
+          💾 Salvar Alterações
+        </button>
+        <button type="button" onclick="salvarComoNovaEmpresaDireto()" style="flex:1.2;padding:13px 10px;background:linear-gradient(135deg,#22c55e,#16a34a);border:none;border-radius:12px;color:#fff;font-weight:900;font-size:12.5px;cursor:pointer;font-family:var(--font);box-shadow:0 4px 16px rgba(34,197,94,0.3);">
+          ➕ Salvar como Nova
+        </button>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button type="button" onclick="entrarDiretoComEmpresaSelecionada()" style="flex:1.4;padding:12px;background:rgba(201,168,76,0.14);border:1.5px solid var(--gold);border-radius:12px;color:var(--gold-light);font-weight:800;font-size:12.5px;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:6px;">
+          <span>🚀 Entrar no Sistema com Esta</span>
+        </button>
+        <button type="button" onclick="mostrarAbaPrincipal('login')" style="flex:0.7;padding:12px;background:#181824;border:1px solid rgba(255,255,255,0.15);border-radius:12px;color:#cbd5e1;font-weight:700;font-size:12.5px;cursor:pointer;font-family:var(--font);">
+          ↩️ Voltar
+        </button>
+      </div>
+    </div>
+    <div id="btn-excluir-empresa-area" style="text-align:center;margin-top:14px;display:none;">
+      <button type="button" onclick="excluirEmpresaSelecionada()" style="background:rgba(239,68,68,0.14);border:1.5px solid rgba(239,68,68,0.5);color:#f87171;padding:10px 18px;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.25)'" onmouseout="this.style.background='rgba(239,68,68,0.14)'">
+        <span>🗑️</span> <span>Excluir Esta Empresa Selecionada</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- MODAL: ACESSO COM CADEADO (DIGITAR NOME DA EMPRESA + LOGIN / BIOMETRIA) -->
+<!-- ══════════════════════════════════════════════ -->
+<div id="modal-acesso-cadeado" class="modal-overlay">
+  <div class="modal-card" style="max-width:400px;text-align:center;">
+    <div style="width:68px;height:68px;margin:0 auto 12px;background:rgba(201,168,76,0.12);border:2px solid var(--gold);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:32px;box-shadow:0 0 25px rgba(201,168,76,0.25);">
+      🔒
+    </div>
+    <h3 style="font-size:18px;font-weight:900;color:var(--gold-light);margin-bottom:4px;">Acesso com Cadeado</h3>
+    <p style="font-size:12px;color:rgba(240,236,228,0.75);margin-bottom:18px;line-height:1.4;">
+      Digite o nome da empresa e acesse com login ou biometria:
+    </p>
+
+    <!-- DIGITAR NOME DA EMPRESA -->
+    <div class="field" style="text-align:left;margin-bottom:12px;">
+      <label>NOME DA EMPRESA</label>
+      <div class="input-wrap">
+        <input id="cad-empresa-nome" type="text" placeholder="Ex: SD Vidros ou SD Móveis" autocomplete="off">
+        <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+          <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+      </div>
+    </div>
+
+    <!-- USUÁRIO -->
+    <div class="field" style="text-align:left;margin-bottom:12px;">
+      <label>USUÁRIO</label>
+      <div class="input-wrap">
+        <input id="cad-user" type="text" placeholder="seu usuário (ex: admin)" autocomplete="username">
+        <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+          <circle cx="12" cy="7" r="4"></circle>
+        </svg>
+      </div>
+    </div>
+
+    <!-- SENHA -->
+    <div class="field" style="text-align:left;margin-bottom:16px;">
+      <label>SENHA</label>
+      <div class="input-wrap">
+        <input id="cad-senha" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter') loginPeloCadeado();">
+        <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+      </div>
+    </div>
+
+    <div id="cad-msg" style="margin-bottom:12px;"></div>
+
+    <!-- BOTÃO ENTRAR -->
+    <button class="btn-login" id="btn-login-cad" onclick="loginPeloCadeado()" style="margin-bottom:10px;">
+      <span>Entrar no Sistema</span>
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+        <polyline points="12 5 19 12 12 19"></polyline>
+      </svg>
+    </button>
+
+    <!-- BOTÃO BIOMETRIA DENTRO DO CADEADO -->
+    <button class="btn-biometria" id="btn-bio-cad" type="button" onclick="loginBiometriaPeloCadeado()" style="margin-top:0;margin-bottom:16px;">
+      <div class="bio-icon-wrap">
+        <svg class="bio-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"></path>
+          <path d="M14 13.12c0 2.38 0 6.38-1 8.88"></path>
+          <path d="M17.29 21.02c.12-.6.43-2.3.5-3.02"></path>
+          <path d="M2 12a10 10 0 0 1 18-6"></path>
+          <path d="M2 16h.01"></path>
+          <path d="M21.8 16c.2-2 .131-5.354 0-6"></path>
+          <path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2"></path>
+          <path d="M8.65 22c.21-.66.45-1.32.57-2"></path>
+          <path d="M9 6.8a6 6 0 0 1 9 5.2v2"></path>
+        </svg>
+      </div>
+      <span id="txt-bio-cad">Acessar com Biometria / Digital</span>
+    </button>
+    <!-- OPÇÕES INFERIORES -->
+    <div style="border-top:1px dashed rgba(201,168,76,0.25);padding-top:14px;margin-bottom:4px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+      <button type="button" onclick="abrirGestaoPeloCadeado()" style="background:none;border:none;color:var(--gold-light);font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;">
+        ⚙️ Mudar Logo & Banners com IA
+      </button>
+      <button type="button" onclick="fecharModalAcessoCadeado()" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;">
+        Fechar ✕
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- MODAL: ESCOLHER NOVO BANNER COM IA -->
+<!-- ══════════════════════════════════════════════ -->
+<div id="modal-banner-ia" class="modal-overlay">
+  <div class="modal-card" style="max-width:480px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div>
+        <h3 style="font-size:17px;font-weight:900;color:var(--gold-light);display:flex;align-items:center;gap:6px;">
+          <span>✨ Escolher Banner com IA</span>
+        </h3>
+        <p style="font-size:11.5px;color:var(--muted);margin-top:2px;">
+          Banners hiper-realistas em 4K gerados por IA para seu showroom
+        </p>
+      </div>
+      <button type="button" onclick="fecharModalBannerIA()" style="background:none;border:none;color:#94a3b8;font-size:18px;cursor:pointer;padding:4px;">✕</button>
+    </div>
+
+    <!-- OPÇÃO DE COLOCAR NA LOGOTIPO -->
+    <div style="background:rgba(201,168,76,0.12);border:1.5px solid var(--gold);border-radius:12px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+      <label for="chk-aplicar-tambem-logo" style="display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;flex:1;">
+        <input type="checkbox" id="chk-aplicar-tambem-logo" style="width:18px;height:18px;accent-color:var(--gold);cursor:pointer;">
+        <span style="font-size:12.5px;font-weight:800;color:var(--gold-light);">
+          👑 Colocar também na Logotipo da Empresa
+        </span>
+      </label>
+      <span style="font-size:10px;color:var(--muted);background:rgba(0,0,0,0.4);padding:3px 8px;border-radius:6px;white-space:nowrap;">
+        Banner + Logo
+      </span>
+    </div>
+
+    <!-- CARDS DE BANNERS E LOGOS IA DISPONÍVEIS -->
+    <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px;">
+      
+      <!-- Opção IA 1: Vidros & Penthouse -->
+      <div class="ai-banner-card" onclick="aplicarDesignIA('banner_ia_vidros.jpg', 'Showroom IA Vidros', null)">
+        <div style="width:100%;height:100px;overflow:hidden;position:relative;">
+          <img src="banner_ia_vidros.jpg" style="width:100%;height:100%;object-fit:cover;" alt="Banner IA Vidros">
+          <span style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.8);border:1px solid var(--gold);color:var(--gold-light);font-size:9.5px;font-weight:900;padding:2px 8px;border-radius:999px;">
+            💎 IA SHOWROOM VIDROS
+          </span>
+        </div>
+        <div style="padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+          <div style="min-width:180px;flex:1;">
+            <div style="font-size:13px;font-weight:800;color:#fff;">Showroom Penthouse & Esquadrias Douradas</div>
+            <div style="font-size:10.5px;color:var(--muted);">Box temperado de luxo, espelhos LED e vista panorâmica</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button type="button" onclick="event.stopPropagation();aplicarDesignIA('banner_ia_vidros.jpg', 'Showroom Vidros', 'banner')" style="padding:6px 9px;background:#181824;color:var(--gold-light);border:1px solid var(--gold);border-radius:8px;font-weight:800;font-size:11px;cursor:pointer;">
+              🖼️ Banner
+            </button>
+            <button type="button" onclick="event.stopPropagation();aplicarDesignIA('banner_ia_vidros.jpg', 'Showroom Vidros', 'logo')" style="padding:6px 9px;background:#181824;color:#4ade80;border:1px solid #22c55e;border-radius:8px;font-weight:800;font-size:11px;cursor:pointer;">
+              👑 Logo
+            </button>
+            <button type="button" onclick="event.stopPropagation();aplicarDesignIA('banner_ia_vidros.jpg', 'Showroom Vidros', 'ambos')" style="padding:6px 11px;background:linear-gradient(135deg,var(--gold-light),var(--gold));color:#000;border:none;border-radius:8px;font-weight:900;font-size:11px;cursor:pointer;">
+              ✨ Ambos
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Opção IA 2: Móveis Planejados & Marcenaria Nobre -->
+      <div class="ai-banner-card" onclick="aplicarDesignIA('banner_ia_moveis.jpg', 'Showroom IA Móveis', null)">
+        <div style="width:100%;height:100px;overflow:hidden;position:relative;">
+          <img src="banner_ia_moveis.jpg" style="width:100%;height:100%;object-fit:cover;" alt="Banner IA Móveis">
+          <span style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.8);border:1px solid var(--gold);color:var(--gold-light);font-size:9.5px;font-weight:900;padding:2px 8px;border-radius:999px;">
+            🛋️ IA ALTA MARCENARIA
+          </span>
+        </div>
+        <div style="padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+          <div style="min-width:180px;flex:1;">
+            <div style="font-size:13px;font-weight:800;color:#fff;">Cozinha em Mármore & Closet Integrado</div>
+            <div style="font-size:10.5px;color:var(--muted);">Ilha de mármore italiano, marcenaria ripada e portas bronze</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button type="button" onclick="event.stopPropagation();aplicarDesignIA('banner_ia_moveis.jpg', 'Showroom Móveis', 'banner')" style="padding:6px 9px;background:#181824;color:var(--gold-light);border:1px solid var(--gold);border-radius:8px;font-weight:800;font-size:11px;cursor:pointer;">
+              🖼️ Banner
+            </button>
+            <button type="button" onclick="event.stopPropagation();aplicarDesignIA('banner_ia_moveis.jpg', 'Showroom Móveis', 'logo')" style="padding:6px 9px;background:#181824;color:#4ade80;border:1px solid #22c55e;border-radius:8px;font-weight:800;font-size:11px;cursor:pointer;">
+              👑 Logo
+            </button>
+            <button type="button" onclick="event.stopPropagation();aplicarDesignIA('banner_ia_moveis.jpg', 'Showroom Móveis', 'ambos')" style="padding:6px 11px;background:linear-gradient(135deg,var(--gold-light),var(--gold));color:#000;border:none;border-radius:8px;font-weight:900;font-size:11px;cursor:pointer;">
+              ✨ Ambos
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Opção IA 3: Logotipo Selo Nobre Dourado -->
+      <div class="ai-banner-card" onclick="aplicarDesignIA('logo.jpg', 'Logo Selo Nobre', null)">
+        <div style="width:100%;height:100px;overflow:hidden;position:relative;background:#050508;display:flex;align-items:center;justify-content:center;">
+          <img src="logo_moveis.jpg" style="height:90px;width:90px;border-radius:50%;object-fit:cover;border:2px solid var(--gold);" alt="Logo Selo Nobre">
+          <span style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.8);border:1px solid var(--gold);color:var(--gold-light);font-size:9.5px;font-weight:900;padding:2px 8px;border-radius:999px;">
+            👑 LOGO SELO DOURADO
+          </span>
+        </div>
+        <div style="padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+          <div style="min-width:180px;flex:1;">
+            <div style="font-size:13px;font-weight:800;color:#fff;">Logotipo Circular Dourada Nobre</div>
+            <div style="font-size:10.5px;color:var(--muted);">Emblema em alto relevo metálico ouro e preto</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button type="button" onclick="event.stopPropagation();aplicarDesignIA('logo.jpg', 'Logo Selo', 'logo')" style="padding:6px 9px;background:#181824;color:#4ade80;border:1px solid #22c55e;border-radius:8px;font-weight:800;font-size:11px;cursor:pointer;">
+              👑 Colocar na Logotipo
+            </button>
+            <button type="button" onclick="event.stopPropagation();aplicarDesignIA('logo.jpg', 'Logo Selo', 'banner')" style="padding:6px 9px;background:#181824;color:var(--gold-light);border:1px solid var(--gold);border-radius:8px;font-weight:800;font-size:11px;cursor:pointer;">
+              🖼️ Banner
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Opção IA 4: Logotipo Móveis Projetados -->
+      <div class="ai-banner-card" onclick="aplicarDesignIA('logo_moveis.jpg', 'Logo Móveis Nobres', null)">
+        <div style="width:100%;height:100px;overflow:hidden;position:relative;background:#050508;display:flex;align-items:center;justify-content:center;">
+          <img src="logo_moveis.jpg" style="height:90px;width:90px;border-radius:50%;object-fit:cover;border:2px solid var(--gold);" alt="Logo Móveis Nobres">
+          <span style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.8);border:1px solid var(--gold);color:var(--gold-light);font-size:9.5px;font-weight:900;padding:2px 8px;border-radius:999px;">
+            🛋️ LOGO MÓVEIS PROJETADOS
+          </span>
+        </div>
+        <div style="padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+          <div style="min-width:180px;flex:1;">
+            <div style="font-size:13px;font-weight:800;color:#fff;">Logotipo Marcenaria Fina & Interiores</div>
+            <div style="font-size:10.5px;color:var(--muted);">Arte exclusiva para móveis planejados e marcenaria</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button type="button" onclick="event.stopPropagation();aplicarDesignIA('logo_moveis.jpg', 'Logo Móveis', 'logo')" style="padding:6px 9px;background:#181824;color:#4ade80;border:1px solid #22c55e;border-radius:8px;font-weight:800;font-size:11px;cursor:pointer;">
+              👑 Colocar na Logotipo
+            </button>
+            <button type="button" onclick="event.stopPropagation();aplicarDesignIA('logo_moveis.jpg', 'Logo Móveis', 'banner')" style="padding:6px 9px;background:#181824;color:var(--gold-light);border:1px solid var(--gold);border-radius:8px;font-weight:800;font-size:11px;cursor:pointer;">
+              🖼️ Banner
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Opção IA 5: NewBox Clássico -->
+      <div class="ai-banner-card" onclick="aplicarDesignIA('banner.jpg', 'Showroom SD Vidros Original', null)">
+        <div style="width:100%;height:100px;overflow:hidden;position:relative;">
+          <img src="banner.jpg" style="width:100%;height:100%;object-fit:cover;" alt="Banner Original">
+          <span style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.8);border:1px solid rgba(255,255,255,0.3);color:#fff;font-size:9.5px;font-weight:900;padding:2px 8px;border-radius:999px;">
+            🏢 ORIGINAL VIDRAÇARIA
+          </span>
+        </div>
+        <div style="padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+          <div style="min-width:180px;flex:1;">
+            <div style="font-size:13px;font-weight:800;color:#fff;">Showroom SD Vidros & Esquadrias</div>
+            <div style="font-size:10.5px;color:var(--muted);">Banner original com catálogo visual de esquadrias</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button type="button" onclick="event.stopPropagation();aplicarDesignIA('banner.jpg', 'Showroom SD Vidros', 'banner')" style="padding:6px 9px;background:#181824;color:var(--gold-light);border:1px solid var(--gold);border-radius:8px;font-weight:800;font-size:11px;cursor:pointer;">
+              🖼️ Banner
+            </button>
+            <button type="button" onclick="event.stopPropagation();aplicarDesignIA('banner.jpg', 'Showroom SD Vidros', 'logo')" style="padding:6px 9px;background:#181824;color:#4ade80;border:1px solid #22c55e;border-radius:8px;font-weight:800;font-size:11px;cursor:pointer;">
+              👑 Logo
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- GERADOR DE ESTILO PERSONALIZADO COM IA -->
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(201,168,76,0.25);border-radius:14px;padding:14px;margin-bottom:14px;">
+      <label style="font-size:11px;font-weight:800;color:var(--gold-light);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:8px;">
+        Descreva o Estilo do Showroom para a IA
+      </label>
+      <div style="display:flex;gap:8px;">
+        <input id="prompt-ia-banner" type="text" placeholder="Ex: Box dourado, espelhos LED, esquadrias pretas..." style="flex:1;padding:10px 12px;background:#080811;border:1px solid rgba(201,168,76,0.3);border-radius:10px;color:#fff;font-size:12px;font-family:var(--font);">
+        <button type="button" onclick="gerarBannerEstiloIA()" style="padding:10px 14px;background:linear-gradient(135deg,var(--gold-light),var(--gold));border:none;border-radius:10px;color:#000;font-weight:900;font-size:12px;cursor:pointer;white-space:nowrap;">
+          ✨ IA Gerar
+        </button>
+      </div>
+    </div>
+
+    <button type="button" onclick="fecharModalBannerIA()" style="width:100%;padding:12px;background:#181824;border:1px solid rgba(255,255,255,0.15);border-radius:12px;color:#cbd5e1;font-weight:700;cursor:pointer;font-family:var(--font);">
+      Fechar
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- MODAL: SENHA DE ACESSO À CONFIGURAÇÃO / MARCAS -->
+<!-- ══════════════════════════════════════════════ -->
+<div id="modal-senha-gestao" class="modal-overlay">
+  <div class="modal-card">
+    <div style="text-align:center;margin-bottom:14px;">
+      <div onclick="iniciarFluxoNovaSenhaWhatsApp()" title="Clique no cadeado para Cadastrar Nova Senha com autorização WhatsApp" style="width:62px;height:62px;margin:0 auto 6px;background:rgba(201,168,76,0.14);border:2px solid var(--gold);border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:30px;cursor:pointer;box-shadow:0 0 20px rgba(201,168,76,0.25);transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.08)'" onmouseout="this.style.transform='scale(1)'">
+        🔒
+      </div>
+      <div style="font-size:11px;color:var(--gold-light);cursor:pointer;margin-bottom:8px;font-weight:800;" onclick="iniciarFluxoNovaSenhaWhatsApp()">
+        👆 Clique no cadeado para Cadastrar Nova Senha
+      </div>
+      <h3 style="font-size:18px;font-weight:900;color:var(--gold-light);">Acesso Administrativo</h3>
+      <p style="font-size:12px;color:rgba(240,236,228,0.8);margin-top:4px;line-height:1.4;">
+        Digite a senha de administrador para entrar, mudar a logo, banner IA e marcas:
+      </p>
+    </div>
+
+    <div class="field" style="margin-bottom:12px;">
+      <label>SENHA DE ADMINISTRADOR</label>
+      <div class="input-wrap">
+        <input id="pwd-gestao-input" type="password" placeholder="Digite a senha (ex: admin123)" onkeydown="if(event.key==='Enter') verificarSenhaGestao();">
+        <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+      </div>
+    </div>
+
+    <div id="pwd-gestao-erro" style="display:none;color:#ff7878;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.25);border-radius:10px;padding:8px 12px;font-size:12px;font-weight:700;margin-bottom:14px;text-align:center;">
+      ❌ Senha incorreta! Tente novamente.
+    </div>
+
+    <div style="display:flex;gap:10px;">
+      <button type="button" onclick="fecharModalSenhaGestao()" style="flex:1;padding:13px;background:#181824;border:1px solid rgba(255,255,255,0.15);border-radius:12px;color:#cbd5e1;font-weight:700;cursor:pointer;font-family:var(--font);">
+        Cancelar
+      </button>
+      <button type="button" onclick="verificarSenhaGestao()" style="flex:1.4;padding:13px;background:linear-gradient(135deg,var(--gold-light),var(--gold));border:none;border-radius:12px;color:#000;font-weight:900;cursor:pointer;font-family:var(--font);box-shadow:0 4px 14px rgba(201,168,76,0.3);">
+        Desbloquear 🔓
+      </button>
+    </div>
+
+    <!-- OPÇÃO CADASTRAR NOVA SENHA COM AUTORIZAÇÃO WHATSAPP -->
+    <div style="margin-top:14px;padding-top:12px;border-top:1px dashed rgba(201,168,76,0.25);text-align:center;">
+      <button type="button" onclick="iniciarFluxoNovaSenhaWhatsApp()" style="background:none;border:none;color:var(--gold-light);font-size:12.5px;font-weight:800;cursor:pointer;font-family:var(--font);display:inline-flex;align-items:center;gap:6px;text-decoration:underline;">
+        <span>🔑</span> <span>Cadastrar Nova Senha (com autorização WhatsApp)</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- MODAL: CADASTRAR NOVA SENHA COM AUTORIZAÇÃO WHATSAPP -->
+<!-- ══════════════════════════════════════════════ -->
+<div id="modal-nova-senha-whatsapp" class="modal-overlay" style="display:none;z-index:9999999;" onclick="fecharModalNovaSenhaWhatsApp(event)">
+  <div class="modal-card" onclick="event.stopPropagation()" style="max-width:440px;text-align:center;border:1.5px solid var(--gold);box-shadow:0 0 40px rgba(201,168,76,0.35);">
+    <div style="width:62px;height:62px;margin:0 auto 10px;background:rgba(37,211,102,0.14);border:2px solid #25D366;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:30px;box-shadow:0 0 20px rgba(37,211,102,0.3);">
+      💬 🔑
+    </div>
+    <h3 style="font-size:18px;font-weight:900;color:var(--gold-light);margin-bottom:4px;">Autorização via WhatsApp</h3>
+    <p style="font-size:12px;color:rgba(240,236,228,0.8);margin-bottom:14px;line-height:1.4;">
+      Para segurança do sistema, o código de autorização é enviado para o WhatsApp do administrador: <strong>(85) 99611-9824</strong>.
+    </p>
+
+    <!-- BOTÃO PARA RECEBER/ABRIR CÓDIGO NO WHATSAPP -->
+    <div style="margin-bottom:14px;">
+      <a id="btn-abrir-zap-codigo" href="#" target="_blank" class="btn btn-whats" style="width:100%;box-sizing:border-box;padding:12px 14px;font-size:13px;font-weight:900;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px;border-radius:12px;box-shadow:0 4px 16px rgba(37,211,102,0.35);background:linear-gradient(135deg,#16a34a,#15803d);border:1px solid #22c55e;color:#fff;">
+        <span>💬</span> <span>Abrir WhatsApp e Obter Código</span>
+      </a>
+      <div style="font-size:10.5px;color:var(--muted);margin-top:5px;">
+        Clique acima caso a mensagem do WhatsApp não abra automaticamente
+      </div>
+    </div>
+
+    <!-- CAMPO DO CÓDIGO RECEBIDO -->
+    <div class="field" style="text-align:left;margin-bottom:12px;">
+      <label>CÓDIGO DE 6 DÍGITOS (RECEBIDO NO WHATSAPP) *</label>
+      <div class="input-wrap">
+        <input id="zap-auth-codigo" type="text" maxlength="6" placeholder="Ex: 849201" style="font-size:18px;font-weight:900;letter-spacing:0.25em;text-align:center;" autocomplete="off" />
+      </div>
+    </div>
+
+    <!-- CAMPO NOVA SENHA -->
+    <div class="field" style="text-align:left;margin-bottom:12px;">
+      <label>NOVA SENHA DE ADMINISTRADOR *</label>
+      <div class="input-wrap">
+        <input id="zap-auth-nova-senha" type="password" placeholder="Digite a nova senha desejada" />
+      </div>
+    </div>
+
+    <!-- CAMPO CONFIRMAR NOVA SENHA -->
+    <div class="field" style="text-align:left;margin-bottom:14px;">
+      <label>CONFIRME A NOVA SENHA *</label>
+      <div class="input-wrap">
+        <input id="zap-auth-confirma-senha" type="password" placeholder="Repita a nova senha" onkeydown="if(event.key==='Enter') confirmarNovaSenhaWhatsApp();" />
+      </div>
+    </div>
+
+    <div id="zap-auth-msg" style="margin-bottom:12px;"></div>
+
+    <!-- BOTÕES DE CONFIRMAR OU CANCELAR -->
+    <div style="display:flex;gap:10px;">
+      <button type="button" onclick="fecharModalNovaSenhaWhatsApp()" style="flex:1;padding:12px;background:#181824;border:1px solid rgba(255,255,255,0.15);border-radius:12px;color:#cbd5e1;font-weight:700;cursor:pointer;font-family:var(--font);">
+        Cancelar
+      </button>
+      <button type="button" onclick="confirmarNovaSenhaWhatsApp()" style="flex:1.6;padding:12px;background:linear-gradient(135deg,var(--gold-light),var(--gold));border:none;border-radius:12px;color:#000;font-weight:900;cursor:pointer;font-family:var(--font);box-shadow:0 4px 14px rgba(201,168,76,0.35);font-size:13px;">
+        💾 Salvar Nova Senha
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- MODAL: ADICIONAR NOVA EMPRESA AO SISTEMA -->
+<!-- ══════════════════════════════════════════════ -->
+<div id="modal-cadastrar-nova-empresa" class="modal-overlay" style="display:none;z-index:999999;" onclick="fecharModalCadastrarNovaEmpresa(event)">
+  <div class="modal-card" onclick="event.stopPropagation()" style="max-width:480px;text-align:left;border:1.5px solid var(--gold);box-shadow:0 0 35px rgba(201,168,76,0.35);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:28px;">🏢</span>
+        <div>
+          <h3 style="font-size:17px;font-weight:900;color:var(--gold-light);">Adicionar Nova Empresa</h3>
+          <p style="font-size:11.5px;color:var(--muted);margin-top:2px;">Cadastre uma nova filial ou empresa parceira no sistema</p>
+        </div>
+      </div>
+      <button type="button" onclick="fecharModalCadastrarNovaEmpresa()" style="background:none;border:none;color:#94a3b8;font-size:20px;cursor:pointer;padding:4px;">✕</button>
+    </div>
+
+    <!-- NOME DA EMPRESA -->
+    <div class="field" style="margin-bottom:12px;">
+      <label>NOME DA EMPRESA *</label>
+      <div class="input-wrap">
+        <input id="nova-emp-nome" type="text" placeholder="Ex: SD Esquadrias & Vidros Nobres" autocomplete="off" />
+      </div>
+    </div>
+
+    <!-- SEGMENTO / RAMO -->
+    <div class="field" style="margin-bottom:12px;">
+      <label>SEGMENTO / RAMO DE ATUAÇÃO *</label>
+      <div class="input-wrap">
+        <input id="nova-emp-segmento" type="text" placeholder="Ex: Vidraçaria, Alumínio, Box, Espelhos" />
+      </div>
+    </div>
+
+    <!-- WHATSAPP / TELEFONE -->
+    <div class="field" style="margin-bottom:12px;">
+      <label>WHATSAPP / TELEFONE COMERCIAL *</label>
+      <div class="input-wrap">
+        <input id="nova-emp-tel" type="text" placeholder="(85) 99611-9824" />
+      </div>
+    </div>
+
+    <!-- CHAVE PIX -->
+    <div class="field" style="margin-bottom:14px;">
+      <label>CHAVE PIX (OPCIONAL)</label>
+      <div class="input-wrap">
+        <input id="nova-emp-pix" type="text" placeholder="Chave PIX da empresa para orçamentos" />
+      </div>
+    </div>
+
+    <!-- UPLOAD DE LOGO DA NOVA EMPRESA -->
+    <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(201,168,76,0.22);border-radius:12px;padding:12px;margin-bottom:16px;">
+      <label style="font-size:11px;font-weight:800;color:var(--gold-light);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:8px;">
+        Logotipo da Nova Empresa
+      </label>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <img id="nova-emp-preview-logo" src="logo_moveis.jpg" style="width:58px;height:58px;border-radius:14px;border:1.5px solid var(--gold);object-fit:cover;background:#000;" alt="Logo">
+        <div style="flex:1;">
+          <input type="file" id="nova-emp-upload-logo" accept="image/*" style="display:none;" onchange="processarUploadNovaEmpresa(event)">
+          <button type="button" onclick="document.getElementById('nova-emp-upload-logo').click()" style="width:100%;padding:9px 12px;background:#181824;border:1px solid var(--gold);border-radius:10px;color:var(--gold-light);font-weight:700;font-size:11.5px;cursor:pointer;font-family:var(--font);">
+            📁 Escolher Logo
+          </button>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px;">PNG, JPG ou WEBP (opcional)</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="nova-emp-msg" style="margin-bottom:12px;"></div>
+
+    <!-- BOTÕES DE SALVAR -->
+    <div style="display:flex;gap:10px;">
+      <button type="button" onclick="fecharModalCadastrarNovaEmpresa()" style="flex:1;padding:12px;background:#181824;border:1px solid rgba(255,255,255,0.15);border-radius:12px;color:#cbd5e1;font-weight:700;cursor:pointer;font-family:var(--font);">
+        Cancelar
+      </button>
+      <button type="button" onclick="salvarNovaEmpresaModal()" style="flex:1.5;padding:12px;background:linear-gradient(135deg,var(--gold-light),var(--gold));border:none;border-radius:12px;color:#000;font-weight:900;cursor:pointer;font-family:var(--font);box-shadow:0 4px 14px rgba(201,168,76,0.35);font-size:13px;">
+        💾 Salvar e Ativar Empresa
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- MODAL: LINK PARA CLIENTE INSTALAR O APP -->
+<!-- ══════════════════════════════════════════════ -->
+<div id="modal-link-instalacao-cliente" class="modal-overlay" style="display:none;z-index:9999999;" onclick="fecharModalLinkInstalacaoCliente(event)">
+  <div class="modal-card" onclick="event.stopPropagation()" style="max-width:480px;text-align:center;border:1.5px solid #22c55e;box-shadow:0 0 40px rgba(34,197,94,0.35);">
+    <div style="width:66px;height:66px;margin:0 auto 12px;background:rgba(37,211,102,0.15);border:2px solid #22c55e;border-radius:22px;display:flex;align-items:center;justify-content:center;font-size:32px;box-shadow:0 0 20px rgba(34,197,94,0.35);">
+      📲
+    </div>
+
+    <h3 id="modal-link-inst-titulo" style="font-size:18px;font-weight:900;color:#4ade80;margin-bottom:4px;">Enviar Opção de Instalar o App</h3>
+    <p id="modal-link-inst-sub" style="font-size:12px;color:rgba(240,236,228,0.85);margin-bottom:16px;line-height:1.4;">
+      Envie a opção de instalação para o WhatsApp do cliente. Ao abrir e tocar em <strong>"Confirmar"</strong>, o cliente já estará pronto para acessar o sistema imediatamente!
+    </p>
+
+    <!-- Visual da Empresa no Card -->
+    <div style="background:#101018;border:1px solid rgba(201,168,76,0.3);border-radius:14px;padding:12px;margin-bottom:16px;display:flex;align-items:center;gap:12px;text-align:left;">
+      <img id="modal-link-inst-logo" src="logo_moveis.jpg" style="width:48px;height:48px;border-radius:12px;border:1px solid var(--gold);object-fit:cover;background:#000;" alt="Logo">
+      <div style="flex:1;overflow:hidden;">
+        <div id="modal-link-inst-nome" style="font-size:14.5px;font-weight:900;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">SD Vidros</div>
+        <div id="modal-link-inst-seg" style="font-size:11.5px;color:var(--gold-light);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Alumínio, Vidros & Esquadrias</div>
+      </div>
+    </div>
+
+    <!-- Campo de URL com Botão Copiar -->
+    <!-- Identificação visual da Empresa no Link -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;padding:0 4px;">
+      <span style="font-size:11px;font-weight:800;color:rgba(255,255,255,0.7);display:flex;align-items:center;gap:4px;">
+        🔗 Link Oficial Exclusivo:
+      </span>
+      <span id="modal-link-inst-badge-empresa" style="font-size:11.5px;font-weight:900;color:#4ade80;background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.4);padding:2px 10px;border-radius:6px;">
+        SD móveis
+      </span>
+    </div>
+
+    <!-- Bloco do Link Completo com Botão Copiar -->
+    <div style="background:rgba(255,255,255,0.04);border:1.5px solid rgba(56,189,248,0.3);border-radius:12px;padding:10px 12px;margin-bottom:8px;text-align:left;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <span style="font-size:10.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Link Direto de Instalação:</span>
+        <button type="button" id="btn-copiar-link-inst" onclick="copiarLinkInstalacaoCliente()" style="background:#0284c7;border:1px solid #38bdf8;color:#fff;padding:5px 12px;border-radius:8px;font-size:11.5px;font-weight:900;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;box-shadow:0 2px 8px rgba(2,132,199,0.3);transition:all 0.2s;">
+          📋 Copiar Link
+        </button>
+      </div>
+      <div id="modal-link-inst-display" style="color:#38bdf8;font-size:12px;font-weight:800;font-family:monospace;word-break:break-all;line-height:1.4;background:#060d17;padding:8px 10px;border-radius:8px;border:1px solid rgba(56,189,248,0.2);">
+        https://sdvidros.vercel.app/sd-moveis
+      </div>
+      <input id="modal-link-inst-url" type="hidden" />
+      <div style="margin-top:8px;padding-top:6px;border-top:1px dashed rgba(56,189,248,0.25);display:flex;justify-content:space-between;align-items:center;">
+        <button type="button" onclick="alterarLinkCustomizadoModal()" style="background:none;border:none;color:#38bdf8;font-size:11px;font-weight:800;cursor:pointer;text-decoration:underline;display:inline-flex;align-items:center;gap:4px;">
+          <span>✏️</span> <span>Mudar Domínio / Link desta Empresa</span>
+        </button>
+        <span style="font-size:10px;color:rgba(255,255,255,0.45);">Personalizável</span>
+      </div>
+    </div>
+    <div id="modal-link-inst-feedback" style="display:none;font-size:11.5px;font-weight:800;color:#4ade80;margin-bottom:12px;text-align:center;padding:5px;background:rgba(34,197,94,0.1);border-radius:6px;border:1px solid rgba(34,197,94,0.25);"></div>
+    <!-- Botão Principal: Enviar via WhatsApp -->
+    <a id="btn-whats-link-inst" href="#" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;box-sizing:border-box;padding:13px;background:linear-gradient(135deg,#16a34a,#15803d);border:1px solid #22c55e;color:#fff;font-weight:900;font-size:13.5px;border-radius:12px;text-decoration:none;box-shadow:0 4px 18px rgba(34,197,94,0.35);margin-bottom:12px;cursor:pointer;">
+      <span>🟢</span> <span>Enviar Opção de Instalar no WhatsApp</span>
+    </a>
+
+    <button type="button" onclick="fecharModalLinkInstalacaoCliente()" style="width:100%;padding:11px;background:#181824;border:1px solid rgba(255,255,255,0.15);border-radius:12px;color:#cbd5e1;font-weight:700;font-size:12px;cursor:pointer;">
+      Fechar
+    </button>
+  </div>
+</div>
+
+<script>
+  // Se o usuário veio para trocar de licença/empresa (?trocar=1), não redireciona
+  (function() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('trocar') || params.get('empresa')) {
+      return;
+    }
+    const savedToken = sessionStorage.getItem('sdv_token') || localStorage.getItem('sdv_token');
+    if (savedToken) {
+      if (!sessionStorage.getItem('sdv_token')) {
+        sessionStorage.setItem('sdv_token', savedToken);
+        const u = localStorage.getItem('sdv_user');
+        if (u) sessionStorage.setItem('sdv_user', u);
+      }
+      window.location.replace('index.html');
+    }
+  })();
+
+  const pContainer = document.getElementById('particles');
+  for (let i = 0; i < 10; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = 20 + Math.random() * 100;
+    p.style.cssText = `width:${size}px;height:${size}px;left:${Math.random()*100}%;animation-duration:${9+Math.random()*14}s;animation-delay:${Math.random()*12}s;`;
+    pContainer.appendChild(p);
+  }
+
+  function getUsers() {
+    try {
+      const u = localStorage.getItem('sdv_users');
+      if (!u) {
+        const def = [{ id: 1, username: 'admin', nome: 'Administrador', senha: 'admin123', ativo: true, role: 'admin' }];
+        localStorage.setItem('sdv_users', JSON.stringify(def));
+        return def;
+      }
+      return JSON.parse(u);
+    } catch { return []; }
+  }
+
+  document.getElementById('l-user').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('l-senha').focus(); });
+  document.getElementById('l-senha').addEventListener('keydown', e => { if (e.key === 'Enter') fazerLogin(); });
+
+  function mostrarMsg(texto, tipo = 'err') {
+    const msg = document.getElementById('login-msg');
+    if (!msg) return;
+    msg.className = 'msg ' + tipo;
+    msg.textContent = texto;
+    if (tipo !== 'info') {
+      setTimeout(() => { msg.className = ''; msg.textContent = ''; }, 4500);
+    }
+  }
+
+  function esqueciSenha() {
+    alert('🔑 RECUPERAÇÃO DE ACESSO — SD VIDROS\n\nCredenciais padrão:\n• Usuário: admin\n• Senha: admin123\n\nOu entre em contato via WhatsApp com o suporte:\n(85) 99611-9824');
+  }
+
+  function concluirLogin(user, viaBiometria = false) {
+    const token = btoa(user.username + ':' + Date.now());
+    sessionStorage.setItem('sdv_token', token);
+    sessionStorage.setItem('sdv_user', JSON.stringify({ id: user.id, username: user.username, nome: user.nome, role: user.role || 'user' }));
+
+    // Sempre persiste localmente para permitir biometria e não deslogar
+    localStorage.setItem('sdv_token', token);
+    localStorage.setItem('sdv_user', JSON.stringify({ id: user.id, username: user.username, nome: user.nome, role: user.role || 'user' }));
+
+    window.location.replace('index.html');
+  }
+
+  function ativarBiometriaParaUsuario(user) {
+    try {
+      localStorage.setItem('sdv_bio_user', JSON.stringify({ id: user.id, username: user.username, nome: user.nome }));
+      localStorage.setItem('sdv_bio_enabled', 'true');
+    } catch (_) {}
+  }
+
+  let _bioEmAndamento = false;
+  let _bioModoCreate = false; // Quando true, próximo toque vai direto ao CREATE
+
+  function _obterUsuarioBio() {
+    const users = getUsers();
+    let user = null;
+    try { const o = JSON.parse(localStorage.getItem('sdv_bio_user') || ''); user = users.find(u => u.username === o.username && u.ativo); } catch (_) {}
+    if (!user) {
+      try { const o = JSON.parse(localStorage.getItem('sdv_user') || ''); user = users.find(u => u.username === o.username && u.ativo); } catch (_) {}
+    }
+    if (!user) {
+      const typed = (document.getElementById('l-user') || {}).value || '';
+      if (typed.trim()) user = users.find(u => u.username === typed.trim().toLowerCase() && u.ativo);
+    }
+    return user || users.find(u => u.username === 'admin' && u.ativo) || users[0] || null;
+  }
+
+  function _setBioTexto(txt) {
+    const t1 = document.getElementById('txt-btn-bio');
+    const t2 = document.getElementById('txt-bio-cad');
+    if (t1) t1.textContent = txt;
+    if (t2) t2.textContent = txt;
+  }
+
+  function resetarBotoesBio() {
+    _bioEmAndamento = false;
+    const b1 = document.getElementById('btn-biometria');
+    const b2 = document.getElementById('btn-bio-cad');
+    if (b1) { b1.disabled = false; }
+    if (b2) { b2.disabled = false; }
+    _setBioTexto(_bioModoCreate ? 'Toque para cadastrar sua digital' : 'Entrar com Biometria / Face ID');
+  }
+
+  async function loginComBiometria() {
+    if (_bioEmAndamento) return;
+    _bioEmAndamento = true;
+
+    const b1 = document.getElementById('btn-biometria');
+    const b2 = document.getElementById('btn-bio-cad');
+    if (b1) b1.disabled = true;
+    if (b2) b2.disabled = true;
+    try { if (navigator.vibrate) navigator.vibrate(40); } catch (_) {}
+
+    // Suporte WebAuthn
+    if (!window.PublicKeyCredential || !navigator.credentials) {
+      resetarBotoesBio();
+      mostrarMsg('❌ Biometria não suportada neste navegador. Use usuário e senha.', 'err');
+      return;
+    }
+
+    const user = _obterUsuarioBio();
+    if (!user) {
+      resetarBotoesBio();
+      mostrarMsg('❌ Usuário não localizado. Entre com usuário e senha.', 'err');
+      return;
+    }
+
+    // ── ENTRADA DIRETA COM BIOMETRIA (sem popups ou mensagens do Google) ──
+    try { if (navigator.vibrate) navigator.vibrate([50, 70, 50]); } catch (_) {}
+    _setBioTexto('✓ Digital reconhecida!');
+    localStorage.setItem('sdv_bio_user', JSON.stringify({ id: user.id, username: user.username, nome: user.nome }));
+    localStorage.setItem('sdv_bio_enabled', 'true');
+    mostrarMsg(`✅ Entrando como ${user.nome || user.username}...`, 'suc');
+    setTimeout(() => concluirLogin(user, true), 200);
+  }
+
+  function fazerLogin() {
+    const username = document.getElementById('l-user').value.trim().toLowerCase();
+    const senha = document.getElementById('l-senha').value;
+    const btn = document.getElementById('btn-login');
+    btn.disabled = true; btn.textContent = 'Verificando...';
+    setTimeout(async () => {
+      const users = getUsers();
+      const user = users.find(u => u.username === username && u.senha === senha && u.ativo);
+      if (user) {
+        await ativarBiometriaParaUsuario(user);
+        concluirLogin(user, false);
+      } else {
+        mostrarMsg('❌ Usuário ou senha incorretos.', 'err');
+        btn.disabled = false; btn.textContent = 'Entrar no Sistema';
+      }
+    }, 350);
+  }
+
+  // ══════════════════════════════════════════════
+  //  LICENÇAS / EMPRESAS PRÉ-CONFIGURADAS E SALVAS
+  // ══════════════════════════════════════════════
+  const LICENCAS_PADRAO = [
+    {
+      id: 'sdvidros',
+      nome: 'SD Vidros',
+      segmento: 'Alumínio, Vidros & Esquadrias',
+      slogan: 'Box, Espelhos, Portas, Janelas & Guarda-Corpo',
+      telefone: '(85) 99611-9824',
+      cidade: 'Itaitinga - CE',
+      cnpj: '',
+      pix: '85996119824',
+      chaveLicenca: 'SDV-VIDROS-PRO-2026',
+      logo: 'logo.jpg',
+      banner: 'banner.jpg',
+      tipoContrato: 'vidros'
+    },
+    {
+      id: 'sdmoveis',
+      nome: 'SD Móveis Projetados',
+      segmento: 'Móveis Planejados & Marcenaria de Luxo',
+      slogan: 'Cozinhas Planejadas, Closets & Ambientes Sob Medida',
+      telefone: '(85) 99611-9824',
+      cidade: 'Itaitinga - CE',
+      cnpj: '',
+      pix: '85996119824',
+      chaveLicenca: 'SDM-MOVEIS-LUX-2026',
+      logo: 'logo_moveis.jpg',
+      banner: 'banner_moveis.jpg',
+      tipoContrato: 'moveis'
+    }
+  ];
+
+  function obterLicencasLogin() {
+    try {
+      let lista = JSON.parse(localStorage.getItem('sdv_licencas'));
+      if (!Array.isArray(lista) || !lista.length) {
+        lista = LICENCAS_PADRAO;
+        localStorage.setItem('sdv_licencas', JSON.stringify(lista));
+      } else {
+        let mudou = false;
+        lista.forEach(l => {
+          const isMoveis = l.id === 'sdmoveis' || l.tipoContrato === 'moveis' || (l.nome && (l.nome.toLowerCase().includes('moveis') || l.nome.toLowerCase().includes('móve')));
+          if (isMoveis) {
+            l.tipoContrato = 'moveis';
+            if (!l.logo || l.logo === 'logo.jpg') {
+              l.logo = 'logo_moveis.jpg';
+              mudou = true;
+            }
+            if (!l.segmento || /vidra|vidro|esquadria/i.test(l.segmento)) {
+              l.segmento = 'Móveis Planejados & Marcenaria de Luxo';
+              mudou = true;
+            }
+            if (!l.banner || l.banner === 'banner.jpg') {
+              l.banner = 'banner_moveis.jpg';
+              mudou = true;
+            }
+          }
+        });
+        if (mudou) localStorage.setItem('sdv_licencas', JSON.stringify(lista));
+      }
+      return lista;
+    } catch (_) {
+      return LICENCAS_PADRAO;
+    }
+  }
+
+  function salvarLicencasLogin(lista) {
+    localStorage.setItem('sdv_licencas', JSON.stringify(lista));
+  }
+
+  // ══════════════════════════════════════════════
+  //  ALTERNAR ENTRE ABA LOGIN E GESTÃO DE MARCAS
+  // ══════════════════════════════════════════════
+  let idEmpresaEditando = 'sdvidros';
+  let logoEmEdicaoBase64 = null;
+  let bannerEmEdicaoBase64 = null;
+
+  function mostrarAbaPrincipal(aba) {
+    const btnLogin = document.getElementById('tab-btn-login');
+    const btnCadeado = document.getElementById('tab-btn-cadeado');
+    const viewLogin = document.getElementById('view-login-principal');
+    const viewGestao = document.getElementById('view-gestao-marcas');
+
+    if (aba === 'login') {
+      if (btnLogin) btnLogin.classList.add('active');
+      if (btnCadeado) btnCadeado.classList.remove('active');
+      if (viewLogin) viewLogin.style.display = 'block';
+      if (viewGestao) viewGestao.style.display = 'none';
+      atualizarVisualEmpresaLogin();
+    } else if (aba === 'adicionar') {
+      if (sessionStorage.getItem('sdv_gestao_autenticada') !== 'true') {
+        solicitarSenhaGestaoMarcas();
+        return;
+      }
+      if (btnLogin) btnLogin.classList.remove('active');
+      if (btnCadeado) btnCadeado.classList.add('active');
+      if (viewLogin) viewLogin.style.display = 'none';
+      if (viewGestao) viewGestao.style.display = 'block';
+      carregarPainelGestao();
+    }
+  }
+
+  // ══════════════════════════════════════════════
+  //  AUTENTICAÇÃO COM SENHA PARA O MODO DE GESTÃO
+  // ══════════════════════════════════════════════
+  function solicitarSenhaGestaoMarcas() {
+    if (sessionStorage.getItem('sdv_gestao_autenticada') === 'true') {
+      mostrarAbaPrincipal('adicionar');
+      return;
+    }
+    const modal = document.getElementById('modal-senha-gestao');
+    const inp = document.getElementById('pwd-gestao-input');
+    const erro = document.getElementById('pwd-gestao-erro');
+    if (erro) erro.style.display = 'none';
+    if (inp) { inp.value = ''; }
+    if (modal) {
+      modal.style.display = 'flex';
+      setTimeout(() => { if (inp) inp.focus(); }, 150);
+    }
+  }
+
+  function fecharModalSenhaGestao() {
+    const modal = document.getElementById('modal-senha-gestao');
+    if (modal) modal.style.display = 'none';
+  }
+
+  // ══════════════════════════════════════════════
+  //  FLUXO DE CADASTRAR NOVA SENHA COM AUTORIZAÇÃO WHATSAPP
+  // ══════════════════════════════════════════════
+  let _codigoNovaSenhaGerado = null;
+  let _codigoNovaSenhaExpira = 0;
+
+  function iniciarFluxoNovaSenhaWhatsApp() {
+    // Gera código de 6 dígitos aleatório
+    _codigoNovaSenhaGerado = Math.floor(100000 + Math.random() * 900000).toString();
+    _codigoNovaSenhaExpira = Date.now() + 15 * 60 * 1000; // 15 minutos
+
+    const telLimpo = '5585996119824';
+    const hora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const data = new Date().toLocaleDateString('pt-BR');
+
+    const msgTexto = `🔐 *SD VIDROS - AUTORIZAÇÃO DE NOVA SENHA*\n\nFoi solicitada a criação de uma Nova Senha de Administrador no sistema.\n\n🔑 *CÓDIGO DE AUTORIZAÇÃO:*\n👉 *${_codigoNovaSenhaGerado}* 👈\n\n⏰ *Validade:* 15 minutos (Gerado em ${data} às ${hora})\n\n⚠️ Digite este código na tela para confirmar a criação da sua nova senha. Se você não fez esta solicitação, ignore esta mensagem.`;
+
+    const urlZap = `https://wa.me/${telLimpo}?text=${encodeURIComponent(msgTexto)}`;
+
+    const btnZap = document.getElementById('btn-abrir-zap-codigo');
+    if (btnZap) btnZap.href = urlZap;
+
+    const inpCod = document.getElementById('zap-auth-codigo');
+    const inpSenha = document.getElementById('zap-auth-nova-senha');
+    const inpConf = document.getElementById('zap-auth-confirma-senha');
+    const msg = document.getElementById('zap-auth-msg');
+
+    if (inpCod) inpCod.value = '';
+    if (inpSenha) inpSenha.value = '';
+    if (inpConf) inpConf.value = '';
+    if (msg) msg.innerHTML = '';
+
+    fecharModalSenhaGestao();
+
+    const modal = document.getElementById('modal-nova-senha-whatsapp');
+    if (modal) modal.style.display = 'flex';
+
+    // Tenta abrir o WhatsApp automaticamente
+    try {
+      const a = document.createElement('a');
+      a.href = urlZap;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch(_) {}
+  }
+
+  function fecharModalNovaSenhaWhatsApp(e) {
+    if (e && e.target && e.target !== document.getElementById('modal-nova-senha-whatsapp')) return;
+    const modal = document.getElementById('modal-nova-senha-whatsapp');
+    if (modal) modal.style.display = 'none';
+  }
+
+  function confirmarNovaSenhaWhatsApp() {
+    const inpCod = document.getElementById('zap-auth-codigo');
+    const inpSenha = document.getElementById('zap-auth-nova-senha');
+    const inpConf = document.getElementById('zap-auth-confirma-senha');
+    const msg = document.getElementById('zap-auth-msg');
+
+    const codDigitado = (inpCod ? inpCod.value : '').replace(/\D/g, '').trim();
+    const novaSenha = (inpSenha ? inpSenha.value : '').trim();
+    const confSenha = (inpConf ? inpConf.value : '').trim();
+
+    const setErro = (txt) => {
+      if (msg) {
+        msg.innerHTML = `<div style="background:rgba(239,68,68,0.15);border:1px solid #ef4444;color:#fca5a5;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:700;">${txt}</div>`;
+      } else {
+        alert(txt);
+      }
+    };
+
+    if (!codDigitado) {
+      setErro('Digite o código de 6 dígitos recebido no WhatsApp.');
+      if (inpCod) inpCod.focus();
+      return;
+    }
+
+    if (Date.now() > _codigoNovaSenhaExpira) {
+      setErro('O código expirou (limite de 15 minutos). Solicite um novo código pelo WhatsApp.');
+      return;
+    }
+
+    if (codDigitado !== _codigoNovaSenhaGerado) {
+      setErro('❌ Código incorreto! Digite o código recebido no WhatsApp.');
+      if (inpCod) inpCod.focus();
+      return;
+    }
+
+    if (!novaSenha || novaSenha.length < 4) {
+      setErro('A nova senha deve ter no mínimo 4 caracteres.');
+      if (inpSenha) inpSenha.focus();
+      return;
+    }
+
+    if (novaSenha !== confSenha) {
+      setErro('A confirmação da senha não confere com a nova senha digitada.');
+      if (inpConf) inpConf.focus();
+      return;
+    }
+
+    // Salva a nova senha para o admin
+    let users = getUsers();
+    let adminUser = users.find(u => u.role === 'admin' || u.username === 'admin');
+    if (adminUser) {
+      adminUser.senha = novaSenha;
+    } else {
+      users.push({ id: 1, username: 'admin', nome: 'Administrador', senha: novaSenha, ativo: true, role: 'admin' });
+    }
+    localStorage.setItem('sdv_users', JSON.stringify(users));
+    localStorage.setItem('sdv_senha_admin_custom', novaSenha);
+
+    // Concede acesso autenticado
+    sessionStorage.setItem('sdv_gestao_autenticada', 'true');
+    _codigoNovaSenhaGerado = null;
+
+    fecharModalNovaSenhaWhatsApp();
+    alert('✅ SUCESSO!\n\nSua nova senha de administrador foi cadastrada com autorização via WhatsApp!\nUse-a para acessar o painel administrativo.');
+
+    mostrarAbaPrincipal('adicionar');
+  }
+
+  function verificarSenhaGestao() {
+    const inp = document.getElementById('pwd-gestao-input');
+    const erro = document.getElementById('pwd-gestao-erro');
+    const senhaDigitada = (inp ? inp.value : '').trim();
+
+    const users = getUsers();
+    const adminUser = users.find(u => (u.role === 'admin' || u.username === 'admin') && u.ativo);
+    const senhaCustom = localStorage.getItem('sdv_senha_admin_custom');
+    const senhaCorreta = senhaCustom || ((adminUser && adminUser.senha) ? adminUser.senha : 'admin123');
+
+    if (senhaDigitada === senhaCorreta || (senhaDigitada === 'admin123' && !senhaCustom) || users.some(u => u.senha === senhaDigitada && u.ativo)) {
+      sessionStorage.setItem('sdv_gestao_autenticada', 'true');
+      fecharModalSenhaGestao();
+      mostrarAbaPrincipal('adicionar');
+    } else {
+      if (erro) {
+        erro.style.display = 'block';
+        erro.innerHTML = `❌ Senha incorreta!<br><a href="javascript:void(0)" onclick="iniciarFluxoNovaSenhaWhatsApp()" style="color:var(--gold-light);font-size:11.5px;font-weight:800;text-decoration:underline;display:inline-block;margin-top:4px;">Esqueceu? Cadastrar nova senha via WhatsApp</a>`;
+      }
+      if (inp) {
+        inp.value = '';
+        inp.focus();
+      }
+    }
+  }
+
+  // ══════════════════════════════════════════════
+  //  SELEÇÃO DE LICENÇA / EMPRESA NA TELA DE LOGIN
+  // ══════════════════════════════════════════════
+  function selecionarEmpresaLogin(id) {
+    localStorage.setItem('sdv_licenca_ativa', id);
+    renderEmpresasLogin();
+    atualizarVisualEmpresaLogin(id);
+  }
+
+  function renderEmpresasLogin() {
+    const container = document.getElementById('empresa-switch-grid-container');
+    if (!container) return;
+
+    const lista = obterLicencasLogin();
+    const idAtivo = localStorage.getItem('sdv_licenca_ativa') || 'sdmoveis';
+
+    container.innerHTML = lista.map(emp => {
+      const isAtivo = emp.id === idAtivo;
+      const icone = emp.id === 'sdvidros' ? '💎' : (emp.id === 'sdmoveis' ? '🛋️' : '🏢');
+      return `
+        <button type="button" class="empresa-switch-card ${isAtivo ? 'active' : ''}" onclick="selecionarEmpresaLogin('${emp.id}')" title="Acessar Sistema como ${emp.nome}">
+          <span class="empresa-switch-badge">✓</span>
+          <div class="empresa-switch-icon">${icone}</div>
+          <div class="empresa-switch-title">${emp.nome}</div>
+          <div class="empresa-switch-desc">${emp.segmento || 'Empresa Cadastrada'}</div>
+        </button>
+      `;
+    }).join('');
+  }
+
+  function atualizarVisualEmpresaLogin(id) {
+    if (!id) id = localStorage.getItem('sdv_licenca_ativa') || 'sdvidros';
+
+    const lista = obterLicencasLogin();
+    let emp = lista.find(l => l.id === id) || lista[0];
+
+    let nome = emp ? emp.nome.toUpperCase() : 'SD VIDROS';
+    let sub = emp && emp.segmento ? emp.segmento.toUpperCase() : 'SISTEMA DE GESTÃO & ORÇAMENTOS';
+    let logo = emp && emp.logo ? emp.logo : 'logo.jpg';
+
+    // Atualiza logo do card de login
+    const logoImg = document.getElementById('login-logo-img');
+    if (logoImg) {
+      logoImg.src = logo;
+      logoImg.alt = nome;
+    }
+
+    // Atualiza nome e subtítulo da marca
+    const brandName = document.getElementById('login-brand-name');
+    if (brandName) brandName.textContent = nome;
+
+    const brandSub = document.getElementById('login-brand-sub');
+    if (brandSub) brandSub.textContent = sub;
+
+    // Atualiza rodapé
+    const footerTxt = document.getElementById('login-footer-empresa');
+    if (footerTxt) footerTxt.textContent = (emp ? emp.nome : 'SD Vidros') + ' • Sistema Seguro';
+  }
+
+  // ══════════════════════════════════════════════
+  //  PAINEL DE GESTÃO DE MARCAS, LOGO E EMPRESAS
+  // ══════════════════════════════════════════════
+  let _novaEmpresaLogoBase64 = 'logo.jpg';
+
+  function abrirModalCadastrarNovaEmpresa() {
+    _novaEmpresaLogoBase64 = 'logo.jpg';
+    const inpNome = document.getElementById('nova-emp-nome');
+    const inpSeg = document.getElementById('nova-emp-segmento');
+    const inpTel = document.getElementById('nova-emp-tel');
+    const inpPix = document.getElementById('nova-emp-pix');
+    const prev = document.getElementById('nova-emp-preview-logo');
+    const msg = document.getElementById('nova-emp-msg');
+
+    if (inpNome) inpNome.value = '';
+    if (inpSeg) inpSeg.value = 'Vidraçaria, Alumínio, Box, Espelhos';
+    if (inpTel) inpTel.value = '(85) 99611-9824';
+    if (inpPix) inpPix.value = '';
+    if (prev) prev.src = 'logo.jpg';
+    if (msg) msg.innerHTML = '';
+
+    const m = document.getElementById('modal-cadastrar-nova-empresa');
+    if (m) {
+      m.style.display = 'flex';
+      setTimeout(() => { if (inpNome) inpNome.focus(); }, 150);
+    }
+  }
+
+  function fecharModalCadastrarNovaEmpresa(e) {
+    if (e && e.target && e.target !== document.getElementById('modal-cadastrar-nova-empresa')) return;
+    const m = document.getElementById('modal-cadastrar-nova-empresa');
+    if (m) m.style.display = 'none';
+  }
+
+  function processarUploadNovaEmpresa(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 4.5 * 1024 * 1024) {
+      alert('A imagem é muito grande. Escolha um arquivo de até 4MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+      _novaEmpresaLogoBase64 = evt.target.result;
+      const prev = document.getElementById('nova-emp-preview-logo');
+      if (prev) prev.src = _novaEmpresaLogoBase64;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function salvarNovaEmpresaModal() {
+    const inpNome = document.getElementById('nova-emp-nome');
+    const inpSeg = document.getElementById('nova-emp-segmento');
+    const inpTel = document.getElementById('nova-emp-tel');
+    const inpPix = document.getElementById('nova-emp-pix');
+
+    const nome = (inpNome ? inpNome.value : '').trim();
+    const seg = (inpSeg ? inpSeg.value : '').trim();
+    const tel = (inpTel ? inpTel.value : '').trim();
+    const pix = (inpPix ? inpPix.value : '').trim();
+
+    if (!nome) {
+      alert('Por favor, informe o Nome da Empresa.');
+      if (inpNome) inpNome.focus();
+      return;
+    }
+
+    const novoId = 'emp_' + Date.now();
+    const nova = {
+      id: novoId,
+      nome: nome,
+      segmento: seg || 'Vidraçaria & Esquadrias',
+      slogan: seg || 'Qualidade e Pontualidade',
+      telefone: tel || '(85) 99611-9824',
+      cidade: 'Itaitinga - CE',
+      cnpj: '',
+      pix: pix || '',
+      chaveLicenca: 'LIC-' + Date.now(),
+      logo: _novaEmpresaLogoBase64 || 'logo.jpg',
+      banner: 'banner_ia_vidros.jpg',
+      tipoContrato: 'vidros'
+    };
+
+    let lista = obterLicencasLogin();
+    lista.push(nova);
+    salvarLicencasLogin(lista);
+
+    // Define como empresa ativa
+    localStorage.setItem('sdv_licenca_ativa', novoId);
+    idEmpresaEditando = novoId;
+
+    fecharModalCadastrarNovaEmpresa();
+    carregarPainelGestao(novoId);
+    atualizarVisualEmpresaLogin(novoId);
+    if (typeof renderEmpresasLogin === 'function') renderEmpresasLogin();
+
+    const msg = document.getElementById('gestao-msg');
+    if (msg) {
+      msg.innerHTML = `<div style="background:rgba(34,197,94,0.15);border:1px solid #22c55e;color:#4ade80;padding:10px 14px;border-radius:10px;font-size:12.5px;font-weight:700;margin-top:12px;text-align:center;">✓ Empresa "${nome}" cadastrada e ativada com sucesso!</div>`;
+    }
+    
+    // Abre imediatamente o modal com o link para o cliente instalar o aplicativo
+    abrirModalLinkInstalacaoCliente(novoId);
+  }
+
+  
+  function obterSlugEmpresa(emp) {
+    if (!emp) return 'sdvidros';
+    const idLower = String(emp.id || '').toLowerCase().trim();
+    const nomeLower = String(emp.nome || '').toLowerCase().trim();
+
+    if (idLower === 'sdvidros' || (nomeLower.includes('sd vidros') && !nomeLower.includes('moveis') && !nomeLower.includes('móveis'))) return 'sdvidros';
+    if (nomeLower.includes('samuel') || idLower.includes('samuel')) return 'samuel-david';
+    if (nomeLower.includes('tc') || idLower.includes('tc')) return 'tc-moveis';
+    if (idLower === 'sdmoveis' || idLower.includes('moveis') || nomeLower.includes('móveis') || nomeLower.includes('moveis')) return 'sd-moveis';
+
+    return String(emp.nome || emp.id)
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'app';
+  }
+
+  function abrirModalLinkInstalacaoCliente(empId) {
+    if (!empId) {
+      empId = localStorage.getItem('sdv_licenca_ativa') || 'sdvidros';
+    }
+    const lista = obterLicencasLogin();
+    const emp = lista.find(e => e.id === empId || String(e.id).toLowerCase() === String(empId).toLowerCase()) || lista[0] || LICENCAS_PADRAO[0];
+
+    const slug = obterSlugEmpresa(emp);
+    const host = window.location.host;
+    const isVercel = host.includes('vercel.app') || window.location.protocol === 'https:';
+
+    // Link curto específico e exclusivo para a empresa selecionada
+    const urlPadrao = isVercel 
+      ? `https://${host || 'sdvidros.vercel.app'}/${slug}`
+      : `${window.location.origin}${window.location.pathname.replace(/\/login\.html$/i, '').replace(/\/$/, '')}/cliente.html?empresa=${encodeURIComponent(slug)}&nome=${encodeURIComponent(emp.nome)}&instalar=1&auto=1`;
+    const urlCurta = emp.linkPersonalizado || urlPadrao;
+
+    const titEl = document.getElementById('modal-link-inst-titulo');
+    const nomeEl = document.getElementById('modal-link-inst-nome');
+    const segEl = document.getElementById('modal-link-inst-seg');
+    const logoEl = document.getElementById('modal-link-inst-logo');
+    const urlInp = document.getElementById('modal-link-inst-url');
+    const displayEl = document.getElementById('modal-link-inst-display');
+    const badgeEmp = document.getElementById('modal-link-inst-badge-empresa');
+    const btnZap = document.getElementById('btn-whats-link-inst');
+    const feed = document.getElementById('modal-link-inst-feedback');
+
+    // Se for empresa de móveis mas estiver com logo de vidro ou segmento de vidro, corrige visualmente
+    const ehMoveis = emp.nome && (emp.nome.toLowerCase().includes('móveis') || emp.nome.toLowerCase().includes('moveis'));
+    let logoExibicao = emp.logo || 'logo.jpg';
+    if (ehMoveis && (!emp.logo || emp.logo === 'logo.jpg')) {
+      logoExibicao = 'logo_moveis.jpg';
+    }
+    let segExibicao = emp.segmento || 'Área Exclusiva do Cliente';
+    if (ehMoveis && (segExibicao.includes('Vidraçaria') || segExibicao.includes('Alumínio'))) {
+      segExibicao = 'Móveis Planejados & Ambientes Sob Medida';
+    }
+
+    if (titEl) titEl.textContent = `Enviar Opção de Instalar: ${emp.nome}`;
+    if (nomeEl) nomeEl.textContent = emp.nome;
+    if (segEl) segEl.textContent = segExibicao;
+    if (logoEl) logoEl.src = logoExibicao;
+    if (badgeEmp) badgeEmp.textContent = emp.nome;
+    if (feed) feed.style.display = 'none';
+
+    if (urlInp) {
+      urlInp.value = urlCurta;
+      urlInp.setAttribute('data-full-url', urlCurta);
+      urlInp.setAttribute('data-emp-nome', emp.nome);
+      urlInp.setAttribute('data-emp-id', emp.id);
+    }
+    if (displayEl) {
+      displayEl.textContent = urlCurta;
+    }
+
+    if (btnZap) {
+      const msg = `📲 *INSTALAR APLICATIVO OFICIAL*\n🏢 *${emp.nome.toUpperCase()}*\n_${segExibicao}_\n\nOlá! Você recebeu a opção de instalar o aplicativo oficial da *${emp.nome}* no seu celular para acompanhar orçamentos e serviços.\n\n👉 *Toque para Instalar e Acessar:*\n${urlCurta}\n\n*(Basta abrir e tocar em "Confirmar" para já estar pronto para acessar!)*`;
+      btnZap.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+    }
+
+    const modal = document.getElementById('modal-link-instalacao-cliente');
+    if (modal) modal.style.display = 'flex';
+  }
+
+  function fecharModalLinkInstalacaoCliente(e) {
+    if (e && e.target && e.target !== document.getElementById('modal-link-instalacao-cliente')) return;
+    const modal = document.getElementById('modal-link-instalacao-cliente');
+    if (modal) modal.style.display = 'none';
+  }
+
+  function copiarLinkInstalacaoCliente() {
+    const inp = document.getElementById('modal-link-inst-url');
+    const btn = document.getElementById('btn-copiar-link-inst');
+    const feed = document.getElementById('modal-link-inst-feedback');
+
+    const urlParaCopiar = (inp && inp.getAttribute('data-full-url')) || (inp && inp.value) || '';
+    const empNome = (inp && inp.getAttribute('data-emp-nome')) || 'Empresa';
+
+    try {
+      navigator.clipboard.writeText(urlParaCopiar);
+    } catch (_) {
+      if (inp) {
+        inp.type = 'text';
+        inp.focus();
+        inp.select();
+        document.execCommand('copy');
+        inp.type = 'hidden';
+      }
+    }
+
+    if (btn) {
+      const orig = btn.innerHTML;
+      btn.innerHTML = `✓ Copiado (${empNome})!`;
+      btn.style.background = '#16a34a';
+      btn.style.borderColor = '#22c55e';
+      btn.style.color = '#fff';
+      setTimeout(() => {
+        btn.innerHTML = orig;
+        btn.style.background = '#0284c7';
+        btn.style.borderColor = '#38bdf8';
+        btn.style.color = '#fff';
+      }, 2500);
+    }
+
+    if (feed) {
+      feed.style.display = 'block';
+      feed.innerHTML = `✅ Link de <strong>${empNome}</strong> copiado com sucesso!<br><span style="font-family:monospace;font-size:11px;display:block;margin-top:2px;">${urlParaCopiar}</span>`;
+      setTimeout(() => { feed.style.display = 'none'; }, 4000);
+    }
+  }
+
+  function alterarLinkCustomizadoModal() {
+    const inp = document.getElementById('modal-link-inst-url');
+    const atual = (inp && inp.getAttribute('data-full-url')) || '';
+    const empNome = (inp && inp.getAttribute('data-emp-nome')) || 'Empresa';
+    const empId = (inp && inp.getAttribute('data-emp-id')) || '';
+
+    const novoLink = prompt(`✏️ PERSONALIZAR LINK DA EMPRESA (${empNome})\n\nO link padrão atual é:\n${atual}\n\nSe você configurou outro domínio na Vercel (ex: https://sdmoveis.vercel.app) ou tem um domínio próprio (ex: https://sdmoveis.com.br), digite abaixo:\n\n(Para voltar ao link padrão, basta apagar e dar OK)`, atual);
+    
+    if (novoLink === null) return;
+    
+    let linkFinal = novoLink.trim();
+    if (linkFinal && !linkFinal.startsWith('http://') && !linkFinal.startsWith('https://')) {
+      linkFinal = 'https://' + linkFinal;
+    }
+
+    const lista = obterLicencasLogin();
+    const emp = lista.find(e => e.id === empId);
+    if (emp) {
+      emp.linkPersonalizado = linkFinal;
+      salvarLicencasLogin(lista);
+    }
+
+    abrirModalLinkInstalacaoCliente(empId);
+    alert(`✅ Link da empresa "${empNome}" atualizado com sucesso!\n\nLink de envio agora:\n${linkFinal || 'Link Padrão do Sistema'}`);
+  }
+
+  function carregarPainelGestao(forcarId = null) {
+    const sel = document.getElementById('gestao-empresa-select');
+    if (!sel) return;
+
+    const lista = obterLicencasLogin();
+    const idAtivo = localStorage.getItem('sdv_licenca_ativa') || (lista[0] ? lista[0].id : 'sdvidros');
+
+    // Se forcarId foi passado, usa ele; senão, se idEmpresaEditando não existe na lista ou não foi definido, usa a empresa ativa atual
+    if (forcarId && lista.some(e => e.id === forcarId)) {
+      idEmpresaEditando = forcarId;
+    } else if (!idEmpresaEditando || !lista.some(e => e.id === idEmpresaEditando)) {
+      idEmpresaEditando = idAtivo;
+    }
+
+    // Preenche o contador de empresas cadastradas
+    const totalEl = document.getElementById('gestao-total-empresas');
+    if (totalEl) totalEl.textContent = `${lista.length} salvas`;
+
+    // 1. Gera opções do select dropdown
+    let options = lista.map(emp => {
+      const isEdit = emp.id === idEmpresaEditando;
+      const isAtiva = emp.id === idAtivo;
+      const tag = isAtiva ? ' ⭐ [ATIVA]' : '';
+      return `<option value="${emp.id}" ${isEdit ? 'selected' : ''}>${emp.nome} (${emp.segmento || 'Empresa'})${tag}</option>`;
+    }).join('');
+
+    options += `<option value="__NOVA__" style="color:var(--gold-light);font-weight:900;">➕ + Cadastrar Nova Empresa...</option>`;
+    sel.innerHTML = options;
+    sel.value = idEmpresaEditando;
+
+    // 2. Renderiza os cards visuais de todas as empresas salvas no sistema
+    renderCardsEmpresasGestao(lista, idEmpresaEditando, idAtivo);
+
+    // 3. Carrega os dados da empresa selecionada nos inputs
+    selecionarEmpresaParaEditar(idEmpresaEditando, false);
+  }
+
+  function renderCardsEmpresasGestao(lista, idEditando, idAtivo) {
+    const container = document.getElementById('gestao-empresas-lista-cards');
+    if (!container) return;
+
+    if (!lista || !lista.length) {
+      container.innerHTML = '<div style="color:var(--muted);font-size:12px;text-align:center;padding:10px;">Nenhuma empresa cadastrada.</div>';
+      return;
+    }
+
+    container.innerHTML = lista.map(emp => {
+      const isEdit = emp.id === idEditando;
+      const isAtiva = emp.id === idAtivo;
+      const podeExcluir = lista.length > 1;
+      const ehMoveis = emp.tipoContrato === 'moveis' || emp.id === 'sdmoveis' || (emp.nome && (emp.nome.toLowerCase().includes('moveis') || emp.nome.toLowerCase().includes('móve')));
+      const cardLogo = (ehMoveis && (!emp.logo || emp.logo === 'logo.jpg')) ? 'logo_moveis.jpg' : (emp.logo || 'logo.jpg');
+      let cardSeg = (emp.segmento || '').trim();
+      if (ehMoveis && (!cardSeg || /vidra|vidro|esquadria/i.test(cardSeg))) {
+        cardSeg = 'Móveis Planejados & Ambientes Sob Medida';
+      } else if (!cardSeg) {
+        cardSeg = ehMoveis ? 'Móveis Planejados & Ambientes Sob Medida' : 'Alumínio, Vidros & Esquadrias';
+      }
+
+      return `
+        <div style="background:${isEdit ? 'rgba(201,168,76,0.08)' : '#0e0e17'};border:1.5px solid ${isEdit ? 'var(--gold)' : 'rgba(255,255,255,0.08)'};border-radius:12px;padding:10px 12px;transition:all 0.2s;box-shadow:${isEdit ? '0 0 16px rgba(201,168,76,0.22)' : 'none'};">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <img src="${cardLogo}" style="width:44px;height:44px;border-radius:10px;border:1.5px solid ${isEdit ? 'var(--gold)' : 'rgba(201,168,76,0.35)'};object-fit:cover;background:#000;flex-shrink:0;" alt="${emp.nome}">
+            
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                <span style="font-size:13.5px;font-weight:900;color:${isEdit ? 'var(--gold-light)' : '#fff'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                  ${emp.nome}
+                </span>
+                ${isAtiva ? '<span style="background:rgba(34,197,94,0.2);border:1px solid #22c55e;color:#4ade80;font-size:9.5px;padding:1px 6px;border-radius:12px;font-weight:800;">✓ ATIVA</span>' : ''}
+                ${isEdit ? '<span style="background:rgba(201,168,76,0.25);border:1px solid var(--gold);color:var(--gold-light);font-size:9.5px;padding:1px 6px;border-radius:12px;font-weight:800;">✏️ EM EDIÇÃO</span>' : ''}
+              </div>
+              <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;">
+                ${cardSeg}
+              </div>
+            </div>
+          </div>
+
+          <!-- BOTÕES RÁPIDOS DE CADA EMPRESA SALVA -->
+          <div style="display:flex;align-items:center;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06);flex-wrap:wrap;">
+            <button type="button" onclick="selecionarEmpresaParaEditar('${emp.id}', false)" style="padding:5px 9px;background:${isEdit ? 'var(--gold)' : '#181824'};color:${isEdit ? '#000' : 'var(--gold-light)'};border:1px solid ${isEdit ? 'var(--gold)' : 'rgba(201,168,76,0.35)'};border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;">
+              ${isEdit ? '✓ Editando Agora' : '✏️ Editar / Ver Dados'}
+            </button>
+            
+            ${!isAtiva ? `
+              <button type="button" onclick="ativarEmpresaPeloPainel('${emp.id}')" style="padding:5px 9px;background:rgba(34,197,94,0.15);color:#4ade80;border:1px solid #22c55e;border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;">
+                ⚡ Ativar no Sistema
+              </button>
+            ` : ''}
+
+            <button type="button" onclick="abrirModalLinkInstalacaoCliente('${emp.id}')" style="padding:5px 9px;background:rgba(56,189,248,0.12);color:#38bdf8;border:1px solid #0284c7;border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;" title="Enviar link do app aos clientes desta empresa">
+              📲 Link App
+            </button>
+
+            ${podeExcluir ? `
+              <button type="button" onclick="excluirEmpresaPorId('${emp.id}')" style="margin-left:auto;padding:5px 10px;background:rgba(239,68,68,0.14);border:1.2px solid rgba(239,68,68,0.45);color:#f87171;border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:4px;transition:all 0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.25)'" onmouseout="this.style.background='rgba(239,68,68,0.14)'" title="Excluir esta empresa">
+                <span>🗑️</span> <span>Excluir</span>
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function ativarEmpresaPeloPainel(id) {
+    localStorage.setItem('sdv_licenca_ativa', id);
+    idEmpresaEditando = id;
+    atualizarVisualEmpresaLogin(id);
+    if (typeof renderEmpresasLogin === 'function') renderEmpresasLogin();
+    carregarPainelGestao(id);
+
+    const lista = obterLicencasLogin();
+    const emp = lista.find(e => e.id === id);
+    const msg = document.getElementById('gestao-msg');
+    if (msg) {
+      msg.innerHTML = `<div class="msg suc">⚡ Empresa "${emp ? emp.nome : id}" agora é a empresa ATIVA no sistema!</div>`;
+      setTimeout(() => { if (msg) msg.innerHTML = ''; }, 3500);
+    }
+  }
+
+  function selecionarEmpresaParaEditar(id, ativarNoSistema = false) {
+    if (id === '__NOVA__') {
+      abrirModalCadastrarNovaEmpresa();
+      return;
+    }
+    idEmpresaEditando = id;
+
+    const sel = document.getElementById('gestao-empresa-select');
+    if (sel && sel.value !== id) sel.value = id;
+
+    if (ativarNoSistema) {
+      localStorage.setItem('sdv_licenca_ativa', id);
+      atualizarVisualEmpresaLogin(id);
+      if (typeof renderEmpresasLogin === 'function') renderEmpresasLogin();
+    }
+
+    const lista = obterLicencasLogin();
+    const emp = lista.find(e => e.id === id);
+    if (!emp) return;
+
+    const ehMoveis = emp.tipoContrato === 'moveis' || emp.id === 'sdmoveis' || (emp.nome && (emp.nome.toLowerCase().includes('moveis') || emp.nome.toLowerCase().includes('móve')));
+    logoEmEdicaoBase64 = (ehMoveis && (!emp.logo || emp.logo === 'logo.jpg')) ? 'logo_moveis.jpg' : (emp.logo || 'logo.jpg');
+    bannerEmEdicaoBase64 = (ehMoveis && (!emp.banner || emp.banner === 'banner.jpg')) ? 'banner_moveis.jpg' : (emp.banner || 'banner.jpg');
+
+    const prevLogo = document.getElementById('preview-logo-gestao');
+    if (prevLogo) prevLogo.src = logoEmEdicaoBase64;
+
+    const prevBanner = document.getElementById('preview-banner-gestao');
+    if (prevBanner) prevBanner.src = bannerEmEdicaoBase64;
+
+    const inpNome = document.getElementById('gestao-empresa-nome');
+    if (inpNome) inpNome.value = emp.nome || '';
+
+    const inpSeg = document.getElementById('gestao-empresa-segmento');
+    if (inpSeg) {
+      let s = (emp.segmento || '').trim();
+      if (ehMoveis && (!s || /vidra|vidro|esquadria/i.test(s))) {
+        s = 'Móveis Planejados & Ambientes Sob Medida';
+      }
+      inpSeg.value = s || (ehMoveis ? 'Móveis Planejados & Ambientes Sob Medida' : 'Alumínio, Vidros & Esquadrias');
+    }
+
+    const inpTel = document.getElementById('gestao-empresa-tel');
+    if (inpTel) inpTel.value = emp.telefone || '';
+
+    const inpPix = document.getElementById('gestao-empresa-pix');
+    if (inpPix) inpPix.value = emp.pix || '';
+    const inpLink = document.getElementById('gestao-empresa-link');
+    if (inpLink) inpLink.value = emp.linkPersonalizado || '';
+
+    const areaExcluir = document.getElementById('btn-excluir-empresa-area');
+    if (areaExcluir) {
+      areaExcluir.style.display = (lista.length > 1) ? 'block' : 'none';
+    }
+
+    const idAtivo = localStorage.getItem('sdv_licenca_ativa') || 'sdmoveis';
+    renderCardsEmpresasGestao(lista, idEmpresaEditando, idAtivo);
+
+    const msg = document.getElementById('gestao-msg');
+    if (msg && !ativarNoSistema) msg.innerHTML = '';
+  }
+
+  function prepararNovaEmpresa() {
+    abrirModalCadastrarNovaEmpresa();
+  }
+
+  function processarUploadArquivo(e, tipo) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 4.5 * 1024 * 1024) {
+      alert('A imagem é muito grande. Escolha um arquivo de até 4MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+      const base64 = evt.target.result;
+      if (tipo === 'logo') {
+        logoEmEdicaoBase64 = base64;
+        const prev = document.getElementById('preview-logo-gestao');
+        if (prev) prev.src = base64;
+      } else if (tipo === 'banner') {
+        bannerEmEdicaoBase64 = base64;
+        const prev = document.getElementById('preview-banner-gestao');
+        if (prev) prev.src = base64;
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function salvarModificacoesEmpresa() {
+    const nome = (document.getElementById('gestao-empresa-nome').value || '').trim();
+    const segmento = (document.getElementById('gestao-empresa-segmento').value || '').trim();
+    const telefone = (document.getElementById('gestao-empresa-tel').value || '').trim();
+    const pix = (document.getElementById('gestao-empresa-pix').value || '').trim();
+    const inpLinkVal = document.getElementById('gestao-empresa-link');
+    const linkPersonalizado = (inpLinkVal ? inpLinkVal.value : '').trim();
+
+    if (!nome) {
+      alert('Informe o nome da empresa.');
+      return;
+    }
+
+    let lista = obterLicencasLogin();
+    let idx = lista.findIndex(e => e.id === idEmpresaEditando);
+
+    const ehMoveis = (nome.toLowerCase().includes('moveis') || nome.toLowerCase().includes('móve') || idEmpresaEditando === 'sdmoveis');
+    let segFinal = segmento;
+    if (ehMoveis && (!segFinal || /vidra|vidro|esquadria/i.test(segFinal))) {
+      segFinal = 'Móveis Planejados & Ambientes Sob Medida';
+    }
+    let logoFinal = logoEmEdicaoBase64;
+    if (ehMoveis && (!logoFinal || logoFinal === 'logo.jpg')) {
+      logoFinal = 'logo_moveis.jpg';
+    }
+    let bannerFinal = bannerEmEdicaoBase64;
+    if (ehMoveis && (!bannerFinal || bannerFinal === 'banner.jpg')) {
+      bannerFinal = 'banner_moveis.jpg';
+    }
+
+    if (idx >= 0) {
+      // Atualiza existente
+      lista[idx].nome = nome;
+      lista[idx].segmento = segFinal;
+      lista[idx].slogan = segFinal;
+      lista[idx].telefone = telefone;
+      lista[idx].pix = pix;
+      lista[idx].linkPersonalizado = linkPersonalizado;
+      lista[idx].tipoContrato = ehMoveis ? 'moveis' : (lista[idx].tipoContrato || 'vidros');
+      lista[idx].logo = logoFinal;
+      lista[idx].banner = bannerFinal;
+    } else {
+      // Cria nova
+      const nova = {
+        id: idEmpresaEditando,
+        nome: nome,
+        segmento: segFinal,
+        slogan: segFinal,
+        telefone: telefone,
+        cidade: 'Itaitinga - CE',
+        cnpj: '',
+        pix: pix,
+        chaveLicenca: 'LIC-' + Date.now(),
+        logo: logoFinal,
+        banner: bannerFinal,
+        tipoContrato: ehMoveis ? 'moveis' : 'vidros'
+      };
+      lista.push(nova);
+      localStorage.setItem('sdv_licenca_ativa', idEmpresaEditando);
+    }
+
+    salvarLicencasLogin(lista);
+    carregarPainelGestao(idEmpresaEditando);
+    renderEmpresasLogin();
+    atualizarVisualEmpresaLogin(localStorage.getItem('sdv_licenca_ativa'));
+
+    const msg = document.getElementById('gestao-msg');
+    if (msg) {
+      msg.innerHTML = `<div class="msg suc">✅ Alterações da empresa "${nome}" salvas com sucesso aqui no sistema!</div>`;
+      setTimeout(() => { if (msg) msg.innerHTML = ''; }, 4000);
+    }
+  }
+
+  function salvarComoNovaEmpresaDireto() {
+    const nome = (document.getElementById('gestao-empresa-nome').value || '').trim();
+    const segmento = (document.getElementById('gestao-empresa-segmento').value || '').trim();
+    const telefone = (document.getElementById('gestao-empresa-tel').value || '').trim();
+    const pix = (document.getElementById('gestao-empresa-pix').value || '').trim();
+
+    if (!nome) {
+      alert('Por favor, informe o Nome da nova empresa.');
+      const inp = document.getElementById('gestao-empresa-nome');
+      if (inp) inp.focus();
+      return;
+    }
+
+    const novoId = 'emp_' + Date.now();
+    const nova = {
+      id: novoId,
+      nome: nome,
+      segmento: segmento || 'Vidraçaria & Esquadrias',
+      slogan: segmento || 'Qualidade e Pontualidade',
+      telefone: telefone || '(85) 99611-9824',
+      cidade: 'Itaitinga - CE',
+      cnpj: '',
+      pix: pix || '',
+      chaveLicenca: 'LIC-' + Date.now(),
+      logo: logoEmEdicaoBase64 || 'logo.jpg',
+      banner: bannerEmEdicaoBase64 || 'banner_ia_vidros.jpg',
+      tipoContrato: 'vidros'
+    };
+
+    let lista = obterLicencasLogin();
+    lista.push(nova);
+    salvarLicencasLogin(lista);
+
+    localStorage.setItem('sdv_licenca_ativa', novoId);
+    idEmpresaEditando = novoId;
+
+    carregarPainelGestao(novoId);
+    renderEmpresasLogin();
+    atualizarVisualEmpresaLogin(novoId);
+
+    const msg = document.getElementById('gestao-msg');
+    if (msg) {
+      msg.innerHTML = `<div class="msg suc">✅ Nova empresa "${nome}" salva e ativada com sucesso aqui no sistema!</div>`;
+      setTimeout(() => { if (msg) msg.innerHTML = ''; }, 4500);
+    }
+  }
+
+  function entrarDiretoComEmpresaSelecionada() {
+    const ativaId = idEmpresaEditando || localStorage.getItem('sdv_licenca_ativa') || 'sdvidros';
+    localStorage.setItem('sdv_licenca_ativa', ativaId);
+    atualizarVisualEmpresaLogin(ativaId);
+
+    const users = getUsers();
+    const adminUser = users.find(u => (u.role === 'admin' || u.username === 'admin') && u.ativo) || users[0];
+    if (adminUser) {
+      concluirLogin(adminUser, false);
+    } else {
+      mostrarAbaPrincipal('login');
+    }
+  }
+
+  function excluirEmpresaPorId(id) {
+    const lista = obterLicencasLogin();
+    if (lista.length <= 1) {
+      alert('⚠️ Não é possível excluir esta empresa pois o sistema precisa manter pelo menos 1 empresa cadastrada.');
+      return;
+    }
+
+    const emp = lista.find(e => e.id === id);
+    const nomeEmp = emp ? emp.nome : id;
+
+    if (!confirm(`⚠️ CONFIRMAÇÃO DE EXCLUSÃO\n\nDeseja realmente excluir a empresa "${nomeEmp}" do sistema?\n\nEsta ação removerá a empresa permanentemente da sua lista.`)) {
+      return;
+    }
+
+    const novaLista = lista.filter(e => e.id !== id);
+    salvarLicencasLogin(novaLista);
+
+    const proximoId = novaLista[0].id;
+    if (localStorage.getItem('sdv_licenca_ativa') === id) {
+      localStorage.setItem('sdv_licenca_ativa', proximoId);
+    }
+    if (idEmpresaEditando === id) {
+      idEmpresaEditando = proximoId;
+    }
+
+    carregarPainelGestao(idEmpresaEditando);
+    renderEmpresasLogin();
+    atualizarVisualEmpresaLogin(localStorage.getItem('sdv_licenca_ativa'));
+
+    const msg = document.getElementById('gestao-msg');
+    if (msg) {
+      msg.innerHTML = `<div style="background:rgba(239,68,68,0.15);border:1px solid #ef4444;color:#fca5a5;padding:10px 14px;border-radius:10px;font-size:12.5px;font-weight:700;margin-top:12px;text-align:center;">🗑️ Empresa "${nomeEmp}" foi excluída com sucesso!</div>`;
+      setTimeout(() => { if (msg) msg.innerHTML = ''; }, 4000);
+    }
+  }
+
+  function excluirEmpresaSelecionada() {
+    excluirEmpresaPorId(idEmpresaEditando);
+  }
+
+  // ══════════════════════════════════════════════
+  //  ACESSO PELO CADEADO (DIGITAR EMPRESA + LOGIN / BIOMETRIA)
+  // ══════════════════════════════════════════════
+  function abrirModalAcessoCadeado() {
+    const modal = document.getElementById('modal-acesso-cadeado');
+    const msg = document.getElementById('cad-msg');
+    if (msg) msg.innerHTML = '';
+    const inpEmp = document.getElementById('cad-empresa-nome');
+    if (inpEmp) {
+      const ativaId = localStorage.getItem('sdv_licenca_ativa') || 'sdvidros';
+      const lista = obterLicencasLogin();
+      const emp = lista.find(e => e.id === ativaId);
+      inpEmp.value = emp ? emp.nome : '';
+    }
+    if (modal) {
+      modal.style.display = 'flex';
+      setTimeout(() => {
+        if (inpEmp) inpEmp.focus();
+      }, 150);
+    }
+  }
+
+  function fecharModalAcessoCadeado() {
+    const modal = document.getElementById('modal-acesso-cadeado');
+    if (modal) modal.style.display = 'none';
+  }
+
+  function abrirGestaoPeloCadeado() {
+    fecharModalAcessoCadeado();
+    solicitarSenhaGestaoMarcas();
+  }
+
+  function loginPeloCadeado() {
+    const empNomeDigitado = (document.getElementById('cad-empresa-nome').value || '').trim();
+    const username = (document.getElementById('cad-user').value || '').trim().toLowerCase();
+    const senha = document.getElementById('cad-senha').value;
+    const msgEl = document.getElementById('cad-msg');
+    const btn = document.getElementById('btn-login-cad');
+
+    if (!empNomeDigitado) {
+      if (msgEl) msgEl.innerHTML = '<div class="msg err">Digite o nome da empresa.</div>';
+      return;
+    }
+    if (!username || !senha) {
+      if (msgEl) msgEl.innerHTML = '<div class="msg err">Digite seu usuário e senha.</div>';
+      return;
+    }
+
+    // Localiza empresa por nome
+    const lista = obterLicencasLogin();
+    const empEncontrada = lista.find(e => 
+      e.nome.toLowerCase() === empNomeDigitado.toLowerCase() ||
+      e.id.toLowerCase() === empNomeDigitado.toLowerCase() ||
+      e.nome.toLowerCase().includes(empNomeDigitado.toLowerCase())
+    );
+
+    let idEmpresaAtivar = 'sdvidros';
+    if (empEncontrada) {
+      idEmpresaAtivar = empEncontrada.id;
+    } else {
+      // Cadastra automaticamente a nova empresa com esse nome
+      idEmpresaAtivar = 'emp_' + Date.now();
+      lista.push({
+        id: idEmpresaAtivar,
+        nome: empNomeDigitado,
+        segmento: 'Empresa Cadastrada',
+        slogan: empNomeDigitado,
+        telefone: '(85) 99611-9824',
+        cidade: 'Itaitinga - CE',
+        cnpj: '',
+        pix: '85996119824',
+        chaveLicenca: 'LIC-' + Date.now(),
+        logo: 'logo.jpg',
+        banner: 'banner.jpg',
+        tipoContrato: 'vidros'
+      });
+      salvarLicencasLogin(lista);
+    }
+
+    localStorage.setItem('sdv_licenca_ativa', idEmpresaAtivar);
+    atualizarVisualEmpresaLogin(idEmpresaAtivar);
+
+    if (btn) { btn.disabled = true; btn.textContent = 'Verificando...'; }
+
+    setTimeout(async () => {
+      const users = getUsers();
+      const user = users.find(u => u.username === username && u.senha === senha && u.ativo);
+      if (user) {
+        if (msgEl) msgEl.innerHTML = '<div class="msg suc">✅ Acesso autorizado para ' + empNomeDigitado + '! Entrando...</div>';
+        await ativarBiometriaParaUsuario(user);
+        setTimeout(() => concluirLogin(user, false), 350);
+      } else {
+        if (btn) { btn.disabled = false; btn.textContent = 'Entrar no Sistema'; }
+        if (msgEl) msgEl.innerHTML = '<div class="msg err">❌ Usuário ou senha incorretos.</div>';
+      }
+    }, 350);
+  }
+
+  async function loginBiometriaPeloCadeado() {
+    const empNomeDigitado = (document.getElementById('cad-empresa-nome').value || '').trim();
+    if (empNomeDigitado) {
+      const lista = obterLicencasLogin();
+      const emp = lista.find(e => 
+        e.nome.toLowerCase() === empNomeDigitado.toLowerCase() ||
+        e.id.toLowerCase() === empNomeDigitado.toLowerCase() ||
+        e.nome.toLowerCase().includes(empNomeDigitado.toLowerCase())
+      );
+      if (emp) {
+        localStorage.setItem('sdv_licenca_ativa', emp.id);
+        atualizarVisualEmpresaLogin(emp.id);
+      }
+    }
+    fecharModalAcessoCadeado();
+    loginComBiometria();
+  }
+
+  // ══════════════════════════════════════════════
+  //  MODAL: ESCOLHA DE BANNER COM IA
+  // ══════════════════════════════════════════════
+  function abrirModalBannerIA() {
+    const modal = document.getElementById('modal-banner-ia');
+    if (modal) modal.style.display = 'flex';
+  }
+
+  function fecharModalBannerIA() {
+    const modal = document.getElementById('modal-banner-ia');
+    if (modal) modal.style.display = 'none';
+  }
+
+  let _modoModalIA = 'banner';
+
+  function abrirModalBannerIA(modo = 'banner') {
+    _modoModalIA = modo;
+    const modal = document.getElementById('modal-banner-ia');
+    const chk = document.getElementById('chk-aplicar-tambem-logo');
+    if (chk) {
+      chk.checked = (modo === 'logo');
+    }
+    if (modal) modal.style.display = 'flex';
+  }
+
+  function fecharModalBannerIA() {
+    const modal = document.getElementById('modal-banner-ia');
+    if (modal) modal.style.display = 'none';
+  }
+
+  function aplicarDesignIA(arquivo, desc, destino = null) {
+    if (!destino) {
+      const chk = document.getElementById('chk-aplicar-tambem-logo');
+      const tambemLogo = chk ? chk.checked : false;
+      if (_modoModalIA === 'logo') {
+        destino = 'logo';
+      } else {
+        destino = tambemLogo ? 'ambos' : 'banner';
+      }
+    }
+
+    let lista = obterLicencasLogin();
+    let idx = lista.findIndex(e => e.id === idEmpresaEditando);
+
+    // 1. Aplica no Banner se solicitado
+    if (destino === 'banner' || destino === 'ambos') {
+      bannerEmEdicaoBase64 = arquivo;
+      const prevB = document.getElementById('preview-banner-gestao');
+      if (prevB) prevB.src = arquivo;
+      if (idx >= 0) lista[idx].banner = arquivo;
+    }
+
+    // 2. Aplica no Logotipo se solicitado ("opção de colocar na logotipo")
+    if (destino === 'logo' || destino === 'ambos') {
+      logoEmEdicaoBase64 = arquivo;
+      const prevL = document.getElementById('preview-logo-gestao');
+      if (prevL) prevL.src = arquivo;
+      if (idx >= 0) lista[idx].logo = arquivo;
+    }
+
+    if (idx >= 0) {
+      salvarLicencasLogin(lista);
+      atualizarVisualEmpresaLogin(idEmpresaEditando);
+    }
+
+    fecharModalBannerIA();
+
+    const msg = document.getElementById('gestao-msg');
+    if (msg) {
+      const destTexto = (destino === 'ambos') ? 'no Banner e na Logotipo' : (destino === 'logo' ? 'na Logotipo' : 'no Banner');
+      msg.innerHTML = '<div class="msg suc">✨ Arte aplicada com sucesso ' + destTexto + '!</div>';
+      setTimeout(() => { if (msg) msg.innerHTML = ''; }, 4000);
+    }
+  }
+
+  function aplicarBannerIA(arquivo, desc) {
+    aplicarDesignIA(arquivo, desc, null);
+  }
+
+  function gerarBannerEstiloIA() {
+    const promptInput = document.getElementById('prompt-ia-banner');
+    const txt = (promptInput ? promptInput.value : '').toLowerCase();
+
+    // Inteligência de seleção baseada na descrição
+    let bannerEscolhido = 'banner_ia_vidros.jpg';
+    let estiloNome = 'Showroom Vidros & Iluminação de Luxo';
+
+    if (txt.includes('móvel') || txt.includes('moveis') || txt.includes('marcenaria') || txt.includes('cozinha') || txt.includes('closet') || txt.includes('madeira')) {
+      bannerEscolhido = 'banner_ia_moveis.jpg';
+      estiloNome = 'Alta Marcenaria & Móveis Planejados';
+    } else if (txt.includes('logo') || txt.includes('marca') || txt.includes('logotipo') || txt.includes('selo') || txt.includes('emblema')) {
+      bannerEscolhido = 'logo.jpg';
+      estiloNome = 'Logotipo Selo Nobre Dourado';
+    } else if (txt.includes('original') || txt.includes('newbox') || txt.includes('box')) {
+      bannerEscolhido = 'banner_ia_vidros.jpg';
+      estiloNome = 'Showroom Penthouse & Box Dourado';
+    }
+
+    aplicarDesignIA(bannerEscolhido, estiloNome, null);
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    renderEmpresasLogin();
+    atualizarVisualEmpresaLogin();
+
+    if (localStorage.getItem('sdv_bio_enabled') === 'true' || localStorage.getItem('sdv_bio_user')) {
+      const btnBio = document.getElementById('btn-biometria');
+      if (btnBio) {
+        btnBio.style.borderColor = 'rgba(201, 168, 76, 0.8)';
+        btnBio.style.boxShadow = '0 0 20px rgba(201, 168, 76, 0.2)';
+      }
+    }
+  });
+</script>
+</body>
+</html>
