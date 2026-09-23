@@ -12027,7 +12027,233 @@ function exportarRelatorioCSV() {
 }
 
 function imprimirRelatorio() {
-  window.print();
+  var intervalo = obterIntervaloRelatorio();
+  var periodoTexto = 'Todo o período';
+  var selPeriodo = document.getElementById('rel-filtro-periodo');
+  if (selPeriodo && selPeriodo.selectedIndex >= 0) {
+    periodoTexto = selPeriodo.options[selPeriodo.selectedIndex].text;
+  }
+  var statusFiltro = (document.getElementById('rel-filtro-status') || {}).value || 'todos';
+  var catFiltro = (document.getElementById('rel-filtro-categoria') || {}).value || _relFiltroCategoria || 'todas';
+
+  var todasOS = historico || load(K.orders, []);
+
+  // Filtra por período
+  var osFiltradas = todasOS.filter(function(os) {
+    if (intervalo.inicio) {
+      var d = parseDateOS(os);
+      if (!d) return true;
+      if (d < intervalo.inicio || d > intervalo.fim) return false;
+    }
+    if (statusFiltro !== 'todos') {
+      var st = (os.status || '').toLowerCase();
+      if (st !== statusFiltro) return false;
+    }
+    return true;
+  });
+
+  // Totais
+  var totalServicos = 0, totalProdutos = 0, totalFretes = 0, totalDescontos = 0;
+  var cntServicos = 0, cntProdutos = 0, cntFretes = 0, cntDescontos = 0;
+
+  var linhas = osFiltradas.map(function(os) {
+    var v = extrairValoresOS(os);
+    if (v.servico > 0) { totalServicos += v.servico; cntServicos++; }
+    if (v.produto > 0) { totalProdutos += v.produto; cntProdutos++; }
+    if (v.frete > 0) { totalFretes += v.frete; cntFretes++; }
+    if (v.desconto > 0) { totalDescontos += v.desconto; cntDescontos++; }
+    return { os: os, v: v };
+  });
+
+  var totalGeral = totalServicos + totalProdutos + totalFretes;
+  var totalLiquido = totalGeral - totalDescontos;
+  var ticketMedio = linhas.length > 0 ? totalLiquido / linhas.length : 0;
+
+  // Filtra linhas para tabela se filtro de categoria ativo
+  var linhasTabela = linhas;
+  if (catFiltro === 'servico') linhasTabela = linhas.filter(function(l) { return l.v.servico > 0; });
+  else if (catFiltro === 'produto') linhasTabela = linhas.filter(function(l) { return l.v.produto > 0; });
+  else if (catFiltro === 'frete') linhasTabela = linhas.filter(function(l) { return l.v.frete > 0; });
+  else if (catFiltro === 'desconto') linhasTabela = linhas.filter(function(l) { return l.v.desconto > 0; });
+
+  var fmtBRL = function(v) { return 'R$ ' + (v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+  var dataEmissao = new Date().toLocaleString('pt-BR');
+
+  var lic = (typeof obterLicencaAtiva === 'function' ? obterLicencaAtiva() : null) || { nome: 'SD Móveis Projetados', telefone: '(85) 99611-9824' };
+  var nomeEmpresa = lic.nome || 'SD Móveis Projetados';
+  var telEmpresa = lic.telefone || '(85) 99611-9824';
+  var cnpjEmpresa = lic.cnpj ? ('CNPJ: ' + lic.cnpj) : '';
+
+  var STATUS_PRINT_LABELS = {
+    aprovado: '<span style="color:#15803d;font-weight:700;">Aprovado</span>',
+    pendente: '<span style="color:#b45309;font-weight:700;">Pendente</span>',
+    entregue: '<span style="color:#0369a1;font-weight:700;">Entregue</span>',
+    cancelado: '<span style="color:#b91c1c;font-weight:700;">Cancelado</span>',
+    medicao: '<span style="color:#6d28d9;font-weight:700;">Medição</span>',
+    producao: '<span style="color:#c2410c;font-weight:700;">Produção</span>',
+    instalacao: '<span style="color:#047857;font-weight:700;">Instalação</span>',
+    reajustar: '<span style="color:#b45309;font-weight:700;">Reajustar</span>'
+  };
+
+  var linhasHtml = '';
+  if (linhasTabela.length === 0) {
+    linhasHtml = '<tr><td colspan="9" style="text-align:center;padding:24px;color:#666;">Nenhum registro encontrado para os filtros selecionados.</td></tr>';
+  } else {
+    linhasTabela.forEach(function(l, idx) {
+      var os = l.os;
+      var v = l.v;
+      var num = os.numero || os.num || os.id || '-';
+      var cliente = os.nome || os.cliente || os.clienteNome || '-';
+      var d = parseDateOS(os);
+      var dataStr = d ? d.toLocaleDateString('pt-BR') : '-';
+      var st = (os.status || '').toLowerCase();
+      var stLabel = STATUS_PRINT_LABELS[st] || (os.status || '-');
+      var totalOS = v.servico + v.produto + v.frete - v.desconto;
+      var bgZebra = (idx % 2 === 1) ? 'background-color:#fafafa;' : 'background-color:#ffffff;';
+
+      linhasHtml += '<tr style="' + bgZebra + 'border-bottom:1px solid #e5e7eb;">' +
+        '<td style="padding:7px 8px;font-weight:700;color:#1e293b;">#' + num + '</td>' +
+        '<td style="padding:7px 8px;font-weight:600;color:#0f172a;">' + cliente + '</td>' +
+        '<td style="padding:7px 8px;color:#475569;white-space:nowrap;">' + dataStr + '</td>' +
+        '<td style="padding:7px 8px;">' + stLabel + '</td>' +
+        '<td style="padding:7px 8px;text-align:right;color:#854d0e;font-weight:600;">' + (v.servico > 0 ? fmtBRL(v.servico) : '-') + '</td>' +
+        '<td style="padding:7px 8px;text-align:right;color:#5b21b6;font-weight:600;">' + (v.produto > 0 ? fmtBRL(v.produto) : '-') + '</td>' +
+        '<td style="padding:7px 8px;text-align:right;color:#0369a1;font-weight:600;">' + (v.frete > 0 ? fmtBRL(v.frete) : '-') + '</td>' +
+        '<td style="padding:7px 8px;text-align:right;color:#b91c1c;font-weight:600;">' + (v.desconto > 0 ? ('-' + fmtBRL(v.desconto)) : '-') + '</td>' +
+        '<td style="padding:7px 8px;text-align:right;font-weight:800;color:#15803d;">' + fmtBRL(totalOS) + '</td>' +
+        '</tr>';
+    });
+  }
+
+  var win = window.open('', '_blank');
+  if (!win) {
+    alert('Por favor, permita pop-ups para visualizar a impressão do relatório.');
+    return;
+  }
+
+  var docHtml = '<!DOCTYPE html>' +
+    '<html lang="pt-BR">' +
+    '<head>' +
+    '<meta charset="UTF-8">' +
+    '<title>Relatório Financeiro – ' + nomeEmpresa + '</title>' +
+    '<style>' +
+    '@page { size: A4 portrait; margin: 12mm 10mm; }' +
+    'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; color: #0f172a; margin: 0; padding: 20px; background: #fff; font-size: 11.5px; line-height: 1.4; }' +
+    '.no-print { display: flex; justify-content: space-between; align-items: center; background: #1e293b; color: #fff; padding: 10px 18px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 4px 14px rgba(0,0,0,0.15); }' +
+    '.no-print button { cursor: pointer; padding: 8px 16px; font-weight: 700; border-radius: 6px; font-size: 13px; border: none; }' +
+    '.btn-print { background: #eab308; color: #000; }' +
+    '.btn-close { background: rgba(255,255,255,0.15); color: #fff; margin-left: 8px; }' +
+    '@media print { .no-print { display: none !important; } body { padding: 0 !important; } }' +
+    '.header-box { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f172a; padding-bottom: 14px; margin-bottom: 16px; }' +
+    '.header-title { font-size: 20px; font-weight: 900; color: #0f172a; text-transform: uppercase; letter-spacing: -0.02em; }' +
+    '.header-sub { font-size: 12px; color: #64748b; font-weight: 600; margin-top: 2px; }' +
+    '.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }' +
+    '.kpi-card { border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 10px; background: #f8fafc; }' +
+    '.kpi-title { font-size: 9px; font-weight: 800; text-transform: uppercase; color: #64748b; letter-spacing: 0.05em; }' +
+    '.kpi-val { font-size: 16px; font-weight: 900; color: #0f172a; margin-top: 3px; }' +
+    '.kpi-desc { font-size: 9.5px; color: #64748b; margin-top: 2px; }' +
+    '.resumo-total-box { background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }' +
+    '.tab-rel { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 11px; }' +
+    '.tab-rel th { background: #0f172a; color: #ffffff; padding: 8px 8px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 800; }' +
+    '.tab-rel td { padding: 6px 8px; }' +
+    '.footer-sig { margin-top: 36px; padding-top: 14px; border-top: 1px dashed #cbd5e1; display: flex; justify-content: space-between; align-items: flex-end; font-size: 10px; color: #64748b; }' +
+    '</style>' +
+    '</head>' +
+    '<body>' +
+    '<div class="no-print">' +
+    '<div><strong>Prévia de Impressão</strong> · Relatório Financeiro Formatado</div>' +
+    '<div>' +
+    '<button class="btn-print" onclick="window.print()">🖨️ Imprimir / Salvar em PDF</button>' +
+    '<button class="btn-close" onclick="window.close()">✕ Fechar</button>' +
+    '</div>' +
+    '</div>' +
+    '<div class="header-box">' +
+    '<div>' +
+    '<div class="header-title">' + nomeEmpresa + '</div>' +
+    '<div class="header-sub">Móveis Planejados & Ambientes Sob Medida</div>' +
+    '<div style="font-size:10.5px;color:#64748b;margin-top:4px;">' + (telEmpresa ? ('Contato: ' + telEmpresa) : '') + (cnpjEmpresa ? (' · ' + cnpjEmpresa) : '') + '</div>' +
+    '</div>' +
+    '<div style="text-align:right;">' +
+    '<div style="font-size:14px;font-weight:900;color:#0f172a;">RELATÓRIO FINANCEIRO</div>' +
+    '<div style="font-size:11px;color:#475569;margin-top:2px;">Período: <strong>' + periodoTexto + '</strong></div>' +
+    '<div style="font-size:10px;color:#94a3b8;margin-top:2px;">Emissão: ' + dataEmissao + '</div>' +
+    '</div>' +
+    '</div>' +
+    '<div class="kpi-grid">' +
+    '<div class="kpi-card" style="border-left:4px solid #ca8a04;">' +
+    '<div class="kpi-title">🔧 Serviços</div>' +
+    '<div class="kpi-val" style="color:#854d0e;">' + fmtBRL(totalServicos) + '</div>' +
+    '<div class="kpi-desc">' + cntServicos + ' O.S. no período</div>' +
+    '</div>' +
+    '<div class="kpi-card" style="border-left:4px solid #7c3aed;">' +
+    '<div class="kpi-title">📦 Produtos</div>' +
+    '<div class="kpi-val" style="color:#5b21b6;">' + fmtBRL(totalProdutos) + '</div>' +
+    '<div class="kpi-desc">' + cntProdutos + ' O.S. no período</div>' +
+    '</div>' +
+    '<div class="kpi-card" style="border-left:4px solid #0284c7;">' +
+    '<div class="kpi-title">🚚 Fretes</div>' +
+    '<div class="kpi-val" style="color:#0369a1;">' + fmtBRL(totalFretes) + '</div>' +
+    '<div class="kpi-desc">' + cntFretes + ' O.S. no período</div>' +
+    '</div>' +
+    '<div class="kpi-card" style="border-left:4px solid #dc2626;">' +
+    '<div class="kpi-title">🏷️ Descontos</div>' +
+    '<div class="kpi-val" style="color:#b91c1c;">-' + fmtBRL(totalDescontos) + '</div>' +
+    '<div class="kpi-desc">' + cntDescontos + ' O.S. com desconto</div>' +
+    '</div>' +
+    '</div>' +
+    '<div class="resumo-total-box">' +
+    '<div>' +
+    '<div style="font-size:10px;font-weight:800;color:#166534;text-transform:uppercase;">TOTAL GERAL (RECEITA BRUTA)</div>' +
+    '<div style="font-size:22px;font-weight:900;color:#15803d;line-height:1.2;">' + fmtBRL(totalGeral) + '</div>' +
+    '</div>' +
+    '<div style="display:flex;gap:20px;text-align:right;">' +
+    '<div><div style="font-size:9.5px;color:#64748b;font-weight:700;">TOTAL O.S.</div><div style="font-size:16px;font-weight:900;color:#0f172a;">' + linhasTabela.length + '</div></div>' +
+    '<div><div style="font-size:9.5px;color:#64748b;font-weight:700;">TICKET MÉDIO</div><div style="font-size:16px;font-weight:900;color:#0f172a;">' + fmtBRL(ticketMedio) + '</div></div>' +
+    '<div><div style="font-size:9.5px;color:#166534;font-weight:800;">RECEITA LÍQUIDA</div><div style="font-size:16px;font-weight:900;color:#15803d;">' + fmtBRL(totalLiquido) + '</div></div>' +
+    '</div>' +
+    '</div>' +
+    '<div style="font-size:12px;font-weight:800;color:#0f172a;text-transform:uppercase;letter-spacing:0.04em;margin-top:14px;margin-bottom:6px;">Detalhamento das Ordens de Serviço</div>' +
+    '<table class="tab-rel">' +
+    '<thead>' +
+    '<tr>' +
+    '<th style="width:70px">O.S. Nº</th>' +
+    '<th>Cliente</th>' +
+    '<th style="width:80px">Data</th>' +
+    '<th style="width:90px">Status</th>' +
+    '<th style="width:95px;text-align:right">Serviços</th>' +
+    '<th style="width:95px;text-align:right">Produtos</th>' +
+    '<th style="width:80px;text-align:right">Frete</th>' +
+    '<th style="width:85px;text-align:right">Desconto</th>' +
+    '<th style="width:105px;text-align:right">Total</th>' +
+    '</tr>' +
+    '</thead>' +
+    '<tbody>' +
+    linhasHtml +
+    '</tbody>' +
+    '<tfoot>' +
+    '<tr style="background:#0f172a;color:#ffffff;font-weight:800;">' +
+    '<td colspan="4" style="padding:8px 8px;text-transform:uppercase;">TOTAL CONSOLIDADO (' + linhasTabela.length + ' O.S.)</td>' +
+    '<td style="padding:8px 8px;text-align:right;color:#fde047;">' + fmtBRL(totalServicos) + '</td>' +
+    '<td style="padding:8px 8px;text-align:right;color:#ddd6fe;">' + fmtBRL(totalProdutos) + '</td>' +
+    '<td style="padding:8px 8px;text-align:right;color:#bae6fd;">' + fmtBRL(totalFretes) + '</td>' +
+    '<td style="padding:8px 8px;text-align:right;color:#fca5a5;">-' + fmtBRL(totalDescontos) + '</td>' +
+    '<td style="padding:8px 8px;text-align:right;color:#86efac;font-size:12px;">' + fmtBRL(totalLiquido) + '</td>' +
+    '</tr>' +
+    '</tfoot>' +
+    '</table>' +
+    '<div class="footer-sig">' +
+    '<div>' + nomeEmpresa + ' · Sistema de Gestão Comercial e Orçamentária<br>Relatório gerado eletronicamente em ' + dataEmissao + '</div>' +
+    '<div style="text-align:center;"><div style="width:220px;border-top:1px solid #0f172a;margin-bottom:4px;"></div>Assinatura do Responsável</div>' +
+    '</div>' +
+    '<script>' +
+    'window.onload = function() { setTimeout(function(){ window.print(); }, 400); };' +
+    '<\/script>' +
+    '</body>' +
+    '</html>';
+
+  win.document.open();
+  win.document.write(docHtml);
+  win.document.close();
 }
 
 // Garante que o painel é incluído no goTab
