@@ -1034,6 +1034,7 @@
     <button id="tab-usuarios" class="tab" data-tab="usuarios" onclick="goTab('usuarios')">👥 Usuários</button>
     <button type="button" id="tab-portal-cliente" class="tab" onclick="abrirPortalCliente()" title="Acessar Portal do Cliente">🌐 Portal do Cliente</button>
     <button type="button" id="tab-portal-funcionario" class="tab" onclick="abrirPortalFuncionario()" title="Acessar Portal do Funcionário">👷 Portal do Funcionário</button>
+    <button type="button" id="tab-relatorio" class="tab" data-tab="relatorio" onclick="goTab('relatorio')" title="Relatório Financeiro">📊 Relatório</button>
     <button type="button" id="btn-central-mensagens" class="tab" onclick="abrirModalCentralMensagens()" title="Central de Mensagens com Clientes">💬 Mensagens <span id="badge-msg-clientes" style="display:none;background:#ef4444;color:#fff;font-size:9.5px;padding:1px 6px;border-radius:999px;font-weight:900;margin-left:4px;">0</span></button>
   </div>
 
@@ -1181,16 +1182,48 @@
               style="font-weight:800;color:#fff;background:#0d0d15;border:1px solid rgba(255,255,255,0.12);padding:9px 10px;font-size:13px;border-radius:8px;">
           </div>
 
-          <!-- 5. Desconto -->
-          <div class="field" style="margin:0;">
-            <label style="font-size:11px;font-weight:700;color:var(--text2);display:flex;align-items:center;gap:4px;">
-              <span>🏷️</span> Desconto
-            </label>
-            <input type="text" id="o-val-desconto" inputmode="decimal" placeholder="0,00" value="0,00"
-              onfocus="this.select()"
-              oninput="aoModificarValoresResumoFinanceiro('desconto')"
-              onblur="formatarCampoMoeda(this);aoModificarValoresResumoFinanceiro('desconto')"
-              style="font-weight:800;color:#ff7878;background:#0d0d15;border:1px solid rgba(239,68,68,0.25);padding:9px 10px;font-size:13px;border-radius:8px;">
+          <!-- 5. Desconto (com opção R$ ou %) -->
+          <div class="field" style="margin:0;background:rgba(239,68,68,0.06);border:1.5px solid rgba(239,68,68,0.35);border-radius:10px;padding:8px 10px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <label style="font-size:11px;font-weight:800;color:#ff8585;margin:0;display:flex;align-items:center;gap:4px;">
+                <span>🏷️</span> Desconto
+              </label>
+              <!-- Switcher R$ vs % -->
+              <div style="display:inline-flex;background:rgba(0,0,0,0.6);border:1px solid rgba(239,68,68,0.4);border-radius:6px;padding:2px;gap:2px;">
+                <button type="button" id="btn-tipo-desc-reais" onclick="alternarTipoDesconto('reais')"
+                  title="Digitar desconto em Reais (R$)"
+                  style="border:none;background:rgba(239,68,68,0.4);color:#fff;font-size:10px;font-weight:900;padding:2px 7px;border-radius:4px;cursor:pointer;transition:all 0.15s;">R$</button>
+                <button type="button" id="btn-tipo-desc-porc" onclick="alternarTipoDesconto('porc')"
+                  title="Digitar desconto em Porcentagem (%)"
+                  style="border:none;background:transparent;color:var(--muted);font-size:10px;font-weight:900;padding:2px 7px;border-radius:4px;cursor:pointer;transition:all 0.15s;">%</button>
+              </div>
+            </div>
+
+            <!-- Entrada em Reais (R$) -->
+            <div id="wrap-desc-reais" style="display:flex;align-items:center;gap:4px;margin-top:4px;">
+              <input type="text" id="o-val-desconto" inputmode="decimal" placeholder="0,00" value="0,00"
+                onfocus="this.select()"
+                oninput="aoModificarValoresResumoFinanceiro('desconto')"
+                onblur="formatarCampoMoeda(this);aoModificarValoresResumoFinanceiro('desconto')"
+                style="font-weight:800;color:#ff7878;background:#0d0d15;border:1px solid rgba(239,68,68,0.4);padding:7px 8px;font-size:13px;border-radius:6px;width:100%;">
+            </div>
+
+            <!-- Entrada em Porcentagem (%) -->
+            <div id="wrap-desc-porc" style="display:none;align-items:center;gap:4px;margin-top:4px;">
+              <input type="text" id="o-taxa-desconto" inputmode="decimal" placeholder="0,00" value="0,00"
+                onfocus="this.select()"
+                oninput="aoModificarValoresResumoFinanceiro('desconto_porc')"
+                onblur="formatarCampoTaxa(this);aoModificarValoresResumoFinanceiro('desconto_porc')"
+                style="font-weight:800;color:#ff7878;background:#0d0d15;border:1px solid rgba(239,68,68,0.4);text-align:right;padding:7px 8px;font-size:13px;border-radius:6px;width:100%;">
+              <span style="font-size:13px;font-weight:800;color:#ff7878;">%</span>
+            </div>
+
+            <div id="o-desc-equiv-calc" style="font-size:10px;color:#fca5a5;margin-top:4px;text-align:right;font-weight:700;">
+              = 0% s/ total
+            </div>
+            <div style="font-size:9px;color:rgba(252,165,165,0.7);margin-top:2px;line-height:1.2;">
+              💰 Aplicado sobre o total
+            </div>
           </div>
         </div>
 
@@ -1702,7 +1735,177 @@
   </div>
 
   <!-- ══════════════════════════════════════════ -->
-  
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- PANEL: RELATÓRIO FINANCEIRO                -->
+  <!-- ══════════════════════════════════════════ -->
+  <div id="panel-relatorio" class="panel">
+
+    <!-- CABEÇALHO -->
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:18px;">
+      <div>
+        <div style="font-size:22px;font-weight:900;color:#fff;display:flex;align-items:center;gap:10px;">
+          <span style="font-size:30px;">📊</span> Relatório Financeiro
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px;">Resumo consolidado de receitas por categoria</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <select id="rel-filtro-periodo" onchange="renderRelatorio()" style="background:#08080f;border:1.5px solid rgba(201,168,76,0.35);border-radius:10px;color:#fff;padding:8px 14px;font-size:12.5px;font-weight:700;font-family:var(--font);">
+          <option value="tudo">📅 Todo o período</option>
+          <option value="hoje">📅 Hoje</option>
+          <option value="semana">📅 Esta semana</option>
+          <option value="mes" selected>📅 Este mês</option>
+          <option value="trimestre">📅 Este trimestre</option>
+          <option value="ano">📅 Este ano</option>
+        </select>
+        <button type="button" class="btn btn-gold btn-sm" onclick="exportarRelatorioCSV()" style="font-size:12px;display:inline-flex;align-items:center;gap:5px;">
+          📥 Exportar CSV
+        </button>
+        <button type="button" class="btn btn-sec btn-sm" onclick="imprimirRelatorio()" style="font-size:12px;display:inline-flex;align-items:center;gap:5px;">
+          🖨️ Imprimir
+        </button>
+      </div>
+    </div>
+
+    <!-- 4 KPI CARDS -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:20px;">
+
+      <!-- Card Serviços -->
+      <div class="card" id="rel-card-servicos" style="border:1.5px solid rgba(201,168,76,0.45);background:linear-gradient(145deg,rgba(201,168,76,0.1),rgba(10,10,18,0.95));padding:18px 16px;cursor:pointer;transition:all .2s;" onclick="filtrarTabRelatorio('servico')" title="Ver apenas serviços">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+          <div style="font-size:30px;line-height:1;">🔧</div>
+          <span style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--gold-light);background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.3);padding:3px 10px;border-radius:999px;">SERVIÇOS</span>
+        </div>
+        <div id="rel-val-servicos" style="font-size:clamp(22px,5vw,32px);font-weight:900;color:var(--gold-light);line-height:1.1;letter-spacing:-0.01em;">R$ 0,00</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;">
+          <div style="font-size:11.5px;color:var(--muted);">Total em serviços</div>
+          <div id="rel-qtd-servicos" style="font-size:11px;color:var(--gold);font-weight:800;">0 O.S.</div>
+        </div>
+        <div style="height:3px;background:rgba(255,255,255,0.05);border-radius:99px;margin-top:10px;overflow:hidden;">
+          <div id="rel-bar-servicos" style="height:100%;background:linear-gradient(90deg,var(--gold-dim),var(--gold-light));border-radius:99px;width:0%;transition:width .6s ease;"></div>
+        </div>
+      </div>
+
+      <!-- Card Produtos -->
+      <div class="card" id="rel-card-produtos" style="border:1.5px solid rgba(139,92,246,0.45);background:linear-gradient(145deg,rgba(139,92,246,0.1),rgba(10,10,18,0.95));padding:18px 16px;cursor:pointer;transition:all .2s;" onclick="filtrarTabRelatorio('produto')" title="Ver apenas produtos">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+          <div style="font-size:30px;line-height:1;">📦</div>
+          <span style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#c4b5fd;background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.3);padding:3px 10px;border-radius:999px;">PRODUTOS</span>
+        </div>
+        <div id="rel-val-produtos" style="font-size:clamp(22px,5vw,32px);font-weight:900;color:#c4b5fd;line-height:1.1;letter-spacing:-0.01em;">R$ 0,00</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;">
+          <div style="font-size:11.5px;color:var(--muted);">Total em produtos</div>
+          <div id="rel-qtd-produtos" style="font-size:11px;color:#a78bfa;font-weight:800;">0 O.S.</div>
+        </div>
+        <div style="height:3px;background:rgba(255,255,255,0.05);border-radius:99px;margin-top:10px;overflow:hidden;">
+          <div id="rel-bar-produtos" style="height:100%;background:linear-gradient(90deg,#7c3aed,#c4b5fd);border-radius:99px;width:0%;transition:width .6s ease;"></div>
+        </div>
+      </div>
+
+      <!-- Card Fretes -->
+      <div class="card" id="rel-card-fretes" style="border:1.5px solid rgba(14,165,233,0.45);background:linear-gradient(145deg,rgba(14,165,233,0.1),rgba(10,10,18,0.95));padding:18px 16px;cursor:pointer;transition:all .2s;" onclick="filtrarTabRelatorio('frete')" title="Ver apenas fretes">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+          <div style="font-size:30px;line-height:1;">🚚</div>
+          <span style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#7dd3fc;background:rgba(14,165,233,0.15);border:1px solid rgba(14,165,233,0.3);padding:3px 10px;border-radius:999px;">FRETES</span>
+        </div>
+        <div id="rel-val-fretes" style="font-size:clamp(22px,5vw,32px);font-weight:900;color:#7dd3fc;line-height:1.1;letter-spacing:-0.01em;">R$ 0,00</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;">
+          <div style="font-size:11.5px;color:var(--muted);">Total em fretes</div>
+          <div id="rel-qtd-fretes" style="font-size:11px;color:#38bdf8;font-weight:800;">0 O.S.</div>
+        </div>
+        <div style="height:3px;background:rgba(255,255,255,0.05);border-radius:99px;margin-top:10px;overflow:hidden;">
+          <div id="rel-bar-fretes" style="height:100%;background:linear-gradient(90deg,#0284c7,#7dd3fc);border-radius:99px;width:0%;transition:width .6s ease;"></div>
+        </div>
+      </div>
+
+      <!-- Card Descontos -->
+      <div class="card" id="rel-card-descontos" style="border:1.5px solid rgba(239,68,68,0.45);background:linear-gradient(145deg,rgba(239,68,68,0.1),rgba(10,10,18,0.95));padding:18px 16px;cursor:pointer;transition:all .2s;" onclick="filtrarTabRelatorio('desconto')" title="Ver apenas descontos">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+          <div style="font-size:30px;line-height:1;">🏷️</div>
+          <span style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#fca5a5;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);padding:3px 10px;border-radius:999px;">DESCONTOS</span>
+        </div>
+        <div id="rel-val-descontos" style="font-size:clamp(22px,5vw,32px);font-weight:900;color:#fca5a5;line-height:1.1;letter-spacing:-0.01em;">R$ 0,00</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;">
+          <div style="font-size:11.5px;color:var(--muted);">Total de descontos dados</div>
+          <div id="rel-qtd-descontos" style="font-size:11px;color:#f87171;font-weight:800;">0 O.S.</div>
+        </div>
+        <div style="height:3px;background:rgba(255,255,255,0.05);border-radius:99px;margin-top:10px;overflow:hidden;">
+          <div id="rel-bar-descontos" style="height:100%;background:linear-gradient(90deg,#b91c1c,#fca5a5);border-radius:99px;width:0%;transition:width .6s ease;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CARD RESUMO TOTAL -->
+    <div class="card" style="border:1.5px solid rgba(37,211,102,0.4);background:linear-gradient(145deg,rgba(37,211,102,0.08),rgba(10,10,18,0.95));padding:16px 18px;margin-bottom:18px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:24px;">💰</span>
+          <div>
+            <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#4ade80;">TOTAL GERAL (RECEITA BRUTA)</div>
+            <div id="rel-total-geral" style="font-size:28px;font-weight:900;color:#4ade80;letter-spacing:-0.01em;">R$ 0,00</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:18px;flex-wrap:wrap;">
+          <div style="text-align:center;">
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:700;">O.S. no Período</div>
+            <div id="rel-total-os" style="font-size:20px;font-weight:900;color:#fff;">0</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:700;">Ticket Médio</div>
+            <div id="rel-ticket-medio" style="font-size:20px;font-weight:900;color:var(--gold-light);">R$ 0,00</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:700;">Receita Líquida</div>
+            <div id="rel-liquido" style="font-size:20px;font-weight:900;color:#34d399;">R$ 0,00</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABELA DETALHADA -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+        <div class="card-title" style="margin-bottom:0;">📋 Ordens de Serviço do Período <span class="num-badge" id="rel-tabela-count">0</span></div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <select id="rel-filtro-categoria" onchange="renderRelatorio()" style="background:#08080f;border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:#fff;padding:6px 12px;font-size:12px;font-family:var(--font);">
+            <option value="todas">Todas as categorias</option>
+            <option value="servico">🔧 Serviços</option>
+            <option value="produto">📦 Produtos</option>
+            <option value="frete">🚚 Fretes</option>
+            <option value="desconto">🏷️ Descontos</option>
+          </select>
+          <select id="rel-filtro-status" onchange="renderRelatorio()" style="background:#08080f;border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:#fff;padding:6px 12px;font-size:12px;font-family:var(--font);">
+            <option value="todos">Todos os status</option>
+            <option value="aprovado">✅ Aprovado</option>
+            <option value="pendente">⏳ Pendente</option>
+            <option value="entregue">📦 Entregue</option>
+            <option value="cancelado">❌ Cancelado</option>
+          </select>
+        </div>
+      </div>
+      <div class="ponto-table-wrap">
+        <table class="ponto-table">
+          <thead>
+            <tr>
+              <th style="width:80px">O.S. Nº</th>
+              <th style="min-width:160px">CLIENTE</th>
+              <th style="width:90px">DATA</th>
+              <th style="min-width:120px">STATUS</th>
+              <th style="width:110px;text-align:right">SERVIÇOS</th>
+              <th style="width:110px;text-align:right">PRODUTOS</th>
+              <th style="width:100px;text-align:right">FRETE</th>
+              <th style="width:100px;text-align:right">DESCONTO</th>
+              <th style="width:120px;text-align:right">TOTAL</th>
+            </tr>
+          </thead>
+          <tbody id="rel-tabela-tbody">
+            <tr><td colspan="9" class="empty">Nenhum dado encontrado no período.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <!-- ══════════════════════════════════════════ -->
   <!-- PANEL: CÂMERA ULTRA ZOOM HD (ALCANCE 200M) -->
   <!-- ══════════════════════════════════════════ -->
@@ -3877,7 +4080,7 @@ function getUser() {
 //  TABS
 // ══════════════════════════════════════════════
 function goTab(t) {
-  ['orcamento','historico','financeiro','agenda','produtos','clientes','ponto','contratos','usuarios','licenca','camera'].forEach(p => {
+  ['orcamento','historico','financeiro','agenda','produtos','clientes','ponto','contratos','usuarios','licenca','camera','relatorio'].forEach(p => {
     const pan = document.getElementById('panel-'+p);
     if (pan) pan.classList.toggle('active', p===t);
     const tab = document.getElementById('tab-'+p);
@@ -3893,6 +4096,7 @@ function goTab(t) {
   if (t==='usuarios')   renderUsuarios();
   if (t==='licenca')    renderPainelLicenca();
   if (t==='camera')     inicializarCameraUltraZoom(); else pausarCameraUltraZoom();
+  if (t==='relatorio')  renderRelatorio();
 }
 
 // ══════════════════════════════════════════════
@@ -4207,6 +4411,32 @@ function calcItem(id) {
 }
 
 let valoresResumoEditadosManualmente = false;
+let tipoDescontoAtual = 'reais'; // 'reais' ou 'porc'
+
+function alternarTipoDesconto(tipo) {
+  tipoDescontoAtual = tipo;
+  const btnR = document.getElementById('btn-tipo-desc-reais');
+  const btnP = document.getElementById('btn-tipo-desc-porc');
+  const wrapR = document.getElementById('wrap-desc-reais');
+  const wrapP = document.getElementById('wrap-desc-porc');
+
+  if (tipo === 'porc') {
+    if (btnR) { btnR.style.background = 'transparent'; btnR.style.color = 'var(--muted)'; }
+    if (btnP) { btnP.style.background = 'rgba(239,68,68,0.45)'; btnP.style.color = '#fff'; }
+    if (wrapR) wrapR.style.display = 'none';
+    if (wrapP) wrapP.style.display = 'flex';
+    const elTaxa = document.getElementById('o-taxa-desconto');
+    if (elTaxa) { elTaxa.focus(); elTaxa.select(); }
+  } else {
+    if (btnR) { btnR.style.background = 'rgba(239,68,68,0.45)'; btnR.style.color = '#fff'; }
+    if (btnP) { btnP.style.background = 'transparent'; btnP.style.color = 'var(--muted)'; }
+    if (wrapR) wrapR.style.display = 'flex';
+    if (wrapP) wrapP.style.display = 'none';
+    const elVal = document.getElementById('o-val-desconto');
+    if (elVal) { elVal.focus(); elVal.select(); }
+  }
+  aoModificarValoresResumoFinanceiro(tipo === 'porc' ? 'desconto_porc' : 'desconto');
+}
 
 function aoModificarValoresResumoFinanceiro(campoOrigem = '') {
   valoresResumoEditadosManualmente = true;
@@ -4219,12 +4449,14 @@ function recalcularTotaisGerais(campoOrigem = '') {
   const elTaxa = document.getElementById('o-taxa-acrescimo');
   const elFrete = document.getElementById('o-val-frete');
   const elDesc = document.getElementById('o-val-desconto');
+  const elTaxaDesc = document.getElementById('o-taxa-desconto');
 
   let valProd = parseNum(elProd ? elProd.value : 0);
   let valServ = parseNum(elServ ? elServ.value : 0);
   let taxaPercent = parseNum(elTaxa ? elTaxa.value : 0);
   const valFrete = parseNum(elFrete ? elFrete.value : 0);
-  const valDesc = parseNum(elDesc ? elDesc.value : 0);
+  let valDesc = parseNum(elDesc ? elDesc.value : 0);
+  let taxaDesc = parseNum(elTaxaDesc ? elTaxaDesc.value : 0);
 
   // 💡 REGRA DO NEGÓCIO:
   // "O VALOR DO SERVIÇO É O VALOR PRODUTOS MAIS A TAXA DE ACRESCIMO, EXEMPLO 1.671,40 + 70% = 1.169,98 QUE ESSE É O VALOR DO SERVIÇO"
@@ -4260,6 +4492,54 @@ function recalcularTotaisGerais(campoOrigem = '') {
       elAcrescimoCalc.innerHTML = `= R$ <strong>${formatarValorPtBr(valServ)}</strong> em serviço`;
     } else {
       elAcrescimoCalc.innerHTML = `= R$ 0,00 em serviço`;
+    }
+  }
+
+  // Base de cálculo do desconto = Subtotal bruto (Produtos + Serviço + Frete)
+  const subtotalBruto = valProd + valServ + valFrete;
+
+  // Lógica de cálculo do Desconto (% vs R$)
+  if (campoOrigem === 'desconto_porc' || (tipoDescontoAtual === 'porc' && campoOrigem !== 'desconto')) {
+    if (subtotalBruto > 0 && taxaDesc > 0) {
+      valDesc = subtotalBruto * (taxaDesc / 100);
+      if (elDesc) elDesc.value = formatarValorPtBr(valDesc);
+    } else if (taxaDesc === 0) {
+      valDesc = 0;
+      if (elDesc) elDesc.value = '0,00';
+    }
+  } else if (campoOrigem === 'desconto') {
+    if (subtotalBruto > 0 && valDesc > 0) {
+      taxaDesc = (valDesc / subtotalBruto) * 100;
+      if (elTaxaDesc) elTaxaDesc.value = formatarCampoTaxa({ value: taxaDesc });
+    } else if (valDesc === 0) {
+      taxaDesc = 0;
+      if (elTaxaDesc) elTaxaDesc.value = '0,00';
+    }
+  } else {
+    // Recálculo ao modificar produtos, frete ou serviço
+    if (tipoDescontoAtual === 'porc' && taxaDesc > 0 && subtotalBruto > 0) {
+      valDesc = subtotalBruto * (taxaDesc / 100);
+      if (elDesc) elDesc.value = formatarValorPtBr(valDesc);
+    } else if (subtotalBruto > 0 && valDesc > 0) {
+      taxaDesc = (valDesc / subtotalBruto) * 100;
+      if (elTaxaDesc) elTaxaDesc.value = formatarCampoTaxa({ value: taxaDesc });
+    }
+  }
+
+  // Atualiza display explicativo do desconto
+  const elDescCalc = document.getElementById('o-desc-equiv-calc');
+  if (elDescCalc) {
+    if (tipoDescontoAtual === 'porc') {
+      elDescCalc.innerHTML = valDesc > 0
+        ? `= <strong>- R$ ${formatarValorPtBr(valDesc)}</strong>`
+        : `= - R$ 0,00`;
+    } else {
+      if (subtotalBruto > 0 && valDesc > 0) {
+        const pct = (valDesc / subtotalBruto) * 100;
+        elDescCalc.innerHTML = `= <strong>${pct.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%</strong> s/ total`;
+      } else {
+        elDescCalc.innerHTML = `= 0% s/ total`;
+      }
     }
   }
 
@@ -4356,6 +4636,7 @@ function getOrc() {
   const elTaxa = document.getElementById('o-taxa-acrescimo');
   const elFrete = document.getElementById('o-val-frete');
   const elDesc = document.getElementById('o-val-desconto');
+  const elTaxaDesc = document.getElementById('o-taxa-desconto');
 
   const valProdutos = parseNum(elProd ? elProd.value : 0);
   const taxaAcrescimo = parseNum(elTaxa ? elTaxa.value : 0);
@@ -4365,6 +4646,8 @@ function getOrc() {
   }
   const valFrete = parseNum(elFrete ? elFrete.value : 0);
   const valDesconto = parseNum(elDesc ? elDesc.value : 0);
+  const taxaDesconto = parseNum(elTaxaDesc ? elTaxaDesc.value : 0);
+  const tipoDesconto = tipoDescontoAtual || 'reais';
   const valAcrescimo = valServico;
 
   return {
@@ -4388,6 +4671,8 @@ function getOrc() {
     valAcrescimo: valAcrescimo,
     valFrete: valFrete,
     valDesconto: valDesconto,
+    taxaDesconto: taxaDesconto,
+    tipoDesconto: tipoDesconto,
     itens:  getItens(),
     data:   new Date().toLocaleDateString('pt-BR')
   };
@@ -4789,10 +5074,13 @@ function cancelarEdicaoOs() {
 
   ['o-nome','o-cnpj','o-tel','o-bairro','o-end','o-num','o-apto','o-resp','o-prazo','o-garantia','o-obs','forma-outro']
     .forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
-  ['o-val-produtos','o-val-servico','o-taxa-acrescimo','o-val-frete','o-val-desconto']
+  ['o-val-produtos','o-val-servico','o-taxa-acrescimo','o-val-frete','o-val-desconto','o-taxa-desconto']
     .forEach(id => { const el=document.getElementById(id); if(el) el.value='0,00'; });
   const elAcrescimoCalc = document.getElementById('o-taxa-acrescimo-calc');
   if (elAcrescimoCalc) elAcrescimoCalc.innerHTML = '= R$ 0,00 em serviço';
+  const elDescCalc = document.getElementById('o-desc-equiv-calc');
+  if (elDescCalc) elDescCalc.innerHTML = '= 0% s/ total';
+  alternarTipoDesconto('reais');
   document.getElementById('itens-lista').innerHTML = '';
   itemId = 0; addItem();
   selChip(document.querySelector('.chip'),'À vista');
@@ -5519,7 +5807,15 @@ function editarOs(id) {
     elServ.value = formatarValorPtBr(parseNum(d.valProdutos) * (parseNum(d.taxaAcrescimo) / 100));
   }
   if (elFrete && d.valFrete != null) elFrete.value = formatarValorPtBr(d.valFrete);
-  if (elDesc && d.valDesconto != null) elDesc.value = formatarValorPtBr(d.valDesconto);
+  const elTaxaDesc = document.getElementById('o-taxa-desconto');
+  if (d.tipoDesconto === 'porc' || (d.taxaDesconto > 0 && !d.valDesconto)) {
+    alternarTipoDesconto('porc');
+    if (elTaxaDesc && d.taxaDesconto != null) elTaxaDesc.value = formatarCampoTaxa({ value: d.taxaDesconto });
+  } else {
+    alternarTipoDesconto('reais');
+    if (elDesc && d.valDesconto != null) elDesc.value = formatarValorPtBr(d.valDesconto);
+    if (elTaxaDesc && d.taxaDesconto != null) elTaxaDesc.value = formatarCampoTaxa({ value: d.taxaDesconto });
+  }
   recalcularTotaisGerais('edicao');
 
   // Configurações do modo de edição de O.S. com modificações
@@ -9630,8 +9926,12 @@ async function gerarPdfOrcamentoDoc(dados) {
 
   if (valDescNum > 0) {
     totY -= 13;
+    const taxaDescPct = parseNum(dados.taxaDesconto);
+    const labelDesc = (taxaDescPct > 0 || dados.tipoDesconto === 'porc')
+      ? `Desconto Especial (${taxaDescPct > 0 ? taxaDescPct.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) : ''}%):`
+      : 'Desconto Especial:';
     const txtDesc = '- R$ ' + formatarValorPtBr(valDescNum);
-    page.drawText('Desconto Especial:', { x: rightCardX + 10, y: totY, size: 6.8, font: fontRegular, color: rgb(0.8, 0.2, 0.2) });
+    page.drawText(labelDesc, { x: rightCardX + 10, y: totY, size: 6.8, font: fontRegular, color: rgb(0.8, 0.2, 0.2) });
     page.drawText(txtDesc, { x: rightCardX + rightCardW - 10 - fontBold.widthOfTextAtSize(txtDesc, 7.2), y: totY, size: 7.2, font: fontBold, color: rgb(0.8, 0.2, 0.2) });
   }
 
@@ -11432,6 +11732,317 @@ function limparHistoricoLiberacoesFin() {
   localStorage.setItem('sdv_solicitacoes_edicao_fin', JSON.stringify(lista));
   renderizarListaCodigosEmpresa();
 }
+
+// ══════════════════════════════════════════════
+//  MÓDULO: RELATÓRIO FINANCEIRO
+// ══════════════════════════════════════════════
+
+var _relFiltroCategoria = 'todas'; // usado ao clicar nos cards KPI
+
+function obterIntervaloRelatorio() {
+  var periodo = (document.getElementById('rel-filtro-periodo') || {}).value || 'mes';
+  var agora = new Date();
+  var inicio = null;
+  var fim = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), 23, 59, 59, 999);
+
+  if (periodo === 'hoje') {
+    inicio = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), 0, 0, 0, 0);
+  } else if (periodo === 'semana') {
+    var dow = agora.getDay(); // 0=dom
+    inicio = new Date(agora);
+    inicio.setDate(agora.getDate() - dow);
+    inicio.setHours(0, 0, 0, 0);
+  } else if (periodo === 'mes') {
+    inicio = new Date(agora.getFullYear(), agora.getMonth(), 1, 0, 0, 0, 0);
+  } else if (periodo === 'trimestre') {
+    var trim = Math.floor(agora.getMonth() / 3);
+    inicio = new Date(agora.getFullYear(), trim * 3, 1, 0, 0, 0, 0);
+  } else if (periodo === 'ano') {
+    inicio = new Date(agora.getFullYear(), 0, 1, 0, 0, 0, 0);
+  } else {
+    // tudo
+    inicio = null;
+  }
+  return { inicio: inicio, fim: fim };
+}
+
+function parseDateOS(os) {
+  var dObj = os.dados || os;
+  var raw = os.data_orc || os.data || dObj.data || dObj.data_orc || os.dataEmissao || os.dataCriacao || os.criadoEm || os.updatedAt || null;
+  if (!raw) return null;
+  if (raw instanceof Date) return isNaN(raw.getTime()) ? null : raw;
+  var d = new Date(raw);
+  if (isNaN(d.getTime())) {
+    var parts = String(raw).split('/');
+    if (parts.length === 3) {
+      d = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+    }
+  }
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function extrairValoresOS(os) {
+  var d = os.dados || os;
+  var vServico = 0;
+  var vProduto = 0;
+  var vFrete = 0;
+  var vDesconto = 0;
+
+  // Frete direto
+  if (d.valFrete !== undefined && d.valFrete !== null && d.valFrete !== '') {
+    vFrete = parseNum(d.valFrete);
+  } else if (os.frete || os.valorFrete || os.taxaEntrega) {
+    vFrete = parseNum(os.frete || os.valorFrete || os.taxaEntrega);
+  }
+
+  // Desconto direto
+  if (d.valDesconto !== undefined && d.valDesconto !== null && d.valDesconto !== '') {
+    vDesconto = parseNum(d.valDesconto);
+  } else if (os.desconto || os.valorDesconto || os.descontoValor) {
+    vDesconto = parseNum(os.desconto || os.valorDesconto || os.descontoValor);
+  } else if (os.descontoPct || d.descontoPct) {
+    var baseTotal = parseNum(os.total || d.total || 0);
+    vDesconto = baseTotal * (parseNum(os.descontoPct || d.descontoPct) / 100);
+  }
+
+  // Serviços e Produtos quando informados diretamente no orçamento
+  var temServicoDireto = false;
+  if (d.valServico !== undefined && d.valServico !== null && d.valServico !== '') {
+    vServico = parseNum(d.valServico);
+    temServicoDireto = true;
+  } else if (os.valorServico !== undefined && os.valorServico !== null) {
+    vServico = parseNum(os.valorServico);
+    temServicoDireto = true;
+  }
+
+  var temProdutoDireto = false;
+  if (d.valProdutos !== undefined && d.valProdutos !== null && d.valProdutos !== '') {
+    vProduto = parseNum(d.valProdutos);
+    temProdutoDireto = true;
+  } else if (os.valorProduto !== undefined && os.valorProduto !== null) {
+    vProduto = parseNum(os.valorProduto);
+    temProdutoDireto = true;
+  }
+
+  // Se não temos valores diretos explícitos, processa lista de itens
+  var itens = (d.itens && Array.isArray(d.itens) && d.itens.length) ? d.itens : (os.itens || os.items || []);
+  if ((!temServicoDireto && !temProdutoDireto) && Array.isArray(itens) && itens.length > 0) {
+    itens.forEach(function(item) {
+      var totalItem = parseNum(item.total || item.subtotal || item.valor || (parseNum(item.v_unit || item.preco || 0) * parseNum(item.qtd || 1)));
+      var cat = (item.cat || item.categoria || item.tipo || '').toLowerCase();
+      var nome = (item.nome || item.descricao || item.desc || item.produto || '').toLowerCase();
+      if (cat === 'frete' || nome.includes('frete') || nome.includes('entrega') || nome.includes('transporte')) {
+        if (!vFrete) vFrete += totalItem;
+      } else if (cat === 'servico' || cat === 'serviço' || cat === 'serviços' || cat === 'servicos' ||
+                 nome.includes('instalação') || nome.includes('instalacao') || nome.includes('montagem') ||
+                 nome.includes('manutenção') || nome.includes('manutencao') || nome.includes('serviço') ||
+                 nome.includes('mão de obra') || nome.includes('mao de obra') || nome.includes('corte')) {
+        vServico += totalItem;
+      } else {
+        vProduto += totalItem;
+      }
+    });
+  }
+
+  // Caso de fallback: se não temos itens nem discriminados, total geral vira produto
+  if (!vServico && !vProduto) {
+    var tot = parseNum(os.total || d.total || 0);
+    vProduto = Math.max(0, tot - vFrete + vDesconto);
+  }
+
+  return { servico: vServico, produto: vProduto, frete: vFrete, desconto: vDesconto };
+}
+
+function renderRelatorio() {
+  var intervalo = obterIntervaloRelatorio();
+  var statusFiltro = (document.getElementById('rel-filtro-status') || {}).value || 'todos';
+  var catFiltro = (document.getElementById('rel-filtro-categoria') || {}).value || _relFiltroCategoria || 'todas';
+
+  var todasOS = historico || load(K.orders, []);
+
+  // Filtra por período
+  var osFiltradas = todasOS.filter(function(os) {
+    if (intervalo.inicio) {
+      var d = parseDateOS(os);
+      if (!d) return true; // sem data: inclui
+      if (d < intervalo.inicio || d > intervalo.fim) return false;
+    }
+    // Filtro status
+    if (statusFiltro !== 'todos') {
+      var st = (os.status || '').toLowerCase();
+      if (st !== statusFiltro) return false;
+    }
+    return true;
+  });
+
+  // Acumula totais
+  var totalServicos = 0, totalProdutos = 0, totalFretes = 0, totalDescontos = 0;
+  var cntServicos = 0, cntProdutos = 0, cntFretes = 0, cntDescontos = 0;
+
+  var linhas = osFiltradas.map(function(os) {
+    var v = extrairValoresOS(os);
+    if (v.servico > 0) { totalServicos += v.servico; cntServicos++; }
+    if (v.produto > 0) { totalProdutos += v.produto; cntProdutos++; }
+    if (v.frete > 0) { totalFretes += v.frete; cntFretes++; }
+    if (v.desconto > 0) { totalDescontos += v.desconto; cntDescontos++; }
+    return { os: os, v: v };
+  });
+
+  var totalGeral = totalServicos + totalProdutos + totalFretes;
+  var totalLiquido = totalGeral - totalDescontos;
+  var ticketMedio = linhas.length > 0 ? totalLiquido / linhas.length : 0;
+
+  // Atualiza KPI cards
+  var maxVal = Math.max(totalServicos, totalProdutos, totalFretes, totalDescontos, 1);
+
+  function setKPI(valId, qtdId, barId, val, qtd, pct) {
+    var elV = document.getElementById(valId);
+    var elQ = document.getElementById(qtdId);
+    var elB = document.getElementById(barId);
+    if (elV) elV.textContent = 'R$ ' + val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (elQ) elQ.textContent = qtd + ' O.S.';
+    if (elB) elB.style.width = Math.min(100, pct) + '%';
+  }
+
+  setKPI('rel-val-servicos', 'rel-qtd-servicos', 'rel-bar-servicos', totalServicos, cntServicos, (totalServicos / maxVal) * 100);
+  setKPI('rel-val-produtos', 'rel-qtd-produtos', 'rel-bar-produtos', totalProdutos, cntProdutos, (totalProdutos / maxVal) * 100);
+  setKPI('rel-val-fretes', 'rel-qtd-fretes', 'rel-bar-fretes', totalFretes, cntFretes, (totalFretes / maxVal) * 100);
+  setKPI('rel-val-descontos', 'rel-qtd-descontos', 'rel-bar-descontos', totalDescontos, cntDescontos, (totalDescontos / maxVal) * 100);
+
+  // Totalizadores
+  var fmtBRL = function(v) { return 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+  var elTG = document.getElementById('rel-total-geral');
+  var elTOS = document.getElementById('rel-total-os');
+  var elTM = document.getElementById('rel-ticket-medio');
+  var elLQ = document.getElementById('rel-liquido');
+  if (elTG) elTG.textContent = fmtBRL(totalGeral);
+  if (elTOS) elTOS.textContent = linhas.length;
+  if (elTM) elTM.textContent = fmtBRL(ticketMedio);
+  if (elLQ) elLQ.textContent = fmtBRL(totalLiquido);
+
+  // Filtra linhas para tabela se filtro de categoria ativo
+  var linhasTabela = linhas;
+  if (catFiltro === 'servico') linhasTabela = linhas.filter(function(l) { return l.v.servico > 0; });
+  else if (catFiltro === 'produto') linhasTabela = linhas.filter(function(l) { return l.v.produto > 0; });
+  else if (catFiltro === 'frete') linhasTabela = linhas.filter(function(l) { return l.v.frete > 0; });
+  else if (catFiltro === 'desconto') linhasTabela = linhas.filter(function(l) { return l.v.desconto > 0; });
+
+  // Atualiza badge
+  var badge = document.getElementById('rel-tabela-count');
+  if (badge) badge.textContent = linhasTabela.length;
+
+  // Renderiza tabela
+  var tbody = document.getElementById('rel-tabela-tbody');
+  if (!tbody) return;
+
+  if (linhasTabela.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" class="empty">Nenhum dado encontrado no período.</td></tr>';
+    return;
+  }
+
+  var STATUS_LABELS = {
+    aprovado: '<span style="color:#4ade80;font-weight:800;">✅ Aprovado</span>',
+    pendente: '<span style="color:#fbbf24;font-weight:800;">⏳ Pendente</span>',
+    entregue: '<span style="color:#38bdf8;font-weight:800;">📦 Entregue</span>',
+    cancelado: '<span style="color:#f87171;font-weight:800;">❌ Cancelado</span>',
+    medicao: '<span style="color:#a78bfa;font-weight:800;">📐 Medição</span>',
+    producao: '<span style="color:#fb923c;font-weight:800;">⚙️ Produção</span>',
+    instalacao: '<span style="color:#34d399;font-weight:800;">🔧 Instalação</span>',
+    reajustar: '<span style="color:#f59e0b;font-weight:800;">🔄 Reajustar</span>'
+  };
+
+  var html = '';
+  linhasTabela.forEach(function(linha) {
+    var os = linha.os;
+    var v = linha.v;
+    var num = os.numero || os.num || os.id || '-';
+    var cliente = os.nome || os.cliente || os.clienteNome || '-';
+    var dataStr = '-';
+    var d = parseDateOS(os);
+    if (d) dataStr = d.toLocaleDateString('pt-BR');
+    var st = (os.status || '').toLowerCase();
+    var stLabel = STATUS_LABELS[st] || ('<span style="color:var(--muted);">' + (os.status || '-') + '</span>');
+    var totalOS = v.servico + v.produto + v.frete - v.desconto;
+    html += '<tr>';
+    html += '<td style="font-weight:800;color:var(--gold-light);">#' + num + '</td>';
+    html += '<td style="font-weight:600;">' + cliente + '</td>';
+    html += '<td style="color:var(--text2);">' + dataStr + '</td>';
+    html += '<td>' + stLabel + '</td>';
+    html += '<td style="text-align:right;color:var(--gold-light);font-weight:700;">' + (v.servico > 0 ? fmtBRL(v.servico) : '<span style="color:var(--muted);">—</span>') + '</td>';
+    html += '<td style="text-align:right;color:#c4b5fd;font-weight:700;">' + (v.produto > 0 ? fmtBRL(v.produto) : '<span style="color:var(--muted);">—</span>') + '</td>';
+    html += '<td style="text-align:right;color:#7dd3fc;font-weight:700;">' + (v.frete > 0 ? fmtBRL(v.frete) : '<span style="color:var(--muted);">—</span>') + '</td>';
+    html += '<td style="text-align:right;color:#fca5a5;font-weight:700;">' + (v.desconto > 0 ? ('-' + fmtBRL(v.desconto)) : '<span style="color:var(--muted);">—</span>') + '</td>';
+    html += '<td style="text-align:right;font-weight:900;color:#4ade80;">' + fmtBRL(totalOS) + '</td>';
+    html += '</tr>';
+  });
+  tbody.innerHTML = html;
+}
+
+function filtrarTabRelatorio(cat) {
+  // Atualiza select de categoria e re-renderiza
+  var sel = document.getElementById('rel-filtro-categoria');
+  if (sel) sel.value = cat;
+  _relFiltroCategoria = cat;
+  // Highlight do card clicado
+  ['servico','produto','frete','desconto'].forEach(function(c) {
+    var card = document.getElementById('rel-card-' + c + 's');
+    if (card) card.style.transform = (c === cat) ? 'scale(1.03)' : '';
+  });
+  renderRelatorio();
+}
+
+function exportarRelatorioCSV() {
+  var intervalo = obterIntervaloRelatorio();
+  var todasOS = historico || load(K.orders, []);
+  var osFiltradas = todasOS.filter(function(os) {
+    if (intervalo.inicio) {
+      var d = parseDateOS(os);
+      if (!d) return true;
+      if (d < intervalo.inicio || d > intervalo.fim) return false;
+    }
+    return true;
+  });
+  var linhas = ['Nº O.S.,Cliente,Data,Status,Serviços,Produtos,Frete,Desconto,Total'];
+  osFiltradas.forEach(function(os) {
+    var v = extrairValoresOS(os);
+    var num = os.numero || os.num || os.id || '';
+    var cliente = (os.nome || os.cliente || '').replace(/,/g, ' ');
+    var d = parseDateOS(os);
+    var dataStr = d ? d.toLocaleDateString('pt-BR') : '';
+    var st = os.status || '';
+    var total = v.servico + v.produto + v.frete - v.desconto;
+    var fmt = function(n) { return n.toFixed(2).replace('.', ','); };
+    linhas.push([num, cliente, dataStr, st, fmt(v.servico), fmt(v.produto), fmt(v.frete), fmt(v.desconto), fmt(total)].join(','));
+  });
+  var csv = linhas.join('\n');
+  var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'relatorio_sdmoveis_' + new Date().toISOString().slice(0, 10) + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function imprimirRelatorio() {
+  window.print();
+}
+
+// Garante que o painel é incluído no goTab
+(function patchGoTabRelatorio() {
+  var origGoTab = typeof goTab === 'function' ? goTab : null;
+  if (origGoTab) {
+    var _orig = origGoTab;
+    window.goTab = function(t) {
+      _orig(t);
+      if (t === 'relatorio') {
+        setTimeout(renderRelatorio, 50);
+      }
+    };
+  }
+})();
 </script>
 
 <!-- ══ MODAL DE AUTORIZAÇÃO DE EDIÇÃO (FINANCEIRO PESSOAL DOS COLABORADORES) ══ -->
