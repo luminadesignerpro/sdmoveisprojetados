@@ -493,7 +493,7 @@
 
       <div class="client-row">
         <div>Cliente: <strong id="display-cliente">-</strong></div>
-        <div style="margin-top:4px;">Documento: <strong id="subtitulo">SD Vidros</strong></div>
+        <div style="margin-top:4px;">Documento: <strong id="subtitulo">SD Móveis Projetados</strong></div>
       </div>
 
       <!-- Actions: Download PDF or Review -->
@@ -917,7 +917,7 @@
     const btnAjustar = document.getElementById('btn-ajustar-zap');
     if (btnAjustar) {
       const licAtivaAjuste = obterLicencaAtiva();
-    const zapMsg = 'Olá ' + (licAtivaAjuste.nome || 'SD Vidros') + '! Recebi a proposta ' + numOs + ' (' + cliNome + '), mas gostaria de tirar algumas dúvidas e falar sobre ajustes antes de aprovar.';
+    const zapMsg = 'Olá ' + (licAtivaAjuste.nome || 'SD Móveis Projetados') + '! Recebi a proposta ' + numOs + ' (' + cliNome + '), mas gostaria de tirar algumas dúvidas e falar sobre ajustes antes de aprovar.';
       btnAjustar.href = 'https://wa.me/5585996119824?text=' + encodeURIComponent(zapMsg);
     }
 
@@ -1136,7 +1136,7 @@ WhatsApp: ${d.tel || d.t || '_________________________________'}`;
     .catch(err => {
       let msg = err.message || 'Erro ao carregar proposta.';
       if (msg.includes('fetch failed')) {
-        msg = 'Servidor temporariamente indisponível. Entre em contato via WhatsApp com a SD Vidros.';
+        msg = 'Servidor temporariamente indisponível. Entre em contato via WhatsApp com SD Móveis Projetados.';
       }
       mostrarErro(msg);
     });
