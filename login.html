@@ -1249,6 +1249,7 @@
   function getUsers() {
     try {
       const u = localStorage.getItem('sdv_users');
+      if (!u) {
         const def = [
           { id: 1, username: 'samuel', nome: 'Samuel', senha: '123', ativo: true, role: 'admin' },
           { id: 2, username: 'admin', nome: 'Administrador', senha: 'admin123', ativo: true, role: 'admin' }
@@ -1257,7 +1258,12 @@
         return def;
       }
       return JSON.parse(u);
-    } catch { return []; }
+    } catch {
+      return [
+        { id: 1, username: 'samuel', nome: 'Samuel', senha: '123', ativo: true, role: 'admin' },
+        { id: 2, username: 'admin', nome: 'Administrador', senha: 'admin123', ativo: true, role: 'admin' }
+      ];
+    }
   }
 
   document.getElementById('l-user').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('l-senha').focus(); });
@@ -1274,7 +1280,7 @@
   }
 
   function esqueciSenha() {
-    alert('🔑 RECUPERAÇÃO DE ACESSO — SD VIDROS\n\nCredenciais padrão:\n• Usuário: admin\n• Senha: admin123\n\nOu entre em contato via WhatsApp com o suporte:\n(85) 99611-9824');
+    alert('🔑 RECUPERAÇÃO DE ACESSO — SD MÓVEIS PROJETADOS\n\nCredenciais padrão:\n• Usuário: admin\n• Senha: admin123\n\nOu entre em contato via WhatsApp com o suporte:\n(85) 99611-9824');
   }
 
   function concluirLogin(user, viaBiometria = false) {
