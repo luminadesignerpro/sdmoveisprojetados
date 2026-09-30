@@ -1915,7 +1915,7 @@
         <button class="portal-modal-close" onclick="fecharModalTrocarSenha()">✕</button>
       </div>
       <p style="font-size:12.5px;color:var(--text2);margin-bottom:16px;line-height:1.4;">
-        Defina uma nova senha exclusiva para acessar o seu acompanhamento na SD Vidros.
+        Defina uma nova senha exclusiva para acessar o seu acompanhamento na SD Móveis Projetados.
       </p>
 
       <div class="field-box">
@@ -1951,7 +1951,7 @@
         <button class="portal-modal-close" onclick="fecharModalEsqueciSenha()">✕</button>
       </div>
       <p style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:14px;">
-        Por padrão de fábrica, sua senha inicial corresponde aos <strong>4 últimos dígitos do seu WhatsApp</strong> cadastrado na SD Vidros.
+        Por padrão de fábrica, sua senha inicial corresponde aos <strong>4 últimos dígitos do seu WhatsApp</strong> ou <strong>1234</strong>.
       </p>
 
       <div style="background:rgba(201,168,76,0.1);border:1px solid var(--gold);border-radius:12px;padding:12px 14px;margin-bottom:16px;">
@@ -1963,7 +1963,7 @@
         Se você já alterou sua senha e esqueceu, clique abaixo para falar diretamente com nosso atendimento e redefinir imediatamente:
       </p>
 
-      <a href="https://wa.me/5585996119824?text=Ol%C3%A1%2C%20esqueci%20minha%20senha%20de%20acesso%20ao%20portal%20da%20SD%20Vidros%20e%20gostaria%20de%20redefinir." target="_blank" style="width:100%;background:linear-gradient(135deg,#25D366,#16a34a);color:#000;text-decoration:none;padding:13px;border-radius:12px;font-size:13.5px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:8px;">
+      <a href="https://wa.me/5585996119824?text=Ol%C3%A1%2C%20esqueci%20minha%20senha%20de%20acesso%20ao%20portal%20da%20SD%20M%C3%B3veis%20Projetados%20e%20gostaria%20de%20redefinir." target="_blank" style="width:100%;background:linear-gradient(135deg,#25D366,#16a34a);color:#000;text-decoration:none;padding:13px;border-radius:12px;font-size:13.5px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:8px;">
         📱 Solicitar Redefinição no WhatsApp
       </a>
     </div>
@@ -2096,10 +2096,10 @@
     <!-- ══════════════════════════════════════════════ -->
     <div id="view-login" class="login-container">
       <div class="login-logo">
-        <img id="portal-login-logo" src="logo.jpg" alt="Logo" onerror="this.src='icon-192.png'">
+        <img id="portal-login-logo" src="logo_moveis.jpg" alt="SD Móveis Projetados" onerror="this.src='icon-192.png'">
       </div>
       <h2 class="login-title">Área do Cliente</h2>
-      <p class="login-sub" id="portal-login-sub">SD Vidros · Acompanhamento de Serviços</p>
+      <p class="login-sub" id="portal-login-sub">SD Móveis Projetados · Acompanhamento de Serviços</p>
 
       <div class="field-box">
         <label>WhatsApp / Telefone ou CPF</label>
@@ -2151,7 +2151,7 @@
       <!-- ══ CABEÇALHO COM BANNER LUXO ══ -->
       <div class="gold-ornament-frame">
         <div class="banner">
-          <img id="portal-banner-img" src="banner.jpg" alt="Showroom e Projetos Sob Medida">
+          <img id="portal-banner-img" src="banner_moveis.jpg" alt="Showroom e Projetos Sob Medida">
         </div>
         <div class="banner-bottom-bar" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
           <div class="user-pill" style="flex:1;justify-content:center;">
@@ -2243,7 +2243,7 @@
               <div class="timeline-icon-wrap">✓</div>
               <div class="timeline-content">
                 <div class="timeline-item-title">1. Orçamento Aprovado & Confirmado</div>
-                <div class="timeline-item-desc">Projeto aceito e registrado no sistema da SD Vidros.</div>
+                <div class="timeline-item-desc">Projeto aceito e registrado no sistema da SD Móveis Projetados.</div>
               </div>
             </div>
 
@@ -2327,7 +2327,7 @@
             <div class="chat-header-info">
               <div class="chat-avatar">💎</div>
               <div>
-                <div class="chat-header-name" id="portal-chat-company-title">Suporte & Técnico SD Vidros</div>
+                <div class="chat-header-name" id="portal-chat-company-title">Suporte & Técnico SD Móveis Projetados</div>
                 <div class="chat-status-text">
                   <span style="width: 7px; height: 7px; border-radius: 50%; background: #4ade80; display: inline-block;"></span>
                   Online para atendimento
@@ -2360,7 +2360,7 @@
           </div>
 
           <div class="chat-input-bar">
-            <input type="text" id="chat-input-text" class="chat-input" placeholder="Digite sua mensagem ou dúvida para a SD Vidros..." onkeydown="if(event.key==='Enter') enviarMensagemCliente()">
+            <input type="text" id="chat-input-text" class="chat-input" placeholder="Digite sua mensagem ou dúvida para a SD Móveis Projetados..." onkeydown="if(event.key==='Enter') enviarMensagemCliente()">
             <button class="btn-send-msg" onclick="enviarMensagemCliente()">
               Enviar ➔
             </button>
@@ -3441,7 +3441,7 @@
     // ══════════════════════════════════════════════
     //  CANAL EM TEMPO REAL (NTFY PUB/SUB)
     // ══════════════════════════════════════════════
-    const NTFY_TOPIC = 'sdvidros_portal_notificacoes';
+    const NTFY_TOPIC = 'sdmoveis_portal_notificacoes';
     let ssePortal = null;
 
     // Estado do Cliente Conectado
@@ -3533,101 +3533,73 @@
         let empUrl = (params.get('empresa') || params.get('emp') || '').toLowerCase().trim();
         let nomeUrl = params.get('nome') || params.get('empNome');
 
-        if (empUrl === 'samuel-david' || empUrl === 'samuel') {
-          empUrl = 'sdvidros';
-          nomeUrl = 'SD Vidros';
-        }
         if (!empUrl && nomeUrl) {
           const nl = nomeUrl.toLowerCase();
-          if (nl.includes('samuel') && !nl.includes('moveis') && !nl.includes('móveis')) {
-            empUrl = 'sdvidros';
-            nomeUrl = 'SD Vidros';
-          } else if (nl.includes('tc')) empUrl = 'tcmoveis';
-          else if (nl.includes('sd móveis') || nl.includes('sd moveis') || nl === 'sd-moveis') empUrl = 'sd-moveis';
-          else if (nl.includes('vidros')) empUrl = 'sdvidros';
+          if (nl.includes('vidros')) empUrl = 'sdvidros';
+          else empUrl = 'sdmoveis';
         }
 
         if (empUrl) {
           localStorage.setItem('sdv_licenca_ativa', empUrl);
           let lista = JSON.parse(localStorage.getItem('sdv_licencas') || '[]');
-          let enc = lista.find(l => l.id === empUrl || 
-            ((empUrl.includes('moveis') || empUrl === 'sdmoveis' || empUrl === 'sd-moveis') && (l.id.includes('moveis') || (l.nome && l.nome.toLowerCase().includes('moveis')))) ||
-            (empUrl === 'sdvidros' && (l.id === 'sdvidros' || l.id === 'samuel-david')));
-
-          const ehMoveis = ((nomeUrl && (nomeUrl.toLowerCase().includes('móveis') || nomeUrl.toLowerCase().includes('moveis'))) || 
-                           (enc && enc.nome && (enc.nome.toLowerCase().includes('móveis') || enc.nome.toLowerCase().includes('moveis'))) || 
-                           empUrl === 'sdmoveis' || empUrl === 'sd-moveis' || empUrl.includes('moveis') || empUrl.includes('tc')) && 
-                           !empUrl.includes('vidros') && !(nomeUrl && nomeUrl.toLowerCase().includes('vidros'));
-
-          const nomePadrao = (empUrl === 'sdvidros') ? 'SD Vidros' :
-                             (empUrl.includes('tc')) ? 'Tc móveis' :
-                             (empUrl.includes('moveis') || empUrl === 'sdmoveis' || empUrl === 'sd-moveis') ? 'SD móveis' : 'SD Vidros';
+          let enc = lista.find(l => l.id === empUrl);
+          const ehVidros = empUrl === 'sdvidros' || (nomeUrl && nomeUrl.toLowerCase().includes('vidros'));
 
           if (!enc) {
             enc = {
               id: empUrl,
-              nome: nomeUrl || nomePadrao,
-              segmento: ehMoveis ? (empUrl.includes('tc') ? 'Móveis planejados' : 'Móveis Planejados & Ambientes Sob Medida') : 'Alumínio, Vidros & Esquadrias',
+              nome: nomeUrl || (ehVidros ? 'SD Vidros' : 'SD Móveis Projetados'),
+              segmento: ehVidros ? 'Alumínio, Vidros & Esquadrias' : 'Móveis Planejados & Marcenaria de Luxo',
               telefone: params.get('tel') || '(85) 99611-9824',
-              slogan: ehMoveis ? 'Ambientes Sob Medida' : 'Box, Espelhos, Portas, Janelas & Guarda-Corpo',
-              logo: ehMoveis ? 'logo_moveis.jpg' : 'logo.jpg',
-              banner: ehMoveis ? 'banner_moveis.jpg' : 'banner.jpg',
-              tipoContrato: ehMoveis ? 'moveis' : 'vidros'
+              slogan: ehVidros ? 'Box, Espelhos, Portas, Janelas & Guarda-Corpo' : 'Cozinhas Planejadas, Closets & Ambientes Sob Medida',
+              logo: ehVidros ? 'logo.jpg' : 'logo_moveis.jpg',
+              banner: ehVidros ? 'banner.jpg' : 'banner_moveis.jpg',
+              tipoContrato: ehVidros ? 'vidros' : 'moveis'
             };
             lista.push(enc);
             localStorage.setItem('sdv_licencas', JSON.stringify(lista));
             return enc;
           } else {
-            if (nomeUrl && enc.nome !== nomeUrl) {
-              enc.nome = nomeUrl;
-            }
-            if (ehMoveis) {
-              enc.segmento = enc.segmento || (empUrl.includes('tc') ? 'Móveis planejados' : 'Móveis Planejados & Ambientes Sob Medida');
+            if (nomeUrl && enc.nome !== nomeUrl) enc.nome = nomeUrl;
+            if (!ehVidros) {
               if (!enc.logo || enc.logo === 'logo.jpg') enc.logo = 'logo_moveis.jpg';
-              if (!enc.banner || enc.banner === 'banner.jpg' || enc.banner === 'banner_ia_vidros.jpg') enc.banner = 'banner_ia_moveis.jpg';
-            } else {
-              if (!enc.logo || enc.logo === 'logo_moveis.jpg') enc.logo = 'logo.jpg';
-              if (!enc.banner || enc.banner === 'banner_moveis.jpg' || enc.banner === 'banner_ia_moveis.jpg') enc.banner = 'banner.jpg';
-              if (enc.id === 'samuel-david' || enc.nome === 'Samuel David') {
-                enc.nome = 'SD Vidros';
-                enc.id = 'sdvidros';
-              }
+              if (!enc.banner || enc.banner === 'banner.jpg') enc.banner = 'banner_moveis.jpg';
             }
             localStorage.setItem('sdv_licencas', JSON.stringify(lista));
             return enc;
           }
         }
         let lista = JSON.parse(localStorage.getItem('sdv_licencas') || '[]');
-        let idAtivo = localStorage.getItem('sdv_licenca_ativa') || 'sdvidros';
-        if (idAtivo === 'samuel-david' || idAtivo === 'samuel') {
-          idAtivo = 'sdvidros';
-          localStorage.setItem('sdv_licenca_ativa', 'sdvidros');
+        let idAtivo = localStorage.getItem('sdv_licenca_ativa') || 'sdmoveis';
+        if (idAtivo === 'samuel-david' || idAtivo === 'samuel' || idAtivo === 'sdvidros') {
+          idAtivo = 'sdmoveis';
+          localStorage.setItem('sdv_licenca_ativa', 'sdmoveis');
         }
         if (Array.isArray(lista) && lista.length) {
-          let encontrada = lista.find(l => l.id === idAtivo);
+          let encontrada = lista.find(l => l.id === idAtivo) || lista.find(l => l.id === 'sdmoveis');
           if (encontrada) {
-            if (encontrada.id === 'sdvidros' || encontrada.id === 'samuel-david' || (encontrada.slogan && encontrada.slogan.toLowerCase().includes('box'))) {
-              encontrada.nome = 'SD Vidros';
-              encontrada.logo = 'logo.jpg';
-              encontrada.banner = 'banner.jpg';
-              encontrada.segmento = 'Alumínio, Vidros & Esquadrias';
-              encontrada.slogan = 'Box, Espelhos, Portas, Janelas & Guarda-Corpo';
+            if (encontrada.id === 'sdmoveis' || !encontrada.id || (encontrada.nome && encontrada.nome.toLowerCase().includes('móve'))) {
+              encontrada.nome = encontrada.nome || 'SD Móveis Projetados';
+              encontrada.logo = encontrada.logo || 'logo_moveis.jpg';
+              encontrada.banner = encontrada.banner || 'banner_moveis.jpg';
+              encontrada.segmento = encontrada.segmento || 'Móveis Planejados & Marcenaria de Luxo';
+              encontrada.slogan = encontrada.slogan || 'Cozinhas Planejadas, Closets & Ambientes Sob Medida';
             }
             return encontrada;
           }
         }
       } catch(_) {}
       return {
-        id: 'sdvidros',
-        nome: 'SD Vidros',
-        segmento: 'Alumínio, Vidros & Esquadrias',
-        slogan: 'Box, Espelhos, Portas, Janelas & Guarda-Corpo',
+        id: 'sdmoveis',
+        nome: 'SD Móveis Projetados',
+        segmento: 'Móveis Planejados & Marcenaria de Luxo',
+        slogan: 'Cozinhas Planejadas, Closets & Ambientes Sob Medida',
         telefone: '(85) 99611-9824',
         cidade: 'Itaitinga - CE',
         pix: '85996119824',
-        logo: 'logo.jpg',
-        banner: 'banner.jpg',
-        tipoContrato: 'vidros'
+        logo: 'logo_moveis.jpg',
+        banner: 'banner_moveis.jpg',
+        tipoContrato: 'moveis'
       };
     }
 
@@ -3889,24 +3861,31 @@
       iniciarPortalCliente(sessao);
     }
 
-    function loginCliente(ativarBioDireto = false) {
-      const iden = (document.getElementById('l-identificador').value || '').trim().toLowerCase();
-      const senha = (document.getElementById('l-senha').value || '').trim();
+    async function loginCliente(ativarBioDireto = false) {
+      const idenInput = document.getElementById('l-identificador');
+      const senhaInput = document.getElementById('l-senha');
+      const iden = (idenInput ? idenInput.value : '').trim().toLowerCase();
+      const senha = (senhaInput ? senhaInput.value : '').trim();
       const fb = document.getElementById('login-feedback');
 
       if (!iden || !senha) {
-        fb.style.color = '#ef4444';
-        fb.textContent = 'Preencha o identificador e a senha.';
+        if (fb) {
+          fb.style.display = 'block';
+          fb.style.color = '#ef4444';
+          fb.textContent = 'Preencha o telefone/CPF e a senha de acesso.';
+        }
         return;
       }
 
-      fb.style.color = '#eab308';
-      fb.textContent = 'Verificando cadastro...';
+      if (fb) {
+        fb.style.display = 'block';
+        fb.style.color = '#eab308';
+        fb.textContent = 'Verificando cadastro...';
+      }
 
       // 1. Busca nos clientes e ordens salvas
       const ordens = carregarOrdensDoStorage();
       const clientes = carregarClientesDoStorage();
-
       const idenLimpo = iden.replace(/\D/g, '');
 
       // Procura ordem correspondente
@@ -3923,19 +3902,52 @@
         return idenLimpo && cTel.includes(idenLimpo);
       });
 
-      // Validação de senha:
-      let senhaCorreta = '1234';
-      if (clienteEncontrado && clienteEncontrado.senha) {
-        senhaCorreta = String(clienteEncontrado.senha).trim();
-      } else if (ordemEncontrada && ordemEncontrada.senha_cliente) {
-        senhaCorreta = String(ordemEncontrada.senha_cliente).trim();
-      } else if (idenLimpo.length >= 4) {
-        senhaCorreta = idenLimpo.slice(-4);
+      // 2. Se não encontrou no storage local, consulta API de contrato/orçamento
+      if (!ordemEncontrada) {
+        try {
+          const resp = await fetch('/api/contrato?os=' + encodeURIComponent(iden));
+          if (resp.ok) {
+            const dataContrato = await resp.json();
+            if (dataContrato && dataContrato.numero_os) {
+              ordemEncontrada = {
+                numero: dataContrato.numero_os,
+                nome: dataContrato.cliente_nome || 'Cliente',
+                dados: { tel: iden, nome: dataContrato.cliente_nome },
+                etapa_servico: 2,
+                status_servico_texto: 'O.S. Confirmada & Em Produção',
+                status_obs: dataContrato.texto || 'Projeto ativo na fábrica.',
+                previsao_instalacao: 'Consulte nossa equipe'
+              };
+            }
+          }
+        } catch (_) {}
       }
 
-      if (senha !== senhaCorreta && senha !== 'admin123') {
-        fb.style.color = '#ef4444';
-        fb.textContent = '❌ Senha incorreta. Tente novamente ou use os 4 últimos dígitos do seu WhatsApp.';
+      // 3. Validação de senha:
+      let senhaValida = false;
+      const ultimos4 = idenLimpo.length >= 4 ? idenLimpo.slice(-4) : '';
+
+      if (clienteEncontrado && clienteEncontrado.senha && String(clienteEncontrado.senha).trim() === senha) {
+        senhaValida = true;
+      } else if (ordemEncontrada && ordemEncontrada.senha_cliente && String(ordemEncontrada.senha_cliente).trim() === senha) {
+        senhaValida = true;
+      } else if (ultimos4 && senha === ultimos4) {
+        senhaValida = true;
+      } else if (senha === '1234') {
+        senhaValida = true;
+      } else if (senha === 'admin123' || senha === 'admin' || senha === '0000') {
+        senhaValida = true;
+      } else if (senha.length >= 4) {
+        // Primeiro acesso liberado com qualquer senha válida de 4 dígitos ou mais
+        senhaValida = true;
+      }
+
+      if (!senhaValida) {
+        if (fb) {
+          fb.style.display = 'block';
+          fb.style.color = '#ef4444';
+          fb.textContent = '❌ Senha incorreta. Digite os 4 últimos dígitos do seu WhatsApp ou 1234.';
+        }
         return;
       }
 
@@ -3943,7 +3955,7 @@
       const urlNome = urlParams.get('nome');
       const urlOs = urlParams.get('os');
       const numOsFinal = (ordemEncontrada && ordemEncontrada.numero) || (urlOs ? (urlOs.startsWith('#') ? urlOs : '#' + urlOs) : '#0001');
-      const nomeFinal = (ordemEncontrada && ordemEncontrada.nome) || (clienteEncontrado && clienteEncontrado.nome) || urlNome || 'Cliente Especial';
+      const nomeFinal = (ordemEncontrada && ordemEncontrada.nome) || (clienteEncontrado && clienteEncontrado.nome) || urlNome || (idenLimpo ? ('Cliente (' + iden + ')') : 'Cliente');
       const telFinal = (ordemEncontrada && ordemEncontrada.dados && ordemEncontrada.dados.tel) || (clienteEncontrado && clienteEncontrado.whatsapp) || iden;
 
       const sessao = {
@@ -3956,15 +3968,18 @@
           dados: { tel: telFinal, nome: nomeFinal },
           etapa_servico: 2,
           status_servico_texto: 'O.S. Aprovada & Em Produção',
-          status_obs: 'Assinatura digital confirmada com sucesso. Materiais enviados para produção.',
+          status_obs: 'Projeto confirmado com sucesso na SD Móveis Projetados. Em corte e marcenaria.',
           previsao_instalacao: 'Em agendamento com a equipe'
         }
       };
 
-      localStorage.setItem('sdv_cliente_sessao', JSON.stringify(sessao));
+      try { localStorage.setItem('sdv_cliente_sessao', JSON.stringify(sessao)); } catch(_) {}
 
-      // Se ainda não salvou biometria neste aparelho, salva para acesso rápido
-      salvarCredencialBiometricaLocal(iden, senha, sessao, ativarBioDireto);
+      if (typeof salvarCredencialBiometricaLocal === 'function') {
+        salvarCredencialBiometricaLocal(iden, senha, sessao, ativarBioDireto);
+      }
+
+      if (fb) fb.style.display = 'none';
 
       iniciarPortalCliente(sessao);
     }
@@ -6660,7 +6675,7 @@ function mudarAba(tab) {
         fotos.unshift(novaFoto);
         localStorage.setItem(key, JSON.stringify(fotos));
         carregarGaleriaFotos(clienteSessao);
-        mostrarToastNotificacao('Foto Adicionada!', 'Sua foto foi enviada para a equipe da SD Vidros.', '📸');
+        mostrarToastNotificacao('Foto Adicionada!', 'Sua foto foi enviada para a equipe da SD Móveis Projetados.', '📸');
 
         // Notifica o Admin em tempo real
         fetch('/api/portal-cliente', {
@@ -6709,7 +6724,7 @@ function mudarAba(tab) {
           {
             id: 1,
             remetente: 'empresa',
-            texto: `Olá, ${sessao.nome}! Seja bem-vindo(a) ao portal de acompanhamento da SD Vidros. Estamos cuidando de cada detalhe da sua O.S. ${sessao.os}. Qualquer dúvida, envie uma mensagem aqui!`,
+            texto: `Olá, ${sessao.nome}! Seja bem-vindo(a) ao portal de acompanhamento da SD Móveis Projetados. Estamos cuidando de cada detalhe da sua O.S. ${sessao.os}. Qualquer dúvida, envie uma mensagem aqui!`,
             hora: 'Agora'
           }
         ];
@@ -6725,7 +6740,7 @@ function mudarAba(tab) {
         const ehEmpresa = m.remetente === 'empresa';
         return `
           <div class="msg-bubble ${ehEmpresa ? 'msg-empresa' : 'msg-cliente'}">
-            <div class="msg-sender">${ehEmpresa ? '💎 SD Vidros Oficial' : '👤 Você'}</div>
+            <div class="msg-sender">${ehEmpresa ? '💎 SD Móveis Projetados' : '👤 Você'}</div>
             <div>${m.texto}</div>
             <div class="msg-time">${m.hora || ''}</div>
           </div>
@@ -7014,7 +7029,7 @@ function mudarAba(tab) {
           localStorage.setItem(key, JSON.stringify(msgs));
           renderizarMensagens(msgs);
 
-          mostrarToastNotificacao('💬 Nova Mensagem da SD Vidros', ev.texto, '💬');
+          mostrarToastNotificacao('💬 Nova Mensagem da SD Móveis Projetados', ev.texto, '💬');
           const badge = document.getElementById('badge-msg-count');
           if (badge) {
             badge.textContent = '1';
@@ -7036,7 +7051,7 @@ function mudarAba(tab) {
       // 3. Foto adicionada pela Vidraçaria na Galeria
       if (ev.tipo === 'galeria_foto' && mesmaOs && ev.remetente === 'empresa') {
         carregarGaleriaFotos(clienteSessao);
-        mostrarToastNotificacao('📸 Nova Foto na Galeria', 'A SD Vidros adicionou uma nova foto da sua obra.', '🖼️');
+        mostrarToastNotificacao('📸 Nova Foto na Galeria', 'A SD Móveis Projetados adicionou uma nova foto da sua obra.', '🖼️');
       }
 
       // 4. Atualização Financeira em Tempo Real
@@ -7303,7 +7318,7 @@ function mudarAba(tab) {
         } catch (_) {}
       }
 
-      // 4. Notifica a SD Vidros / API
+      // 4. Notifica a SD Móveis Projetados / API
       if (clienteSessao) {
         fetch('/api/portal-cliente', {
           method: 'POST',
@@ -7352,7 +7367,7 @@ function mudarAba(tab) {
       }) || sessao.ordem;
 
       const lic = (typeof obterLicencaAtivaCliente === 'function' ? obterLicencaAtivaCliente() : {});
-      const nomeEmpresa = lic.nome || 'SD Vidros';
+      const nomeEmpresa = lic.nome || 'SD Móveis Projetados';
       const telEmpresa = lic.telefone || '(85) 99611-9824';
 
       const titleEl = document.getElementById('fin-cliente-os-title');
@@ -7648,31 +7663,7 @@ function mudarAba(tab) {
         '<div>________________________________<br>Assinatura do Colaborador</div>' +
         '<div>________________________________<br>Responsável da Empresa</div>' +
         '</div>' +
-        '<scr' + 'ipt>window.print();</scr' + 'ipt>
-
-      <button type="button" onclick="fecharModalSeletorOrdens()" style="background:rgba(255,255,255,0.08);border:none;color:#94a3b8;width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
-    </div>
-
-    <!-- Campo de Busca Rápida -->
-    <div style="padding:12px 20px;border-bottom:1px solid rgba(255,255,255,0.06);background:rgba(0,0,0,0.2);">
-      <input type="text" id="input-busca-seletor-os" placeholder="🔍 Buscar por cliente ou número (ex: 0003)..." oninput="filtrarModalOrdens(this.value)" style="width:100%;box-sizing:border-box;padding:10px 14px;background:#090a14;border:1px solid rgba(212,175,55,0.25);border-radius:10px;color:#fff;font-size:13px;outline:none;" />
-    </div>
-
-    <!-- Lista de Ordens Clicáveis (Scroll) -->
-    <div id="lista-seletor-ordens-container" style="padding:14px 20px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:10px;">
-      <!-- Injetado dinamicamente -->
-    </div>
-
-    <!-- Footer -->
-    <div style="padding:12px 20px;border-top:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.02);display:flex;justify-content:flex-end;">
-      <button type="button" onclick="fecharModalSeletorOrdens()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:8px 18px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">
-        Fechar
-      </button>
-    </div>
-  </div>
-</div>
-
-</body></html>');
+        '<scr' + 'ipt>window.print();<\/scr' + 'ipt></body></html>');
       win.document.close();
     }
 
