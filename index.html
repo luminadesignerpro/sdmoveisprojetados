@@ -1539,7 +1539,70 @@
       }
     }
 
-  </style>
+  
+    /* ── SISTEMA DE REORDENAÇÃO DAS ABAS (DRAG & DROP / CLIQUE DUPLO + SEGURAR) ── */
+    .tabs {
+      position: relative;
+      touch-action: pan-y;
+      transition: all 0.2s ease;
+    }
+    .tabs.tabs-is-reordering {
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .tab {
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.2s ease;
+    }
+    .tab.tab-reordering {
+      transform: scale(1.12) !important;
+      box-shadow: 0 14px 35px rgba(0, 0, 0, 0.95), 0 0 22px rgba(201, 168, 76, 0.8) !important;
+      border: 2px solid #fde047 !important;
+      background: linear-gradient(135deg, rgba(201,168,76,0.45), rgba(16,16,24,0.98)) !important;
+      color: #fff !important;
+      z-index: 99999 !important;
+      opacity: 0.96 !important;
+      cursor: grabbing !important;
+      animation: tabWiggleAnim 0.35s ease-in-out infinite alternate !important;
+    }
+    @keyframes tabWiggleAnim {
+      0% { transform: scale(1.12) rotate(-1.5deg); }
+      100% { transform: scale(1.12) rotate(1.5deg); }
+    }
+    .tab-drag-hint-toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(16, 16, 26, 0.97);
+      border: 1.5px solid var(--gold);
+      color: var(--gold-light);
+      padding: 10px 22px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 800;
+      box-shadow: 0 10px 35px rgba(0,0,0,0.88), 0 0 20px rgba(201,168,76,0.35);
+      z-index: 1000000;
+      pointer-events: none;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      animation: toastPopAnim 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes toastPopAnim {
+      from { opacity: 0; transform: translate(-50%, 15px) scale(0.9); }
+      to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+    }
+    #btn-central-mensagens:last-child {
+      grid-column: 1 / -1;
+      justify-self: center;
+      min-width: 140px;
+    }
+
+</style>
   <script src="pdf-lib.min.js"></script>
   <script src="pdf.min.js"></script>
   <script>
@@ -2385,6 +2448,9 @@
         </button>
         <button type="button" class="btn btn-sec" onclick="restaurarPadraoSDMoveisConfig()" style="padding:10px 18px;font-size:13px;border-radius:10px;">
           🔄 Restaurar Padrões SD Móveis
+        </button>
+        <button type="button" class="btn btn-sec" onclick="restaurarOrdemAbasPadrao()" style="padding:10px 16px;font-size:12.5px;border-radius:10px;" title="Restaura a ordem original das abas do sistema">
+          📑 Restaurar Ordem das Abas
         </button>
       </div>
       <div id="cfg-emp-msg" style="font-size:13px;font-weight:700;"></div>
@@ -14504,5 +14570,220 @@ function aplicarReajusteComparativo() {
 
 </script>
 
+<script>
+
+// ══════════════════════════════════════════════
+//  SISTEMA DE PERSONALIZAÇÃO & REORDENAÇÃO DE ABAS
+//  (Clique Duplo + Segurar OU Pressionar e Segurar)
+// ══════════════════════════════════════════════
+function restaurarOrdemAbasSalva() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('sdm_tabs_custom_order') || 'null');
+    if (!Array.isArray(saved) || !saved.length) return;
+    const container = document.querySelector('.tabs');
+    if (!container) return;
+
+    saved.forEach(id => {
+      const el = document.getElementById(id);
+      if (el && el.parentNode === container) {
+        container.appendChild(el);
+      }
+    });
+  } catch(_) {}
+}
+
+function restaurarOrdemAbasPadrao() {
+  if (!confirm('Deseja restaurar a ordem original padrão de todas as abas?')) return;
+  localStorage.removeItem('sdm_tabs_custom_order');
+  const padrao = [
+    'tab-orcamento', 'tab-historico', 'tab-financeiro', 'tab-agenda',
+    'tab-produtos', 'tab-empresa', 'tab-clientes', 'tab-ponto',
+    'tab-camera', 'tab-contratos', 'tab-usuarios', 'tab-portal-cliente',
+    'tab-portal-funcionario', 'tab-relatorio', 'btn-central-mensagens'
+  ];
+  const container = document.querySelector('.tabs');
+  if (container) {
+    padrao.forEach(id => {
+      const el = document.getElementById(id);
+      if (el && el.parentNode === container) container.appendChild(el);
+    });
+  }
+  const msg = document.getElementById('cfg-emp-msg');
+  if (msg) {
+    msg.innerHTML = '<span style="color:#10b981;">✅ Ordem padrão das abas restaurada com sucesso!</span>';
+    setTimeout(() => { msg.innerHTML = ''; }, 3500);
+  }
+}
+
+(function initReordenacaoAbas() {
+  function setup() {
+    const container = document.querySelector('.tabs');
+    if (!container) return;
+
+    let isDragging = false;
+    let draggedTab = null;
+    let startX = 0, startY = 0;
+    let holdTimer = null;
+    let lastTapTime = 0;
+    let lastTapTab = null;
+    let suppressNextClick = false;
+    let toastEl = null;
+
+    function showToast(msg, dur = 2000) {
+      if (!toastEl) {
+        toastEl = document.createElement('div');
+        toastEl.className = 'tab-drag-hint-toast';
+        document.body.appendChild(toastEl);
+      }
+      toastEl.innerHTML = msg;
+      toastEl.style.display = 'flex';
+      clearTimeout(toastEl._timer);
+      if (dur > 0) {
+        toastEl._timer = setTimeout(() => {
+          if (toastEl) toastEl.style.display = 'none';
+        }, dur);
+      }
+    }
+
+    function startDrag(tab, clientX, clientY) {
+      if (isDragging) return;
+      isDragging = true;
+      draggedTab = tab;
+      suppressNextClick = true;
+
+      try { if (navigator.vibrate) navigator.vibrate([45, 35]); } catch(_) {}
+
+      container.classList.add('tabs-is-reordering');
+      tab.classList.add('tab-reordering');
+
+      showToast('🖐️ <b>Organizando:</b> Arraste para qualquer canto e solte!', 0);
+    }
+
+    function moveDrag(clientX, clientY) {
+      if (!isDragging || !draggedTab) return;
+
+      draggedTab.style.pointerEvents = 'none';
+      const under = document.elementFromPoint(clientX, clientY);
+      draggedTab.style.pointerEvents = '';
+
+      const targetTab = under ? under.closest('.tab') : null;
+      if (targetTab && targetTab !== draggedTab && targetTab.parentNode === container) {
+        const rect = targetTab.getBoundingClientRect();
+        const midX = rect.left + rect.width / 2;
+        const midY = rect.top + rect.height / 2;
+
+        const isAfter = (clientY > midY + 4) || (clientY >= rect.top && clientY <= rect.bottom && clientX > midX);
+
+        if (isAfter) {
+          container.insertBefore(draggedTab, targetTab.nextSibling);
+        } else {
+          container.insertBefore(draggedTab, targetTab);
+        }
+
+        try { if (navigator.vibrate) navigator.vibrate(10); } catch(_) {}
+      }
+    }
+
+    function endDrag() {
+      if (!isDragging || !draggedTab) return;
+
+      draggedTab.classList.remove('tab-reordering');
+      container.classList.remove('tabs-is-reordering');
+
+      try { if (navigator.vibrate) navigator.vibrate([30, 45]); } catch(_) {}
+
+      // Salva ordem atual no localStorage
+      const tabs = Array.from(container.querySelectorAll('.tab'));
+      const order = tabs.map(t => t.id).filter(Boolean);
+      localStorage.setItem('sdm_tabs_custom_order', JSON.stringify(order));
+
+      showToast('✨ <b>Posição salva!</b> Suas abas foram organizadas.', 2400);
+
+      isDragging = false;
+      draggedTab = null;
+
+      setTimeout(() => {
+        suppressNextClick = false;
+      }, 350);
+    }
+
+    function handlePointerDown(e) {
+      const tab = e.target.closest('.tab');
+      if (!tab) return;
+
+      const touch = e.touches ? e.touches[0] : e;
+      startX = touch.clientX;
+      startY = touch.clientY;
+
+      const now = Date.now();
+      const isDoubleTap = (lastTapTab === tab && (now - lastTapTime) < 450);
+      lastTapTime = now;
+      lastTapTab = tab;
+
+      clearTimeout(holdTimer);
+
+      // Clique duplo + segurar: 140ms
+      // Pressionar e segurar: 360ms
+      const delay = isDoubleTap ? 140 : 360;
+
+      holdTimer = setTimeout(() => {
+        startDrag(tab, touch.clientX, touch.clientY);
+      }, delay);
+    }
+
+    function handlePointerMove(e) {
+      const touch = e.touches ? e.touches[0] : e;
+      const dx = touch.clientX - startX;
+      const dy = touch.clientY - startY;
+
+      if (!isDragging) {
+        if (Math.hypot(dx, dy) > 10) {
+          clearTimeout(holdTimer);
+        }
+        return;
+      }
+
+      if (e.cancelable) e.preventDefault();
+      moveDrag(touch.clientX, touch.clientY);
+    }
+
+    function handlePointerUp() {
+      clearTimeout(holdTimer);
+      if (isDragging) {
+        endDrag();
+      }
+    }
+
+    container.addEventListener('click', (e) => {
+      if (suppressNextClick) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+    }, true);
+
+    // Eventos de toque
+    container.addEventListener('touchstart', handlePointerDown, { passive: true });
+    window.addEventListener('touchmove', handlePointerMove, { passive: false });
+    window.addEventListener('touchend', handlePointerUp, { passive: true });
+    window.addEventListener('touchcancel', handlePointerUp, { passive: true });
+
+    // Eventos de mouse
+    container.addEventListener('mousedown', handlePointerDown);
+    window.addEventListener('mousemove', handlePointerMove);
+    window.addEventListener('mouseup', handlePointerUp);
+
+    // Restaura ordem salva
+    restaurarOrdemAbasSalva();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setup);
+  } else {
+    setup();
+  }
+})();
+
+</script>
 </body>
 </html>
