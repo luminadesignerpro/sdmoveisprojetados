@@ -1651,7 +1651,7 @@
     <button id="tab-financeiro" class="tab" data-tab="financeiro" onclick="goTab('financeiro')">💰 Financeiro</button>
     <button id="tab-agenda" class="tab" data-tab="agenda" onclick="goTab('agenda')">📅 Agenda</button>
     <button id="tab-produtos" class="tab" data-tab="produtos" onclick="goTab('produtos')">📦 Produtos & Serviços</button>
-    <button id="tab-comparativo" class="tab" data-tab="comparativo" onclick="goTab('comparativo')">📊 Comparativo</button>
+    <button id="tab-empresa" class="tab" data-tab="empresa" onclick="goTab('empresa')">🏢 Dados da Empresa</button>
     <button id="tab-clientes" class="tab" data-tab="clientes" onclick="goTab('clientes')">👤 Clientes</button>
     <button id="tab-ponto" class="tab" data-tab="ponto" onclick="goTab('ponto')">👷 Funcionários & Ponto</button>
     <button id="tab-camera" class="tab" data-tab="camera" onclick="goTab('camera')">📷 Câmera</button>
@@ -2107,117 +2107,289 @@
   
   
   <!-- ══════════════════════════════════════════ -->
-  <!-- PANEL: SD COMPARATIVO (IGUAL IMAGENS 2 & 3)-->
   <!-- ══════════════════════════════════════════ -->
-  <div id="panel-comparativo" class="panel">
-    <div class="cmp-container">
-
-      <!-- ROW 1: COMPARATIVO (2) | TIAGO CARVALHO v | CONFIGURAÇÃO | SINCRONIZAR | REAJUSTAR -->
-      <div class="cmp-row1-bar">
-        <button class="cmp-tab-btn-active" onclick="abrirModalNovaCotacaoComparativo()" title="Adicionar nova cotação">
-          <span>📊</span>
-          <span>Comparativo (<span id="cmp-count-active">2</span>)</span>
-        </button>
-
-        <div class="cmp-folder-dropdown-btn" onclick="abrirModalPastasClientes()" id="btn-cmp-pasta-atual" title="Selecionar Pasta / Cliente">
-          <span>📁</span>
-          <span id="cmp-pasta-nome">TIAGO CARVALHO</span>
-          <span style="font-size:9px;opacity:0.7;">˅</span>
-        </div>
-
-        <button class="cmp-action-btn" onclick="abrirModalConfiguracaoComparativo()" title="Configurações do Comparativo">
-          <span>⚙️</span>
-          <span>Configuração</span>
-        </button>
-
-        <button class="cmp-action-btn" onclick="sincronizarComparativoInstantaneo()" title="Sincronizar com Fornecedores">
-          <span>🔄</span>
-          <span>Sincronizar</span>
-        </button>
-
-        <button class="cmp-action-btn" onclick="abrirModalReajusteComparativo()" title="Reajustar Preços em Lote">
-          <span>%</span>
-          <span>Reajustar</span>
-        </button>
-      </div>
-
-      <div class="cmp-accent-bar"></div>
-
-      <!-- ROW 2: CHIPS DE FORNECEDORES (FLG, GMAD, ITAIPU, RIO BRANCO) + FORNECEDOR -->
-      <div class="cmp-row2-bar">
-        <div id="cmp-suppliers-chips-container" style="display:flex;align-items:center;gap:6px;">
-          <!-- Injetado dinamicamente -->
-        </div>
-
-        <button class="cmp-add-supplier-btn" onclick="abrirModalNovoFornecedor()" title="Cadastrar Novo Fornecedor">
-          <span>+</span> <span>Fornecedor</span>
-        </button>
-      </div>
-
-      <div class="cmp-accent-bar"></div>
-
-      <!-- ROW 3: 3 CARDS DE ESTATÍSTICAS RÁPIDAS -->
-      <div class="cmp-stats-grid">
-        <div class="cmp-stat-card">
-          <div class="cmp-stat-icon-box teal">🛍️</div>
-          <div class="cmp-stat-info">
-            <div class="lbl">PROD...</div>
-            <div class="val white" id="cmp-stat-produtos">2</div>
+  <!-- PANEL: DADOS E CONFIGURAÇÃO DA EMPRESA -->
+  <!-- ══════════════════════════════════════════ -->
+  <div id="panel-empresa" class="panel">
+    
+    <!-- BANNER PREVIEW / CARTÃO DE IDENTIDADE VISUAL EM TEMPO REAL -->
+    <div class="card" style="background:linear-gradient(135deg, rgba(20,20,32,0.95), rgba(10,10,18,0.95));border:1.5px solid rgba(201,168,76,0.45);border-radius:18px;padding:20px;margin-bottom:18px;box-shadow:0 10px 30px rgba(0,0,0,0.5);">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:44px;height:44px;border-radius:12px;background:rgba(201,168,76,0.15);border:1.5px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:22px;">
+            🏢
+          </div>
+          <div>
+            <h2 style="font-size:18px;font-weight:900;color:var(--gold-light);margin:0;letter-spacing:0.5px;">Dados & Configuração da Empresa</h2>
+            <p style="font-size:12px;color:#94a3b8;margin:3px 0 0 0;">Configure a identidade da sua marcenaria para orçamentos, contratos, assinaturas digitais e recibos</p>
           </div>
         </div>
-
-        <div class="cmp-stat-card">
-          <div class="cmp-stat-icon-box amber">📉</div>
-          <div class="cmp-stat-info">
-            <div class="lbl">ECON...</div>
-            <div class="val green" id="cmp-stat-economia">R$ 5,00</div>
-          </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.4);color:#34d399;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:800;">
+            <span style="width:8px;height:8px;border-radius:50%;background:#34d399;box-shadow:0 0 8px #34d399;"></span>
+            Empresa Ativa
+          </span>
+          <button type="button" class="btn btn-gold btn-sm" onclick="salvarDadosEmpresaConfig()" style="font-weight:900;padding:8px 18px;border-radius:10px;box-shadow:0 4px 14px rgba(201,168,76,0.35);">
+            💾 Salvar Alterações
+          </button>
         </div>
+      </div>
 
-        <div class="cmp-stat-card">
-          <div class="cmp-stat-icon-box blue">🏅</div>
-          <div class="cmp-stat-info">
-            <div class="lbl">MAIS ...</div>
-            <div class="val gold" id="cmp-stat-melhor">ITAI...</div>
+      <!-- PREVIEW CARD INTERATIVO -->
+      <div style="background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:16px;display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
+        <div style="position:relative;width:76px;height:76px;border-radius:50%;overflow:hidden;border:2px solid var(--gold);background:#07070b;flex-shrink:0;box-shadow:0 4px 14px rgba(0,0,0,0.6);">
+          <img id="emp-prev-logo" src="logo_moveis.jpg" alt="Logo" style="width:100%;height:100%;object-fit:cover;">
+        </div>
+        <div style="flex:1;min-width:240px;">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <span id="emp-prev-nome" style="font-size:16px;font-weight:900;color:#fff;">SD Móveis Projetados</span>
+            <span id="emp-prev-segmento-badge" style="background:rgba(201,168,76,0.18);border:1px solid var(--gold);color:var(--gold-light);font-size:10px;font-weight:800;padding:2px 8px;border-radius:12px;text-transform:uppercase;">Móveis Planejados</span>
+          </div>
+          <div id="emp-prev-slogan" style="font-size:11.5px;color:#94a3b8;margin-top:3px;">Ambientes Sob Medida & Marcenaria de Luxo</div>
+          <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:6px;font-size:11px;color:#cbd5e1;">
+            <span id="emp-prev-tel">📞 (85) 99611-9824</span>
+            <span id="emp-prev-cidade">📍 Itaitinga - CE</span>
+            <span id="emp-prev-pix">💰 PIX: 85996119824</span>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- ROW 4: BARRA DE BUSCA CENTRALIZADA -->
-      <div class="cmp-search-box">
-        <input 
-          type="text" 
-          id="cmp-busca-input" 
-          class="cmp-search-input" 
-          placeholder="Buscar produto, marca ou categoria..." 
-          oninput="filtrarProdutosComparativo()"
-        />
-      </div>
+    <!-- FORMULÁRIO COMPLETO DIVIDIDO EM CARDS MODERNOS -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));gap:16px;">
 
-      <!-- ROW 5: PÍLULAS DE CATEGORIAS COM LINHA DOURADA -->
-      <div>
-        <div class="cmp-category-bar" id="cmp-categorias-pills">
-          <!-- Categorias injetadas dinamicamente -->
+      <!-- 1. IDENTIDADE VISUAL & MARCA -->
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-title" style="display:flex;align-items:center;gap:8px;">
+          <span>🎨</span> Identidade Visual & Logotipo
         </div>
-        <div class="cmp-cat-underline" id="cmp-cat-indicator"></div>
+
+        <div class="field">
+          <label>Nome Fantasia (Como aparece no cabeçalho e orçamentos)</label>
+          <input id="cfg-emp-nome" placeholder="Ex: SD Móveis Projetados" oninput="atualizarPreviewEmpresaAoDigitar()" />
+        </div>
+
+        <div class="field">
+          <label>Razão Social (Nome Oficial / Registro)</label>
+          <input id="cfg-emp-razao" placeholder="Ex: SD Móveis Planejados & Marcenaria LTDA" />
+        </div>
+
+        <div class="field">
+          <label>Ramo / Segmento de Atuação</label>
+          <input id="cfg-emp-segmento" placeholder="Ex: Móveis Planejados & Ambientes Sob Medida" oninput="atualizarPreviewEmpresaAoDigitar()" />
+        </div>
+
+        <div class="field">
+          <label>Slogan ou Subtítulo</label>
+          <input id="cfg-emp-slogan" placeholder="Ex: Cozinhas Planejadas, Closets & Ambientes de Alto Padrão" oninput="atualizarPreviewEmpresaAoDigitar()" />
+        </div>
+
+        <!-- LOGO UPLOAD & URL -->
+        <div style="background:rgba(255,255,255,0.02);border:1px dashed rgba(201,168,76,0.35);border-radius:10px;padding:12px;margin-top:8px;">
+          <label style="font-size:11px;font-weight:700;color:var(--gold-light);display:block;margin-bottom:6px;">Logotipo da Empresa</label>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <input type="file" id="cfg-emp-logo-file" accept="image/*" style="display:none;" onchange="handleUploadLogoEmpresa(event)">
+            <button type="button" class="btn btn-sec btn-sm" onclick="document.getElementById('cfg-emp-logo-file').click()" style="font-size:11.5px;padding:6px 12px;">
+              📁 Escolher Foto / Logo
+            </button>
+            <button type="button" class="btn btn-sec btn-sm" onclick="usarLogoPadraoMoveis()" style="font-size:11px;padding:6px 10px;">
+              🔄 Usar Logo Padrão
+            </button>
+          </div>
+          <div class="field" style="margin-top:8px;margin-bottom:0;">
+            <input id="cfg-emp-logo" placeholder="URL ou nome do arquivo da logo (ex: logo_moveis.jpg)" oninput="atualizarPreviewEmpresaAoDigitar()" style="font-size:11.5px;" />
+          </div>
+        </div>
+
+        <!-- BANNER UPLOAD & URL -->
+        <div style="background:rgba(255,255,255,0.02);border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:12px;margin-top:10px;">
+          <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:6px;">Banner / Imagem de Fundo</label>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <input type="file" id="cfg-emp-banner-file" accept="image/*" style="display:none;" onchange="handleUploadBannerEmpresa(event)">
+            <button type="button" class="btn btn-sec btn-sm" onclick="document.getElementById('cfg-emp-banner-file').click()" style="font-size:11.5px;padding:6px 12px;">
+              📁 Escolher Banner
+            </button>
+            <button type="button" class="btn btn-sec btn-sm" onclick="usarBannerPadraoMoveis()" style="font-size:11px;padding:6px 10px;">
+              🔄 Usar Banner Padrão
+            </button>
+          </div>
+          <div class="field" style="margin-top:8px;margin-bottom:0;">
+            <input id="cfg-emp-banner" placeholder="URL ou nome do arquivo do banner (ex: banner_moveis.jpg)" style="font-size:11.5px;" />
+          </div>
+        </div>
       </div>
 
-      <!-- ROW 6: LISTA DE PRODUTOS COMPARADOS -->
-      <div class="cmp-products-container" id="cmp-products-list">
-        <!-- Cards dos produtos renderizados dinamicamente -->
+      <!-- 2. CONTATOS OFICIAIS & REDES SOCIAIS -->
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-title" style="display:flex;align-items:center;gap:8px;">
+          <span>📞</span> Contato & Redes Sociais
+        </div>
+
+        <div class="field">
+          <label>WhatsApp Comercial (Com DDD)</label>
+          <input id="cfg-emp-whatsapp" placeholder="(85) 99611-9824" oninput="atualizarPreviewEmpresaAoDigitar()" />
+          <span style="font-size:10.5px;color:#94a3b8;">Usado para envio de mensagens, orçamentos e contato com clientes</span>
+        </div>
+
+        <div class="field">
+          <label>Telefone Adicional / Fixo</label>
+          <input id="cfg-emp-telefone" placeholder="(85) 99611-9824" oninput="atualizarPreviewEmpresaAoDigitar()" />
+        </div>
+
+        <div class="field">
+          <label>E-mail Comercial</label>
+          <input id="cfg-emp-email" type="email" placeholder="contato@sdmoveisprojetados.com.br" />
+        </div>
+
+        <div class="field">
+          <label>Instagram Oficial</label>
+          <input id="cfg-emp-instagram" placeholder="@sdmoveisprojetados" />
+        </div>
+
+        <div class="field">
+          <label>Site ou Link do Portfólio</label>
+          <input id="cfg-emp-site" placeholder="https://sdmoveisprojetados.vercel.app" />
+        </div>
       </div>
 
-      <!-- BOTÃO INFERIOR DE ADICIONAR PRODUTO & VER COTAÇÕES -->
-      <div style="display:flex;justify-content:center;gap:10px;margin-top:8px;flex-wrap:wrap;">
-        <button class="btn btn-gold" onclick="abrirModalNovaCotacaoComparativo()" style="padding:10px 20px;font-size:13px;font-weight:800;border-radius:12px;">
-          ➕ Adicionar Produto ao Comparativo
-        </button>
-        <button class="btn btn-sec" onclick="abrirModalVerCotacoesSalvas()" style="padding:10px 18px;font-size:13px;font-weight:700;border-radius:12px;">
-          📋 Ver Cotações (<span id="cmp-badge-cotacoes-btn">0</span>)
-        </button>
+      <!-- 3. ENDEREÇO & LOCALIZAÇÃO -->
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-title" style="display:flex;align-items:center;gap:8px;">
+          <span>📍</span> Endereço & Localização
+        </div>
+
+        <div class="field-row">
+          <div class="field" style="flex:1;">
+            <label>Cidade</label>
+            <input id="cfg-emp-cidade" placeholder="Itaitinga" oninput="atualizarPreviewEmpresaAoDigitar()" />
+          </div>
+          <div class="field" style="width:90px;">
+            <label>UF / Estado</label>
+            <input id="cfg-emp-uf" placeholder="CE" maxlength="2" style="text-transform:uppercase;" oninput="atualizarPreviewEmpresaAoDigitar()" />
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field" style="flex:2;">
+            <label>Logradouro / Rua / Avenida</label>
+            <input id="cfg-emp-rua" placeholder="Rua / Avenida..." />
+          </div>
+          <div class="field" style="width:100px;">
+            <label>Número</label>
+            <input id="cfg-emp-numero" placeholder="Nº" />
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field" style="flex:1;">
+            <label>Bairro</label>
+            <input id="cfg-emp-bairro" placeholder="Bairro" />
+          </div>
+          <div class="field" style="flex:1;">
+            <label>CEP</label>
+            <input id="cfg-emp-cep" placeholder="61880-000" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Complemento / Ponto de Referência</label>
+          <input id="cfg-emp-complemento" placeholder="Galpão, Sala, Próximo ao..." />
+        </div>
+      </div>
+
+      <!-- 4. DADOS FISCAIS & PAGAMENTO (CHAVE PIX) -->
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-title" style="display:flex;align-items:center;gap:8px;">
+          <span>💳</span> Dados Fiscais & Pagamento (PIX)
+        </div>
+
+        <div class="field-row">
+          <div class="field" style="flex:1;">
+            <label>CNPJ ou CPF</label>
+            <input id="cfg-emp-cnpj" placeholder="00.000.000/0001-00 ou CPF" />
+          </div>
+          <div class="field" style="flex:1;">
+            <label>Inscrição Estadual (Opcional)</label>
+            <input id="cfg-emp-ie" placeholder="Isento ou Nº" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Chave PIX Principal (Aparece nos Orçamentos & Contratos)</label>
+          <input id="cfg-emp-pix" placeholder="85996119824 ou CNPJ/E-mail" oninput="atualizarPreviewEmpresaAoDigitar()" />
+        </div>
+
+        <div class="field-row">
+          <div class="field" style="flex:1;">
+            <label>Tipo de Chave PIX</label>
+            <select id="cfg-emp-tipo-pix">
+              <option value="telefone">Telefone / Celular</option>
+              <option value="cnpj">CNPJ / CPF</option>
+              <option value="email">E-mail</option>
+              <option value="aleatoria">Chave Aleatória</option>
+            </select>
+          </div>
+          <div class="field" style="flex:1;">
+            <label>Banco / Instituição</label>
+            <input id="cfg-emp-banco" placeholder="Ex: Inter, Nubank, Bradesco..." />
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Titular / Favorecido da Conta</label>
+          <input id="cfg-emp-titular-pix" placeholder="Ex: Samuel - SD Móveis Projetados" />
+        </div>
+      </div>
+
+      <!-- 5. PADRÕES DE ORÇAMENTO & CONTRATO -->
+      <div class="card" style="margin-bottom:0;grid-column:1 / -1;">
+        <div class="card-title" style="display:flex;align-items:center;gap:8px;">
+          <span>📋</span> Padrões para Orçamentos & Contratos
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:14px;">
+          <div class="field">
+            <label>Validade Padrão dos Orçamentos (Dias)</label>
+            <input id="cfg-emp-validade" type="number" placeholder="15" />
+          </div>
+
+          <div class="field">
+            <label>Prazo Padrão de Fabricação & Montagem</label>
+            <input id="cfg-emp-prazo" placeholder="Ex: 30 a 45 dias úteis" />
+          </div>
+
+          <div class="field">
+            <label>Garantia Padrão</label>
+            <input id="cfg-emp-garantia" placeholder="Ex: 5 anos contra defeitos de fabricação em MDF e ferragens" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Condições de Pagamento Padrão no Contrato</label>
+          <input id="cfg-emp-condicoes" placeholder="Ex: 50% de entrada no fechamento + saldo na entrega/montagem ou até 12x no cartão" />
+        </div>
+
+        <div class="field" style="margin-bottom:0;">
+          <label>Observações / Rodapé Padrão dos Documentos</label>
+          <textarea id="cfg-emp-obs" rows="2" placeholder="Ex: Orçamento sujeito a confirmação de medidas no local. Instalação e frete inclusos no valor total."></textarea>
+        </div>
       </div>
 
     </div>
+
+    <!-- BARRA INFERIOR DE SALVAMENTO -->
+    <div style="margin-top:20px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;background:#10101a;border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:14px 20px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button type="button" class="btn btn-gold" onclick="salvarDadosEmpresaConfig()" style="font-weight:900;padding:10px 24px;font-size:14px;border-radius:10px;box-shadow:0 4px 16px rgba(201,168,76,0.35);">
+          💾 Salvar Todos os Dados
+        </button>
+        <button type="button" class="btn btn-sec" onclick="restaurarPadraoSDMoveisConfig()" style="padding:10px 18px;font-size:13px;border-radius:10px;">
+          🔄 Restaurar Padrões SD Móveis
+        </button>
+      </div>
+      <div id="cfg-emp-msg" style="font-size:13px;font-weight:700;"></div>
+    </div>
+
   </div>
 
 <!-- ══════════════════════════════════════════ -->
@@ -4234,7 +4406,12 @@ function salvarLicencas(lista) {
 function obterLicencaAtiva() {
   const lista = obterLicencas();
   const idAtivo = localStorage.getItem('sdv_licenca_ativa') || 'sdmoveis';
-  return lista.find(l => l.id === idAtivo) || lista[0] || LICENCAS_PADRAO[0];
+  let lic = lista.find(l => l.id === idAtivo) || lista.find(l => l.id === 'sdmoveis') || lista[0] || LICENCAS_PADRAO[1] || LICENCAS_PADRAO[0];
+  try {
+    const custom = JSON.parse(localStorage.getItem('sdv_empresa_config') || 'null');
+    if (custom && typeof custom === 'object') return Object.assign({}, lic, custom);
+  } catch(_) {}
+  return lic;
 }
 
 function aplicarLicencaVisual(lic) {
@@ -4314,6 +4491,312 @@ function aplicarLicencaVisual(lic) {
     badgeEl.textContent = `Licença Ativa: ${lic.nome || 'SD Vidros'}`;
   }
 }
+
+
+// ══════════════════════════════════════════════
+//  CONFIGURAÇÃO DOS DADOS DA EMPRESA (GERENCIAMENTO COMPLETO)
+// ══════════════════════════════════════════════
+function abrirModalEmpresas() {
+  if (typeof goTab === 'function') goTab('empresa');
+}
+
+function carregarDadosConfiguracaoEmpresa() {
+  const lic = (typeof obterLicencaAtiva === 'function') ? obterLicencaAtiva() : {
+    id: 'sdmoveis',
+    nome: 'SD Móveis Projetados',
+    segmento: 'Móveis Planejados & Marcenaria de Luxo',
+    slogan: 'Cozinhas Planejadas, Closets & Ambientes Sob Medida',
+    telefone: '(85) 99611-9824',
+    whatsapp: '(85) 99611-9824',
+    cidade: 'Itaitinga',
+    uf: 'CE',
+    cnpj: '',
+    pix: '85996119824',
+    logo: 'logo_moveis.jpg',
+    banner: 'banner_moveis.jpg'
+  };
+
+  const setVal = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.value = (val !== undefined && val !== null) ? val : '';
+  };
+
+  setVal('cfg-emp-nome', lic.nome || 'SD Móveis Projetados');
+  setVal('cfg-emp-razao', lic.razaoSocial || lic.nome || 'SD Móveis Projetados LTDA');
+  setVal('cfg-emp-segmento', lic.segmento || 'Móveis Planejados & Marcenaria de Luxo');
+  setVal('cfg-emp-slogan', lic.slogan || 'Cozinhas Planejadas, Closets & Ambientes Sob Medida');
+  setVal('cfg-emp-logo', lic.logo || 'logo_moveis.jpg');
+  setVal('cfg-emp-banner', lic.banner || 'banner_moveis.jpg');
+  
+  setVal('cfg-emp-whatsapp', lic.whatsapp || lic.telefone || '(85) 99611-9824');
+  setVal('cfg-emp-telefone', lic.telefone || '(85) 99611-9824');
+  setVal('cfg-emp-email', lic.email || 'contato@sdmoveisprojetados.com.br');
+  setVal('cfg-emp-instagram', lic.instagram || '@sdmoveisprojetados');
+  setVal('cfg-emp-site', lic.site || 'https://sdmoveisprojetados.vercel.app');
+
+  setVal('cfg-emp-cidade', lic.cidadePura || (lic.cidade ? lic.cidade.split('-')[0].trim() : 'Itaitinga'));
+  setVal('cfg-emp-uf', lic.uf || 'CE');
+  setVal('cfg-emp-rua', lic.rua || lic.endereco || '');
+  setVal('cfg-emp-numero', lic.numero || '');
+  setVal('cfg-emp-bairro', lic.bairro || 'Centro');
+  setVal('cfg-emp-cep', lic.cep || '61880-000');
+  setVal('cfg-emp-complemento', lic.complemento || '');
+
+  setVal('cfg-emp-cnpj', lic.cnpj || '');
+  setVal('cfg-emp-ie', lic.inscricaoEstadual || '');
+  setVal('cfg-emp-pix', lic.pix || '85996119824');
+  setVal('cfg-emp-tipo-pix', lic.tipoChavePix || 'telefone');
+  setVal('cfg-emp-banco', lic.bancoPix || 'Nubank / Inter');
+  setVal('cfg-emp-titular-pix', lic.titularPix || 'Samuel - SD Móveis');
+
+  setVal('cfg-emp-validade', lic.validadeOrcamento || '15');
+  setVal('cfg-emp-prazo', lic.prazoEntrega || '30 a 45 dias úteis');
+  setVal('cfg-emp-garantia', lic.garantia || '5 anos contra defeitos de fabricação em MDF e ferragens');
+  setVal('cfg-emp-condicoes', lic.condicoesPagamento || 'Entrada de 50% no fechamento + saldo na entrega/montagem ou até 12x no cartão');
+  setVal('cfg-emp-obs', lic.obsPadrao || 'Orçamento sujeito a confirmação de medidas no local. Instalação e frete inclusos no valor total.');
+
+  atualizarPreviewEmpresaAoDigitar();
+}
+
+function atualizarPreviewEmpresaAoDigitar() {
+  const getVal = (id, def) => {
+    const el = document.getElementById(id);
+    return (el && el.value.trim()) ? el.value.trim() : def;
+  };
+
+  const nome = getVal('cfg-emp-nome', 'SD Móveis Projetados');
+  const segmento = getVal('cfg-emp-segmento', 'Móveis Planejados');
+  const slogan = getVal('cfg-emp-slogan', 'Ambientes Sob Medida & Marcenaria de Luxo');
+  const tel = getVal('cfg-emp-whatsapp', getVal('cfg-emp-telefone', '(85) 99611-9824'));
+  const cidade = getVal('cfg-emp-cidade', 'Itaitinga');
+  const uf = getVal('cfg-emp-uf', 'CE');
+  const pix = getVal('cfg-emp-pix', '85996119824');
+  const logoUrl = getVal('cfg-emp-logo', 'logo_moveis.jpg');
+
+  const prevLogo = document.getElementById('emp-prev-logo');
+  if (prevLogo) {
+    prevLogo.src = logoUrl;
+    prevLogo.onerror = function() { this.src = 'logo_moveis.jpg'; };
+  }
+  const prevNome = document.getElementById('emp-prev-nome');
+  if (prevNome) prevNome.textContent = nome;
+
+  const prevSeg = document.getElementById('emp-prev-segmento-badge');
+  if (prevSeg) prevSeg.textContent = segmento;
+
+  const prevSlogan = document.getElementById('emp-prev-slogan');
+  if (prevSlogan) prevSlogan.textContent = slogan;
+
+  const prevTel = document.getElementById('emp-prev-tel');
+  if (prevTel) prevTel.textContent = '📞 ' + tel;
+
+  const prevCidade = document.getElementById('emp-prev-cidade');
+  if (prevCidade) prevCidade.textContent = '📍 ' + cidade + (uf ? ' - ' + uf : '');
+
+  const prevPix = document.getElementById('emp-prev-pix');
+  if (prevPix) prevPix.textContent = '💰 PIX: ' + pix;
+}
+
+function handleUploadLogoEmpresa(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  if (file.size > 2.5 * 1024 * 1024) {
+    alert('A imagem selecionada é muito grande (máximo 2.5MB). Escolha uma imagem menor.');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const dataUrl = e.target.result;
+    const inp = document.getElementById('cfg-emp-logo');
+    if (inp) inp.value = dataUrl;
+    atualizarPreviewEmpresaAoDigitar();
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleUploadBannerEmpresa(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  if (file.size > 3.5 * 1024 * 1024) {
+    alert('A imagem do banner é muito grande (máximo 3.5MB).');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const dataUrl = e.target.result;
+    const inp = document.getElementById('cfg-emp-banner');
+    if (inp) inp.value = dataUrl;
+  };
+  reader.readAsDataURL(file);
+}
+
+function usarLogoPadraoMoveis() {
+  const inp = document.getElementById('cfg-emp-logo');
+  if (inp) inp.value = 'logo_moveis.jpg';
+  atualizarPreviewEmpresaAoDigitar();
+}
+
+function usarBannerPadraoMoveis() {
+  const inp = document.getElementById('cfg-emp-banner');
+  if (inp) inp.value = 'banner_moveis.jpg';
+}
+
+function restaurarPadraoSDMoveisConfig() {
+  if (!confirm('Deseja restaurar as configurações padrão da SD Móveis Projetados?')) return;
+  localStorage.setItem('sdv_licenca_ativa', 'sdmoveis');
+  let licencas = (typeof obterLicencas === 'function') ? obterLicencas() : [];
+  let lic = licencas.find(l => l.id === 'sdmoveis');
+  if (!lic) {
+    lic = { id: 'sdmoveis' };
+    licencas.push(lic);
+  }
+  Object.assign(lic, {
+    id: 'sdmoveis',
+    nome: 'SD Móveis Projetados',
+    razaoSocial: 'SD Móveis Projetados LTDA',
+    segmento: 'Móveis Planejados & Marcenaria de Luxo',
+    slogan: 'Cozinhas Planejadas, Closets & Ambientes Sob Medida',
+    telefone: '(85) 99611-9824',
+    whatsapp: '(85) 99611-9824',
+    email: 'contato@sdmoveisprojetados.com.br',
+    instagram: '@sdmoveisprojetados',
+    site: 'https://sdmoveisprojetados.vercel.app',
+    cidade: 'Itaitinga - CE',
+    cidadePura: 'Itaitinga',
+    uf: 'CE',
+    bairro: 'Centro',
+    cep: '61880-000',
+    cnpj: '',
+    pix: '85996119824',
+    tipoChavePix: 'telefone',
+    titularPix: 'Samuel - SD Móveis',
+    bancoPix: 'Nubank / Inter',
+    logo: 'logo_moveis.jpg',
+    banner: 'banner_moveis.jpg',
+    tipoContrato: 'moveis',
+    validadeOrcamento: '15',
+    prazoEntrega: '30 a 45 dias úteis',
+    garantia: '5 anos contra defeitos de fabricação em MDF e ferragens',
+    condicoesPagamento: 'Entrada de 50% no fechamento + saldo na entrega/montagem ou até 12x no cartão',
+    obsPadrao: 'Orçamento sujeito a confirmação de medidas no local. Instalação e frete inclusos no valor total.'
+  });
+  if (typeof salvarLicencas === 'function') salvarLicencas(licencas);
+  localStorage.setItem('sdv_empresa_config', JSON.stringify(lic));
+  carregarDadosConfiguracaoEmpresa();
+  if (typeof aplicarLicencaVisual === 'function') aplicarLicencaVisual(lic);
+
+  const msg = document.getElementById('cfg-emp-msg');
+  if (msg) {
+    msg.innerHTML = '<span style="color:#10b981;">✅ Padrões SD Móveis restaurados com sucesso!</span>';
+    setTimeout(() => { msg.innerHTML = ''; }, 4000);
+  }
+}
+
+function salvarDadosEmpresaConfig() {
+  const getVal = (id) => {
+    const el = document.getElementById(id);
+    return el ? el.value.trim() : '';
+  };
+
+  const nome = getVal('cfg-emp-nome') || 'SD Móveis Projetados';
+  const razaoSocial = getVal('cfg-emp-razao');
+  const segmento = getVal('cfg-emp-segmento') || 'Móveis Planejados & Marcenaria de Luxo';
+  const slogan = getVal('cfg-emp-slogan');
+  const logo = getVal('cfg-emp-logo') || 'logo_moveis.jpg';
+  const banner = getVal('cfg-emp-banner') || 'banner_moveis.jpg';
+  
+  const whatsapp = getVal('cfg-emp-whatsapp') || '(85) 99611-9824';
+  const telefone = getVal('cfg-emp-telefone') || whatsapp;
+  const email = getVal('cfg-emp-email');
+  const instagram = getVal('cfg-emp-instagram');
+  const site = getVal('cfg-emp-site');
+
+  const cidade = getVal('cfg-emp-cidade') || 'Itaitinga';
+  const uf = (getVal('cfg-emp-uf') || 'CE').toUpperCase();
+  const rua = getVal('cfg-emp-rua');
+  const numero = getVal('cfg-emp-numero');
+  const bairro = getVal('cfg-emp-bairro');
+  const cep = getVal('cfg-emp-cep');
+  const complemento = getVal('cfg-emp-complemento');
+
+  const cnpj = getVal('cfg-emp-cnpj');
+  const inscricaoEstadual = getVal('cfg-emp-ie');
+  const pix = getVal('cfg-emp-pix') || '85996119824';
+  const tipoChavePix = getVal('cfg-emp-tipo-pix') || 'telefone';
+  const bancoPix = getVal('cfg-emp-banco');
+  const titularPix = getVal('cfg-emp-titular-pix') || 'Samuel - SD Móveis';
+
+  const validadeOrcamento = getVal('cfg-emp-validade') || '15';
+  const prazoEntrega = getVal('cfg-emp-prazo') || '30 a 45 dias úteis';
+  const garantia = getVal('cfg-emp-garantia') || '5 anos contra defeitos de fabricação em MDF e ferragens';
+  const condicoesPagamento = getVal('cfg-emp-condicoes') || 'Entrada de 50% no fechamento + saldo na entrega/montagem ou até 12x no cartão';
+  const obsPadrao = getVal('cfg-emp-obs');
+
+  let licencas = (typeof obterLicencas === 'function') ? obterLicencas() : [];
+  let licAtiva = (typeof obterLicencaAtiva === 'function') ? obterLicencaAtiva() : null;
+  let idAtivo = (licAtiva && licAtiva.id) ? licAtiva.id : 'sdmoveis';
+
+  let lic = licencas.find(l => l.id === idAtivo);
+  if (!lic) {
+    lic = { id: idAtivo };
+    licencas.push(lic);
+  }
+
+  // Atualizar dados
+  Object.assign(lic, {
+    nome,
+    razaoSocial,
+    segmento,
+    slogan,
+    logo,
+    banner,
+    whatsapp,
+    telefone,
+    email,
+    instagram,
+    site,
+    cidade: (cidade + (uf ? ' - ' + uf : '')),
+    cidadePura: cidade,
+    uf,
+    endereco: (rua ? (rua + (numero ? ', ' + numero : '')) : ''),
+    rua,
+    numero,
+    bairro,
+    cep,
+    complemento,
+    cnpj,
+    inscricaoEstadual,
+    pix,
+    tipoChavePix,
+    bancoPix,
+    titularPix,
+    validadeOrcamento,
+    prazoEntrega,
+    garantia,
+    condicoesPagamento,
+    obsPadrao,
+    tipoContrato: 'moveis'
+  });
+
+  // Salvar no localStorage
+  if (typeof salvarLicencas === 'function') salvarLicencas(licencas);
+  localStorage.setItem('sdv_licenca_ativa', idAtivo);
+  localStorage.setItem('sdv_empresa_config', JSON.stringify(lic));
+
+  // Aplicar visual imediato
+  if (typeof aplicarLicencaVisual === 'function') aplicarLicencaVisual(lic);
+
+  // Notificar
+  const msg = document.getElementById('cfg-emp-msg');
+  if (msg) {
+    msg.innerHTML = '<span style="color:#10b981;display:inline-flex;align-items:center;gap:6px;">✅ Dados da empresa salvos e aplicados com sucesso!</span>';
+    setTimeout(() => { msg.innerHTML = ''; }, 4500);
+  }
+
+  // Atualiza preview
+  atualizarPreviewEmpresaAoDigitar();
+}
+
 
 function recarregarDadosEmpresaAtiva() {
   const licAtiva = obterLicencaAtiva();
@@ -4821,7 +5304,7 @@ function getUser() {
 //  TABS
 // ══════════════════════════════════════════════
 function goTab(t) {
-  ['orcamento','historico','financeiro','agenda','produtos','comparativo','clientes','ponto','contratos','usuarios','licenca','camera','relatorio'].forEach(p => {
+  ['orcamento','historico','financeiro','agenda','produtos','empresa','clientes','ponto','contratos','usuarios','licenca','camera','relatorio'].forEach(p => {
     const pan = document.getElementById('panel-'+p);
     if (pan) pan.classList.toggle('active', p===t);
     const tab = document.getElementById('tab-'+p);
@@ -4831,7 +5314,7 @@ function goTab(t) {
   if (t==='financeiro') { renderFinanceiro(); }
   if (t==='agenda')     { renderAgenda(); }
   if (t==='produtos')   { atualizarBannerSelecaoProduto(); renderProdutos(); }
-  if (t==='comparativo') { renderComparativo(); }
+  if (t==='empresa') { carregarDadosConfiguracaoEmpresa(); }
   if (t==='clientes')   renderCli();
   if (t==='ponto')      { renderPontoView(); }
   if (t==='contratos')  { renderHist(); renderSelectContratos(); carregarListaContratos(); sincronizarStatusContratos(); }
@@ -13008,8 +13491,8 @@ function imprimirRelatorio() {
       if (t === 'relatorio') {
         setTimeout(renderRelatorio, 50);
       }
-      if (t === 'comparativo') {
-        setTimeout(renderComparativo, 50);
+      if (t === 'empresa') {
+        setTimeout(carregarDadosConfiguracaoEmpresa, 50);
       }
     };
   }
@@ -13354,6 +13837,7 @@ function salvarDadosComparativo() {
 }
 
 function renderComparativo() {
+  if (!document.getElementById("panel-comparativo")) return;
   carregarDadosComparativo();
   atualizarHeaderComparativo();
   renderCategoriasComparativo();
