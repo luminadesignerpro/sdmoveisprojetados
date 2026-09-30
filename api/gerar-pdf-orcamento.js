@@ -459,21 +459,15 @@ async function gerarPdfOrcamento(dados, fetchLogo, empInfo) {
   page.drawText(`R$ ${valorTotalFormatado}`, { x: rightCardX + 18, y: totalBoxY + 14, size: 14, font: fontBold, color: WHITE });
 
   // ---------------- 6. BARRA DE DIFERENCIAIS & CARD DE ESPECIFICAÇÕES TÉCNICAS ----------------
-  // Preenche harmonicamente o espaço intermediário sem deixar vazio branco
-  if (spaceBelowCards >= 140) {
-    // 6.1 Barra com 4 Pilares de Confiança
+  // ---------------- 6. BARRA DE DIFERENCIAIS (4 PILARES DE CONFIANÇA) ----------------
+  if (spaceBelowCards >= 35) {
     const badgesY = cardBottomY - 12;
     const badgesH = 24;
     const badgeColW = (CONTENT_W - 18) / 4;
 
-    const selos = empInfo.ehMoveis ? [
+    const selos = [
       { t1: '100% MDF', t2: 'NAVAL PREMIUM' },
       { t1: 'PADRÃO LUXO', t2: 'SOB MEDIDA' },
-      { t1: 'PONTUALIDADE', t2: 'NA ENTREGA' },
-      { t1: '1 ANO DE', t2: 'GARANTIA REAL' }
-    ] : [
-      { t1: '100% VIDRO', t2: 'TEMPERADO' },
-      { t1: 'PADRÃO NORMAS', t2: 'ABNT NBR 14698' },
       { t1: 'PONTUALIDADE', t2: 'NA ENTREGA' },
       { t1: '1 ANO DE', t2: 'GARANTIA REAL' }
     ];
@@ -498,138 +492,6 @@ async function gerarPdfOrcamento(dados, fetchLogo, empInfo) {
         color: GOLD
       });
 
-      const txtFull = `${s.t1} ${s.t2}`;
-      const txtW = fontBold.widthOfTextAtSize(txtFull, 6.2);
-      page.drawText(txtFull, {
-        x: bX + Math.max(4, (badgeColW - txtW) / 2),
-        y: badgesY - 15,
-        size: 6.2,
-        font: fontBold,
-        color: DARK
-      });
-    });
-
-    // 6.2 Card Executivo de Padrão Técnico e Segurança
-    const qualTopY = badgesY - badgesH - 10;
-    const qualBottomY = rodapeTop + 10;
-    const qualCardH = qualTopY - qualBottomY;
-
-    if (qualCardH >= 70) {
-      page.drawRectangle({
-        x: MARGIN_X,
-        y: qualBottomY,
-        width: CONTENT_W,
-        height: qualCardH,
-        color: BOX_BG,
-        borderColor: BORDER,
-        borderWidth: 0.8
-      });
-
-      // Cabeçalho do Card Técnico
-      const qualHeaderH = 15;
-      page.drawRectangle({
-        x: MARGIN_X,
-        y: qualTopY - qualHeaderH,
-        width: CONTENT_W,
-        height: qualHeaderH,
-        color: HEADER_BG
-      });
-
-      const tituloCardTecnico = empInfo.ehMoveis
-        ? 'PADRÃO TÉCNICO DE MARCENARIA, NORMAS DE QUALIDADE & ACABAMENTO'
-        : 'PADRÃO TÉCNICO DE ENGENHARIA, NORMAS DE SEGURANÇA & PROCEDIMENTOS';
-
-      page.drawText(tituloCardTecnico, {
-        x: MARGIN_X + 10,
-        y: qualTopY - 11,
-        size: 6.8,
-        font: fontBold,
-        color: DARK
-      });
-
-      const colW = (CONTENT_W - 24) / 2;
-      const col1X = MARGIN_X + 10;
-      const col2X = MARGIN_X + colW + 18;
-      let textLineY = qualTopY - qualHeaderH - 13;
-
-      if (empInfo.ehMoveis) {
-        // Coluna 1: Materiais & Acabamento SD Móveis
-        page.drawText('• MDF Naval e Madeiras Certificadas:', { x: col1X, y: textLineY, size: 6.8, font: fontBold, color: DARK });
-        page.drawText('Chapas de alta densidade 100% MDF com tratamento antimofo, resistentes à umidade e ao empenamento.', { x: col1X + 8, y: textLineY - 10, size: 6.3, font: fontRegular, color: GRAY });
-
-        page.drawText('• Ferragens & Amortecedores Soft-Close:', { x: col1X, y: textLineY - 23, size: 6.8, font: fontBold, color: DARK });
-        page.drawText('Dobradiças com amortecimento suave e corrediças telescópicas reforçadas para deslizamento silencioso.', { x: col1X + 8, y: textLineY - 33, size: 6.3, font: fontRegular, color: GRAY });
-
-        page.drawText('• Bordas Seladas & Acabamento Impecável:', { x: col1X, y: textLineY - 46, size: 6.8, font: fontBold, color: DARK });
-        page.drawText('Fita de borda aplicada com polímero termoplástico impermeabilizante, garantindo total vedação.', { x: col1X + 8, y: textLineY - 56, size: 6.3, font: fontRegular, color: GRAY });
-
-        // Coluna 2: Instalação & Atendimento SD Móveis
-        page.drawText('• Projeto 3D e Medição Milimétrica a Laser:', { x: col2X, y: textLineY, size: 6.8, font: fontBold, color: DARK });
-        page.drawText('Conferência precisa de prumos, desníveis e esquadros antes da fabricação sob medida para encaixe exato.', { x: col2X + 8, y: textLineY - 10, size: 6.3, font: fontRegular, color: GRAY });
-
-        page.drawText('• Puxadores Nobres & Perfis de Alumínio:', { x: col2X, y: textLineY - 23, size: 6.8, font: fontBold, color: DARK });
-        page.drawText('Componentes de alta durabilidade, design moderno e ergonomia planejada para cada ambiente.', { x: col2X + 8, y: textLineY - 33, size: 6.3, font: fontRegular, color: GRAY });
-
-        page.drawText('• Montagem Especializada & Limpeza Pós-Obra:', { x: col2X, y: textLineY - 46, size: 6.8, font: fontBold, color: DARK });
-        page.drawText('Marceneiros próprios capacitados com entrega dos ambientes higienizados, nivelados e alinhados.', { x: col2X + 8, y: textLineY - 56, size: 6.3, font: fontRegular, color: GRAY });
-      } else {
-        // Coluna 1: Materiais & Segurança SD Vidros
-        page.drawText('• Vidros Temperados Certificados:', { x: col1X, y: textLineY, size: 6.8, font: fontBold, color: DARK });
-        page.drawText('Conforme normas ABNT NBR 14698/14697, resistência térmica e a impacto até 5x maior que o vidro comum.', { x: col1X + 8, y: textLineY - 10, size: 6.3, font: fontRegular, color: GRAY });
-
-        page.drawText('• Perfis Estruturais em Alumínio Nobre:', { x: col1X, y: textLineY - 23, size: 6.8, font: fontBold, color: DARK });
-        page.drawText('Tratamento anticorrosivo especial (anodização ou pintura eletrostática), imunes a oxidação e ferrugem.', { x: col1X + 8, y: textLineY - 33, size: 6.3, font: fontRegular, color: GRAY });
-
-        page.drawText('• Vedação Acústica e Hidráulica:', { x: col1X, y: textLineY - 46, size: 6.8, font: fontBold, color: DARK });
-        page.drawText('Aplicação com silicone neutro fungicida de alta vedação, evitando vazamentos, infiltrações e mofo.', { x: col1X + 8, y: textLineY - 56, size: 6.3, font: fontRegular, color: GRAY });
-
-        // Coluna 2: Instalação & Atendimento SD Vidros
-        page.drawText('• Medição Técnica e Precisão a Laser:', { x: col2X, y: textLineY, size: 6.8, font: fontBold, color: DARK });
-        page.drawText('Conferência de vãos, prumos e esquadros antes da fabricação sob medida para encaixe milimétrico.', { x: col2X + 8, y: textLineY - 10, size: 6.3, font: fontRegular, color: GRAY });
-
-        page.drawText('• Ferragens e Roldanas de Alta Performance:', { x: col2X, y: textLineY - 23, size: 6.8, font: fontBold, color: DARK });
-        page.drawText('Roldanas blindadas de rolamento suave com regulagem, e componentes em aço inox e latão cromado.', { x: col2X + 8, y: textLineY - 33, size: 6.3, font: fontRegular, color: GRAY });
-
-        page.drawText('• Equipe Especializada e Garantia de 1 Ano:', { x: col2X, y: textLineY - 46, size: 6.8, font: fontBold, color: DARK });
-        page.drawText('Montadores próprios capacitados com EPIs, limpeza pós-obra e cobertura total de fabricação.', { x: col2X + 8, y: textLineY - 56, size: 6.3, font: fontRegular, color: GRAY });
-      }
-    }
-  } else if (spaceBelowCards >= 50) {
-    // Versão compacta da barra de selos se houver mais itens
-    const badgesY = cardBottomY - 10;
-    const badgesH = 24;
-    const badgeColW = (CONTENT_W - 18) / 4;
-
-    const selos = empInfo.ehMoveis ? [
-      { t1: '100% MDF', t2: 'NAVAL PREMIUM' },
-      { t1: 'PADRÃO LUXO', t2: 'SOB MEDIDA' },
-      { t1: 'PONTUALIDADE', t2: 'NA ENTREGA' },
-      { t1: '1 ANO DE', t2: 'GARANTIA REAL' }
-    ] : [
-      { t1: '100% VIDRO', t2: 'TEMPERADO' },
-      { t1: 'PADRÃO NORMAS', t2: 'ABNT NBR' },
-      { t1: 'PONTUALIDADE', t2: 'NA ENTREGA' },
-      { t1: '1 ANO DE', t2: 'GARANTIA' }
-    ];
-
-    selos.forEach((s, sIdx) => {
-      const bX = MARGIN_X + (sIdx * (badgeColW + 6));
-      page.drawRectangle({
-        x: bX,
-        y: badgesY - badgesH,
-        width: badgeColW,
-        height: badgesH,
-        color: BOX_BG,
-        borderColor: BORDER,
-        borderWidth: 0.6
-      });
-      page.drawRectangle({
-        x: bX,
-        y: badgesY - 2.5,
-        width: badgeColW,
-        height: 2.5,
-        color: GOLD
-      });
       const txtFull = `${s.t1} ${s.t2}`;
       const txtW = fontBold.widthOfTextAtSize(txtFull, 6.2);
       page.drawText(txtFull, {
@@ -872,21 +734,7 @@ module.exports = async (req, res) => {
     );
 
     let empInfo = {};
-    if (ehMoveis) {
-      empInfo = {
-        id: queryEmpresa || 'sdmoveis',
-        nome: queryEmpNome || 'SD Móveis Projetados',
-        segmento: queryEmpSeg || 'Móveis Planejados & Marcenaria de Luxo',
-        slogan: 'Cozinhas Planejadas, Closets & Ambientes Sob Medida',
-        endereco: 'Itaitinga - CE',
-        contatos: `WhatsApp: ${queryEmpTel || '(85) 99611-9824'} | Atendimento & Projetos Sob Medida`,
-        telefone: queryEmpTel || '(85) 99611-9824',
-        pixChave: queryEmpPix || '85996119824',
-        pixTitular: 'SD Móveis Projetados',
-        logoFile: 'logo_moveis.jpg',
-        ehMoveis: true
-      };
-    } else {
+    if (!ehMoveis && (empParamLower === 'sdvidros' || empTipoLower === 'vidros')) {
       empInfo = {
         id: queryEmpresa || 'sdvidros',
         nome: queryEmpNome || 'SD Vidros',
@@ -899,6 +747,20 @@ module.exports = async (req, res) => {
         pixTitular: 'InfinityPay - SD Vidros',
         logoFile: 'logo.jpg',
         ehMoveis: false
+      };
+    } else {
+      empInfo = {
+        id: queryEmpresa || 'sdmoveis',
+        nome: queryEmpNome || 'SD Móveis Projetados',
+        segmento: queryEmpSeg || 'Móveis Planejados & Marcenaria de Luxo',
+        slogan: 'Cozinhas Planejadas, Closets & Ambientes Sob Medida',
+        endereco: 'Itaitinga - CE',
+        contatos: `WhatsApp: ${queryEmpTel || '(85) 99611-9824'} | Atendimento & Projetos Sob Medida`,
+        telefone: queryEmpTel || '(85) 99611-9824',
+        pixChave: queryEmpPix || '85996119824',
+        pixTitular: 'SD Móveis Projetados',
+        logoFile: 'logo_moveis.jpg',
+        ehMoveis: true
       };
     }
 
