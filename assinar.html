@@ -396,9 +396,9 @@
   <!-- Brand Header -->
   <div class="header-brand">
     <div class="brand-title" id="header-brand-title">
-      <span>🪟</span> SD VIDROS
+      <span>🛋️</span> SD MÓVEIS PROJETADOS
     </div>
-    <div class="brand-badge" id="header-brand-badge">Soluções em Vidros & Esquadrias de Alumínio</div>
+    <div class="brand-badge" id="header-brand-badge">Móveis Planejados & Ambientes Sob Medida</div>
   </div>
 
   <!-- Loading State -->
@@ -412,7 +412,7 @@
       <div style="font-size:40px;margin-bottom:10px;">⚠️</div>
       <h2 style="font-size:18px;color:#f87171;margin-bottom:8px;">Não foi possível carregar</h2>
       <p id="erro-texto" style="font-size:13.5px;color:#94a3b8;margin-bottom:16px;"></p>
-      <a href="https://wa.me/5585996119824" class="btn btn-whats">Falar com SD Vidros no WhatsApp</a>
+      <a href="https://wa.me/5585996119824" class="btn btn-whats">Falar com SD Móveis no WhatsApp</a>
     </div>
   </div>
 
@@ -522,7 +522,7 @@
           ✅ Aprovar e Assinar Orçamento
         </button>
         <a id="btn-ajustar-zap" href="https://wa.me/5585996119824" target="_blank" class="btn btn-outline">
-          💬 Falar com SD Vidros / Solicitar Ajustes
+          💬 Falar com SD Móveis / Solicitar Ajustes
         </a>
       </div>
     </div>
@@ -605,34 +605,24 @@
   function obterLicencaAtiva() {
     const urlParams = new URLSearchParams(window.location.search);
     const empParam = (urlParams.get('empresa') || urlParams.get('lic') || '').toLowerCase().trim();
+    const empNomeParam = urlParams.get('empNome') || '';
+    const empTipoParam = (urlParams.get('empTipo') || '').toLowerCase().trim();
+    const empSegParam = urlParams.get('empSeg') || '';
+    const empTelParam = urlParams.get('empTel') || '';
+    const empPixParam = urlParams.get('empPix') || '';
 
     // Se o texto do contrato já foi carregado, verifica o conteúdo do contrato
     const textoContrato = (contratoCache && contratoCache.texto) ? contratoCache.texto.toLowerCase() : '';
-    const ehContratoVidros = textoContrato.includes('vidraçaria') || textoContrato.includes('vidros') || textoContrato.includes('esquadrias') || textoContrato.includes('box') || textoContrato.includes('@sdvidros');
-    const ehContratoMoveis = (textoContrato.includes('móveis') || textoContrato.includes('moveis') || textoContrato.includes('marcenaria')) && !ehContratoVidros;
+    const ehContratoMoveis = textoContrato.includes('móveis') || textoContrato.includes('moveis') || textoContrato.includes('marcenaria');
+    // Só usa vidros se explicitamente solicitado e não tem móveis
+    const ehContratoVidros = !ehContratoMoveis && (textoContrato.includes('@sdvidros'));
 
-    if (ehContratoVidros || empParam === 'sdvidros' || empParam.includes('vidros')) {
-      return {
-        id: 'sdvidros',
-        nome: 'SD Vidros',
-        segmento: 'Alumínio, Vidros & Esquadrias',
-        slogan: 'Box, Espelhos, Portas, Janelas & Guarda-Corpo',
-        telefone: '(85) 99611-9824',
-        cidade: 'Itaitinga - CE',
-        pix: '85996119824',
-        tipoContrato: 'vidros'
-      };
-    }
-
-    const empNomeParam = urlParams.get('empNome') || '';
-    const empTipoParam = (urlParams.get('empTipo') || '').toLowerCase().trim();
-
+    // Prioridade 1: empTipo=moveis ou parâmetros de empresa de móveis
     if (
-      empParam === 'emp_1789700331599' ||
-      empParam.includes('moveis') ||
+      empTipoParam === 'moveis' ||
       empParam === 'sdmoveis' ||
       empParam === 'sd-moveis' ||
-      empTipoParam === 'moveis' ||
+      empParam.includes('moveis') ||
       empNomeParam.toLowerCase().includes('móveis') ||
       empNomeParam.toLowerCase().includes('moveis') ||
       ehContratoMoveis
@@ -640,49 +630,52 @@
       return {
         id: empParam || 'sdmoveis',
         nome: empNomeParam || 'SD Móveis Projetados',
-        segmento: urlParams.get('empSeg') || 'Móveis Planejados & Ambientes Sob Medida',
+        segmento: empSegParam || 'Móveis Planejados & Ambientes Sob Medida',
         slogan: 'Cozinhas Planejadas, Closets & Ambientes Sob Medida',
-        telefone: urlParams.get('empTel') || '(85) 99611-9824',
+        telefone: empTelParam || '(85) 99611-9824',
         cidade: 'Itaitinga - CE',
-        pix: urlParams.get('empPix') || '85996119824',
+        pix: empPixParam || '85996119824',
         tipoContrato: 'moveis'
       };
     }
 
-    try {
-      const lista = JSON.parse(localStorage.getItem('sdv_licencas') || '[]');
-      const idAtivo = empParam || localStorage.getItem('sdv_licenca_ativa') || 'sdvidros';
-      if (Array.isArray(lista) && lista.length) {
-        const encontrada = lista.find(l => l.id === idAtivo || (empParam && (l.id.toLowerCase() === empParam || l.nome.toLowerCase().includes(empParam))));
-        if (encontrada) {
-          if (encontrada.id === 'samuel-david' || encontrada.nome === 'Samuel David') {
-            encontrada.id = 'sdvidros';
-            encontrada.nome = 'SD Vidros';
-          }
-          return encontrada;
-        }
-      }
-    } catch (_) {}
-
-    if (empParam && empParam !== 'sdvidros' && empParam !== 'sdmoveis') {
+    // Prioridade 2: explicitamente sdvidros (outro produto irmão)
+    if (ehContratoVidros || empParam === 'sdvidros' || empTipoParam === 'vidros') {
       return {
-        id: empParam,
-        nome: empParam.toUpperCase(),
-        segmento: 'Alumínio, Vidros & Esquadrias',
-        telefone: '(85) 99611-9824',
+        id: 'sdvidros',
+        nome: empNomeParam || 'SD Vidros',
+        segmento: empSegParam || 'Alumínio, Vidros & Esquadrias',
+        slogan: 'Box, Espelhos, Portas, Janelas & Guarda-Corpo',
+        telefone: empTelParam || '(85) 99611-9824',
+        cidade: 'Itaitinga - CE',
+        pix: empPixParam || '85996119824',
         tipoContrato: 'vidros'
       };
     }
 
+    // Prioridade 3: qualquer empresa cadastrada no localStorage
+    try {
+      const lista = JSON.parse(localStorage.getItem('sdv_licencas') || '[]');
+      const idAtivo = empParam || localStorage.getItem('sdv_licenca_ativa') || 'sdmoveis';
+      if (Array.isArray(lista) && lista.length) {
+        const encontrada = lista.find(l => l.id === idAtivo || (empParam && (l.id.toLowerCase() === empParam || l.nome.toLowerCase().includes(empParam))));
+        if (encontrada) return encontrada;
+        // Retorna o item ativo mesmo sem filtro
+        const ativa = lista.find(l => l.id === idAtivo);
+        if (ativa) return ativa;
+      }
+    } catch (_) {}
+
+    // Padrão deste projeto: SD MÓVEIS PROJETADOS
     return {
-      id: 'sdvidros',
-      nome: 'SD Vidros',
-      segmento: 'Alumínio, Vidros & Esquadrias',
-      slogan: 'Box, Espelhos, Portas, Janelas & Guarda-Corpo',
+      id: 'sdmoveis',
+      nome: 'SD Móveis Projetados',
+      segmento: 'Móveis Planejados & Ambientes Sob Medida',
+      slogan: 'Cozinhas Planejadas, Closets & Ambientes Sob Medida',
       telefone: '(85) 99611-9824',
       cidade: 'Itaitinga - CE',
       pix: '85996119824',
-      tipoContrato: 'vidros'
+      tipoContrato: 'moveis'
     };
   }
 
@@ -696,7 +689,7 @@
     const zapHref = 'https://wa.me/' + (zapLimpo.startsWith('55') ? zapLimpo : '55' + zapLimpo);
 
     if (titleEl) {
-      const ehMoveis = (lic.id === 'sdmoveis' || String(lic.nome).toLowerCase().includes('móveis') || String(lic.nome).toLowerCase().includes('moveis'));
+      const ehMoveis = (lic.tipoContrato === 'moveis' || lic.id === 'sdmoveis' || String(lic.nome).toLowerCase().includes('móveis') || String(lic.nome).toLowerCase().includes('moveis'));
       const icone = ehMoveis ? '🛋️' : '🪟';
       titleEl.innerHTML = `<span>${icone}</span> ${lic.nome.toUpperCase()}`;
     }
@@ -841,10 +834,10 @@
   };
 
   window.baixarPdfAtual = function() {
-    const licParaPdf = (typeof obterLicencaAtiva === 'function') ? obterLicencaAtiva() : { id: 'sdvidros', nome: 'SD Vidros' };
-    const empParamPdf = '&empresa=' + encodeURIComponent(licParaPdf.id || 'sdvidros')
-      + '&empNome=' + encodeURIComponent(licParaPdf.nome || '')
-      + '&empTipo=' + encodeURIComponent(licParaPdf.tipoContrato || '');
+    const licParaPdf = (typeof obterLicencaAtiva === 'function') ? obterLicencaAtiva() : { id: 'sdmoveis', nome: 'SD Móveis Projetados', tipoContrato: 'moveis' };
+    const empParamPdf = '&empresa=' + encodeURIComponent(licParaPdf.id || 'sdmoveis')
+      + '&empNome=' + encodeURIComponent(licParaPdf.nome || 'SD Móveis Projetados')
+      + '&empTipo=' + encodeURIComponent(licParaPdf.tipoContrato || 'moveis');
     if (dParam) {
       window.open('/api/gerar-pdf-orcamento?d=' + encodeURIComponent(dParam) + empParamPdf, '_blank');
     } else if (contratoId) {
@@ -970,17 +963,20 @@
       return `  ${i + 1}. ${String(it)}`;
     }).join('\n') || '  (itens conforme orçamento aprovado)';
 
+    const licContrato = obterLicencaAtiva();
+    const ehMoveisContrato = licContrato.tipoContrato === 'moveis' || (licContrato.nome && licContrato.nome.toLowerCase().includes('m'));
+    const ramoDescContrato = ehMoveisContrato ? 'marcenaria sob medida e móveis planejados' : 'vidraçaria, esquadrias e vidros temperados';
     return `CONTRATO DE PRESTAÇÃO DE SERVIÇOS
 N° ${d.numero || d.n || '0001'}
-Itaitinga - CE, ${hoje}
+${licContrato.cidade || 'Itaitinga - CE'}, ${hoje}
 
 ══════════════════════════════════════════════════════════════
 
 CONTRATADA:
-Razão Social.....: ${(obterLicencaAtiva().nome || 'SD Vidros')}
-WhatsApp.........: (85) 99611-9824
-Instagram........: @sdvidros
-Cidade...........: Itaitinga - CE
+Razão Social.....: ${licContrato.nome || 'SD Móveis Projetados'}
+Segmento.........: ${licContrato.segmento || 'Móveis Planejados & Ambientes Sob Medida'}
+WhatsApp.........: ${licContrato.telefone || '(85) 99611-9824'}
+Cidade...........: ${licContrato.cidade || 'Itaitinga - CE'}
 
 CONTRATANTE (CLIENTE):
 Nome.............: ${d.nome || d.c || 'Não informado'}
@@ -992,8 +988,8 @@ ${(d.resp) ? 'Responsável......: ' + d.resp : ''}
 
 CLÁUSULA 1ª – DO OBJETO
 
-A CONTRATADA obriga-se a fornecer e instalar ao CONTRATANTE os seguintes
-serviços de vidraçaria e esquadrias:
+A CONTRATADA obriga-se a fornecer, produzir e instalar ao CONTRATANTE os seguintes
+serviços de ${ramoDescContrato}:
 
 ${itensStr}
 
@@ -1037,8 +1033,8 @@ Itaitinga - CE, ${hoje}
 
 
 _________________________________________________
-CONTRATADA: ${(obterLicencaAtiva().nome || 'SD Vidros')}
-WhatsApp: (85) 99611-9824
+CONTRATADA: ${licContrato.nome || 'SD Móveis Projetados'}
+WhatsApp: ${licContrato.telefone || '(85) 99611-9824'}
 
 
 _________________________________________________
