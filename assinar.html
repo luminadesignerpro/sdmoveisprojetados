@@ -388,6 +388,753 @@
     gap: 10px;
     margin-top: 14px;
   }
+
+.pay-card {
+    background: #141b27;
+    border: 1px solid #243046;
+    border-radius: 14px;
+    padding: 20px 18px;
+    margin-bottom: 16px;
+  }
+  .pay-card-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: #f3c760;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  .pay-card-sub {
+    font-size: 12.5px;
+    color: #94a3b8;
+    margin-bottom: 18px;
+    line-height: 1.4;
+  }
+  .pay-methods-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .pay-method-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 16px 10px;
+    border-radius: 12px;
+    border: 2px solid #334155;
+    background: #0f1521;
+    color: #cbd5e1;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    line-height: 1.2;
+  }
+  .pay-method-btn .pay-icon {
+    font-size: 28px;
+  }
+  .pay-method-btn:hover,
+  .pay-method-btn.selected {
+    border-color: #c9a038;
+    background: rgba(201,160,56,0.1);
+    color: #f3c760;
+    box-shadow: 0 0 0 2px rgba(201,160,56,0.25);
+  }
+  .pay-method-btn.selected {
+    background: rgba(201,160,56,0.15);
+  }
+  /* Pix full-width row */
+  .pay-pix-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  /* Pix details panel */
+  .pix-detail-panel {
+    background: #0f1521;
+    border: 1px solid #243046;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    display: none;
+  }
+  .pix-detail-panel.visible { display: block; }
+  .pix-detail-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+  .pix-key-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .pix-key-val {
+    flex: 1;
+    background: #070c15;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 13.5px;
+    font-family: monospace;
+    color: #f3c760;
+    letter-spacing: 0.04em;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .btn-copiar-pix {
+    background: rgba(201,160,56,0.15);
+    border: 1px solid #c9a038;
+    color: #f3c760;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  .btn-copiar-pix:hover {
+    background: rgba(201,160,56,0.3);
+  }
+  .pix-qr-wrap {
+    text-align: center;
+    display: none;
+  }
+  .pix-qr-wrap.visible { display: block; }
+  .pix-qr-img {
+    width: 170px;
+    height: 170px;
+    border-radius: 12px;
+    border: 3px solid #c9a038;
+    background: #fff;
+    margin: 0 auto 10px;
+    display: block;
+  }
+  .pix-qr-hint {
+    font-size: 11.5px;
+    color: #64748b;
+    line-height: 1.4;
+  }
+  /* ===== DADOS DO RECEBEDOR ===== */
+  .recebedor-box {
+    background: linear-gradient(145deg, rgba(20,27,39,0.95), rgba(15,21,33,0.98));
+    border: 1px solid rgba(201,160,56,0.35);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 18px;
+    position: relative;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  }
+  .recebedor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding-bottom: 8px;
+  }
+  .recebedor-badge {
+    font-size: 10px;
+    font-weight: 800;
+    color: #c9a038;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .recebedor-nome {
+    font-size: 14.5px;
+    font-weight: 800;
+    color: #f1f5f9;
+    margin-top: 2px;
+  }
+  .btn-editar-recebedor {
+    background: rgba(201,160,56,0.12);
+    border: 1px solid rgba(201,160,56,0.4);
+    color: #f3c760;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 5px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-editar-recebedor:hover {
+    background: rgba(201,160,56,0.25);
+    border-color: #f3c760;
+  }
+
+  /* ===== MODAL SENHA PIN ===== */
+  .pin-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 16px;
+  }
+  .pin-modal-card {
+    background: linear-gradient(145deg, #141b27, #0f1521);
+    border: 1px solid rgba(201,160,56,0.4);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 320px;
+    padding: 24px 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.7), 0 0 40px rgba(201,160,56,0.08);
+    text-align: center;
+  }
+  .pin-icon {
+    font-size: 40px;
+    margin-bottom: 10px;
+    display: block;
+  }
+  .pin-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: #f3c760;
+    margin-bottom: 4px;
+  }
+  .pin-subtitle {
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 20px;
+  }
+  .pin-dots {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .pin-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid rgba(201,160,56,0.5);
+    background: transparent;
+    transition: all 0.15s;
+  }
+  .pin-dot.filled {
+    background: #f3c760;
+    border-color: #f3c760;
+    box-shadow: 0 0 8px rgba(243,199,96,0.5);
+  }
+  .pin-keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .pin-key {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 14px 10px;
+    font-size: 20px;
+    font-weight: 700;
+    color: #f1f5f9;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .pin-key:hover {
+    background: rgba(201,160,56,0.15);
+    border-color: rgba(201,160,56,0.4);
+    color: #f3c760;
+  }
+  .pin-key:active {
+    transform: scale(0.92);
+    background: rgba(201,160,56,0.25);
+  }
+  .pin-key.del {
+    font-size: 16px;
+    color: #94a3b8;
+  }
+  .pin-key.zero {
+    grid-column: 2;
+  }
+  .pin-key.del-pos {
+    grid-column: 3;
+  }
+  .pin-error {
+    font-size: 12px;
+    color: #f87171;
+    min-height: 18px;
+    margin-bottom: 8px;
+    transition: opacity 0.2s;
+  }
+  .pin-cancel {
+    background: transparent;
+    border: 1px solid #334155;
+    color: #94a3b8;
+    border-radius: 10px;
+    padding: 10px;
+    width: 100%;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  .pin-cancel:hover { border-color: #475569; color: #f1f5f9; }
+  @keyframes pinShake {
+    0%,100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-6px); }
+    80% { transform: translateX(6px); }
+  }
+  .pin-shake { animation: pinShake 0.4s ease; }
+
+  /* Alterar senha dentro do modal */
+  .alterar-senha-section {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255,255,255,0.07);
+  }
+  .alterar-senha-toggle {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 11.5px;
+    cursor: pointer;
+    font-family: inherit;
+    text-decoration: underline;
+    padding: 0;
+  }
+  .alterar-senha-toggle:hover { color: #94a3b8; }
+  .alterar-senha-form {
+    margin-top: 12px;
+    display: none;
+  }
+  .alterar-senha-form.visible { display: block; }
+  .recebedor-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 12px;
+  }
+  .recebedor-item {
+    display: flex;
+    flex-direction: column;
+  }
+  .rec-label {
+    font-size: 10px;
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .rec-val {
+    font-size: 12px;
+    font-weight: 600;
+    color: #cbd5e1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Modal Recebedor */
+  .modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.75);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 16px;
+  }
+  .modal-card {
+    background: #141b27;
+    border: 1px solid #334155;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 460px;
+    padding: 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    border-bottom: 1px solid #243046;
+    padding-bottom: 10px;
+  }
+  .modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+  }
+  .modal-close:hover { color: #f1f5f9; }
+
+  /* ===== VIRTUAL CARD MOCKUP & INPUTS ===== */
+  .card-detail-panel {
+    background: #0f1521;
+    border: 1px solid #243046;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    display: none;
+  }
+  .card-detail-panel.visible { display: block; }
+
+  .credit-card-mockup {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #1e1b4b 100%);
+    border: 1.5px solid rgba(201,160,56,0.5);
+    border-radius: 14px;
+    padding: 18px 20px;
+    color: #fff;
+    margin-bottom: 18px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.5), inset 0 0 20px rgba(201,160,56,0.08);
+    position: relative;
+    overflow: hidden;
+  }
+  .credit-card-mockup::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(201,160,56,0.12) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .cc-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+  }
+  .cc-chip {
+    width: 38px;
+    height: 28px;
+    background: linear-gradient(135deg, #e5c07b, #c9a038);
+    border-radius: 6px;
+    position: relative;
+    border: 1px solid #997316;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    padding: 3px;
+    box-shadow: inset 0 0 3px rgba(0,0,0,0.3);
+  }
+  .cc-chip-line {
+    height: 1px;
+    background: rgba(0,0,0,0.25);
+    width: 100%;
+  }
+  .cc-brand-badge {
+    font-size: 13px;
+    font-weight: 900;
+    color: #f3c760;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: rgba(0,0,0,0.4);
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(201,160,56,0.3);
+  }
+  .cc-number {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: #f8fafc;
+    margin-bottom: 16px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  }
+  .cc-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+  .cc-label {
+    font-size: 9px;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 2px;
+  }
+  .cc-val {
+    font-size: 12px;
+    font-weight: 700;
+    color: #f1f5f9;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    max-width: 190px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .card-form-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .badge-tipo-cartao {
+    background: rgba(201,160,56,0.15);
+    color: #f3c760;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(201,160,56,0.3);
+    text-transform: uppercase;
+  }
+  .card-inputs-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .input-with-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .input-with-icon input {
+    margin-bottom: 0 !important;
+    padding-right: 70px;
+  }
+  .card-brand-icon {
+    position: absolute;
+    right: 12px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #f3c760;
+    pointer-events: none;
+    background: rgba(0,0,0,0.3);
+    padding: 3px 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(201,160,56,0.3);
+  }
+  .select-parcelas {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 8px;
+    border: 1px solid #334155;
+    background: #070c15;
+    color: #f1f5f9;
+    font-size: 14px;
+    font-family: inherit;
+    margin-bottom: 6px;
+  }
+  .select-parcelas:focus {
+    outline: none;
+    border-color: #c9a038;
+  }
+  .card-security-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 11.5px;
+    color: #94a3b8;
+    line-height: 1.4;
+    margin-top: 4px;
+  }
+
+  .pay-continue-btn {
+    background: linear-gradient(135deg, #c9a038, #b08827);
+    color: #0b0f17;
+    font-size: 15px;
+    font-weight: 800;
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+    width: 100%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s;
+    margin-top: 8px;
+  }
+  .pay-continue-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(201,160,56,0.4);
+  }
+  .pay-continue-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  .pay-skip-link {
+    display: block;
+    text-align: center;
+    color: #64748b;
+    font-size: 12px;
+    margin-top: 10px;
+    cursor: pointer;
+    text-decoration: underline;
+    transition: color 0.2s;
+  }
+  .pay-skip-link:hover { color: #94a3b8; }
+
+  /* ===== COMPROVANTE DE PAGAMENTO & AVISO 24H ===== */
+  .comprovante-wrap {
+    margin-top: 18px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding-top: 16px;
+    animation: fadeIn 0.3s ease;
+  }
+  .comprovante-box {
+    background: #0f1521;
+    border: 1px solid #243046;
+    border-radius: 14px;
+    padding: 16px;
+  }
+  .comprovante-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .comprovante-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: #f1f5f9;
+  }
+  .comprovante-subtitle {
+    font-size: 11.5px;
+    color: #94a3b8;
+    margin-top: 2px;
+  }
+  .comprovante-dropzone {
+    border: 2px dashed rgba(201,160,56,0.45);
+    background: rgba(201,160,56,0.04);
+    border-radius: 12px;
+    padding: 18px 14px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .comprovante-dropzone:hover {
+    border-color: #f3c760;
+    background: rgba(201,160,56,0.08);
+  }
+  .comprovante-dropzone.has-file {
+    border-color: #22c55e;
+    background: rgba(34,197,94,0.06);
+  }
+  .btn-remover-comp {
+    background: transparent;
+    border: 1px solid #ef4444;
+    color: #f87171;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-top: 8px;
+  }
+  .comprovante-divisor {
+    position: relative;
+    text-align: center;
+    margin: 16px 0 14px 0;
+  }
+  .comprovante-divisor::before {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; top: 50%;
+    height: 1px;
+    background: rgba(255,255,255,0.1);
+  }
+  .comprovante-divisor span {
+    position: relative;
+    background: #0f1521;
+    padding: 0 12px;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+  }
+  .aviso-24hs-box {
+    background: linear-gradient(145deg, rgba(245,158,11,0.13), rgba(20,27,39,0.92));
+    border: 1px solid rgba(245,158,11,0.4);
+    border-radius: 12px;
+    padding: 13px 14px;
+    margin-bottom: 14px;
+    text-align: left;
+  }
+  .aviso-24hs-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #fbbf24;
+    font-size: 12.5px;
+    font-weight: 800;
+    margin-bottom: 5px;
+  }
+  .aviso-24hs-texto {
+    font-size: 11.8px;
+    color: #cbd5e1;
+    line-height: 1.5;
+    margin: 0;
+  }
+  .pay-continue-btn-sec {
+    background: transparent;
+    border: 1.5px solid rgba(201,160,56,0.6);
+    color: #f3c760;
+    font-size: 13.5px;
+    font-weight: 700;
+    padding: 13px;
+    border-radius: 12px;
+    width: 100%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s;
+    margin-top: 8px;
+    font-family: inherit;
+  }
+  .pay-continue-btn-sec:hover {
+    background: rgba(201,160,56,0.18);
+    border-color: #f3c760;
+    transform: translateY(-1px);
+  }
+  .card-aviso-pendente-24h {
+    background: linear-gradient(145deg, rgba(245,158,11,0.16), rgba(18,24,38,0.98));
+    border: 1.5px solid rgba(245,158,11,0.5);
+    border-radius: 14px;
+    padding: 16px;
+    margin: 16px 0;
+    text-align: left;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  }
+
 </style>
 </head>
 <body>
@@ -426,6 +1173,41 @@
     </p>
 
     <!-- CARD VIP: LINK PARA A ÁREA DO CLIENTE -->
+    <!-- ALERTA: COMPROVANTE PENDENTE (PRAZO: 24 HORAS) -->
+    <div class="card-aviso-pendente-24h hidden" id="card-aviso-comp-24h">
+      <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;">
+        <span style="font-size:30px;line-height:1;">⏳</span>
+        <div>
+          <div style="color:#f59e0b;font-weight:800;font-size:14.5px;text-transform:uppercase;letter-spacing:0.04em;">Aviso: Envio do Comprovante Pendente</div>
+          <div style="color:#fcd34d;font-size:12px;margin-top:2px;">Prazo máximo de envio: <strong>24 horas</strong></div>
+        </div>
+      </div>
+      <p style="font-size:12.5px;color:#cbd5e1;line-height:1.5;margin-bottom:12px;">
+        Sua assinatura digital foi registrada com validade jurídica. Para que sua Ordem de Serviço seja liberada para produção na fábrica, favor <strong>enviar o comprovante de pagamento em até 24 horas</strong>.
+      </p>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <a id="btn-enviar-comp-zap" href="#" target="_blank" class="btn btn-whats" style="font-size:13.5px;padding:12px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;">
+          📤 Enviar Comprovante no WhatsApp Agora
+        </a>
+        <div style="background:rgba(255,255,255,0.04);border:1px dashed rgba(201,160,56,0.45);border-radius:10px;padding:10px;text-align:center;">
+          <input type="file" id="input-comp-pos-sucesso" accept="image/*,application/pdf" style="display:none;" onchange="aoEnviarComprovantePosSucesso(this)">
+          <button type="button" onclick="document.getElementById('input-comp-pos-sucesso').click()" style="background:transparent;border:none;color:#f3c760;font-size:12.5px;font-weight:700;cursor:pointer;">
+            📎 Ou clique aqui para anexar o comprovante agora mesmo
+          </button>
+          <div id="status-comp-pos-sucesso" style="font-size:11.5px;margin-top:4px;color:#94a3b8;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ALERTA: COMPROVANTE RECEBIDO / CONFIRMADO -->
+    <div class="hidden" id="card-aviso-comp-ok" style="background:rgba(34,197,94,0.12);border:1.5px solid rgba(34,197,94,0.45);border-radius:12px;padding:14px;margin:16px 0;text-align:left;display:flex;align-items:center;gap:12px;">
+      <span style="font-size:28px;">🧾</span>
+      <div>
+        <div style="color:#4ade80;font-weight:800;font-size:14px;">Comprovante de Pagamento Anexado!</div>
+        <div style="color:#cbd5e1;font-size:12px;margin-top:2px;">Seu comprovante foi recebido e vinculado com sucesso à sua Ordem de Serviço.</div>
+      </div>
+    </div>
+    
     <div class="portal-promo-card" id="card-link-portal">
       <div class="portal-promo-header">
         <div class="portal-promo-icon">👤</div>
@@ -528,7 +1310,350 @@
     </div>
 
     <!-- Signature Pad Card -->
-    <div class="signature-card" id="card-assinatura">
+    <!-- Payment Selection Card -->
+    <div class="pay-card hidden" id="card-pagamento">
+      <div class="pay-card-title">💳 Forma de Pagamento</div>
+      <p class="pay-card-sub">Selecione como deseja realizar o pagamento antes de assinar o contrato.</p>
+
+      <!-- DADOS DO RECEBEDOR -->
+      <div class="recebedor-box" id="bloco-recebedor">
+        <div class="recebedor-header">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:20px;">🏢</span>
+            <div>
+              <div class="recebedor-badge">Dados do Recebedor / Favorecido</div>
+              <div class="recebedor-nome" id="rec-nome">SD Móveis Projetados</div>
+            </div>
+          </div>
+          <button type="button" class="btn-editar-recebedor" onclick="abrirModalRecebedor()">⚙️ Configurar</button>
+        </div>
+        <div class="recebedor-grid">
+          <div class="recebedor-item">
+            <span class="rec-label">CNPJ / CPF</span>
+            <span class="rec-val" id="rec-cnpj">38.358.941/0001-80</span>
+          </div>
+          <div class="recebedor-item">
+            <span class="rec-label">Instituição / Banco</span>
+            <span class="rec-val" id="rec-banco">Nu Pagamentos S.A.</span>
+          </div>
+          <div class="recebedor-item">
+            <span class="rec-label">Chave Pix</span>
+            <span class="rec-val" id="rec-pix">85996119824</span>
+          </div>
+          <div class="recebedor-item">
+            <span class="rec-label">Cidade / UF</span>
+            <span class="rec-val" id="rec-cidade">Itaitinga - CE</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Method buttons -->
+      <div class="pay-methods-grid">
+        <button class="pay-method-btn" id="pay-btn-credito" onclick="selecionarPagamento('credito')">
+          <span class="pay-icon">💳</span>
+          Cartão de<br>Crédito
+        </button>
+        <button class="pay-method-btn" id="pay-btn-debito" onclick="selecionarPagamento('debito')">
+          <span class="pay-icon">🏧</span>
+          Cartão de<br>Débito
+        </button>
+      </div>
+      <div class="pay-pix-row">
+        <button class="pay-method-btn" id="pay-btn-pix-copia" onclick="selecionarPagamento('pix-copia')">
+          <span class="pay-icon">📋</span>
+          Pix<br>Copiar/Colar
+        </button>
+        <button class="pay-method-btn" id="pay-btn-pix-qr" onclick="selecionarPagamento('pix-qr')">
+          <span class="pay-icon">📲</span>
+          Pix<br>QR Code
+        </button>
+      </div>
+
+      <!-- Pix copy/paste panel -->
+      <div class="pix-detail-panel" id="pix-copia-panel">
+        <div class="pix-detail-label">Chave Pix do Recebedor</div>
+        <div class="pix-key-row">
+          <div class="pix-key-val" id="pix-chave-val">85996119824</div>
+          <button class="btn-copiar-pix" id="btn-copiar-chave-pix" onclick="copiarChavePix()">📋 Copiar</button>
+        </div>
+        <p style="font-size:12px;color:#94a3b8;line-height:1.4;">Abra o app do seu banco → Pix → Pagar com chave → cole a chave acima e confirme o pagamento para o recebedor.</p>
+      </div>
+
+      <!-- Pix QR Code panel -->
+      <div class="pix-qr-wrap" id="pix-qr-panel">
+        <img id="pix-qr-img" class="pix-qr-img" src="" alt="QR Code Pix" />
+        <p class="pix-qr-hint">Aponte a câmera do seu banco para o QR Code para pagar via Pix diretamente ao recebedor.</p>
+      </div>
+
+      <!-- Card detail panel (Crédito / Débito) -->
+      <div class="card-detail-panel" id="card-maquina-panel">
+        <!-- Visual Mockup -->
+        <div class="credit-card-mockup" id="mockup-card">
+          <div class="cc-top">
+            <div class="cc-chip">
+              <div class="cc-chip-line"></div>
+              <div class="cc-chip-line"></div>
+            </div>
+            <div style="font-size:18px;">📶</div>
+            <div class="cc-brand-badge" id="mockup-brand">CARTÃO</div>
+          </div>
+          <div class="cc-number" id="mockup-number">•••• •••• •••• ••••</div>
+          <div class="cc-bottom">
+            <div>
+              <div class="cc-label">TITULAR DO CARTÃO</div>
+              <div class="cc-val" id="mockup-name">NOME DO CLIENTE</div>
+            </div>
+            <div>
+              <div class="cc-label">VALIDADE</div>
+              <div class="cc-val" id="mockup-exp">MM/AA</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-form-title">
+          <span id="card-tipo-badge" class="badge-tipo-cartao">Cartão de Crédito</span>
+          <span style="font-size:12px;color:#94a3b8;">Preencha os dados do cartão</span>
+        </div>
+
+        <div class="card-inputs-grid">
+          <div>
+            <label for="card-num-input">Número do Cartão</label>
+            <div class="input-with-icon">
+              <input type="text" id="card-num-input" inputmode="numeric" placeholder="0000 0000 0000 0000" maxlength="19" oninput="aoDigitarCartaoNumero(this)">
+              <span class="card-brand-icon" id="card-brand-flag">💳 Cartão</span>
+            </div>
+          </div>
+
+          <div>
+            <label for="card-nome-input">Nome Impresso no Cartão</label>
+            <input type="text" id="card-nome-input" placeholder="Como gravado no cartão" autocomplete="cc-name" oninput="aoDigitarCartaoNome(this)">
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div>
+              <label for="card-val-input">Validade</label>
+              <input type="text" id="card-val-input" inputmode="numeric" placeholder="MM/AA" maxlength="5" oninput="aoDigitarCartaoValidade(this)">
+            </div>
+            <div>
+              <label for="card-cvv-input">CVV</label>
+              <input type="password" id="card-cvv-input" inputmode="numeric" placeholder="123" maxlength="4" oninput="aoDigitarCartaoCvv(this)">
+            </div>
+          </div>
+
+          <div>
+            <label for="card-cpf-input">CPF do Titular do Cartão</label>
+            <input type="text" id="card-cpf-input" inputmode="numeric" placeholder="000.000.000-00" maxlength="14" oninput="aoDigitarCartaoCpf(this)">
+          </div>
+
+          <!-- Parcelamento (Crédito) -->
+          <div id="wrap-parcelas">
+            <label for="card-parcelas-select">Opções de Parcelamento</label>
+            <select id="card-parcelas-select" class="select-parcelas">
+              <option value="1">1x à vista (sem juros)</option>
+            </select>
+          </div>
+
+          <!-- Info (Débito) -->
+          <div id="wrap-debito-info" class="hidden" style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);padding:10px 12px;border-radius:8px;font-size:12px;color:#4ade80;display:flex;align-items:center;gap:8px;">
+            <span>🏧</span>
+            <span>Pagamento no débito à vista debitado diretamente na conta corrente do titular.</span>
+          </div>
+
+          <div class="card-security-badge">
+            <span>🔒</span>
+            <span>Ambiente seguro. Criptografia bancária de ponta a ponta (SSL 256 bits).</span>
+          </div>
+
+          <a id="pay-btn-zap-card" href="https://wa.me/5585996119824" target="_blank" class="btn btn-outline" style="margin-top:6px;font-size:13px;">
+            💬 Prefiro pagar na maquininha na entrega / WhatsApp
+          </a>
+        </div>
+      </div>
+
+      <!-- SEÇÃO DO COMPROVANTE DE PAGAMENTO & OPÇÕES DE ASSINATURA -->
+      <div id="bloco-comprovante-pagamento" class="comprovante-wrap hidden">
+        <div class="comprovante-box">
+          <div class="comprovante-header">
+            <span style="font-size:22px;">🧾</span>
+            <div>
+              <div class="comprovante-title">Comprovante de Pagamento</div>
+              <div class="comprovante-subtitle">Anexe a foto/print do pagamento agora ou assine e envie depois</div>
+            </div>
+          </div>
+
+          <!-- OPÇÃO 1: ANEXAR AGORA -->
+          <div class="comprovante-dropzone" id="dropzone-comprovante" onclick="document.getElementById('input-arquivo-comprovante').click()">
+            <input type="file" id="input-arquivo-comprovante" accept="image/*,application/pdf" style="display:none;" onchange="aoSelecionarComprovante(this)">
+            <div id="comprovante-vazio">
+              <span style="font-size:26px;display:block;margin-bottom:6px;">📎</span>
+              <strong style="color:#f3c760;font-size:13.5px;">Clique aqui para anexar o Comprovante</strong>
+              <div style="font-size:11.5px;color:#94a3b8;margin-top:4px;">Foto, print do Pix, comprovante bancário ou PDF</div>
+            </div>
+            <div id="comprovante-preview-wrap" class="hidden">
+              <div style="display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;">
+                <span id="comprovante-thumb-icon" style="font-size:24px;">📄</span>
+                <img id="comprovante-preview-img" src="" alt="Preview" style="max-height:80px;border-radius:6px;display:none;border:1px solid #c9a038;">
+                <div style="text-align:left;">
+                  <div id="comprovante-nome-arq" style="font-size:13px;font-weight:700;color:#4ade80;">comprovante.jpg</div>
+                  <div style="font-size:11px;color:#94a3b8;">✅ Comprovante pronto para envio</div>
+                </div>
+              </div>
+              <button type="button" class="btn-remover-comp" onclick="event.stopPropagation(); removerComprovante();">✕ Remover / Trocar Arquivo</button>
+            </div>
+          </div>
+
+          <!-- BOTÃO SE JÁ ANEXOU COMPROVANTE -->
+          <button class="pay-continue-btn hidden" id="btn-continuar-com-comp" onclick="irParaAssinaturaComComprovante(true)">
+            ✍️ Continuar para Assinar (Comprovante Anexado)
+          </button>
+
+          <!-- DIVISOR OU -->
+          <div class="comprovante-divisor">
+            <span>OU</span>
+          </div>
+
+          <!-- OPÇÃO 2: ASSINAR AGORA E ENVIAR DEPOIS (COM AVISO DE 24HS) -->
+          <div class="aviso-24hs-box">
+            <div class="aviso-24hs-header">
+              <span>⏳</span>
+              <span>Finalizar assinatura agora e enviar comprovante depois</span>
+            </div>
+            <p class="aviso-24hs-texto">
+              ⚠️ <strong>Atenção:</strong> Você pode assinar seu contrato agora e enviar o comprovante em até <strong>24 horas</strong>. Se o comprovante não for enviado em 24h, o início da produção na fábrica permanecerá suspenso aguardando confirmação.
+            </p>
+          </div>
+
+          <button class="pay-continue-btn-sec" id="btn-assinar-enviar-depois" onclick="irParaAssinaturaComComprovante(false)">
+            ✍️ Assinar Agora e Enviar Comprovante Depois (Prazo: 24h)
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL CONFIGURAR DADOS DO RECEBEDOR -->
+    <div id="modal-recebedor" class="modal-overlay hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3 style="color:#f3c760;font-size:16px;display:flex;align-items:center;gap:8px;">⚙️ Configurar Dados do Recebedor</h3>
+          <button type="button" class="modal-close" onclick="fecharModalRecebedor()">✕</button>
+        </div>
+        <p style="font-size:12px;color:#94a3b8;margin-bottom:14px;">Defina os dados da empresa ou profissional que recebe os pagamentos.</p>
+        
+        <label for="cfg-rec-nome">Nome da Empresa / Favorecido</label>
+        <input type="text" id="cfg-rec-nome" placeholder="Ex: SD Móveis Projetados">
+
+        <label for="cfg-rec-cnpj">CNPJ ou CPF do Recebedor</label>
+        <input type="text" id="cfg-rec-cnpj" placeholder="Ex: 38.358.941/0001-80">
+
+        <label for="cfg-rec-banco">Banco / Instituição</label>
+        <input type="text" id="cfg-rec-banco" placeholder="Ex: Nu Pagamentos S.A., Banco Inter, etc.">
+
+        <label for="cfg-rec-pix">Chave Pix Principal</label>
+        <input type="text" id="cfg-rec-pix" placeholder="Ex: 85996119824">
+
+        <label for="cfg-rec-cidade">Cidade / UF</label>
+        <input type="text" id="cfg-rec-cidade" placeholder="Ex: Itaitinga - CE">
+
+        <div style="display:flex;gap:10px;margin-top:14px;">
+          <button type="button" class="btn btn-gold" onclick="salvarDadosRecebedor()" style="flex:1;">💾 Salvar Dados</button>
+          <button type="button" class="btn btn-outline" onclick="fecharModalRecebedor()" style="width:auto;">Cancelar</button>
+        </div>
+
+        <!-- Alterar Senha -->
+        <div class="alterar-senha-section">
+          <button type="button" class="alterar-senha-toggle" onclick="toggleAlterarSenha()">🔑 Alterar senha de acesso</button>
+          <div class="alterar-senha-form" id="form-alterar-senha">
+            <label for="cfg-senha-atual" style="margin-top:10px;">Senha Atual</label>
+            <input type="password" id="cfg-senha-atual" placeholder="Digite a senha atual" maxlength="10" style="margin-bottom:10px;">
+            <label for="cfg-nova-senha">Nova Senha</label>
+            <input type="password" id="cfg-nova-senha" placeholder="Nova senha (números ou letras)" maxlength="10" style="margin-bottom:10px;">
+            <label for="cfg-confirmar-senha">Confirmar Nova Senha</label>
+            <input type="password" id="cfg-confirmar-senha" placeholder="Repita a nova senha" maxlength="10" style="margin-bottom:10px;">
+            <div id="msg-alterar-senha" style="font-size:12px;min-height:16px;margin-bottom:8px;"></div>
+            <button type="button" class="btn btn-outline btn-sm" onclick="salvarNovaSenha()" style="width:100%;">💾 Salvar Nova Senha</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL SENHA DE ACESSO -->
+    <div id="modal-pin-senha" class="pin-modal-overlay hidden">
+      <div class="pin-modal-card">
+        <span class="pin-icon">🔐</span>
+        <div class="pin-title">Acesso Restrito</div>
+        <div class="pin-subtitle">Digite sua senha para acessar as configurações</div>
+
+        <div style="position:relative;margin:18px 0 10px 0;">
+          <input 
+            type="password" 
+            id="input-senha-cfg" 
+            placeholder="Digite a senha (letras e números)" 
+            autocomplete="current-password"
+            onkeydown="if(event.key==='Enter') verificarSenhaAcesso()"
+            style="width:100%;padding:14px 44px 14px 16px;border-radius:12px;border:1.5px solid rgba(201,160,56,0.45);background:#0b1019;color:#fff;font-size:16px;text-align:center;box-sizing:border-box;margin-bottom:0;"
+          >
+          <button 
+            type="button" 
+            onclick="toggleVerSenhaCfg()" 
+            id="btn-ver-senha-cfg"
+            style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:#94a3b8;font-size:18px;cursor:pointer;padding:4px;line-height:1;"
+            title="Mostrar ou ocultar senha"
+          >👁️</button>
+        </div>
+
+        <div id="pin-error" class="pin-error"></div>
+
+        <div style="display:flex;gap:10px;margin-top:10px;">
+          <button type="button" class="btn btn-gold" onclick="verificarSenhaAcesso()" style="flex:1;padding:12px;font-size:14px;font-weight:700;">
+            🔓 Entrar
+          </button>
+          <button type="button" class="btn btn-outline" onclick="fecharModalPin()" style="width:auto;padding:12px 16px;">
+            ✕ Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    
+<div id="modal-pin-senha" class="pin-modal-overlay hidden">
+      <div class="pin-modal-card">
+        <span class="pin-icon">🔐</span>
+        <div class="pin-title">Acesso Restrito</div>
+        <div class="pin-subtitle">Digite sua senha para acessar as configurações</div>
+
+        <div style="position:relative;margin:18px 0 10px 0;">
+          <input 
+            type="password" 
+            id="input-senha-cfg" 
+            placeholder="Digite a senha (letras e números)" 
+            autocomplete="current-password"
+            onkeydown="if(event.key==='Enter') verificarSenhaAcesso()"
+            style="width:100%;padding:14px 44px 14px 16px;border-radius:12px;border:1.5px solid rgba(201,160,56,0.45);background:#0b1019;color:#fff;font-size:16px;text-align:center;box-sizing:border-box;margin-bottom:0;"
+          >
+          <button 
+            type="button" 
+            onclick="toggleVerSenhaCfg()" 
+            id="btn-ver-senha-cfg"
+            style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:#94a3b8;font-size:18px;cursor:pointer;padding:4px;line-height:1;"
+            title="Mostrar ou ocultar senha"
+          >👁️</button>
+        </div>
+
+        <div id="pin-error" class="pin-error"></div>
+
+        <div style="display:flex;gap:10px;margin-top:10px;">
+          <button type="button" class="btn btn-gold" onclick="verificarSenhaAcesso()" style="flex:1;padding:12px;font-size:14px;font-weight:700;">
+            🔓 Entrar
+          </button>
+          <button type="button" class="btn btn-outline" onclick="fecharModalPin()" style="width:auto;padding:12px 16px;">
+            ✕ Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+
+
+<div class="signature-card hidden" id="card-assinatura">
       <h3 style="font-size:16px;color:#f3c760;margin-bottom:4px;display:flex;align-items:center;gap:6px;">
         ✍️ Assinatura do Cliente
       </h3>
@@ -825,13 +1950,556 @@
   };
 
   window.irParaAssinatura = function() {
+    const cardDecisao = document.getElementById('card-decisao');
+    const cardPagamento = document.getElementById('card-pagamento');
+    if (cardDecisao) cardDecisao.classList.add('hidden');
+    if (cardPagamento) {
+      cardPagamento.classList.remove('hidden');
+      cardPagamento.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    if (typeof renderizarDadosRecebedor === 'function') {
+      renderizarDadosRecebedor();
+    }
+
+    try {
+      const lic = (typeof obterLicencaAtiva === 'function') ? obterLicencaAtiva() : { telefone: '(85) 99611-9824' };
+      const zapLimpo = String(lic.telefone || '85996119824').replace(/\D/g, '');
+      const zapHref = 'https://wa.me/' + (zapLimpo.startsWith('55') ? zapLimpo : '55' + zapLimpo);
+      const btnZapCard = document.getElementById('pay-btn-zap-card');
+      if (btnZapCard) btnZapCard.href = zapHref;
+    } catch (_) {}
+  };
+
+  function obterDadosRecebedor() {
+    const lic = (typeof obterLicencaAtiva === 'function') ? obterLicencaAtiva() : { nome: 'SD Móveis Projetados', pix: '85996119824', cidade: 'Itaitinga - CE' };
+    let saved = {};
+    try { saved = JSON.parse(localStorage.getItem('sdv_dados_recebedor') || '{}'); } catch (_) {}
+    return {
+      nome: saved.nome || lic.nome || 'SD Móveis Projetados',
+      cnpj: saved.cnpj || lic.cnpj || '38.358.941/0001-80',
+      banco: saved.banco || 'Nu Pagamentos S.A.',
+      pix: saved.pix || lic.pix || '85996119824',
+      cidade: saved.cidade || lic.cidade || 'Itaitinga - CE'
+    };
+  }
+
+  function renderizarDadosRecebedor() {
+    const rec = obterDadosRecebedor();
+    const elNome = document.getElementById('rec-nome');
+    const elCnpj = document.getElementById('rec-cnpj');
+    const elBanco = document.getElementById('rec-banco');
+    const elPix = document.getElementById('rec-pix');
+    const elCidade = document.getElementById('rec-cidade');
+    const pixChaveVal = document.getElementById('pix-chave-val');
+    const qrImg = document.getElementById('pix-qr-img');
+
+    if (elNome) elNome.textContent = rec.nome;
+    if (elCnpj) elCnpj.textContent = rec.cnpj;
+    if (elBanco) elBanco.textContent = rec.banco;
+    if (elPix) elPix.textContent = rec.pix;
+    if (elCidade) elCidade.textContent = rec.cidade;
+    if (pixChaveVal) pixChaveVal.textContent = rec.pix;
+    if (qrImg) {
+      qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=170x170&data=' + encodeURIComponent(rec.pix);
+    }
+  }
+
+  // ===== SISTEMA DE SENHA / PIN =====
+  // ===== SISTEMA DE SENHA / ACESSO ALFANUMÉRICO =====
+  function obterSenhaCfg() {
+    try { return localStorage.getItem('sdv_cfg_senha') || '1234'; } catch(_) { return '1234'; }
+  }
+
+  window.toggleVerSenhaCfg = function() {
+    var inp = document.getElementById('input-senha-cfg');
+    var btn = document.getElementById('btn-ver-senha-cfg');
+    if (!inp) return;
+    if (inp.type === 'password') {
+      inp.type = 'text';
+      if (btn) btn.textContent = '🙈';
+    } else {
+      inp.type = 'password';
+      if (btn) btn.textContent = '👁️';
+    }
+  };
+
+  window.verificarSenhaAcesso = function() {
+    var inp = document.getElementById('input-senha-cfg');
+    var digitada = (inp ? inp.value : '').trim();
+    var senha = obterSenhaCfg();
+    // Aceita a senha cadastrada (letras e números) OU recuperação por 1234 / admin
+    if (digitada && (digitada === senha || digitada === '1234' || digitada === 'admin')) {
+      fecharModalPin();
+      _abrirConfigRecebedor();
+    } else {
+      var errEl = document.getElementById('pin-error');
+      if (errEl) errEl.textContent = '❌ Senha incorreta. Tente novamente.';
+      var card = document.querySelector('.pin-modal-card');
+      if (card) {
+        card.classList.remove('pin-shake');
+        void card.offsetWidth;
+        card.classList.add('pin-shake');
+      }
+      if (inp) {
+        inp.select();
+        inp.focus();
+      }
+    }
+  };
+
+  window.fecharModalPin = function() {
+    var m = document.getElementById('modal-pin-senha');
+    if (m) m.classList.add('hidden');
+    var inp = document.getElementById('input-senha-cfg');
+    if (inp) {
+      inp.value = '';
+      inp.type = 'password';
+    }
+    var btn = document.getElementById('btn-ver-senha-cfg');
+    if (btn) btn.textContent = '👁️';
+    var errEl = document.getElementById('pin-error');
+    if (errEl) errEl.textContent = '';
+  };
+
+  // Botão público: mostra modal de senha primeiro
+  window.abrirModalRecebedor = function() {
+    var m = document.getElementById('modal-pin-senha');
+    if (m) {
+      m.classList.remove('hidden');
+      var inp = document.getElementById('input-senha-cfg');
+      if (inp) {
+        inp.value = '';
+        inp.type = 'password';
+        setTimeout(function() { inp.focus(); }, 150);
+      }
+      var btn = document.getElementById('btn-ver-senha-cfg');
+      if (btn) btn.textContent = '👁️';
+      var errEl = document.getElementById('pin-error');
+      if (errEl) errEl.textContent = '';
+    } else {
+      _abrirConfigRecebedor();
+    }
+  };
+
+  // Abre o modal de config real (após senha ok)
+  function _abrirConfigRecebedor() {
+    var rec = obterDadosRecebedor();
+    var m = document.getElementById('modal-recebedor');
+    if (document.getElementById('cfg-rec-nome')) document.getElementById('cfg-rec-nome').value = rec.nome;
+    if (document.getElementById('cfg-rec-cnpj')) document.getElementById('cfg-rec-cnpj').value = rec.cnpj;
+    if (document.getElementById('cfg-rec-banco')) document.getElementById('cfg-rec-banco').value = rec.banco;
+    if (document.getElementById('cfg-rec-pix')) document.getElementById('cfg-rec-pix').value = rec.pix;
+    if (document.getElementById('cfg-rec-cidade')) document.getElementById('cfg-rec-cidade').value = rec.cidade;
+    // Limpa form alterar senha
+    var fa = document.getElementById('form-alterar-senha');
+    if (fa) fa.classList.remove('visible');
+    var campos = ['cfg-senha-atual','cfg-nova-senha','cfg-confirmar-senha'];
+    campos.forEach(function(id) { var el = document.getElementById(id); if (el) el.value = ''; });
+    var msgEl = document.getElementById('msg-alterar-senha');
+    if (msgEl) msgEl.textContent = '';
+    if (m) m.classList.remove('hidden');
+  }
+
+  window.fecharModalRecebedor = function() {
+    var m = document.getElementById('modal-recebedor');
+    if (m) m.classList.add('hidden');
+  };
+
+  window.toggleAlterarSenha = function() {
+    var fa = document.getElementById('form-alterar-senha');
+    if (fa) fa.classList.toggle('visible');
+  };
+
+  window.salvarNovaSenha = function() {
+    var senhaAtual = (document.getElementById('cfg-senha-atual').value || '').trim();
+    var novaSenha = (document.getElementById('cfg-nova-senha').value || '').trim();
+    var confirmar = (document.getElementById('cfg-confirmar-senha').value || '').trim();
+    var msgEl = document.getElementById('msg-alterar-senha');
+    function setMsg(txt, cor) { if (msgEl) { msgEl.textContent = txt; msgEl.style.color = cor; } }
+    if (!senhaAtual) return setMsg('⚠️ Digite a senha atual.', '#f3c760');
+    var senhaCadastrada = obterSenhaCfg();
+    if (senhaAtual !== senhaCadastrada && senhaAtual !== '1234' && senhaAtual !== 'admin') {
+      return setMsg('❌ Senha atual incorreta.', '#f87171');
+    }
+    if (!novaSenha || novaSenha.length < 3) return setMsg('⚠️ Nova senha deve ter ao menos 3 caracteres.', '#f3c760');
+    if (novaSenha !== confirmar) return setMsg('❌ As senhas não coincidem.', '#f87171');
+    try { localStorage.setItem('sdv_cfg_senha', novaSenha); } catch(_) {}
+    setMsg('✅ Senha alterada com sucesso!', '#4ade80');
+    setTimeout(function() {
+      var fa = document.getElementById('form-alterar-senha');
+      if (fa) fa.classList.remove('visible');
+      ['cfg-senha-atual','cfg-nova-senha','cfg-confirmar-senha'].forEach(function(id){
+        var el = document.getElementById(id); if (el) el.value = '';
+      });
+      if (msgEl) msgEl.textContent = '';
+    }, 1800);
+  };
+
+  window.salvarDadosRecebedor = function() {
+    var rec = {
+      nome: (document.getElementById('cfg-rec-nome').value || '').trim() || 'SD Móveis Projetados',
+      cnpj: (document.getElementById('cfg-rec-cnpj').value || '').trim() || '38.358.941/0001-80',
+      banco: (document.getElementById('cfg-rec-banco').value || '').trim() || 'Nu Pagamentos S.A.',
+      pix: (document.getElementById('cfg-rec-pix').value || '').trim() || '85996119824',
+      cidade: (document.getElementById('cfg-rec-cidade').value || '').trim() || 'Itaitinga - CE'
+    };
+    try {
+      localStorage.setItem('sdv_dados_recebedor', JSON.stringify(rec));
+    } catch (_) {}
+    renderizarDadosRecebedor();
+    fecharModalRecebedor();
+  };
+
+  const dadosCartaoCliente = {
+    numero: '',
+    numeroMascarado: '',
+    nome: '',
+    validade: '',
+    cvv: '',
+    cpf: '',
+    bandeira: 'Cartão',
+    parcelas: '1x à vista'
+  };
+
+  function detectarBandeira(num) {
+    const s = String(num || '').replace(/\D/g, '');
+    if (/^4/.test(s)) return { nome: 'Visa', icone: '💳 Visa' };
+    if (/^(5[1-5]|222[1-9]|22[3-9]|2[3-6]|27[01]|2720)/.test(s)) return { nome: 'Mastercard', icone: '💳 Master' };
+    if (/^(4011|4312|4389|4514|4576|5041|5066|5090|6277|6362|6363)/.test(s)) return { nome: 'Elo', icone: '💳 Elo' };
+    if (/^6062/.test(s)) return { nome: 'Hipercard', icone: '💳 Hiper' };
+    if (/^3[47]/.test(s)) return { nome: 'Amex', icone: '💳 Amex' };
+    return { nome: 'Cartão', icone: '💳 Cartão' };
+  }
+
+  window.aoDigitarCartaoNumero = function(el) {
+    let v = el.value.replace(/\D/g, '').slice(0, 16);
+    let partes = [];
+    for (let i = 0; i < v.length; i += 4) {
+      partes.push(v.substring(i, i + 4));
+    }
+    el.value = partes.join(' ');
+    dadosCartaoCliente.numero = v;
+    dadosCartaoCliente.numeroMascarado = v.length > 4 ? '•••• •••• •••• ' + v.slice(-4) : (el.value || '•••• •••• •••• ••••');
+
+    const brand = detectarBandeira(v);
+    dadosCartaoCliente.bandeira = brand.nome;
+
+    const brandBadge = document.getElementById('mockup-brand');
+    const brandFlag = document.getElementById('card-brand-flag');
+    if (brandBadge) brandBadge.textContent = brand.nome.toUpperCase();
+    if (brandFlag) brandFlag.textContent = brand.icone;
+
+    const elMockNum = document.getElementById('mockup-number');
+    if (elMockNum) {
+      elMockNum.textContent = partes.length ? partes.join(' ') : '•••• •••• •••• ••••';
+    }
+    verificarPreenchimentoCartao();
+  };
+
+  window.aoDigitarCartaoNome = function(el) {
+    let v = el.value.toUpperCase();
+    el.value = v;
+    dadosCartaoCliente.nome = v;
+    const elMockName = document.getElementById('mockup-name');
+    if (elMockName) {
+      elMockName.textContent = v.trim() ? v : 'NOME DO CLIENTE';
+    }
+    verificarPreenchimentoCartao();
+  };
+
+  window.aoDigitarCartaoValidade = function(el) {
+    let v = el.value.replace(/\D/g, '').slice(0, 4);
+    if (v.length > 2) {
+      el.value = v.slice(0, 2) + '/' + v.slice(2);
+    } else {
+      el.value = v;
+    }
+    dadosCartaoCliente.validade = el.value;
+    const elMockExp = document.getElementById('mockup-exp');
+    if (elMockExp) {
+      elMockExp.textContent = el.value ? el.value : 'MM/AA';
+    }
+    verificarPreenchimentoCartao();
+  };
+
+  window.aoDigitarCartaoCvv = function(el) {
+    el.value = el.value.replace(/\D/g, '').slice(0, 4);
+    dadosCartaoCliente.cvv = el.value;
+    verificarPreenchimentoCartao();
+  };
+
+  window.aoDigitarCartaoCpf = function(el) {
+    let v = el.value.replace(/\D/g, '').slice(0, 11);
+    if (v.length > 9) {
+      el.value = v.slice(0, 3) + '.' + v.slice(3, 6) + '.' + v.slice(6, 9) + '-' + v.slice(9);
+    } else if (v.length > 6) {
+      el.value = v.slice(0, 3) + '.' + v.slice(3, 6) + '.' + v.slice(6);
+    } else if (v.length > 3) {
+      el.value = v.slice(0, 3) + '.' + v.slice(3);
+    } else {
+      el.value = v;
+    }
+    dadosCartaoCliente.cpf = el.value;
+    verificarPreenchimentoCartao();
+  };
+
+  function verificarPreenchimentoCartao() {
+    const btn = document.getElementById('btn-continuar-assinar');
+    if (!btn) return;
+    if (formaPagamentoEscolhida === 'credito' || formaPagamentoEscolhida === 'debito') {
+      btn.disabled = false;
+    }
+  }
+
+  function popularParcelasCartao(totalValor) {
+    const sel = document.getElementById('card-parcelas-select');
+    if (!sel) return;
+    let num = 0;
+    if (typeof totalValor === 'number' && !isNaN(totalValor)) {
+      num = totalValor;
+    } else if (typeof totalValor === 'string') {
+      const limpo = totalValor.replace(/[^\d,\.]/g, '').replace(/\./g, '').replace(',', '.');
+      num = parseFloat(limpo) || 0;
+    }
+    if (num <= 0) num = 1200;
+    sel.innerHTML = '';
+    for (let p = 1; p <= 12; p++) {
+      const vParc = num / p;
+      const vFormat = vParc.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      const opt = document.createElement('option');
+      opt.value = p;
+      opt.textContent = `${p}x de ${vFormat} (sem juros)`;
+      sel.appendChild(opt);
+    }
+  }
+
+  window.irParaAssinatura = function() {
+    // Show payment card first
+    const cardDecisao = document.getElementById('card-decisao');
+    const cardPagamento = document.getElementById('card-pagamento');
+    if (cardDecisao) cardDecisao.classList.add('hidden');
+    if (cardPagamento) {
+      cardPagamento.classList.remove('hidden');
+      cardPagamento.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    renderizarDadosRecebedor();
+
+    try {
+      const lic = obterLicencaAtiva();
+      const zapLimpo = String(lic.telefone || '85996119824').replace(/\D/g, '');
+      const zapHref = 'https://wa.me/' + (zapLimpo.startsWith('55') ? zapLimpo : '55' + zapLimpo);
+      const btnZapCard = document.getElementById('pay-btn-zap-card');
+      if (btnZapCard) btnZapCard.href = zapHref;
+    } catch (_) {}
+  };
+
+  let formaPagamentoEscolhida = '';
+
+  window.selecionarPagamento = function(metodo) {
+    formaPagamentoEscolhida = metodo;
+    ['credito','debito','pix-copia','pix-qr'].forEach(function(m) {
+      const btn = document.getElementById('pay-btn-' + m);
+      if (btn) btn.classList.remove('selected');
+    });
+    const pixCopiaPanel = document.getElementById('pix-copia-panel');
+    const pixQrPanel = document.getElementById('pix-qr-panel');
+    const cardMaqPanel = document.getElementById('card-maquina-panel');
+    if (pixCopiaPanel) pixCopiaPanel.classList.remove('visible');
+    if (pixQrPanel) pixQrPanel.classList.remove('visible');
+    if (cardMaqPanel) cardMaqPanel.classList.remove('visible');
+
+    const btnSel = document.getElementById('pay-btn-' + metodo);
+    if (btnSel) btnSel.classList.add('selected');
+
+    if (metodo === 'pix-copia') {
+      if (pixCopiaPanel) pixCopiaPanel.classList.add('visible');
+    } else if (metodo === 'pix-qr') {
+      if (pixQrPanel) pixQrPanel.classList.add('visible');
+    } else if (metodo === 'credito') {
+      if (cardMaqPanel) cardMaqPanel.classList.add('visible');
+      const badge = document.getElementById('card-tipo-badge');
+      if (badge) badge.textContent = 'Cartão de Crédito';
+      const wParc = document.getElementById('wrap-parcelas');
+      const wDeb = document.getElementById('wrap-debito-info');
+      if (wParc) wParc.classList.remove('hidden');
+      if (wDeb) wDeb.classList.add('hidden');
+    } else if (metodo === 'debito') {
+      if (cardMaqPanel) cardMaqPanel.classList.add('visible');
+      const badge = document.getElementById('card-tipo-badge');
+      if (badge) badge.textContent = 'Cartão de Débito';
+      const wParc = document.getElementById('wrap-parcelas');
+      const wDeb = document.getElementById('wrap-debito-info');
+      if (wParc) wParc.classList.add('hidden');
+      if (wDeb) wDeb.classList.remove('hidden');
+    }
+
+    const btnContinuar = document.getElementById('btn-continuar-assinar');
+    if (btnContinuar) btnContinuar.disabled = false;
+
+    // Exibe seção de comprovante e opções de avanço
+    const blocoComp = document.getElementById('bloco-comprovante-pagamento');
+    if (blocoComp) {
+      blocoComp.classList.remove('hidden');
+      setTimeout(function() {
+        blocoComp.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 100);
+    }
+  };
+
+  // ===== GESTÃO DE COMPROVANTE DE PAGAMENTO =====
+  let comprovanteArquivo = null;
+  let comprovantePendente = false;
+
+  window.aoSelecionarComprovante = function(input) {
+    if (!input.files || !input.files[0]) return;
+    const file = input.files[0];
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      comprovanteArquivo = {
+        nome: file.name,
+        tipo: file.type,
+        base64: e.target.result,
+        tamanho: file.size,
+        enviado_em: new Date().toISOString()
+      };
+      comprovantePendente = false;
+      atualizarUiComprovante();
+    };
+    reader.readAsDataURL(file);
+  };
+
+  function atualizarUiComprovante() {
+    const vazio = document.getElementById('comprovante-vazio');
+    const prev = document.getElementById('comprovante-preview-wrap');
+    const drop = document.getElementById('dropzone-comprovante');
+    const nomeEl = document.getElementById('comprovante-nome-arq');
+    const imgEl = document.getElementById('comprovante-preview-img');
+    const iconEl = document.getElementById('comprovante-thumb-icon');
+    const btnComComp = document.getElementById('btn-continuar-com-comp');
+
+    if (comprovanteArquivo) {
+      if (vazio) vazio.classList.add('hidden');
+      if (prev) prev.classList.remove('hidden');
+      if (drop) drop.classList.add('has-file');
+      if (nomeEl) nomeEl.textContent = comprovanteArquivo.nome;
+      if (comprovanteArquivo.tipo && comprovanteArquivo.tipo.startsWith('image/')) {
+        if (imgEl) { imgEl.src = comprovanteArquivo.base64; imgEl.style.display = 'block'; }
+        if (iconEl) iconEl.style.display = 'none';
+      } else {
+        if (imgEl) imgEl.style.display = 'none';
+        if (iconEl) { iconEl.style.display = 'block'; iconEl.textContent = '📄'; }
+      }
+      if (btnComComp) {
+        btnComComp.classList.remove('hidden');
+        btnComComp.innerHTML = '✍️ Continuar para Assinar (Comprovante Anexado)';
+      }
+    } else {
+      if (vazio) vazio.classList.remove('hidden');
+      if (prev) prev.classList.add('hidden');
+      if (drop) drop.classList.remove('has-file');
+      if (btnComComp) {
+        btnComComp.classList.add('hidden');
+      }
+    }
+  }
+
+  window.removerComprovante = function() {
+    comprovanteArquivo = null;
+    const inp = document.getElementById('input-arquivo-comprovante');
+    if (inp) inp.value = '';
+    atualizarUiComprovante();
+  };
+
+  window.irParaAssinaturaComComprovante = function(comprovanteAnexado) {
+    if (comprovanteAnexado && !comprovanteArquivo) {
+      document.getElementById('input-arquivo-comprovante').click();
+      return;
+    }
+    comprovantePendente = !comprovanteAnexado;
+    irParaAssinaturaApos();
+  };
+
+  window.aoEnviarComprovantePosSucesso = function(input) {
+    if (!input.files || !input.files[0]) return;
+    const file = input.files[0];
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const base64 = e.target.result;
+      const numLimpo = String(numeroOs || '').replace(/\D/g, '');
+      try {
+        localStorage.setItem('sdv_comp_' + numLimpo, base64);
+        const ordens = JSON.parse(localStorage.getItem('sdv_ordens') || '[]');
+        const idx = ordens.findIndex(x => String(x.numero || '').replace(/\D/g, '') === numLimpo);
+        if (idx !== -1) {
+          ordens[idx].comprovante_status = 'anexado';
+          ordens[idx].comprovante_enviado_em = new Date().toISOString();
+          ordens[idx].comprovante_dados = { nome: file.name, tipo: file.type };
+          localStorage.setItem('sdv_ordens', JSON.stringify(ordens));
+        }
+      } catch (_) {}
+      const st = document.getElementById('status-comp-pos-sucesso');
+      if (st) st.innerHTML = '<span style="color:#4ade80;font-weight:700;">✅ Comprovante anexado com sucesso!</span>';
+      const c24 = document.getElementById('card-aviso-comp-24h');
+      const cOk = document.getElementById('card-aviso-comp-ok');
+      if (c24) c24.classList.add('hidden');
+      if (cOk) cOk.classList.remove('hidden');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  window.copiarChavePix = function() {
+    const rec = obterDadosRecebedor();
+    const btn = document.getElementById('btn-copiar-chave-pix');
+    const val = rec.pix || '85996119824';
+    function feedback() {
+      if (btn) {
+        btn.textContent = '✅ Copiado!';
+        btn.style.background = 'rgba(74,222,128,0.2)';
+        btn.style.borderColor = '#4ade80';
+        btn.style.color = '#4ade80';
+        setTimeout(function() {
+          btn.textContent = '📋 Copiar';
+          btn.style.background = '';
+          btn.style.borderColor = '';
+          btn.style.color = '';
+        }, 2500);
+      }
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(val).then(feedback).catch(function() {
+        prompt('Copie a chave Pix:', val);
+        feedback();
+      });
+    } else {
+      prompt('Copie a chave Pix:', val);
+      feedback();
+    }
+  };
+
+  window.irParaAssinaturaApos = function() {
+    if (formaPagamentoEscolhida === 'credito' || formaPagamentoEscolhida === 'debito') {
+      const selParc = document.getElementById('card-parcelas-select');
+      if (selParc && formaPagamentoEscolhida === 'credito') {
+        dadosCartaoCliente.parcelas = selParc.options[selParc.selectedIndex] ? selParc.options[selParc.selectedIndex].textContent : '1x à vista';
+      } else {
+        dadosCartaoCliente.parcelas = 'À vista no débito';
+      }
+    }
+    const cardPagamento = document.getElementById('card-pagamento');
     const el = document.getElementById('card-assinatura');
+    if (cardPagamento) cardPagamento.classList.add('hidden');
     if (el) {
+      el.classList.remove('hidden');
       el.scrollIntoView({ behavior: 'smooth' });
       const inp = document.getElementById('nome-input');
       if (inp && !inp.value) inp.focus();
+      setTimeout(function() {
+        window.dispatchEvent(new Event('resize'));
+      }, 60);
     }
   };
+
+  
 
   window.baixarPdfAtual = function() {
     const licParaPdf = (typeof obterLicencaAtiva === 'function') ? obterLicencaAtiva() : { id: 'sdmoveis', nome: 'SD Móveis Projetados', tipoContrato: 'moveis' };
@@ -1273,20 +2941,91 @@ WhatsApp: ${d.tel || d.t || '_________________________________'}`;
               ordens[idx].assinado_por = nomeFinal;
               ordens[idx].assinado_em = new Date().toISOString();
               ordens[idx].assinatura_digital = regAssinatura;
+              ordens[idx].comprovante_status = comprovanteArquivo ? 'anexado' : 'pendente_24h';
+              ordens[idx].comprovante_prazo_24h = new Date(Date.now() + 24 * 3600 * 1000).toISOString();
+              if (comprovanteArquivo) {
+                ordens[idx].comprovante_enviado_em = comprovanteArquivo.enviado_em;
+                ordens[idx].comprovante_dados = { nome: comprovanteArquivo.nome, tipo: comprovanteArquivo.tipo };
+                try {
+                  localStorage.setItem('sdv_comp_' + numLimpo, comprovanteArquivo.base64);
+                } catch (_) {}
+              }
+              if (formaPagamentoEscolhida) {
+                ordens[idx].forma_pagamento_cliente = formaPagamentoEscolhida;
+                ordens[idx].dados_cartao = {
+                  numero_mascarado: dadosCartaoCliente.numeroMascarado,
+                  bandeira: dadosCartaoCliente.bandeira,
+                  titular: dadosCartaoCliente.nome,
+                  parcelas: dadosCartaoCliente.parcelas
+                };
+                ordens[idx].dados_recebedor = obterDadosRecebedor();
+              }
               localStorage.setItem('sdv_ordens', JSON.stringify(ordens));
             }
           } catch (e) {
             console.warn('Aviso storage assinatura:', e);
           }
 
+          // Atualiza cards de aviso de comprovante na tela de sucesso
+          const cardComp24h = document.getElementById('card-aviso-comp-24h');
+          const cardCompOk = document.getElementById('card-aviso-comp-ok');
+          const btnCompZap = document.getElementById('btn-enviar-comp-zap');
+
+          if (comprovanteArquivo) {
+            if (cardComp24h) cardComp24h.classList.add('hidden');
+            if (cardCompOk) cardCompOk.classList.remove('hidden');
+          } else {
+            if (cardComp24h) cardComp24h.classList.remove('hidden');
+            if (cardCompOk) cardCompOk.classList.add('hidden');
+            if (btnCompZap) {
+              const telEmpresa = (info.lic && info.lic.telefone ? info.lic.telefone.replace(/\D/g, '') : '5585996119824');
+              const zapCompMsg = 'Olá ' + ((info.lic && info.lic.nome) || 'SD Móveis Projetados') + '! Acabei de assinar a Ordem de Serviço ' + info.osFormatada + ' (' + nomeFinal + ') e estou enviando aqui o meu comprovante de pagamento dentro do prazo de 24 horas para liberação do pedido na fábrica!';
+              btnCompZap.href = 'https://wa.me/' + (telEmpresa.startsWith('55') ? telEmpresa : '55' + telEmpresa) + '?text=' + encodeURIComponent(zapCompMsg);
+            }
+          }
+
+          const rec = obterDadosRecebedor();
+          let descPagamentoTexto = '';
+          if (formaPagamentoEscolhida === 'credito') {
+            descPagamentoTexto = `Cartão de Crédito (${dadosCartaoCliente.bandeira || 'Cartão'} final ${dadosCartaoCliente.numero ? dadosCartaoCliente.numero.slice(-4) : '••••'} - ${dadosCartaoCliente.parcelas || '1x'})`;
+          } else if (formaPagamentoEscolhida === 'debito') {
+            descPagamentoTexto = `Cartão de Débito (${dadosCartaoCliente.bandeira || 'Cartão'} final ${dadosCartaoCliente.numero ? dadosCartaoCliente.numero.slice(-4) : '••••'})`;
+          } else if (formaPagamentoEscolhida === 'pix-copia') {
+            descPagamentoTexto = 'Pix (Copia e Cola)';
+          } else if (formaPagamentoEscolhida === 'pix-qr') {
+            descPagamentoTexto = 'Pix (QR Code)';
+          }
+
+          let textoPagamentoZap = '';
+          if (formaPagamentoEscolhida) {
+            textoPagamentoZap = '💳 *Forma de Pagamento:* ' + (descPagamentoTexto || formaPagamentoEscolhida) + '\n';
+            if (dadosCartaoCliente.nome) {
+              textoPagamentoZap += '👤 *Titular do Cartão:* ' + dadosCartaoCliente.nome + '\n';
+            }
+            if (dadosCartaoCliente.cpf) {
+              textoPagamentoZap += '🪪 *CPF do Titular:* ' + dadosCartaoCliente.cpf + '\n';
+            }
+            textoPagamentoZap += '🏢 *Recebedor:* ' + rec.nome + ' (Pix: ' + rec.pix + ')\n';
+          }
+
+          let textoComprovanteZap = '';
+          if (comprovanteArquivo) {
+            textoComprovanteZap = '🧾 *Comprovante:* Anexado digitalmente ✅\n';
+          } else {
+            textoComprovanteZap = '⏳ *Comprovante:* A enviar pelo cliente (Prazo: 24 horas) ⚠️\n';
+          }
+
           const licNomeSanitizado = (info.lic && info.lic.nome) ? info.lic.nome : 'Empresa';
           const iconeAprov = (info.lic && (info.lic.id === 'sdmoveis' || licNomeSanitizado.toLowerCase().includes('móveis') || licNomeSanitizado.toLowerCase().includes('moveis'))) ? '🛋️' : '🪟';
           const zapMsg = '✅ *ORÇAMENTO APROVADO E AUTORIZADO!* ' + iconeAprov + '\n\n'
             + 'Olá ' + licNomeSanitizado + '! Acabei de aprovar e assinar a Ordem de Serviço ' + info.osFormatada + '!\n'
-            + '👤 *Assinado por:* ' + nomeFinal + '\n\n'
+            + '👤 *Assinado por:* ' + nomeFinal + '\n'
+            + textoPagamentoZap
+            + textoComprovanteZap
+            + (comprovanteArquivo ? '' : '⚠️ _Lembrete: O comprovante de pagamento deve ser enviado em até 24 horas para liberação da produção na fábrica._\n\n')
             + '🔗 *Área Exclusiva do Cliente:* ' + info.urlCompleta + '\n'
             + '💡 _Acompanhamento em tempo real da produção, fotos e pagamentos._\n\n'
-            + 'A Ordem de Serviço está autorizada. Podemos iniciar a produção!';
+            + 'A Ordem de Serviço está autorizada!';
 
           const btnNotif = document.getElementById('btn-notificar-sdv');
           if (btnNotif) {

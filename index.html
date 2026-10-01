@@ -1,13 +1,49 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+  <!-- PWA Automático: Manifest + Meta Tags + Service Worker -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#080811">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SDMoveis">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/sw.js')
+          .then(function(reg){ console.log('SW registrado com sucesso:', reg.scope); })
+          .catch(function(err){ console.warn('Erro ao registrar SW:', err); });
+      });
+    }
+  </script>
+
+  <!-- PWA Automático: Manifest + Meta Tags + Service Worker -->
+  
+  
+  
+  
+  
+  
+  
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/sw.js')
+          .then(function(reg){ console.log('SW registrado com sucesso:', reg.scope); })
+          .catch(function(err){ console.warn('Erro ao registrar SW:', err); });
+      });
+    }
+  </script>
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#0f0f0f">
+  
+  
   <title>SD Móveis Projetados – Móveis Planejados & Ambientes Sob Medida</title>
   <meta name="description" content="SD Móveis Projetados – Sistema Completo de Gestão de Móveis Planejados, Ambientes Sob Medida, Orçamentos, Clientes e Contratos.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1602,6 +1638,122 @@
       min-width: 140px;
     }
 
+
+.ponto-grid-actions {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 10px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    @media(max-width: 900px) {
+      .ponto-grid-actions { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media(max-width: 600px) {
+      .ponto-grid-actions {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+      }
+    }
+
+    .ponto-btn-action {
+      background: rgba(255,255,255,0.03);
+      border: 1.5px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 12px 6px;
+      min-height: 72px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+      transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+    }
+    .ponto-btn-action:hover {
+      transform: translateY(-2px);
+    }
+    .ponto-btn-action:active {
+      transform: scale(0.95);
+      filter: brightness(1.3);
+    }
+    .ponto-btn-action .ponto-act-icon { font-size: 22px; line-height: 1; }
+    .ponto-btn-action .ponto-act-label {
+      font-size: 12px;
+      font-weight: 800;
+      text-align: center;
+      line-height: 1.2;
+    }
+    .ponto-btn-action .ponto-act-hora {
+      display: none;
+      font-size: 11px;
+      font-weight: 900;
+      padding: 2px 7px;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.18);
+      color: #fff;
+      letter-spacing: 0.3px;
+    }
+    .ponto-btn-action.batido .ponto-act-hora {
+      display: inline-block;
+    }
+
+    /* Estilos do Seletor de Dias da Semana no Alarme */
+    .btn-preset-dias {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #e2e8f0;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 9px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-preset-dias:hover, .btn-preset-dias:active {
+      background: rgba(56,189,248,0.25);
+      border-color: #38bdf8;
+      color: #38bdf8;
+    }
+    .grid-dias-semana {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+    }
+    @media(max-width: 420px) {
+      .grid-dias-semana { gap: 3px; }
+    }
+    .dia-check-chip {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,0.04);
+      border: 1.5px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      padding: 9px 2px;
+      cursor: pointer;
+      font-size: 11.5px;
+      font-weight: 800;
+      color: #94a3b8;
+      transition: all 0.2s;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .dia-check-chip input[type="checkbox"] {
+      display: none;
+    }
+    .dia-check-chip.ativo {
+      background: rgba(56,189,248,0.22);
+      border-color: #38bdf8;
+      color: #fff;
+      box-shadow: 0 0 10px rgba(56,189,248,0.3);
+    }
 </style>
   <script src="pdf-lib.min.js"></script>
   <script src="pdf.min.js"></script>
@@ -2538,33 +2690,40 @@
       </div>
 
       <div class="ponto-grid-actions">
-        <button type="button" class="ponto-btn-action ponto-act-entrada" onclick="registrarBatidaPonto('entrada1')">
+        <button type="button" id="btn-ponto-ent1" class="ponto-btn-action ponto-act-entrada" onclick="registrarBatidaPonto('entrada1')">
           <span class="ponto-act-icon">➔]</span>
           <span class="ponto-act-label">1ª Entrada</span>
+          <span class="ponto-act-hora" id="badge-ponto-ent1"></span>
         </button>
-        <button type="button" class="ponto-btn-action ponto-act-almoco" onclick="registrarBatidaPonto('saidaAlmoco')">
+        <button type="button" id="btn-ponto-alm" class="ponto-btn-action ponto-act-almoco" onclick="registrarBatidaPonto('saidaAlmoco')">
           <span class="ponto-act-icon">☕</span>
           <span class="ponto-act-label">Saída Almoço</span>
+          <span class="ponto-act-hora" id="badge-ponto-alm"></span>
         </button>
-        <button type="button" class="ponto-btn-action ponto-act-volta" onclick="registrarBatidaPonto('voltaAlmoco')">
+        <button type="button" id="btn-ponto-vol" class="ponto-btn-action ponto-act-volta" onclick="registrarBatidaPonto('voltaAlmoco')">
           <span class="ponto-act-icon">▶️</span>
           <span class="ponto-act-label">Volta Almoço</span>
+          <span class="ponto-act-hora" id="badge-ponto-vol"></span>
         </button>
-        <button type="button" class="ponto-btn-action ponto-act-saida" onclick="registrarBatidaPonto('saidaFinal')">
+        <button type="button" id="btn-ponto-sai" class="ponto-btn-action ponto-act-saida" onclick="registrarBatidaPonto('saidaFinal')">
           <span class="ponto-act-icon">[➔</span>
           <span class="ponto-act-label">Saída Final</span>
+          <span class="ponto-act-hora" id="badge-ponto-sai"></span>
         </button>
-        <button type="button" class="ponto-btn-action ponto-act-he-ini" onclick="registrarBatidaPonto('horaExtraInicial')">
+        <button type="button" id="btn-ponto-he-ini" class="ponto-btn-action ponto-act-he-ini" onclick="registrarBatidaPonto('horaExtraInicial')">
           <span class="ponto-act-icon">⏱️➔</span>
           <span class="ponto-act-label">H. Extra Inicial</span>
+          <span class="ponto-act-hora" id="badge-ponto-he-ini"></span>
         </button>
-        <button type="button" class="ponto-btn-action ponto-act-he-fim" onclick="registrarBatidaPonto('horaExtraFinal')">
+        <button type="button" id="btn-ponto-he-fim" class="ponto-btn-action ponto-act-he-fim" onclick="registrarBatidaPonto('horaExtraFinal')">
           <span class="ponto-act-icon">⏱️🏁</span>
           <span class="ponto-act-label">H. Extra Final</span>
+          <span class="ponto-act-hora" id="badge-ponto-he-fim"></span>
         </button>
-        <button type="button" class="ponto-btn-action ponto-act-falta" onclick="registrarBatidaPontoComJustificativa()">
+        <button type="button" id="btn-ponto-falta" class="ponto-btn-action ponto-act-falta" onclick="registrarBatidaPontoComJustificativa()" style="grid-column: 1 / -1;">
           <span class="ponto-act-icon">👤📝</span>
           <span class="ponto-act-label">Falta (Justificar)</span>
+          <span class="ponto-act-hora" id="badge-ponto-falta"></span>
         </button>
       </div>
       <div id="ponto-feedback-msg" style="margin-top:14px;font-size:13.5px;font-weight:700;"></div>
@@ -3590,6 +3749,122 @@
 </div>
 
 <!-- ══ MODAL JUSTIFICAR SAÍDA FINAL ANTECIPADA ══ -->
+
+<!-- ══ BANNER DE SOLICITAÇÕES DE SAÍDA ANTECIPADA PENDENTES (EMPRESA) ══ -->
+<div id="banner-solicitacoes-saida" style="display:none;background:linear-gradient(135deg,rgba(245,158,11,0.18),rgba(217,119,6,0.28));border:1.5px solid #f59e0b;border-radius:14px;padding:12px 18px;margin-bottom:16px;box-shadow:0 6px 20px rgba(245,158,11,0.2);align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <span style="font-size:26px;animation:pulseDot 1.5s infinite;">🔔</span>
+    <div>
+      <div id="banner-solicitacoes-saida-titulo" style="font-size:14px;font-weight:900;color:#fef08a;">
+        1 Solicitação de Saída Antecipada Pendente de Análise!
+      </div>
+      <div style="font-size:11.5px;color:#cbd5e1;margin-top:2px;">
+        Colaborador encerrou antes do horário e solicitou autorização da gerência.
+      </div>
+    </div>
+  </div>
+  <button type="button" onclick="abrirModalAnaliseSolicitacoesSaida()" style="background:#f59e0b;color:#000;font-weight:900;border:none;padding:9px 18px;border-radius:8px;cursor:pointer;font-size:12.5px;display:inline-flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(245,158,11,0.4);">
+    <span>🔍</span> <span>Analisar e Decidir Agora</span>
+  </button>
+</div>
+
+<!-- ══ MODAL ANÁLISE DE SAÍDA ANTECIPADA (DECISÃO DA EMPRESA) ══ -->
+<div id="modal-analise-saida-empresa" class="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);backdrop-filter:blur(8px);z-index:1000200;align-items:center;justify-content:center;padding:16px;" onclick="fecharModalAnaliseSaida(event)">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:500px;width:100%;border-radius:20px;background:linear-gradient(145deg,#0e111d,#16192b);border:1.5px solid rgba(245,158,11,0.5);box-shadow:0 24px 60px rgba(0,0,0,0.9);padding:24px;color:#fff;box-sizing:border-box;">
+    
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:24px;">⚖️</span>
+        <div>
+          <div style="font-size:16px;font-weight:900;color:#facc15;">Análise de Saída Antecipada</div>
+          <div style="font-size:11px;color:#94a3b8;">Decisão da Gerência / RH</div>
+        </div>
+      </div>
+      <button type="button" onclick="fecharModalAnaliseSaida()" style="background:none;border:none;color:#94a3b8;font-size:22px;cursor:pointer;line-height:1;">✕</button>
+    </div>
+
+    <input type="hidden" id="analise-solic-id" value="" />
+    <input type="hidden" id="analise-ponto-id" value="" />
+
+    <!-- Card de Dados do Colaborador -->
+    <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:14px;margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span id="analise-colab-nome" style="font-size:15px;font-weight:900;color:#fff;">Nome do Colaborador</span>
+        <span id="analise-data-solic" style="font-size:11.5px;color:#94a3b8;font-weight:700;">Hoje</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;margin-bottom:8px;">
+        <div style="background:rgba(0,0,0,0.25);padding:8px 10px;border-radius:8px;">
+          <span style="color:#94a3b8;">Saída Registrada:</span> <strong id="analise-hora-saida" style="color:#fff;">10:30</strong>
+        </div>
+        <div style="background:rgba(0,0,0,0.25);padding:8px 10px;border-radius:8px;">
+          <span style="color:#94a3b8;">Término Oficial:</span> <strong id="analise-hora-prevista" style="color:#38bdf8;">17:30</strong>
+        </div>
+      </div>
+      <div style="background:rgba(239,68,68,0.14);border:1px solid rgba(239,68,68,0.3);padding:8px 12px;border-radius:8px;font-size:12.5px;font-weight:800;color:#fca5a5;display:flex;align-items:center;gap:6px;">
+        <span>⏳</span> <span id="analise-tempo-faltante">Tempo Antecipado: 07h 00m (420 min)</span>
+      </div>
+      <div style="margin-top:10px;font-size:12px;color:#cbd5e1;line-height:1.4;">
+        <div><strong>Motivo informado:</strong> <span id="analise-motivo" style="color:#fef08a;">Serviço Concluído</span></div>
+        <div style="margin-top:3px;"><strong>Observação:</strong> <span id="analise-obs" style="color:#e2e8f0;font-style:italic;">Nenhuma</span></div>
+      </div>
+    </div>
+
+    <div style="font-size:11.5px;font-weight:900;color:#facc15;text-transform:uppercase;margin-bottom:10px;letter-spacing:0.5px;">
+      Selecione a Decisão da Empresa:
+    </div>
+
+    <!-- AS 3 OPÇÕES DE DECISÃO DA EMPRESA -->
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
+      
+      <!-- DECISÃO 1: AUTORIZAR SEM DESCONTO (ABONAR) -->
+      <button type="button" onclick="executarDecisaoEmpresa('autorizar_sem_desconto')" style="background:linear-gradient(135deg,#10b981,#059669);border:none;padding:12px 14px;border-radius:10px;color:#fff;text-align:left;cursor:pointer;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 14px rgba(16,185,129,0.35);transition:all 0.2s;">
+        <div>
+          <div style="font-size:13px;font-weight:900;display:flex;align-items:center;gap:6px;">
+            <span>🟢</span> <span>1. Autorizar Saída Sem Desconto (Abonar)</span>
+          </div>
+          <div style="font-size:10.5px;color:#d1fae5;margin-top:2px;">
+            Abona o expediente. NÃO gera horas negativas e NÃO desconta salário.
+          </div>
+        </div>
+        <span style="font-size:16px;">✓</span>
+      </button>
+
+      <!-- DECISÃO 2: DESCONTAR EM HORAS NEGATIVAS -->
+      <button type="button" onclick="executarDecisaoEmpresa('hora_negativa')" style="background:rgba(245,158,11,0.15);border:1.5px solid rgba(245,158,11,0.5);padding:12px 14px;border-radius:10px;color:#fff;text-align:left;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all 0.2s;">
+        <div>
+          <div style="font-size:13px;font-weight:900;color:#fef08a;display:flex;align-items:center;gap:6px;">
+            <span>🟠</span> <span>2. Descontar do Banco de Horas (Horas Negativas)</span>
+          </div>
+          <div style="font-size:10.5px;color:#cbd5e1;margin-top:2px;">
+            Lança o tempo restante como débito de horas negativas para compensação.
+          </div>
+        </div>
+        <span style="font-size:16px;color:#fef08a;">✓</span>
+      </button>
+
+      <!-- DECISÃO 3: DESCONTAR DO SALÁRIO -->
+      <button type="button" onclick="executarDecisaoEmpresa('desconto_salario')" style="background:rgba(239,68,68,0.15);border:1.5px solid rgba(239,68,68,0.5);padding:12px 14px;border-radius:10px;color:#fff;text-align:left;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all 0.2s;">
+        <div>
+          <div style="font-size:13px;font-weight:900;color:#fca5a5;display:flex;align-items:center;gap:6px;">
+            <span>🔴</span> <span>3. Descontar do Salário (Desconto em Folha)</span>
+          </div>
+          <div style="font-size:10.5px;color:#cbd5e1;margin-top:2px;">
+            Desconta o valor financeiro correspondente na folha de pagamento do colaborador.
+          </div>
+        </div>
+        <span style="font-size:16px;color:#fca5a5;">✓</span>
+      </button>
+    </div>
+
+    <!-- Fechar / Cancelar -->
+    <div style="display:flex;justify-content:flex-end;">
+      <button type="button" onclick="fecharModalAnaliseSaida()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">
+        Decidir Mais Tarde
+      </button>
+    </div>
+  </div>
+</div>
+
 <div id="modal-justificar-saida-final" class="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(6px);z-index:999999;align-items:center;justify-content:center;padding:16px;">
   <div style="background:linear-gradient(145deg,#111322,#1a1d33);border:1.5px solid rgba(250,204,21,0.4);border-radius:18px;max-width:440px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,0.85);padding:22px;color:#fff;box-sizing:border-box;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:10px;">
@@ -4117,45 +4392,134 @@
 </div>
 
 <!-- ══ MODAL CONFIGURAÇÃO HORÁRIOS DO ALARME DE PONTO ══ -->
+<!-- ══ MODAL CONFIGURAÇÃO HORÁRIOS DO ALARME DE PONTO ══ -->
 <div id="modal-config-alarme-ponto" class="modal-overlay" style="display:none;z-index:1000100;" onclick="fecharConfigHorariosAlarmePonto(event)">
-  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:460px;padding:22px 20px;">
-    <div class="modal-title" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-      <div style="display:flex;align-items:center;gap:8px;">
-        <span style="font-size:22px;">⚙️ ⏰</span>
-        <span style="font-size:15px;font-weight:900;color:#fff;">Horários do Alarme de Ponto</span>
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:480px;padding:22px 20px;border-radius:18px;background:linear-gradient(145deg,#0e111d,#161929);border:1.5px solid rgba(56,189,248,0.35);box-shadow:0 24px 60px rgba(0,0,0,0.85);color:#fff;box-sizing:border-box;">
+    <div class="modal-title" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:24px;">⚙️ ⏰</span>
+        <span style="font-size:16px;font-weight:900;color:#fff;">Horários do Alarme de Ponto</span>
       </div>
-      <button class="modal-close" onclick="fecharConfigHorariosAlarmePonto()">✕</button>
+      <button class="modal-close" onclick="fecharConfigHorariosAlarmePonto()" style="background:none;border:none;color:#94a3b8;font-size:22px;cursor:pointer;line-height:1;">✕</button>
     </div>
 
-    <div style="background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.3);border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--text2);line-height:1.4;">
-      💡 O alarme sonoro tocará automaticamente <strong>5 minutos antes</strong> de cada um dos 4 horários abaixo. Colaboradores com status <strong>Falta</strong> ou <strong>Doente</strong> serão ignorados.
+    <!-- 1. OPÇÃO DE COLOCAR O ALARME OU NÃO (ATIVAR / DESATIVAR) -->
+    <div id="box-alarme-mestre" style="background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(5,150,105,0.22));border:2px solid #10b981;border-radius:12px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;transition:all 0.3s ease;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:26px;" id="icon-status-alarme">🔔</span>
+        <div>
+          <div style="font-size:13.5px;font-weight:900;color:#fff;" id="txt-status-alarme-titulo">Alarme de Ponto Ativado</div>
+          <div style="font-size:11px;color:#cbd5e1;" id="txt-status-alarme-sub">Toca som e vibra nos horários e dias configurados</div>
+        </div>
+      </div>
+      <label style="position:relative;display:inline-block;width:56px;height:30px;flex-shrink:0;cursor:pointer;">
+        <input type="checkbox" id="cfg-ponto-ativo" checked onchange="aoAlternarAlarmeMestre(this)" style="opacity:0;width:0;height:0;">
+        <span id="slider-alarme-mestre" style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background-color:#10b981;border-radius:30px;transition:.3s;">
+          <span id="slider-knob-alarme" style="position:absolute;content:'';height:24px;width:24px;left:3px;bottom:3px;background-color:#ffffff;border-radius:50%;transition:.3s;transform:translateX(26px);box-shadow:0 2px 6px rgba(0,0,0,0.4);"></span>
+        </span>
+      </label>
     </div>
 
-    <div class="field-row" style="margin-bottom:12px;">
-      <div class="field">
-        <label>1ª Entrada (Manhã)</label>
-        <input type="time" id="cfg-ponto-ent" value="08:00" style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:14px;font-weight:800;" />
+    <div style="background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.3);border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#cbd5e1;line-height:1.4;">
+      💡 O alarme sonoro tocará automaticamente com a antecedência programada. Colaboradores com status <strong>Falta</strong> ou <strong>Doente</strong> serão ignorados.
+    </div>
+
+    <!-- HORÁRIOS DOS 4 TURNOS -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+      <div>
+        <label style="display:block;font-size:11px;font-weight:800;color:#34d399;text-transform:uppercase;margin-bottom:4px;">1ª Entrada (Manhã)</label>
+        <input type="time" id="cfg-ponto-ent" value="08:00" style="width:100%;box-sizing:border-box;padding:9px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:13.5px;font-weight:800;" />
       </div>
-      <div class="field">
-        <label>Saída para Almoço</label>
-        <input type="time" id="cfg-ponto-alm" value="12:00" style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:14px;font-weight:800;" />
+      <div>
+        <label style="display:block;font-size:11px;font-weight:800;color:#fbbf24;text-transform:uppercase;margin-bottom:4px;">Saída para Almoço</label>
+        <input type="time" id="cfg-ponto-alm" value="12:00" style="width:100%;box-sizing:border-box;padding:9px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:13.5px;font-weight:800;" />
+      </div>
+      <div>
+        <label style="display:block;font-size:11px;font-weight:800;color:#38bdf8;text-transform:uppercase;margin-bottom:4px;">Volta do Almoço</label>
+        <input type="time" id="cfg-ponto-vol" value="13:00" style="width:100%;box-sizing:border-box;padding:9px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:13.5px;font-weight:800;" />
+      </div>
+      <div>
+        <label style="display:block;font-size:11px;font-weight:800;color:#f87171;text-transform:uppercase;margin-bottom:4px;">Saída Final (Término)</label>
+        <input type="time" id="cfg-ponto-sai" value="17:00" style="width:100%;box-sizing:border-box;padding:9px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:13.5px;font-weight:800;" />
       </div>
     </div>
 
-    <div class="field-row" style="margin-bottom:14px;">
-      <div class="field">
-        <label>Volta do Almoço</label>
-        <input type="time" id="cfg-ponto-vol" value="13:00" style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:14px;font-weight:800;" />
+    <!-- 2. OPÇÃO ESPECÍFICA: SÁBADO E DOMINGO (A ESCOLHER SE ALARMA OU NÃO) -->
+    <div style="background:rgba(56,189,248,0.06);border:1.5px solid rgba(56,189,248,0.3);border-radius:12px;padding:12px 14px;margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:6px;">
+        <label style="font-size:11.5px;font-weight:900;color:#38bdf8;text-transform:uppercase;letter-spacing:0.5px;margin:0;">
+          📅 Dias de Funcionamento do Alarme
+        </label>
+        <span id="badge-alarme-dias-resumo" style="font-size:11px;font-weight:800;color:#fef08a;background:rgba(212,175,55,0.18);padding:3px 10px;border-radius:6px;border:1px solid rgba(212,175,55,0.35);">
+          Seg a Sex
+        </span>
       </div>
-      <div class="field">
-        <label>Saída Final (Término)</label>
-        <input type="time" id="cfg-ponto-sai" value="17:00" style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:14px;font-weight:800;" />
+
+      <!-- CARDS DE DESTAQUE: SÁBADO E DOMINGO -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+        <!-- SÁBADO -->
+        <label id="card-alarme-sabado" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.12);cursor:pointer;user-select:none;transition:all 0.2s ease;">
+          <input type="checkbox" id="cfg-dia-6" value="6" onchange="aoAlternarDiaEspecifico(this, 'sabado')" style="width:20px;height:20px;accent-color:#38bdf8;cursor:pointer;">
+          <div>
+            <div style="font-size:12.5px;font-weight:900;color:#fff;">Alarmar Sábado?</div>
+            <div id="lbl-status-sabado" style="font-size:10.5px;font-weight:700;color:#94a3b8;">❌ Não alarmar</div>
+          </div>
+        </label>
+
+        <!-- DOMINGO -->
+        <label id="card-alarme-domingo" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.12);cursor:pointer;user-select:none;transition:all 0.2s ease;">
+          <input type="checkbox" id="cfg-dia-0" value="0" onchange="aoAlternarDiaEspecifico(this, 'domingo')" style="width:20px;height:20px;accent-color:#38bdf8;cursor:pointer;">
+          <div>
+            <div style="font-size:12.5px;font-weight:900;color:#fff;">Alarmar Domingo?</div>
+            <div id="lbl-status-domingo" style="font-size:10.5px;font-weight:700;color:#94a3b8;">❌ Não alarmar</div>
+          </div>
+        </label>
+      </div>
+
+      <!-- BOTÕES RÁPIDOS -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
+        <button type="button" class="btn-preset-dias" onclick="aplicarPresetDiasAlarme('seg-sex')">🏢 Seg a Sex</button>
+        <button type="button" class="btn-preset-dias" onclick="aplicarPresetDiasAlarme('seg-sab')">🛠️ Seg a Sáb (+Sáb)</button>
+        <button type="button" class="btn-preset-dias" onclick="aplicarPresetDiasAlarme('todos')">🌐 Todos (+Sáb/Dom)</button>
+      </div>
+
+      <!-- CHIPS DE TODOS OS DIAS (SEG A DOM) -->
+      <div class="grid-dias-semana" style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;">
+        <label class="dia-check-chip" id="lbl-dia-1">
+          <input type="checkbox" id="cfg-dia-1" value="1" onchange="aoAlternarDiaAlarme(this)" checked>
+          <span>Seg</span>
+        </label>
+        <label class="dia-check-chip" id="lbl-dia-2">
+          <input type="checkbox" id="cfg-dia-2" value="2" onchange="aoAlternarDiaAlarme(this)" checked>
+          <span>Ter</span>
+        </label>
+        <label class="dia-check-chip" id="lbl-dia-3">
+          <input type="checkbox" id="cfg-dia-3" value="3" onchange="aoAlternarDiaAlarme(this)" checked>
+          <span>Qua</span>
+        </label>
+        <label class="dia-check-chip" id="lbl-dia-4">
+          <input type="checkbox" id="cfg-dia-4" value="4" onchange="aoAlternarDiaAlarme(this)" checked>
+          <span>Qui</span>
+        </label>
+        <label class="dia-check-chip" id="lbl-dia-5">
+          <input type="checkbox" id="cfg-dia-5" value="5" onchange="aoAlternarDiaAlarme(this)" checked>
+          <span>Sex</span>
+        </label>
+        <label class="dia-check-chip" id="lbl-dia-6">
+          <input type="checkbox" id="cfg-dia-6-chip" value="6" onchange="aoAlternarChipFinal(this, 6)">
+          <span>Sáb</span>
+        </label>
+        <label class="dia-check-chip" id="lbl-dia-0">
+          <input type="checkbox" id="cfg-dia-0-chip" value="0" onchange="aoAlternarChipFinal(this, 0)">
+          <span>Dom</span>
+        </label>
       </div>
     </div>
 
-    <div class="field" style="margin-bottom:14px;">
-      <label>Antecedência do Alarme</label>
-      <select id="cfg-ponto-antecedencia" style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(201,168,76,0.35);color:#fff;font-size:13px;font-weight:800;">
+    <!-- ANTECEDÊNCIA DO ALARME -->
+    <div style="margin-bottom:14px;">
+      <label style="display:block;font-size:11px;font-weight:800;color:#fef08a;text-transform:uppercase;margin-bottom:4px;">Antecedência do Alarme</label>
+      <select id="cfg-ponto-antecedencia" style="width:100%;box-sizing:border-box;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(201,168,76,0.35);color:#fff;font-size:13px;font-weight:800;">
         <option value="5" selected>⏰ 5 minutos antes (Recomendado)</option>
         <option value="10">⏰ 10 minutos antes</option>
         <option value="15">⏰ 15 minutos antes</option>
@@ -4165,14 +4529,20 @@
 
     <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px 12px;margin-bottom:16px;">
       <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#fff;cursor:pointer;">
-        <input type="checkbox" id="cfg-ponto-bloquear-inativos" checked disabled style="width:17px;height:17px;accent-color:#10b981;" />
+        <input type="checkbox" id="cfg-ponto-bloquear-inativos" checked style="width:17px;height:17px;accent-color:#10b981;" />
         <span><strong>Regra ativa:</strong> Não alarmar quando colaborador estiver de Falta, Ausente, Doente ou Atestado</span>
       </label>
     </div>
 
-    <div style="display:flex;gap:8px;justify-content:flex-end;">
-      <button type="button" class="btn btn-sec btn-sm" onclick="fecharConfigHorariosAlarmePonto()">Cancelar</button>
-      <button type="button" class="btn btn-primary btn-sm" onclick="salvarConfigHorariosAlarmePonto()">💾 Salvar Horários</button>
+    <!-- AÇÕES INFERIORES: TESTAR SOM + SALVAR/CANCELAR -->
+    <div style="display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap;">
+      <button type="button" onclick="testarSomAlarmePonto()" style="padding:9px 13px;background:rgba(212,175,55,0.18);border:1.5px solid rgba(212,175,55,0.45);border-radius:8px;color:#fef08a;font-weight:800;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;">
+        🔊 Testar Som Agora
+      </button>
+      <div style="display:flex;gap:8px;">
+        <button type="button" class="btn btn-sec btn-sm" onclick="fecharConfigHorariosAlarmePonto()" style="padding:9px 14px;border-radius:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;font-weight:700;font-size:12px;cursor:pointer;">Cancelar</button>
+        <button type="button" class="btn btn-primary btn-sm" onclick="salvarConfigHorariosAlarmePonto()" style="background:linear-gradient(135deg,#0284c7,#0369a1);border:none;padding:9px 18px;border-radius:8px;font-weight:900;color:#fff;font-size:12.5px;cursor:pointer;box-shadow:0 4px 12px rgba(2,132,199,0.35);">💾 Salvar Configurações</button>
+      </div>
     </div>
   </div>
 </div>
@@ -6735,6 +7105,10 @@ function copiarLinkPortalFuncionario(link, btn, inputId) {
 //  SISTEMA DE ALARME DE PONTO (5 MIN ANTES)
 //  REGRA: NÃO ALARMAR SE ESTIVER FALTA OU DOENTE
 // ══════════════════════════════════════════════
+
+// ═════════════════════════════════════════════════════════
+// SISTEMA DE ALARME DE PONTO - COM CONTROLE DE SÁB/DOM E ON/OFF
+// ═════════════════════════════════════════════════════════
 const CHAVE_STORAGE_ALARME = 'sdv_config_alarme_ponto';
 const CONFIG_ALARME_PADRAO = {
   ativo: true,
@@ -6744,11 +7118,32 @@ const CONFIG_ALARME_PADRAO = {
   vol: '13:00',
   sai: '17:00',
   bloquearInativos: true,
+  diasSemana: [1, 2, 3, 4, 5],
   ultimoDisparo: ''
 };
 
 let _audioCtxAlarme = null;
 let _timerLoopAlarme = null;
+
+// Desbloqueio global do áudio em qualquer interação
+function desbloquearAudioGeral() {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (AudioCtx) {
+      if (!_audioCtxAlarme || _audioCtxAlarme.state === 'closed') {
+        _audioCtxAlarme = new AudioCtx();
+      }
+      if (_audioCtxAlarme.state === 'suspended') {
+        _audioCtxAlarme.resume();
+      }
+    }
+  } catch(_) {}
+}
+if (typeof window !== 'undefined') {
+  ['click', 'touchstart', 'touchend', 'mousedown', 'keydown'].forEach(evt => {
+    window.addEventListener(evt, desbloquearAudioGeral, { passive: true });
+  });
+}
 
 function obterConfigAlarmePonto() {
   try {
@@ -6779,7 +7174,7 @@ function atualizarResumoHorariosAlarme() {
   if (elSai) elSai.textContent = cfg.sai || '17:00';
 
   if (badgeStatus) {
-    if (cfg.ativo) {
+    if (cfg.ativo !== false) {
       badgeStatus.textContent = `ATIVO (${cfg.antecedenciaMin || 5} min antes)`;
       badgeStatus.style.background = '#10b981';
       badgeStatus.style.color = '#fff';
@@ -6791,39 +7186,219 @@ function atualizarResumoHorariosAlarme() {
   }
 }
 
+function aoAlternarAlarmeMestre(el) {
+  const ativo = el ? el.checked : true;
+  const box = document.getElementById('box-alarme-mestre');
+  const icone = document.getElementById('icon-status-alarme');
+  const tit = document.getElementById('txt-status-alarme-titulo');
+  const sub = document.getElementById('txt-status-alarme-sub');
+  const slider = document.getElementById('slider-alarme-mestre');
+  const knob = document.getElementById('slider-knob-alarme');
 
-function copiarHorariosColaboradorParaAlarme() {
-  const sel = document.getElementById('ponto-sel-colaborador');
-  const id = sel ? parseInt(sel.value) : 0;
-  const colab = (typeof funcionariosLista !== 'undefined') ? funcionariosLista.find(f => f.id === id) : null;
-  if (!colab) {
-    alert('Selecione um colaborador na lista de ponto para copiar os horários.');
-    return;
+  if (ativo) {
+    if (box) {
+      box.style.background = 'linear-gradient(135deg,rgba(16,185,129,0.15),rgba(5,150,105,0.22))';
+      box.style.borderColor = '#10b981';
+    }
+    if (icone) icone.textContent = '🔔';
+    if (tit) { tit.textContent = 'Alarme de Ponto Ativado'; tit.style.color = '#fff'; }
+    if (sub) sub.textContent = 'Toca som e vibra nos horários e dias configurados';
+    if (slider) slider.style.backgroundColor = '#10b981';
+    if (knob) knob.style.transform = 'translateX(26px)';
+  } else {
+    if (box) {
+      box.style.background = 'rgba(239,68,68,0.12)';
+      box.style.borderColor = 'rgba(239,68,68,0.4)';
+    }
+    if (icone) icone.textContent = '🔕';
+    if (tit) { tit.textContent = 'Alarme de Ponto DESATIVADO'; tit.style.color = '#fca5a5'; }
+    if (sub) sub.textContent = 'O alarme NÃO tocará em nenhum horário ou dia';
+    if (slider) slider.style.backgroundColor = '#64748b';
+    if (knob) knob.style.transform = 'translateX(0px)';
   }
-  const inpEnt = document.getElementById('cfg-ponto-ent');
-  const inpAlm = document.getElementById('cfg-ponto-alm');
-  const inpVol = document.getElementById('cfg-ponto-vol');
-  const inpSai = document.getElementById('cfg-ponto-sai');
-  if (inpEnt && colab.horarioEntrada) inpEnt.value = colab.horarioEntrada;
-  if (inpAlm && colab.horarioAlmocoSai) inpAlm.value = colab.horarioAlmocoSai;
-  if (inpVol && colab.horarioAlmocoVolta) inpVol.value = colab.horarioAlmocoVolta;
-  if (inpSai && colab.horarioSaida) inpSai.value = colab.horarioSaida;
-  mostrarMsgPonto('⚡ Horários copiados do colaborador ' + colab.nome + '!', true);
+}
+
+function sincronizarCardsSabadoDomingo() {
+  const chkSab = document.getElementById('cfg-dia-6');
+  const chkDom = document.getElementById('cfg-dia-0');
+  const cardSab = document.getElementById('card-alarme-sabado');
+  const cardDom = document.getElementById('card-alarme-domingo');
+  const lblSab = document.getElementById('lbl-status-sabado');
+  const lblDom = document.getElementById('lbl-status-domingo');
+  const chipSab = document.getElementById('cfg-dia-6-chip');
+  const chipDom = document.getElementById('cfg-dia-0-chip');
+
+  if (chkSab) {
+    const atv = chkSab.checked;
+    if (cardSab) {
+      cardSab.style.background = atv ? 'rgba(56,189,248,0.18)' : 'rgba(255,255,255,0.04)';
+      cardSab.style.borderColor = atv ? '#38bdf8' : 'rgba(255,255,255,0.12)';
+    }
+    if (lblSab) {
+      lblSab.textContent = atv ? '🟢 Toca no Sábado' : '❌ Não alarmar';
+      lblSab.style.color = atv ? '#38bdf8' : '#94a3b8';
+    }
+    if (chipSab && chipSab.checked !== atv) {
+      chipSab.checked = atv;
+      aoAlternarDiaAlarme(chipSab);
+    }
+  }
+
+  if (chkDom) {
+    const atv = chkDom.checked;
+    if (cardDom) {
+      cardDom.style.background = atv ? 'rgba(56,189,248,0.18)' : 'rgba(255,255,255,0.04)';
+      cardDom.style.borderColor = atv ? '#38bdf8' : 'rgba(255,255,255,0.12)';
+    }
+    if (lblDom) {
+      lblDom.textContent = atv ? '🟢 Toca no Domingo' : '❌ Não alarmar';
+      lblDom.style.color = atv ? '#38bdf8' : '#94a3b8';
+    }
+    if (chipDom && chipDom.checked !== atv) {
+      chipDom.checked = atv;
+      aoAlternarDiaAlarme(chipDom);
+    }
+  }
+}
+
+function aoAlternarDiaEspecifico(chk, tipo) {
+  if (tipo === 'sabado') {
+    const chipSab = document.getElementById('cfg-dia-6-chip');
+    if (chipSab) {
+      chipSab.checked = chk.checked;
+      aoAlternarDiaAlarme(chipSab);
+    }
+  } else if (tipo === 'domingo') {
+    const chipDom = document.getElementById('cfg-dia-0-chip');
+    if (chipDom) {
+      chipDom.checked = chk.checked;
+      aoAlternarDiaAlarme(chipDom);
+    }
+  }
+  sincronizarCardsSabadoDomingo();
+  atualizarBadgeResumoDiasAlarme();
+}
+
+function aoAlternarChipFinal(chip, dia) {
+  aoAlternarDiaAlarme(chip);
+  if (dia === 6) {
+    const chkSab = document.getElementById('cfg-dia-6');
+    if (chkSab) chkSab.checked = chip.checked;
+  } else if (dia === 0) {
+    const chkDom = document.getElementById('cfg-dia-0');
+    if (chkDom) chkDom.checked = chip.checked;
+  }
+  sincronizarCardsSabadoDomingo();
+  atualizarBadgeResumoDiasAlarme();
+}
+
+function aoAlternarDiaAlarme(chk) {
+  const lbl = chk.closest('.dia-check-chip') || document.getElementById('lbl-dia-' + chk.value);
+  if (lbl) {
+    if (chk.checked) lbl.classList.add('ativo');
+    else lbl.classList.remove('ativo');
+  }
+  atualizarBadgeResumoDiasAlarme();
+}
+
+function aplicarPresetDiasAlarme(tipo) {
+  let dias = [1, 2, 3, 4, 5];
+  if (tipo === 'seg-sab') dias = [1, 2, 3, 4, 5, 6];
+  else if (tipo === 'todos') dias = [0, 1, 2, 3, 4, 5, 6];
+  else if (tipo === 'nenhum') dias = [];
+
+  [1, 2, 3, 4, 5].forEach(d => {
+    const chk = document.getElementById('cfg-dia-' + d);
+    if (chk) {
+      chk.checked = dias.includes(d);
+      aoAlternarDiaAlarme(chk);
+    }
+  });
+
+  const chkSab = document.getElementById('cfg-dia-6');
+  if (chkSab) chkSab.checked = dias.includes(6);
+  const chipSab = document.getElementById('cfg-dia-6-chip');
+  if (chipSab) { chipSab.checked = dias.includes(6); aoAlternarDiaAlarme(chipSab); }
+
+  const chkDom = document.getElementById('cfg-dia-0');
+  if (chkDom) chkDom.checked = dias.includes(0);
+  const chipDom = document.getElementById('cfg-dia-0-chip');
+  if (chipDom) { chipDom.checked = dias.includes(0); aoAlternarDiaAlarme(chipDom); }
+
+  sincronizarCardsSabadoDomingo();
+  atualizarBadgeResumoDiasAlarme();
+}
+
+function atualizarBadgeResumoDiasAlarme() {
+  const badge = document.getElementById('badge-alarme-dias-resumo');
+  if (!badge) return;
+  const nomes = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  const selecionados = [];
+  [1, 2, 3, 4, 5].forEach(d => {
+    const chk = document.getElementById('cfg-dia-' + d);
+    if (chk && chk.checked) selecionados.push(d);
+  });
+  const chkSab = document.getElementById('cfg-dia-6');
+  if (chkSab && chkSab.checked) selecionados.push(6);
+  const chkDom = document.getElementById('cfg-dia-0');
+  if (chkDom && chkDom.checked) selecionados.push(0);
+
+  if (selecionados.length === 5 && [1,2,3,4,5].every(d => selecionados.includes(d))) {
+    badge.textContent = 'Seg a Sex';
+  } else if (selecionados.length === 6 && [1,2,3,4,5,6].every(d => selecionados.includes(d))) {
+    badge.textContent = 'Seg a Sáb (c/ Sábado)';
+  } else if (selecionados.length === 7) {
+    badge.textContent = 'Todos os Dias (c/ Sáb e Dom)';
+  } else if (selecionados.length === 0) {
+    badge.textContent = 'Nenhum Dia';
+  } else {
+    badge.textContent = selecionados.map(d => nomes[d]).join(', ');
+  }
 }
 
 function abrirConfigHorariosAlarmePonto() {
+  desbloquearAudioGeral();
   const cfg = obterConfigAlarmePonto();
+  const chkAtivo = document.getElementById('cfg-ponto-ativo');
   const inpEnt = document.getElementById('cfg-ponto-ent');
   const inpAlm = document.getElementById('cfg-ponto-alm');
   const inpVol = document.getElementById('cfg-ponto-vol');
   const inpSai = document.getElementById('cfg-ponto-sai');
   const selAnt = document.getElementById('cfg-ponto-antecedencia');
+  const chkBloq = document.getElementById('cfg-ponto-bloquear-inativos');
 
+  if (chkAtivo) {
+    chkAtivo.checked = cfg.ativo !== false;
+    aoAlternarAlarmeMestre(chkAtivo);
+  }
   if (inpEnt) inpEnt.value = cfg.ent || '08:00';
   if (inpAlm) inpAlm.value = cfg.alm || '12:00';
   if (inpVol) inpVol.value = cfg.vol || '13:00';
   if (inpSai) inpSai.value = cfg.sai || '17:00';
   if (selAnt) selAnt.value = String(cfg.antecedenciaMin !== undefined ? cfg.antecedenciaMin : 5);
+  if (chkBloq) chkBloq.checked = cfg.bloquearInativos !== false;
+
+  const diasCfg = (Array.isArray(cfg.diasSemana) && cfg.diasSemana.length) ? cfg.diasSemana : [1, 2, 3, 4, 5];
+  [1, 2, 3, 4, 5].forEach(d => {
+    const chk = document.getElementById('cfg-dia-' + d);
+    if (chk) {
+      chk.checked = diasCfg.includes(d);
+      aoAlternarDiaAlarme(chk);
+    }
+  });
+
+  const chkSab = document.getElementById('cfg-dia-6');
+  if (chkSab) chkSab.checked = diasCfg.includes(6);
+  const chipSab = document.getElementById('cfg-dia-6-chip');
+  if (chipSab) { chipSab.checked = diasCfg.includes(6); aoAlternarDiaAlarme(chipSab); }
+
+  const chkDom = document.getElementById('cfg-dia-0');
+  if (chkDom) chkDom.checked = diasCfg.includes(0);
+  const chipDom = document.getElementById('cfg-dia-0-chip');
+  if (chipDom) { chipDom.checked = diasCfg.includes(0); aoAlternarDiaAlarme(chipDom); }
+
+  sincronizarCardsSabadoDomingo();
+  atualizarBadgeResumoDiasAlarme();
 
   const m = document.getElementById('modal-config-alarme-ponto');
   if (m) m.style.display = 'flex';
@@ -6837,70 +7412,117 @@ function fecharConfigHorariosAlarmePonto(e) {
 
 function salvarConfigHorariosAlarmePonto() {
   const cfg = obterConfigAlarmePonto();
+  const chkAtivo = document.getElementById('cfg-ponto-ativo');
   const inpEnt = document.getElementById('cfg-ponto-ent');
   const inpAlm = document.getElementById('cfg-ponto-alm');
   const inpVol = document.getElementById('cfg-ponto-vol');
   const inpSai = document.getElementById('cfg-ponto-sai');
   const selAnt = document.getElementById('cfg-ponto-antecedencia');
+  const chkBloq = document.getElementById('cfg-ponto-bloquear-inativos');
 
+  cfg.ativo = chkAtivo ? chkAtivo.checked : true;
   if (inpEnt && inpEnt.value) cfg.ent = inpEnt.value;
   if (inpAlm && inpAlm.value) cfg.alm = inpAlm.value;
   if (inpVol && inpVol.value) cfg.vol = inpVol.value;
   if (inpSai && inpSai.value) cfg.sai = inpSai.value;
   if (selAnt) cfg.antecedenciaMin = Number(selAnt.value) || 5;
+  if (chkBloq) cfg.bloquearInativos = chkBloq.checked;
+
+  const diasSalvar = [];
+  [1, 2, 3, 4, 5].forEach(d => {
+    const chk = document.getElementById('cfg-dia-' + d);
+    if (chk && chk.checked) diasSalvar.push(d);
+  });
+  const chkSab = document.getElementById('cfg-dia-6');
+  if (chkSab && chkSab.checked) diasSalvar.push(6);
+  const chkDom = document.getElementById('cfg-dia-0');
+  if (chkDom && chkDom.checked) diasSalvar.push(0);
+
+  cfg.diasSemana = diasSalvar;
 
   salvarConfigAlarmePonto(cfg);
   fecharConfigHorariosAlarmePonto();
-  mostrarMsgPonto('✓ Horários do Alarme salvos com sucesso!', true);
+  
+  const statusTxt = cfg.ativo ? '🔔 Alarme ATIVADO' : '🔕 Alarme DESATIVADO';
+  if (typeof mostrarMsgPonto === 'function') {
+    mostrarMsgPonto(`✓ Configurações salvas: ${statusTxt}!`, true);
+  } else if (typeof mostrarToastNotificacao === 'function') {
+    mostrarToastNotificacao('Alarme de Ponto', `Configurações salvas: ${statusTxt}!`, '⏰');
+  } else {
+    alert(`✓ Configurações salvas: ${statusTxt}!`);
+  }
 }
 
 function testarSomAlarmePonto() {
   tocarSireneAlarmePonto(true);
-  mostrarMsgPonto('🔊 Teste de som: Alarme programado para tocar 5 minutos antes dos turnos!', true);
+  const msg = '🔊 Teste de som executado! O alarme tocará com a sirene e vibração programadas.';
+  if (typeof mostrarMsgPonto === 'function') {
+    mostrarMsgPonto(msg, true);
+  } else if (typeof mostrarToastNotificacao === 'function') {
+    mostrarToastNotificacao('Teste de Som', msg, '🔊');
+  }
 }
 
 function tocarSireneAlarmePonto(modoTeste = false) {
   pararAudioAlarmePonto();
+  desbloquearAudioGeral();
+
   try {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    if (!AudioCtx) return;
-    _audioCtxAlarme = new AudioCtx();
-
-    const emitirPulso = (freq, dur, atraso) => {
-      setTimeout(() => {
-        if (!_audioCtxAlarme || _audioCtxAlarme.state === 'closed') return;
-        try {
-          const osc = _audioCtxAlarme.createOscillator();
-          const gain = _audioCtxAlarme.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(freq, _audioCtxAlarme.currentTime);
-          osc.frequency.linearRampToValueAtTime(freq * 1.4, _audioCtxAlarme.currentTime + dur);
-          gain.gain.setValueAtTime(0.3, _audioCtxAlarme.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.01, _audioCtxAlarme.currentTime + dur);
-          osc.connect(gain);
-          gain.connect(_audioCtxAlarme.destination);
-          osc.start();
-          osc.stop(_audioCtxAlarme.currentTime + dur);
-        } catch(_) {}
-      }, atraso);
-    };
-
-    const tocarCiclo = () => {
-      emitirPulso(800, 0.22, 0);
-      emitirPulso(1000, 0.22, 260);
-      emitirPulso(1200, 0.3, 520);
-      if (navigator.vibrate) {
-        try { navigator.vibrate([200, 100, 200, 100, 400]); } catch(_) {}
+    if (AudioCtx) {
+      if (!_audioCtxAlarme || _audioCtxAlarme.state === 'closed') {
+        _audioCtxAlarme = new AudioCtx();
       }
-    };
-
-    tocarCiclo();
-    if (modoTeste) {
-      setTimeout(() => { pararAudioAlarmePonto(); }, 2500);
-    } else {
-      _timerLoopAlarme = setInterval(tocarCiclo, 1100);
+      if (_audioCtxAlarme.state === 'suspended') {
+        _audioCtxAlarme.resume();
+      }
     }
   } catch(_) {}
+
+  const emitirBeep = (freq, duracaoMs) => {
+    try {
+      if (!_audioCtxAlarme || _audioCtxAlarme.state !== 'running') return;
+      const osc = _audioCtxAlarme.createOscillator();
+      const gain = _audioCtxAlarme.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, _audioCtxAlarme.currentTime);
+      gain.gain.setValueAtTime(0.4, _audioCtxAlarme.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, _audioCtxAlarme.currentTime + (duracaoMs / 1000));
+      osc.connect(gain);
+      gain.connect(_audioCtxAlarme.destination);
+      osc.start();
+      osc.stop(_audioCtxAlarme.currentTime + (duracaoMs / 1000));
+    } catch(_) {}
+  };
+
+  const tocarSequencia = () => {
+    emitirBeep(880, 220);
+    setTimeout(() => emitirBeep(1100, 220), 240);
+    setTimeout(() => emitirBeep(1320, 360), 480);
+
+    if (navigator.vibrate) {
+      try { navigator.vibrate([250, 120, 250, 120, 450]); } catch(_) {}
+    }
+  };
+
+  tocarSequencia();
+
+  // Fala sintetizada
+  try {
+    if ('speechSynthesis' in window && !modoTeste) {
+      window.speechSynthesis.cancel();
+      const msg = new SpeechSynthesisUtterance('Atenção: Horário de registrar o ponto!');
+      msg.lang = 'pt-BR';
+      msg.rate = 1.1;
+      window.speechSynthesis.speak(msg);
+    }
+  } catch(_) {}
+
+  if (modoTeste) {
+    setTimeout(() => { pararAudioAlarmePonto(); }, 2500);
+  } else {
+    _timerLoopAlarme = setInterval(tocarSequencia, 1200);
+  }
 }
 
 function pararAudioAlarmePonto() {
@@ -6908,29 +7530,38 @@ function pararAudioAlarmePonto() {
     clearInterval(_timerLoopAlarme);
     _timerLoopAlarme = null;
   }
+  try {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+  } catch(_) {}
   if (_audioCtxAlarme) {
     try { _audioCtxAlarme.close(); } catch(_) {}
     _audioCtxAlarme = null;
   }
 }
 
-// ═════════════════════════════════════════════════════════
-// REGRA MANDATÓRIA: QUANDO ESTIVER FALTA OU DOENTE, NÃO ALARMAR!
-// ═════════════════════════════════════════════════════════
 function funcionarioElegivelParaAlarme(f) {
   if (!f) return false;
   const st = String(f.status || 'Presente').toLowerCase().trim();
   if (st.includes('falta') || st.includes('doente') || st.includes('atestado') || st.includes('ausente') || st.includes('folga')) {
-    return false; // NÃO ALARMAR!
+    return false;
   }
   return true;
 }
 
 function verificarAlarmePontoAutomatico() {
   const cfg = obterConfigAlarmePonto();
-  if (!cfg.ativo) return;
+  if (cfg.ativo === false) return; // ALARME DESATIVADO
 
   const now = new Date();
+  const diaSemanaHoje = now.getDay(); // 0 = Domingo, 1 = Segunda ... 6 = Sábado
+  const diasAtivos = (Array.isArray(cfg.diasSemana) && cfg.diasSemana.length) ? cfg.diasSemana : [1, 2, 3, 4, 5];
+  
+  if (!diasAtivos.includes(diaSemanaHoje)) {
+    return; // Hoje não toca
+  }
+
   const minutosAgora = now.getHours() * 60 + now.getMinutes();
   const dataHoje = now.toISOString().split('T')[0];
   const antecedencia = Number(cfg.antecedenciaMin) !== undefined ? Number(cfg.antecedenciaMin) : 5;
@@ -6952,22 +7583,24 @@ function verificarAlarmePontoAutomatico() {
     if (minutosAgora === disparoMinutos) {
       const chaveEvento = `${dataHoje}_${t.chave}_${t.hora}`;
       if (cfg.ultimoDisparo === chaveEvento) {
-        continue; // Já tocou neste horário hoje
-      }
-
-      // CRÍTICO: Filtrar funcionários elegíveis (ignora Falta e Doente)
-      const todos = Array.isArray(funcionariosLista) ? funcionariosLista : [];
-      const elegiveis = todos.filter(funcionarioElegivelParaAlarme);
-
-      if (elegiveis.length === 0) {
-        // Se todos estiverem com falta ou doente, NÃO ALARMAR!
-        cfg.ultimoDisparo = chaveEvento;
-        salvarConfigAlarmePonto(cfg);
-        console.log(`[Alarme de Ponto] Ignorado (${t.label} às ${t.hora}): Nenhum colaborador elegível (todos de Falta/Doente/Folga).`);
         continue;
       }
 
-      // Disparar alarme sonoro e visual
+      const todos = (typeof funcionariosLista !== 'undefined' && Array.isArray(funcionariosLista)) ? funcionariosLista : [];
+      let elegiveis = todos.filter(funcionarioElegivelParaAlarme);
+
+      // Se há funcionários e TODOS estão em Falta/Doente com bloqueio ativo:
+      if (todos.length > 0 && elegiveis.length === 0 && cfg.bloquearInativos !== false) {
+        cfg.ultimoDisparo = chaveEvento;
+        salvarConfigAlarmePonto(cfg);
+        console.log(`[Alarme] Ignorado (${t.label} às ${t.hora}): Todos de Falta/Doente.`);
+        continue;
+      }
+
+      if (elegiveis.length === 0) {
+        elegiveis = [{ nome: 'Horário Oficial da Empresa' }];
+      }
+
       cfg.ultimoDisparo = chaveEvento;
       salvarConfigAlarmePonto(cfg);
       dispararAlarmePonto(t.label, t.hora, antecedencia, elegiveis);
@@ -6976,53 +7609,6 @@ function verificarAlarmePontoAutomatico() {
   }
 }
 
-function dispararAlarmePonto(labelTurno, horaTurno, antecedencia, elegiveis) {
-  tocarSireneAlarmePonto(false);
-
-  const tit = document.getElementById('alarme-ponto-titulo');
-  const badge = document.getElementById('alarme-ponto-tempo-badge');
-  const txtEtapa = document.getElementById('alarme-ponto-etapa-texto');
-  const txtHora = document.getElementById('alarme-ponto-horario-texto');
-  const listaElem = document.getElementById('alarme-ponto-colaboradores-lista');
-
-  if (tit) tit.textContent = `${labelTurno} às ${horaTurno}`;
-  if (badge) badge.textContent = antecedencia > 0 ? `⏰ Faltam ${antecedencia} minutos!` : '⏰ Horário do Ponto Agora!';
-  if (txtEtapa) txtEtapa.textContent = labelTurno;
-  if (txtHora) txtHora.textContent = horaTurno;
-
-  if (listaElem) {
-    listaElem.innerHTML = elegiveis.map(f => `
-      <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.06);padding:6px 10px;border-radius:8px;font-size:12px;">
-        <span style="font-weight:700;color:#fff;">👤 ${esc(f.nome)}</span>
-        <span style="font-size:10.5px;color:#10b981;font-weight:800;background:rgba(16,185,129,0.15);padding:2px 7px;border-radius:4px;">🟢 Ativo</span>
-      </div>
-    `).join('');
-  }
-
-  const modal = document.getElementById('modal-alarme-ponto-disparado');
-  if (modal) modal.style.display = 'flex';
-}
-
-function pararAlarmePonto() {
-  pararAudioAlarmePonto();
-  const modal = document.getElementById('modal-alarme-ponto-disparado');
-  if (modal) modal.style.display = 'none';
-}
-
-function adiarAlarmePonto(minutos = 5) {
-  pararAlarmePonto();
-  mostrarMsgPonto(`⏰ Alarme adiado por ${minutos} minutos.`, true);
-  setTimeout(() => {
-    const todos = Array.isArray(funcionariosLista) ? funcionariosLista : [];
-    const elegiveis = todos.filter(funcionarioElegivelParaAlarme);
-    if (elegiveis.length > 0) {
-      dispararAlarmePonto('Lembrete de Ponto (Soneca)', 'Agora', 0, elegiveis);
-    }
-  }, minutos * 60 * 1000);
-}
-
-// Inicia verificação automática a cada 15 segundos
-setInterval(verificarAlarmePontoAutomatico, 15000);
 
 function irParaGestaoFuncionarios() {
   fecharModalLinksFuncionarios();
@@ -9144,6 +9730,30 @@ function atualizarStatusBatidaColaborador() {
   const hoje = getHojeFormatado();
   const p = pontosLista.find(x => (x.colaboradorId === id || (x.colaboradorNome && x.colaboradorNome.toLowerCase() === colab.nome.toLowerCase())) && ehDataHoje(x.data));
   atualizarTravaHoraExtraIndex(p);
+
+  // Atualiza crachás e status visual nos botões
+  const atualizarBotaoStatus = (btnId, badgeId, valor, labelTurno) => {
+    const btn = document.getElementById(btnId);
+    const bd = document.getElementById(badgeId);
+    if (!btn || !bd) return;
+    if (valor) {
+      btn.classList.add('batido');
+      bd.textContent = '✓ ' + valor;
+      bd.style.display = 'inline-block';
+    } else {
+      btn.classList.remove('batido');
+      bd.textContent = '';
+      bd.style.display = 'none';
+    }
+  };
+
+  atualizarBotaoStatus('btn-ponto-ent1', 'badge-ponto-ent1', p?.entrada1, '1ª Entrada');
+  atualizarBotaoStatus('btn-ponto-alm', 'badge-ponto-alm', p?.saidaAlmoco, 'Saída Almoço');
+  atualizarBotaoStatus('btn-ponto-vol', 'badge-ponto-vol', p?.voltaAlmoco, 'Volta Almoço');
+  atualizarBotaoStatus('btn-ponto-sai', 'badge-ponto-sai', p?.saidaFinal, 'Saída Final');
+  atualizarBotaoStatus('btn-ponto-he-ini', 'badge-ponto-he-ini', p?.horaExtraInicial, 'H.E. Inicial');
+  atualizarBotaoStatus('btn-ponto-he-fim', 'badge-ponto-he-fim', p?.horaExtraFinal, 'H.E. Final');
+  atualizarBotaoStatus('btn-ponto-falta', 'badge-ponto-falta', (p && String(p.status).includes('Falta')) ? (p.justificativaFalta || 'Falta Registrada') : '', 'Falta');
   if (msgEl) {
     if (p) {
       recalcularHorasPonto(p, colab);
@@ -9160,12 +9770,23 @@ function atualizarStatusBatidaColaborador() {
 
 function mostrarMsgPonto(txt, ok) {
   const el = document.getElementById('ponto-feedback-msg');
-  if (!el) return;
-  el.style.color = ok ? '#4ade80' : '#f87171';
-  el.textContent = txt;
-  setTimeout(() => {
-    if (el) { el.textContent = ''; atualizarStatusBatidaColaborador(); }
-  }, 4500);
+  if (el) {
+    el.style.color = ok ? '#4ade80' : '#f87171';
+    el.textContent = txt;
+    setTimeout(() => {
+      if (el) { el.textContent = ''; atualizarStatusBatidaColaborador(); }
+    }, 4500);
+  }
+  // Feedback tátil em dispositivos móveis
+  try {
+    if (navigator.vibrate) navigator.vibrate(ok ? [40, 20, 40] : [80, 50, 80]);
+  } catch(_) {}
+  // Notificação toast flutuante no topo para mobile
+  if (typeof toast === 'function') {
+    toast((ok ? '✅ ' : '⚠️ ') + txt);
+  } else if (typeof mostrarToast === 'function') {
+    mostrarToast((ok ? '✅ ' : '⚠️ ') + txt);
+  }
 }
 
 function mudarStatusFuncionarioDireto(id, novoStatus) {
@@ -14783,6 +15404,204 @@ function restaurarOrdemAbasPadrao() {
     setup();
   }
 })();
+
+
+
+
+// ════════════════════════════════════════════════════════════
+// GESTÃO DE SAÍDAS ANTECIPADAS E NOTIFICAÇÕES (EMPRESA)
+// ════════════════════════════════════════════════════════════
+let _solicitacaoSaidaAtual = null;
+
+function verificarSolicitacoesSaidaPendentes() {
+  try {
+    let pendentes = [];
+    const salvo = localStorage.getItem('sdv_solicitacoes_saida_pendentes');
+    if (salvo) pendentes = JSON.parse(salvo);
+
+    // Também verifica em pontosLista se há algum com statusAutorizacaoSaida === 'Pendente'
+    const pontosPendentes = (Array.isArray(pontosLista) ? pontosLista : []).filter(p => p.statusAutorizacaoSaida === 'Pendente');
+
+    const total = Math.max(pendentes.length, pontosPendentes.length);
+    const banner = document.getElementById('banner-solicitacoes-saida');
+    const titBanner = document.getElementById('banner-solicitacoes-saida-titulo');
+
+    if (banner) {
+      if (total > 0) {
+        banner.style.display = 'flex';
+        if (titBanner) {
+          titBanner.textContent = total === 1 
+            ? '🔔 1 Solicitação de Saída Antecipada Pendente de Análise!'
+            : `🔔 ${total} Solicitações de Saída Antecipada Pendentes de Análise!`;
+        }
+      } else {
+        banner.style.display = 'none';
+      }
+    }
+  } catch(_) {}
+}
+
+function abrirModalAnaliseSolicitacoesSaida(solicId = null) {
+  let pendentes = [];
+  try {
+    const salvo = localStorage.getItem('sdv_solicitacoes_saida_pendentes');
+    if (salvo) pendentes = JSON.parse(salvo);
+  } catch(_) {}
+
+  let solic = null;
+  if (solicId) {
+    solic = pendentes.find(s => s.id === solicId);
+  } else if (pendentes.length > 0) {
+    solic = pendentes[0];
+  } else {
+    // Tenta encontrar em pontosLista
+    const p = (Array.isArray(pontosLista) ? pontosLista : []).find(x => x.statusAutorizacaoSaida === 'Pendente');
+    if (p) {
+      solic = {
+        id: p.id,
+        pontoId: p.id,
+        colaboradorId: p.colaboradorId,
+        colaboradorNome: p.colaboradorNome,
+        data: p.data,
+        horaSaida: p.saidaFinal,
+        horaPrevista: '17:30',
+        minutosFaltantes: p.minutosAntecipados || 60,
+        tempoFaltante: p.tempoAntecipadoTexto || '01h 00m',
+        motivo: p.motivoSaida || 'Saída Antecipada',
+        obs: p.obsSaida || ''
+      };
+    }
+  }
+
+  if (!solic) {
+    alert('Nenhuma solicitação de saída antecipada pendente de análise no momento.');
+    return;
+  }
+
+  _solicitacaoSaidaAtual = solic;
+
+  const m = document.getElementById('modal-analise-saida-empresa');
+  const elNome = document.getElementById('analise-colab-nome');
+  const elData = document.getElementById('analise-data-solic');
+  const elHora = document.getElementById('analise-hora-saida');
+  const elPrev = document.getElementById('analise-hora-prevista');
+  const elTempo = document.getElementById('analise-tempo-faltante');
+  const elMotivo = document.getElementById('analise-motivo');
+  const elObs = document.getElementById('analise-obs');
+  const inpSolicId = document.getElementById('analise-solic-id');
+  const inpPontoId = document.getElementById('analise-ponto-id');
+
+  if (elNome) elNome.textContent = solic.colaboradorNome || 'Colaborador';
+  if (elData) elData.textContent = solic.data || 'Hoje';
+  if (elHora) elHora.textContent = solic.horaSaida || '--:--';
+  if (elPrev) elPrev.textContent = solic.horaPrevista || '17:30';
+  if (elTempo) elTempo.textContent = `Tempo Antecipado: -${solic.tempoFaltante || '00h 00m'} (${solic.minutosFaltantes || 0} min)`;
+  if (elMotivo) elMotivo.textContent = solic.motivo || 'Motivo Pessoal';
+  if (elObs) elObs.textContent = solic.obs || 'Nenhuma observação informada.';
+  if (inpSolicId) inpSolicId.value = solic.id || '';
+  if (inpPontoId) inpPontoId.value = solic.pontoId || '';
+
+  if (m) m.style.display = 'flex';
+}
+
+function fecharModalAnaliseSaida(e) {
+  if (e && e.target && e.target !== document.getElementById('modal-analise-saida-empresa')) return;
+  const m = document.getElementById('modal-analise-saida-empresa');
+  if (m) m.style.display = 'none';
+  _solicitacaoSaidaAtual = null;
+}
+
+function executarDecisaoEmpresa(decisao) {
+  if (!_solicitacaoSaidaAtual) return;
+  const solic = _solicitacaoSaidaAtual;
+
+  let pontos = (typeof pontosLista !== 'undefined' && Array.isArray(pontosLista)) ? pontosLista : [];
+  let p = pontos.find(x => x.id === solic.pontoId || (x.colaboradorId === solic.colaboradorId && x.data === solic.data));
+
+  if (!p) {
+    p = {
+      id: solic.pontoId || Date.now(),
+      colaboradorId: solic.colaboradorId,
+      colaboradorNome: solic.colaboradorNome,
+      data: solic.data,
+      saidaFinal: solic.horaSaida,
+      status: 'Finalizado'
+    };
+    pontos.unshift(p);
+  }
+
+  const f = (typeof funcionariosLista !== 'undefined') ? funcionariosLista.find(x => x.id === solic.colaboradorId) : null;
+  const vHora = (f && f.valorHora) ? Number(f.valorHora) : 25.50;
+  const minFaltantes = solic.minutosFaltantes || 0;
+  const tempoStr = solic.tempoFaltante || '00h 00m';
+
+  let feedbackMsg = '';
+
+  if (decisao === 'autorizar_sem_desconto') {
+    p.statusAutorizacaoSaida = 'Autorizado Sem Desconto (Abonado)';
+    p.tipoDecisaoSaida = 'abonado';
+    p.semHoraNegativa = true;
+    p.saidaAntecipadaJustificada = true;
+    p.minutosNegativos = 0;
+    p.horaNegativa = '00h 00m';
+    p.descontoNegativoValor = 0;
+    p.descontoNegativoFormatado = '';
+    p.justificativaSaida = `[Abonado pela Gerência] ${solic.motivo}`;
+    feedbackMsg = `✅ Saída de ${solic.colaboradorNome} autorizada SEM DESCONTO!`;
+  } else if (decisao === 'hora_negativa') {
+    p.statusAutorizacaoSaida = 'Descontado em Horas Negativas';
+    p.tipoDecisaoSaida = 'hora_negativa';
+    p.semHoraNegativa = false;
+    p.saidaAntecipadaJustificada = false;
+    p.minutosNegativos = minFaltantes;
+    p.horaNegativa = tempoStr;
+    const vDesc = (minFaltantes / 60) * vHora;
+    p.descontoNegativoValor = vDesc;
+    p.descontoNegativoFormatado = '(-R$ ' + vDesc.toFixed(2).replace('.', ',') + ')';
+    p.justificativaSaida = `[H. Negativa: -${tempoStr}] ${solic.motivo}`;
+    feedbackMsg = `⏳ Lançadas -${tempoStr} no banco de horas de ${solic.colaboradorNome}!`;
+  } else if (decisao === 'desconto_salario') {
+    p.statusAutorizacaoSaida = 'Desconto em Salário';
+    p.tipoDecisaoSaida = 'desconto_salario';
+    p.semHoraNegativa = true; // Não vira hora negativa pois já desconta em dinheiro
+    p.minutosNegativos = 0;
+    const vDesc = (minFaltantes / 60) * vHora;
+    p.valorDescontoSalario = vDesc;
+    p.justificativaSaida = `[Desc. Salário: -R$ ${vDesc.toFixed(2).replace('.', ',')}] ${solic.motivo}`;
+    feedbackMsg = `💰 Desconto de R$ ${vDesc.toFixed(2).replace('.', ',')} aplicado no salário de ${solic.colaboradorNome}!`;
+  }
+
+  // Remove da lista de pendências
+  try {
+    let pendentes = [];
+    const salvo = localStorage.getItem('sdv_solicitacoes_saida_pendentes');
+    if (salvo) pendentes = JSON.parse(salvo);
+    pendentes = pendentes.filter(s => s.id !== solic.id && s.pontoId !== solic.pontoId);
+    localStorage.setItem('sdv_solicitacoes_saida_pendentes', JSON.stringify(pendentes));
+  } catch(_) {}
+
+  // Salva no storage e atualiza tela
+  try {
+    localStorage.setItem('sdv_pontos', JSON.stringify(pontos));
+  } catch(_) {}
+
+  if (typeof recalcularHorasPonto === 'function') recalcularHorasPonto(p, f);
+  if (typeof renderEspelhoPonto === 'function') renderEspelhoPonto();
+
+  fecharModalAnaliseSaida();
+  verificarSolicitacoesSaidaPendentes();
+
+  if (typeof mostrarMsgPonto === 'function') {
+    mostrarMsgPonto(feedbackMsg, true);
+  } else {
+    alert(feedbackMsg);
+  }
+}
+
+// Inicia verificação periódica de solicitações de saída pendentes a cada 10 segundos
+if (typeof setInterval !== 'undefined') {
+  setInterval(verificarSolicitacoesSaidaPendentes, 10000);
+}
 
 </script>
 </body>

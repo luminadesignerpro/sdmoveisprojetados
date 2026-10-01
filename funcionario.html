@@ -1911,7 +1911,71 @@
       to { transform: rotate(360deg); }
     }
 
-  </style>
+  
+    .ponto-btn-action {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+      min-height: 72px;
+      transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .ponto-btn-action:active {
+      transform: scale(0.95);
+      filter: brightness(1.25);
+    }
+    .btn-preset-dias {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #e2e8f0;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 9px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-preset-dias:hover, .btn-preset-dias:active {
+      background: rgba(56,189,248,0.25);
+      border-color: #38bdf8;
+      color: #38bdf8;
+    }
+    .grid-dias-semana {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+    }
+    @media(max-width: 420px) {
+      .grid-dias-semana { gap: 3px; }
+    }
+    .dia-check-chip {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,0.04);
+      border: 1.5px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      padding: 9px 2px;
+      cursor: pointer;
+      font-size: 11.5px;
+      font-weight: 800;
+      color: #94a3b8;
+      transition: all 0.2s;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .dia-check-chip input[type="checkbox"] {
+      display: none;
+    }
+    .dia-check-chip.ativo {
+      background: rgba(56,189,248,0.22);
+      border-color: #38bdf8;
+      color: #fff;
+      box-shadow: 0 0 10px rgba(56,189,248,0.3);
+    }
+
+</style>
 </head>
 <body>
 
@@ -2915,48 +2979,102 @@
 </div>
 
 <!-- ══ MODAL CLIENTE JUSTIFICAR SAÍDA FINAL ANTECIPADA ══ -->
-<div id="modal-cliente-saida-final" class="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(6px);z-index:999999;align-items:center;justify-content:center;padding:16px;">
-  <div style="background:linear-gradient(145deg,#111322,#1a1d33);border:1.5px solid rgba(250,204,21,0.4);border-radius:18px;max-width:440px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,0.85);padding:22px;color:#fff;box-sizing:border-box;">
+<!-- ══ MODAL CLIENTE JUSTIFICAR SAÍDA FINAL ANTECIPADA (COM OPÇÕES DE DESCONTO E AUTORIZAÇÃO) ══ -->
+<div id="modal-cliente-saida-final" class="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);backdrop-filter:blur(8px);z-index:999999;align-items:center;justify-content:center;padding:16px;" onclick="fecharModalSaidaFinalCliente(event)">
+  <div style="background:linear-gradient(145deg,#0e111d,#16192b);border:1.5px solid rgba(250,204,21,0.45);border-radius:20px;max-width:460px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,0.9);padding:22px;color:#fff;box-sizing:border-box;" onclick="event.stopPropagation()">
+    
+    <!-- Topo -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:10px;">
-      <div style="display:flex;align-items:center;gap:8px;">
-        <span style="font-size:22px;">🚪</span>
-        <div style="font-size:16px;font-weight:900;color:#facc15;">Saída Final Antecipada</div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:24px;">🚪</span>
+        <div>
+          <div style="font-size:16px;font-weight:900;color:#facc15;">Saída Final Antecipada</div>
+          <div style="font-size:11px;color:#94a3b8;">Registro de término antes do horário previsto</div>
+        </div>
       </div>
-      <button type="button" onclick="fecharModalSaidaFinalCliente()" style="background:none;border:none;color:#94a3b8;font-size:20px;cursor:pointer;">✕</button>
+      <button type="button" onclick="fecharModalSaidaFinalCliente()" style="background:none;border:none;color:#94a3b8;font-size:22px;cursor:pointer;line-height:1;">✕</button>
     </div>
 
-    <p style="font-size:13px;color:#cbd5e1;line-height:1.5;margin-bottom:14px;">
-      Você está registrando a sua <strong>Saída Final</strong> antes do término da jornada normal. Deseja justificar para encerrar o expediente <strong>sem gerar horas negativas</strong>?
-    </p>
+    <!-- Box Informativo: Horário e Tempo Restante -->
+    <div style="background:rgba(239,68,68,0.12);border:1.5px solid rgba(239,68,68,0.35);border-radius:12px;padding:12px 14px;margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:4px;">
+        <span style="color:#cbd5e1;">Horário de Saída: <strong id="lbl-saida-hora-efetiva-cli" style="color:#fff;font-size:13px;">--:--</strong></span>
+        <span style="color:#cbd5e1;">Término Oficial: <strong id="lbl-saida-hora-oficial-cli" style="color:#38bdf8;font-size:13px;">17:30</strong></span>
+      </div>
+      <div style="font-size:12.5px;font-weight:800;color:#fca5a5;display:flex;align-items:center;gap:6px;">
+        <span>⏳</span> <span id="lbl-saida-tempo-restante-cli">Tempo a ser descontado: calculando...</span>
+      </div>
+    </div>
 
-    <div style="margin-bottom:12px;">
-      <label style="display:block;font-size:11.5px;font-weight:800;color:var(--gold-light);text-transform:uppercase;margin-bottom:6px;">Motivo da Saída:</label>
-      <select id="sel-motivo-saida-final-cli" style="width:100%;padding:10px;background:#090a14;border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:13px;outline:none;">
+    <!-- Motivo da Saída -->
+    <div style="margin-bottom:10px;">
+      <label style="display:block;font-size:11px;font-weight:800;color:#fef08a;text-transform:uppercase;margin-bottom:4px;letter-spacing:0.5px;">Motivo da Saída:</label>
+      <select id="sel-motivo-saida-final-cli" style="width:100%;box-sizing:border-box;padding:9px;background:#090a14;border:1px solid rgba(255,255,255,0.18);border-radius:8px;color:#fff;font-size:12.5px;outline:none;">
         <option value="Serviço Externo / Obra Concluída">Serviço Externo / Obra Concluída</option>
-        <option value="Dispensa Autorizada pela Gerência">Dispensa Autorizada pela Gerência</option>
+        <option value="Dispensa Solicitada / Acordo">Dispensa Solicitada / Acordo</option>
         <option value="Consulta / Atestado Médico">Consulta / Atestado Médico</option>
-        <option value="Compensação / Acordo de Horas">Compensação / Acordo de Horas</option>
         <option value="Motivo Pessoal / Emergência">Motivo Pessoal / Emergência</option>
-        <option value="Outro">Outro Motivo (digitar abaixo)</option>
+        <option value="Outro Motivo">Outro Motivo (descrever abaixo)</option>
       </select>
     </div>
 
-    <div style="margin-bottom:16px;">
-      <label style="display:block;font-size:11.5px;font-weight:800;color:var(--gold-light);text-transform:uppercase;margin-bottom:6px;">Observações (opcional):</label>
-      <input type="text" id="txt-obs-saida-final-cli" placeholder="Ex: Obra finalizada às 10:30..." style="width:100%;box-sizing:border-box;padding:10px;background:#090a14;border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:13px;outline:none;" />
+    <!-- Observações -->
+    <div style="margin-bottom:14px;">
+      <label style="display:block;font-size:11px;font-weight:800;color:#fef08a;text-transform:uppercase;margin-bottom:4px;letter-spacing:0.5px;">Observações / Justificativa (Opcional):</label>
+      <input type="text" id="txt-obs-saida-final-cli" placeholder="Ex: Obra no condomínio finalizada às 10:30..." style="width:100%;box-sizing:border-box;padding:9px 12px;background:#090a14;border:1px solid rgba(255,255,255,0.18);border-radius:8px;color:#fff;font-size:12px;outline:none;" />
     </div>
 
-    <div style="display:flex;flex-direction:column;gap:8px;">
-      <button type="button" onclick="confirmarSaidaFinalCliente(true)" class="btn btn-primary" style="background:linear-gradient(135deg,#10b981,#059669);border:none;padding:12px;border-radius:10px;font-weight:900;font-size:13px;color:#fff;cursor:pointer;box-shadow:0 4px 14px rgba(16,185,129,0.35);">
-        ✅ Justificar e Finalizar (Sem Horas Negativas)
+    <div style="font-size:11px;font-weight:900;color:#94a3b8;text-transform:uppercase;margin-bottom:8px;letter-spacing:0.5px;">
+      Escolha como deseja registrar a saída antecipada:
+    </div>
+
+    <!-- AS 3 OPÇÕES SOLICITADAS -->
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
+      
+      <!-- OPÇÃO 1: PEDIR AUTORIZAÇÃO À EMPRESA -->
+      <button type="button" onclick="confirmarSaidaFinalClienteTipo('solicitar_autorizacao')" style="background:linear-gradient(135deg,#0284c7,#0369a1);border:none;padding:12px 14px;border-radius:10px;color:#fff;text-align:left;cursor:pointer;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 14px rgba(2,132,199,0.35);transition:all 0.2s;">
+        <div>
+          <div style="font-size:13px;font-weight:900;display:flex;align-items:center;gap:6px;">
+            <span>📩</span> <span>Pedir Autorização à Empresa</span>
+          </div>
+          <div style="font-size:10.5px;color:#bae6fd;margin-top:2px;">
+            Envia notificação para a gerência analisar se abona ou desconta
+          </div>
+        </div>
+        <span style="font-size:18px;font-weight:900;">➔</span>
       </button>
-      <button type="button" onclick="confirmarSaidaFinalCliente(false)" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);padding:10px;border-radius:10px;font-weight:700;font-size:12px;color:#94a3b8;cursor:pointer;">
-        Registrar Saída Sem Justificativa
+
+      <!-- OPÇÃO 2: DESCONTAR DO BANCO DE HORAS (HORAS NEGATIVAS) -->
+      <button type="button" onclick="confirmarSaidaFinalClienteTipo('hora_negativa')" style="background:rgba(245,158,11,0.14);border:1.5px solid rgba(245,158,11,0.45);padding:11px 14px;border-radius:10px;color:#fff;text-align:left;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all 0.2s;">
+        <div>
+          <div style="font-size:13px;font-weight:900;color:#fef08a;display:flex;align-items:center;gap:6px;">
+            <span>⏳</span> <span>Descontar em Horas Negativas</span>
+          </div>
+          <div style="font-size:10.5px;color:#cbd5e1;margin-top:2px;">
+            O tempo faltante será lançado como débito no seu banco de horas
+          </div>
+        </div>
+        <span style="font-size:14px;color:#fef08a;font-weight:900;">➔</span>
       </button>
-      <button type="button" onclick="fecharModalSaidaFinalCliente()" style="background:transparent;border:none;color:#64748b;font-size:12px;cursor:pointer;margin-top:4px;">
-        Cancelar
+
+      <!-- OPÇÃO 3: DESCONTAR DIRETO DO SALÁRIO -->
+      <button type="button" onclick="confirmarSaidaFinalClienteTipo('desconto_salario')" style="background:rgba(239,68,68,0.14);border:1.5px solid rgba(239,68,68,0.45);padding:11px 14px;border-radius:10px;color:#fff;text-align:left;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all 0.2s;">
+        <div>
+          <div style="font-size:13px;font-weight:900;color:#fca5a5;display:flex;align-items:center;gap:6px;">
+            <span>💰</span> <span>Descontar do Salário</span>
+          </div>
+          <div style="font-size:10.5px;color:#cbd5e1;margin-top:2px;">
+            O valor proporcional ao tempo não trabalhado será descontado em folha
+          </div>
+        </div>
+        <span style="font-size:14px;color:#fca5a5;font-weight:900;">➔</span>
       </button>
     </div>
+
+    <!-- Cancelar -->
+    <button type="button" onclick="fecharModalSaidaFinalCliente()" style="width:100%;background:transparent;border:none;color:#94a3b8;font-size:12px;font-weight:700;cursor:pointer;padding:6px;text-align:center;">
+      Cancelar Batida
+    </button>
   </div>
 </div>
 
@@ -4405,6 +4523,53 @@
       <div>
         <label style="display:block;font-size:11px;font-weight:800;color:#ef4444;text-transform:uppercase;margin-bottom:4px;">Saída Final</label>
         <input type="time" id="cfg-ponto-sai-func" value="17:30" style="width:100%;box-sizing:border-box;padding:9px;background:#090a14;border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:13px;outline:none;" />
+      </div>
+    </div>
+
+    <!-- DIAS DA SEMANA DO ALARME -->
+    <div style="background:rgba(56,189,248,0.06);border:1px solid rgba(56,189,248,0.25);border-radius:10px;padding:12px;margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:4px;">
+        <label style="font-size:11.5px;font-weight:800;color:#38bdf8;text-transform:uppercase;letter-spacing:0.5px;margin:0;">
+          📅 Dias de Funcionamento do Alarme
+        </label>
+        <span id="badge-alarme-dias-resumo-func" style="font-size:11px;font-weight:800;color:#fef08a;background:rgba(212,175,55,0.15);padding:2px 8px;border-radius:6px;">
+          Seg a Sex
+        </span>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
+        <button type="button" class="btn-preset-dias" onclick="aplicarPresetDiasAlarmeFunc('seg-sex')">Seg a Sex (44h)</button>
+        <button type="button" class="btn-preset-dias" onclick="aplicarPresetDiasAlarmeFunc('seg-sab')">Seg a Sáb (Comercial)</button>
+        <button type="button" class="btn-preset-dias" onclick="aplicarPresetDiasAlarmeFunc('todos')">Todos os Dias</button>
+      </div>
+      <div class="grid-dias-semana">
+        <label class="dia-check-chip" id="lbl-dia-func-1">
+          <input type="checkbox" id="cfg-dia-func-1" value="1" onchange="aoAlternarDiaAlarmeFunc(this)" checked>
+          <span>Seg</span>
+        </label>
+        <label class="dia-check-chip" id="lbl-dia-func-2">
+          <input type="checkbox" id="cfg-dia-func-2" value="2" onchange="aoAlternarDiaAlarmeFunc(this)" checked>
+          <span>Ter</span>
+        </label>
+        <label class="dia-check-chip" id="lbl-dia-func-3">
+          <input type="checkbox" id="cfg-dia-func-3" value="3" onchange="aoAlternarDiaAlarmeFunc(this)" checked>
+          <span>Qua</span>
+        </label>
+        <label class="dia-check-chip" id="lbl-dia-func-4">
+          <input type="checkbox" id="cfg-dia-func-4" value="4" onchange="aoAlternarDiaAlarmeFunc(this)" checked>
+          <span>Qui</span>
+        </label>
+        <label class="dia-check-chip" id="lbl-dia-func-5">
+          <input type="checkbox" id="cfg-dia-func-5" value="5" onchange="aoAlternarDiaAlarmeFunc(this)" checked>
+          <span>Sex</span>
+        </label>
+        <label class="dia-check-chip" id="lbl-dia-func-6">
+          <input type="checkbox" id="cfg-dia-func-6" value="6" onchange="aoAlternarDiaAlarmeFunc(this)">
+          <span>Sáb</span>
+        </label>
+        <label class="dia-check-chip" id="lbl-dia-func-0">
+          <input type="checkbox" id="cfg-dia-func-0" value="0" onchange="aoAlternarDiaAlarmeFunc(this)">
+          <span>Dom</span>
+        </label>
       </div>
     </div>
 
@@ -7593,36 +7758,162 @@ function mudarAba(tab) {
 
     let _saidaFinalCliPendente = null;
 
-    function abrirModalSaidaFinalCliente(horaStr) {
-      _saidaFinalCliPendente = { horaStr };
-      const m = document.getElementById('modal-cliente-saida-final');
-      const txt = document.getElementById('txt-obs-saida-final-cli');
-      if (txt) txt.value = '';
-      if (m) m.style.display = 'flex';
-    }
+    
+let _saidaFinalCliPendente = null;
 
-    function fecharModalSaidaFinalCliente() {
-      const m = document.getElementById('modal-cliente-saida-final');
-      if (m) m.style.display = 'none';
-      _saidaFinalCliPendente = null;
-    }
+function abrirModalSaidaFinalCliente(horaStr) {
+  const colab = (typeof obterFuncionarioAtivoPonto === 'function') ? obterFuncionarioAtivoPonto() : null;
+  const horaSaidaPrevista = colab?.horarioSaida || '17:30';
+  
+  const parseMin = (s) => (s && s.includes(':')) ? s.split(':').map(Number)[0]*60 + s.split(':').map(Number)[1] : null;
+  const mSai = parseMin(horaStr) || 0;
+  const mExp = parseMin(horaSaidaPrevista) || 1050;
+  const minFaltantes = Math.max(0, mExp - mSai);
+  
+  const hFalta = Math.floor(minFaltantes / 60);
+  const mFalta = minFaltantes % 60;
+  const tempoRestanteStr = `${String(hFalta).padStart(2, '0')}h ${String(mFalta).padStart(2, '0')}m`;
 
-    function confirmarSaidaFinalCliente(comJustificativa) {
-      if (!_saidaFinalCliPendente) return;
-      const { horaStr } = _saidaFinalCliPendente;
-      let justificativa = '';
-      if (comJustificativa) {
-        const sel = document.getElementById('sel-motivo-saida-final-cli');
-        const txt = document.getElementById('txt-obs-saida-final-cli');
-        const motivo = sel ? sel.value : 'Serviço Concluído';
-        const obs = (txt && txt.value) ? txt.value.trim() : '';
-        justificativa = obs ? `${motivo} (${obs})` : motivo;
-      }
-      fecharModalSaidaFinalCliente();
-      executarBatidaPontoNoCliente('saidaFinal', horaStr, comJustificativa, justificativa);
-    }
+  _saidaFinalCliPendente = { horaStr, horaSaidaPrevista, minFaltantes, tempoRestanteStr };
 
-    function baterPontoNoCliente(tipo) {
+  const m = document.getElementById('modal-cliente-saida-final');
+  const lblHora = document.getElementById('lbl-saida-hora-efetiva-cli');
+  const lblOficial = document.getElementById('lbl-saida-hora-oficial-cli');
+  const lblRestante = document.getElementById('lbl-saida-tempo-restante-cli');
+  const txtObs = document.getElementById('txt-obs-saida-final-cli');
+
+  if (lblHora) lblHora.textContent = horaStr;
+  if (lblOficial) lblOficial.textContent = horaSaidaPrevista;
+  if (lblRestante) lblRestante.textContent = `Tempo a ser descontado: -${tempoRestanteStr} (${minFaltantes} minutos)`;
+  if (txtObs) txtObs.value = '';
+
+  if (m) m.style.display = 'flex';
+}
+
+function fecharModalSaidaFinalCliente(e) {
+  if (e && e.target && e.target !== document.getElementById('modal-cliente-saida-final')) return;
+  const m = document.getElementById('modal-cliente-saida-final');
+  if (m) m.style.display = 'none';
+  _saidaFinalCliPendente = null;
+}
+
+function confirmarSaidaFinalClienteTipo(tipoDecisao) {
+  if (!_saidaFinalCliPendente) return;
+  const { horaStr, minFaltantes, tempoRestanteStr } = _saidaFinalCliPendente;
+  const sel = document.getElementById('sel-motivo-saida-final-cli');
+  const txt = document.getElementById('txt-obs-saida-final-cli');
+  const motivo = sel ? sel.value : 'Saída Antecipada';
+  const obs = (txt && txt.value) ? txt.value.trim() : '';
+
+  fecharModalSaidaFinalCliente();
+  executarBatidaSaidaFinalComOpcao(horaStr, tipoDecisao, motivo, obs, minFaltantes, tempoRestanteStr);
+}
+
+function executarBatidaSaidaFinalComOpcao(horaStr, tipoDecisao, motivo, obs, minFaltantes, tempoRestanteStr) {
+  const colab = (typeof obterFuncionarioAtivoPonto === 'function') ? obterFuncionarioAtivoPonto() : null;
+  if (!colab) return;
+
+  const dataHoje = getHojeFormatadoPonto();
+  let pontos = carregarPontosDoStorage();
+  let p = pontos.find(x => (x.colaboradorId === colab.id || (x.colaboradorNome && x.colaboradorNome.toLowerCase() === colab.nome.toLowerCase())) && x.data === dataHoje);
+
+  if (!p) {
+    p = {
+      id: Date.now(),
+      colaboradorId: colab.id,
+      colaboradorNome: colab.nome,
+      data: dataHoje,
+      entrada1: '',
+      saidaAlmoco: '',
+      voltaAlmoco: '',
+      saidaFinal: '',
+      status: 'Presente'
+    };
+    pontos.unshift(p);
+  }
+
+  p.saidaFinal = horaStr;
+  colab.status = 'Finalizado';
+  p.status = 'Finalizado';
+  p.saidaAntecipada = true;
+  p.minutosAntecipados = minFaltantes;
+  p.tempoAntecipadoTexto = tempoRestanteStr;
+  p.motivoSaida = motivo;
+  p.obsSaida = obs;
+  p.dataSolicitacaoSaida = new Date().toISOString();
+
+  let toastMsg = '';
+
+  if (tipoDecisao === 'solicitar_autorizacao') {
+    p.tipoDecisaoSaida = 'pendente_autorizacao';
+    p.statusAutorizacaoSaida = 'Pendente';
+    p.justificativaSaida = `[Aguardando Análise] ${motivo}${obs ? ' - ' + obs : ''}`;
+    
+    // Registra na fila de solicitações pendentes para análise da empresa
+    registrarSolicitacaoSaidaPendente({
+      id: Date.now(),
+      pontoId: p.id,
+      colaboradorId: colab.id,
+      colaboradorNome: colab.nome,
+      data: dataHoje,
+      horaSaida: horaStr,
+      horaPrevista: _saidaFinalCliPendente ? _saidaFinalCliPendente.horaSaidaPrevista : '17:30',
+      minutosFaltantes: minFaltantes,
+      tempoFaltante: tempoRestanteStr,
+      motivo: motivo,
+      obs: obs,
+      timestamp: Date.now()
+    });
+
+    toastMsg = '📩 Pedido de saída enviado à empresa! Aguardando análise da gerência.';
+  } else if (tipoDecisao === 'hora_negativa') {
+    p.tipoDecisaoSaida = 'hora_negativa';
+    p.statusAutorizacaoSaida = 'Descontado em Horas Negativas';
+    p.minutosNegativos = minFaltantes;
+    p.horaNegativa = tempoRestanteStr;
+    p.justificativaSaida = `[H. Negativa] ${motivo}${obs ? ' - ' + obs : ''}`;
+    toastMsg = `⏳ Saída registrada! -${tempoRestanteStr} lançados no banco de horas.`;
+  } else if (tipoDecisao === 'desconto_salario') {
+    p.tipoDecisaoSaida = 'desconto_salario';
+    p.statusAutorizacaoSaida = 'Desconto em Salário';
+    const vHora = colab.valorHora || 25.50;
+    const vDesc = (minFaltantes / 60) * vHora;
+    p.valorDescontoSalario = vDesc;
+    p.justificativaSaida = `[Desc. Salário R$ ${vDesc.toFixed(2)}] ${motivo}${obs ? ' - ' + obs : ''}`;
+    toastMsg = `💰 Saída registrada! Desconto de R$ ${vDesc.toFixed(2)} em folha.`;
+  }
+
+  // Recalcula horas trabalhadas
+  if (typeof executarBatidaPontoNoCliente === 'function') {
+    // Salva pontos atualizados
+    localStorage.setItem('sdv_pontos', JSON.stringify(pontos));
+    renderizarResumoPontoCliente();
+  } else {
+    localStorage.setItem('sdv_pontos', JSON.stringify(pontos));
+  }
+
+  if (typeof mostrarToastPontoCliente === 'function') {
+    mostrarToastPontoCliente(toastMsg, true);
+  } else {
+    alert(toastMsg);
+  }
+}
+
+function registrarSolicitacaoSaidaPendente(solic) {
+  try {
+    let lista = [];
+    const salvo = localStorage.getItem('sdv_solicitacoes_saida_pendentes');
+    if (salvo) lista = JSON.parse(salvo);
+    lista.unshift(solic);
+    localStorage.setItem('sdv_solicitacoes_saida_pendentes', JSON.stringify(lista));
+  } catch(_) {}
+}
+
+
+function baterPontoNoCliente(tipo) {
+      try {
+        if (navigator.vibrate) navigator.vibrate([40, 20, 40]);
+      } catch(_) {}
       const dataHoje = getHojeFormatadoPonto();
       const pontos = carregarPontosDoStorage();
       const colab = obterFuncionarioAtivoPonto();
@@ -10427,14 +10718,235 @@ function baixarSincronizacaoAlarmeCalendario() {
 // ══════════════════════════════════════════════
 //  CONTROLE E EDIÇÃO DO ALARME NO PORTAL
 // ══════════════════════════════════════════════
+
+function aplicarPresetDiasAlarmeFunc(preset) {
+  const dias = (preset === 'seg-sex') ? [1, 2, 3, 4, 5] : ((preset === 'seg-sab') ? [1, 2, 3, 4, 5, 6] : [0, 1, 2, 3, 4, 5, 6]);
+  [0, 1, 2, 3, 4, 5, 6].forEach(d => {
+    const chk = document.getElementById('cfg-dia-func-' + d);
+    if (chk) {
+      chk.checked = dias.includes(d);
+      aoAlternarDiaAlarmeFunc(chk);
+    }
+  });
+}
+
+function aoAlternarDiaAlarmeFunc(el) {
+  if (!el) return;
+  const lbl = document.getElementById('lbl-dia-func-' + el.value);
+  if (lbl) {
+    if (el.checked) lbl.classList.add('ativo');
+    else lbl.classList.remove('ativo');
+  }
+  atualizarBadgeResumoDiasAlarmeFunc();
+}
+
+function atualizarBadgeResumoDiasAlarmeFunc() {
+  const selecionados = [];
+  const nomes = { 0: 'Dom', 1: 'Seg', 2: 'Ter', 3: 'Qua', 4: 'Qui', 5: 'Sex', 6: 'Sáb' };
+  [1, 2, 3, 4, 5, 6, 0].forEach(d => {
+    const chk = document.getElementById('cfg-dia-func-' + d);
+    if (chk && chk.checked) selecionados.push(d);
+  });
+  const badge = document.getElementById('badge-alarme-dias-resumo-func');
+  if (!badge) return;
+  if (selecionados.length === 5 && [1,2,3,4,5].every(d => selecionados.includes(d))) {
+    badge.textContent = 'Seg a Sex';
+  } else if (selecionados.length === 6 && [1,2,3,4,5,6].every(d => selecionados.includes(d))) {
+    badge.textContent = 'Seg a Sáb';
+  } else if (selecionados.length === 7) {
+    badge.textContent = 'Todos os Dias';
+  } else if (selecionados.length === 0) {
+    badge.textContent = 'Nenhum (Desativado)';
+  } else {
+    badge.textContent = selecionados.map(d => nomes[d]).join(', ');
+  }
+}
+
+
+function aoAlternarAlarmeMestreFunc(el) {
+  const ativo = el ? el.checked : true;
+  const box = document.getElementById('box-alarme-mestre-func');
+  const icone = document.getElementById('icon-status-alarme-func');
+  const tit = document.getElementById('txt-status-alarme-titulo-func');
+  const sub = document.getElementById('txt-status-alarme-sub-func');
+  const slider = document.getElementById('slider-alarme-mestre-func');
+  const knob = document.getElementById('slider-knob-alarme-func');
+
+  if (ativo) {
+    if (box) {
+      box.style.background = 'linear-gradient(135deg,rgba(16,185,129,0.15),rgba(5,150,105,0.22))';
+      box.style.borderColor = '#10b981';
+    }
+    if (icone) icone.textContent = '🔔';
+    if (tit) { tit.textContent = 'Alarme de Ponto Ativado'; tit.style.color = '#fff'; }
+    if (sub) sub.textContent = 'Toca som e vibra no seu celular';
+    if (slider) slider.style.backgroundColor = '#10b981';
+    if (knob) knob.style.transform = 'translateX(26px)';
+  } else {
+    if (box) {
+      box.style.background = 'rgba(239,68,68,0.12)';
+      box.style.borderColor = 'rgba(239,68,68,0.4)';
+    }
+    if (icone) icone.textContent = '🔕';
+    if (tit) { tit.textContent = 'Alarme de Ponto DESATIVADO'; tit.style.color = '#fca5a5'; }
+    if (sub) sub.textContent = 'O alarme NÃO tocará em nenhum horário';
+    if (slider) slider.style.backgroundColor = '#64748b';
+    if (knob) knob.style.transform = 'translateX(0px)';
+  }
+}
+
+function sincronizarCardsSabadoDomingoFunc() {
+  const chkSab = document.getElementById('cfg-dia-func-6');
+  const chkDom = document.getElementById('cfg-dia-func-0');
+  const cardSab = document.getElementById('card-alarme-sabado-func');
+  const cardDom = document.getElementById('card-alarme-domingo-func');
+  const lblSab = document.getElementById('lbl-status-sabado-func');
+  const lblDom = document.getElementById('lbl-status-domingo-func');
+  const chipSab = document.getElementById('cfg-dia-func-6-chip');
+  const chipDom = document.getElementById('cfg-dia-func-0-chip');
+
+  if (chkSab) {
+    const atv = chkSab.checked;
+    if (cardSab) {
+      cardSab.style.background = atv ? 'rgba(56,189,248,0.18)' : 'rgba(255,255,255,0.04)';
+      cardSab.style.borderColor = atv ? '#38bdf8' : 'rgba(255,255,255,0.12)';
+    }
+    if (lblSab) {
+      lblSab.textContent = atv ? '🟢 Toca no Sábado' : '❌ Não alarmar';
+      lblSab.style.color = atv ? '#38bdf8' : '#94a3b8';
+    }
+    if (chipSab && chipSab.checked !== atv) {
+      chipSab.checked = atv;
+      aoAlternarDiaAlarmeFunc(chipSab);
+    }
+  }
+
+  if (chkDom) {
+    const atv = chkDom.checked;
+    if (cardDom) {
+      cardDom.style.background = atv ? 'rgba(56,189,248,0.18)' : 'rgba(255,255,255,0.04)';
+      cardDom.style.borderColor = atv ? '#38bdf8' : 'rgba(255,255,255,0.12)';
+    }
+    if (lblDom) {
+      lblDom.textContent = atv ? '🟢 Toca no Domingo' : '❌ Não alarmar';
+      lblDom.style.color = atv ? '#38bdf8' : '#94a3b8';
+    }
+    if (chipDom && chipDom.checked !== atv) {
+      chipDom.checked = atv;
+      aoAlternarDiaAlarmeFunc(chipDom);
+    }
+  }
+}
+
+function aoAlternarDiaEspecificoFunc(chk, tipo) {
+  if (tipo === 'sabado') {
+    const chipSab = document.getElementById('cfg-dia-func-6-chip');
+    if (chipSab) {
+      chipSab.checked = chk.checked;
+      aoAlternarDiaAlarmeFunc(chipSab);
+    }
+  } else if (tipo === 'domingo') {
+    const chipDom = document.getElementById('cfg-dia-func-0-chip');
+    if (chipDom) {
+      chipDom.checked = chk.checked;
+      aoAlternarDiaAlarmeFunc(chipDom);
+    }
+  }
+  sincronizarCardsSabadoDomingoFunc();
+  atualizarBadgeResumoDiasAlarmeFunc();
+}
+
+function aoAlternarChipFinalFunc(chip, dia) {
+  aoAlternarDiaAlarmeFunc(chip);
+  if (dia === 6) {
+    const chkSab = document.getElementById('cfg-dia-func-6');
+    if (chkSab) chkSab.checked = chip.checked;
+  } else if (dia === 0) {
+    const chkDom = document.getElementById('cfg-dia-func-0');
+    if (chkDom) chkDom.checked = chip.checked;
+  }
+  sincronizarCardsSabadoDomingoFunc();
+  atualizarBadgeResumoDiasAlarmeFunc();
+}
+
+function aoAlternarDiaAlarmeFunc(chk) {
+  const lbl = chk.closest('.dia-check-chip') || document.getElementById('lbl-dia-func-' + chk.value);
+  if (lbl) {
+    if (chk.checked) lbl.classList.add('ativo');
+    else lbl.classList.remove('ativo');
+  }
+  atualizarBadgeResumoDiasAlarmeFunc();
+}
+
+function aplicarPresetDiasAlarmeFunc(tipo) {
+  let dias = [1, 2, 3, 4, 5];
+  if (tipo === 'seg-sab') dias = [1, 2, 3, 4, 5, 6];
+  else if (tipo === 'todos') dias = [0, 1, 2, 3, 4, 5, 6];
+
+  [1, 2, 3, 4, 5].forEach(d => {
+    const chk = document.getElementById('cfg-dia-func-' + d);
+    if (chk) {
+      chk.checked = dias.includes(d);
+      aoAlternarDiaAlarmeFunc(chk);
+    }
+  });
+
+  const chkSab = document.getElementById('cfg-dia-func-6');
+  if (chkSab) chkSab.checked = dias.includes(6);
+  const chipSab = document.getElementById('cfg-dia-func-6-chip');
+  if (chipSab) { chipSab.checked = dias.includes(6); aoAlternarDiaAlarmeFunc(chipSab); }
+
+  const chkDom = document.getElementById('cfg-dia-func-0');
+  if (chkDom) chkDom.checked = dias.includes(0);
+  const chipDom = document.getElementById('cfg-dia-func-0-chip');
+  if (chipDom) { chipDom.checked = dias.includes(0); aoAlternarDiaAlarmeFunc(chipDom); }
+
+  sincronizarCardsSabadoDomingoFunc();
+  atualizarBadgeResumoDiasAlarmeFunc();
+}
+
+function atualizarBadgeResumoDiasAlarmeFunc() {
+  const badge = document.getElementById('badge-alarme-dias-resumo-func');
+  if (!badge) return;
+  const nomes = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  const selecionados = [];
+  [1, 2, 3, 4, 5].forEach(d => {
+    const chk = document.getElementById('cfg-dia-func-' + d);
+    if (chk && chk.checked) selecionados.push(d);
+  });
+  const chkSab = document.getElementById('cfg-dia-func-6');
+  if (chkSab && chkSab.checked) selecionados.push(6);
+  const chkDom = document.getElementById('cfg-dia-func-0');
+  if (chkDom && chkDom.checked) selecionados.push(0);
+
+  if (selecionados.length === 5 && [1,2,3,4,5].every(d => selecionados.includes(d))) {
+    badge.textContent = 'Seg a Sex';
+  } else if (selecionados.length === 6 && [1,2,3,4,5,6].every(d => selecionados.includes(d))) {
+    badge.textContent = 'Seg a Sáb (c/ Sábado)';
+  } else if (selecionados.length === 7) {
+    badge.textContent = 'Todos os Dias (c/ Sáb e Dom)';
+  } else if (selecionados.length === 0) {
+    badge.textContent = 'Nenhum Dia';
+  } else {
+    badge.textContent = selecionados.map(d => nomes[d]).join(', ');
+  }
+}
+
 function abrirConfigHorariosAlarmeCliente() {
+  if (typeof desbloquearAudioGeral === 'function') desbloquearAudioGeral();
   const cfg = (function() {
     try {
       const s = localStorage.getItem('sdv_config_alarme_ponto');
       if (s) return JSON.parse(s);
     } catch(_) {}
-    return { ent: '08:00', alm: '12:00', vol: '13:30', sai: '17:30', antecedenciaMin: 5 };
+    return { ativo: true, ent: '08:00', alm: '12:00', vol: '13:30', sai: '17:30', antecedenciaMin: 5, diasSemana: [1,2,3,4,5] };
   })();
+
+  const chkAtivo = document.getElementById('cfg-ponto-ativo-func');
+  if (chkAtivo) {
+    chkAtivo.checked = cfg.ativo !== false;
+    aoAlternarAlarmeMestreFunc(chkAtivo);
+  }
 
   const entEl = document.getElementById('cfg-ponto-ent-func');
   const almEl = document.getElementById('cfg-ponto-alm-func');
@@ -10448,6 +10960,28 @@ function abrirConfigHorariosAlarmeCliente() {
   if (saiEl) saiEl.value = cfg.sai || '17:30';
   if (antEl) antEl.value = String(cfg.antecedenciaMin !== undefined ? cfg.antecedenciaMin : 5);
 
+  const diasCfg = (Array.isArray(cfg.diasSemana) && cfg.diasSemana.length) ? cfg.diasSemana : [1, 2, 3, 4, 5];
+  [1, 2, 3, 4, 5].forEach(d => {
+    const chk = document.getElementById('cfg-dia-func-' + d);
+    if (chk) {
+      chk.checked = diasCfg.includes(d);
+      aoAlternarDiaAlarmeFunc(chk);
+    }
+  });
+
+  const chkSab = document.getElementById('cfg-dia-func-6');
+  if (chkSab) chkSab.checked = diasCfg.includes(6);
+  const chipSab = document.getElementById('cfg-dia-func-6-chip');
+  if (chipSab) { chipSab.checked = diasCfg.includes(6); aoAlternarDiaAlarmeFunc(chipSab); }
+
+  const chkDom = document.getElementById('cfg-dia-func-0');
+  if (chkDom) chkDom.checked = diasCfg.includes(0);
+  const chipDom = document.getElementById('cfg-dia-func-0-chip');
+  if (chipDom) { chipDom.checked = diasCfg.includes(0); aoAlternarDiaAlarmeFunc(chipDom); }
+
+  sincronizarCardsSabadoDomingoFunc();
+  atualizarBadgeResumoDiasAlarmeFunc();
+
   const m = document.getElementById('modal-config-alarme-ponto');
   if (m) m.style.display = 'flex';
 }
@@ -10458,45 +10992,84 @@ function fecharConfigHorariosAlarmeCliente(e) {
   if (m) m.style.display = 'none';
 }
 
-function puxarHorarioPrevistoParaAlarmeFuncionario() {
-  const cfgHorario = (function() {
+function salvarConfigHorariosAlarmeCliente() {
+  const cfg = (function() {
     try {
-      const s = localStorage.getItem('sdv_horario_previsto_custom');
+      const s = localStorage.getItem('sdv_config_alarme_ponto');
       if (s) return JSON.parse(s);
     } catch(_) {}
-    return { entrada: '08:00', almocoSai: '12:00', almocoVolta: '13:30', saida: '17:30' };
+    return { ent: '08:00', alm: '12:00', vol: '13:30', sai: '17:30', antecedenciaMin: 5 };
   })();
+
+  const chkAtivo = document.getElementById('cfg-ponto-ativo-func');
+  cfg.ativo = chkAtivo ? chkAtivo.checked : true;
 
   const entEl = document.getElementById('cfg-ponto-ent-func');
   const almEl = document.getElementById('cfg-ponto-alm-func');
   const volEl = document.getElementById('cfg-ponto-vol-func');
   const saiEl = document.getElementById('cfg-ponto-sai-func');
+  const antEl = document.getElementById('cfg-ponto-antecedencia-func');
 
-  if (entEl && cfgHorario.entrada) entEl.value = cfgHorario.entrada;
-  if (almEl && cfgHorario.almocoSai) almEl.value = cfgHorario.almocoSai;
-  if (volEl && cfgHorario.almocoVolta) volEl.value = cfgHorario.almocoVolta;
-  if (saiEl && cfgHorario.saida) saiEl.value = cfgHorario.saida;
-  mostrarToastNotificacao('Horários Sincronizados', 'Horários do alarme atualizados com o horário de trabalho previsto.', '⚡');
+  if (entEl) cfg.ent = entEl.value || '08:00';
+  if (almEl) cfg.alm = almEl.value || '12:00';
+  if (volEl) cfg.vol = volEl.value || '13:30';
+  if (saiEl) cfg.sai = saiEl.value || '17:30';
+  if (antEl) cfg.antecedenciaMin = Number(antEl.value) || 5;
+
+  const diasSalvar = [];
+  [1, 2, 3, 4, 5].forEach(d => {
+    const chk = document.getElementById('cfg-dia-func-' + d);
+    if (chk && chk.checked) diasSalvar.push(d);
+  });
+  const chkSab = document.getElementById('cfg-dia-func-6');
+  if (chkSab && chkSab.checked) diasSalvar.push(6);
+  const chkDom = document.getElementById('cfg-dia-func-0');
+  if (chkDom && chkDom.checked) diasSalvar.push(0);
+
+  cfg.diasSemana = diasSalvar;
+
+  try {
+    localStorage.setItem('sdv_config_alarme_ponto', JSON.stringify(cfg));
+  } catch(_) {}
+
+  fecharConfigHorariosAlarmeCliente();
+  const statusTxt = cfg.ativo ? '🔔 Alarme ATIVADO' : '🔕 Alarme DESATIVADO';
+  if (typeof mostrarToastNotificacao === 'function') {
+    mostrarToastNotificacao('Alarme de Ponto', `Configurações salvas: ${statusTxt}!`, '⏰');
+  } else {
+    alert(`Configurações salvas: ${statusTxt}!`);
+  }
 }
 
 function testarSireneFuncionario() {
-  try {
-    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    if (!AudioCtx) return;
-    const ctx = new AudioCtx();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(880, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.3);
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.3);
-    mostrarToastNotificacao('Sirene de Teste', 'Som do alarme funcionando corretamente!', '🔊');
-  } catch(_) {}
+  if (typeof tocarSireneAlarmePonto === 'function') {
+    tocarSireneAlarmePonto(true);
+  } else {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) {
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        gain.gain.setValueAtTime(0.4, ctx.currentTime);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.8);
+      }
+    } catch(_) {}
+    if (navigator.vibrate) {
+      try { navigator.vibrate([250, 100, 250]); } catch(_) {}
+    }
+  }
+  if (typeof mostrarToastNotificacao === 'function') {
+    mostrarToastNotificacao('Teste de Som', 'Sirene de alarme executada com sucesso!', '🔊');
+  }
+}
+
+
 }
 
 function salvarConfigHorariosAlarmeCliente() {
@@ -10506,6 +11079,12 @@ function salvarConfigHorariosAlarmeCliente() {
   const sai = document.getElementById('cfg-ponto-sai-func')?.value || '17:30';
   const ant = Number(document.getElementById('cfg-ponto-antecedencia-func')?.value) || 5;
 
+  const diasSalvar = [];
+  [0, 1, 2, 3, 4, 5, 6].forEach(d => {
+    const chk = document.getElementById('cfg-dia-func-' + d);
+    if (chk && chk.checked) diasSalvar.push(d);
+  });
+
   const cfg = {
     ativo: true,
     antecedenciaMin: ant,
@@ -10513,6 +11092,7 @@ function salvarConfigHorariosAlarmeCliente() {
     alm: alm,
     vol: vol,
     sai: sai,
+    diasSemana: diasSalvar.length ? diasSalvar : [1, 2, 3, 4, 5],
     bloquearInativos: true
   };
 
