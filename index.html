@@ -4370,9 +4370,9 @@
 
     <div class="field-row" style="margin-bottom:12px;">
       <div class="field">
-        <label style="display:flex;align-items:center;justify-content:space-between;">
+        <label style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;">
           <span>Telefone / WhatsApp</span>
-          <button type="button" id="btn-buscar-zap-agenda" onclick="buscarContatoWhatsApp()" title="Buscar contato ou abrir no WhatsApp" style="font-size:11px;font-weight:800;color:#4ade80;background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.3);padding:2px 8px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;transition:all 0.2s;">💬 Buscar no WhatsApp</button>
+          <button type="button" id="btn-buscar-zap-agenda" onclick="abrirModalBuscaWhatsApp()" title="Buscar nos 2 WhatsApps: Business (99760-2237) e WhatsApp (98574-9686)" style="font-size:11px;font-weight:800;color:#4ade80;background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.3);padding:2px 8px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;transition:all 0.2s;">💬 Buscar no WhatsApp (2 Contatos)</button>
         </label>
         <input id="agenda-novo-tel" placeholder="(85) 99999-9999" oninput="atualizarBtnWhatsAppAgenda()" style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.12);color:#fff;font-family:var(--font);" />
       </div>
@@ -4455,6 +4455,75 @@
       <button type="button" class="btn btn-sec btn-sm" onclick="fecharModalNovoCompromissoAgenda()">Cancelar</button>
       <button type="button" id="agenda-modal-btn-salvar-simples" class="btn btn-sec btn-sm" onclick="salvarNovoCompromissoAgenda(false)" style="border-color:rgba(201,168,76,0.5);color:var(--gold-light);">💾 Salvar sem enviar</button>
       <button type="button" id="agenda-modal-btn-salvar" class="btn btn-primary btn-sm" onclick="salvarNovoCompromissoAgenda(true)">📅 Salvar + Enviar WhatsApp</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL SELEÇÃO DOS 2 WHATSAPPS PARA BUSCA DE CONTATO ══ -->
+<div id="modal-buscar-contato-whatsapp" class="modal-overlay" style="display:none;z-index:9999999;" onclick="if(event.target===this)fecharModalBuscaWhatsApp()">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:440px;padding:22px 20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div style="font-size:16px;font-weight:900;color:#fff;display:flex;align-items:center;gap:8px;">
+        <span>🔍</span> Buscar Contato no WhatsApp
+      </div>
+      <button class="modal-close" onclick="fecharModalBuscaWhatsApp()">✕</button>
+    </div>
+
+    <div style="font-size:12px;color:var(--muted);margin-bottom:14px;">
+      Selecione qual dos 2 WhatsApps deseja abrir para buscar o contato do cliente:
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <!-- OPÇÃO 1: WHATSAPP BUSINESS -->
+      <div style="background:rgba(34,197,94,0.08);border:1.5px solid rgba(34,197,94,0.3);border-radius:12px;padding:12px 14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <div style="font-weight:900;font-size:13.5px;color:#4ade80;display:flex;align-items:center;gap:6px;">
+            <span>🏢</span> WhatsApp Business
+          </div>
+          <span style="font-size:11px;background:#22c55e;color:#000;padding:2px 7px;border-radius:999px;font-weight:900;">55 85 99760-2237</span>
+        </div>
+        <div style="font-size:11.5px;color:rgba(255,255,255,0.7);margin-bottom:10px;">
+          Conta comercial principal da SD Móveis Projetados.
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button type="button" class="btn btn-sm" onclick="aplicarNumeroWhatsAppAgenda('5585997602237')" style="flex:1;background:rgba(255,255,255,0.08);color:#fff;font-size:11px;">📋 Usar este número</button>
+          <button type="button" class="btn btn-sm" onclick="abrirAppWhatsApp('business')" style="flex:1.3;background:#22c55e;color:#000;font-weight:900;font-size:11.5px;">🚀 Abrir WhatsApp Business</button>
+        </div>
+      </div>
+
+      <!-- OPÇÃO 2: WHATSAPP NORMAL / CONTATO -->
+      <div style="background:rgba(56,189,248,0.08);border:1.5px solid rgba(56,189,248,0.3);border-radius:12px;padding:12px 14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <div style="font-weight:900;font-size:13.5px;color:#38bdf8;display:flex;align-items:center;gap:6px;">
+            <span>💬</span> WhatsApp Contato / Pessoal
+          </div>
+          <span style="font-size:11px;background:#38bdf8;color:#000;padding:2px 7px;border-radius:999px;font-weight:900;">55 85 98574-9686</span>
+        </div>
+        <div style="font-size:11.5px;color:rgba(255,255,255,0.7);margin-bottom:10px;">
+          Segundo WhatsApp oficial da empresa.
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button type="button" class="btn btn-sm" onclick="aplicarNumeroWhatsAppAgenda('5585985749686')" style="flex:1;background:rgba(255,255,255,0.08);color:#fff;font-size:11px;">📋 Usar este número</button>
+          <button type="button" class="btn btn-sm" onclick="abrirAppWhatsApp('pessoal')" style="flex:1.3;background:#38bdf8;color:#000;font-weight:900;font-size:11.5px;">🚀 Abrir WhatsApp</button>
+        </div>
+      </div>
+
+      <!-- OPÇÃO 3: CLIENTES CADASTRADOS NO SISTEMA -->
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:10px 14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <div style="font-weight:700;font-size:12.5px;color:#fff;display:flex;align-items:center;gap:6px;">
+            <span>👥</span> Buscar nos Clientes do Sistema
+          </div>
+        </div>
+        <select id="select-cliente-zap-rapido" onchange="selecionarClienteCadastradoParaZap(this.value)" style="width:100%;padding:8px;border-radius:8px;background:#0d0d1a;border:1px solid rgba(255,255,255,0.18);color:#fff;font-size:12px;cursor:pointer;">
+          <option value="">-- Escolher dos Clientes Cadastrados --</option>
+        </select>
+      </div>
+
+      <!-- OPÇÃO 4: AGENDA DO CELULAR -->
+      <button type="button" class="btn btn-sec btn-sm" onclick="selecionarContatoAgendaAparelho()" style="padding:10px;justify-content:center;font-size:12px;font-weight:800;border-color:rgba(201,168,76,0.4);color:var(--gold-light);">
+        <span>📇</span> Buscar na Agenda de Contatos do Celular
+      </button>
     </div>
   </div>
 </div>
@@ -14457,60 +14526,122 @@ function salvarNovoCompromissoAgenda(enviarWhatsApp = false) {
   verificarNotificacoesAgenda();
 }
 
-// Abre o WhatsApp ou busca contato na agenda do aparelho / cadastro de clientes
-async function buscarContatoWhatsApp() {
+function abrirModalBuscaWhatsApp() {
+  const m = document.getElementById('modal-buscar-contato-whatsapp');
+  if (m) {
+    const sel = document.getElementById('select-cliente-zap-rapido');
+    if (sel) {
+      sel.innerHTML = '<option value="">-- Escolher dos Clientes Cadastrados --</option>';
+      if (typeof clientes !== 'undefined' && Array.isArray(clientes)) {
+        clientes.forEach((cli, idx) => {
+          if (cli && (cli.nome || cli.tel)) {
+            const opt = document.createElement('option');
+            opt.value = String(idx);
+            opt.textContent = `${cli.nome || 'Sem nome'}${cli.tel ? ' - ' + cli.tel : ''}`;
+            sel.appendChild(opt);
+          }
+        });
+      }
+    }
+    m.style.display = 'flex';
+  }
+}
+
+function fecharModalBuscaWhatsApp() {
+  const m = document.getElementById('modal-buscar-contato-whatsapp');
+  if (m) m.style.display = 'none';
+}
+
+function selecionarClienteCadastradoParaZap(val) {
+  if (val === '' || typeof clientes === 'undefined') return;
+  const idx = parseInt(val, 10);
+  const cli = clientes[idx];
+  if (!cli) return;
+
   const telInput = document.getElementById('agenda-novo-tel');
   const nomeInput = document.getElementById('agenda-novo-cliente');
-  let tel = (telInput || {}).value || '';
-  let telLimpo = tel.replace(/\D/g, '');
+  const endInput = document.getElementById('agenda-novo-end');
 
-  // 1. Se campo de telefone estiver vazio e o navegador suportar Contact Picker API (Chrome Android / PWA)
-  if (!telLimpo && 'contacts' in navigator && 'ContactsManager' in window) {
+  if (cli.tel && telInput) {
+    telInput.value = cli.tel;
+    atualizarBtnWhatsAppAgenda();
+  }
+  if (cli.nome && nomeInput && !nomeInput.value) {
+    nomeInput.value = cli.nome;
+  }
+  if (cli.end && endInput && !endInput.value) {
+    endInput.value = cli.end + (cli.cidade ? ' - ' + cli.cidade : '');
+    atualizarBotaoMapsAgenda();
+  }
+  fecharModalBuscaWhatsApp();
+  mostrarToastAprovacao(`✅ Dados de ${cli.nome || 'cliente'} preenchidos!`);
+}
+
+function aplicarNumeroWhatsAppAgenda(num) {
+  const inp = document.getElementById('agenda-novo-tel');
+  if (inp) {
+    const limpo = num.replace(/^55/, '');
+    inp.value = limpo.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+    atualizarBtnWhatsAppAgenda();
+  }
+  fecharModalBuscaWhatsApp();
+  mostrarToastAprovacao('✅ Número preenchido no agendamento!');
+}
+
+async function selecionarContatoAgendaAparelho() {
+  const telInput = document.getElementById('agenda-novo-tel');
+  const nomeInput = document.getElementById('agenda-novo-cliente');
+  if ('contacts' in navigator && 'ContactsManager' in window) {
     try {
       const contacts = await navigator.contacts.select(['name', 'tel'], { multiple: false });
       if (contacts && contacts.length > 0) {
         const c = contacts[0];
-        if (c.tel && c.tel.length > 0) {
+        if (c.tel && c.tel.length > 0 && telInput) {
           telInput.value = c.tel[0];
-          tel = c.tel[0];
-          telLimpo = tel.replace(/\D/g, '');
+          atualizarBtnWhatsAppAgenda();
         }
         if (c.name && c.name.length > 0 && nomeInput && !nomeInput.value) {
           nomeInput.value = c.name[0];
         }
-        atualizarBtnWhatsAppAgenda();
-        mostrarToastAprovacao('✅ Contato selecionado da agenda do aparelho!');
+        fecharModalBuscaWhatsApp();
+        mostrarToastAprovacao('✅ Contato selecionado da agenda!');
         return;
       }
     } catch (_) {}
+  } else {
+    mostrarToastAprovacao('ℹ️ Toque em um dos 2 WhatsApps para abrir o aplicativo.');
   }
+}
 
-  // 2. Se telefone vazio mas nome informado, busca nos clientes cadastrados
-  if (!telLimpo && nomeInput && nomeInput.value.trim() && typeof clientes !== 'undefined' && Array.isArray(clientes)) {
-    const achado = clientes.find(c => c.nome && c.nome.toLowerCase().includes(nomeInput.value.trim().toLowerCase()));
-    if (achado && achado.tel) {
-      telInput.value = achado.tel;
-      tel = achado.tel;
-      telLimpo = tel.replace(/\D/g, '');
-      if (achado.end && document.getElementById('agenda-novo-end') && !document.getElementById('agenda-novo-end').value) {
-        document.getElementById('agenda-novo-end').value = achado.end + (achado.cidade ? ' - ' + achado.cidade : '');
-        atualizarBotaoMapsAgenda();
-      }
-      atualizarBtnWhatsAppAgenda();
-      mostrarToastAprovacao(`✅ Telefone de ${achado.nome} localizado!`);
+function abrirAppWhatsApp(tipo) {
+  const telInput = document.getElementById('agenda-novo-tel');
+  const tel = (telInput ? telInput.value : '').replace(/\D/g, '');
+  const isAndroid = /android/i.test(navigator.userAgent);
+  const numAlvo = (tipo === 'business') ? '5585997602237' : '5585985749686';
+  const pkg = (tipo === 'business') ? 'com.whatsapp.w4b' : 'com.whatsapp';
+
+  if (tel && tel.length >= 8) {
+    const prefix = tel.startsWith('55') ? '' : '55';
+    const numFinal = `${prefix}${tel}`;
+    if (isAndroid) {
+      window.location.href = `intent://send?phone=${numFinal}#Intent;scheme=whatsapp;package=${pkg};end`;
+    } else {
+      window.open(`https://wa.me/${numFinal}`, '_blank', 'noopener');
+    }
+  } else {
+    // Quando o campo está vazio, abre o app do WhatsApp correspondente para o usuário buscar nas conversas
+    if (isAndroid) {
+      window.location.href = `intent://#Intent;package=${pkg};scheme=whatsapp;end`;
+    } else {
+      window.open(`https://wa.me/${numAlvo}`, '_blank', 'noopener');
     }
   }
+  fecharModalBuscaWhatsApp();
+}
 
-  // 3. Se ainda não possui número válido
-  if (telLimpo.length < 8) {
-    mostrarToastAprovacao('⚠️ Digite o telefone ou selecione um cliente para abrir o WhatsApp.');
-    if (telInput) telInput.focus();
-    return;
-  }
-
-  // 4. Abre o WhatsApp com o número
-  const prefix = telLimpo.startsWith('55') ? '' : '55';
-  window.open(`https://wa.me/${prefix}${telLimpo}`, '_blank', 'noopener');
+// Abre o modal de busca dos 2 WhatsApps ou contatos
+function buscarContatoWhatsApp() {
+  abrirModalBuscaWhatsApp();
 }
 
 // Atualiza cor do botão de WhatsApp conforme o número está preenchido
