@@ -2695,17 +2695,17 @@
           <span class="ponto-act-label">1ª Entrada</span>
           <span class="ponto-act-hora" id="badge-ponto-ent1"></span>
         </button>
-        <button type="button" id="btn-ponto-alm" class="ponto-btn-action ponto-act-almoco" onclick="registrarBatidaPonto('saidaAlmoco')">
+        <button type="button" id="btn-ponto-alm" class="ponto-btn-action ponto-act-almoco" onclick="confirmarSaidaAlmocoPonto()">
           <span class="ponto-act-icon">☕</span>
           <span class="ponto-act-label">Saída Almoço</span>
           <span class="ponto-act-hora" id="badge-ponto-alm"></span>
         </button>
-        <button type="button" id="btn-ponto-vol" class="ponto-btn-action ponto-act-volta" onclick="registrarBatidaPonto('voltaAlmoco')">
+        <button type="button" id="btn-ponto-vol" class="ponto-btn-action ponto-act-volta" onclick="confirmarVoltaAlmocoPonto()">
           <span class="ponto-act-icon">▶️</span>
           <span class="ponto-act-label">Volta Almoço</span>
           <span class="ponto-act-hora" id="badge-ponto-vol"></span>
         </button>
-        <button type="button" id="btn-ponto-sai" class="ponto-btn-action ponto-act-saida" onclick="registrarBatidaPonto('saidaFinal')">
+        <button type="button" id="btn-ponto-sai" class="ponto-btn-action ponto-act-saida" onclick="confirmarSaidaFinalPonto()">
           <span class="ponto-act-icon">[➔</span>
           <span class="ponto-act-label">Saída Final</span>
           <span class="ponto-act-hora" id="badge-ponto-sai"></span>
@@ -4410,6 +4410,90 @@
       </button>
       <button type="button" onclick="confirmarEntradaExecutar()" style="flex:2;padding:13px;border-radius:10px;border:none;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:14px;font-weight:900;cursor:pointer;box-shadow:0 4px 16px rgba(16,185,129,0.4);">
         ✅ Confirmar Entrada
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL CONFIRMAÇÃO DE SAÍDA ALMOÇO ══ -->
+<div id="modal-confirmacao-almsai" class="modal-overlay" style="display:none;z-index:1000200;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);" onclick="cancelarConfirmacaoAlmocoSai()">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:390px;text-align:center;border:2px solid #f59e0b;box-shadow:0 0 40px rgba(245,158,11,0.5);padding:28px 22px;border-radius:20px;background:linear-gradient(145deg,#1c1305,#261907);">
+    <div style="font-size:52px;line-height:1;margin-bottom:10px;">☕</div>
+    <div style="font-size:12px;font-weight:900;color:#f59e0b;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:8px;">Confirmar Registro de Ponto</div>
+    <h2 style="font-size:19px;font-weight:900;color:#fff;margin:0 0 6px 0;">Saída para Almoço</h2>
+    <div style="font-size:13px;color:#94a3b8;margin-bottom:16px;">
+      Colaborador: <strong style="color:#fff;" id="modal-conf-almsai-nome">—</strong>
+    </div>
+    <div style="background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.35);border-radius:12px;padding:14px 18px;margin-bottom:14px;">
+      <div style="font-size:13px;color:#cbd5e1;margin-bottom:4px;">Horário de registro:</div>
+      <div style="font-size:36px;font-weight:900;color:#fbbf24;letter-spacing:0.05em;" id="modal-conf-almsai-hora">--:--</div>
+      <div style="font-size:11.5px;color:#fcd34d;margin-top:6px;font-weight:700;">
+        Horário programado: <span id="modal-conf-almsai-prog">12:00</span>
+      </div>
+      <div style="font-size:11px;color:#94a3b8;margin-top:4px;">Após confirmar, o botão ficará travado e o status mudará para "Em Almoço".</div>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button type="button" onclick="cancelarConfirmacaoAlmocoSai()" style="flex:1;padding:13px;border-radius:10px;border:1.5px solid rgba(148,163,184,0.3);background:rgba(255,255,255,0.05);color:#94a3b8;font-size:13px;font-weight:700;cursor:pointer;">
+        ✕ Cancelar
+      </button>
+      <button type="button" onclick="confirmarAlmocoSaiExecutar()" style="flex:2;padding:13px;border-radius:10px;border:none;background:linear-gradient(135deg,#d97706,#f59e0b);color:#000;font-size:14px;font-weight:900;cursor:pointer;box-shadow:0 4px 16px rgba(245,158,11,0.4);">
+        ✅ Confirmar Saída
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL CONFIRMAÇÃO DE VOLTA ALMOÇO ══ -->
+<div id="modal-confirmacao-almvol" class="modal-overlay" style="display:none;z-index:1000200;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);" onclick="cancelarConfirmacaoAlmocoVolta()">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:390px;text-align:center;border:2px solid #38bdf8;box-shadow:0 0 40px rgba(56,189,248,0.5);padding:28px 22px;border-radius:20px;background:linear-gradient(145deg,#061726,#0a2138);">
+    <div style="font-size:52px;line-height:1;margin-bottom:10px;">▶️</div>
+    <div style="font-size:12px;font-weight:900;color:#38bdf8;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:8px;">Confirmar Registro de Ponto</div>
+    <h2 style="font-size:19px;font-weight:900;color:#fff;margin:0 0 6px 0;">Volta do Almoço</h2>
+    <div style="font-size:13px;color:#94a3b8;margin-bottom:16px;">
+      Colaborador: <strong style="color:#fff;" id="modal-conf-almvol-nome">—</strong>
+    </div>
+    <div style="background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.35);border-radius:12px;padding:14px 18px;margin-bottom:14px;">
+      <div style="font-size:13px;color:#cbd5e1;margin-bottom:4px;">Horário de registro:</div>
+      <div style="font-size:36px;font-weight:900;color:#38bdf8;letter-spacing:0.05em;" id="modal-conf-almvol-hora">--:--</div>
+      <div style="font-size:11.5px;color:#7dd3fc;margin-top:6px;font-weight:700;">
+        Horário programado: <span id="modal-conf-almvol-prog">13:00</span>
+      </div>
+      <div style="font-size:11px;color:#94a3b8;margin-top:4px;">Após confirmar, o botão ficará travado e o status mudará para "Presente".</div>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button type="button" onclick="cancelarConfirmacaoAlmocoVolta()" style="flex:1;padding:13px;border-radius:10px;border:1.5px solid rgba(148,163,184,0.3);background:rgba(255,255,255,0.05);color:#94a3b8;font-size:13px;font-weight:700;cursor:pointer;">
+        ✕ Cancelar
+      </button>
+      <button type="button" onclick="confirmarAlmocoVoltaExecutar()" style="flex:2;padding:13px;border-radius:10px;border:none;background:linear-gradient(135deg,#0284c7,#38bdf8);color:#fff;font-size:14px;font-weight:900;cursor:pointer;box-shadow:0 4px 16px rgba(56,189,248,0.4);">
+        ✅ Confirmar Volta
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL CONFIRMAÇÃO DE SAÍDA FINAL ══ -->
+<div id="modal-confirmacao-saida-final" class="modal-overlay" style="display:none;z-index:1000200;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);" onclick="cancelarConfirmacaoSaidaFinal()">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:390px;text-align:center;border:2px solid #ef4444;box-shadow:0 0 40px rgba(239,68,68,0.5);padding:28px 22px;border-radius:20px;background:linear-gradient(145deg,#240808,#320c0c);">
+    <div style="font-size:52px;line-height:1;margin-bottom:10px;">[➔</div>
+    <div style="font-size:12px;font-weight:900;color:#f87171;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:8px;">Confirmar Encerramento de Jornada</div>
+    <h2 style="font-size:19px;font-weight:900;color:#fff;margin:0 0 6px 0;">Saída Final</h2>
+    <div style="font-size:13px;color:#94a3b8;margin-bottom:16px;">
+      Colaborador: <strong style="color:#fff;" id="modal-conf-saida-nome">—</strong>
+    </div>
+    <div style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.35);border-radius:12px;padding:14px 18px;margin-bottom:14px;">
+      <div style="font-size:13px;color:#cbd5e1;margin-bottom:4px;">Horário de registro:</div>
+      <div style="font-size:36px;font-weight:900;color:#f87171;letter-spacing:0.05em;" id="modal-conf-saida-hora">--:--</div>
+      <div style="font-size:11.5px;color:#fca5a5;margin-top:6px;font-weight:700;">
+        Horário programado: <span id="modal-conf-saida-prog">17:30</span>
+      </div>
+      <div style="font-size:11px;color:#94a3b8;margin-top:4px;">Esta ação encerra a jornada normal de hoje e trava o botão.</div>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button type="button" onclick="cancelarConfirmacaoSaidaFinal()" style="flex:1;padding:13px;border-radius:10px;border:1.5px solid rgba(148,163,184,0.3);background:rgba(255,255,255,0.05);color:#94a3b8;font-size:13px;font-weight:700;cursor:pointer;">
+        ✕ Cancelar
+      </button>
+      <button type="button" onclick="confirmarSaidaFinalExecutar()" style="flex:2;padding:13px;border-radius:10px;border:none;background:linear-gradient(135deg,#dc2626,#ef4444);color:#fff;font-size:14px;font-weight:900;cursor:pointer;box-shadow:0 4px 16px rgba(239,68,68,0.4);">
+        ✅ Encerrar Dia
       </button>
     </div>
   </div>
@@ -9847,19 +9931,19 @@ function atualizarStatusBatidaColaborador() {
       btn.classList.add('batido');
       bd.textContent = '✓ ' + valor;
       bd.style.display = 'inline-block';
-      // Trava o botão de entrada para não permitir re-registro
-      if (btnId === 'btn-ponto-ent1') {
+      // Trava os botões para não permitir re-registro
+      if (['btn-ponto-ent1', 'btn-ponto-alm', 'btn-ponto-vol', 'btn-ponto-sai'].includes(btnId)) {
         btn.disabled = true;
         btn.style.opacity = '0.6';
         btn.style.cursor = 'not-allowed';
-        btn.title = 'Entrada já registrada hoje';
+        btn.title = labelTurno + ' já registrado(a) hoje';
       }
     } else {
       btn.classList.remove('batido');
       bd.textContent = '';
       bd.style.display = 'none';
       // Desbloqueio (novo dia / sem registro)
-      if (btnId === 'btn-ponto-ent1') {
+      if (['btn-ponto-ent1', 'btn-ponto-alm', 'btn-ponto-vol', 'btn-ponto-sai'].includes(btnId)) {
         btn.disabled = false;
         btn.style.opacity = '';
         btn.style.cursor = '';
@@ -10014,6 +10098,13 @@ function concluirBatidaSaidaFinal(colabId, horaStr, justificada, motivoJustifica
   const msg = justificada
     ? `✅ Saída Final registrada às ${horaStr} com justificativa: "${p.justificativaSaida}"! Dia finalizado sem horas negativas.`
     : `✅ Saída Final registrada às ${horaStr} para ${colab.nome}!`;
+  const btnSai = document.getElementById('btn-ponto-sai');
+  if (btnSai) {
+    btnSai.disabled = true;
+    btnSai.style.opacity = '0.6';
+    btnSai.style.cursor = 'not-allowed';
+    btnSai.title = 'Saída Final já registrada hoje';
+  }
   mostrarMsgPonto(msg, true);
 }
 
@@ -10062,6 +10153,226 @@ function confirmarEntradaExecutar() {
 
 function cancelarConfirmacaoEntrada() {
   const modal = document.getElementById('modal-confirmacao-entrada');
+  if (modal) modal.style.display = 'none';
+}
+
+// ── CONFIRMAÇÃO DE SAÍDA PARA ALMOÇO ──
+function confirmarSaidaAlmocoPonto() {
+  const btn = document.getElementById('btn-ponto-alm');
+  if (btn && (btn.classList.contains('batido') || btn.disabled)) {
+    mostrarMsgPonto('✅ Saída para Almoço já registrada hoje.', true);
+    return;
+  }
+
+  const sel = document.getElementById('ponto-sel-colaborador');
+  let colabId = parseInt(sel ? sel.value : 0);
+  if (!colabId && funcionariosLista.length > 0) colabId = funcionariosLista[0].id;
+  const colab = funcionariosLista.find(f => f.id === colabId);
+  if (!colab) {
+    mostrarMsgPonto('⚠️ Nenhum funcionário selecionado.', false);
+    return;
+  }
+
+  const dataHoje = getHojeFormatado();
+  let p = pontosLista.find(x => (x.colaboradorId === colabId || (x.colaboradorNome && x.colaboradorNome.toLowerCase() === colab.nome.toLowerCase())) && ehDataHoje(x.data));
+  if (p && p.saidaAlmoco) {
+    mostrarMsgPonto('✅ Saída para Almoço já registrada hoje.', true);
+    return;
+  }
+  if (!p || !p.entrada1) {
+    mostrarMsgPonto('⚠️ Registre primeiro a 1ª Entrada antes da Saída para Almoço.', false);
+    return;
+  }
+
+  const horaProg = colab.horarioAlmocoSai || '12:00';
+  const agora = new Date();
+  const minAgora = agora.getHours() * 60 + agora.getMinutes();
+  const [hP, mP] = horaProg.split(':').map(Number);
+  const minProg = (hP * 60) + mP;
+  const hh = String(agora.getHours()).padStart(2, '0');
+  const mm = String(agora.getMinutes()).padStart(2, '0');
+  const horaStr = `${hh}:${mm}`;
+
+  // Bloqueio rigoroso antes do horário programado
+  if (minAgora < minProg) {
+    mostrarMsgPonto(`🔒 Registro Bloqueado! A Saída para Almoço não pode ser registrada antes do horário programado (${horaProg}). Horário atual: ${horaStr}.`, false);
+    return;
+  }
+
+  const elNome = document.getElementById('modal-conf-almsai-nome');
+  const elHora = document.getElementById('modal-conf-almsai-hora');
+  const elProg = document.getElementById('modal-conf-almsai-prog');
+  if (elNome) elNome.textContent = colab.nome;
+  if (elHora) elHora.textContent = horaStr;
+  if (elProg) elProg.textContent = horaProg;
+
+  const modal = document.getElementById('modal-confirmacao-almsai');
+  if (modal) modal.style.display = 'flex';
+}
+
+function confirmarAlmocoSaiExecutar() {
+  const modal = document.getElementById('modal-confirmacao-almsai');
+  if (modal) modal.style.display = 'none';
+  registrarBatidaPonto('saidaAlmoco');
+  const btn = document.getElementById('btn-ponto-alm');
+  if (btn) {
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
+    btn.style.cursor = 'not-allowed';
+    btn.title = 'Saída Almoço já registrada hoje';
+  }
+}
+
+function cancelarConfirmacaoAlmocoSai() {
+  const modal = document.getElementById('modal-confirmacao-almsai');
+  if (modal) modal.style.display = 'none';
+}
+
+// ── CONFIRMAÇÃO DE VOLTA DO ALMOÇO ──
+function confirmarVoltaAlmocoPonto() {
+  const btn = document.getElementById('btn-ponto-vol');
+  if (btn && (btn.classList.contains('batido') || btn.disabled)) {
+    mostrarMsgPonto('✅ Volta do Almoço já registrada hoje.', true);
+    return;
+  }
+
+  const sel = document.getElementById('ponto-sel-colaborador');
+  let colabId = parseInt(sel ? sel.value : 0);
+  if (!colabId && funcionariosLista.length > 0) colabId = funcionariosLista[0].id;
+  const colab = funcionariosLista.find(f => f.id === colabId);
+  if (!colab) {
+    mostrarMsgPonto('⚠️ Nenhum funcionário selecionado.', false);
+    return;
+  }
+
+  const dataHoje = getHojeFormatado();
+  let p = pontosLista.find(x => (x.colaboradorId === colabId || (x.colaboradorNome && x.colaboradorNome.toLowerCase() === colab.nome.toLowerCase())) && ehDataHoje(x.data));
+  if (p && p.voltaAlmoco) {
+    mostrarMsgPonto('✅ Volta do Almoço já registrada hoje.', true);
+    return;
+  }
+  if (!p || !p.saidaAlmoco) {
+    mostrarMsgPonto('⚠️ Registre primeiro a Saída para Almoço antes da Volta.', false);
+    return;
+  }
+
+  const horaProg = colab.horarioAlmocoVolta || '13:00';
+  const agora = new Date();
+  const minAgora = agora.getHours() * 60 + agora.getMinutes();
+  const [hP, mP] = horaProg.split(':').map(Number);
+  const minProg = (hP * 60) + mP;
+  const hh = String(agora.getHours()).padStart(2, '0');
+  const mm = String(agora.getMinutes()).padStart(2, '0');
+  const horaStr = `${hh}:${mm}`;
+
+  // Bloqueio rigoroso antes do horário programado
+  if (minAgora < minProg) {
+    mostrarMsgPonto(`🔒 Registro Bloqueado! A Volta do Almoço não pode ser registrada antes do horário programado (${horaProg}). Horário atual: ${horaStr}.`, false);
+    return;
+  }
+
+  const elNome = document.getElementById('modal-conf-almvol-nome');
+  const elHora = document.getElementById('modal-conf-almvol-hora');
+  const elProg = document.getElementById('modal-conf-almvol-prog');
+  if (elNome) elNome.textContent = colab.nome;
+  if (elHora) elHora.textContent = horaStr;
+  if (elProg) elProg.textContent = horaProg;
+
+  const modal = document.getElementById('modal-confirmacao-almvol');
+  if (modal) modal.style.display = 'flex';
+}
+
+function confirmarAlmocoVoltaExecutar() {
+  const modal = document.getElementById('modal-confirmacao-almvol');
+  if (modal) modal.style.display = 'none';
+  registrarBatidaPonto('voltaAlmoco');
+  const btn = document.getElementById('btn-ponto-vol');
+  if (btn) {
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
+    btn.style.cursor = 'not-allowed';
+    btn.title = 'Volta Almoço já registrada hoje';
+  }
+}
+
+function cancelarConfirmacaoAlmocoVolta() {
+  const modal = document.getElementById('modal-confirmacao-almvol');
+  if (modal) modal.style.display = 'none';
+}
+
+// ── CONFIRMAÇÃO DE SAÍDA FINAL ──
+function confirmarSaidaFinalPonto() {
+  const btn = document.getElementById('btn-ponto-sai');
+  if (btn && (btn.classList.contains('batido') || btn.disabled)) {
+    mostrarMsgPonto('✅ Saída Final já registrada hoje.', true);
+    return;
+  }
+
+  const sel = document.getElementById('ponto-sel-colaborador');
+  let colabId = parseInt(sel ? sel.value : 0);
+  if (!colabId && funcionariosLista.length > 0) colabId = funcionariosLista[0].id;
+  const colab = funcionariosLista.find(f => f.id === colabId);
+  if (!colab) {
+    mostrarMsgPonto('⚠️ Nenhum funcionário selecionado.', false);
+    return;
+  }
+
+  const dataHoje = getHojeFormatado();
+  let p = pontosLista.find(x => (x.colaboradorId === colabId || (x.colaboradorNome && x.colaboradorNome.toLowerCase() === colab.nome.toLowerCase())) && ehDataHoje(x.data));
+  if (p && p.saidaFinal) {
+    mostrarMsgPonto('✅ Saída Final já registrada hoje.', true);
+    return;
+  }
+  if (!p || !p.entrada1) {
+    mostrarMsgPonto('⚠️ Registre primeiro a 1ª Entrada antes da Saída Final.', false);
+    return;
+  }
+
+  const horaProg = colab.horarioSaida || '17:30';
+  const agora = new Date();
+  const minAgora = agora.getHours() * 60 + agora.getMinutes();
+  const [hP, mP] = horaProg.split(':').map(Number);
+  const minProg = (hP * 60) + mP;
+  const hh = String(agora.getHours()).padStart(2, '0');
+  const mm = String(agora.getMinutes()).padStart(2, '0');
+  const horaStr = `${hh}:${mm}`;
+  const ehFds = ehFimDeSemanaPonto(dataHoje);
+
+  // Bloqueio rigoroso antes do horário programado
+  if (minAgora < minProg && !ehFds && !p.saidaAntecipadaJustificada) {
+    mostrarMsgPonto(`🔒 Registro Bloqueado! A Saída Final não pode ser registrada antes do horário programado (${horaProg}). Horário atual: ${horaStr}.`, false);
+    setTimeout(() => {
+      abrirModalSaidaFinal(colabId, horaStr, p);
+    }, 1000);
+    return;
+  }
+
+  const elNome = document.getElementById('modal-conf-saida-nome');
+  const elHora = document.getElementById('modal-conf-saida-hora');
+  const elProg = document.getElementById('modal-conf-saida-prog');
+  if (elNome) elNome.textContent = colab.nome;
+  if (elHora) elHora.textContent = horaStr;
+  if (elProg) elProg.textContent = horaProg;
+
+  const modal = document.getElementById('modal-confirmacao-saida-final');
+  if (modal) modal.style.display = 'flex';
+}
+
+function confirmarSaidaFinalExecutar() {
+  const modal = document.getElementById('modal-confirmacao-saida-final');
+  if (modal) modal.style.display = 'none';
+  registrarBatidaPonto('saidaFinal');
+  const btn = document.getElementById('btn-ponto-sai');
+  if (btn) {
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
+    btn.style.cursor = 'not-allowed';
+    btn.title = 'Saída Final já registrada hoje';
+  }
+}
+
+function cancelarConfirmacaoSaidaFinal() {
+  const modal = document.getElementById('modal-confirmacao-saida-final');
   if (modal) modal.style.display = 'none';
 }
 
@@ -10130,16 +10441,51 @@ function registrarBatidaPonto(tipo) {
     colab.status = 'Presente';
     p.status = 'Presente';
     labelTipo = '1ª Entrada';
+    const btnEnt = document.getElementById('btn-ponto-ent1');
+    if (btnEnt) {
+      btnEnt.disabled = true;
+      btnEnt.style.opacity = '0.6';
+      btnEnt.style.cursor = 'not-allowed';
+      btnEnt.title = 'Entrada já registrada';
+    }
   } else if (tipo === 'saidaAlmoco') {
+    const parseMin = (s) => (s && s.includes(':')) ? s.split(':').map(Number)[0]*60 + s.split(':').map(Number)[1] : null;
+    const expAlmSaiMin = parseMin(colab?.horarioAlmocoSai || '12:00') || 720;
+    const horaAgoraMin = agora.getHours() * 60 + agora.getMinutes();
+    if (horaAgoraMin < expAlmSaiMin) {
+      mostrarMsgPonto(`🔒 Registro Bloqueado! A Saída para Almoço não pode ser registrada antes do horário programado (${colab?.horarioAlmocoSai || '12:00'}). Horário atual: ${horaStr}.`, false);
+      return;
+    }
     p.saidaAlmoco = horaStr;
     colab.status = 'Em Almoço';
     p.status = 'Em Almoço';
     labelTipo = 'Saída Almoço';
+    const btnAlm = document.getElementById('btn-ponto-alm');
+    if (btnAlm) {
+      btnAlm.disabled = true;
+      btnAlm.style.opacity = '0.6';
+      btnAlm.style.cursor = 'not-allowed';
+      btnAlm.title = 'Saída Almoço já registrada hoje';
+    }
   } else if (tipo === 'voltaAlmoco') {
+    const parseMin = (s) => (s && s.includes(':')) ? s.split(':').map(Number)[0]*60 + s.split(':').map(Number)[1] : null;
+    const expAlmVolMin = parseMin(colab?.horarioAlmocoVolta || '13:00') || 780;
+    const horaAgoraMin = agora.getHours() * 60 + agora.getMinutes();
+    if (horaAgoraMin < expAlmVolMin) {
+      mostrarMsgPonto(`🔒 Registro Bloqueado! A Volta do Almoço não pode ser registrada antes do horário programado (${colab?.horarioAlmocoVolta || '13:00'}). Horário atual: ${horaStr}.`, false);
+      return;
+    }
     p.voltaAlmoco = horaStr;
     colab.status = 'Presente';
     p.status = 'Presente';
     labelTipo = 'Volta Almoço';
+    const btnVol = document.getElementById('btn-ponto-vol');
+    if (btnVol) {
+      btnVol.disabled = true;
+      btnVol.style.opacity = '0.6';
+      btnVol.style.cursor = 'not-allowed';
+      btnVol.title = 'Volta Almoço já registrada hoje';
+    }
   } else if (tipo === 'saidaFinal') {
     // Horário previsto de encerramento da jornada
     const parseMin = (s) => (s && s.includes(':')) ? s.split(':').map(Number)[0]*60 + s.split(':').map(Number)[1] : null;
@@ -10148,7 +10494,8 @@ function registrarBatidaPonto(tipo) {
     const ehFds = ehFimDeSemanaPonto(p.data);
 
     // Se saiu antes do horário e ainda não justificou, abre modal para justificar
-    if (horaAgoraMin < (expSaiMin - 5) && !ehFds && !p.saidaAntecipadaJustificada) {
+    if (horaAgoraMin < expSaiMin && !ehFds && !p.saidaAntecipadaJustificada) {
+      mostrarMsgPonto(`🔒 Registro Bloqueado! A Saída Final não pode ser registrada antes do horário programado (${colab?.horarioSaida || '17:30'}). Horário atual: ${horaStr}.`, false);
       abrirModalSaidaFinal(colabId, horaStr, p);
       return;
     }
@@ -10157,6 +10504,13 @@ function registrarBatidaPonto(tipo) {
     colab.status = 'Finalizado';
     p.status = 'Finalizado';
     labelTipo = 'Saída Final';
+    const btnSai = document.getElementById('btn-ponto-sai');
+    if (btnSai) {
+      btnSai.disabled = true;
+      btnSai.style.opacity = '0.6';
+      btnSai.style.cursor = 'not-allowed';
+      btnSai.title = 'Saída Final já registrada hoje';
+    }
   } else if (tipo === 'horaExtraInicial') {
     p.horaExtraInicial = horaStr;
     colab.status = 'Em Hora Extra';
