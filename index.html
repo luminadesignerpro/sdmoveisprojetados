@@ -2690,7 +2690,7 @@
       </div>
 
       <div class="ponto-grid-actions">
-        <button type="button" id="btn-ponto-ent1" class="ponto-btn-action ponto-act-entrada" onclick="registrarBatidaPonto('entrada1')">
+        <button type="button" id="btn-ponto-ent1" class="ponto-btn-action ponto-act-entrada" onclick="confirmarEntradaPonto()">
           <span class="ponto-act-icon">➔]</span>
           <span class="ponto-act-label">1ª Entrada</span>
           <span class="ponto-act-hora" id="badge-ponto-ent1"></span>
@@ -4387,6 +4387,30 @@
           🚀 Bater Ponto
         </button>
       </div>
+    </div>
+  </div>
+</div>
+<!-- ══ MODAL CONFIRMAÇÃO DE 1ª ENTRADA ══ -->
+<div id="modal-confirmacao-entrada" class="modal-overlay" style="display:none;z-index:1000200;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);" onclick="cancelarConfirmacaoEntrada()">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:380px;text-align:center;border:2px solid #10b981;box-shadow:0 0 40px rgba(16,185,129,0.5);padding:28px 22px;border-radius:20px;background:linear-gradient(145deg,#0a1a0f,#0e1f16);">
+    <div style="font-size:56px;line-height:1;margin-bottom:10px;">➔]</div>
+    <div style="font-size:12px;font-weight:900;color:#10b981;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:8px;">Confirmar Registro de Ponto</div>
+    <h2 style="font-size:19px;font-weight:900;color:#fff;margin:0 0 6px 0;">1ª Entrada</h2>
+    <div style="font-size:13px;color:#94a3b8;margin-bottom:18px;">
+      Colaborador: <strong style="color:#fff;" id="modal-conf-entrada-nome">—</strong>
+    </div>
+    <div style="background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.35);border-radius:12px;padding:14px 18px;margin-bottom:20px;">
+      <div style="font-size:13px;color:#cbd5e1;margin-bottom:4px;">Horário de entrada:</div>
+      <div style="font-size:36px;font-weight:900;color:#10b981;letter-spacing:0.05em;" id="modal-conf-entrada-hora">--:--</div>
+      <div style="font-size:11px;color:#64748b;margin-top:4px;">Esta ação não poderá ser revertida pelo colaborador.</div>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button type="button" onclick="cancelarConfirmacaoEntrada()" style="flex:1;padding:13px;border-radius:10px;border:1.5px solid rgba(148,163,184,0.3);background:rgba(255,255,255,0.05);color:#94a3b8;font-size:13px;font-weight:700;cursor:pointer;">
+        ✕ Cancelar
+      </button>
+      <button type="button" onclick="confirmarEntradaExecutar()" style="flex:2;padding:13px;border-radius:10px;border:none;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:14px;font-weight:900;cursor:pointer;box-shadow:0 4px 16px rgba(16,185,129,0.4);">
+        ✅ Confirmar Entrada
+      </button>
     </div>
   </div>
 </div>
@@ -7550,6 +7574,80 @@ function pararAudioAlarmePonto() {
   }
 }
 
+// ── DISPARAR / PARAR / ADIAR ALARME DE PONTO ──
+function dispararAlarmePonto(label, hora, antecedencia, colaboradores) {
+  try {
+    // Atualiza textos no modal
+    const elTitulo = document.getElementById('alarme-ponto-titulo');
+    const elEtapa = document.getElementById('alarme-ponto-etapa-texto');
+    const elHorario = document.getElementById('alarme-ponto-horario-texto');
+    const elBadge = document.getElementById('alarme-ponto-tempo-badge');
+    const elLista = document.getElementById('alarme-ponto-colaboradores-lista');
+
+    if (elTitulo) elTitulo.textContent = label + ' às ' + hora;
+    if (elEtapa) elEtapa.textContent = label;
+    if (elHorario) elHorario.textContent = hora;
+    if (elBadge) elBadge.textContent = antecedencia > 0 ? '⏰ Faltam ' + antecedencia + ' minuto' + (antecedencia > 1 ? 's' : '') + '!' : '⏰ Agora!';
+    if (elLista && Array.isArray(colaboradores)) {
+      elLista.innerHTML = colaboradores.map(c =>
+        '<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);">' +
+        '<span style="font-size:16px">👤</span>' +
+        '<span style="font-size:12.5px;font-weight:700;color:#fff;">' + (c.nome || 'Colaborador') + '</span>' +
+        (c.cargo ? '<span style="font-size:11px;color:#94a3b8;">| ' + c.cargo + '</span>' : '') +
+        '</div>'
+      ).join('');
+    }
+
+    // Exibe o modal do alarme
+    const modal = document.getElementById('modal-alarme-ponto-disparado');
+    if (modal) modal.style.display = 'flex';
+
+    // Toca o som
+    tocarSireneAlarmePonto(false);
+
+    // Notificação do navegador
+    try {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('⏰ Ponto Eletrônico', {
+          body: label + ' às ' + hora + ' - Hora de bater o ponto!',
+          icon: '/favicon.ico'
+        });
+      } else if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
+    } catch(_) {}
+
+    console.log('[Alarme de Ponto] Disparado: ' + label + ' às ' + hora);
+  } catch(e) {
+    console.error('[Alarme de Ponto] Erro ao disparar:', e);
+  }
+}
+
+function pararAlarmePonto() {
+  pararAudioAlarmePonto();
+  const modal = document.getElementById('modal-alarme-ponto-disparado');
+  if (modal) modal.style.display = 'none';
+}
+
+function adiarAlarmePonto(minutos) {
+  pararAudioAlarmePonto();
+  const modal = document.getElementById('modal-alarme-ponto-disparado');
+  if (modal) modal.style.display = 'none';
+  // Agenda um novo disparo após X minutos
+  setTimeout(() => {
+    const cfg = obterConfigAlarmePonto();
+    const todos = (typeof funcionariosLista !== 'undefined' && Array.isArray(funcionariosLista)) ? funcionariosLista : [];
+    const elegiveis = todos.filter(funcionarioElegivelParaAlarme);
+    const agora = new Date();
+    const h = String(agora.getHours()).padStart(2,'0');
+    const m = String(agora.getMinutes()).padStart(2,'0');
+    dispararAlarmePonto('Soneca - Bater Ponto', h + ':' + m, 0, elegiveis.length ? elegiveis : [{ nome: 'Horário Oficial' }]);
+  }, minutos * 60 * 1000);
+  if (typeof mostrarMsgPonto === 'function') {
+    mostrarMsgPonto('⏰ Soneca ativada! Alarme em ' + minutos + ' minutos.', true);
+  }
+}
+
 function funcionarioElegivelParaAlarme(f) {
   if (!f) return false;
   const st = String(f.status || 'Presente').toLowerCase().trim();
@@ -9749,10 +9847,24 @@ function atualizarStatusBatidaColaborador() {
       btn.classList.add('batido');
       bd.textContent = '✓ ' + valor;
       bd.style.display = 'inline-block';
+      // Trava o botão de entrada para não permitir re-registro
+      if (btnId === 'btn-ponto-ent1') {
+        btn.disabled = true;
+        btn.style.opacity = '0.6';
+        btn.style.cursor = 'not-allowed';
+        btn.title = 'Entrada já registrada hoje';
+      }
     } else {
       btn.classList.remove('batido');
       bd.textContent = '';
       bd.style.display = 'none';
+      // Desbloqueio (novo dia / sem registro)
+      if (btnId === 'btn-ponto-ent1') {
+        btn.disabled = false;
+        btn.style.opacity = '';
+        btn.style.cursor = '';
+        btn.title = '';
+      }
     }
   };
 
@@ -9903,6 +10015,54 @@ function concluirBatidaSaidaFinal(colabId, horaStr, justificada, motivoJustifica
     ? `✅ Saída Final registrada às ${horaStr} com justificativa: "${p.justificativaSaida}"! Dia finalizado sem horas negativas.`
     : `✅ Saída Final registrada às ${horaStr} para ${colab.nome}!`;
   mostrarMsgPonto(msg, true);
+}
+
+// ── CONFIRMAÇÃO DE ENTRADA ──
+function confirmarEntradaPonto() {
+  const btn = document.getElementById('btn-ponto-ent1');
+  // Se já batido, não faz nada
+  if (btn && btn.classList.contains('batido')) {
+    mostrarMsgPonto('✅ Entrada já registrada hoje. Aguarde os próximos lançamentos.', true);
+    return;
+  }
+
+  const sel = document.getElementById('ponto-sel-colaborador');
+  let colabId = parseInt(sel ? sel.value : 0);
+  if (!colabId && funcionariosLista.length > 0) colabId = funcionariosLista[0].id;
+  const colab = funcionariosLista.find(f => f.id === colabId);
+
+  const agora = new Date();
+  const hh = String(agora.getHours()).padStart(2, '0');
+  const mm = String(agora.getMinutes()).padStart(2, '0');
+  const horaStr = hh + ':' + mm;
+
+  // Preenche o modal de confirmação
+  const elNome = document.getElementById('modal-conf-entrada-nome');
+  const elHora = document.getElementById('modal-conf-entrada-hora');
+  if (elNome) elNome.textContent = colab ? colab.nome : 'Colaborador';
+  if (elHora) elHora.textContent = horaStr;
+
+  const modal = document.getElementById('modal-confirmacao-entrada');
+  if (modal) modal.style.display = 'flex';
+}
+
+function confirmarEntradaExecutar() {
+  const modal = document.getElementById('modal-confirmacao-entrada');
+  if (modal) modal.style.display = 'none';
+  registrarBatidaPonto('entrada1');
+  // Trava o botão visualmente
+  const btn = document.getElementById('btn-ponto-ent1');
+  if (btn) {
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
+    btn.style.cursor = 'not-allowed';
+    btn.title = 'Entrada já registrada';
+  }
+}
+
+function cancelarConfirmacaoEntrada() {
+  const modal = document.getElementById('modal-confirmacao-entrada');
+  if (modal) modal.style.display = 'none';
 }
 
 function registrarBatidaPonto(tipo) {
