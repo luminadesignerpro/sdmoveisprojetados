@@ -1874,6 +1874,7 @@
     <button id="tab-usuarios" class="tab" data-tab="usuarios" onclick="goTab('usuarios')">👥 Usuários</button>
     <button type="button" id="tab-portal-cliente" class="tab" onclick="abrirPortalCliente()" title="Acessar Portal do Cliente">🌐 Portal do Cliente</button>
     <button type="button" id="tab-portal-funcionario" class="tab" onclick="abrirPortalFuncionario()" title="Acessar Portal do Funcionário">👷 Portal do Funcionário</button>
+    <button type="button" id="tab-cronograma" class="tab" data-tab="cronograma" onclick="goTab('cronograma')" title="Cronograma e Pedido de Material">📅 Cronograma</button>
     <button type="button" id="tab-relatorio" class="tab" data-tab="relatorio" onclick="goTab('relatorio')" title="Relatório Financeiro">📊 Relatório</button>
     <button type="button" id="btn-central-mensagens" class="tab" onclick="abrirModalCentralMensagens()" title="Central de Mensagens com Clientes">💬 Mensagens <span id="badge-msg-clientes" style="display:none;background:#ef4444;color:#fff;font-size:9.5px;padding:1px 6px;border-radius:999px;font-weight:900;margin-left:4px;">0</span></button>
   </div>
@@ -2876,6 +2877,137 @@
   </div>
 
   <!-- ══════════════════════════════════════════ -->
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- PANEL: CRONOGRAMA                          -->
+  <!-- ══════════════════════════════════════════ -->
+  <div id="panel-cronograma" class="panel">
+
+    <!-- CABEÇALHO -->
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:18px;">
+      <div>
+        <div style="font-size:22px;font-weight:900;color:#fff;display:flex;align-items:center;gap:10px;">
+          <span style="font-size:30px;">📅</span> Cronograma
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px;">Planejamento por Semana, Mês e Ano · Pedido de Material</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button class="btn btn-gold btn-sm" onclick="abrirModalNovoPedidoMaterial()" style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:800;">
+          <span>📦</span> Novo Pedido de Material
+        </button>
+        <button class="btn btn-sec btn-sm" onclick="abrirModalConfigWhatsappMaterial()" style="display:flex;align-items:center;gap:6px;font-size:12px;">
+          <span>⚙️</span> Config. WhatsApp
+        </button>
+      </div>
+    </div>
+
+    <!-- SUB-ABAS: SEMANA / MÊS / ANO / PEDIDO DE MATERIAL -->
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px;">
+      <button id="crono-tab-semana" class="btn btn-primary btn-sm" onclick="mudarAbaCronograma('semana')" style="font-size:12px;font-weight:800;border-radius:8px;">📆 Semana</button>
+      <button id="crono-tab-mes" class="btn btn-sec btn-sm" onclick="mudarAbaCronograma('mes')" style="font-size:12px;font-weight:700;border-radius:8px;">📅 Mês</button>
+      <button id="crono-tab-ano" class="btn btn-sec btn-sm" onclick="mudarAbaCronograma('ano')" style="font-size:12px;font-weight:700;border-radius:8px;">🗓️ Ano</button>
+      <button id="crono-tab-material" class="btn btn-sec btn-sm" onclick="mudarAbaCronograma('material')" style="font-size:12px;font-weight:700;border-radius:8px;">📦 Pedido de Material</button>
+    </div>
+
+    <!-- PAINEL: SEMANA -->
+    <div id="crono-panel-semana">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+        <div style="font-size:15px;font-weight:800;color:#fff;display:flex;align-items:center;gap:8px;">
+          <span>📆</span> <span id="crono-semana-label">Semana Atual</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-sec btn-xs" onclick="navCronoSemana(-1)" style="font-size:13px;">◀</button>
+          <button class="btn btn-sec btn-xs" onclick="navCronoSemana(0)" style="font-size:11px;font-weight:800;">Hoje</button>
+          <button class="btn btn-sec btn-xs" onclick="navCronoSemana(1)" style="font-size:13px;">▶</button>
+        </div>
+      </div>
+      <div id="crono-semana-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;"></div>
+      <div id="crono-semana-eventos" style="margin-top:14px;display:flex;flex-direction:column;gap:8px;"></div>
+      <div style="text-align:center;margin-top:14px;">
+        <button class="btn btn-gold btn-sm" onclick="abrirModalNovoEventoCronograma()" style="font-size:12.5px;display:inline-flex;align-items:center;gap:6px;">
+          <span>➕</span> Adicionar Evento / Prazo
+        </button>
+      </div>
+    </div>
+
+    <!-- PAINEL: MÊS -->
+    <div id="crono-panel-mes" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+        <div style="font-size:15px;font-weight:800;color:#fff;display:flex;align-items:center;gap:8px;">
+          <span>📅</span> <span id="crono-mes-label">Mês Atual</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-sec btn-xs" onclick="navCronoMes(-1)" style="font-size:13px;">◀</button>
+          <button class="btn btn-sec btn-xs" onclick="navCronoMes(0)" style="font-size:11px;font-weight:800;">Mês Atual</button>
+          <button class="btn btn-sec btn-xs" onclick="navCronoMes(1)" style="font-size:13px;">▶</button>
+        </div>
+      </div>
+      <div id="crono-mes-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;min-height:200px;"></div>
+      <div id="crono-mes-eventos" style="margin-top:14px;display:flex;flex-direction:column;gap:8px;"></div>
+      <div style="text-align:center;margin-top:14px;">
+        <button class="btn btn-gold btn-sm" onclick="abrirModalNovoEventoCronograma()" style="font-size:12.5px;display:inline-flex;align-items:center;gap:6px;">
+          <span>➕</span> Adicionar Evento / Prazo
+        </button>
+      </div>
+    </div>
+
+    <!-- PAINEL: ANO -->
+    <div id="crono-panel-ano" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+        <div style="font-size:15px;font-weight:800;color:#fff;display:flex;align-items:center;gap:8px;">
+          <span>🗓️</span> <span id="crono-ano-label">Ano Atual</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-sec btn-xs" onclick="navCronoAno(-1)" style="font-size:13px;">◀</button>
+          <button class="btn btn-sec btn-xs" onclick="navCronoAno(0)" style="font-size:11px;font-weight:800;">Este Ano</button>
+          <button class="btn btn-sec btn-xs" onclick="navCronoAno(1)" style="font-size:13px;">▶</button>
+        </div>
+      </div>
+      <div id="crono-ano-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;"></div>
+    </div>
+
+    <!-- PAINEL: PEDIDO DE MATERIAL -->
+    <div id="crono-panel-material" style="display:none;">
+      <!-- FILTROS E BUSCA -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">
+        <input type="text" id="material-busca" oninput="renderPedidosMaterial()" placeholder="🔍 Buscar item..." style="flex:1;min-width:180px;padding:9px 14px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:13px;" />
+        <select id="material-filtro-status" onchange="renderPedidosMaterial()" style="padding:9px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:12.5px;font-weight:700;">
+          <option value="todos">📋 Todos</option>
+          <option value="a_comprar">🛒 A Comprar</option>
+          <option value="pendente">⏳ Pendente</option>
+          <option value="comprado">✅ Comprado</option>
+        </select>
+        <button class="btn btn-gold btn-sm" onclick="enviarPedidoMaterialWhatsApp()" style="font-size:12px;font-weight:800;display:inline-flex;align-items:center;gap:5px;">
+          <span>💬</span> Enviar via WhatsApp
+        </button>
+      </div>
+
+      <!-- RESUMO DE STATUS -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;" id="material-resumo">
+        <div style="background:rgba(239,68,68,0.12);border:1.5px solid rgba(239,68,68,0.35);border-radius:10px;padding:10px 12px;text-align:center;">
+          <div style="font-size:11px;color:#fca5a5;font-weight:700;">🛒 A COMPRAR</div>
+          <div id="material-count-a_comprar" style="font-size:22px;font-weight:900;color:#f87171;margin-top:2px;">0</div>
+        </div>
+        <div style="background:rgba(245,158,11,0.12);border:1.5px solid rgba(245,158,11,0.35);border-radius:10px;padding:10px 12px;text-align:center;">
+          <div style="font-size:11px;color:#fde68a;font-weight:700;">⏳ PENDENTE</div>
+          <div id="material-count-pendente" style="font-size:22px;font-weight:900;color:#fbbf24;margin-top:2px;">0</div>
+        </div>
+        <div style="background:rgba(16,185,129,0.12);border:1.5px solid rgba(16,185,129,0.35);border-radius:10px;padding:10px 12px;text-align:center;">
+          <div style="font-size:11px;color:#6ee7b7;font-weight:700;">✅ COMPRADO</div>
+          <div id="material-count-comprado" style="font-size:22px;font-weight:900;color:#34d399;margin-top:2px;">0</div>
+        </div>
+      </div>
+
+      <!-- LISTA DE ITENS -->
+      <div id="material-lista" style="display:flex;flex-direction:column;gap:8px;"></div>
+
+      <div style="text-align:center;margin-top:14px;">
+        <button class="btn btn-gold btn-sm" onclick="abrirModalNovoPedidoMaterial()" style="font-size:12.5px;display:inline-flex;align-items:center;gap:6px;">
+          <span>➕</span> Adicionar Item
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- ══════════════════════════════════════════ -->
   <!-- PANEL: RELATÓRIO FINANCEIRO                -->
@@ -4765,6 +4897,14 @@
 
     <div id="portal-func-lista-cards" style="max-height:380px;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding-right:4px;">
       <!-- Preenchido via JavaScript -->
+    </div>
+
+    <!-- BOTÃO DE COMISSÕES POR SERVIÇOS -->
+    <div style="margin-bottom:12px;">
+      <button type="button" class="btn btn-sec" onclick="abrirModalComissoes()" style="width:100%;padding:9px 12px;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:7px;border-color:rgba(201,168,76,0.4);background:linear-gradient(135deg,rgba(201,168,76,0.15),rgba(201,168,76,0.05));color:var(--gold-light);box-shadow:0 3px 12px rgba(201,168,76,0.15);">
+        <span>💰</span> <span>Comissão por Serviços Finalizados</span>
+        <span id="badge-comissoes-pendentes" style="background:#f59e0b;color:#000;font-size:10px;font-weight:900;padding:2px 6px;border-radius:999px;display:none;">0</span>
+      </button>
     </div>
 
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.08);flex-wrap:wrap;gap:10px;">
@@ -16342,6 +16482,1112 @@ if (typeof setInterval !== 'undefined') {
   setInterval(verificarSolicitacoesSaidaPendentes, 10000);
 }
 
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!--  MODAL: COMISSÃO POR SERVIÇOS FINALIZADOS                         -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<div id="modal-comissoes" class="modal-overlay" style="display:none" onclick="if(event.target===this)fecharModalComissoes()">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:600px;padding:26px 22px;">
+    <div class="modal-title" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:28px;">💰</span>
+        <div>
+          <div style="font-size:16px;font-weight:900;color:#fff;">Comissão por Serviços Finalizados</div>
+          <div style="font-size:11.5px;color:var(--muted);font-weight:500;">Registre e programe o recebimento de comissões por serviços concluídos</div>
+        </div>
+      </div>
+      <button class="modal-close" onclick="fecharModalComissoes()">✕</button>
+    </div>
+
+    <!-- FILTRO FUNCIONÁRIO -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+      <select id="comissao-filtro-func" onchange="renderComissoes()" style="flex:1;padding:9px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:12.5px;font-weight:700;">
+        <option value="todos">👷 Todos os Funcionários</option>
+      </select>
+      <select id="comissao-filtro-status" onchange="renderComissoes()" style="padding:9px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:12.5px;font-weight:700;">
+        <option value="todos">📋 Todos</option>
+        <option value="pendente">⏳ Pendente</option>
+        <option value="agendado">📅 Agendado</option>
+        <option value="pago">✅ Pago</option>
+      </select>
+    </div>
+
+    <!-- RESUMO -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">
+      <div style="background:rgba(245,158,11,0.12);border:1.5px solid rgba(245,158,11,0.35);border-radius:10px;padding:10px 12px;text-align:center;">
+        <div style="font-size:10px;color:#fde68a;font-weight:700;">⏳ A PAGAR</div>
+        <div id="comissao-total-pendente" style="font-size:18px;font-weight:900;color:#fbbf24;margin-top:2px;">R$ 0,00</div>
+      </div>
+      <div style="background:rgba(56,189,248,0.12);border:1.5px solid rgba(56,189,248,0.35);border-radius:10px;padding:10px 12px;text-align:center;">
+        <div style="font-size:10px;color:#bae6fd;font-weight:700;">📅 AGENDADO</div>
+        <div id="comissao-total-agendado" style="font-size:18px;font-weight:900;color:#38bdf8;margin-top:2px;">R$ 0,00</div>
+      </div>
+      <div style="background:rgba(16,185,129,0.12);border:1.5px solid rgba(16,185,129,0.35);border-radius:10px;padding:10px 12px;text-align:center;">
+        <div style="font-size:10px;color:#6ee7b7;font-weight:700;">✅ PAGO</div>
+        <div id="comissao-total-pago" style="font-size:18px;font-weight:900;color:#34d399;margin-top:2px;">R$ 0,00</div>
+      </div>
+    </div>
+
+    <!-- LISTA DE COMISSÕES -->
+    <div id="comissao-lista" style="max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding-right:4px;margin-bottom:14px;">
+      <!-- Preenchido via JS -->
+    </div>
+
+    <!-- BOTÃO NOVA COMISSÃO -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button type="button" class="btn btn-gold" onclick="abrirModalNovaComissao()" style="flex:1;padding:10px;font-size:13px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;gap:7px;">
+        <span>➕</span> Nova Comissão
+      </button>
+      <button type="button" class="btn btn-sec btn-sm" onclick="fecharModalComissoes()" style="padding:10px 18px;font-size:12.5px;">
+        Fechar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!--  MODAL: NOVA COMISSÃO                                             -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<div id="modal-nova-comissao" class="modal-overlay" style="display:none" onclick="if(event.target===this)fecharModalNovaComissao()">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:480px;padding:24px 20px;">
+    <div class="modal-title" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+      <div style="font-size:15px;font-weight:900;color:#fff;display:flex;align-items:center;gap:8px;"><span>💰</span> <span id="nova-comissao-titulo">Nova Comissão</span></div>
+      <button class="modal-close" onclick="fecharModalNovaComissao()">✕</button>
+    </div>
+
+    <input type="hidden" id="comissao-edit-id" value="">
+
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="field">
+        <label>Funcionário</label>
+        <select id="comissao-form-func" style="width:100%;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:13px;">
+        </select>
+      </div>
+      <div class="field">
+        <label>Descrição do Serviço / O.S.</label>
+        <input type="text" id="comissao-form-descricao" placeholder="Ex: Instalação de cozinha planejada - OS #0042" style="width:100%;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:13px;">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Valor da Comissão (R$)</label>
+          <input type="number" id="comissao-form-valor" placeholder="0,00" min="0" step="0.01" style="width:100%;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:13px;">
+        </div>
+        <div class="field">
+          <label>% de Comissão (opcional)</label>
+          <input type="number" id="comissao-form-pct" placeholder="Ex: 5" min="0" max="100" step="0.1" style="width:100%;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:13px;">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Data do Serviço Finalizado</label>
+          <input type="date" id="comissao-form-data-servico" style="width:100%;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:13px;">
+        </div>
+        <div class="field">
+          <label>📅 Data Programada para Receber</label>
+          <input type="date" id="comissao-form-data-recebimento" style="width:100%;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:13px;">
+        </div>
+      </div>
+      <div class="field">
+        <label>Status</label>
+        <select id="comissao-form-status" style="width:100%;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:13px;">
+          <option value="pendente">⏳ Pendente (a pagar)</option>
+          <option value="agendado">📅 Agendado (data programada)</option>
+          <option value="pago">✅ Pago</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Observações</label>
+        <textarea id="comissao-form-obs" rows="2" placeholder="Informações adicionais..." style="width:100%;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:13px;resize:vertical;"></textarea>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button type="button" class="btn btn-sec btn-sm" onclick="fecharModalNovaComissao()" style="flex:1;">Cancelar</button>
+      <button type="button" class="btn btn-gold" onclick="salvarComissao()" style="flex:2;font-size:13px;font-weight:800;">💾 Salvar Comissão</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!--  MODAL: NOVO ITEM DE PEDIDO DE MATERIAL                           -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<div id="modal-novo-pedido-material" class="modal-overlay" style="display:none" onclick="if(event.target===this)fecharModalNovoPedidoMaterial()">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:480px;padding:24px 20px;">
+    <div class="modal-title" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+      <div style="font-size:15px;font-weight:900;color:#fff;display:flex;align-items:center;gap:8px;"><span>📦</span> <span id="pedido-material-titulo">Novo Item de Material</span></div>
+      <button class="modal-close" onclick="fecharModalNovoPedidoMaterial()">✕</button>
+    </div>
+
+    <input type="hidden" id="pedido-material-edit-id" value="">
+
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="field">
+        <label>Nome do Material / Item</label>
+        <input type="text" id="pedido-form-nome" placeholder="Ex: MDF 18mm Branco TX" style="width:100%;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:13px;">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Quantidade</label>
+          <input type="number" id="pedido-form-qtd" placeholder="1" min="1" step="1" style="width:100%;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:13px;">
+        </div>
+        <div class="field">
+          <label>Unidade</label>
+          <select id="pedido-form-unidade" style="width:100%;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:13px;">
+            <option>un</option><option>m²</option><option>m</option><option>kg</option><option>L</option><option>cx</option><option>pç</option><option>par</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Valor Unitário (R$)</label>
+          <input type="number" id="pedido-form-valor" placeholder="0,00" min="0" step="0.01" style="width:100%;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:13px;">
+        </div>
+        <div class="field">
+          <label>Urgência</label>
+          <select id="pedido-form-urgencia" style="width:100%;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:13px;">
+            <option value="normal">📋 Normal</option>
+            <option value="urgente">🔥 Urgente</option>
+            <option value="critico">🚨 Crítico</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Fornecedor (opcional)</label>
+        <input type="text" id="pedido-form-fornecedor" placeholder="Nome do fornecedor" style="width:100%;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:13px;">
+      </div>
+      <div class="field">
+        <label>Status</label>
+        <select id="pedido-form-status" style="width:100%;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:13px;">
+          <option value="a_comprar">🛒 A Comprar</option>
+          <option value="pendente">⏳ Pendente</option>
+          <option value="comprado">✅ Comprado</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Observações</label>
+        <textarea id="pedido-form-obs" rows="2" placeholder="Informações adicionais, referências, links..." style="width:100%;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:13px;resize:vertical;"></textarea>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button type="button" class="btn btn-sec btn-sm" onclick="fecharModalNovoPedidoMaterial()" style="flex:1;">Cancelar</button>
+      <button type="button" class="btn btn-gold" onclick="salvarPedidoMaterial()" style="flex:2;font-size:13px;font-weight:800;">💾 Salvar Item</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!--  MODAL: NOVO EVENTO DO CRONOGRAMA                                 -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<div id="modal-novo-evento-cronograma" class="modal-overlay" style="display:none" onclick="if(event.target===this)fecharModalNovoEventoCronograma()">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:460px;padding:24px 20px;">
+    <div class="modal-title" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+      <div style="font-size:15px;font-weight:900;color:#fff;display:flex;align-items:center;gap:8px;"><span>📅</span> <span id="evento-cronograma-titulo">Novo Evento / Prazo</span></div>
+      <button class="modal-close" onclick="fecharModalNovoEventoCronograma()">✕</button>
+    </div>
+
+    <input type="hidden" id="evento-cronograma-edit-id" value="">
+
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="field">
+        <label>Título do Evento</label>
+        <input type="text" id="evento-form-titulo" placeholder="Ex: Entrega de obra - Cliente X" style="width:100%;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:13px;">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Data</label>
+          <input type="date" id="evento-form-data" style="width:100%;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:13px;">
+        </div>
+        <div class="field">
+          <label>Hora (opcional)</label>
+          <input type="time" id="evento-form-hora" style="width:100%;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:13px;">
+        </div>
+      </div>
+      <div class="field">
+        <label>Tipo / Categoria</label>
+        <select id="evento-form-tipo" style="width:100%;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:13px;">
+          <option value="entrega">🚚 Entrega de Obra</option>
+          <option value="instalacao">🔧 Instalação</option>
+          <option value="medicao">📏 Medição</option>
+          <option value="reuniao">🤝 Reunião</option>
+          <option value="pagamento">💰 Pagamento</option>
+          <option value="prazo">⏰ Prazo</option>
+          <option value="outro">📌 Outro</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Responsável (opcional)</label>
+        <input type="text" id="evento-form-responsavel" placeholder="Nome do responsável ou equipe" style="width:100%;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:13px;">
+      </div>
+      <div class="field">
+        <label>Descrição / Observações</label>
+        <textarea id="evento-form-desc" rows="2" placeholder="Detalhes do evento..." style="width:100%;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:13px;resize:vertical;"></textarea>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button type="button" class="btn btn-sec btn-sm" onclick="fecharModalNovoEventoCronograma()" style="flex:1;">Cancelar</button>
+      <button type="button" class="btn btn-gold" onclick="salvarEventoCronograma()" style="flex:2;font-size:13px;font-weight:800;">💾 Salvar Evento</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!--  MODAL: CONFIGURAÇÃO WHATSAPP PARA PEDIDO DE MATERIAL             -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<div id="modal-config-whatsapp-material" class="modal-overlay" style="display:none" onclick="if(event.target===this)fecharModalConfigWhatsappMaterial()">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:420px;padding:22px 20px;">
+    <div class="modal-title" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div style="font-size:15px;font-weight:900;color:#fff;display:flex;align-items:center;gap:8px;"><span>⚙️</span> Config. WhatsApp - Pedido de Material</div>
+      <button class="modal-close" onclick="fecharModalConfigWhatsappMaterial()">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="field">
+        <label>Número do WhatsApp para receber pedidos</label>
+        <input type="tel" id="config-whatsapp-numero" placeholder="Ex: (85) 99999-9999" style="width:100%;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:13px;">
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;">Digite o número com DDD (apenas números ou com formatação)</div>
+      </div>
+      <div class="field">
+        <label>Nome do Fornecedor / Contato (opcional)</label>
+        <input type="text" id="config-whatsapp-nome" placeholder="Ex: Fornecedor Principal" style="width:100%;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:13px;">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button type="button" class="btn btn-sec btn-sm" onclick="fecharModalConfigWhatsappMaterial()" style="flex:1;">Cancelar</button>
+      <button type="button" class="btn btn-gold" onclick="salvarConfigWhatsappMaterial()" style="flex:2;font-size:13px;font-weight:800;">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+//  MÓDULO: CRONOGRAMA (Semana, Mês, Ano + Pedido de Material)
+// ══════════════════════════════════════════════════════════════════
+
+const K_CRONO = {
+  eventos: 'sdv_cronograma_eventos',
+  materiais: 'sdv_pedidos_material',
+  whatsapp: 'sdv_material_whatsapp',
+  comissoes: 'sdv_comissoes'
+};
+
+// Estado local do cronograma
+let _cronoAbaAtual = 'semana';
+let _cronoSemanaOffset = 0;   // quantas semanas a partir de hoje
+let _cronoMesOffset = 0;      // quantas meses a partir de hoje
+let _cronoAnoOffset = 0;      // quantos anos a partir de hoje
+let _cronoDiaSelecionado = null;
+
+// ── NAVEGAÇÃO ENTRE ABAS ────────────────────────────────────────
+function mudarAbaCronograma(aba) {
+  _cronoAbaAtual = aba;
+  const abas = ['semana', 'mes', 'ano', 'material'];
+  abas.forEach(a => {
+    const btn = document.getElementById('crono-tab-' + a);
+    const panel = document.getElementById('crono-panel-' + a);
+    if (btn) {
+      if (a === aba) {
+        btn.className = 'btn btn-primary btn-sm';
+        btn.style.fontWeight = '800';
+      } else {
+        btn.className = 'btn btn-sec btn-sm';
+        btn.style.fontWeight = '700';
+      }
+    }
+    if (panel) panel.style.display = (a === aba) ? '' : 'none';
+  });
+  if (aba === 'semana') renderCronoSemana();
+  else if (aba === 'mes') renderCronoMes();
+  else if (aba === 'ano') renderCronoAno();
+  else if (aba === 'material') renderPedidosMaterial();
+}
+
+// ── HELPERS DE DATA ─────────────────────────────────────────────
+function formatDataBR(iso) {
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+function isoHoje() {
+  const n = new Date();
+  return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
+}
+function nomeMes(idx) {
+  return ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][idx];
+}
+function nomeDiaSemana(idx) {
+  return ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][idx];
+}
+
+// ── EVENTOS DO CRONOGRAMA ────────────────────────────────────────
+function carregarEventosCrono() {
+  try { return JSON.parse(localStorage.getItem(K_CRONO.eventos) || '[]'); } catch(_) { return []; }
+}
+function salvarEventosCrono(arr) {
+  try { localStorage.setItem(K_CRONO.eventos, JSON.stringify(arr)); } catch(_) {}
+}
+
+function eventosNaData(iso) {
+  return carregarEventosCrono().filter(e => e.data === iso);
+}
+
+function tipoEventoInfo(tipo) {
+  const m = {
+    entrega: { emoji: '🚚', color: '#38bdf8' },
+    instalacao: { emoji: '🔧', color: '#fbbf24' },
+    medicao: { emoji: '📏', color: '#a78bfa' },
+    reuniao: { emoji: '🤝', color: '#34d399' },
+    pagamento: { emoji: '💰', color: '#4ade80' },
+    prazo: { emoji: '⏰', color: '#f87171' },
+    outro: { emoji: '📌', color: '#94a3b8' }
+  };
+  return m[tipo] || { emoji: '📌', color: '#94a3b8' };
+}
+
+// ── SEMANA ───────────────────────────────────────────────────────
+function navCronoSemana(dir) {
+  if (dir === 0) _cronoSemanaOffset = 0;
+  else _cronoSemanaOffset += dir;
+  renderCronoSemana();
+}
+
+function renderCronoSemana() {
+  const hoje = new Date();
+  const inicioSemana = new Date(hoje);
+  inicioSemana.setDate(hoje.getDate() - hoje.getDay() + (_cronoSemanaOffset * 7));
+
+  const lbl = document.getElementById('crono-semana-label');
+  if (lbl) {
+    const fim = new Date(inicioSemana);
+    fim.setDate(inicioSemana.getDate() + 6);
+    lbl.textContent = `${formatDataBR(toISO(inicioSemana))} – ${formatDataBR(toISO(fim))}`;
+  }
+
+  const grid = document.getElementById('crono-semana-grid');
+  if (!grid) return;
+
+  const hojeISO = isoHoje();
+  let gridHTML = '';
+  let eventosDaSemana = [];
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(inicioSemana);
+    d.setDate(inicioSemana.getDate() + i);
+    const iso = toISO(d);
+    const eventos = eventosNaData(iso);
+    const isHoje = iso === hojeISO;
+    const isSel = iso === _cronoDiaSelecionado;
+    eventosDaSemana.push(...eventos.map(ev => ({...ev, _iso: iso})));
+
+    gridHTML += `<div onclick="selecionarDiaCrono('${iso}')" style="
+      padding:8px 4px;border-radius:10px;text-align:center;cursor:pointer;
+      background:${isSel ? 'rgba(201,168,76,0.25)' : isHoje ? 'rgba(56,189,248,0.12)' : 'rgba(255,255,255,0.03)'};
+      border:1.5px solid ${isSel ? 'rgba(201,168,76,0.6)' : isHoje ? 'rgba(56,189,248,0.5)' : 'rgba(255,255,255,0.07)'};
+      transition:all 0.2s;">
+      <div style="font-size:10px;color:var(--muted);font-weight:700;">${nomeDiaSemana(d.getDay())}</div>
+      <div style="font-size:17px;font-weight:900;color:${isHoje ? '#38bdf8' : isSel ? 'var(--gold-light)' : '#fff'};margin:2px 0;">${d.getDate()}</div>
+      ${eventos.length ? `<div style="font-size:9px;background:rgba(201,168,76,0.35);color:var(--gold-light);border-radius:20px;padding:1px 5px;">${eventos.length}</div>` : '<div style="height:15px;"></div>'}
+    </div>`;
+  }
+  grid.innerHTML = gridHTML;
+
+  // Lista de eventos da semana
+  const evList = document.getElementById('crono-semana-eventos');
+  if (evList) {
+    if (!eventosDaSemana.length) {
+      evList.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:12.5px;padding:12px;">Nenhum evento nessa semana.</div>`;
+    } else {
+      evList.innerHTML = eventosDaSemana.map(ev => renderEventoCard(ev)).join('');
+    }
+  }
+}
+
+function toISO(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function selecionarDiaCrono(iso) {
+  _cronoDiaSelecionado = iso;
+  renderCronoSemana();
+}
+
+// ── MÊS ──────────────────────────────────────────────────────────
+function navCronoMes(dir) {
+  if (dir === 0) _cronoMesOffset = 0;
+  else _cronoMesOffset += dir;
+  renderCronoMes();
+}
+
+function renderCronoMes() {
+  const agora = new Date();
+  const base = new Date(agora.getFullYear(), agora.getMonth() + _cronoMesOffset, 1);
+  const ano = base.getFullYear();
+  const mes = base.getMonth();
+
+  const lbl = document.getElementById('crono-mes-label');
+  if (lbl) lbl.textContent = `${nomeMes(mes)} ${ano}`;
+
+  const grid = document.getElementById('crono-mes-grid');
+  if (!grid) return;
+
+  const hoje = isoHoje();
+  const primeiroDia = new Date(ano, mes, 1).getDay();
+  const totalDias = new Date(ano, mes + 1, 0).getDate();
+
+  let html = '';
+  // Cabeçalho
+  ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].forEach(d => {
+    html += `<div style="text-align:center;font-size:10px;font-weight:800;color:var(--muted);padding:5px 2px;">${d}</div>`;
+  });
+  // Dias vazios
+  for (let i = 0; i < primeiroDia; i++) {
+    html += `<div></div>`;
+  }
+  // Dias do mês
+  for (let dia = 1; dia <= totalDias; dia++) {
+    const iso = `${ano}-${String(mes+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+    const evts = eventosNaData(iso);
+    const isHoje = iso === hoje;
+    const isSel = iso === _cronoDiaSelecionado;
+    html += `<div onclick="selecionarDiaCrono('${iso}')" style="
+      padding:6px 2px;border-radius:8px;text-align:center;cursor:pointer;min-height:42px;
+      background:${isSel ? 'rgba(201,168,76,0.25)' : isHoje ? 'rgba(56,189,248,0.12)' : 'rgba(255,255,255,0.02)'};
+      border:1px solid ${isSel ? 'rgba(201,168,76,0.6)' : isHoje ? 'rgba(56,189,248,0.4)' : 'rgba(255,255,255,0.06)'};
+      transition:all 0.2s;">
+      <div style="font-size:13px;font-weight:800;color:${isHoje ? '#38bdf8' : isSel ? 'var(--gold-light)' : '#fff'};">${dia}</div>
+      ${evts.length ? `<div style="font-size:9px;background:rgba(201,168,76,0.35);color:var(--gold-light);border-radius:20px;padding:1px 4px;margin-top:2px;">${evts.length}</div>` : ''}
+    </div>`;
+  }
+  grid.innerHTML = html;
+
+  // Eventos do mês
+  const evList = document.getElementById('crono-mes-eventos');
+  if (evList) {
+    const evMes = carregarEventosCrono().filter(e => e.data && e.data.startsWith(`${ano}-${String(mes+1).padStart(2,'0')}`)).sort((a,b) => a.data.localeCompare(b.data));
+    if (!evMes.length) {
+      evList.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:12.5px;padding:12px;">Nenhum evento nesse mês.</div>`;
+    } else {
+      evList.innerHTML = evMes.map(ev => renderEventoCard(ev)).join('');
+    }
+  }
+}
+
+// ── ANO ───────────────────────────────────────────────────────────
+function navCronoAno(dir) {
+  if (dir === 0) _cronoAnoOffset = 0;
+  else _cronoAnoOffset += dir;
+  renderCronoAno();
+}
+
+function renderCronoAno() {
+  const ano = new Date().getFullYear() + _cronoAnoOffset;
+  const lbl = document.getElementById('crono-ano-label');
+  if (lbl) lbl.textContent = String(ano);
+
+  const grid = document.getElementById('crono-ano-grid');
+  if (!grid) return;
+
+  const hoje = isoHoje();
+  let html = '';
+
+  for (let m = 0; m < 12; m++) {
+    const totalDias = new Date(ano, m + 1, 0).getDate();
+    const evMes = carregarEventosCrono().filter(e => e.data && e.data.startsWith(`${ano}-${String(m+1).padStart(2,'0')}`));
+    const temHojeMes = hoje.startsWith(`${ano}-${String(m+1).padStart(2,'0')}`);
+
+    html += `<div style="background:rgba(255,255,255,0.03);border:1.5px solid ${temHojeMes ? 'rgba(56,189,248,0.4)' : 'rgba(255,255,255,0.07)'};border-radius:12px;padding:12px;">
+      <div style="font-size:13px;font-weight:900;color:${temHojeMes ? '#38bdf8' : 'var(--gold-light)'};margin-bottom:8px;">${nomeMes(m)}</div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;">
+        ${['D','S','T','Q','Q','S','S'].map(d => `<div style="text-align:center;font-size:8px;color:var(--muted);font-weight:700;">${d}</div>`).join('')}
+        ${'<div></div>'.repeat(new Date(ano, m, 1).getDay())}
+        ${Array.from({length: totalDias}, (_, i) => {
+          const dia = i + 1;
+          const iso = `${ano}-${String(m+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+          const hasEv = eventosNaData(iso).length > 0;
+          const isHj = iso === hoje;
+          return `<div onclick="goTab('cronograma');mudarAbaCronograma('mes');_cronoMesOffset=${m - new Date().getMonth() + (ano - new Date().getFullYear())*12};renderCronoMes();" style="text-align:center;font-size:9px;font-weight:700;padding:2px;border-radius:3px;cursor:pointer;background:${isHj ? 'rgba(56,189,248,0.3)' : hasEv ? 'rgba(201,168,76,0.25)' : 'transparent'};color:${isHj ? '#38bdf8' : hasEv ? 'var(--gold-light)' : '#9ca3af'};">${dia}</div>`;
+        }).join('')}
+      </div>
+      ${evMes.length ? `<div style="font-size:10px;color:var(--gold-light);margin-top:6px;font-weight:700;">📌 ${evMes.length} evento${evMes.length > 1 ? 's' : ''}</div>` : ''}
+    </div>`;
+  }
+  grid.innerHTML = html;
+}
+
+// ── CARD DE EVENTO ──────────────────────────────────────────────
+function renderEventoCard(ev) {
+  const info = tipoEventoInfo(ev.tipo);
+  return `<div style="background:rgba(255,255,255,0.03);border:1.5px solid rgba(255,255,255,0.07);border-left:4px solid ${info.color};border-radius:10px;padding:10px 14px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+    <div style="flex:1;min-width:0;">
+      <div style="font-size:13px;font-weight:800;color:#fff;display:flex;align-items:center;gap:6px;">${info.emoji} ${esc(ev.titulo || '')}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:3px;">
+        📅 ${formatDataBR(ev.data)}${ev.hora ? ' · ⏰ ' + ev.hora : ''}${ev.responsavel ? ' · 👤 ' + esc(ev.responsavel) : ''}
+      </div>
+      ${ev.desc ? `<div style="font-size:11.5px;color:var(--text2);margin-top:4px;">${esc(ev.desc)}</div>` : ''}
+    </div>
+    <div style="display:flex;gap:4px;flex-shrink:0;">
+      <button onclick="editarEventoCronograma('${ev.id}')" title="Editar" style="padding:4px 7px;font-size:12px;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.35);border-radius:6px;color:var(--gold-light);cursor:pointer;">✏️</button>
+      <button onclick="excluirEventoCronograma('${ev.id}')" title="Excluir" style="padding:4px 7px;font-size:12px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);border-radius:6px;color:#f87171;cursor:pointer;">🗑️</button>
+    </div>
+  </div>`;
+}
+
+// ── MODAL: NOVO EVENTO ──────────────────────────────────────────
+function abrirModalNovoEventoCronograma(id) {
+  const m = document.getElementById('modal-novo-evento-cronograma');
+  if (!m) return;
+  document.getElementById('evento-cronograma-edit-id').value = '';
+  document.getElementById('evento-cronograma-titulo').textContent = 'Novo Evento / Prazo';
+  document.getElementById('evento-form-titulo').value = '';
+  document.getElementById('evento-form-data').value = _cronoDiaSelecionado || isoHoje();
+  document.getElementById('evento-form-hora').value = '';
+  document.getElementById('evento-form-tipo').value = 'entrega';
+  document.getElementById('evento-form-responsavel').value = '';
+  document.getElementById('evento-form-desc').value = '';
+
+  if (id) {
+    const ev = carregarEventosCrono().find(e => e.id === id);
+    if (ev) {
+      document.getElementById('evento-cronograma-edit-id').value = ev.id;
+      document.getElementById('evento-cronograma-titulo').textContent = 'Editar Evento';
+      document.getElementById('evento-form-titulo').value = ev.titulo || '';
+      document.getElementById('evento-form-data').value = ev.data || '';
+      document.getElementById('evento-form-hora').value = ev.hora || '';
+      document.getElementById('evento-form-tipo').value = ev.tipo || 'outro';
+      document.getElementById('evento-form-responsavel').value = ev.responsavel || '';
+      document.getElementById('evento-form-desc').value = ev.desc || '';
+    }
+  }
+  m.style.display = 'flex';
+}
+
+function fecharModalNovoEventoCronograma() {
+  const m = document.getElementById('modal-novo-evento-cronograma');
+  if (m) m.style.display = 'none';
+}
+
+function salvarEventoCronograma() {
+  const titulo = (document.getElementById('evento-form-titulo').value || '').trim();
+  const data = document.getElementById('evento-form-data').value;
+  if (!titulo || !data) { alert('Preencha o título e a data do evento.'); return; }
+
+  const lista = carregarEventosCrono();
+  const editId = document.getElementById('evento-cronograma-edit-id').value;
+
+  const obj = {
+    id: editId || `ev_${Date.now()}`,
+    titulo,
+    data,
+    hora: document.getElementById('evento-form-hora').value,
+    tipo: document.getElementById('evento-form-tipo').value,
+    responsavel: document.getElementById('evento-form-responsavel').value.trim(),
+    desc: document.getElementById('evento-form-desc').value.trim(),
+    criadoEm: editId ? undefined : new Date().toISOString()
+  };
+
+  if (editId) {
+    const idx = lista.findIndex(e => e.id === editId);
+    if (idx >= 0) lista[idx] = {...lista[idx], ...obj};
+    else lista.push(obj);
+  } else {
+    lista.push(obj);
+  }
+
+  salvarEventosCrono(lista);
+  fecharModalNovoEventoCronograma();
+  if (_cronoAbaAtual === 'semana') renderCronoSemana();
+  else if (_cronoAbaAtual === 'mes') renderCronoMes();
+  else if (_cronoAbaAtual === 'ano') renderCronoAno();
+}
+
+function editarEventoCronograma(id) {
+  abrirModalNovoEventoCronograma(id);
+}
+
+function excluirEventoCronograma(id) {
+  if (!confirm('Excluir este evento?')) return;
+  let lista = carregarEventosCrono().filter(e => e.id !== id);
+  salvarEventosCrono(lista);
+  if (_cronoAbaAtual === 'semana') renderCronoSemana();
+  else if (_cronoAbaAtual === 'mes') renderCronoMes();
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  MÓDULO: PEDIDO DE MATERIAL
+// ══════════════════════════════════════════════════════════════════
+
+function carregarMateriais() {
+  try { return JSON.parse(localStorage.getItem(K_CRONO.materiais) || '[]'); } catch(_) { return []; }
+}
+function salvarMateriais(arr) {
+  try { localStorage.setItem(K_CRONO.materiais, JSON.stringify(arr)); } catch(_) {}
+}
+
+function renderPedidosMaterial() {
+  const lista = carregarMateriais();
+  const busca = (document.getElementById('material-busca') || {}).value || '';
+  const filtroStatus = (document.getElementById('material-filtro-status') || {}).value || 'todos';
+
+  // Contadores
+  const counts = { a_comprar: 0, pendente: 0, comprado: 0 };
+  lista.forEach(it => { if (counts.hasOwnProperty(it.status)) counts[it.status]++; });
+  ['a_comprar', 'pendente', 'comprado'].forEach(s => {
+    const el = document.getElementById(`material-count-${s}`);
+    if (el) el.textContent = counts[s];
+  });
+
+  let filtrado = lista;
+  if (filtroStatus !== 'todos') filtrado = filtrado.filter(it => it.status === filtroStatus);
+  if (busca.trim()) {
+    const b = busca.toLowerCase().trim();
+    filtrado = filtrado.filter(it => (it.nome||'').toLowerCase().includes(b) || (it.fornecedor||'').toLowerCase().includes(b));
+  }
+
+  const cont = document.getElementById('material-lista');
+  if (!cont) return;
+
+  if (!filtrado.length) {
+    cont.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:12.5px;padding:20px;">Nenhum item encontrado.</div>`;
+    return;
+  }
+
+  const statusInfo = {
+    a_comprar: { label: '🛒 A Comprar', color: '#f87171', bg: 'rgba(239,68,68,0.12)', border: 'rgba(239,68,68,0.35)' },
+    pendente: { label: '⏳ Pendente', color: '#fbbf24', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.35)' },
+    comprado: { label: '✅ Comprado', color: '#34d399', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.35)' }
+  };
+
+  const urgInfo = {
+    normal: { label: '📋 Normal', color: '#94a3b8' },
+    urgente: { label: '🔥 Urgente', color: '#fbbf24' },
+    critico: { label: '🚨 Crítico', color: '#f87171' }
+  };
+
+  cont.innerHTML = filtrado.map(it => {
+    const st = statusInfo[it.status] || statusInfo.a_comprar;
+    const urg = urgInfo[it.urgencia] || urgInfo.normal;
+    const total = it.qtd && it.valor ? (parseFloat(it.qtd) * parseFloat(it.valor)).toFixed(2).replace('.', ',') : null;
+    return `<div style="background:rgba(255,255,255,0.03);border:1.5px solid ${st.border};border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:900;font-size:13.5px;color:#fff;">${esc(it.nome || '')}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">
+            ${it.qtd ? `Qtd: <strong style="color:#fff;">${it.qtd} ${it.unidade||'un'}</strong>` : ''}
+            ${it.valor ? ` · Unit: <strong style="color:#fff;">R$ ${parseFloat(it.valor).toFixed(2).replace('.',',')}</strong>` : ''}
+            ${total ? ` · Total: <strong style="color:var(--gold-light);">R$ ${total}</strong>` : ''}
+            ${it.fornecedor ? ` · 🏪 ${esc(it.fornecedor)}` : ''}
+          </div>
+          ${it.obs ? `<div style="font-size:11px;color:var(--text2);margin-top:4px;">${esc(it.obs)}</div>` : ''}
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+          <span style="font-size:10.5px;font-weight:800;background:${st.bg};color:${st.color};border:1px solid ${st.border};padding:3px 8px;border-radius:20px;">${st.label}</span>
+          <span style="font-size:10px;color:${urg.color};">${urg.label}</span>
+        </div>
+      </div>
+      <!-- AÇÕES -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button onclick="alterarStatusMaterial('${it.id}','a_comprar')" style="flex:1;padding:5px 4px;font-size:10.5px;font-weight:700;border-radius:6px;cursor:pointer;background:${it.status==='a_comprar'?'rgba(239,68,68,0.25)':'rgba(255,255,255,0.04)'};border:1px solid ${it.status==='a_comprar'?'rgba(239,68,68,0.5)':'rgba(255,255,255,0.1)'};color:${it.status==='a_comprar'?'#f87171':'#9ca3af'};">🛒 A Comprar</button>
+        <button onclick="alterarStatusMaterial('${it.id}','pendente')" style="flex:1;padding:5px 4px;font-size:10.5px;font-weight:700;border-radius:6px;cursor:pointer;background:${it.status==='pendente'?'rgba(245,158,11,0.25)':'rgba(255,255,255,0.04)'};border:1px solid ${it.status==='pendente'?'rgba(245,158,11,0.5)':'rgba(255,255,255,0.1)'};color:${it.status==='pendente'?'#fbbf24':'#9ca3af'};">⏳ Pendente</button>
+        <button onclick="alterarStatusMaterial('${it.id}','comprado')" style="flex:1;padding:5px 4px;font-size:10.5px;font-weight:700;border-radius:6px;cursor:pointer;background:${it.status==='comprado'?'rgba(16,185,129,0.25)':'rgba(255,255,255,0.04)'};border:1px solid ${it.status==='comprado'?'rgba(16,185,129,0.5)':'rgba(255,255,255,0.1)'};color:${it.status==='comprado'?'#34d399':'#9ca3af'};">✅ Comprado</button>
+        <button onclick="editarPedidoMaterial('${it.id}')" title="Editar" style="padding:5px 8px;font-size:12px;background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.3);border-radius:6px;color:var(--gold-light);cursor:pointer;">✏️</button>
+        <button onclick="excluirPedidoMaterial('${it.id}')" title="Excluir" style="padding:5px 8px;font-size:12px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:6px;color:#f87171;cursor:pointer;">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function alterarStatusMaterial(id, novoStatus) {
+  const lista = carregarMateriais();
+  const idx = lista.findIndex(it => it.id === id);
+  if (idx >= 0) { lista[idx].status = novoStatus; salvarMateriais(lista); }
+  renderPedidosMaterial();
+}
+
+function editarPedidoMaterial(id) {
+  const it = carregarMateriais().find(x => x.id === id);
+  if (!it) return;
+  abrirModalNovoPedidoMaterial(it);
+}
+
+function excluirPedidoMaterial(id) {
+  if (!confirm('Excluir este item?')) return;
+  salvarMateriais(carregarMateriais().filter(x => x.id !== id));
+  renderPedidosMaterial();
+}
+
+function abrirModalNovoPedidoMaterial(it) {
+  const m = document.getElementById('modal-novo-pedido-material');
+  if (!m) return;
+  document.getElementById('pedido-material-edit-id').value = it ? it.id : '';
+  document.getElementById('pedido-material-titulo').textContent = it ? 'Editar Item' : 'Novo Item de Material';
+  document.getElementById('pedido-form-nome').value = it ? (it.nome||'') : '';
+  document.getElementById('pedido-form-qtd').value = it ? (it.qtd||'') : '';
+  document.getElementById('pedido-form-unidade').value = it ? (it.unidade||'un') : 'un';
+  document.getElementById('pedido-form-valor').value = it ? (it.valor||'') : '';
+  document.getElementById('pedido-form-urgencia').value = it ? (it.urgencia||'normal') : 'normal';
+  document.getElementById('pedido-form-fornecedor').value = it ? (it.fornecedor||'') : '';
+  document.getElementById('pedido-form-status').value = it ? (it.status||'a_comprar') : 'a_comprar';
+  document.getElementById('pedido-form-obs').value = it ? (it.obs||'') : '';
+  m.style.display = 'flex';
+}
+
+function fecharModalNovoPedidoMaterial() {
+  const m = document.getElementById('modal-novo-pedido-material');
+  if (m) m.style.display = 'none';
+}
+
+function salvarPedidoMaterial() {
+  const nome = (document.getElementById('pedido-form-nome').value || '').trim();
+  if (!nome) { alert('Informe o nome do material.'); return; }
+
+  const lista = carregarMateriais();
+  const editId = document.getElementById('pedido-material-edit-id').value;
+
+  const obj = {
+    id: editId || `mat_${Date.now()}`,
+    nome,
+    qtd: document.getElementById('pedido-form-qtd').value,
+    unidade: document.getElementById('pedido-form-unidade').value,
+    valor: document.getElementById('pedido-form-valor').value,
+    urgencia: document.getElementById('pedido-form-urgencia').value,
+    fornecedor: document.getElementById('pedido-form-fornecedor').value.trim(),
+    status: document.getElementById('pedido-form-status').value,
+    obs: document.getElementById('pedido-form-obs').value.trim(),
+    criadoEm: editId ? undefined : new Date().toISOString()
+  };
+
+  if (editId) {
+    const idx = lista.findIndex(x => x.id === editId);
+    if (idx >= 0) lista[idx] = {...lista[idx], ...obj};
+    else lista.push(obj);
+  } else {
+    lista.push(obj);
+  }
+
+  salvarMateriais(lista);
+  fecharModalNovoPedidoMaterial();
+  renderPedidosMaterial();
+}
+
+// ── ENVIO VIA WHATSAPP ───────────────────────────────────────────
+function abrirModalConfigWhatsappMaterial() {
+  const m = document.getElementById('modal-config-whatsapp-material');
+  if (!m) return;
+  try {
+    const cfg = JSON.parse(localStorage.getItem(K_CRONO.whatsapp) || '{}');
+    document.getElementById('config-whatsapp-numero').value = cfg.numero || '';
+    document.getElementById('config-whatsapp-nome').value = cfg.nome || '';
+  } catch(_) {}
+  m.style.display = 'flex';
+}
+
+function fecharModalConfigWhatsappMaterial() {
+  const m = document.getElementById('modal-config-whatsapp-material');
+  if (m) m.style.display = 'none';
+}
+
+function salvarConfigWhatsappMaterial() {
+  const numero = (document.getElementById('config-whatsapp-numero').value || '').trim();
+  const nome = (document.getElementById('config-whatsapp-nome').value || '').trim();
+  if (!numero) { alert('Informe o número do WhatsApp.'); return; }
+  try { localStorage.setItem(K_CRONO.whatsapp, JSON.stringify({numero, nome})); } catch(_) {}
+  fecharModalConfigWhatsappMaterial();
+  alert(`✅ WhatsApp de pedidos salvo: ${numero}${nome ? ' (' + nome + ')' : ''}`);
+}
+
+function enviarPedidoMaterialWhatsApp() {
+  let cfg = {};
+  try { cfg = JSON.parse(localStorage.getItem(K_CRONO.whatsapp) || '{}'); } catch(_) {}
+
+  if (!cfg.numero) {
+    if (confirm('Nenhum número de WhatsApp configurado para pedidos. Deseja configurar agora?')) {
+      abrirModalConfigWhatsappMaterial();
+    }
+    return;
+  }
+
+  const lista = carregarMateriais();
+  const filtroStatus = (document.getElementById('material-filtro-status') || {}).value || 'todos';
+  const itens = filtroStatus !== 'todos' ? lista.filter(it => it.status === filtroStatus) : lista.filter(it => it.status !== 'comprado');
+
+  if (!itens.length) {
+    alert('Nenhum item para enviar com o filtro atual.');
+    return;
+  }
+
+  const nomeEmp = (typeof obterEmpresaAtivaGlobal === 'function' ? obterEmpresaAtivaGlobal() : null)?.nome || 'SD Móveis Projetados';
+  const hoje = new Date().toLocaleDateString('pt-BR');
+
+  let msg = `📦 *PEDIDO DE MATERIAL – ${nomeEmp}*\n📅 Data: ${hoje}\n\n`;
+
+  const statusLabel = { a_comprar: '🛒 A Comprar', pendente: '⏳ Pendente', comprado: '✅ Comprado' };
+  const grupos = {};
+  itens.forEach(it => {
+    const g = it.status || 'a_comprar';
+    if (!grupos[g]) grupos[g] = [];
+    grupos[g].push(it);
+  });
+
+  Object.keys(grupos).forEach(st => {
+    msg += `*${statusLabel[st] || st}*\n`;
+    grupos[st].forEach((it, i) => {
+      msg += `${i+1}. ${it.nome}${it.qtd ? ' – ' + it.qtd + ' ' + (it.unidade||'un') : ''}${it.urgencia === 'urgente' ? ' 🔥' : it.urgencia === 'critico' ? ' 🚨' : ''}${it.fornecedor ? ' (' + it.fornecedor + ')' : ''}\n`;
+    });
+    msg += '\n';
+  });
+
+  msg += `_Enviado via SD Móveis Projetados_`;
+
+  const tel = cfg.numero.replace(/\D/g, '');
+  const url = `https://wa.me/55${tel}?text=${encodeURIComponent(msg)}`;
+  window.open(url, '_blank');
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  MÓDULO: COMISSÕES POR SERVIÇOS FINALIZADOS
+// ══════════════════════════════════════════════════════════════════
+
+function carregarComissoes() {
+  try { return JSON.parse(localStorage.getItem(K_CRONO.comissoes) || '[]'); } catch(_) { return []; }
+}
+function salvarComissoes(arr) {
+  try { localStorage.setItem(K_CRONO.comissoes, JSON.stringify(arr)); } catch(_) {}
+}
+
+function abrirModalComissoes() {
+  const m = document.getElementById('modal-comissoes');
+  if (!m) return;
+  // Popula select de funcionários
+  popularSelectComissoesFuncionarios();
+  renderComissoes();
+  m.style.display = 'flex';
+}
+
+function fecharModalComissoes() {
+  const m = document.getElementById('modal-comissoes');
+  if (m) m.style.display = 'none';
+}
+
+function popularSelectComissoesFuncionarios() {
+  const sel = document.getElementById('comissao-filtro-func');
+  if (!sel) return;
+  const lista = (typeof funcionariosLista !== 'undefined' && Array.isArray(funcionariosLista)) ? funcionariosLista : [];
+  sel.innerHTML = '<option value="todos">👷 Todos os Funcionários</option>' +
+    lista.map(f => `<option value="${f.id}">${esc(f.nome||'')}</option>`).join('');
+}
+
+function renderComissoes() {
+  const lista = carregarComissoes();
+  const filtroFunc = (document.getElementById('comissao-filtro-func') || {}).value || 'todos';
+  const filtroStatus = (document.getElementById('comissao-filtro-status') || {}).value || 'todos';
+
+  // Totais
+  let totPendente = 0, totAgendado = 0, totPago = 0;
+  lista.forEach(c => {
+    const v = parseFloat(c.valor || 0);
+    if (c.status === 'pendente') totPendente += v;
+    else if (c.status === 'agendado') totAgendado += v;
+    else if (c.status === 'pago') totPago += v;
+  });
+  const fmtR = v => `R$ ${v.toFixed(2).replace('.',',')}`;
+  const el1 = document.getElementById('comissao-total-pendente');
+  const el2 = document.getElementById('comissao-total-agendado');
+  const el3 = document.getElementById('comissao-total-pago');
+  if (el1) el1.textContent = fmtR(totPendente);
+  if (el2) el2.textContent = fmtR(totAgendado);
+  if (el3) el3.textContent = fmtR(totPago);
+
+  // Badge
+  const badge = document.getElementById('badge-comissoes-pendentes');
+  const pendCnt = lista.filter(c => c.status === 'pendente' || c.status === 'agendado').length;
+  if (badge) {
+    if (pendCnt > 0) { badge.textContent = pendCnt; badge.style.display = ''; }
+    else badge.style.display = 'none';
+  }
+
+  let filtrado = lista;
+  if (filtroFunc !== 'todos') filtrado = filtrado.filter(c => String(c.funcId) === String(filtroFunc));
+  if (filtroStatus !== 'todos') filtrado = filtrado.filter(c => c.status === filtroStatus);
+  filtrado = filtrado.sort((a,b) => (a.dataServico||'').localeCompare(b.dataServico||''));
+
+  const cont = document.getElementById('comissao-lista');
+  if (!cont) return;
+
+  if (!filtrado.length) {
+    cont.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:12.5px;padding:20px;">Nenhuma comissão registrada.</div>`;
+    return;
+  }
+
+  const stInfo = {
+    pendente: { label: '⏳ Pendente', color: '#fbbf24', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.35)' },
+    agendado: { label: '📅 Agendado', color: '#38bdf8', bg: 'rgba(56,189,248,0.12)', border: 'rgba(56,189,248,0.35)' },
+    pago: { label: '✅ Pago', color: '#34d399', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.35)' }
+  };
+
+  cont.innerHTML = filtrado.map(c => {
+    const st = stInfo[c.status] || stInfo.pendente;
+    const func = (typeof funcionariosLista !== 'undefined' && Array.isArray(funcionariosLista))
+      ? funcionariosLista.find(f => String(f.id) === String(c.funcId)) : null;
+    return `<div style="background:rgba(255,255,255,0.03);border:1.5px solid ${st.border};border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:900;font-size:13.5px;color:#fff;">💰 ${esc(c.descricao || 'Comissão')}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:3px;">
+            ${func ? `👷 ${esc(func.nome)} · ` : ''}
+            ${c.dataServico ? `📅 Serviço: ${formatDataBR(c.dataServico)}` : ''}
+          </div>
+          ${c.dataRecebimento ? `<div style="font-size:11px;color:#38bdf8;margin-top:2px;">📅 Receber em: <strong>${formatDataBR(c.dataRecebimento)}</strong></div>` : ''}
+          ${c.obs ? `<div style="font-size:11px;color:var(--text2);margin-top:4px;">${esc(c.obs)}</div>` : ''}
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+          <span style="font-size:16px;font-weight:900;color:var(--gold-light);">R$ ${parseFloat(c.valor||0).toFixed(2).replace('.',',')}</span>
+          <span style="font-size:10.5px;font-weight:800;background:${st.bg};color:${st.color};border:1px solid ${st.border};padding:3px 8px;border-radius:20px;">${st.label}</span>
+        </div>
+      </div>
+      <!-- AÇÕES DE STATUS -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button onclick="alterarStatusComissao('${c.id}','pendente')" style="flex:1;padding:5px 4px;font-size:10.5px;font-weight:700;border-radius:6px;cursor:pointer;background:${c.status==='pendente'?'rgba(245,158,11,0.25)':'rgba(255,255,255,0.04)'};border:1px solid ${c.status==='pendente'?'rgba(245,158,11,0.5)':'rgba(255,255,255,0.1)'};color:${c.status==='pendente'?'#fbbf24':'#9ca3af'};">⏳ Pendente</button>
+        <button onclick="alterarStatusComissao('${c.id}','agendado')" style="flex:1;padding:5px 4px;font-size:10.5px;font-weight:700;border-radius:6px;cursor:pointer;background:${c.status==='agendado'?'rgba(56,189,248,0.25)':'rgba(255,255,255,0.04)'};border:1px solid ${c.status==='agendado'?'rgba(56,189,248,0.5)':'rgba(255,255,255,0.1)'};color:${c.status==='agendado'?'#38bdf8':'#9ca3af'};">📅 Agendado</button>
+        <button onclick="alterarStatusComissao('${c.id}','pago')" style="flex:1;padding:5px 4px;font-size:10.5px;font-weight:700;border-radius:6px;cursor:pointer;background:${c.status==='pago'?'rgba(16,185,129,0.25)':'rgba(255,255,255,0.04)'};border:1px solid ${c.status==='pago'?'rgba(16,185,129,0.5)':'rgba(255,255,255,0.1)'};color:${c.status==='pago'?'#34d399':'#9ca3af'};">✅ Pago</button>
+        <button onclick="editarComissao('${c.id}')" title="Editar" style="padding:5px 8px;font-size:12px;background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.3);border-radius:6px;color:var(--gold-light);cursor:pointer;">✏️</button>
+        <button onclick="excluirComissao('${c.id}')" title="Excluir" style="padding:5px 8px;font-size:12px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:6px;color:#f87171;cursor:pointer;">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function alterarStatusComissao(id, novoStatus) {
+  const lista = carregarComissoes();
+  const idx = lista.findIndex(c => c.id === id);
+  if (idx >= 0) { lista[idx].status = novoStatus; salvarComissoes(lista); }
+  renderComissoes();
+}
+
+function editarComissao(id) {
+  const c = carregarComissoes().find(x => x.id === id);
+  if (!c) return;
+  abrirModalNovaComissao(c);
+}
+
+function excluirComissao(id) {
+  if (!confirm('Excluir esta comissão?')) return;
+  salvarComissoes(carregarComissoes().filter(x => x.id !== id));
+  renderComissoes();
+}
+
+function abrirModalNovaComissao(c) {
+  const m = document.getElementById('modal-nova-comissao');
+  if (!m) return;
+
+  // Popula select de funcionários
+  const selFunc = document.getElementById('comissao-form-func');
+  if (selFunc) {
+    const lista = (typeof funcionariosLista !== 'undefined' && Array.isArray(funcionariosLista)) ? funcionariosLista : [];
+    selFunc.innerHTML = '<option value="">-- Selecione o Funcionário --</option>' +
+      lista.map(f => `<option value="${f.id}">${esc(f.nome||'')}</option>`).join('');
+  }
+
+  document.getElementById('comissao-edit-id').value = c ? c.id : '';
+  document.getElementById('nova-comissao-titulo').textContent = c ? 'Editar Comissão' : 'Nova Comissão';
+  if (selFunc) selFunc.value = c ? (c.funcId||'') : '';
+  document.getElementById('comissao-form-descricao').value = c ? (c.descricao||'') : '';
+  document.getElementById('comissao-form-valor').value = c ? (c.valor||'') : '';
+  document.getElementById('comissao-form-pct').value = c ? (c.pct||'') : '';
+  document.getElementById('comissao-form-data-servico').value = c ? (c.dataServico||'') : isoHoje();
+  document.getElementById('comissao-form-data-recebimento').value = c ? (c.dataRecebimento||'') : '';
+  document.getElementById('comissao-form-status').value = c ? (c.status||'pendente') : 'pendente';
+  document.getElementById('comissao-form-obs').value = c ? (c.obs||'') : '';
+
+  m.style.display = 'flex';
+}
+
+function fecharModalNovaComissao() {
+  const m = document.getElementById('modal-nova-comissao');
+  if (m) m.style.display = 'none';
+}
+
+function salvarComissao() {
+  const funcId = document.getElementById('comissao-form-func').value;
+  const descricao = (document.getElementById('comissao-form-descricao').value || '').trim();
+  const valor = document.getElementById('comissao-form-valor').value;
+  const dataServico = document.getElementById('comissao-form-data-servico').value;
+
+  if (!funcId) { alert('Selecione o funcionário.'); return; }
+  if (!descricao) { alert('Informe a descrição do serviço.'); return; }
+  if (!valor || isNaN(parseFloat(valor))) { alert('Informe o valor da comissão.'); return; }
+
+  const lista = carregarComissoes();
+  const editId = document.getElementById('comissao-edit-id').value;
+
+  const obj = {
+    id: editId || `com_${Date.now()}`,
+    funcId,
+    descricao,
+    valor: parseFloat(valor).toFixed(2),
+    pct: document.getElementById('comissao-form-pct').value,
+    dataServico,
+    dataRecebimento: document.getElementById('comissao-form-data-recebimento').value,
+    status: document.getElementById('comissao-form-status').value,
+    obs: document.getElementById('comissao-form-obs').value.trim(),
+    criadoEm: editId ? undefined : new Date().toISOString()
+  };
+
+  if (editId) {
+    const idx = lista.findIndex(x => x.id === editId);
+    if (idx >= 0) lista[idx] = {...lista[idx], ...obj};
+    else lista.push(obj);
+  } else {
+    lista.push(obj);
+  }
+
+  salvarComissoes(lista);
+  fecharModalNovaComissao();
+  renderComissoes();
+
+  // Notifica se houver data de recebimento agendada
+  if (obj.dataRecebimento) {
+    const func = (typeof funcionariosLista !== 'undefined' && Array.isArray(funcionariosLista))
+      ? funcionariosLista.find(f => String(f.id) === String(funcId)) : null;
+    const nomeFunc = func ? func.nome : 'Funcionário';
+    try {
+      const notifs = JSON.parse(localStorage.getItem('sdv_registro_notificacoes') || '[]');
+      notifs.unshift({
+        id: `notif_com_${Date.now()}`,
+        tipo: 'comissao_agendada',
+        titulo: '💰 Comissão Agendada',
+        msg: `Comissão de R$ ${parseFloat(obj.valor).toFixed(2).replace('.',',')} para ${nomeFunc} (${descricao}) programada para ${formatDataBR(obj.dataRecebimento)}.`,
+        data: new Date().toISOString()
+      });
+      localStorage.setItem('sdv_registro_notificacoes', JSON.stringify(notifs.slice(0, 200)));
+      if (typeof atualizarBadgeNotificacoes === 'function') atualizarBadgeNotificacoes();
+    } catch(_) {}
+  }
+}
+
+// ── INICIALIZAÇÃO DO MÓDULO CRONOGRAMA ──────────────────────────
+(function initCronograma() {
+  // Renderiza quando a aba for clicada
+  const origGoTab = typeof goTab === 'function' ? goTab : null;
+  if (origGoTab) {
+    const _goTabOrig = window.goTab;
+    window.goTab = function(t) {
+      _goTabOrig(t);
+      if (t === 'cronograma') {
+        setTimeout(() => mudarAbaCronograma(_cronoAbaAtual || 'semana'), 50);
+      }
+    };
+  }
+  // Atualiza badge de comissões
+  setTimeout(() => {
+    try {
+      const lista = carregarComissoes();
+      const badge = document.getElementById('badge-comissoes-pendentes');
+      const cnt = lista.filter(c => c.status === 'pendente' || c.status === 'agendado').length;
+      if (badge && cnt > 0) { badge.textContent = cnt; badge.style.display = ''; }
+    } catch(_) {}
+  }, 1000);
+})();
 </script>
 </body>
 </html>
