@@ -7402,11 +7402,15 @@ function abrirPortalFuncionarioDireto() {
   const baseOrigin = window.location.origin;
   const basePath = window.location.pathname.replace(/\/index\.html$/i, '').replace(/\/$/, '');
   const licAtivaLink = (typeof obterLicencaAtiva === 'function' ? obterLicencaAtiva() : { id: 'sdvidros', nome: 'SD Vidros' });
-  const listaFuncs = (typeof funcionarios !== 'undefined' && Array.isArray(funcionarios) && funcionarios.length > 0) ? funcionarios : [];
+  const listaFuncs = (typeof funcionariosLista !== 'undefined' && Array.isArray(funcionariosLista) && funcionariosLista.length > 0) 
+    ? funcionariosLista 
+    : ((typeof funcionarios !== 'undefined' && Array.isArray(funcionarios) && funcionarios.length > 0) ? funcionarios : []);
   let url = `${baseOrigin}${basePath}/funcionario.html?portal=funcionario&empresa=${encodeURIComponent(licAtivaLink.id)}&empNome=${encodeURIComponent(licAtivaLink.nome)}`;
   if (listaFuncs.length > 0) {
-    const f1 = listaFuncs[0];
+    const f1 = listaFuncs.find(f => f.id === 100 || (f.nome && f.nome.toLowerCase().includes('samuel'))) || listaFuncs[0];
     url += `&funcId=${encodeURIComponent(f1.id)}&nome=${encodeURIComponent(f1.nome)}&cargo=${encodeURIComponent(f1.cargo || 'Colaborador')}`;
+  } else {
+    url += `&funcId=100&nome=Samuel%20David&cargo=${encodeURIComponent('Instalador / Técnico Líder')}`;
   }
   abrirLinkPortalFuncionario(url);
 }

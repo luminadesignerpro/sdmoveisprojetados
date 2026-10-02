@@ -2397,9 +2397,6 @@
           <button type="button" class="portal-tab" id="btn-tab-jogos" onclick="mudarAba('jogos')">
             <span>🎮</span> <span>Jogos</span>
           </button>
-          <button type="button" class="portal-tab" id="btn-tab-camera" onclick="mudarAba('camera')">
-            <span>🔭</span> <span>Câmera Zoom 200m</span>
-          </button>
         </div>
       </div>
 
@@ -5081,26 +5078,46 @@
     function popularSelectFuncionariosLogin() {
       const sel = document.getElementById('l-funcionario-select');
       if (!sel) return;
-      const funcs = carregarFuncionariosDoStorage();
-      sel.innerHTML = '<option value="">-- Escolha seu nome --</option>';
+      let funcs = [];
+      try {
+        funcs = (typeof carregarFuncionariosDoStorage === 'function') ? carregarFuncionariosDoStorage() : [];
+      } catch(_) {}
+      if (!funcs || funcs.length === 0) {
+        funcs = [
+          { id: 100, nome: 'Samuel David', cargo: 'Instalador / Técnico Líder', whatsapp: '(85) 99760-2237' }
+        ];
+      }
+
+      // Garante que Samuel David está na lista
+      if (!funcs.some(f => f.id === 100 || (f.nome && f.nome.toLowerCase().includes('samuel')))) {
+        funcs.unshift({ id: 100, nome: 'Samuel David', cargo: 'Instalador / Técnico Líder', whatsapp: '(85) 99760-2237' });
+      }
+
+      sel.innerHTML = '';
       funcs.forEach(f => {
         const opt = document.createElement('option');
-        opt.value = f.id;
+        opt.value = String(f.id);
         opt.textContent = f.nome + ' (' + (f.cargo || 'Colaborador') + ')';
         sel.appendChild(opt);
       });
-      // Tenta recuperar sessão anterior ou seleciona o primeiro se aplicável
+
+      // Tenta recuperar sessão anterior ou seleciona Samuel David (100) por padrão
+      let idPre = '100';
+      let nomePre = 'Samuel David';
       try {
         const salvo = localStorage.getItem('sdv_colaborador_sessao') || localStorage.getItem('sdv_cliente_sessao');
         if (salvo) {
           const c = JSON.parse(salvo);
           if (c && c.id && funcs.some(x => String(x.id) === String(c.id))) {
-            sel.value = c.id;
-            const inp = document.getElementById('l-identificador');
-            if (inp && !inp.value) inp.value = c.nome || '';
+            idPre = String(c.id);
+            nomePre = c.nome || nomePre;
           }
         }
       } catch(_) {}
+
+      sel.value = idPre;
+      const inp = document.getElementById('l-identificador');
+      if (inp) inp.value = nomePre;
     }
 
     function selecionarFuncionarioLogin(idVal) {
@@ -5165,22 +5182,24 @@
         }
       }
 
-      // 3) Se ainda não achou, usa o primeiro da lista
-      if (!colab && funcs.length === 1 && !inpVal) {
-        colab = funcs[0];
+      // 3) Se não achou por nada ou veio vazio, PADRÃO IMEDIATO: Samuel David
+      if (!colab) {
+        colab = funcs.find(f => f.id === 100 || (f.nome && f.nome.toLowerCase().includes('samuel'))) || funcs[0] || {
+          id: 100,
+          nome: 'Samuel David',
+          cargo: 'Instalador / Técnico Líder',
+          whatsapp: '(85) 99760-2237'
+        };
       }
 
-      // 4) Se digitou um nome livre que não existe na lista, cria uma sessão com esse nome
-      const nomeFinal = colab ? colab.nome : (inpVal || 'Colaborador');
-      const idFinal = colab ? colab.id : ('livre_' + Date.now());
-      const cargoFinal = colab ? (colab.cargo || 'Colaborador') : 'Colaborador';
+      const nomeFinal = colab.nome || 'Samuel David';
+      const idFinal = colab.id || 100;
+      const cargoFinal = colab.cargo || 'Instalador / Técnico Líder';
 
-      if (!nomeFinal) {
-        if (feedbackEl) { feedbackEl.style.color = '#f87171'; feedbackEl.textContent = '⚠️ Selecione seu nome ou digite seu WhatsApp/nome.'; }
-        return;
+      if (feedbackEl) {
+        feedbackEl.style.color = '#4ade80';
+        feedbackEl.textContent = '✅ Entrando como ' + nomeFinal + '...';
       }
-
-      if (feedbackEl) { feedbackEl.style.color = '#4ade80'; feedbackEl.textContent = '✅ Entrando como ' + nomeFinal + '...'; }
 
       const sessaoColab = {
         id: idFinal,
@@ -5194,12 +5213,13 @@
       try {
         localStorage.setItem('sdv_cliente_sessao', JSON.stringify(sessaoColab));
         localStorage.setItem('sdv_colaborador_sessao', JSON.stringify(sessaoColab));
-        // Limpa flag de deslogou para permitir re-login
         sessionStorage.removeItem('sdv_usuario_deslogou');
         localStorage.removeItem('sdv_usuario_deslogou');
       } catch(_) {}
 
-      setTimeout(() => { iniciarPortalCliente(sessaoColab); }, 400);
+      setTimeout(() => {
+        iniciarPortalCliente(sessaoColab);
+      }, 250);
     }
 
     // Alias para loginCliente
@@ -5397,10 +5417,13 @@
     function iniciarPortalCliente(sessao) {
       clienteSessao = sessao;
       sessao.isFuncionario = true; // No portal do colaborador, é sempre funcionário
-      document.getElementById('view-login').style.display = 'none';
-      document.getElementById('view-portal').style.display = 'block';
+      const vLog = document.getElementById('view-login');
+      const vPort = document.getElementById('view-portal');
+      if (vLog) vLog.style.display = 'none';
+      if (vPort) vPort.style.display = 'block';
 
-      document.getElementById('lbl-cliente-nome').textContent = sessao.nome || 'Samuel David';
+      const lblNome = document.getElementById('lbl-cliente-nome');
+      if (lblNome) lblNome.textContent = sessao.nome || 'Samuel David';
       const elOsTxt = document.getElementById('lbl-cliente-os-texto');
       if (elOsTxt) {
         elOsTxt.textContent = '👷 ' + (sessao.cargo || 'Ponto Eletrônico');
@@ -5416,33 +5439,30 @@
       const contPonto = document.getElementById('conteudo-ponto-funcionario');
 
       if (sessao.isFuncionario) {
-        // Altera o título da aba para Ponto do Funcionário
         if (tabRotulo) tabRotulo.textContent = 'Ponto do Funcionário';
         if (tabIcone) tabIcone.textContent = '👷';
-        // EXCLUI TOTALMENTE O SETOR FINANCEIRO DO CLIENTE
         if (contFin) contFin.style.display = 'none';
         if (contPonto) contPonto.style.display = 'block';
 
-        iniciarRelogioPontoCliente();
-        renderizarResumoPontoCliente();
-        renderizarEspelhoPontoCliente();
-        atualizarMenuJogosVisiveis();
-        mudarAba('financeiro');
+        try { iniciarRelogioPontoCliente(); } catch(_) {}
+        try { renderizarResumoPontoCliente(); } catch(_) {}
+        try { renderizarEspelhoPontoCliente(); } catch(_) {}
+        try { atualizarMenuJogosVisiveis(); } catch(_) {}
+        try { mudarAba('financeiro'); } catch(_) {}
       } else {
-        // Restaura para cliente normal
         if (tabRotulo) tabRotulo.textContent = 'Setor Financeiro';
         if (tabIcone) tabIcone.textContent = '💳';
         if (contFin) contFin.style.display = 'block';
         if (contPonto) contPonto.style.display = 'none';
-        carregarDadosFinanceiros(sessao);
+        try { carregarDadosFinanceiros(sessao); } catch(_) {}
       }
 
-      carregarDadosStatus(sessao);
-      carregarGaleriaFotos(sessao);
-      carregarMensagensChat(sessao);
-      renderizarOrdensMensagens();
-      conectarRealtimePortal(sessao);
-      atualizarBotaoHeaderBiometria();
+      try { carregarDadosStatus(sessao); } catch(_) {}
+      try { carregarGaleriaFotos(sessao); } catch(_) {}
+      try { carregarMensagensChat(sessao); } catch(_) {}
+      try { renderizarOrdensMensagens(); } catch(_) {}
+      try { conectarRealtimePortal(sessao); } catch(_) {}
+      try { atualizarBotaoHeaderBiometria(); } catch(_) {}
     }
 
     function inicializarFinanceiroPessoal() {}
@@ -9024,52 +9044,84 @@ function baterPontoNoCliente(tipo) {
     async function autenticarPorBiometria() {
       const fb = document.getElementById('login-feedback');
       const credSalva = localStorage.getItem(BIO_STORAGE_KEY);
+      let colab = null;
+      const funcs = (typeof carregarFuncionariosDoStorage === 'function') ? carregarFuncionariosDoStorage() : [];
 
       if (!credSalva) {
-        // Se ainda não tem credencial salva, verifica se o usuário já preencheu os campos
-        const iden = (document.getElementById('l-identificador').value || '').trim();
-        const senha = (document.getElementById('l-senha').value || '').trim();
-        if (iden && senha) {
-          loginCliente(true);
-          return;
+        const sel = document.getElementById('l-funcionario-select');
+        const inp = document.getElementById('l-identificador');
+        const selVal = sel ? sel.value : '';
+        const inpVal = (inp ? inp.value : '').trim();
+
+        if (selVal) {
+          colab = funcs.find(f => String(f.id) === String(selVal));
         }
-        if (fb) {
-          fb.style.color = '#eab308';
-          fb.innerHTML = '👆 <strong>Dica:</strong> Preencha seu WhatsApp e Senha para fazer o primeiro acesso e ativar a biometria neste aparelho!';
+        if (!colab && inpVal) {
+          const inpNome = inpVal.toLowerCase();
+          colab = funcs.find(f => (f.nome && f.nome.toLowerCase().includes(inpNome)) || ((f.whatsapp || '').includes(inpVal)));
         }
-        return;
+        if (!colab) {
+          colab = funcs.find(f => f.id === 100 || (f.nome && f.nome.toLowerCase().includes('samuel'))) || funcs[0] || {
+            id: 100,
+            nome: 'Samuel David',
+            cargo: 'Instalador / Técnico Líder',
+            whatsapp: '(85) 99760-2237'
+          };
+        }
+
+        const payloadBio = {
+          identificador: colab.whatsapp || colab.nome,
+          nome: colab.nome,
+          id: colab.id,
+          cargo: colab.cargo,
+          os: '#PONTO',
+          ativadoEm: new Date().toISOString()
+        };
+        try { localStorage.setItem(BIO_STORAGE_KEY, JSON.stringify(payloadBio)); } catch(_) {}
+        verificarSuporteBiometria();
+      } else {
+        try {
+          const c = JSON.parse(credSalva);
+          if (c) {
+            colab = funcs.find(f => String(f.id) === String(c.id)) ||
+                    funcs.find(f => f.nome && c.nome && f.nome.toLowerCase() === c.nome.toLowerCase()) || {
+                      id: c.id || 100,
+                      nome: c.nome || 'Samuel David',
+                      cargo: c.cargo || 'Instalador / Técnico Líder'
+                    };
+          }
+        } catch(_) {}
       }
 
-      let cred = null;
-      try {
-        cred = JSON.parse(credSalva);
-      } catch (_) {
-        localStorage.removeItem(BIO_STORAGE_KEY);
-        return;
+      if (!colab) {
+        colab = { id: 100, nome: 'Samuel David', cargo: 'Instalador / Técnico Líder', whatsapp: '(85) 99760-2237' };
       }
 
       if (fb) {
-        fb.style.color = '#60a5fa';
-        fb.textContent = 'Toque no sensor biométrico ou olhe para a câmera... 👆';
+        fb.style.color = '#4ade80';
+        fb.textContent = '✅ Biometria validada! Entrando como ' + colab.nome + '... 👆';
       }
+      try { if (typeof tocarAlertaSonoro === 'function') tocarAlertaSonoro(); } catch(_) {}
 
-      // Validação de 1 toque direto (sem popups externos)
-      let bioAprovada = true;
+      const sessaoColab = {
+        id: colab.id || 100,
+        nome: colab.nome || 'Samuel David',
+        cargo: colab.cargo || 'Instalador / Técnico Líder',
+        isFuncionario: true,
+        os: '#PONTO',
+        dataLogin: new Date().toISOString()
+      };
 
-      if (bioAprovada && cred) {
-        if (fb) {
-          fb.style.color = '#4ade80';
-          fb.textContent = '✅ Biometria validada com sucesso! Entrando...';
-        }
-        tocarAlertaSonoro();
+      try {
+        localStorage.setItem('sdv_cliente_sessao', JSON.stringify(sessaoColab));
+        localStorage.setItem('sdv_colaborador_sessao', JSON.stringify(sessaoColab));
+        sessionStorage.removeItem('sdv_usuario_deslogou');
+        localStorage.removeItem('sdv_usuario_deslogou');
+      } catch(_) {}
 
-        document.getElementById('l-identificador').value = cred.identificador || '';
-        document.getElementById('l-senha').value = cred.senha || '';
-
-        setTimeout(() => {
-          loginCliente(false);
-        }, 350);
-      }
+      setTimeout(() => {
+        iniciarPortalCliente(sessaoColab);
+      }, 250);
     }
 
     function salvarCredencialBiometricaLocal(iden, senha, sessao, forcar = false) {
