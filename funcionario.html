@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>Portal do Funcionário – SD Vidros</title>
+  <title>Portal do Funcionário – SD Móveis Projetados</title>
     <script>
     (function() {
       try {
@@ -15,13 +15,13 @@
         var nome = (p.get('nome') || p.get('empNome') || '').toLowerCase();
         if (emp === 'samuel-david' || emp === 'samuel' || nome === 'samuel david' || nome === 'samuel') {
           emp = 'sdvidros';
-          nome = 'sd vidros';
+          nome = 'sd moveis projetados';
         }
         var isMoveis = true;
         var manifestHref = isMoveis ? 'manifest-moveis.json' : 'manifest.json';
         var logoSrc = 'logo_moveis.jpg';
-        var appTitle = isMoveis ? 'SD Móveis Projetados' : 'SD Vidros';
-        var shortTitle = isMoveis ? 'SD Móveis' : 'SD Vidros';
+        var appTitle = 'SD Móveis Projetados';
+        var shortTitle = 'SD Móveis';
 
         document.write('<link id="dynamic-manifest" rel="manifest" href="' + manifestHref + '">');
         document.write('<link id="dynamic-favicon" rel="icon" type="image/jpeg" href="' + logoSrc + '">');
@@ -2264,15 +2264,13 @@
       </div>
     </div>
 
-    <!-- ══════════════════════════════════════════════ -->
-    <!-- TELA 1: LOGIN DO CLIENTE                     -->
-    <!-- ══════════════════════════════════════════════ -->
-    <div id="view-login" class="login-container">
+    <!-- TELA 1: LOGIN REMOVIDO - ACESSO DIRETO AO PORTAL -->
+    <div id="view-login" style="display:none;">
       <div class="login-logo">
         <img id="portal-login-logo" src="logo.jpg" alt="Logo" onerror="this.src='icon-192.png'">
       </div>
       <h2 class="login-title">Portal do Funcionário</h2>
-      <p class="login-sub" id="portal-login-sub">SD Vidros · Ponto Eletrônico & Acompanhamento</p>
+      <p class="login-sub" id="portal-login-sub">SD Móveis Projetados · Ponto Eletrônico & Acompanhamento</p>
 
       <div class="field-box" style="margin-bottom:12px;">
         <label style="font-size:12px;font-weight:800;color:var(--gold-light);display:flex;align-items:center;gap:6px;margin-bottom:6px;">
@@ -2330,7 +2328,7 @@
     <!-- ══════════════════════════════════════════════ -->
     <!-- TELA 2: PORTAL PRINCIPAL DO FUNCIONÁRIO       -->
     <!-- ══════════════════════════════════════════════ -->
-    <div id="view-portal" style="display: none;">
+    <div id="view-portal" style="display: block;">
 
       <!-- ══ CABEÇALHO COM BANNER LUXO ══ -->
       <div class="gold-ornament-frame">
@@ -3241,7 +3239,7 @@
             <div>
               <div style="font-size:11px;font-weight:800;color:var(--gold-light);text-transform:uppercase;letter-spacing:0.8px;">Painel de Remuneração & Vales</div>
               <div id="fin-colab-nome" style="font-size:18px;font-weight:900;color:#fff;margin-top:2px;">Samuel David</div>
-              <div id="fin-colab-cargo" style="font-size:12px;color:#94a3b8;">Instalador / Técnico Líder · SD Vidros</div>
+              <div id="fin-colab-cargo" style="font-size:12px;color:#94a3b8;">Instalador / Técnico Líder · SD Móveis Projetados</div>
             </div>
           </div>
           <div style="display:flex;align-items:center;gap:10px;background:rgba(0,0,0,0.35);padding:8px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);">
@@ -5235,28 +5233,13 @@
       const paramPortal = (urlParams.get('portal') || urlParams.get('modo') || '').toLowerCase();
       const paramInstalarUrl = urlParams.get('instalar') === '1';
 
-      // Se veio com parâmetros de funcionário ou portal=funcionario, LIMPA qualquer flag de deslogar!
-      if (paramNomeUrl || paramFuncIdUrl || paramPortal === 'funcionario') {
-        try {
-          sessionStorage.removeItem('sdv_usuario_deslogou');
-          localStorage.removeItem('sdv_usuario_deslogou');
-        } catch(_) {}
-      } else {
-        // Se NÃO tem parâmetros e o usuário acabou de clicar em "Sair" nesta mesma aba
-        try {
-          if (sessionStorage.getItem('sdv_usuario_deslogou') === 'true') {
-            sessionStorage.removeItem('sdv_usuario_deslogou');
-            const vPort = document.getElementById('view-portal');
-            const vLog = document.getElementById('view-login');
-            if (vPort) vPort.style.display = 'none';
-            if (vLog) vLog.style.display = 'block';
-            popularSelectFuncionariosLogin();
-            return;
-          }
-        } catch(_) {}
-      }
+      // Limpa flag de deslogar - sempre entra direto
+      try {
+        sessionStorage.removeItem('sdv_usuario_deslogou');
+        localStorage.removeItem('sdv_usuario_deslogou');
+      } catch(_) {}
 
-      // ── PRIORIDADE MÁXIMA: LOGIN AUTOMÁTICO DO FUNCIONÁRIO ──
+      // ── SE VEIO COM PARÂMETROS DE FUNCIONÁRIO NA URL ──
       if (paramNomeUrl || paramFuncIdUrl || paramPortal === 'funcionario') {
         const funcs = (typeof carregarFuncionariosDoStorage === 'function') ? carregarFuncionariosDoStorage() : [
           { id: 100, nome: 'Samuel David', cargo: 'Instalador / Técnico Líder', whatsapp: '(85) 99611-9824' }
@@ -5311,7 +5294,7 @@
         return;
       }
 
-      // Verifica se já tinha sessão salva de colaborador
+      // ── TENTA RESTAURAR SESSÃO SALVA ──
       try {
         const salvoColab = localStorage.getItem('sdv_colaborador_sessao') || localStorage.getItem('sdv_cliente_sessao');
         if (salvoColab) {
@@ -5322,12 +5305,22 @@
         }
       } catch (_) {}
 
-      // Se chegou aqui sem sessão, inicializa seletor e exibe a tela de login do funcionário
-      popularSelectFuncionariosLogin();
-      const vPort = document.getElementById('view-portal');
-      const vLog = document.getElementById('view-login');
-      if (vPort) vPort.style.display = 'none';
-      if (vLog) vLog.style.display = 'block';
+      // ── SEM SESSÃO: ENTRA DIRETO COMO SAMUEL DAVID (padrão) ──
+      const funcs = (typeof carregarFuncionariosDoStorage === 'function') ? carregarFuncionariosDoStorage() : [];
+      const funcPadrao = (funcs.length > 0 ? funcs[0] : null) || { id: 100, nome: 'Samuel David', cargo: 'Instalador / Técnico Líder' };
+      const sessaoPadrao = {
+        id: funcPadrao.id,
+        nome: funcPadrao.nome,
+        cargo: funcPadrao.cargo || 'Colaborador',
+        isFuncionario: true,
+        os: '#PONTO',
+        dataLogin: new Date().toISOString()
+      };
+      try {
+        localStorage.setItem('sdv_cliente_sessao', JSON.stringify(sessaoPadrao));
+        localStorage.setItem('sdv_colaborador_sessao', JSON.stringify(sessaoPadrao));
+      } catch(_) {}
+      iniciarPortalCliente(sessaoPadrao);
     }
 
     function confirmarAcessoDiretoCliente() {
@@ -7860,7 +7853,7 @@ function mudarAba(tab) {
       const statusBadge = document.getElementById('ponto-func-badge-status');
 
       if (tituloEl) tituloEl.textContent = colab.nome;
-      if (subEl) subEl.textContent = `${colab.cargo || 'Colaborador'} · SD Vidros`;
+      if (subEl) subEl.textContent = `${colab.cargo || 'Colaborador'} · SD Móveis Projetados`;
 
       const dataHoje = getHojeFormatadoPonto();
       const pontos = carregarPontosDoStorage();
@@ -11559,7 +11552,7 @@ function renderizarMeuSetorFinanceiro() {
   var elCargo = document.getElementById('fin-colab-cargo');
   var elPix = document.getElementById('fin-colab-pix');
   if (elNome) elNome.textContent = colab.nome || 'Samuel David';
-  if (elCargo) elCargo.textContent = (colab.cargo || 'Instalador / Técnico Líder') + ' · SD Vidros';
+  if (elCargo) elCargo.textContent = (colab.cargo || 'Instalador / Técnico Líder') + ' · SD Móveis Projetados';
 
   var pixSalvo = localStorage.getItem('sdv_pix_colab_' + colab.id);
   if (!pixSalvo && colab.whatsapp) pixSalvo = colab.whatsapp;
