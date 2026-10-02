@@ -3876,34 +3876,27 @@
     </div>
 
     <p id="desc-modal-saida-final" style="font-size:13px;color:#cbd5e1;line-height:1.5;margin-bottom:14px;">
-      O funcionário está finalizando o expediente antes do término da jornada normal. Deseja registrar a justificativa para que o restante do dia <strong>não conte horas negativas</strong>?
+      O funcionário está encerrando o expediente antes do término da jornada normal. Selecione a opção de <strong>Dispensa Autorizada pela Gerência</strong>:
     </p>
 
-    <div style="margin-bottom:12px;">
-      <label style="display:block;font-size:11.5px;font-weight:800;color:var(--gold-light);text-transform:uppercase;margin-bottom:6px;">Motivo da Saída:</label>
-      <select id="sel-motivo-saida-final" onchange="aoMudarMotivoSaidaFinal(this.value)" style="width:100%;padding:10px;background:#090a14;border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:13px;outline:none;">
-        <option value="Serviço Externo / Obra Concluída">Serviço Externo / Obra Concluída</option>
-        <option value="Dispensa Autorizada pela Gerência">Dispensa Autorizada pela Gerência</option>
-        <option value="Consulta / Atestado Médico">Consulta / Atestado Médico</option>
-        <option value="Compensação / Acordo de Horas">Compensação / Acordo de Horas</option>
-        <option value="Motivo Pessoal / Emergência">Motivo Pessoal / Emergência</option>
-        <option value="Outro">Outro Motivo (digitar abaixo)</option>
+    <div style="margin-bottom:14px;">
+      <label style="display:block;font-size:11.5px;font-weight:800;color:var(--gold-light);text-transform:uppercase;margin-bottom:6px;">Opção de Dispensa:</label>
+      <select id="sel-motivo-saida-final" style="width:100%;padding:11px;background:#090a14;border:1.5px solid rgba(250,204,21,0.35);border-radius:10px;color:#fff;font-size:13px;font-weight:700;outline:none;">
+        <option value="desconto_salario">Dispensa Autorizada pela Gerência — Descontar do Salário</option>
+        <option value="hora_negativa">Dispensa Autorizada pela Gerência — Hora Negativa</option>
       </select>
     </div>
 
     <div style="margin-bottom:16px;">
       <label style="display:block;font-size:11.5px;font-weight:800;color:var(--gold-light);text-transform:uppercase;margin-bottom:6px;">Detalhes / Observações (opcional):</label>
-      <input type="text" id="txt-obs-saida-final" placeholder="Ex: Obra no condomínio finalizada às 10:30..." style="width:100%;box-sizing:border-box;padding:10px;background:#090a14;border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:13px;outline:none;" />
+      <input type="text" id="txt-obs-saida-final" placeholder="Ex: Autorizado pela gerência..." style="width:100%;box-sizing:border-box;padding:10px;background:#090a14;border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:13px;outline:none;" />
     </div>
 
     <div style="display:flex;flex-direction:column;gap:8px;">
-      <button type="button" onclick="confirmarSaidaFinalComJustificativa(true)" class="btn btn-primary" style="background:linear-gradient(135deg,#10b981,#059669);border:none;padding:12px;border-radius:10px;font-weight:900;font-size:13px;color:#fff;cursor:pointer;box-shadow:0 4px 14px rgba(16,185,129,0.35);">
-        ✅ Justificar e Finalizar (Sem Horas Negativas)
+      <button type="button" onclick="confirmarSaidaFinalComJustificativa()" class="btn btn-primary" style="background:linear-gradient(135deg,#10b981,#059669);border:none;padding:12px;border-radius:10px;font-weight:900;font-size:13.5px;color:#fff;cursor:pointer;box-shadow:0 4px 14px rgba(16,185,129,0.35);">
+        ✅ Confirmar Saída com Dispensa Autorizada
       </button>
-      <button type="button" onclick="confirmarSaidaFinalComJustificativa(false)" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);padding:10px;border-radius:10px;font-weight:700;font-size:12px;color:#94a3b8;cursor:pointer;">
-        Registrar Saída Sem Justificativa
-      </button>
-      <button type="button" onclick="fecharModalSaidaFinal()" style="background:transparent;border:none;color:#64748b;font-size:12px;cursor:pointer;margin-top:4px;">
+      <button type="button" onclick="fecharModalSaidaFinal()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);padding:10px;border-radius:10px;font-weight:700;font-size:12px;color:#94a3b8;cursor:pointer;">
         Cancelar
       </button>
     </div>
@@ -10021,7 +10014,7 @@ function abrirModalSaidaFinal(colabId, horaStr, p) {
   const colab = funcionariosLista.find(f => f.id === colabId);
   const nome = colab ? colab.nome : 'o funcionário';
   if (desc) {
-    desc.innerHTML = `<strong>${nome}</strong> está registrando a <strong>Saída Final às ${horaStr}</strong> antes do término da jornada normal. Deseja justificar para encerrar o dia <strong>sem gerar horas negativas</strong>?`;
+    desc.innerHTML = `<strong>${nome}</strong> está registrando a <strong>Saída Final às ${horaStr}</strong> antes do término da jornada normal. Selecione o tratamento da <strong>Dispensa Autorizada pela Gerência</strong>:`;
   }
   const txt = document.getElementById('txt-obs-saida-final');
   if (txt) txt.value = '';
@@ -10036,27 +10029,22 @@ function fecharModalSaidaFinal() {
 
 function aoMudarMotivoSaidaFinal(val) {
   const txt = document.getElementById('txt-obs-saida-final');
-  if (txt && val === 'Outro') {
-    txt.focus();
-  }
+  if (txt) txt.focus();
 }
 
 function confirmarSaidaFinalComJustificativa(comJustificativa) {
   if (!_saidaFinalPendente) return;
   const { colabId, horaStr } = _saidaFinalPendente;
-  let justificativa = '';
-  if (comJustificativa) {
-    const sel = document.getElementById('sel-motivo-saida-final');
-    const txt = document.getElementById('txt-obs-saida-final');
-    const motivo = sel ? sel.value : 'Serviço Concluído';
-    const obs = (txt && txt.value) ? txt.value.trim() : '';
-    justificativa = obs ? `${motivo} (${obs})` : motivo;
-  }
+  const sel = document.getElementById('sel-motivo-saida-final');
+  const txt = document.getElementById('txt-obs-saida-final');
+  const decisao = sel ? sel.value : 'desconto_salario';
+  const obs = (txt && txt.value) ? txt.value.trim() : '';
+
   fecharModalSaidaFinal();
-  concluirBatidaSaidaFinal(colabId, horaStr, comJustificativa, justificativa);
+  concluirBatidaSaidaFinal(colabId, horaStr, decisao, obs);
 }
 
-function concluirBatidaSaidaFinal(colabId, horaStr, justificada, motivoJustificativa) {
+function concluirBatidaSaidaFinal(colabId, horaStr, decisao, obs) {
   const colab = funcionariosLista.find(f => f.id === colabId);
   if (!colab) return;
   const dataHoje = getHojeFormatado();
@@ -10078,13 +10066,52 @@ function concluirBatidaSaidaFinal(colabId, horaStr, justificada, motivoJustifica
     pontosLista.unshift(p);
   }
 
+  const parseMin = (s) => (s && s.includes(':')) ? s.split(':').map(Number)[0]*60 + s.split(':').map(Number)[1] : null;
+  const expSaiMin = parseMin(colab?.horarioSaida || '17:30') || 1050;
+  const agoraMin = parseMin(horaStr) || (new Date().getHours()*60 + new Date().getMinutes());
+  const minFaltantes = Math.max(0, expSaiMin - agoraMin);
+  const hF = Math.floor(minFaltantes / 60);
+  const mF = minFaltantes % 60;
+  const tempoStr = `${String(hF).padStart(2, '0')}h ${String(mF).padStart(2, '0')}m`;
+  const vHora = Number(colab?.valorHora) || 25.50;
+  const vDesc = (minFaltantes / 60) * vHora;
+
   p.saidaFinal = horaStr;
   colab.status = 'Finalizado';
   p.status = 'Finalizado';
-  if (justificada) {
-    p.saidaAntecipadaJustificada = true;
+  p.saidaAntecipadaJustificada = true;
+
+  let msg = '';
+  if (decisao === 'hora_negativa' || String(decisao).includes('hora_negativa') || String(decisao).includes('Hora Negativa')) {
+    p.tipoDecisaoSaida = 'hora_negativa';
+    p.statusAutorizacaoSaida = 'Descontado em Horas Negativas';
+    p.semHoraNegativa = false;
+    p.minutosNegativos = minFaltantes;
+    p.horaNegativa = `-${tempoStr}`;
+    p.descontoNegativoValor = vDesc;
+    p.descontoNegativoFormatado = '(-R$ ' + vDesc.toFixed(2).replace('.', ',') + ')';
+    p.justificativaSaida = `Dispensa Autorizada pela Gerência (Hora Negativa: -${tempoStr})${obs ? ' · ' + obs : ''}`;
+    msg = `✅ Saída Final registrada às ${horaStr}! Dispensa autorizada gerando -${tempoStr} no banco de horas.`;
+  } else {
+    // Descontar do Salário (padrão)
+    p.tipoDecisaoSaida = 'desconto_salario';
+    p.statusAutorizacaoSaida = 'Desconto em Salário';
     p.semHoraNegativa = true;
-    p.justificativaSaida = motivoJustificativa || 'Saída Autorizada';
+    p.minutosNegativos = 0;
+    p.horaNegativa = '00h 00m';
+    p.valorDescontoSalario = vDesc;
+    p.descontoNegativoValor = 0;
+    p.descontoNegativoFormatado = '';
+    p.justificativaSaida = `Dispensa Autorizada pela Gerência (Descontar do Salário: -R$ ${vDesc.toFixed(2).replace('.', ',')})${obs ? ' · ' + obs : ''}`;
+    msg = `✅ Saída Final registrada às ${horaStr}! Dispensa autorizada com desconto de R$ ${vDesc.toFixed(2).replace('.', ',')} no salário.`;
+  }
+
+  const btnSai = document.getElementById('btn-ponto-sai');
+  if (btnSai) {
+    btnSai.disabled = true;
+    btnSai.style.opacity = '0.6';
+    btnSai.style.cursor = 'not-allowed';
+    btnSai.title = 'Saída Final já registrada hoje';
   }
 
   recalcularHorasPonto(p, colab);
@@ -10094,17 +10121,8 @@ function concluirBatidaSaidaFinal(colabId, horaStr, justificada, motivoJustifica
 
   renderFuncionarios();
   renderEspelhoPonto();
+  atualizarStatusBatidaColaborador();
 
-  const msg = justificada
-    ? `✅ Saída Final registrada às ${horaStr} com justificativa: "${p.justificativaSaida}"! Dia finalizado sem horas negativas.`
-    : `✅ Saída Final registrada às ${horaStr} para ${colab.nome}!`;
-  const btnSai = document.getElementById('btn-ponto-sai');
-  if (btnSai) {
-    btnSai.disabled = true;
-    btnSai.style.opacity = '0.6';
-    btnSai.style.cursor = 'not-allowed';
-    btnSai.title = 'Saída Final já registrada hoje';
-  }
   mostrarMsgPonto(msg, true);
 }
 
@@ -10710,22 +10728,25 @@ function recalcularHorasPonto(p, colab) {
 
     // 4. Saída Final (saída antecipada)
     if (mSaida !== null) {
-      // Se a saída final foi justificada ou é fim de semana, encerra sem penalidade de hora negativa no restante do dia!
-      if (p.saidaAntecipadaJustificada || p.justificativaSaida || p.semHoraNegativa || ehFds) {
-        antecipadoSaidaMin = 0;
-      } else if (mSaida < expSai) {
+      if (mSaida < expSai) {
         const diff = expSai - mSaida;
         if (diff <= 5) {
           mSaidaEfetivo = expSai;
         } else {
           antecipadoSaidaMin = diff;
-          minutosNegativos += diff;
+          if (p.tipoDecisaoSaida === 'hora_negativa') {
+            minutosNegativos += diff;
+          }
         }
       }
     }
   }
 
-  if (p.saidaAntecipadaJustificada || p.justificativaSaida || p.semHoraNegativa || ehFds) {
+  if (p.tipoDecisaoSaida === 'hora_negativa') {
+    // Dispensa autorizada com geração de hora negativa no banco de horas
+    minutosNegativos = p.minutosNegativos || antecipadoSaidaMin;
+    antecipadoSaidaMin = minutosNegativos;
+  } else if (p.saidaAntecipadaJustificada || p.justificativaSaida || p.semHoraNegativa || p.tipoDecisaoSaida === 'desconto_salario' || ehFds) {
     minutosNegativos = 0;
     atrasoEntradaMin = 0;
     antecipadoAlmocoMin = 0;
