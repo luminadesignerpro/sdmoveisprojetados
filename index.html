@@ -6786,28 +6786,37 @@ function renderizarModalLinksFuncionarios(filtro = '') {
     if (salvos && salvos.length) {
       funcionariosLista = salvos;
     } else {
-      funcionariosLista = [
-        {
-          id: 100,
-          nome: 'Samuel David',
-          cargo: 'Instalador / Técnico Líder',
-          whatsapp: '(85) 99611-9824',
-          departamento: 'Operações',
-          jornada: '44h/sem',
-          salario: 4500,
-          valorHora: 22.50,
-          status: 'Presente'
-        },
-        ...FUNCIONARIOS_PADRAO
-      ];
-      save(K.employees, funcionariosLista);
+      // Apenas para sdvidros: carrega funcionários padrão de demonstração
+      const _licAtualModal = (typeof obterLicencaAtiva === 'function') ? obterLicencaAtiva() : null;
+      const _idAtualModal = (_licAtualModal && _licAtualModal.id) ? _licAtualModal.id : '';
+      if (_idAtualModal === 'sdvidros') {
+        funcionariosLista = [
+          {
+            id: 100,
+            nome: 'Samuel David',
+            cargo: 'Instalador / Técnico Líder',
+            whatsapp: '(85) 99611-9824',
+            departamento: 'Operações',
+            jornada: '44h/sem',
+            salario: 4500,
+            valorHora: 22.50,
+            status: 'Presente'
+          },
+          ...FUNCIONARIOS_PADRAO
+        ];
+        save(K.employees, funcionariosLista);
+      } else {
+        funcionariosLista = [];
+      }
     }
   }
 
   let lista = [...funcionariosLista];
 
-  // Se Samuel David não estiver na lista, garante inserção
-  if (!lista.some(f => (f.nome || '').toLowerCase().includes('samuel david'))) {
+  // Garante Samuel David apenas para sdvidros
+  const _licModalSamuel = (typeof obterLicencaAtiva === 'function') ? obterLicencaAtiva() : null;
+  const _idModalSamuel = (_licModalSamuel && _licModalSamuel.id) ? _licModalSamuel.id : '';
+  if (_idModalSamuel === 'sdvidros' && !lista.some(f => (f.nome || '').toLowerCase().includes('samuel david'))) {
     const s = {
       id: 100,
       nome: 'Samuel David',
@@ -13499,6 +13508,12 @@ function salvarNovoCompromissoAgenda() {
 try {
   setInterval(verificarNotificacoesAgenda, 20000);
   setTimeout(verificarNotificacoesAgenda, 2000);
+} catch(_) {}
+
+// Iniciar verificação automática do alarme de ponto a cada 60 segundos
+try {
+  setInterval(verificarAlarmePontoAutomatico, 60000);
+  setTimeout(verificarAlarmePontoAutomatico, 3000);
 } catch(_) {}
 
 // ── GESTÃO DE CÓDIGOS DE LIBERAÇÃO DO FINANCEIRO PESSOAL (SIGILO TOTAL) ──
