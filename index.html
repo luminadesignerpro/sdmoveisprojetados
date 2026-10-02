@@ -4388,8 +4388,11 @@
     </div>
 
     <div class="field" style="margin-bottom:12px;">
-      <label>Endereço / Local da Obra</label>
-      <input id="agenda-novo-end" placeholder="Rua, número, bairro, cidade..." style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.12);color:#fff;font-family:var(--font);" />
+      <label style="display:flex;align-items:center;justify-content:space-between;">
+        <span>📍 Endereço / Local da Obra</span>
+        <a id="agenda-maps-link" href="#" target="_blank" rel="noopener" onclick="return abrirMapsEndereco()" style="display:none;font-size:11px;font-weight:800;color:#4ade80;text-decoration:none;padding:3px 8px;border-radius:6px;background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.3);transition:all 0.2s;">🗺️ Abrir no Maps</a>
+      </label>
+      <input id="agenda-novo-end" placeholder="Rua, número, bairro, cidade..." oninput="atualizarBotaoMapsAgenda()" style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.12);color:#fff;font-family:var(--font);" />
     </div>
 
     <div class="field-row" style="margin-bottom:12px;">
@@ -4477,8 +4480,9 @@
         <span style="color:var(--muted);">Tempo Restante:</span>
         <strong id="alarme-tempo-restante" style="color:#4ade80;font-size:13px;">Faltam 30 minutos!</strong>
       </div>
-      <div id="alarme-local-box" style="color:var(--text2);margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.06);">
-        📍 <span id="alarme-local-texto">Endereço da obra</span>
+      <div id="alarme-local-box" style="color:var(--text2);margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+        <span style="display:flex;align-items:center;gap:4px;">📍 <span id="alarme-local-texto">Endereço da obra</span></span>
+        <a id="alarme-btn-maps" href="#" target="_blank" rel="noopener" style="display:none;font-size:11px;font-weight:800;color:#4ade80;text-decoration:none;padding:3px 10px;border-radius:6px;background:rgba(74,222,128,0.15);border:1px solid rgba(74,222,128,0.35);align-items:center;gap:4px;white-space:nowrap;">🗺️ Abrir no Maps</a>
       </div>
       <div id="alarme-obs-box" style="color:var(--gold-light);margin-top:4px;font-style:italic;">
         📝 <span id="alarme-obs-texto">Observações</span>
@@ -13954,9 +13958,18 @@ function iniciarLoopAlarme(ev, diffMinutos) {
 
   const elLocal = document.getElementById('alarme-local-texto');
   const boxLocal = document.getElementById('alarme-local-box');
+  const btnMapsAlarme = document.getElementById('alarme-btn-maps');
   if (elLocal && boxLocal) {
     elLocal.textContent = ev.end || 'Endereço a combinar';
     boxLocal.style.display = ev.end ? 'block' : 'none';
+  }
+  if (btnMapsAlarme) {
+    if (ev.end) {
+      btnMapsAlarme.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.end)}`;
+      btnMapsAlarme.style.display = 'inline-flex';
+    } else {
+      btnMapsAlarme.style.display = 'none';
+    }
   }
 
   const elObs = document.getElementById('alarme-obs-texto');
@@ -14165,7 +14178,7 @@ function renderAgenda() {
             <div style="font-size:12px;color:var(--muted);margin-top:4px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
               <span>📅 ${ev.data ? ev.data.split('-').reverse().join('/') : 'Sem data'} ${ev.hora ? ' às ' + ev.hora : ''}</span>
               ${ev.tel ? `<span>📞 ${esc(ev.tel)}</span>` : ''}
-              ${ev.end ? `<span>📍 ${esc(ev.end)}</span>` : ''}
+              ${ev.end ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.end)}" target="_blank" rel="noopener" style="color:#4ade80;text-decoration:none;font-weight:700;display:inline-flex;align-items:center;gap:3px;" title="Abrir no Google Maps">🗺️ ${esc(ev.end)}</a>` : ''}
             </div>
             ${ev.obs ? `<div style="font-size:11.5px;color:rgba(255,255,255,0.7);margin-top:4px;font-style:italic;">📝 ${esc(ev.obs)}</div>` : ''}
           </div>
@@ -14178,6 +14191,32 @@ function renderAgenda() {
       </div>
     `;
   }).join('');
+}
+
+// ── MAPS INTEGRATION ──
+function atualizarBotaoMapsAgenda() {
+  const inp = document.getElementById('agenda-novo-end');
+  const link = document.getElementById('agenda-maps-link');
+  if (!inp || !link) return;
+  const val = inp.value.trim();
+  if (val.length > 3) {
+    link.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(val)}`;
+    link.style.display = 'inline-flex';
+    link.style.alignItems = 'center';
+    link.style.gap = '4px';
+  } else {
+    link.style.display = 'none';
+  }
+}
+
+function abrirMapsEndereco() {
+  const inp = document.getElementById('agenda-novo-end');
+  if (!inp) return false;
+  const val = inp.value.trim();
+  if (!val || val.length <= 3) return false;
+  const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(val)}`;
+  window.open(url, '_blank', 'noopener');
+  return false;
 }
 
 function filtrarAgenda(filtro) {
@@ -14256,6 +14295,7 @@ function abrirModalNovoCompromissoAgenda(id = null) {
 
       const m = document.getElementById('modal-agenda-novo');
       if (m) m.style.display = 'flex';
+      setTimeout(atualizarBotaoMapsAgenda, 50);
       return;
     }
   }
@@ -14268,6 +14308,7 @@ function abrirModalNovoCompromissoAgenda(id = null) {
   document.getElementById('agenda-novo-cliente').value = '';
   document.getElementById('agenda-novo-tel').value = '';
   document.getElementById('agenda-novo-end').value = '';
+  setTimeout(atualizarBotaoMapsAgenda, 50);
   document.getElementById('agenda-novo-tipo').value = 'Medição Técnica';
   document.getElementById('agenda-novo-data').value = new Date().toISOString().split('T')[0];
   document.getElementById('agenda-novo-hora').value = '09:00';
