@@ -6019,7 +6019,7 @@ function getUser() {
 //  TABS
 // ══════════════════════════════════════════════
 function goTab(t) {
-  ['orcamento','historico','financeiro','agenda','produtos','empresa','clientes','ponto','contratos','usuarios','licenca','camera','relatorio'].forEach(p => {
+  ['orcamento','historico','financeiro','agenda','produtos','empresa','clientes','ponto','contratos','usuarios','licenca','camera','relatorio','cronograma'].forEach(p => {
     const pan = document.getElementById('panel-'+p);
     if (pan) pan.classList.toggle('active', p===t);
     const tab = document.getElementById('tab-'+p);
@@ -6037,6 +6037,7 @@ function goTab(t) {
   if (t==='licenca')    renderPainelLicenca();
   if (t==='camera')     inicializarCameraUltraZoom(); else pausarCameraUltraZoom();
   if (t==='relatorio')  renderRelatorio();
+  if (t==='cronograma') { if (typeof mudarAbaCronograma === 'function') mudarAbaCronograma('semana'); }
 }
 
 // ══════════════════════════════════════════════
