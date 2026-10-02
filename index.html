@@ -2686,6 +2686,9 @@
           <button type="button" onclick="abrirModalEditarHorarioTrabalho()" style="background:rgba(212,175,55,0.18);border:1px solid rgba(212,175,55,0.45);color:#fef08a;font-size:11.5px;font-weight:800;padding:6px 12px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;" title="Editar jornada de trabalho do colaborador">
             ✏️ Editar Horário
           </button>
+          <button type="button" onclick="abrirModalHistoricoNotificacoes()" style="background:rgba(245,158,11,0.18);border:1px solid rgba(245,158,11,0.45);color:#fef08a;font-size:11.5px;font-weight:800;padding:6px 12px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;" title="Ver registro de todas as notificações e alertas">
+            🔔 Notificações (<span id="badge-notif-ponto-count">0</span>)
+          </button>
         </div>
       </div>
 
@@ -3882,6 +3885,7 @@
     <div style="margin-bottom:14px;">
       <label style="display:block;font-size:11.5px;font-weight:800;color:var(--gold-light);text-transform:uppercase;margin-bottom:6px;">Opção de Dispensa:</label>
       <select id="sel-motivo-saida-final" style="width:100%;padding:11px;background:#090a14;border:1.5px solid rgba(250,204,21,0.35);border-radius:10px;color:#fff;font-size:13px;font-weight:700;outline:none;">
+        <option value="sem_desconto">Dispensa Autorizada pela Gerência — Sem Desconto e Sem Hora Negativa</option>
         <option value="desconto_salario">Dispensa Autorizada pela Gerência — Descontar do Salário</option>
         <option value="hora_negativa">Dispensa Autorizada pela Gerência — Hora Negativa</option>
       </select>
@@ -3898,6 +3902,36 @@
       </button>
       <button type="button" onclick="fecharModalSaidaFinal()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);padding:10px;border-radius:10px;font-weight:700;font-size:12px;color:#94a3b8;cursor:pointer;">
         Cancelar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL HISTÓRICO DE NOTIFICAÇÕES REGISTRADAS ══ -->
+<div id="modal-historico-notificacoes" class="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);z-index:999999;align-items:center;justify-content:center;padding:16px;" onclick="fecharModalHistoricoNotificacoes()">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:520px;width:100%;border-radius:20px;background:linear-gradient(145deg,#0e111d,#16192b);border:1.5px solid rgba(245,158,11,0.5);box-shadow:0 24px 60px rgba(0,0,0,0.9);padding:22px;color:#fff;box-sizing:border-box;max-height:85vh;display:flex;flex-direction:column;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:24px;">🔔</span>
+        <div>
+          <div style="font-size:16px;font-weight:900;color:#facc15;">Notificações Registradas</div>
+          <div style="font-size:11px;color:#94a3b8;">Registro de alarmes, dispensas e ocorrências do ponto</div>
+        </div>
+      </div>
+      <button type="button" onclick="fecharModalHistoricoNotificacoes()" style="background:none;border:none;color:#94a3b8;font-size:22px;cursor:pointer;line-height:1;">✕</button>
+    </div>
+
+    <!-- Lista de Notificações com Scroll -->
+    <div id="lista-historico-notificacoes-container" style="overflow-y:auto;flex:1;max-height:55vh;padding-right:4px;">
+      <!-- Itens renderizados dinamicamente via JS -->
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:14px;border-top:1px solid rgba(255,255,255,0.08);padding-top:12px;">
+      <button type="button" onclick="limparNotificacoesPonto()" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.35);color:#fca5a5;padding:8px 14px;border-radius:8px;font-size:11.5px;font-weight:700;cursor:pointer;">
+        🗑️ Limpar Histórico
+      </button>
+      <button type="button" onclick="fecharModalHistoricoNotificacoes()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:8px 18px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">
+        Fechar
       </button>
     </div>
   </div>
@@ -7651,6 +7685,127 @@ function pararAudioAlarmePonto() {
   }
 }
 
+// ── SISTEMA DE REGISTRO DE NOTIFICAÇÕES DO PONTO ──
+function registrarNotificacaoPonto(tipo, titulo, mensagem, detalhes = {}) {
+  try {
+    const salvo = localStorage.getItem('sdv_registro_notificacoes');
+    let lista = salvo ? JSON.parse(salvo) : [];
+    const agora = new Date();
+    const dataHoraStr = agora.toLocaleDateString('pt-BR') + ' às ' + String(agora.getHours()).padStart(2, '0') + ':' + String(agora.getMinutes()).padStart(2, '0');
+
+    const nova = {
+      id: Date.now() + Math.floor(Math.random() * 1000),
+      tipo, // 'dispensa', 'alarme', 'ponto'
+      titulo,
+      mensagem,
+      detalhes,
+      dataHora: dataHoraStr,
+      timestamp: Date.now()
+    };
+
+    lista.unshift(nova);
+    if (lista.length > 150) lista = lista.slice(0, 150);
+    localStorage.setItem('sdv_registro_notificacoes', JSON.stringify(lista));
+
+    atualizarBadgeNotificacoesPonto();
+    renderListaNotificacoesPonto();
+  } catch(e) {
+    console.warn('[Notificações] Erro ao registrar:', e);
+  }
+}
+
+function obterNotificacoesPonto() {
+  try {
+    const salvo = localStorage.getItem('sdv_registro_notificacoes');
+    return salvo ? JSON.parse(salvo) : [];
+  } catch(_) {
+    return [];
+  }
+}
+
+function limparNotificacoesPonto() {
+  if (!confirm('Deseja realmente limpar o histórico de notificações registradas?')) return;
+  localStorage.setItem('sdv_registro_notificacoes', JSON.stringify([]));
+  atualizarBadgeNotificacoesPonto();
+  renderListaNotificacoesPonto();
+  if (typeof mostrarMsgPonto === 'function') {
+    mostrarMsgPonto('Registro de notificações limpo com sucesso.', true);
+  }
+}
+
+function atualizarBadgeNotificacoesPonto() {
+  const badge = document.getElementById('badge-notif-ponto-count');
+  if (!badge) return;
+  const lista = obterNotificacoesPonto();
+  badge.textContent = lista.length;
+}
+
+function abrirModalHistoricoNotificacoes() {
+  renderListaNotificacoesPonto();
+  const m = document.getElementById('modal-historico-notificacoes');
+  if (m) m.style.display = 'flex';
+}
+
+function fecharModalHistoricoNotificacoes() {
+  const m = document.getElementById('modal-historico-notificacoes');
+  if (m) m.style.display = 'none';
+}
+
+function renderListaNotificacoesPonto() {
+  const container = document.getElementById('lista-historico-notificacoes-container');
+  if (!container) return;
+  const lista = obterNotificacoesPonto();
+  atualizarBadgeNotificacoesPonto();
+
+  if (!lista || !lista.length) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:32px 16px;color:#94a3b8;">
+        <span style="font-size:38px;display:block;margin-bottom:8px;opacity:0.6;">🔔</span>
+        <div style="font-size:14px;font-weight:700;color:#cbd5e1;">Nenhuma notificação registrada ainda.</div>
+        <div style="font-size:12px;margin-top:4px;">Alarmes de ponto, dispensas autorizadas e batidas ficarão registrados aqui.</div>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = lista.map(item => {
+    let cor = '#38bdf8';
+    let icone = '🔔';
+    let bg = 'rgba(56,189,248,0.1)';
+    let border = 'rgba(56,189,248,0.25)';
+
+    if (item.tipo === 'dispensa') {
+      cor = '#f59e0b';
+      icone = '🚪';
+      bg = 'rgba(245,158,11,0.12)';
+      border = 'rgba(245,158,11,0.3)';
+    } else if (item.tipo === 'alarme') {
+      cor = '#ef4444';
+      icone = '⏰';
+      bg = 'rgba(239,68,68,0.12)';
+      border = 'rgba(239,68,68,0.3)';
+    } else if (item.tipo === 'ponto') {
+      cor = '#10b981';
+      icone = '✓';
+      bg = 'rgba(16,185,129,0.12)';
+      border = 'rgba(16,185,129,0.3)';
+    }
+
+    return `
+      <div style="background:${bg};border:1px solid ${border};border-radius:12px;padding:12px 14px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;">
+        <div style="font-size:22px;line-height:1;margin-top:2px;">${icone}</div>
+        <div style="flex:1;">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:3px;">
+            <strong style="color:${cor};font-size:13.5px;">${esc(item.titulo)}</strong>
+            <span style="font-size:11px;color:#94a3b8;font-weight:700;">${item.dataHora}</span>
+          </div>
+          <div style="font-size:12.5px;color:#f1f5f9;line-height:1.4;">${esc(item.mensagem)}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
 // ── DISPARAR / PARAR / ADIAR ALARME DE PONTO ──
 function dispararAlarmePonto(label, hora, antecedencia, colaboradores) {
   try {
@@ -7681,6 +7836,12 @@ function dispararAlarmePonto(label, hora, antecedencia, colaboradores) {
 
     // Toca o som
     tocarSireneAlarmePonto(false);
+
+    // Registra a notificação no histórico persistente
+    try {
+      const nomes = (Array.isArray(colaboradores) && colaboradores.length) ? colaboradores.map(c => c.nome).join(', ') : 'Geral';
+      registrarNotificacaoPonto('alarme', `⏰ Alarme de Ponto: ${label}`, `Alarme disparado às ${hora} (${antecedencia > 0 ? antecedencia + ' min antes' : 'no horário'}). Funcionários: ${nomes}`, { label, hora, colaboradores: nomes });
+    } catch(_) {}
 
     // Notificação do navegador
     try {
@@ -9523,6 +9684,7 @@ function renderPontoView() {
   renderFuncionarios();
   inicializarPontoHojeSeNecessario();
   renderEspelhoPonto();
+  if (typeof atualizarBadgeNotificacoesPonto === 'function') atualizarBadgeNotificacoesPonto();
 }
 
 function atualizarSelectColaboradoresPonto() {
@@ -10082,7 +10244,20 @@ function concluirBatidaSaidaFinal(colabId, horaStr, decisao, obs) {
   p.saidaAntecipadaJustificada = true;
 
   let msg = '';
-  if (decisao === 'hora_negativa' || String(decisao).includes('hora_negativa') || String(decisao).includes('Hora Negativa')) {
+  if (decisao === 'sem_desconto' || String(decisao).includes('sem_desconto') || String(decisao).includes('Sem Desconto')) {
+    p.tipoDecisaoSaida = 'sem_desconto';
+    p.statusAutorizacaoSaida = 'Dispensa Autorizada (Sem Desconto / Sem H. Negativa)';
+    p.semHoraNegativa = true;
+    p.minutosNegativos = 0;
+    p.horaNegativa = '00h 00m';
+    p.descontoNegativoValor = 0;
+    p.descontoNegativoFormatado = '';
+    p.valorDescontoSalario = 0;
+    p.horasAbonadasMin = minFaltantes;
+    p.justificativaSaida = `Dispensa Autorizada pela Gerência (Sem Desconto e Sem Horas Negativas)${obs ? ' · ' + obs : ''}`;
+    msg = `✅ Saída Final registrada às ${horaStr}! Dispensa autorizada SEM DESCONTO e SEM HORAS NEGATIVAS.`;
+    registrarNotificacaoPonto('dispensa', '🚪 Dispensa Autorizada (Sem Desconto)', `${colab.nome} foi liberado(a) às ${horaStr} com Dispensa Autorizada pela Gerência: Sem desconto no salário e sem horas negativas.${obs ? ' Obs: ' + obs : ''}`, { colab: colab.nome, hora: horaStr, tipo: 'sem_desconto' });
+  } else if (decisao === 'hora_negativa' || String(decisao).includes('hora_negativa') || String(decisao).includes('Hora Negativa')) {
     p.tipoDecisaoSaida = 'hora_negativa';
     p.statusAutorizacaoSaida = 'Descontado em Horas Negativas';
     p.semHoraNegativa = false;
@@ -10092,6 +10267,7 @@ function concluirBatidaSaidaFinal(colabId, horaStr, decisao, obs) {
     p.descontoNegativoFormatado = '(-R$ ' + vDesc.toFixed(2).replace('.', ',') + ')';
     p.justificativaSaida = `Dispensa Autorizada pela Gerência (Hora Negativa: -${tempoStr})${obs ? ' · ' + obs : ''}`;
     msg = `✅ Saída Final registrada às ${horaStr}! Dispensa autorizada gerando -${tempoStr} no banco de horas.`;
+    registrarNotificacaoPonto('dispensa', '🚪 Dispensa Autorizada (Horas Negativas)', `${colab.nome} foi liberado(a) às ${horaStr} com Dispensa Autorizada pela Gerência: Lançadas -${tempoStr} no banco de horas.${obs ? ' Obs: ' + obs : ''}`, { colab: colab.nome, hora: horaStr, tipo: 'hora_negativa' });
   } else {
     // Descontar do Salário (padrão)
     p.tipoDecisaoSaida = 'desconto_salario';
@@ -10104,6 +10280,7 @@ function concluirBatidaSaidaFinal(colabId, horaStr, decisao, obs) {
     p.descontoNegativoFormatado = '';
     p.justificativaSaida = `Dispensa Autorizada pela Gerência (Descontar do Salário: -R$ ${vDesc.toFixed(2).replace('.', ',')})${obs ? ' · ' + obs : ''}`;
     msg = `✅ Saída Final registrada às ${horaStr}! Dispensa autorizada com desconto de R$ ${vDesc.toFixed(2).replace('.', ',')} no salário.`;
+    registrarNotificacaoPonto('dispensa', '🚪 Dispensa Autorizada (Desconto Salário)', `${colab.nome} foi liberado(a) às ${horaStr} com Dispensa Autorizada pela Gerência: Desconto de R$ ${vDesc.toFixed(2).replace('.', ',')} no salário.${obs ? ' Obs: ' + obs : ''}`, { colab: colab.nome, hora: horaStr, tipo: 'desconto_salario' });
   }
 
   const btnSai = document.getElementById('btn-ponto-sai');
@@ -10553,6 +10730,10 @@ function registrarBatidaPonto(tipo) {
   renderFuncionarios();
   renderEspelhoPonto();
 
+  try {
+    registrarNotificacaoPonto('ponto', `✓ ${labelTipo || 'Ponto'}`, `${colab.nome} registrou ${labelTipo} às ${horaStr}.`, { colab: colab.nome, tipo: labelTipo, hora: horaStr });
+  } catch(_) {}
+
   mostrarMsgPonto(`✅ ${labelTipo} registrada com sucesso para ${colab.nome} às ${horaStr}! Tempo trabalhado e valor salarial atualizados.`, true);
 }
 
@@ -10746,7 +10927,7 @@ function recalcularHorasPonto(p, colab) {
     // Dispensa autorizada com geração de hora negativa no banco de horas
     minutosNegativos = p.minutosNegativos || antecipadoSaidaMin;
     antecipadoSaidaMin = minutosNegativos;
-  } else if (p.saidaAntecipadaJustificada || p.justificativaSaida || p.semHoraNegativa || p.tipoDecisaoSaida === 'desconto_salario' || ehFds) {
+  } else if (p.saidaAntecipadaJustificada || p.justificativaSaida || p.semHoraNegativa || p.tipoDecisaoSaida === 'desconto_salario' || p.tipoDecisaoSaida === 'sem_desconto' || ehFds) {
     minutosNegativos = 0;
     atrasoEntradaMin = 0;
     antecipadoAlmocoMin = 0;
@@ -10810,10 +10991,18 @@ function recalcularHorasPonto(p, colab) {
   const mTot = totalMin % 60;
   p.totalMinutos = totalMin;
   p.emAndamento = emAndamento;
-  p.tempoTrabalhado = `${String(hTot).padStart(2, '0')}h ${String(mTot).padStart(2, '0')}m`;
+  if (p.tipoDecisaoSaida === 'sem_desconto' && p.horasAbonadasMin) {
+    const hAb = Math.floor(p.horasAbonadasMin / 60);
+    const mAb = p.horasAbonadasMin % 60;
+    const strAb = `${String(hAb).padStart(2,'0')}h ${String(mAb).padStart(2,'0')}m`;
+    p.tempoTrabalhado = `${String(hTot).padStart(2, '0')}h ${String(mTot).padStart(2, '0')}m (+${strAb} Abonadas)`;
+  } else {
+    p.tempoTrabalhado = `${String(hTot).padStart(2, '0')}h ${String(mTot).padStart(2, '0')}m`;
+  }
 
   const vMinuto = vHora > 0 ? (vHora / 60) : 0;
-  const valorDia = (totalMin / 60) * vHora;
+  const totalMinPagamento = (p.tipoDecisaoSaida === 'sem_desconto' && p.horasAbonadasMin) ? (totalMin + p.horasAbonadasMin) : totalMin;
+  const valorDia = (totalMinPagamento / 60) * vHora;
 
   // Registra as Horas Negativas de forma separada
   p.minutosNegativos = minutosNegativos;
