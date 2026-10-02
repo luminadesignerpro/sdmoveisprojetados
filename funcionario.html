@@ -4901,30 +4901,54 @@
     function loginFuncionario() {
       const sel = document.getElementById('l-funcionario-select');
       const selVal = sel ? sel.value : '';
-      const inpVal = (document.getElementById('l-identificador') ? document.getElementById('l-identificador').value : '').trim();
-      const funcs = (typeof carregarFuncionariosDoStorage === 'function') ? carregarFuncionariosDoStorage() : [
-        { id: 100, nome: 'Samuel David', cargo: 'Instalador / Técnico Líder', whatsapp: '(85) 99611-9824' }
-      ];
+      const inpEl = document.getElementById('l-identificador');
+      const inpVal = (inpEl ? inpEl.value : '').trim();
+      const feedbackEl = document.getElementById('login-feedback');
+
+      // Busca funcionários do storage
+      let funcs = [];
+      try {
+        funcs = (typeof carregarFuncionariosDoStorage === 'function') ? carregarFuncionariosDoStorage() : [];
+      } catch(_) {}
+      // Garante funcionário padrão caso esteja vazio
+      if (!funcs || funcs.length === 0) {
+        funcs = [{ id: 100, nome: 'Samuel David', cargo: 'Instalador / Técnico Líder', whatsapp: '(85) 99611-9824' }];
+      }
 
       let colab = null;
+
+      // 1) Tenta pelo select
       if (selVal) {
         colab = funcs.find(f => String(f.id) === String(selVal));
       }
+
+      // 2) Tenta pelo texto digitado (nome ou whatsapp)
       if (!colab && inpVal) {
-        const inpLimpo = inpVal.toLowerCase().replace(/\D/g, '');
+        const inpLimpo = inpVal.replace(/\D/g, '');
+        const inpNome = inpVal.toLowerCase();
         colab = funcs.find(f => {
           const fTel = (f.whatsapp || f.tel || '').replace(/\D/g, '');
           const fNome = (f.nome || '').toLowerCase();
-          return (inpLimpo && fTel.includes(inpLimpo)) || fNome.includes(inpVal.toLowerCase());
+          return (inpLimpo.length >= 4 && fTel.includes(inpLimpo)) || fNome.includes(inpNome);
         });
       }
+
+      // 3) Se ainda não achou, usa o primeiro da lista
       if (!colab && funcs.length > 0) {
         colab = funcs[0];
       }
 
-      const nomeFinal = colab ? colab.nome : (inpVal || 'Samuel David');
-      const idFinal = colab ? colab.id : 100;
-      const cargoFinal = colab ? (colab.cargo || 'Instalador / Técnico Líder') : 'Instalador / Técnico Líder';
+      // 4) Se digitou um nome livre que não existe na lista, cria uma sessão com esse nome
+      const nomeFinal = colab ? colab.nome : (inpVal || 'Colaborador');
+      const idFinal = colab ? colab.id : ('livre_' + Date.now());
+      const cargoFinal = colab ? (colab.cargo || 'Colaborador') : 'Colaborador';
+
+      if (!nomeFinal) {
+        if (feedbackEl) { feedbackEl.style.color = '#f87171'; feedbackEl.textContent = '⚠️ Selecione seu nome ou digite seu WhatsApp/nome.'; }
+        return;
+      }
+
+      if (feedbackEl) { feedbackEl.style.color = '#4ade80'; feedbackEl.textContent = '✅ Entrando como ' + nomeFinal + '...'; }
 
       const sessaoColab = {
         id: idFinal,
@@ -4938,9 +4962,12 @@
       try {
         localStorage.setItem('sdv_cliente_sessao', JSON.stringify(sessaoColab));
         localStorage.setItem('sdv_colaborador_sessao', JSON.stringify(sessaoColab));
+        // Limpa flag de deslogou para permitir re-login
+        sessionStorage.removeItem('sdv_usuario_deslogou');
+        localStorage.removeItem('sdv_usuario_deslogou');
       } catch(_) {}
 
-      iniciarPortalCliente(sessaoColab);
+      setTimeout(() => { iniciarPortalCliente(sessaoColab); }, 400);
     }
 
     // Alias para loginCliente
@@ -5108,7 +5135,7 @@
       if (iden) iden.value = '';
       if (sen) sen.value = '';
       const fb = document.getElementById('login-feedback');
-      if (fb) { fb.textContent = ''; fb.style.display = 'none'; }
+      if (fb) { fb.textContent = ''; fb.style.display = 'block'; }
 
       // 4. Exibe tela de login do funcionário
       const vPort = document.getElementById('view-portal');
