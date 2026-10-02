@@ -4370,8 +4370,11 @@
 
     <div class="field-row" style="margin-bottom:12px;">
       <div class="field">
-        <label>Telefone / WhatsApp</label>
-        <input id="agenda-novo-tel" placeholder="(85) 99999-9999" style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.12);color:#fff;font-family:var(--font);" />
+        <label style="display:flex;align-items:center;justify-content:space-between;">
+          <span>Telefone / WhatsApp</span>
+          <button type="button" id="btn-buscar-zap-agenda" onclick="buscarContatoWhatsApp()" title="Buscar contato ou abrir no WhatsApp" style="font-size:11px;font-weight:800;color:#4ade80;background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.3);padding:2px 8px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;transition:all 0.2s;">💬 Buscar no WhatsApp</button>
+        </label>
+        <input id="agenda-novo-tel" placeholder="(85) 99999-9999" oninput="atualizarBtnWhatsAppAgenda()" style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.12);color:#fff;font-family:var(--font);" />
       </div>
       <div class="field">
         <label>Tipo de Atendimento</label>
@@ -4448,9 +4451,10 @@
       <textarea id="agenda-novo-obs" rows="2" placeholder="Ex: Levar trena a laser, cliente só está em casa após às 14h..." style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.12);color:#fff;font-family:var(--font);resize:vertical;"></textarea>
     </div>
 
-    <div style="display:flex;gap:10px;justify-content:flex-end;">
+    <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
       <button type="button" class="btn btn-sec btn-sm" onclick="fecharModalNovoCompromissoAgenda()">Cancelar</button>
-      <button type="button" id="agenda-modal-btn-salvar" class="btn btn-primary btn-sm" onclick="salvarNovoCompromissoAgenda()">📅 Agendar Visita</button>
+      <button type="button" id="agenda-modal-btn-salvar-simples" class="btn btn-sec btn-sm" onclick="salvarNovoCompromissoAgenda(false)" style="border-color:rgba(201,168,76,0.5);color:var(--gold-light);">💾 Salvar sem enviar</button>
+      <button type="button" id="agenda-modal-btn-salvar" class="btn btn-primary btn-sm" onclick="salvarNovoCompromissoAgenda(true)">📅 Salvar + Enviar WhatsApp</button>
     </div>
   </div>
 </div>
@@ -14158,7 +14162,7 @@ function renderAgenda() {
   container.innerHTML = filtrados.map(ev => {
     const isHoje = ev.data === hojeStr && !ev.concluido;
     const zapClean = (ev.tel || '').replace(/\D/g, '');
-    const zapMsg = encodeURIComponent(`Olá ${ev.cliente || ''}, confirmando o seu agendamento de *${ev.tipo || 'atendimento'}* para o dia *${ev.data ? ev.data.split('-').reverse().join('/') : ''}* às *${ev.hora || ''}* pela SD Vidros.`);
+    const zapMsg = encodeURIComponent(`Olá ${ev.cliente || ''}, confirmando o seu agendamento de *${ev.tipo || 'atendimento'}* para o dia *${ev.data ? ev.data.split('-').reverse().join('/') : ''}* às *${ev.hora || ''}* pela SD Móveis Projetados.`);
     const zapLink = zapClean ? `https://wa.me/55${zapClean}?text=${zapMsg}` : '';
     const notifPill = formatarTempoNotificacao(ev.notificar_minutos);
 
@@ -14272,7 +14276,9 @@ function abrirModalNovoCompromissoAgenda(id = null) {
     if (ev) {
       if (iconeEl) iconeEl.textContent = '✏️';
       if (tituloEl) tituloEl.textContent = 'Editar Agendamento';
-      if (btnSalvar) btnSalvar.textContent = '💾 Salvar Alterações';
+      if (btnSalvar) btnSalvar.textContent = '📅 Salvar + Enviar WhatsApp';
+      const btnSalvarSimples = document.getElementById('agenda-modal-btn-salvar-simples');
+      if (btnSalvarSimples) btnSalvarSimples.textContent = '💾 Salvar sem enviar';
 
       document.getElementById('agenda-novo-cliente').value = ev.cliente || '';
       document.getElementById('agenda-novo-tel').value = ev.tel || '';
@@ -14297,6 +14303,7 @@ function abrirModalNovoCompromissoAgenda(id = null) {
       const m = document.getElementById('modal-agenda-novo');
       if (m) m.style.display = 'flex';
       setTimeout(atualizarBotaoMapsAgenda, 50);
+      setTimeout(atualizarBtnWhatsAppAgenda, 50);
       return;
     }
   }
@@ -14304,12 +14311,15 @@ function abrirModalNovoCompromissoAgenda(id = null) {
   // Novo compromisso
   if (iconeEl) iconeEl.textContent = '📅';
   if (tituloEl) tituloEl.textContent = 'Novo Agendamento / Visita';
-  if (btnSalvar) btnSalvar.textContent = '📅 Agendar Visita';
+  if (btnSalvar) btnSalvar.textContent = '📅 Salvar + Enviar WhatsApp';
+  const btnSalvarSimples = document.getElementById('agenda-modal-btn-salvar-simples');
+  if (btnSalvarSimples) btnSalvarSimples.textContent = '💾 Salvar sem enviar';
 
   document.getElementById('agenda-novo-cliente').value = '';
   document.getElementById('agenda-novo-tel').value = '';
   document.getElementById('agenda-novo-end').value = '';
   setTimeout(atualizarBotaoMapsAgenda, 50);
+  setTimeout(atualizarBtnWhatsAppAgenda, 50);
   document.getElementById('agenda-novo-tipo').value = 'Medição Técnica';
   document.getElementById('agenda-novo-data').value = new Date().toISOString().split('T')[0];
   document.getElementById('agenda-novo-hora').value = '09:00';
@@ -14326,8 +14336,14 @@ function aoSelecionarClienteAgenda() {
   if (!nome || typeof clientes === 'undefined' || !clientes) return;
   const c = clientes.find(x => x.nome.toLowerCase() === nome.toLowerCase());
   if (c) {
-    if (c.tel) document.getElementById('agenda-novo-tel').value = c.tel;
-    if (c.end) document.getElementById('agenda-novo-end').value = c.end + (c.cidade ? ' - ' + c.cidade : '');
+    if (c.tel) {
+      document.getElementById('agenda-novo-tel').value = c.tel;
+      atualizarBtnWhatsAppAgenda();
+    }
+    if (c.end) {
+      document.getElementById('agenda-novo-end').value = c.end + (c.cidade ? ' - ' + c.cidade : '');
+      atualizarBotaoMapsAgenda();
+    }
   }
 }
 
@@ -14338,7 +14354,7 @@ function fecharModalNovoCompromissoAgenda(e) {
   if (m) m.style.display = 'none';
 }
 
-function salvarNovoCompromissoAgenda() {
+function salvarNovoCompromissoAgenda(enviarWhatsApp = false) {
   const cliente = document.getElementById('agenda-novo-cliente').value.trim();
   const tel = document.getElementById('agenda-novo-tel').value.trim();
   const end = document.getElementById('agenda-novo-end').value.trim();
@@ -14403,12 +14419,110 @@ function salvarNovoCompromissoAgenda() {
   fecharModalNovoCompromissoAgenda();
   renderAgenda();
 
+  // Envia WhatsApp se solicitado
+  if (enviarWhatsApp && tel) {
+    const telLimpo = tel.replace(/\D/g, '');
+    if (telLimpo.length >= 8) {
+      const dataFmt = data ? data.split('-').reverse().join('/') : '';
+      const msg = encodeURIComponent(
+        `Olá ${cliente}! 😊\n\nConfirmando seu agendamento:\n📋 *${tipo}*\n📅 Data: *${dataFmt}*${hora ? '\n⏰ Horário: *' + hora + '*' : ''}${end ? '\n📍 Local: *' + end + '*' : ''}${obs ? '\n📝 Obs: ' + obs : ''}\n\nAtenciosamente,\n*SD Móveis Projetados* 🏠`
+      );
+      const prefix = telLimpo.startsWith('55') ? '' : '55';
+      setTimeout(() => { window.open(`https://wa.me/${prefix}${telLimpo}?text=${msg}`, '_blank', 'noopener'); }, 300);
+    } else {
+      mostrarToastAprovacao('⚠️ Agendamento salvo! Número inválido para enviar WhatsApp.');
+    }
+  } else if (enviarWhatsApp && !tel) {
+    mostrarToastAprovacao('✅ Salvo! Nenhum telefone informado para enviar pelo WhatsApp.');
+  } else {
+    mostrarToastAprovacao('✅ Agendamento salvo com sucesso!');
+  }
+
   if (notificar_minutos !== -1 && 'Notification' in window && Notification.permission === 'default') {
     solicitarPermissaoNotificacaoAgenda();
   }
 
   verificarNotificacoesAgenda();
 }
+
+// Abre o WhatsApp ou busca contato na agenda do aparelho / cadastro de clientes
+async function buscarContatoWhatsApp() {
+  const telInput = document.getElementById('agenda-novo-tel');
+  const nomeInput = document.getElementById('agenda-novo-cliente');
+  let tel = (telInput || {}).value || '';
+  let telLimpo = tel.replace(/\D/g, '');
+
+  // 1. Se campo de telefone estiver vazio e o navegador suportar Contact Picker API (Chrome Android / PWA)
+  if (!telLimpo && 'contacts' in navigator && 'ContactsManager' in window) {
+    try {
+      const contacts = await navigator.contacts.select(['name', 'tel'], { multiple: false });
+      if (contacts && contacts.length > 0) {
+        const c = contacts[0];
+        if (c.tel && c.tel.length > 0) {
+          telInput.value = c.tel[0];
+          tel = c.tel[0];
+          telLimpo = tel.replace(/\D/g, '');
+        }
+        if (c.name && c.name.length > 0 && nomeInput && !nomeInput.value) {
+          nomeInput.value = c.name[0];
+        }
+        atualizarBtnWhatsAppAgenda();
+        mostrarToastAprovacao('✅ Contato selecionado da agenda do aparelho!');
+        return;
+      }
+    } catch (_) {}
+  }
+
+  // 2. Se telefone vazio mas nome informado, busca nos clientes cadastrados
+  if (!telLimpo && nomeInput && nomeInput.value.trim() && typeof clientes !== 'undefined' && Array.isArray(clientes)) {
+    const achado = clientes.find(c => c.nome && c.nome.toLowerCase().includes(nomeInput.value.trim().toLowerCase()));
+    if (achado && achado.tel) {
+      telInput.value = achado.tel;
+      tel = achado.tel;
+      telLimpo = tel.replace(/\D/g, '');
+      if (achado.end && document.getElementById('agenda-novo-end') && !document.getElementById('agenda-novo-end').value) {
+        document.getElementById('agenda-novo-end').value = achado.end + (achado.cidade ? ' - ' + achado.cidade : '');
+        atualizarBotaoMapsAgenda();
+      }
+      atualizarBtnWhatsAppAgenda();
+      mostrarToastAprovacao(`✅ Telefone de ${achado.nome} localizado!`);
+    }
+  }
+
+  // 3. Se ainda não possui número válido
+  if (telLimpo.length < 8) {
+    mostrarToastAprovacao('⚠️ Digite o telefone ou selecione um cliente para abrir o WhatsApp.');
+    if (telInput) telInput.focus();
+    return;
+  }
+
+  // 4. Abre o WhatsApp com o número
+  const prefix = telLimpo.startsWith('55') ? '' : '55';
+  window.open(`https://wa.me/${prefix}${telLimpo}`, '_blank', 'noopener');
+}
+
+// Atualiza cor do botão de WhatsApp conforme o número está preenchido
+function atualizarBtnWhatsAppAgenda() {
+  const tel = (document.getElementById('agenda-novo-tel') || {}).value || '';
+  const telLimpo = tel.replace(/\D/g, '');
+  const btn = document.getElementById('btn-buscar-zap-agenda');
+  if (btn) {
+    if (telLimpo.length >= 8) {
+      btn.style.background = '#22c55e';
+      btn.style.color = '#000';
+      btn.style.borderColor = '#16a34a';
+      btn.innerHTML = '💬 WhatsApp ✓';
+      btn.title = `Abrir WhatsApp com ${tel}`;
+    } else {
+      btn.style.background = 'rgba(74,222,128,0.12)';
+      btn.style.color = '#4ade80';
+      btn.style.borderColor = 'rgba(74,222,128,0.3)';
+      btn.innerHTML = '💬 Buscar no WhatsApp';
+      btn.title = 'Buscar contato ou abrir no WhatsApp';
+    }
+  }
+}
+
 
 // Iniciar verificação automática do alarme a cada 20 segundos
 try {
