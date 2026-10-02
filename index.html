@@ -4352,178 +4352,219 @@
 
 <!-- ══ MODAL NOVO AGENDAMENTO ══ -->
 <div id="modal-agenda-novo" class="modal-overlay" style="display:none" onclick="fecharModalNovoCompromissoAgenda(event)">
-  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:460px;">
-    <div class="modal-title">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:480px;max-height:92vh;display:flex;flex-direction:column;padding:0;">
+    
+    <!-- CABEÇALHO COM BOTÃO SALVAR RÁPIDO NO TOPO -->
+    <div class="modal-title" style="padding:16px 20px;margin-bottom:0;border-bottom:1px solid rgba(255,255,255,0.1);display:flex;justify-content:space-between;align-items:center;">
       <div style="display:flex;align-items:center;gap:8px;">
         <span id="agenda-modal-icone">📅</span>
-        <span id="agenda-modal-titulo">Novo Agendamento / Visita</span>
+        <span id="agenda-modal-titulo" style="font-size:15px;font-weight:900;">Novo Agendamento / Visita</span>
       </div>
-      <button class="modal-close" onclick="fecharModalNovoCompromissoAgenda()">✕</button>
-    </div>
-
-    <datalist id="agenda-lista-sugestoes-clientes"></datalist>
-
-    <div class="field" style="margin-bottom:12px;">
-      <label>Nome do Cliente</label>
-      <input id="agenda-novo-cliente" list="agenda-lista-sugestoes-clientes" oninput="aoSelecionarClienteAgenda()" placeholder="Digite ou selecione o cliente..." style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.12);color:#fff;font-family:var(--font);" />
-    </div>
-
-    <div class="field-row" style="margin-bottom:12px;">
-      <div class="field">
-        <label style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;">
-          <span>Telefone / WhatsApp</span>
-          <button type="button" id="btn-buscar-zap-agenda" onclick="abrirModalBuscaWhatsApp()" title="Buscar nos 2 WhatsApps: Business (99760-2237) e WhatsApp (98574-9686)" style="font-size:11px;font-weight:800;color:#4ade80;background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.3);padding:2px 8px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;transition:all 0.2s;">💬 Buscar no WhatsApp (2 Contatos)</button>
-        </label>
-        <input id="agenda-novo-tel" placeholder="(85) 99999-9999" oninput="atualizarBtnWhatsAppAgenda()" style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.12);color:#fff;font-family:var(--font);" />
-      </div>
-      <div class="field">
-        <label>Tipo de Atendimento</label>
-        <select id="agenda-novo-tipo" style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.12);color:#fff;font-family:var(--font);">
-          <option value="Medição Técnica">📏 Medição Técnica</option>
-          <option value="Instalação de Box">🚿 Instalação de Box</option>
-          <option value="Instalação de Vidro / Janela">🪟 Instalação Vidro/Janela</option>
-          <option value="Entrega de Espelho">🪞 Entrega de Espelho</option>
-          <option value="Manutenção / Regulagem">🔧 Manutenção / Regulagem</option>
-          <option value="Vistoria Técnica">📋 Vistoria Técnica</option>
-          <option value="Outro Atendimento">📍 Outro Atendimento</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="field" style="margin-bottom:12px;">
-      <label style="display:flex;align-items:center;justify-content:space-between;">
-        <span>📍 Endereço / Local da Obra</span>
-        <a id="agenda-maps-link" href="#" target="_blank" rel="noopener" onclick="return abrirMapsEndereco()" style="display:none;font-size:11px;font-weight:800;color:#4ade80;text-decoration:none;padding:3px 8px;border-radius:6px;background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.3);transition:all 0.2s;">🗺️ Abrir no Maps</a>
-      </label>
-      <input id="agenda-novo-end" placeholder="Rua, número, bairro, cidade..." oninput="atualizarBotaoMapsAgenda()" style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.12);color:#fff;font-family:var(--font);" />
-    </div>
-
-    <div class="field-row" style="margin-bottom:12px;">
-      <div class="field">
-        <label>Data</label>
-        <input id="agenda-novo-data" type="date" style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.12);color:#fff;font-family:var(--font);" />
-      </div>
-      <div class="field">
-        <label>Horário Previsto</label>
-        <input id="agenda-novo-hora" type="time" style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.12);color:#fff;font-family:var(--font);" />
-      </div>
-    </div>
-
-    <div class="field" style="margin-bottom:14px;background:rgba(201,168,76,0.08);border:1.5px solid rgba(201,168,76,0.4);padding:12px;border-radius:10px;">
-      <label style="display:flex;align-items:center;justify-content:space-between;color:var(--gold-light);font-weight:800;font-size:12.5px;margin-bottom:6px;">
-        <span style="display:flex;align-items:center;gap:6px;">
-          <span>⏰</span> <span>DEFINIR ALARME / AVISAR ANTES</span>
-        </span>
-        <span style="font-size:11px;color:#4ade80;font-weight:bold;">Alarme Sonoro Ativo 🔔</span>
-      </label>
-      
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-        <select id="agenda-novo-notificacao" onchange="aoMudarOpcaoAlarmeAgenda()" style="flex:1;min-width:180px;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(201,168,76,0.4);color:#fff;font-family:var(--font);font-size:13px;font-weight:700;">
-          <option value="5">⏰ 5 minutos antes</option>
-          <option value="10">⏰ 10 minutos antes</option>
-          <option value="15">⏰ 15 minutos antes</option>
-          <option value="30" selected>⏰ 30 minutos antes (Padrão recomendado)</option>
-          <option value="45">⏰ 45 minutos antes</option>
-          <option value="60">⏰ 1 hora antes (60 minutos)</option>
-          <option value="120">⏰ 2 horas antes</option>
-          <option value="180">⏰ 3 horas antes</option>
-          <option value="1440">⏰ 1 dia antes (24 horas)</option>
-          <option value="0">⏰ No exato horário agendado</option>
-          <option value="custom">✏️ Digitar tempo personalizado (em minutos)...</option>
-          <option value="-1">🚫 Sem alarme</option>
-        </select>
-        <button type="button" onclick="testarSomAlarmeAgenda()" class="btn btn-sec btn-sm" style="padding:9px 12px;font-size:11.5px;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;" title="Testar som do alarme">
-          🔊 Testar Som
+      <div style="display:flex;align-items:center;gap:6px;">
+        <button type="button" class="btn btn-sm" onclick="salvarNovoCompromissoAgenda(false)" style="background:#22c55e;color:#000;font-weight:900;font-size:12px;padding:6px 14px;border-radius:8px;border:none;box-shadow:0 3px 12px rgba(34,197,94,0.4);cursor:pointer;" title="Salvar Agendamento">
+          💾 Salvar
         </button>
+        <button class="modal-close" onclick="fecharModalNovoCompromissoAgenda()">✕</button>
       </div>
+    </div>
 
-      <div id="agenda-tempo-custom-box" style="display:none;margin-top:10px;padding:8px 10px;background:rgba(0,0,0,0.4);border-radius:8px;border:1px dashed rgba(201,168,76,0.3);">
-        <label style="font-size:11.5px;color:var(--text2);display:block;margin-bottom:4px;">Definir tempo de antecedência:</label>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <input type="number" id="agenda-novo-minutos-custom" min="1" max="10000" placeholder="Ex: 20" style="width:90px;padding:8px;border-radius:6px;background:#080811;border:1px solid rgba(255,255,255,0.25);color:#fff;font-size:14px;font-weight:800;" />
-          <span style="font-size:12px;color:#fff;font-weight:700;">minutos antes do agendamento</span>
+    <!-- CORPO DO FORMULÁRIO COM ROLAGEM SUAVE -->
+    <div style="padding:16px 20px;overflow-y:auto;flex:1;">
+      <datalist id="agenda-lista-sugestoes-clientes"></datalist>
+
+      <!-- BARRA DE AÇÕES RÁPIDAS DE CONTATO -->
+      <div style="background:rgba(201,168,76,0.1);border:1.5px solid rgba(201,168,76,0.35);border-radius:12px;padding:10px 12px;margin-bottom:14px;">
+        <div style="font-size:11px;font-weight:800;color:var(--gold-light);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;display:flex;align-items:center;gap:5px;">
+          <span>⚡</span> <span>Pegar Contato Rapidamente:</span>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button type="button" onclick="selecionarContatoAgendaAparelho()" class="btn btn-sm" style="flex:1;min-width:120px;background:linear-gradient(135deg,#c9a84c,#e6c875);color:#000;font-size:11.5px;font-weight:900;padding:8px 10px;justify-content:center;display:flex;align-items:center;gap:5px;border:none;box-shadow:0 2px 8px rgba(201,168,76,0.3);">
+            <span>📇</span> <span>Pegar da Agenda</span>
+          </button>
+          <button type="button" onclick="colarContatoAreaTransferencia()" class="btn btn-sm" style="flex:1;min-width:115px;background:rgba(34,197,94,0.18);border:1.5px solid #22c55e;color:#4ade80;font-size:11.5px;font-weight:900;padding:8px 10px;justify-content:center;display:flex;align-items:center;gap:5px;">
+            <span>📋</span> <span>Colar Copiado</span>
+          </button>
+          <button type="button" onclick="abrirModalBuscaWhatsApp()" class="btn btn-sm" style="flex:1.2;min-width:130px;background:rgba(56,189,248,0.18);border:1.5px solid #38bdf8;color:#38bdf8;font-size:11.5px;font-weight:900;padding:8px 10px;justify-content:center;display:flex;align-items:center;gap:5px;">
+            <span>💬</span> <span>Buscar WhatsApp</span>
+          </button>
         </div>
       </div>
+
+      <div class="field" style="margin-bottom:12px;">
+        <label>Nome do Cliente</label>
+        <input id="agenda-novo-cliente" list="agenda-lista-sugestoes-clientes" oninput="aoSelecionarClienteAgenda()" placeholder="Ex: Claudia ou selecione o cliente..." style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.12);color:#fff;font-family:var(--font);" />
+      </div>
+
+      <div class="field-row" style="margin-bottom:12px;">
+        <div class="field">
+          <label style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;">
+            <span>Telefone / WhatsApp</span>
+          </label>
+          <input id="agenda-novo-tel" placeholder="(85) 99999-9999" oninput="atualizarBtnWhatsAppAgenda()" style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.12);color:#fff;font-family:var(--font);" />
+        </div>
+        <div class="field">
+          <label>Tipo de Atendimento</label>
+          <select id="agenda-novo-tipo" style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.12);color:#fff;font-family:var(--font);">
+            <option value="Medição Técnica">📏 Medição Técnica</option>
+            <option value="Instalação de Box">🚿 Instalação de Box</option>
+            <option value="Instalação de Vidro / Janela">🪟 Instalação Vidro/Janela</option>
+            <option value="Entrega de Espelho">🪞 Entrega de Espelho</option>
+            <option value="Manutenção / Regulagem">🔧 Manutenção / Regulagem</option>
+            <option value="Vistoria Técnica">📋 Vistoria Técnica</option>
+            <option value="Outro Atendimento">📍 Outro Atendimento</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom:12px;">
+        <label style="display:flex;align-items:center;justify-content:space-between;">
+          <span>📍 Endereço / Local da Obra</span>
+          <a id="agenda-maps-link" href="#" target="_blank" rel="noopener" onclick="return abrirMapsEndereco()" style="display:none;font-size:11px;font-weight:800;color:#4ade80;text-decoration:none;padding:3px 8px;border-radius:6px;background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.3);transition:all 0.2s;">🗺️ Abrir no Maps</a>
+        </label>
+        <input id="agenda-novo-end" placeholder="Rua, número, bairro, cidade..." oninput="atualizarBotaoMapsAgenda()" style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.12);color:#fff;font-family:var(--font);" />
+      </div>
+
+      <div class="field-row" style="margin-bottom:12px;">
+        <div class="field">
+          <label>Data</label>
+          <input id="agenda-novo-data" type="date" style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.12);color:#fff;font-family:var(--font);" />
+        </div>
+        <div class="field">
+          <label>Horário Previsto</label>
+          <input id="agenda-novo-hora" type="time" style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.12);color:#fff;font-family:var(--font);" />
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom:14px;background:rgba(201,168,76,0.08);border:1.5px solid rgba(201,168,76,0.4);padding:12px;border-radius:10px;">
+        <label style="display:flex;align-items:center;justify-content:space-between;color:var(--gold-light);font-weight:800;font-size:12.5px;margin-bottom:6px;">
+          <span style="display:flex;align-items:center;gap:6px;">
+            <span>⏰</span> <span>DEFINIR ALARME / AVISAR ANTES</span>
+          </span>
+          <span style="font-size:11px;color:#4ade80;font-weight:bold;">Alarme Sonoro Ativo 🔔</span>
+        </label>
+        
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <select id="agenda-novo-notificacao" onchange="aoMudarOpcaoAlarmeAgenda()" style="flex:1;min-width:180px;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(201,168,76,0.4);color:#fff;font-family:var(--font);font-size:13px;font-weight:700;">
+            <option value="5">⏰ 5 minutos antes</option>
+            <option value="10">⏰ 10 minutos antes</option>
+            <option value="15">⏰ 15 minutos antes</option>
+            <option value="30" selected>⏰ 30 minutos antes (Padrão recomendado)</option>
+            <option value="45">⏰ 45 minutos antes</option>
+            <option value="60">⏰ 1 hora antes (60 minutos)</option>
+            <option value="120">⏰ 2 horas antes</option>
+            <option value="180">⏰ 3 horas antes</option>
+            <option value="1440">⏰ 1 dia antes (24 horas)</option>
+            <option value="0">⏰ No exato horário agendado</option>
+            <option value="custom">✏️ Digitar tempo personalizado (em minutos)...</option>
+            <option value="-1">🚫 Sem alarme</option>
+          </select>
+          <button type="button" onclick="testarSomAlarmeAgenda()" class="btn btn-sec btn-sm" style="padding:9px 12px;font-size:11.5px;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;" title="Testar som do alarme">
+            🔊 Testar Som
+          </button>
+        </div>
+
+        <div id="agenda-tempo-custom-box" style="display:none;margin-top:10px;padding:8px 10px;background:rgba(0,0,0,0.4);border-radius:8px;border:1px dashed rgba(201,168,76,0.3);">
+          <label style="font-size:11.5px;color:var(--text2);display:block;margin-bottom:4px;">Definir tempo de antecedência:</label>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <input type="number" id="agenda-novo-minutos-custom" min="1" max="10000" placeholder="Ex: 20" style="width:90px;padding:8px;border-radius:6px;background:#080811;border:1px solid rgba(255,255,255,0.25);color:#fff;font-size:14px;font-weight:800;" />
+            <span style="font-size:12px;color:#fff;font-weight:700;">minutos antes do agendamento</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom:16px;">
+        <label>Observações / Itens a levar</label>
+        <textarea id="agenda-novo-obs" rows="2" placeholder="Ex: Levar trena a laser, cliente só está em casa após às 14h..." style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.12);color:#fff;font-family:var(--font);resize:vertical;"></textarea>
+      </div>
     </div>
 
-    <div class="field" style="margin-bottom:16px;">
-      <label>Observações / Itens a levar</label>
-      <textarea id="agenda-novo-obs" rows="2" placeholder="Ex: Levar trena a laser, cliente só está em casa após às 14h..." style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.12);color:#fff;font-family:var(--font);resize:vertical;"></textarea>
+    <!-- BARRA FIXA / STICKY DE SALVAMENTO NO RODAPÉ -->
+    <div style="padding:12px 20px;background:#090a12;border-top:1.5px solid rgba(255,255,255,0.12);display:flex;gap:8px;justify-content:space-between;align-items:center;box-shadow:0 -6px 18px rgba(0,0,0,0.5);">
+      <button type="button" class="btn btn-sec btn-sm" onclick="fecharModalNovoCompromissoAgenda()" style="padding:10px 14px;">Cancelar</button>
+      <div style="display:flex;gap:8px;">
+        <button type="button" id="agenda-modal-btn-salvar-simples" class="btn btn-sec btn-sm" onclick="salvarNovoCompromissoAgenda(false)" style="border-color:rgba(201,168,76,0.6);color:var(--gold-light);font-weight:900;padding:10px 16px;font-size:12.5px;">💾 Salvar sem enviar</button>
+        <button type="button" id="agenda-modal-btn-salvar" class="btn btn-primary btn-sm" onclick="salvarNovoCompromissoAgenda(true)" style="background:linear-gradient(135deg,#22c55e,#16a34a);color:#000;font-weight:900;padding:10px 16px;font-size:12.5px;border:none;box-shadow:0 3px 12px rgba(34,197,94,0.35);">📅 Salvar + WhatsApp</button>
+      </div>
     </div>
 
-    <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
-      <button type="button" class="btn btn-sec btn-sm" onclick="fecharModalNovoCompromissoAgenda()">Cancelar</button>
-      <button type="button" id="agenda-modal-btn-salvar-simples" class="btn btn-sec btn-sm" onclick="salvarNovoCompromissoAgenda(false)" style="border-color:rgba(201,168,76,0.5);color:var(--gold-light);">💾 Salvar sem enviar</button>
-      <button type="button" id="agenda-modal-btn-salvar" class="btn btn-primary btn-sm" onclick="salvarNovoCompromissoAgenda(true)">📅 Salvar + Enviar WhatsApp</button>
-    </div>
   </div>
 </div>
 
 <!-- ══ MODAL SELEÇÃO DOS 2 WHATSAPPS PARA BUSCA DE CONTATO ══ -->
 <div id="modal-buscar-contato-whatsapp" class="modal-overlay" style="display:none;z-index:9999999;" onclick="if(event.target===this)fecharModalBuscaWhatsApp()">
-  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:440px;padding:22px 20px;">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:440px;padding:22px 20px;max-height:90vh;overflow-y:auto;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
       <div style="font-size:16px;font-weight:900;color:#fff;display:flex;align-items:center;gap:8px;">
-        <span>🔍</span> Buscar Contato no WhatsApp
+        <span>🔍</span> Buscar Contato do Cliente
       </div>
       <button class="modal-close" onclick="fecharModalBuscaWhatsApp()">✕</button>
     </div>
 
-    <div style="font-size:12px;color:var(--muted);margin-bottom:14px;">
-      Selecione qual dos 2 WhatsApps deseja abrir para buscar o contato do cliente:
-    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      
+      <!-- AÇÃO 1: PEGAR CONTATO DA AGENDA DO APARELHO / WHATSAPP -->
+      <button type="button" onclick="selecionarContatoAgendaAparelho()" style="width:100%;padding:14px 16px;border-radius:12px;background:linear-gradient(135deg,rgba(201,168,76,0.3),rgba(20,20,32,0.95));border:2px solid var(--gold);color:#fff;font-weight:900;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:12px;box-shadow:0 4px 16px rgba(201,168,76,0.3);text-align:left;">
+        <span style="font-size:26px;">📇</span>
+        <div style="flex:1;">
+          <div style="font-size:14px;color:#fff;font-weight:900;">Pegar da Agenda do Celular</div>
+          <div style="font-size:11px;color:var(--gold-light);font-weight:600;">Selecione o contato salvo (WhatsApp/Telefone) e preencha direto</div>
+        </div>
+        <span style="font-size:18px;color:var(--gold);">➔</span>
+      </button>
 
-    <div style="display:flex;flex-direction:column;gap:10px;">
-      <!-- OPÇÃO 1: WHATSAPP BUSINESS -->
-      <div style="background:rgba(34,197,94,0.08);border:1.5px solid rgba(34,197,94,0.3);border-radius:12px;padding:12px 14px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-          <div style="font-weight:900;font-size:13.5px;color:#4ade80;display:flex;align-items:center;gap:6px;">
-            <span>🏢</span> WhatsApp Business
-          </div>
-          <span style="font-size:11px;background:#22c55e;color:#000;padding:2px 7px;border-radius:999px;font-weight:900;">55 85 99760-2237</span>
+      <!-- AÇÃO 2: COLAR CONTATO QUE COPIOU DO WHATSAPP -->
+      <button type="button" onclick="colarContatoAreaTransferencia()" style="width:100%;padding:12px 16px;border-radius:12px;background:rgba(34,197,94,0.12);border:1.5px solid #22c55e;color:#4ade80;font-weight:900;font-size:13.5px;cursor:pointer;display:flex;align-items:center;gap:10px;text-align:left;">
+        <span style="font-size:22px;">📋</span>
+        <div style="flex:1;">
+          <div style="color:#4ade80;font-weight:900;">Colar Contato Copiado</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.7);font-weight:600;">Lê o número ou nome que você copiou do WhatsApp</div>
         </div>
-        <div style="font-size:11.5px;color:rgba(255,255,255,0.7);margin-bottom:10px;">
-          Conta comercial principal da SD Móveis Projetados.
-        </div>
+      </button>
+
+      <!-- AÇÃO 3: CAMPO RÁPIDO PARA DIGITAR OU COLAR -->
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:12px;">
+        <label style="font-size:11.5px;font-weight:800;color:#fff;display:block;margin-bottom:6px;">
+          ✏️ Digite ou Cole o Contato do Cliente:
+        </label>
         <div style="display:flex;gap:6px;">
-          <button type="button" class="btn btn-sm" onclick="aplicarNumeroWhatsAppAgenda('5585997602237')" style="flex:1;background:rgba(255,255,255,0.08);color:#fff;font-size:11px;">📋 Usar este número</button>
-          <button type="button" class="btn btn-sm" onclick="abrirAppWhatsApp('business')" style="flex:1.3;background:#22c55e;color:#000;font-weight:900;font-size:11.5px;">🚀 Abrir WhatsApp Business</button>
+          <input id="input-contato-zap-rapido" placeholder="Ex: Claudia ou 85 99184-8975" style="flex:1;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.22);color:#fff;font-size:13px;" />
+          <button type="button" class="btn btn-primary btn-sm" onclick="aplicarContatoDigitadoRapido(false)" style="background:#22c55e;color:#000;font-weight:900;padding:10px 14px;white-space:nowrap;">
+            ✅ Inserir
+          </button>
+          <button type="button" class="btn btn-sm" onclick="aplicarContatoDigitadoRapido(true)" style="background:var(--gold);color:#000;font-weight:900;padding:10px 14px;white-space:nowrap;" title="Inserir e Salvar Imediatamente">
+            💾 Salvar
+          </button>
         </div>
       </div>
 
-      <!-- OPÇÃO 2: WHATSAPP NORMAL / CONTATO -->
-      <div style="background:rgba(56,189,248,0.08);border:1.5px solid rgba(56,189,248,0.3);border-radius:12px;padding:12px 14px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-          <div style="font-weight:900;font-size:13.5px;color:#38bdf8;display:flex;align-items:center;gap:6px;">
-            <span>💬</span> WhatsApp Contato / Pessoal
-          </div>
-          <span style="font-size:11px;background:#38bdf8;color:#000;padding:2px 7px;border-radius:999px;font-weight:900;">55 85 98574-9686</span>
+      <!-- AÇÃO 4: ABRIR SEUS APLICATIVOS DE WHATSAPP -->
+      <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px;">
+        <div style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">
+          Abrir seu WhatsApp para buscar o cliente:
         </div>
-        <div style="font-size:11.5px;color:rgba(255,255,255,0.7);margin-bottom:10px;">
-          Segundo WhatsApp oficial da empresa.
+        <div style="display:flex;gap:8px;">
+          <button type="button" class="btn btn-sm" onclick="abrirAppWhatsApp('business')" style="flex:1;background:rgba(34,197,94,0.15);border:1px solid #22c55e;color:#4ade80;font-weight:900;padding:10px 8px;font-size:12px;justify-content:center;display:flex;align-items:center;gap:6px;">
+            <span>🏢</span> <span>WhatsApp Business</span>
+          </button>
+          <button type="button" class="btn btn-sm" onclick="abrirAppWhatsApp('pessoal')" style="flex:1;background:rgba(56,189,248,0.15);border:1px solid #38bdf8;color:#38bdf8;font-weight:900;padding:10px 8px;font-size:12px;justify-content:center;display:flex;align-items:center;gap:6px;">
+            <span>💬</span> <span>WhatsApp Normal</span>
+          </button>
         </div>
-        <div style="display:flex;gap:6px;">
-          <button type="button" class="btn btn-sm" onclick="aplicarNumeroWhatsAppAgenda('5585985749686')" style="flex:1;background:rgba(255,255,255,0.08);color:#fff;font-size:11px;">📋 Usar este número</button>
-          <button type="button" class="btn btn-sm" onclick="abrirAppWhatsApp('pessoal')" style="flex:1.3;background:#38bdf8;color:#000;font-weight:900;font-size:11.5px;">🚀 Abrir WhatsApp</button>
+        <div style="font-size:10.5px;color:rgba(255,255,255,0.5);margin-top:6px;line-height:1.3;">
+          💡 Dica: No WhatsApp, copie o número do cliente e ao voltar aqui, toque em <strong>"Colar Contato Copiado"</strong>.
         </div>
       </div>
 
-      <!-- OPÇÃO 3: CLIENTES CADASTRADOS NO SISTEMA -->
-      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:10px 14px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-          <div style="font-weight:700;font-size:12.5px;color:#fff;display:flex;align-items:center;gap:6px;">
-            <span>👥</span> Buscar nos Clientes do Sistema
-          </div>
+      <!-- AÇÃO 5: CLIENTES JÁ CADASTRADOS NO SISTEMA -->
+      <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px;">
+        <div style="font-weight:700;font-size:12px;color:#fff;margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+          <span>👥</span> Buscar nos Clientes do Sistema:
         </div>
-        <select id="select-cliente-zap-rapido" onchange="selecionarClienteCadastradoParaZap(this.value)" style="width:100%;padding:8px;border-radius:8px;background:#0d0d1a;border:1px solid rgba(255,255,255,0.18);color:#fff;font-size:12px;cursor:pointer;">
+        <select id="select-cliente-zap-rapido" onchange="selecionarClienteCadastradoParaZap(this.value)" style="width:100%;padding:10px;border-radius:8px;background:#0d0d1a;border:1px solid rgba(255,255,255,0.18);color:#fff;font-size:12.5px;cursor:pointer;">
           <option value="">-- Escolher dos Clientes Cadastrados --</option>
         </select>
       </div>
 
-      <!-- OPÇÃO 4: AGENDA DO CELULAR -->
-      <button type="button" class="btn btn-sec btn-sm" onclick="selecionarContatoAgendaAparelho()" style="padding:10px;justify-content:center;font-size:12px;font-weight:800;border-color:rgba(201,168,76,0.4);color:var(--gold-light);">
-        <span>📇</span> Buscar na Agenda de Contatos do Celular
-      </button>
     </div>
   </div>
 </div>
@@ -14570,51 +14611,125 @@ function selecionarClienteCadastradoParaZap(val) {
     telInput.value = cli.tel;
     atualizarBtnWhatsAppAgenda();
   }
-  if (cli.nome && nomeInput && !nomeInput.value) {
+  if (cli.nome && nomeInput) {
     nomeInput.value = cli.nome;
   }
-  if (cli.end && endInput && !endInput.value) {
+  if (cli.end && endInput) {
     endInput.value = cli.end + (cli.cidade ? ' - ' + cli.cidade : '');
     atualizarBotaoMapsAgenda();
   }
   fecharModalBuscaWhatsApp();
-  mostrarToastAprovacao(`✅ Dados de ${cli.nome || 'cliente'} preenchidos!`);
+  mostrarToastAprovacao(`✅ Dados de ${cli.nome || 'cliente'} preenchidos no agendamento!`);
 }
 
-function aplicarNumeroWhatsAppAgenda(num) {
-  const inp = document.getElementById('agenda-novo-tel');
-  if (inp) {
-    const limpo = num.replace(/^55/, '');
-    inp.value = limpo.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+function processarEInserirContato(texto, salvarDireto = false) {
+  if (!texto || typeof texto !== 'string') return;
+  const telInput = document.getElementById('agenda-novo-tel');
+  const nomeInput = document.getElementById('agenda-novo-cliente');
+
+  const rawTexto = texto.trim();
+  const digitos = rawTexto.replace(/\D/g, '');
+  let numTelefone = '';
+
+  if (digitos.length >= 8) {
+    let limpo = digitos;
+    if (limpo.startsWith('55') && limpo.length >= 10) limpo = limpo.slice(2);
+    if (limpo.length === 11) {
+      numTelefone = limpo.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+    } else if (limpo.length === 10) {
+      numTelefone = limpo.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+    } else {
+      numTelefone = limpo;
+    }
+  }
+
+  // Tenta extrair o nome caso venha junto com o telefone
+  let possivelNome = '';
+  const linhas = rawTexto.split(/[\n,;]/).map(s => s.trim()).filter(Boolean);
+  for (const l of linhas) {
+    const semDigitos = l.replace(/[\d+()\-]/g, '').trim();
+    if (semDigitos.length >= 2 && !/whatsapp|business|contato|telefone|tel|cel/i.test(semDigitos)) {
+      possivelNome = semDigitos;
+      break;
+    }
+  }
+
+  if (numTelefone && telInput) {
+    telInput.value = numTelefone;
+    atualizarBtnWhatsAppAgenda();
+  } else if (digitos.length >= 8 && telInput) {
+    telInput.value = digitos;
     atualizarBtnWhatsAppAgenda();
   }
+
+  if (possivelNome && nomeInput) {
+    nomeInput.value = possivelNome;
+  }
+
   fecharModalBuscaWhatsApp();
-  mostrarToastAprovacao('✅ Número preenchido no agendamento!');
+  mostrarToastAprovacao(`✅ Contato inserido: ${possivelNome ? possivelNome + ' ' : ''}${numTelefone || digitos}`);
+
+  if (salvarDireto) {
+    setTimeout(() => {
+      salvarNovoCompromissoAgenda(false);
+    }, 250);
+  }
+}
+
+async function colarContatoAreaTransferencia() {
+  try {
+    let texto = '';
+    if (navigator.clipboard && navigator.clipboard.readText) {
+      texto = await navigator.clipboard.readText();
+    }
+    if (!texto) {
+      texto = prompt('Cole aqui o número ou contato copiado do WhatsApp:');
+    }
+    if (texto && texto.trim()) {
+      processarEInserirContato(texto.trim());
+    } else {
+      mostrarToastAprovacao('ℹ️ Nenhum contato informado.');
+    }
+  } catch (_) {
+    const texto = prompt('Cole aqui o número ou contato copiado do WhatsApp:');
+    if (texto && texto.trim()) {
+      processarEInserirContato(texto.trim());
+    }
+  }
+}
+
+function aplicarContatoDigitadoRapido(salvarDireto = false) {
+  const inp = document.getElementById('input-contato-zap-rapido');
+  const txt = (inp ? inp.value : '').trim();
+  if (!txt) {
+    mostrarToastAprovacao('⚠️ Digite ou cole o contato primeiro.');
+    return;
+  }
+  processarEInserirContato(txt, salvarDireto);
+  if (inp) inp.value = '';
 }
 
 async function selecionarContatoAgendaAparelho() {
   const telInput = document.getElementById('agenda-novo-tel');
   const nomeInput = document.getElementById('agenda-novo-cliente');
+
   if ('contacts' in navigator && 'ContactsManager' in window) {
     try {
       const contacts = await navigator.contacts.select(['name', 'tel'], { multiple: false });
       if (contacts && contacts.length > 0) {
         const c = contacts[0];
-        if (c.tel && c.tel.length > 0 && telInput) {
-          telInput.value = c.tel[0];
-          atualizarBtnWhatsAppAgenda();
+        const t = (c.tel && c.tel.length > 0) ? c.tel[0] : '';
+        const n = (c.name && c.name.length > 0) ? c.name[0] : '';
+        if (t || n) {
+          processarEInserirContato(`${n} ${t}`);
+          return;
         }
-        if (c.name && c.name.length > 0 && nomeInput && !nomeInput.value) {
-          nomeInput.value = c.name[0];
-        }
-        fecharModalBuscaWhatsApp();
-        mostrarToastAprovacao('✅ Contato selecionado da agenda!');
-        return;
       }
     } catch (_) {}
-  } else {
-    mostrarToastAprovacao('ℹ️ Toque em um dos 2 WhatsApps para abrir o aplicativo.');
   }
+
+  // Fallback se não suportado no navegador atual
+  colarContatoAreaTransferencia();
 }
 
 function abrirAppWhatsApp(tipo) {
