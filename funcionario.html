@@ -351,6 +351,83 @@
       margin-left: 3px;
     }
 
+    /* ─── BOTÕES E MODAIS PADRÃO CRONOGRAMA ─── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #c9a84c, #e6c875) !important;
+      color: #0b0c10 !important;
+      font-weight: 800;
+      box-shadow: 0 4px 14px rgba(201,168,76,0.3);
+    }
+    .btn-sec {
+      background: rgba(255,255,255,0.06) !important;
+      border: 1px solid rgba(255,255,255,0.15) !important;
+      color: #cbd5e1 !important;
+    }
+    .btn-gold {
+      background: linear-gradient(135deg, #c9a84c, #e6c875) !important;
+      color: #0b0c10 !important;
+      font-weight: 800;
+      box-shadow: 0 4px 14px rgba(201,168,76,0.3);
+    }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+    .btn-xs { padding: 4px 8px; font-size: 11px; }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999999;
+      padding: 16px;
+    }
+    .modal-box {
+      background: #0f101a;
+      border: 1.5px solid rgba(201,168,76,0.35);
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+      width: 100%;
+      max-width: 480px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-sizing: border-box;
+    }
+    .modal-close {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #94a3b8;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+    .modal-close:hover {
+      background: rgba(239,68,68,0.2);
+      color: #ef4444;
+      border-color: rgba(239,68,68,0.4);
+    }
+
     /* ─── TELAS (STATUS, GALERIA, MENSAGENS) ─── */
     .tab-pane {
       display: none;
@@ -2210,7 +2287,7 @@
         <label style="font-size:12px;font-weight:800;color:var(--gold-light);display:flex;align-items:center;gap:6px;margin-bottom:6px;">
           <span>📱</span> <span>Ou Digite seu WhatsApp ou Nome</span>
         </label>
-        <input id="l-identificador" placeholder="Ex: Samuel David ou (85) 99611-9824" />
+        <input id="l-identificador" placeholder="Ex: Samuel David ou (85) 99760-2237" />
       </div>
 
       <div class="field-box" id="box-func-senha" style="display:none;margin-bottom:12px;">
@@ -2310,6 +2387,9 @@
           </button>
           <button type="button" class="portal-tab" id="btn-tab-meu-financeiro" onclick="mudarAba('meu-financeiro')">
             <span>💰</span> <span>Meu Setor Financeiro</span>
+          </button>
+          <button type="button" class="portal-tab" id="btn-tab-cronograma" onclick="mudarAba('cronograma')">
+            <span>📅</span> <span>Cronograma</span>
           </button>
           <button type="button" class="portal-tab" id="btn-tab-opiniao" onclick="mudarAba('opiniao')">
             <span>💡</span> <span>Minha Opinião</span>
@@ -3383,6 +3463,136 @@
           <div style="display:flex;gap:8px;">
             <button type="button" onclick="fecharModalEditarPixColab()" style="flex:1;padding:10px;background:rgba(255,255,255,0.08);border:none;border-radius:8px;color:#fff;font-weight:700;font-size:12px;cursor:pointer;">Cancelar</button>
             <button type="button" onclick="salvarPixColab()" style="flex:1.4;padding:10px;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;border-radius:8px;color:#000;font-weight:900;font-size:12px;cursor:pointer;">💾 Salvar Chave</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ABA: CRONOGRAMA ── -->
+      <div id="pane-cronograma" class="tab-pane">
+        <div class="portal-card" style="border:1.5px solid rgba(201,168,76,0.35);box-shadow:0 12px 35px rgba(0,0,0,0.4);padding:18px 16px;">
+          <!-- CABEÇALHO -->
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:18px;">
+            <div>
+              <div style="font-size:20px;font-weight:900;color:#fff;display:flex;align-items:center;gap:10px;">
+                <span style="font-size:26px;">📅</span> Cronograma
+              </div>
+              <div style="font-size:12px;color:var(--text2);margin-top:3px;">Planejamento por Semana, Mês e Ano · Pedido de Material</div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <button class="btn btn-gold btn-sm" onclick="abrirModalNovoPedidoMaterial()" style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800;">
+                <span>📦</span> Novo Pedido
+              </button>
+              <button class="btn btn-sec btn-sm" onclick="abrirModalConfigWhatsappMaterial()" style="display:flex;align-items:center;gap:6px;font-size:11.5px;">
+                <span>⚙️</span> Config. Zap
+              </button>
+            </div>
+          </div>
+
+          <!-- SUB-ABAS: SEMANA / MÊS / ANO / PEDIDO DE MATERIAL -->
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px;">
+            <button id="crono-tab-semana" class="btn btn-primary btn-sm" onclick="mudarAbaCronograma('semana')" style="font-size:12px;font-weight:800;border-radius:8px;">📆 Semana</button>
+            <button id="crono-tab-mes" class="btn btn-sec btn-sm" onclick="mudarAbaCronograma('mes')" style="font-size:12px;font-weight:700;border-radius:8px;">📅 Mês</button>
+            <button id="crono-tab-ano" class="btn btn-sec btn-sm" onclick="mudarAbaCronograma('ano')" style="font-size:12px;font-weight:700;border-radius:8px;">🗓️ Ano</button>
+            <button id="crono-tab-material" class="btn btn-sec btn-sm" onclick="mudarAbaCronograma('material')" style="font-size:12px;font-weight:700;border-radius:8px;">📦 Pedido de Material</button>
+          </div>
+
+          <!-- PAINEL: SEMANA -->
+          <div id="crono-panel-semana">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+              <div style="font-size:14px;font-weight:800;color:#fff;display:flex;align-items:center;gap:8px;">
+                <span>📆</span> <span id="crono-semana-label">Semana Atual</span>
+              </div>
+              <div style="display:flex;gap:6px;">
+                <button class="btn btn-sec btn-xs" onclick="navCronoSemana(-1)" style="font-size:12px;">◀</button>
+                <button class="btn btn-sec btn-xs" onclick="navCronoSemana(0)" style="font-size:11px;font-weight:800;">Hoje</button>
+                <button class="btn btn-sec btn-xs" onclick="navCronoSemana(1)" style="font-size:12px;">▶</button>
+              </div>
+            </div>
+            <div id="crono-semana-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;"></div>
+            <div id="crono-semana-eventos" style="margin-top:14px;display:flex;flex-direction:column;gap:8px;"></div>
+            <div style="text-align:center;margin-top:14px;">
+              <button class="btn btn-gold btn-sm" onclick="abrirModalNovoEventoCronograma()" style="font-size:12px;display:inline-flex;align-items:center;gap:6px;">
+                <span>➕</span> Adicionar Evento / Prazo
+              </button>
+            </div>
+          </div>
+
+          <!-- PAINEL: MÊS -->
+          <div id="crono-panel-mes" style="display:none;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+              <div style="font-size:14px;font-weight:800;color:#fff;display:flex;align-items:center;gap:8px;">
+                <span>📅</span> <span id="crono-mes-label">Mês Atual</span>
+              </div>
+              <div style="display:flex;gap:6px;">
+                <button class="btn btn-sec btn-xs" onclick="navCronoMes(-1)" style="font-size:12px;">◀</button>
+                <button class="btn btn-sec btn-xs" onclick="navCronoMes(0)" style="font-size:11px;font-weight:800;">Mês Atual</button>
+                <button class="btn btn-sec btn-xs" onclick="navCronoMes(1)" style="font-size:12px;">▶</button>
+              </div>
+            </div>
+            <div id="crono-mes-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;min-height:200px;"></div>
+            <div id="crono-mes-eventos" style="margin-top:14px;display:flex;flex-direction:column;gap:8px;"></div>
+            <div style="text-align:center;margin-top:14px;">
+              <button class="btn btn-gold btn-sm" onclick="abrirModalNovoEventoCronograma()" style="font-size:12px;display:inline-flex;align-items:center;gap:6px;">
+                <span>➕</span> Adicionar Evento / Prazo
+              </button>
+            </div>
+          </div>
+
+          <!-- PAINEL: ANO -->
+          <div id="crono-panel-ano" style="display:none;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+              <div style="font-size:14px;font-weight:800;color:#fff;display:flex;align-items:center;gap:8px;">
+                <span>🗓️</span> <span id="crono-ano-label">Ano Atual</span>
+              </div>
+              <div style="display:flex;gap:6px;">
+                <button class="btn btn-sec btn-xs" onclick="navCronoAno(-1)" style="font-size:12px;">◀</button>
+                <button class="btn btn-sec btn-xs" onclick="navCronoAno(0)" style="font-size:11px;font-weight:800;">Este Ano</button>
+                <button class="btn btn-sec btn-xs" onclick="navCronoAno(1)" style="font-size:12px;">▶</button>
+              </div>
+            </div>
+            <div id="crono-ano-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;"></div>
+          </div>
+
+          <!-- PAINEL: PEDIDO DE MATERIAL -->
+          <div id="crono-panel-material" style="display:none;">
+            <!-- FILTROS E BUSCA -->
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">
+              <input type="text" id="material-busca" oninput="renderPedidosMaterial()" placeholder="🔍 Buscar item..." style="flex:1;min-width:140px;padding:9px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:12.5px;" />
+              <select id="material-filtro-status" onchange="renderPedidosMaterial()" style="padding:9px 10px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:12px;font-weight:700;">
+                <option value="todos">📋 Todos</option>
+                <option value="a_comprar">🛒 A Comprar</option>
+                <option value="pendente">⏳ Pendente</option>
+                <option value="comprado">✅ Comprado</option>
+              </select>
+              <button class="btn btn-gold btn-sm" onclick="enviarPedidoMaterialWhatsApp()" style="font-size:11.5px;font-weight:800;display:inline-flex;align-items:center;gap:4px;">
+                <span>💬</span> WhatsApp
+              </button>
+            </div>
+
+            <!-- RESUMO DE STATUS -->
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px;" id="material-resumo">
+              <div style="background:rgba(239,68,68,0.12);border:1.5px solid rgba(239,68,68,0.35);border-radius:10px;padding:8px 6px;text-align:center;">
+                <div style="font-size:10px;color:#fca5a5;font-weight:700;">🛒 A COMPRAR</div>
+                <div id="material-count-a_comprar" style="font-size:18px;font-weight:900;color:#f87171;margin-top:2px;">0</div>
+              </div>
+              <div style="background:rgba(245,158,11,0.12);border:1.5px solid rgba(245,158,11,0.35);border-radius:10px;padding:8px 6px;text-align:center;">
+                <div style="font-size:10px;color:#fde68a;font-weight:700;">⏳ PENDENTE</div>
+                <div id="material-count-pendente" style="font-size:18px;font-weight:900;color:#fbbf24;margin-top:2px;">0</div>
+              </div>
+              <div style="background:rgba(16,185,129,0.12);border:1.5px solid rgba(16,185,129,0.35);border-radius:10px;padding:8px 6px;text-align:center;">
+                <div style="font-size:10px;color:#6ee7b7;font-weight:700;">✅ COMPRADO</div>
+                <div id="material-count-comprado" style="font-size:18px;font-weight:900;color:#34d399;margin-top:2px;">0</div>
+              </div>
+            </div>
+
+            <!-- LISTA DE ITENS -->
+            <div id="material-lista" style="display:flex;flex-direction:column;gap:8px;"></div>
+
+            <div style="text-align:center;margin-top:14px;">
+              <button class="btn btn-gold btn-sm" onclick="abrirModalNovoPedidoMaterial()" style="font-size:12px;display:inline-flex;align-items:center;gap:6px;">
+                <span>➕</span> Adicionar Item
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -4871,9 +5081,7 @@
     function popularSelectFuncionariosLogin() {
       const sel = document.getElementById('l-funcionario-select');
       if (!sel) return;
-      const funcs = (typeof carregarFuncionariosDoStorage === 'function') ? carregarFuncionariosDoStorage() : [
-        { id: 100, nome: 'Samuel David', cargo: 'Instalador / Técnico Líder', whatsapp: '(85) 99611-9824' }
-      ];
+      const funcs = carregarFuncionariosDoStorage();
       sel.innerHTML = '<option value="">-- Escolha seu nome --</option>';
       funcs.forEach(f => {
         const opt = document.createElement('option');
@@ -4881,11 +5089,18 @@
         opt.textContent = f.nome + ' (' + (f.cargo || 'Colaborador') + ')';
         sel.appendChild(opt);
       });
-      if (funcs.length === 1) {
-        sel.value = funcs[0].id;
-        const inp = document.getElementById('l-identificador');
-        if (inp) inp.value = funcs[0].nome;
-      }
+      // Tenta recuperar sessão anterior ou seleciona o primeiro se aplicável
+      try {
+        const salvo = localStorage.getItem('sdv_colaborador_sessao') || localStorage.getItem('sdv_cliente_sessao');
+        if (salvo) {
+          const c = JSON.parse(salvo);
+          if (c && c.id && funcs.some(x => String(x.id) === String(c.id))) {
+            sel.value = c.id;
+            const inp = document.getElementById('l-identificador');
+            if (inp && !inp.value) inp.value = c.nome || '';
+          }
+        }
+      } catch(_) {}
     }
 
     function selecionarFuncionarioLogin(idVal) {
@@ -4905,14 +5120,12 @@
       const inpVal = (inpEl ? inpEl.value : '').trim();
       const feedbackEl = document.getElementById('login-feedback');
 
-      // Busca funcionários do storage
       let funcs = [];
       try {
         funcs = (typeof carregarFuncionariosDoStorage === 'function') ? carregarFuncionariosDoStorage() : [];
       } catch(_) {}
-      // Garante funcionário padrão caso esteja vazio
       if (!funcs || funcs.length === 0) {
-        funcs = [{ id: 100, nome: 'Samuel David', cargo: 'Instalador / Técnico Líder', whatsapp: '(85) 99611-9824' }];
+        funcs = [{ id: 100, nome: 'Samuel David', cargo: 'Instalador / Técnico Líder', whatsapp: '(85) 99760-2237' }];
       }
 
       let colab = null;
@@ -4925,16 +5138,35 @@
       // 2) Tenta pelo texto digitado (nome ou whatsapp)
       if (!colab && inpVal) {
         const inpLimpo = inpVal.replace(/\D/g, '');
-        const inpNome = inpVal.toLowerCase();
+        const inpNome = inpVal.toLowerCase().trim();
         colab = funcs.find(f => {
           const fTel = (f.whatsapp || f.tel || '').replace(/\D/g, '');
           const fNome = (f.nome || '').toLowerCase();
-          return (inpLimpo.length >= 4 && fTel.includes(inpLimpo)) || fNome.includes(inpNome);
+          const matchTel = inpLimpo.length >= 4 && (
+            fTel.includes(inpLimpo) ||
+            inpLimpo.includes(fTel) ||
+            (fTel.length >= 8 && inpLimpo.length >= 8 && fTel.slice(-8) === inpLimpo.slice(-8))
+          );
+          const matchNome = fNome && (fNome.includes(inpNome) || inpNome.includes(fNome));
+          return matchTel || matchNome;
         });
       }
 
+      // Se digitou número do Samuel David
+      if (!colab && inpVal) {
+        const inpLimpo = inpVal.replace(/\D/g, '');
+        if (inpLimpo.includes('997602237') || inpLimpo.includes('97602237') || inpLimpo.includes('985749606') || inpLimpo.includes('85997602237')) {
+          colab = funcs.find(f => f.nome && f.nome.toLowerCase().includes('samuel')) || {
+            id: 100,
+            nome: 'Samuel David',
+            cargo: 'Instalador / Técnico Líder',
+            whatsapp: '(85) 99760-2237'
+          };
+        }
+      }
+
       // 3) Se ainda não achou, usa o primeiro da lista
-      if (!colab && funcs.length > 0) {
+      if (!colab && funcs.length === 1 && !inpVal) {
         colab = funcs[0];
       }
 
@@ -5231,7 +5463,7 @@ function validarCodigoLiberadoManual() {}
 function checarLiberacaoEmpresaAutomatica() {}
 
 function mudarAba(tab) {
-      ['status', 'galeria', 'mensagens', 'financeiro', 'meu-financeiro', 'opiniao', 'jogos', 'financeiro-pessoal', 'camera'].forEach(t => {
+      ['status', 'galeria', 'mensagens', 'financeiro', 'meu-financeiro', 'cronograma', 'opiniao', 'jogos', 'financeiro-pessoal', 'camera'].forEach(t => {
         const pane = document.getElementById('pane-' + t);
         const btn = document.getElementById('btn-tab-' + t);
         if (pane) pane.classList.toggle('active', t === tab);
@@ -5239,7 +5471,9 @@ function mudarAba(tab) {
       });
 
       try {
-        if (tab === 'mensagens') {
+        if (tab === 'cronograma') {
+          if (typeof mudarAbaCronograma === 'function') mudarAbaCronograma(_cronoAbaAtual || 'semana');
+        } else if (tab === 'mensagens') {
           const badge = document.getElementById('badge-msg-count');
           if (badge) badge.style.display = 'none';
           if (typeof renderizarOrdensMensagens === 'function') renderizarOrdensMensagens();
@@ -7575,11 +7809,20 @@ function mudarAba(tab) {
     function carregarFuncionariosDoStorage() {
       try {
         const raw = localStorage.getItem('sdv_funcionarios');
-        if (raw) return JSON.parse(raw);
+        if (raw) {
+          const arr = JSON.parse(raw);
+          if (Array.isArray(arr) && arr.length > 0) return arr;
+        }
       } catch(_) {}
-      return [
-        { id: 100, nome: 'Samuel David', cargo: 'Instalador / Técnico Líder', whatsapp: '(85) 99611-9824', departamento: 'Operações', status: 'Presente', valorHora: 25.50 }
+      const padrao = [
+        { id: 100, nome: 'Samuel David', cargo: 'Instalador / Técnico Líder', whatsapp: '(85) 99760-2237', departamento: 'Operações', status: 'Presente', valorHora: 35.00 },
+        { id: 101, nome: 'Lucas Ferreira', cargo: 'Desenvolvedor Full Stack', whatsapp: '(11) 98765-4321', departamento: 'Tecnologia', status: 'Presente', valorHora: 32.50 },
+        { id: 102, nome: 'Rafael Alencar', cargo: 'Engenheiro de Infra & Cloud', whatsapp: '(11) 96543-2109', departamento: 'Operações', status: 'Presente', valorHora: 31.82 },
+        { id: 103, nome: 'Camila Rocha', cargo: 'Analista de Suporte Técnico', whatsapp: '(11) 95432-1098', departamento: 'Atendimento', status: 'Presente', valorHora: 21.11 },
+        { id: 104, nome: 'Juliana Costa', cargo: 'Especialista de Atendimento', whatsapp: '(85) 99123-4567', departamento: 'Vendas', status: 'Presente', valorHora: 26.00 }
       ];
+      try { localStorage.setItem('sdv_funcionarios', JSON.stringify(padrao)); } catch(_) {}
+      return padrao;
     }
 
     function carregarPontosDoStorage() {
@@ -12098,6 +12341,730 @@ function inicializarListenersArrastoCamera() {
   });
 }
 
+// ══════════════════════════════════════════════════════════════════
+//  MÓDULO: CRONOGRAMA NO PORTAL DO FUNCIONÁRIO
+// ══════════════════════════════════════════════════════════════════
+
+const K_CRONO = {
+  eventos: 'sdv_cronograma_eventos',
+  materiais: 'sdv_pedidos_material',
+  whatsapp: 'sdv_material_whatsapp',
+  comissoes: 'sdv_comissoes'
+};
+
+let _cronoAbaAtual = 'semana';
+let _cronoSemanaOffset = 0;
+let _cronoMesOffset = 0;
+let _cronoAnoOffset = 0;
+let _cronoDiaSelecionado = null;
+
+function mudarAbaCronograma(aba) {
+  _cronoAbaAtual = aba;
+  const abas = ['semana', 'mes', 'ano', 'material'];
+  abas.forEach(a => {
+    const btn = document.getElementById('crono-tab-' + a);
+    const panel = document.getElementById('crono-panel-' + a);
+    if (btn) {
+      if (a === aba) {
+        btn.className = 'btn btn-primary btn-sm';
+        btn.style.fontWeight = '800';
+      } else {
+        btn.className = 'btn btn-sec btn-sm';
+        btn.style.fontWeight = '700';
+      }
+    }
+    if (panel) panel.style.display = (a === aba) ? '' : 'none';
+  });
+  if (aba === 'semana') renderCronoSemana();
+  else if (aba === 'mes') renderCronoMes();
+  else if (aba === 'ano') renderCronoAno();
+  else if (aba === 'material') renderPedidosMaterial();
+}
+
+function formatDataBR(iso) {
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+function isoHoje() {
+  const n = new Date();
+  return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
+}
+function nomeMes(idx) {
+  return ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][idx];
+}
+function nomeDiaSemana(idx) {
+  return ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][idx];
+}
+function toISO(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function carregarEventosCrono() {
+  try { return JSON.parse(localStorage.getItem(K_CRONO.eventos) || '[]'); } catch(_) { return []; }
+}
+function salvarEventosCrono(arr) {
+  try { localStorage.setItem(K_CRONO.eventos, JSON.stringify(arr)); } catch(_) {}
+}
+function eventosNaData(iso) {
+  return carregarEventosCrono().filter(e => e.data === iso);
+}
+function tipoEventoInfo(tipo) {
+  const m = {
+    entrega: { emoji: '🚚', color: '#38bdf8' },
+    instalacao: { emoji: '🔧', color: '#fbbf24' },
+    medicao: { emoji: '📏', color: '#a78bfa' },
+    reuniao: { emoji: '🤝', color: '#34d399' },
+    pagamento: { emoji: '💰', color: '#4ade80' },
+    prazo: { emoji: '⏰', color: '#f87171' },
+    outro: { emoji: '📌', color: '#94a3b8' }
+  };
+  return m[tipo] || { emoji: '📌', color: '#94a3b8' };
+}
+
+function navCronoSemana(dir) {
+  if (dir === 0) _cronoSemanaOffset = 0;
+  else _cronoSemanaOffset += dir;
+  renderCronoSemana();
+}
+
+function renderCronoSemana() {
+  const hoje = new Date();
+  const inicioSemana = new Date(hoje);
+  inicioSemana.setDate(hoje.getDate() - hoje.getDay() + (_cronoSemanaOffset * 7));
+
+  const lbl = document.getElementById('crono-semana-label');
+  if (lbl) {
+    const fim = new Date(inicioSemana);
+    fim.setDate(inicioSemana.getDate() + 6);
+    lbl.textContent = `${formatDataBR(toISO(inicioSemana))} – ${formatDataBR(toISO(fim))}`;
+  }
+
+  const grid = document.getElementById('crono-semana-grid');
+  if (!grid) return;
+
+  const hojeISO = isoHoje();
+  let gridHTML = '';
+  let eventosDaSemana = [];
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(inicioSemana);
+    d.setDate(inicioSemana.getDate() + i);
+    const iso = toISO(d);
+    const eventos = eventosNaData(iso);
+    const isHoje = iso === hojeISO;
+    const isSel = iso === _cronoDiaSelecionado;
+    eventosDaSemana.push(...eventos.map(ev => ({...ev, _iso: iso})));
+
+    gridHTML += `<div onclick="selecionarDiaCrono('${iso}')" style="
+      padding:8px 4px;border-radius:10px;text-align:center;cursor:pointer;
+      background:${isSel ? 'rgba(201,168,76,0.25)' : isHoje ? 'rgba(56,189,248,0.12)' : 'rgba(255,255,255,0.03)'};
+      border:1.5px solid ${isSel ? 'rgba(201,168,76,0.6)' : isHoje ? 'rgba(56,189,248,0.5)' : 'rgba(255,255,255,0.07)'};
+      transition:all 0.2s;">
+      <div style="font-size:10px;color:var(--text2);font-weight:700;">${nomeDiaSemana(d.getDay())}</div>
+      <div style="font-size:16px;font-weight:900;color:${isHoje ? '#38bdf8' : isSel ? 'var(--gold-light)' : '#fff'};margin:2px 0;">${d.getDate()}</div>
+      ${eventos.length ? `<div style="font-size:9px;background:rgba(201,168,76,0.35);color:var(--gold-light);border-radius:20px;padding:1px 5px;">${eventos.length}</div>` : '<div style="height:14px;"></div>'}
+    </div>`;
+  }
+  grid.innerHTML = gridHTML;
+
+  const evCont = document.getElementById('crono-semana-eventos');
+  if (!evCont) return;
+
+  let exibiveis = _cronoDiaSelecionado ? eventosNaData(_cronoDiaSelecionado) : eventosDaSemana;
+  if (!exibiveis.length) {
+    evCont.innerHTML = `<div style="text-align:center;padding:18px 0;color:var(--text2);font-size:12px;">
+      ${_cronoDiaSelecionado ? 'Nenhum evento neste dia (' + formatDataBR(_cronoDiaSelecionado) + ').' : 'Nenhum evento programado para esta semana.'}
+    </div>`;
+    return;
+  }
+
+  evCont.innerHTML = exibiveis.map(ev => {
+    const tInfo = tipoEventoInfo(ev.tipo);
+    return `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-left:4px solid ${tInfo.color};border-radius:8px;gap:8px;">
+        <div style="min-width:0;flex:1;">
+          <div style="font-weight:800;font-size:13.5px;color:#fff;display:flex;align-items:center;gap:6px;">
+            <span>${tInfo.emoji}</span> <span>${esc(ev.titulo)}</span>
+          </div>
+          <div style="font-size:11.5px;color:var(--text2);margin-top:2px;">
+            📅 ${formatDataBR(ev.data)}${ev.hora ? ' às ' + ev.hora : ''} ${ev.responsavel ? '· 👤 ' + esc(ev.responsavel) : ''}
+          </div>
+          ${ev.desc ? `<div style="font-size:11px;color:rgba(255,255,255,0.6);margin-top:2px;">${esc(ev.desc)}</div>` : ''}
+        </div>
+        <div style="display:flex;gap:4px;">
+          <button onclick="abrirModalNovoEventoCronograma('${ev.id}')" class="btn btn-sec btn-xs" title="Editar" style="padding:4px 8px;">✏️</button>
+          <button onclick="excluirEventoCronograma('${ev.id}')" class="btn btn-sec btn-xs" title="Excluir" style="padding:4px 8px;color:#f87171;">✕</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function selecionarDiaCrono(iso) {
+  _cronoDiaSelecionado = (_cronoDiaSelecionado === iso) ? null : iso;
+  renderCronoSemana();
+}
+
+function navCronoMes(dir) {
+  if (dir === 0) _cronoMesOffset = 0;
+  else _cronoMesOffset += dir;
+  renderCronoMes();
+}
+
+function renderCronoMes() {
+  const ref = new Date();
+  ref.setMonth(ref.getMonth() + _cronoMesOffset);
+  const ano = ref.getFullYear();
+  const mes = ref.getMonth();
+
+  const lbl = document.getElementById('crono-mes-label');
+  if (lbl) lbl.textContent = `${nomeMes(mes)} de ${ano}`;
+
+  const grid = document.getElementById('crono-mes-grid');
+  if (!grid) return;
+
+  const primeiroDia = new Date(ano, mes, 1).getDay();
+  const ultimoDia = new Date(ano, mes + 1, 0).getDate();
+  const hojeISO = isoHoje();
+
+  let html = ['D','S','T','Q','Q','S','S'].map(d => `<div style="font-size:10px;color:var(--text2);font-weight:800;text-align:center;padding:4px 0;">${d}</div>`).join('');
+
+  for (let i = 0; i < primeiroDia; i++) {
+    html += `<div></div>`;
+  }
+
+  for (let d = 1; d <= ultimoDia; d++) {
+    const iso = `${ano}-${String(mes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const evs = eventosNaData(iso);
+    const isHoje = iso === hojeISO;
+    const isSel = iso === _cronoDiaSelecionado;
+
+    html += `<div onclick="selecionarDiaCronoMes('${iso}')" style="
+      padding:6px 2px;border-radius:8px;text-align:center;cursor:pointer;
+      background:${isSel ? 'rgba(201,168,76,0.3)' : isHoje ? 'rgba(56,189,248,0.15)' : 'rgba(255,255,255,0.02)'};
+      border:1px solid ${isSel ? 'rgba(201,168,76,0.7)' : isHoje ? 'rgba(56,189,248,0.5)' : 'rgba(255,255,255,0.05)'};
+      min-height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+      <div style="font-size:12px;font-weight:800;color:${isHoje ? '#38bdf8' : isSel ? 'var(--gold-light)' : '#fff'};">${d}</div>
+      ${evs.length ? `<div style="font-size:9px;background:rgba(201,168,76,0.35);color:var(--gold-light);border-radius:10px;padding:0 4px;margin-top:2px;">${evs.length}</div>` : ''}
+    </div>`;
+  }
+  grid.innerHTML = html;
+
+  const evCont = document.getElementById('crono-mes-eventos');
+  if (evCont) {
+    const todosEventosMes = carregarEventosCrono().filter(e => {
+      if (!e.data) return false;
+      const [y, m] = e.data.split('-');
+      return Number(y) === ano && Number(m) === mes + 1;
+    });
+    const exibiveis = _cronoDiaSelecionado ? eventosNaData(_cronoDiaSelecionado) : todosEventosMes;
+
+    if (!exibiveis.length) {
+      evCont.innerHTML = `<div style="text-align:center;padding:14px 0;color:var(--text2);font-size:12px;">
+        ${_cronoDiaSelecionado ? 'Nenhum evento em ' + formatDataBR(_cronoDiaSelecionado) : 'Nenhum evento neste mês.'}
+      </div>`;
+    } else {
+      evCont.innerHTML = exibiveis.map(ev => {
+        const tInfo = tipoEventoInfo(ev.tipo);
+        return `
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-left:3px solid ${tInfo.color};border-radius:6px;gap:6px;">
+            <div style="min-width:0;flex:1;">
+              <div style="font-weight:800;font-size:12.5px;color:#fff;">${tInfo.emoji} ${esc(ev.titulo)}</div>
+              <div style="font-size:11px;color:var(--text2);">📅 ${formatDataBR(ev.data)}${ev.hora ? ' às ' + ev.hora : ''}</div>
+            </div>
+            <div style="display:flex;gap:4px;">
+              <button onclick="abrirModalNovoEventoCronograma('${ev.id}')" class="btn btn-sec btn-xs" style="padding:2px 6px;">✏️</button>
+              <button onclick="excluirEventoCronograma('${ev.id}')" class="btn btn-sec btn-xs" style="padding:2px 6px;color:#f87171;">✕</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+}
+
+function selecionarDiaCronoMes(iso) {
+  _cronoDiaSelecionado = (_cronoDiaSelecionado === iso) ? null : iso;
+  renderCronoMes();
+}
+
+function navCronoAno(dir) {
+  if (dir === 0) _cronoAnoOffset = 0;
+  else _cronoAnoOffset += dir;
+  renderCronoAno();
+}
+
+function renderCronoAno() {
+  const ano = new Date().getFullYear() + _cronoAnoOffset;
+  const lbl = document.getElementById('crono-ano-label');
+  if (lbl) lbl.textContent = `Ano ${ano}`;
+
+  const grid = document.getElementById('crono-ano-grid');
+  if (!grid) return;
+
+  const eventosAno = carregarEventosCrono().filter(e => e.data && e.data.startsWith(String(ano)));
+
+  let html = '';
+  for (let m = 0; m < 12; m++) {
+    const mesStr = String(m + 1).padStart(2, '0');
+    const evsDoMes = eventosAno.filter(e => e.data.split('-')[1] === mesStr);
+    html += `
+      <div onclick="_cronoMesOffset = ${(ano - new Date().getFullYear()) * 12 + m - new Date().getMonth()}; mudarAbaCronograma('mes');" style="
+        padding:12px 10px;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);cursor:pointer;text-align:center;transition:all 0.2s;">
+        <div style="font-weight:800;font-size:13px;color:#fff;">${nomeMes(m)}</div>
+        <div style="font-size:18px;font-weight:900;color:var(--gold-light);margin:4px 0;">${evsDoMes.length}</div>
+        <div style="font-size:10px;color:var(--text2);">${evsDoMes.length === 1 ? 'evento' : 'eventos'}</div>
+      </div>
+    `;
+  }
+  grid.innerHTML = html;
+}
+
+function abrirModalNovoEventoCronograma(id) {
+  const m = document.getElementById('modal-novo-evento-cronograma');
+  if (!m) return;
+  document.getElementById('evento-cronograma-edit-id').value = '';
+  document.getElementById('evento-cronograma-titulo').textContent = 'Novo Evento / Prazo';
+  document.getElementById('evento-form-titulo').value = '';
+  document.getElementById('evento-form-data').value = _cronoDiaSelecionado || isoHoje();
+  document.getElementById('evento-form-hora').value = '';
+  document.getElementById('evento-form-tipo').value = 'entrega';
+  document.getElementById('evento-form-responsavel').value = (clienteSessao && clienteSessao.nome) || '';
+  document.getElementById('evento-form-desc').value = '';
+
+  if (id) {
+    const ev = carregarEventosCrono().find(e => e.id === id);
+    if (ev) {
+      document.getElementById('evento-cronograma-edit-id').value = ev.id;
+      document.getElementById('evento-cronograma-titulo').textContent = 'Editar Evento';
+      document.getElementById('evento-form-titulo').value = ev.titulo || '';
+      document.getElementById('evento-form-data').value = ev.data || '';
+      document.getElementById('evento-form-hora').value = ev.hora || '';
+      document.getElementById('evento-form-tipo').value = ev.tipo || 'outro';
+      document.getElementById('evento-form-responsavel').value = ev.responsavel || '';
+      document.getElementById('evento-form-desc').value = ev.desc || '';
+    }
+  }
+  m.style.display = 'flex';
+}
+
+function fecharModalNovoEventoCronograma() {
+  const m = document.getElementById('modal-novo-evento-cronograma');
+  if (m) m.style.display = 'none';
+}
+
+function salvarEventoCronograma() {
+  const titulo = (document.getElementById('evento-form-titulo').value || '').trim();
+  const data = document.getElementById('evento-form-data').value;
+  if (!titulo || !data) { alert('Informe pelo menos o título e a data do evento.'); return; }
+
+  const lista = carregarEventosCrono();
+  const editId = document.getElementById('evento-cronograma-edit-id').value;
+
+  const obj = {
+    id: editId || `ev_${Date.now()}`,
+    titulo,
+    data,
+    hora: document.getElementById('evento-form-hora').value,
+    tipo: document.getElementById('evento-form-tipo').value,
+    responsavel: (document.getElementById('evento-form-responsavel').value || '').trim(),
+    desc: (document.getElementById('evento-form-desc').value || '').trim(),
+    criadoEm: editId ? undefined : new Date().toISOString()
+  };
+
+  if (editId) {
+    const idx = lista.findIndex(x => x.id === editId);
+    if (idx >= 0) lista[idx] = {...lista[idx], ...obj};
+    else lista.push(obj);
+  } else {
+    lista.push(obj);
+  }
+
+  salvarEventosCrono(lista);
+  fecharModalNovoEventoCronograma();
+  if (_cronoAbaAtual === 'semana') renderCronoSemana();
+  else if (_cronoAbaAtual === 'mes') renderCronoMes();
+  else if (_cronoAbaAtual === 'ano') renderCronoAno();
+}
+
+function excluirEventoCronograma(id) {
+  if (!confirm('Excluir este evento do cronograma?')) return;
+  salvarEventosCrono(carregarEventosCrono().filter(e => e.id !== id));
+  if (_cronoAbaAtual === 'semana') renderCronoSemana();
+  else if (_cronoAbaAtual === 'mes') renderCronoMes();
+  else if (_cronoAbaAtual === 'ano') renderCronoAno();
+}
+
+// ── PEDIDOS DE MATERIAL ───────────────────────────────────────────
+function carregarMateriais() {
+  try { return JSON.parse(localStorage.getItem(K_CRONO.materiais) || '[]'); } catch(_) { return []; }
+}
+function salvarMateriais(arr) {
+  try { localStorage.setItem(K_CRONO.materiais, JSON.stringify(arr)); } catch(_) {}
+}
+
+function renderPedidosMaterial() {
+  const lista = carregarMateriais();
+  const filtroStatus = (document.getElementById('material-filtro-status') || {}).value || 'todos';
+  const busca = ((document.getElementById('material-busca') || {}).value || '').toLowerCase().trim();
+
+  let aComprar = 0, pendente = 0, comprado = 0;
+  lista.forEach(m => {
+    if (m.status === 'comprado') comprado++;
+    else if (m.status === 'pendente') pendente++;
+    else aComprar++;
+  });
+
+  const cA = document.getElementById('material-count-a_comprar');
+  const cP = document.getElementById('material-count-pendente');
+  const cC = document.getElementById('material-count-comprado');
+  if (cA) cA.textContent = aComprar;
+  if (cP) cP.textContent = pendente;
+  if (cC) cC.textContent = comprado;
+
+  let filtrados = lista.filter(m => {
+    if (filtroStatus !== 'todos' && m.status !== filtroStatus) return false;
+    if (busca && !(m.nome || '').toLowerCase().includes(busca) && !(m.fornecedor || '').toLowerCase().includes(busca)) return false;
+    return true;
+  });
+
+  const cont = document.getElementById('material-lista');
+  if (!cont) return;
+
+  if (!filtrados.length) {
+    cont.innerHTML = `<div style="text-align:center;padding:24px 0;color:var(--text2);font-size:12px;">Nenhum item de material encontrado.</div>`;
+    return;
+  }
+
+  const statusLabel = {
+    a_comprar: { label: '🛒 A Comprar', bg: 'rgba(239,68,68,0.15)', color: '#f87171', border: 'rgba(239,68,68,0.35)' },
+    pendente: { label: '⏳ Pendente', bg: 'rgba(245,158,11,0.15)', color: '#fbbf24', border: 'rgba(245,158,11,0.35)' },
+    comprado: { label: '✅ Comprado', bg: 'rgba(16,185,129,0.15)', color: '#34d399', border: 'rgba(16,185,129,0.35)' }
+  };
+
+  const urgLabel = {
+    normal: '',
+    urgente: '<span style="font-size:10px;background:rgba(245,158,11,0.2);color:#fbbf24;padding:1px 6px;border-radius:4px;font-weight:800;">🔥 Urgente</span>',
+    critico: '<span style="font-size:10px;background:rgba(239,68,68,0.2);color:#f87171;padding:1px 6px;border-radius:4px;font-weight:900;">🚨 Crítico</span>'
+  };
+
+  cont.innerHTML = filtrados.map(it => {
+    const st = statusLabel[it.status] || statusLabel.a_comprar;
+    const urg = urgLabel[it.urgencia] || '';
+    return `
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+        <div style="min-width:0;flex:1;">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <span style="font-weight:800;font-size:14px;color:#fff;">${esc(it.nome)}</span>
+            ${urg}
+          </div>
+          <div style="font-size:12px;color:var(--text2);margin-top:3px;display:flex;gap:12px;flex-wrap:wrap;">
+            <span>Qtd: <strong style="color:#fff;">${it.qtd || 1} ${it.unidade || 'un'}</strong></span>
+            ${it.valor ? `<span>Valor: <strong style="color:var(--gold-light);">R$ ${Number(it.valor).toFixed(2).replace('.',',')}</strong></span>` : ''}
+            ${it.fornecedor ? `<span>Fornecedor: <strong style="color:#fff;">${esc(it.fornecedor)}</strong></span>` : ''}
+          </div>
+          ${it.obs ? `<div style="font-size:11px;color:rgba(255,255,255,0.6);margin-top:3px;">📝 ${esc(it.obs)}</div>` : ''}
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <select onchange="alterarStatusMaterial('${it.id}', this.value)" style="padding:4px 8px;border-radius:6px;font-size:11px;font-weight:800;background:#090913;border:1px solid ${st.border};color:${st.color};cursor:pointer;">
+            <option value="a_comprar" ${it.status === 'a_comprar' ? 'selected' : ''}>🛒 A Comprar</option>
+            <option value="pendente" ${it.status === 'pendente' ? 'selected' : ''}>⏳ Pendente</option>
+            <option value="comprado" ${it.status === 'comprado' ? 'selected' : ''}>✅ Comprado</option>
+          </select>
+          <button onclick='abrirModalNovoPedidoMaterial(${JSON.stringify(it).replace(/'/g, "&apos;")})' class="btn btn-sec btn-xs" title="Editar">✏️</button>
+          <button onclick="excluirPedidoMaterial('${it.id}')" class="btn btn-sec btn-xs" title="Excluir" style="color:#f87171;">✕</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function alterarStatusMaterial(id, st) {
+  const lista = carregarMateriais();
+  const it = lista.find(x => x.id === id);
+  if (it) {
+    it.status = st;
+    salvarMateriais(lista);
+    renderPedidosMaterial();
+  }
+}
+
+function excluirPedidoMaterial(id) {
+  if (!confirm('Excluir este item?')) return;
+  salvarMateriais(carregarMateriais().filter(x => x.id !== id));
+  renderPedidosMaterial();
+}
+
+function abrirModalNovoPedidoMaterial(it) {
+  const m = document.getElementById('modal-novo-pedido-material');
+  if (!m) return;
+  document.getElementById('pedido-material-edit-id').value = it ? it.id : '';
+  document.getElementById('pedido-material-titulo').textContent = it ? 'Editar Item' : 'Novo Item de Material';
+  document.getElementById('pedido-form-nome').value = it ? (it.nome||'') : '';
+  document.getElementById('pedido-form-qtd').value = it ? (it.qtd||'') : '';
+  document.getElementById('pedido-form-unidade').value = it ? (it.unidade||'un') : 'un';
+  document.getElementById('pedido-form-valor').value = it ? (it.valor||'') : '';
+  document.getElementById('pedido-form-urgencia').value = it ? (it.urgencia||'normal') : 'normal';
+  document.getElementById('pedido-form-fornecedor').value = it ? (it.fornecedor||'') : '';
+  document.getElementById('pedido-form-status').value = it ? (it.status||'a_comprar') : 'a_comprar';
+  document.getElementById('pedido-form-obs').value = it ? (it.obs||'') : '';
+  m.style.display = 'flex';
+}
+
+function fecharModalNovoPedidoMaterial() {
+  const m = document.getElementById('modal-novo-pedido-material');
+  if (m) m.style.display = 'none';
+}
+
+function salvarPedidoMaterial() {
+  const nome = (document.getElementById('pedido-form-nome').value || '').trim();
+  if (!nome) { alert('Informe o nome do material.'); return; }
+
+  const lista = carregarMateriais();
+  const editId = document.getElementById('pedido-material-edit-id').value;
+
+  const obj = {
+    id: editId || `mat_${Date.now()}`,
+    nome,
+    qtd: document.getElementById('pedido-form-qtd').value,
+    unidade: document.getElementById('pedido-form-unidade').value,
+    valor: document.getElementById('pedido-form-valor').value,
+    urgencia: document.getElementById('pedido-form-urgencia').value,
+    fornecedor: (document.getElementById('pedido-form-fornecedor').value || '').trim(),
+    status: document.getElementById('pedido-form-status').value,
+    obs: (document.getElementById('pedido-form-obs').value || '').trim(),
+    criadoEm: editId ? undefined : new Date().toISOString()
+  };
+
+  if (editId) {
+    const idx = lista.findIndex(x => x.id === editId);
+    if (idx >= 0) lista[idx] = {...lista[idx], ...obj};
+    else lista.push(obj);
+  } else {
+    lista.push(obj);
+  }
+
+  salvarMateriais(lista);
+  fecharModalNovoPedidoMaterial();
+  renderPedidosMaterial();
+}
+
+function abrirModalConfigWhatsappMaterial() {
+  const m = document.getElementById('modal-config-whatsapp-material');
+  if (!m) return;
+  try {
+    const cfg = JSON.parse(localStorage.getItem(K_CRONO.whatsapp) || '{}');
+    document.getElementById('config-whatsapp-numero').value = cfg.numero || '';
+    document.getElementById('config-whatsapp-nome').value = cfg.nome || '';
+  } catch(_) {}
+  m.style.display = 'flex';
+}
+
+function fecharModalConfigWhatsappMaterial() {
+  const m = document.getElementById('modal-config-whatsapp-material');
+  if (m) m.style.display = 'none';
+}
+
+function salvarConfigWhatsappMaterial() {
+  const numero = (document.getElementById('config-whatsapp-numero').value || '').trim();
+  const nome = (document.getElementById('config-whatsapp-nome').value || '').trim();
+  try { localStorage.setItem(K_CRONO.whatsapp, JSON.stringify({numero, nome})); } catch(_) {}
+  fecharModalConfigWhatsappMaterial();
+  if (typeof mostrarToastNotificacao === 'function') {
+    mostrarToastNotificacao('Configuração Salva', 'WhatsApp do fornecedor salvo com sucesso!', '⚙️');
+  } else {
+    alert('Configuração de WhatsApp salva com sucesso!');
+  }
+}
+
+function enviarPedidoMaterialWhatsApp() {
+  let cfg = {};
+  try { cfg = JSON.parse(localStorage.getItem(K_CRONO.whatsapp) || '{}'); } catch(_) {}
+
+  const aComprar = carregarMateriais().filter(x => x.status === 'a_comprar' || x.status === 'pendente');
+  if (!aComprar.length) {
+    alert('Nenhum item com status "A Comprar" ou "Pendente" para enviar.');
+    return;
+  }
+
+  let texto = `*PEDIDO DE MATERIAL — SD Móveis Projetados* 📦\n`;
+  texto += `Data: ${new Date().toLocaleDateString('pt-BR')}\n`;
+  if (clienteSessao && clienteSessao.nome) texto += `Solicitante: ${clienteSessao.nome}\n`;
+  texto += `------------------------------------\n`;
+
+  aComprar.forEach((it, idx) => {
+    const urg = it.urgencia === 'critico' ? ' [🚨 CRÍTICO]' : it.urgencia === 'urgente' ? ' [🔥 URGENTE]' : '';
+    texto += `${idx + 1}. *${it.nome}* — ${it.qtd || 1} ${it.unidade || 'un'}${urg}\n`;
+    if (it.fornecedor) texto += `   Fornecedor: ${it.fornecedor}\n`;
+    if (it.obs) texto += `   Obs: ${it.obs}\n`;
+  });
+  texto += `------------------------------------\nTotal de itens: ${aComprar.length}`;
+
+  const numLimpo = (cfg.numero || '').replace(/\D/g, '');
+  const prefix = (numLimpo && !numLimpo.startsWith('55')) ? '55' : '';
+  const url = numLimpo
+    ? `https://wa.me/${prefix}${numLimpo}?text=${encodeURIComponent(texto)}`
+    : `https://wa.me/?text=${encodeURIComponent(texto)}`;
+
+  window.open(url, '_blank', 'noopener');
+}
+
   </script>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!--  MODAL: NOVO PEDIDO DE MATERIAL                                   -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<div id="modal-novo-pedido-material" class="modal-overlay" style="display:none" onclick="if(event.target===this)fecharModalNovoPedidoMaterial()">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:480px;padding:24px 20px;">
+    <div class="modal-title" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+      <div style="font-size:15px;font-weight:900;color:#fff;display:flex;align-items:center;gap:8px;"><span>📦</span> <span id="pedido-material-titulo">Novo Item de Material</span></div>
+      <button class="modal-close" onclick="fecharModalNovoPedidoMaterial()">✕</button>
+    </div>
+
+    <input type="hidden" id="pedido-material-edit-id" value="">
+
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="field">
+        <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;">Nome do Material / Item</label>
+        <input type="text" id="pedido-form-nome" placeholder="Ex: MDF 18mm Branco TX" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:inherit;font-size:13px;">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="field">
+          <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;">Quantidade</label>
+          <input type="number" id="pedido-form-qtd" placeholder="1" min="1" step="1" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:inherit;font-size:13px;">
+        </div>
+        <div class="field">
+          <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;">Unidade</label>
+          <select id="pedido-form-unidade" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:inherit;font-size:13px;">
+            <option>un</option><option>m²</option><option>m</option><option>kg</option><option>L</option><option>cx</option><option>pç</option><option>par</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="field">
+          <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;">Valor Unitário (R$)</label>
+          <input type="number" id="pedido-form-valor" placeholder="0,00" min="0" step="0.01" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:inherit;font-size:13px;">
+        </div>
+        <div class="field">
+          <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;">Urgência</label>
+          <select id="pedido-form-urgencia" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:inherit;font-size:13px;">
+            <option value="normal">📋 Normal</option>
+            <option value="urgente">🔥 Urgente</option>
+            <option value="critico">🚨 Crítico</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;">Fornecedor (opcional)</label>
+        <input type="text" id="pedido-form-fornecedor" placeholder="Nome do fornecedor" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:inherit;font-size:13px;">
+      </div>
+      <div class="field">
+        <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;">Status</label>
+        <select id="pedido-form-status" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:inherit;font-size:13px;">
+          <option value="a_comprar">🛒 A Comprar</option>
+          <option value="pendente">⏳ Pendente</option>
+          <option value="comprado">✅ Comprado</option>
+        </select>
+      </div>
+      <div class="field">
+        <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;">Observações</label>
+        <textarea id="pedido-form-obs" rows="2" placeholder="Informações adicionais..." style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:inherit;font-size:13px;resize:vertical;"></textarea>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button type="button" class="btn btn-sec btn-sm" onclick="fecharModalNovoPedidoMaterial()" style="flex:1;">Cancelar</button>
+      <button type="button" class="btn btn-gold" onclick="salvarPedidoMaterial()" style="flex:2;font-size:13px;font-weight:800;">💾 Salvar Item</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!--  MODAL: NOVO EVENTO DO CRONOGRAMA                                 -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<div id="modal-novo-evento-cronograma" class="modal-overlay" style="display:none" onclick="if(event.target===this)fecharModalNovoEventoCronograma()">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:460px;padding:24px 20px;">
+    <div class="modal-title" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+      <div style="font-size:15px;font-weight:900;color:#fff;display:flex;align-items:center;gap:8px;"><span>📅</span> <span id="evento-cronograma-titulo">Novo Evento / Prazo</span></div>
+      <button class="modal-close" onclick="fecharModalNovoEventoCronograma()">✕</button>
+    </div>
+
+    <input type="hidden" id="evento-cronograma-edit-id" value="">
+
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="field">
+        <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;">Título do Evento</label>
+        <input type="text" id="evento-form-titulo" placeholder="Ex: Entrega de obra - Cliente X" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:inherit;font-size:13px;">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="field">
+          <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;">Data</label>
+          <input type="date" id="evento-form-data" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:inherit;font-size:13px;">
+        </div>
+        <div class="field">
+          <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;">Hora (opcional)</label>
+          <input type="time" id="evento-form-hora" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:inherit;font-size:13px;">
+        </div>
+      </div>
+      <div class="field">
+        <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;">Tipo / Categoria</label>
+        <select id="evento-form-tipo" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:inherit;font-size:13px;">
+          <option value="entrega">🚚 Entrega de Obra</option>
+          <option value="instalacao">🔧 Instalação</option>
+          <option value="medicao">📏 Medição</option>
+          <option value="reuniao">🤝 Reunião</option>
+          <option value="pagamento">💰 Pagamento</option>
+          <option value="prazo">⏰ Prazo</option>
+          <option value="outro">📌 Outro</option>
+        </select>
+      </div>
+      <div class="field">
+        <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;">Responsável (opcional)</label>
+        <input type="text" id="evento-form-responsavel" placeholder="Nome do responsável ou equipe" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:inherit;font-size:13px;">
+      </div>
+      <div class="field">
+        <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;">Descrição / Observações</label>
+        <textarea id="evento-form-desc" rows="2" placeholder="Detalhes do evento..." style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:inherit;font-size:13px;resize:vertical;"></textarea>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button type="button" class="btn btn-sec btn-sm" onclick="fecharModalNovoEventoCronograma()" style="flex:1;">Cancelar</button>
+      <button type="button" class="btn btn-gold" onclick="salvarEventoCronograma()" style="flex:2;font-size:13px;font-weight:800;">💾 Salvar Evento</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!--  MODAL: CONFIGURAÇÃO WHATSAPP PARA PEDIDO DE MATERIAL             -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<div id="modal-config-whatsapp-material" class="modal-overlay" style="display:none" onclick="if(event.target===this)fecharModalConfigWhatsappMaterial()">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:420px;padding:22px 20px;">
+    <div class="modal-title" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div style="font-size:15px;font-weight:900;color:#fff;display:flex;align-items:center;gap:8px;"><span>⚙️</span> Config. WhatsApp - Pedido de Material</div>
+      <button class="modal-close" onclick="fecharModalConfigWhatsappMaterial()">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="field">
+        <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;">Número do WhatsApp para receber pedidos</label>
+        <input type="tel" id="config-whatsapp-numero" placeholder="Ex: (85) 99999-9999" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:inherit;font-size:13px;">
+        <div style="font-size:11px;color:var(--text2);margin-top:4px;">Digite o número com DDD (apenas números ou com formatação)</div>
+      </div>
+      <div class="field">
+        <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;">Nome do Fornecedor / Contato (opcional)</label>
+        <input type="text" id="config-whatsapp-nome" placeholder="Ex: Fornecedor Principal" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:inherit;font-size:13px;">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button type="button" class="btn btn-sec btn-sm" onclick="fecharModalConfigWhatsappMaterial()" style="flex:1;">Cancelar</button>
+      <button type="button" class="btn btn-gold" onclick="salvarConfigWhatsappMaterial()" style="flex:2;font-size:13px;font-weight:800;">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

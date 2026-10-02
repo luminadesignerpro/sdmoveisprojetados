@@ -5585,7 +5585,7 @@ function recarregarDadosEmpresaAtiva() {
   // 5. Funcionários e Pontos da empresa
   funcionariosLista = load(K.employees, []);
   if (!funcionariosLista || !funcionariosLista.length) {
-    funcionariosLista = (licAtiva.id === 'sdvidros') ? JSON.parse(JSON.stringify(FUNCIONARIOS_PADRAO)) : [];
+    funcionariosLista = JSON.parse(JSON.stringify(FUNCIONARIOS_PADRAO));
     if (funcionariosLista.length) save(K.employees, funcionariosLista);
   }
 
@@ -9628,6 +9628,18 @@ function showMsg(id, txt, ok) {
 //  FUNCIONÁRIOS & PONTO ELETRÔNICO
 // ══════════════════════════════════════════════
 const FUNCIONARIOS_PADRAO = [
+  {
+    id: 100,
+    nome: 'Samuel David',
+    email: 'samuel@sdmoveis.com.br',
+    whatsapp: '(85) 99760-2237',
+    cargo: 'Instalador / Técnico Líder',
+    departamento: 'Operações',
+    jornada: '44h/sem',
+    salario: 8000,
+    valorHora: 35.00,
+    status: 'Presente'
+  },
   {
     id: 101,
     nome: 'Lucas Ferreira',
