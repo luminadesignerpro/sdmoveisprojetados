@@ -20930,6 +20930,7 @@ function gerarSvgPlanoDeCorteVidro(plano, chapaIndex = 1) {
 }
 
 function calcVidro() {
+  try {
   const unit = window._unidadeVidro || 'mm';
   const lRaw = parseFloat(document.getElementById('ferr-v-larg')?.value) || 0;
   const aRaw = parseFloat(document.getElementById('ferr-v-alt')?.value) || 0;
@@ -21057,6 +21058,14 @@ function calcVidro() {
       </div>
     </div>
   `;
+
+  } catch (e) {
+    console.error("calcVidro erro:", e);
+    if (res) {
+      res.style.display = "block";
+      res.innerHTML = `<div style="padding:14px;color:#ef4444;">⚠️ Erro no cálculo: ${e.message}</div>`;
+    }
+  }
 }
 
 
@@ -21452,6 +21461,7 @@ window.mudarChapaPlanoCorte = function(idx) {
 };
 
 function calcMovel() {
+  try {
   const unit = window._unidadeMovel || 'mm';
   const lRaw = parseFloat(document.getElementById('ferr-m-larg')?.value) || 0;
   const aRaw = parseFloat(document.getElementById('ferr-m-alt')?.value) || 0;
@@ -21574,6 +21584,14 @@ function calcMovel() {
       </div>
     </div>
   `;
+
+  } catch (e) {
+    console.error("calcMovel erro:", e);
+    if (res) {
+      res.style.display = "block";
+      res.innerHTML = `<div style="padding:14px;color:#ef4444;">⚠️ Erro no cálculo: ${e.message}</div>`;
+    }
+  }
 }
 
 // Conversão de medidas
