@@ -2309,6 +2309,7 @@
           <button type="button" class="btn-filter-agenda active" id="btn-agenda-filtro-pendentes" onclick="filtrarAgenda('pendentes')">Pendentes</button>
           <button type="button" class="btn-filter-agenda" id="btn-agenda-filtro-todos" onclick="filtrarAgenda('todos')">Todos</button>
           <button type="button" class="btn-filter-agenda" id="btn-agenda-filtro-concluidos" onclick="filtrarAgenda('concluidos')">Concluídos</button>
+          <button type="button" class="btn-filter-agenda" id="btn-agenda-filtro-historico" onclick="filtrarAgenda('historico')">Histórico</button>
         </div>
       </div>
 
@@ -14684,6 +14685,111 @@ function renderAgenda() {
   const elConc = document.getElementById('agenda-kpi-concluidos');
   if (elConc) elConc.textContent = concluidos;
 
+  const container = document.getElementById('agenda-lista-eventos');
+  if (!container) return;
+
+  // ── ABA HISTÓRICO AGRUPADO POR CLIENTE ──
+  if (agendaFiltroAtual === 'historico') {
+    if (eventos.length === 0) {
+      container.innerHTML = '<div class="empty">Nenhum histórico de agendamento registrado ainda.</div>';
+      return;
+    }
+
+    // Agrupa por cliente
+    const grupos = {};
+    eventos.forEach(ev => {
+      const nomeChave = (ev.cliente || 'Sem Nome').trim();
+      if (!grupos[nomeChave]) {
+        grupos[nomeChave] = {
+          nome: nomeChave,
+          tel: ev.tel || '',
+          end: ev.end || '',
+          eventos: []
+        };
+      }
+      if (!grupos[nomeChave].tel && ev.tel) grupos[nomeChave].tel = ev.tel;
+      if (!grupos[nomeChave].end && ev.end) grupos[nomeChave].end = ev.end;
+      grupos[nomeChave].eventos.push(ev);
+    });
+
+    const listaGrupos = Object.values(grupos);
+    listaGrupos.sort((a, b) => a.nome.localeCompare(b.nome));
+
+    let htmlHistorico = '<div style="display:flex;flex-direction:column;gap:14px;">';
+
+    listaGrupos.forEach(g => {
+      const totalVisitas = g.eventos.length;
+      const concCount = g.eventos.filter(x => x.concluido).length;
+      const pendCount = totalVisitas - concCount;
+      const zapClean = (g.tel || '').replace(/\D/g, '');
+      const zapLink = zapClean ? ('https://wa.me/55' + zapClean) : '';
+
+      // Ordena os eventos deste cliente por data decrescente (mais recente primeiro)
+      g.eventos.sort((a, b) => {
+        const dA = a.data ? (a.data + ' ' + (a.hora || '00:00')) : '';
+        const dB = b.data ? (b.data + ' ' + (b.hora || '00:00')) : '';
+        return dB.localeCompare(dA);
+      });
+
+      htmlHistorico += `
+        <div style="background:rgba(255,255,255,0.02);border:1.5px solid rgba(201,168,76,0.22);border-radius:12px;padding:12px;box-shadow:0 4px 16px rgba(0,0,0,0.4);">
+          <!-- Cabeçalho do Cliente -->
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.08);">
+            <div>
+              <div style="font-size:15px;font-weight:900;color:#fff;display:flex;align-items:center;gap:8px;">
+                <span>👤 ${esc(g.nome)}</span>
+                <span style="font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(201,168,76,0.18);color:var(--gold-light);font-weight:800;">
+                  ${totalVisitas} compromisso${totalVisitas !== 1 ? 's' : ''} (${concCount} ✓ • ${pendCount} ⏳)
+                </span>
+              </div>
+              <div style="font-size:12px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                ${g.tel ? `<span>📞 ${esc(g.tel)}</span>` : ''}
+                ${g.end ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(g.end)}" target="_blank" rel="noopener" style="color:#4ade80;text-decoration:none;font-weight:700;">🗺️ ${esc(g.end)}</a>` : ''}
+              </div>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center;">
+              ${zapLink ? `<a href="${zapLink}" target="_blank" class="btn btn-whats btn-xs" style="padding:4px 10px;font-size:11px;text-decoration:none;">💬 WhatsApp</a>` : ''}
+              <button onclick="reagendarCompromissoAgenda('${g.eventos[0].id}')" style="background:rgba(59,130,246,0.18);border:1px solid rgba(59,130,246,0.4);color:#93c5fd;padding:5px 10px;border-radius:8px;cursor:pointer;font-size:11.5px;font-weight:800;display:inline-flex;align-items:center;gap:4px;">
+                🔄 Reagendar
+              </button>
+            </div>
+          </div>
+
+          <!-- Linha do Tempo / Lista de Visitas deste Cliente -->
+          <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px;">
+            ${g.eventos.map(ev => {
+              const dataFmt = ev.data ? ev.data.split('-').reverse().join('/') : 'Sem data';
+              const atrasado = !ev.concluido && ev.data && ev.data < hojeStr;
+              return `
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:8px 10px;background:rgba(0,0,0,0.25);border-radius:8px;border-left:3px solid ${ev.concluido ? '#10b981' : (atrasado ? '#f59e0b' : '#3b82f6')};gap:8px;flex-wrap:wrap;">
+                  <div style="flex:1;min-width:0;">
+                    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                      <span style="font-weight:800;font-size:12.5px;color:#fff;">📅 ${dataFmt} ${ev.hora ? 'às ' + ev.hora : ''}</span>
+                      <span style="font-size:10px;padding:1px 6px;border-radius:999px;background:rgba(201,168,76,0.15);color:var(--gold-light);font-weight:700;">${esc(ev.tipo || 'Medição')}</span>
+                      ${ev.concluido ? '<span style="font-size:10px;background:rgba(16,185,129,0.2);color:#34d399;padding:1px 6px;border-radius:999px;font-weight:800;">✓ Concluído</span>' : (atrasado ? '<span style="font-size:10px;background:rgba(245,158,11,0.2);color:#fbbf24;padding:1px 6px;border-radius:999px;font-weight:800;">⏳ Pendente (Atrasado)</span>' : '<span style="font-size:10px;background:rgba(59,130,246,0.2);color:#93c5fd;padding:1px 6px;border-radius:999px;font-weight:800;">⏳ Agendado</span>')}
+                    </div>
+                    ${ev.obs ? `<div style="font-size:11px;color:rgba(255,255,255,0.7);margin-top:2px;font-style:italic;">📝 ${esc(ev.obs)}</div>` : ''}
+                  </div>
+                  <div style="display:flex;align-items:center;gap:5px;">
+                    <button onclick="alternarConcluidoAgenda('${ev.id}')" title="${ev.concluido ? 'Marcar como pendente' : 'Marcar como concluído'}" style="background:${ev.concluido ? '#10b981' : 'transparent'};border:1px solid rgba(255,255,255,0.2);color:#fff;width:24px;height:24px;border-radius:6px;cursor:pointer;font-size:11px;display:inline-flex;align-items:center;justify-content:center;">${ev.concluido ? '✓' : '○'}</button>
+                    <button onclick="reagendarCompromissoAgenda('${ev.id}')" title="Reagendar mantendo este no histórico" style="background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:#93c5fd;padding:3px 7px;border-radius:6px;cursor:pointer;font-size:10.5px;font-weight:700;">🔄 Reagendar</button>
+                    <button onclick="abrirModalNovoCompromissoAgenda('${ev.id}')" title="Editar" style="background:transparent;border:1px solid rgba(255,255,255,0.15);color:var(--gold-light);width:24px;height:24px;border-radius:6px;cursor:pointer;font-size:10px;display:inline-flex;align-items:center;justify-content:center;">✏️</button>
+                    <button class="item-del" onclick="excluirCompromissoAgenda('${ev.id}')" title="Excluir" style="width:24px;height:24px;font-size:10px;">✕</button>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    });
+
+    htmlHistorico += '</div>';
+    container.innerHTML = htmlHistorico;
+    return;
+  }
+
+  // ── VISÃO PADRÃO (PENDENTES, TODOS, CONCLUÍDOS) ──
   let filtrados = [...eventos];
   if (agendaFiltroAtual === 'pendentes') {
     filtrados = filtrados.filter(x => !x.concluido);
@@ -14696,9 +14802,6 @@ function renderAgenda() {
     const dB = b.data ? (b.data + ' ' + (b.hora || '00:00')) : '';
     return dA.localeCompare(dB);
   });
-
-  const container = document.getElementById('agenda-lista-eventos');
-  if (!container) return;
 
   if (filtrados.length === 0) {
     container.innerHTML = `<div class="empty">Nenhum compromisso ${agendaFiltroAtual === 'pendentes' ? 'pendente' : (agendaFiltroAtual === 'concluidos' ? 'concluído' : '')} no momento.</div>`;
@@ -14734,8 +14837,9 @@ function renderAgenda() {
             ${ev.obs ? `<div style="font-size:11.5px;color:rgba(255,255,255,0.7);margin-top:4px;font-style:italic;">📝 ${esc(ev.obs)}</div>` : ''}
           </div>
         </div>
-        <div style="display:flex;align-items:center;gap:6px;">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
           ${zapLink ? `<a href="${zapLink}" target="_blank" class="btn btn-whats btn-xs" style="padding:4px 10px;font-size:11px;text-decoration:none;" title="Enviar lembrete pelo WhatsApp">💬 WhatsApp</a>` : ''}
+          <button onclick="reagendarCompromissoAgenda('${ev.id}')" title="Reagendar compromisso mantendo este no histórico" style="background:rgba(59,130,246,0.18);border:1px solid rgba(59,130,246,0.35);color:#93c5fd;padding:4px 9px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:4px;">🔄 Reagendar</button>
           <button onclick="abrirModalNovoCompromissoAgenda('${ev.id}')" title="Editar agendamento e alarme" style="background:transparent;border:1px solid rgba(255,255,255,0.15);color:var(--gold-light);width:26px;height:26px;border-radius:6px;cursor:pointer;font-size:11px;display:inline-flex;align-items:center;justify-content:center;">✏️</button>
           <button class="item-del" onclick="excluirCompromissoAgenda('${ev.id}')" title="Excluir agendamento" style="width:26px;height:26px;font-size:11px;">✕</button>
         </div>
@@ -14772,11 +14876,58 @@ function abrirMapsEndereco() {
 
 function filtrarAgenda(filtro) {
   agendaFiltroAtual = filtro;
-  ['pendentes','todos','concluidos'].forEach(f => {
+  ['pendentes','todos','concluidos','historico'].forEach(f => {
     const b = document.getElementById('btn-agenda-filtro-' + f);
     if (b) b.classList.toggle('active', f === filtro);
   });
   renderAgenda();
+}
+
+
+// ── REAGENDAR COMPROMISSO (MANTÉM O ORIGINAL NO HISTÓRICO) ──
+function reagendarCompromissoAgenda(id) {
+  const eventos = obterAgendaEventos();
+  const ev = eventos.find(x => String(x.id) === String(id));
+  if (!ev) return;
+
+  // Garante que é um NOVO compromisso para preservar o anterior no histórico
+  editandoAgendaId = null;
+
+  const iconeEl = document.getElementById('agenda-modal-icone');
+  const tituloEl = document.getElementById('agenda-modal-titulo');
+  const btnSalvar = document.getElementById('agenda-modal-btn-salvar');
+  const btnSalvarSimples = document.getElementById('agenda-modal-btn-salvar-simples');
+
+  if (iconeEl) iconeEl.textContent = '🔄';
+  if (tituloEl) tituloEl.textContent = 'Reagendar Compromisso (Novo)';
+  if (btnSalvar) btnSalvar.textContent = '📅 Salvar Novo + Enviar WhatsApp';
+  if (btnSalvarSimples) btnSalvarSimples.textContent = '💾 Salvar Novo sem enviar';
+
+  document.getElementById('agenda-novo-cliente').value = ev.cliente || '';
+  document.getElementById('agenda-novo-tel').value = ev.tel || '';
+  document.getElementById('agenda-novo-end').value = ev.end || '';
+  document.getElementById('agenda-novo-tipo').value = ev.tipo || 'Medição Técnica';
+  
+  const hoje = new Date().toISOString().split('T')[0];
+  document.getElementById('agenda-novo-data').value = hoje;
+  document.getElementById('agenda-novo-hora').value = ev.hora || '09:00';
+  
+  const dataAntFmt = ev.data ? ev.data.split('-').reverse().join('/') : 'anterior';
+  const obsOrig = ev.obs ? (' - ' + ev.obs) : '';
+  document.getElementById('agenda-novo-obs').value = 'Reagendado do dia ' + dataAntFmt + obsOrig;
+
+  const notifEl = document.getElementById('agenda-novo-notificacao');
+  if (notifEl) notifEl.value = String(ev.notificar_minutos !== undefined ? ev.notificar_minutos : 30);
+
+  setTimeout(atualizarBotaoMapsAgenda, 50);
+  setTimeout(atualizarBtnWhatsAppAgenda, 50);
+
+  const m = document.getElementById('modal-agenda-novo');
+  if (m) m.style.display = 'flex';
+
+  if (typeof mostrarToastAprovacao === 'function') {
+    mostrarToastAprovacao('🔄 Escolha a nova data. O compromisso anterior continuará mantido no histórico!');
+  }
 }
 
 function alternarConcluidoAgenda(id) {
@@ -21541,7 +21692,7 @@ function calcMovel() {
       </div>
       <div style="background:rgba(0,0,0,0.25);padding:10px;border-radius:10px;border:1px solid rgba(168,85,247,0.2);">
         <div style="font-size:11px;color:var(--muted);text-transform:uppercase;">Por Chapa</div>
-        <div style="font-size:16px;color:#4ade80;font-weight:900;">🧩 até ${plano.capPorChapa} peças</div>
+        <div style="font-size:16px;color:#4ade80;font-weight:900;">🧩 até ${plano.capPorChapa || (plano.chapas && plano.chapas[0] ? plano.chapas[0].pecas.length : qtdTotalPecas)} peças</div>
       </div>
       <div style="background:rgba(0,0,0,0.25);padding:10px;border-radius:10px;border:1px solid rgba(168,85,247,0.2);">
         <div style="font-size:11px;color:var(--muted);text-transform:uppercase;">Aproveitamento</div>
