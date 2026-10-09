@@ -2313,6 +2313,8 @@
         </div>
       </div>
 
+      <!-- ── FAIXA SEMANAL DE DIAS GERAL DA AGENDA (5ª IMAGEM) ── -->
+      <div id="agenda-faixa-semanal-topo" style="margin-bottom:12px;"></div>
       <div id="agenda-lista-eventos">
         <div class="empty">Nenhum compromisso agendado ainda. Clique em "Novo Agendamento" para começar.</div>
       </div>
@@ -14673,6 +14675,49 @@ function verificarNotificacoesAgenda() {
   }
 }
 
+
+function gerarFaixaDiasSemanaHtml(dataAlvoIso) {
+  const nomesDias = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  const base = dataAlvoIso ? new Date(dataAlvoIso + 'T12:00:00') : new Date();
+  const inicioSemana = new Date(base);
+  inicioSemana.setDate(base.getDate() - base.getDay());
+
+  const hoje = new Date();
+  const hojeIso = hoje.toISOString().split('T')[0];
+  const alvoIso = dataAlvoIso || hojeIso;
+
+  const eventos = (typeof obterAgendaEventos === 'function') ? obterAgendaEventos() : [];
+
+  let diasHtml = '';
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(inicioSemana);
+    d.setDate(inicioSemana.getDate() + i);
+    const isoDia = d.toISOString().split('T')[0];
+    const numDia = d.getDate();
+    const nomeDia = nomesDias[d.getDay()];
+
+    const countEv = eventos.filter(e => e.data === isoDia && !e.concluido).length;
+    const isAlvo = (isoDia === alvoIso);
+    const isHoje = (isoDia === hojeIso);
+
+    diasHtml += `
+      <div style="flex:1;min-width:38px;padding:8px 4px;border-radius:12px;text-align:center;background:${isAlvo ? '#0f1f38' : 'rgba(255,255,255,0.03)'};border:${isAlvo ? '2px solid #38bdf8' : '1px solid rgba(255,255,255,0.08)'};box-shadow:${isAlvo ? '0 0 14px rgba(56,189,248,0.45)' : 'none'};display:flex;flex-direction:column;align-items:center;justify-content:center;transition:all 0.2s;">
+        <div style="font-size:11px;font-weight:800;color:${isAlvo ? '#38bdf8' : 'var(--muted)'};margin-bottom:2px;">${nomeDia}</div>
+        <div style="font-size:17px;font-weight:900;color:${isAlvo ? '#38bdf8' : (isHoje ? '#4ade80' : '#fff')};line-height:1.1;">${numDia}</div>
+        ${countEv > 0 ? `<div style="font-size:9.5px;font-weight:900;background:rgba(201,168,76,0.35);color:var(--gold-light);padding:1px 6px;border-radius:999px;margin-top:3px;border:1px solid rgba(201,168,76,0.5);">${countEv}</div>` : '<div style="height:15px;margin-top:3px;"></div>'}
+      </div>
+    `;
+  }
+
+  return `
+    <div style="background:#090a12;border:1.5px solid rgba(255,255,255,0.1);border-radius:14px;padding:8px 10px;margin:8px 0 10px 0;box-shadow:0 6px 20px rgba(0,0,0,0.6);">
+      <div style="display:flex;gap:6px;overflow-x:auto;">
+        ${diasHtml}
+      </div>
+    </div>
+  `;
+}
+
 function renderAgenda() {
   atualizarBotaoPermissaoAgenda();
   const eventos = obterAgendaEventos();
@@ -14697,6 +14742,11 @@ function renderAgenda() {
   if (elHoje) elHoje.textContent = hoje;
   const elConc = document.getElementById('agenda-kpi-concluidos');
   if (elConc) elConc.textContent = concluidos;
+
+  const faixaTopo = document.getElementById('agenda-faixa-semanal-topo');
+  if (faixaTopo && typeof gerarFaixaDiasSemanaHtml === 'function') {
+    faixaTopo.innerHTML = gerarFaixaDiasSemanaHtml(hojeStr);
+  }
 
   const container = document.getElementById('agenda-lista-eventos');
   if (!container) return;
@@ -14767,6 +14817,9 @@ function renderAgenda() {
               </button>
             </div>
           </div>
+
+          <!-- ── FAIXA SEMANAL DE DIAS (5ª IMAGEM) NA 3ª IMAGEM ── -->
+          ${gerarFaixaDiasSemanaHtml(g.eventos[0] ? g.eventos[0].data : '')}
 
           <!-- Linha do Tempo / Lista de Visitas deste Cliente -->
           <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px;">
@@ -20279,7 +20332,7 @@ function abrirFerramenta(tipo) {
           <input id="ferr-v-preco" type="number" placeholder="ex: 85.00" style="width:100%;padding:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-size:14px;" />
         </div>
       </div>
-      ${btnCalc('calcVidro()', '🪟 Calcular e Ver Plano de Corte', '#06b6d4')}
+      <button type="button" id="btn-calc-vidro" onclick="calcVidro()" style="margin-top:12px;width:100%;padding:14px;background:linear-gradient(135deg,#06b6d4,#0891b2);border:none;border-radius:12px;color:#fff;font-weight:900;font-size:14.5px;cursor:pointer;box-shadow:0 4px 18px rgba(6,182,212,0.4);display:flex;align-items:center;justify-content:center;gap:8px;">🪟 Calcular e Ver Plano de Corte</button>
       <div id="ferr-v-res" style="margin-top:14px;background:rgba(6,182,212,0.06);border:1px solid rgba(6,182,212,0.25);border-radius:12px;font-size:14px;font-weight:700;color:#67e8f9;display:none;"></div>
     `);
     renderSelectClientesFerr('vidro');
@@ -20366,7 +20419,7 @@ function abrirFerramenta(tipo) {
           <option value="2440x1220">2440×1220mm</option>
         </select>
       </div>
-      ${btnCalc('calcMovel()', '🪑 Calcular chapas', '#a855f7')}
+      <button type="button" id="btn-calc-movel" onclick="calcMovel()" style="margin-top:12px;width:100%;padding:14px;background:linear-gradient(135deg,#a855f7,#7e22ce);border:none;border-radius:12px;color:#fff;font-weight:900;font-size:14.5px;cursor:pointer;box-shadow:0 4px 18px rgba(168,85,247,0.4);display:flex;align-items:center;justify-content:center;gap:8px;">🪑 Calcular chapas</button>
       <div id="ferr-m-res" style="margin-top:14px;padding:14px;background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.3);border-radius:12px;font-size:14px;font-weight:700;color:#c084fc;display:none;"></div>
     `);
     renderSelectClientesFerr('movel');
@@ -21203,15 +21256,28 @@ function gerarSvgPlanoDeCorteVidro(plano, chapaIndex = 1) {
 function calcVidro() {
   try {
   const unit = window._unidadeVidro || 'mm';
-  const lRaw = parseFloat(document.getElementById('ferr-v-larg')?.value) || 0;
-  const aRaw = parseFloat(document.getElementById('ferr-v-alt')?.value) || 0;
-  const qtd  = parseFloat(document.getElementById('ferr-v-qtd')?.value)  || 1;
+  let lRaw = parseFloat(document.getElementById('ferr-v-larg')?.value) || 0;
+  let aRaw = parseFloat(document.getElementById('ferr-v-alt')?.value) || 0;
+  let qtd  = parseFloat(document.getElementById('ferr-v-qtd')?.value)  || 1;
   const preco= parseFloat(document.getElementById('ferr-v-preco')?.value) || 0;
   const esp  = parseInt(document.getElementById('ferr-v-esp')?.value)   || 6;
   const chapaStr = (document.getElementById('ferr-v-chapa')?.value || '3210x2250').split('x');
   const res  = document.getElementById('ferr-v-res');
 
   const temLista = window._listaPecasVidro && window._listaPecasVidro.length > 0;
+
+  // Se não há peças na lista e o usuário não digitou, usa valores padrão para calcular de imediato!
+  if (!temLista && (!lRaw || !aRaw)) {
+    lRaw = (unit === 'mm' ? 1200 : (unit === 'cm' ? 120 : 1.20));
+    aRaw = (unit === 'mm' ? 900 : (unit === 'cm' ? 90 : 0.90));
+    qtd = 4;
+    const inpL = document.getElementById('ferr-v-larg');
+    const inpA = document.getElementById('ferr-v-alt');
+    const inpQ = document.getElementById('ferr-v-qtd');
+    if (inpL) inpL.value = lRaw;
+    if (inpA) inpA.value = aRaw;
+    if (inpQ) inpQ.value = qtd;
+  }
 
   if (!temLista && (!lRaw || !aRaw)) {
     res.style.display = 'block';
@@ -21734,13 +21800,26 @@ window.mudarChapaPlanoCorte = function(idx) {
 function calcMovel() {
   try {
   const unit = window._unidadeMovel || 'mm';
-  const lRaw = parseFloat(document.getElementById('ferr-m-larg')?.value) || 0;
-  const aRaw = parseFloat(document.getElementById('ferr-m-alt')?.value) || 0;
-  const qtd = parseFloat(document.getElementById('ferr-m-qtd')?.value) || 1;
+  let lRaw = parseFloat(document.getElementById('ferr-m-larg')?.value) || 0;
+  let aRaw = parseFloat(document.getElementById('ferr-m-alt')?.value) || 0;
+  let qtd = parseFloat(document.getElementById('ferr-m-qtd')?.value) || 1;
   const chapaStr = (document.getElementById('ferr-m-chapa')?.value || '2750x1850').split('x');
   const res = document.getElementById('ferr-m-res');
 
   const temLista = window._listaPecasMovel && window._listaPecasMovel.length > 0;
+
+  // Se não há peças na lista e o usuário não digitou, usa valores padrão para calcular de imediato!
+  if (!temLista && (!lRaw || !aRaw)) {
+    lRaw = (unit === 'mm' ? 600 : (unit === 'cm' ? 60 : 0.60));
+    aRaw = (unit === 'mm' ? 720 : (unit === 'cm' ? 72 : 0.72));
+    qtd = 4;
+    const inpL = document.getElementById('ferr-m-larg');
+    const inpA = document.getElementById('ferr-m-alt');
+    const inpQ = document.getElementById('ferr-m-qtd');
+    if (inpL) inpL.value = lRaw;
+    if (inpA) inpA.value = aRaw;
+    if (inpQ) inpQ.value = qtd;
+  }
 
   if (!temLista && (!lRaw || !aRaw)) {
     res.style.display = 'block';
@@ -21937,3 +22016,7 @@ function calcRapida(k) {
 </script>
 </body>
 </html>
+<script>
+window.calcVidro = calcVidro;
+window.calcMovel = calcMovel;
+</script>
