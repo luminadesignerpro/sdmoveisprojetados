@@ -1,8 +1,10 @@
-// Service Worker PWA para sdmoveisprojetados - v2.3
-const CACHE_NAME = 'sdmoveisprojetados-v2.3-' + Date.now();
+// Service Worker PWA para sdmoveisprojetados - v2.4
+const CACHE_NAME = 'sdmoveisprojetados-v2.4-' + Date.now();
 const ASSETS = [
   '/',
   '/index.html',
+  '/cliente.html',
+  '/assinar.html',
   '/manifest.json',
   '/icon-192.png',
   '/icon-512.png'
@@ -29,7 +31,6 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
-  // Estratégia Network First para sempre carregar atualizações
   event.respondWith(
     fetch(event.request)
       .then((response) => {

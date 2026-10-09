@@ -1879,7 +1879,10 @@
       background: rgba(255,255,255,0.02);
     }
 
-</style>
+
+    #btn-tab-jogos, #pane-jogos { display: none !important; }
+
+  </style>
 </head>
 <body>
 
@@ -2204,9 +2207,7 @@
           <button type="button" class="portal-tab" id="btn-tab-opiniao" onclick="mudarAba('opiniao')">
             <span>💡</span> <span>Minha Opinião</span>
           </button>
-          <button type="button" class="portal-tab" id="btn-tab-jogos" onclick="mudarAba('jogos')">
-            <span>🎮</span> <span>Jogos</span>
-          </button>
+          <!-- Botão Jogos Removido -->
         </div>
       </div>
 
@@ -2227,6 +2228,55 @@
           <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(201,168,76,0.3); border-radius: 14px; padding: 12px 18px; text-align: right;">
             <div style="font-size: 10.5px; color: var(--gold-light); font-weight: 800; text-transform: uppercase;">Previsão de Instalação</div>
             <div style="font-size: 16px; font-weight: 900; color: #fff; margin-top: 2px;" id="hero-previsao-data">A Combinar</div>
+          </div>
+        </div>
+
+        
+        <!-- ── CARD: HISTÓRICO DE AGENDAMENTO & ATENDIMENTO DA O.S. ── -->
+        <div class="portal-card" id="card-historico-os" style="border:1.5px solid rgba(201,168,76,0.45);background:linear-gradient(135deg,rgba(20,20,35,0.95),rgba(10,10,20,0.98));border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:0 8px 30px rgba(0,0,0,0.6);">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.08);margin-bottom:12px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:20px;">📋</span>
+              <div>
+                <div style="font-size:14px;font-weight:900;color:#fff;">Histórico de Visita & Medição Técnica</div>
+                <div style="font-size:11px;color:var(--gold-light);font-weight:700;" id="hist-os-subtitulo">Ordem de Serviço Vinculada</div>
+              </div>
+            </div>
+            <span style="font-size:11px;background:rgba(16,185,129,0.18);border:1px solid rgba(16,185,129,0.4);color:#34d399;padding:3px 10px;border-radius:999px;font-weight:800;">
+              ✓ Assinado & Aprovado
+            </span>
+          </div>
+
+          <div id="hist-os-conteudo" style="display:flex;flex-direction:column;gap:8px;">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;">
+              <div style="background:rgba(255,255,255,0.03);padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);">
+                <div style="font-size:10px;color:var(--muted);text-transform:uppercase;">Data do Agendamento</div>
+                <div style="font-size:13px;font-weight:800;color:#fff;margin-top:2px;" id="hist-os-data">--/--/----</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.03);padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);">
+                <div style="font-size:10px;color:var(--muted);text-transform:uppercase;">Tipo de Atendimento</div>
+                <div style="font-size:13px;font-weight:800;color:var(--gold-light);margin-top:2px;" id="hist-os-tipo">Medição Técnica</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.03);padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);">
+                <div style="font-size:10px;color:var(--muted);text-transform:uppercase;">Horário</div>
+                <div style="font-size:13px;font-weight:800;color:#38bdf8;margin-top:2px;" id="hist-os-hora">09:00</div>
+              </div>
+            </div>
+
+            <div style="background:rgba(255,255,255,0.03);padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);">
+              <div style="font-size:10px;color:var(--muted);text-transform:uppercase;">Endereço / Local da Obra</div>
+              <div style="font-size:12.5px;font-weight:700;color:#4ade80;margin-top:2px;" id="hist-os-endereco">Endereço cadastrado na agenda</div>
+            </div>
+
+            <div style="background:rgba(255,255,255,0.03);padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);" id="hist-os-box-obs">
+              <div style="font-size:10px;color:var(--muted);text-transform:uppercase;">Observações da Medição / Agendamento</div>
+              <div style="font-size:12px;color:#e2e8f0;margin-top:2px;font-style:italic;" id="hist-os-obs">Nenhuma observação informada.</div>
+            </div>
+
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:4px;padding-top:6px;border-top:1px dashed rgba(255,255,255,0.08);font-size:11px;color:#94a3b8;">
+              <span id="hist-os-assinante">✍️ Assinado digitalmente</span>
+              <span style="color:var(--gold);font-weight:800;">SD Móveis Projetados</span>
+            </div>
           </div>
         </div>
 
@@ -4081,7 +4131,7 @@ function validarCodigoLiberadoManual() {}
 function checarLiberacaoEmpresaAutomatica() {}
 
 function mudarAba(tab) {
-      ['status', 'galeria', 'mensagens', 'financeiro', 'opiniao', 'jogos', 'financeiro-pessoal'].forEach(t => {
+      ['status', 'galeria', 'mensagens', 'financeiro', 'opiniao', 'financeiro-pessoal'].forEach(t => {
         const pane = document.getElementById('pane-' + t);
         const btn = document.getElementById('btn-tab-' + t);
         if (pane) pane.classList.toggle('active', t === tab);
@@ -6580,6 +6630,56 @@ function mudarAba(tab) {
       document.getElementById('hero-status-nome').textContent = statusTexto;
       document.getElementById('hero-status-desc').textContent = statusObs;
       document.getElementById('hero-previsao-data').textContent = previsao;
+
+      // ── ATUALIZAR HISTÓRICO DA VISITA / AGENDAMENTO DA O.S. ──
+      try {
+        const numLimpo = String(sessao.os || '').replace(/\D/g, '');
+        let histAg = (osData && osData.historico_agendamento) || null;
+        if (!histAg) {
+          try {
+            const histStr = localStorage.getItem('sdv_historico_os_' + numLimpo);
+            if (histStr) histAg = JSON.parse(histStr);
+          } catch(_) {}
+        }
+        if (!histAg) {
+          // Busca nos eventos da agenda por telefone ou nome
+          try {
+            const evs = JSON.parse(localStorage.getItem('sdv_agenda_eventos') || '[]');
+            const cliNome = (sessao.nome || '').toLowerCase().trim();
+            const cliTel = String(sessao.telefone || '').replace(/\D/g, '');
+            const achado = evs.find(e => {
+              const eTel = String(e.tel || '').replace(/\D/g, '');
+              const eNome = (e.cliente || '').toLowerCase().trim();
+              return (cliTel && eTel && (eTel === cliTel || eTel.endsWith(cliTel) || cliTel.endsWith(eTel))) ||
+                     (cliNome && eNome && (eNome === cliNome || eNome.includes(cliNome) || cliNome.includes(eNome)));
+            });
+            if (achado) histAg = achado;
+          } catch(_) {}
+        }
+
+        if (histAg) {
+          const elData = document.getElementById('hist-os-data');
+          const elTipo = document.getElementById('hist-os-tipo');
+          const elHora = document.getElementById('hist-os-hora');
+          const elEnd = document.getElementById('hist-os-endereco');
+          const elObs = document.getElementById('hist-os-obs');
+          const elAssinante = document.getElementById('hist-os-assinante');
+          const elSub = document.getElementById('hist-os-subtitulo');
+
+          if (elSub) elSub.textContent = 'Ordem de Serviço ' + sessao.os + ' • ' + (histAg.cliente || sessao.nome);
+          if (elData) elData.textContent = histAg.data ? histAg.data.split('-').reverse().join('/') : 'Realizado';
+          if (elTipo) elTipo.textContent = histAg.tipo || 'Medição Técnica';
+          if (elHora) elHora.textContent = histAg.hora ? ('às ' + histAg.hora) : 'Horário Comercial';
+          if (elEnd) elEnd.textContent = histAg.end || (osData && osData.dados && osData.dados.end) || 'Local da obra registrado';
+          if (elObs) elObs.textContent = histAg.obs ? histAg.obs : 'Medição realizada e aprovada para produção.';
+          if (elAssinante) {
+            const assPor = (osData && (osData.assinado_por || osData.assinante_nome)) || sessao.nome || 'Cliente';
+            elAssinante.textContent = '✍️ Aprovado & Assinado por: ' + assPor;
+          }
+        }
+      } catch(errHist) {
+        console.warn('Erro ao carregar histórico da O.S.:', errHist);
+      }
 
       // Atualiza stepper
       atualizarStepperVisual(etapa);

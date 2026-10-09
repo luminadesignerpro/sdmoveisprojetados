@@ -4616,10 +4616,11 @@
           </button>
           <div id="galeria-submenu-agenda" style="display:none;position:absolute;bottom:calc(100% + 6px);left:0;right:0;background:#0f1729;border:1.5px solid #10b981;border-radius:10px;overflow:hidden;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,0.5);min-width:180px;">
             <button type="button" onclick="toggleMenuGaleriaAgenda(); abrirCameraAgenda();" style="width:100%;padding:10px 12px;background:none;border:none;border-bottom:1px solid rgba(16,185,129,0.2);color:#22d3ee;font-size:12px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:8px;">&#x1F4F7; Abrir C&acirc;mera</button>
-            <button type="button" onclick="toggleMenuGaleriaAgenda(); abrirGaleriaAgenda();" style="width:100%;padding:10px 12px;background:none;border:none;color:#34d399;font-size:12px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:8px;">&#x1F5BC;&#xFE0F; Ver Galeria de Fotos</button>
+            <button type="button" onclick="toggleMenuGaleriaAgenda(); abrirSeletorGaleriaFotosAgenda();" style="width:100%;padding:10px 12px;background:none;border:none;color:#34d399;font-size:12px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:8px;">🖼️ Ver Galeria de Fotos (Celular)</button>
           </div>
           </div>
         </div>
+        <input type="file" id="input-galeria-agenda" accept="image/*" multiple style="display:none;" onchange="aoCapturarFotoAgenda(event)" />
         <input type="file" id="input-camera-agenda" accept="image/*" capture="environment" style="display:none;" onchange="aoCapturarFotoAgenda(event)" />
         <div id="agenda-preview-fotos-capturadas" style="display:none;margin-top:10px;padding:8px 10px;background:rgba(6,182,212,0.08);border:1px solid rgba(6,182,212,0.3);border-radius:10px;">
           <div style="font-size:11px;font-weight:800;color:#22d3ee;display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
@@ -4630,7 +4631,19 @@
         </div>
       </div>
 
-      <div class="field" style="margin-bottom:12px;">
+            <!-- 🔍 BUSCA RÁPIDA DE CLIENTES / CONTATOS -->
+      <div style="margin-bottom:12px;position:relative;">
+        <label style="font-size:11px;font-weight:800;color:var(--gold-light);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;display:flex;align-items:center;gap:5px;">
+          <span>🔍</span> <span>Buscar Cliente Cadastrado (Filtro Rápido):</span>
+        </label>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input type="text" id="agenda-busca-rapida-inp" oninput="aoBuscarClienteRapidoAgenda(this.value)" placeholder="Digite o nome ou telefone para buscar..." style="width:100%;padding:10px 12px;border-radius:10px;background:#05060d;border:1.5px solid var(--gold);color:#fff;font-size:13px;box-shadow:inset 0 2px 6px rgba(0,0,0,0.5);" />
+          <button type="button" onclick="limparBuscaRapidaAgenda()" style="padding:10px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:#cbd5e1;cursor:pointer;font-size:12px;font-weight:700;">✕</button>
+        </div>
+        <div id="agenda-busca-resultados-box" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;max-height:220px;overflow-y:auto;background:#0d0e19;border:1.5px solid var(--gold);border-radius:10px;z-index:999999;box-shadow:0 12px 30px rgba(0,0,0,0.9);padding:6px;"></div>
+      </div>
+
+<div class="field" style="margin-bottom:12px;">
         <label>Nome do Cliente</label>
         <input id="agenda-novo-cliente" list="agenda-lista-sugestoes-clientes" oninput="aoSelecionarClienteAgenda()" placeholder="Ex: Claudia ou selecione o cliente..." style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.12);color:#fff;font-family:var(--font);" />
       </div>
@@ -15028,6 +15041,97 @@ function abrirModalNovoCompromissoAgenda(id = null) {
   if (m) m.style.display = 'flex';
 }
 
+
+function aoBuscarClienteRapidoAgenda(termo) {
+  const box = document.getElementById('agenda-busca-resultados-box');
+  if (!box) return;
+  const q = (termo || '').trim().toLowerCase();
+  if (q.length < 1) {
+    box.style.display = 'none';
+    box.innerHTML = '';
+    return;
+  }
+
+  const lista = [];
+  const telVistos = new Set();
+
+  // 1. Clientes cadastrados
+  if (typeof clientes !== 'undefined' && Array.isArray(clientes)) {
+    clientes.forEach(c => {
+      const nome = c.nome || '';
+      const tel = c.tel || '';
+      const end = c.end || '';
+      if (nome.toLowerCase().includes(q) || tel.includes(q) || end.toLowerCase().includes(q)) {
+        lista.push({ nome, tel, end: end + (c.cidade ? ' - ' + c.cidade : ''), origem: 'Cadastro' });
+        if (tel) telVistos.add(tel.replace(/\D/g, ''));
+      }
+    });
+  }
+
+  // 2. Eventos da agenda
+  const evs = (typeof obterAgendaEventos === 'function') ? obterAgendaEventos() : [];
+  evs.forEach(e => {
+    const nome = e.cliente || '';
+    const tel = e.tel || '';
+    const telClean = tel.replace(/\D/g, '');
+    if (telClean && telVistos.has(telClean)) return;
+    if (nome.toLowerCase().includes(q) || tel.includes(q) || (e.end && e.end.toLowerCase().includes(q))) {
+      lista.push({ nome, tel, end: e.end || '', tipo: e.tipo, origem: 'Agenda' });
+      if (telClean) telVistos.add(telClean);
+    }
+  });
+
+  if (lista.length === 0) {
+    box.style.display = 'block';
+    box.innerHTML = '<div style="padding:10px;text-align:center;color:#94a3b8;font-size:12px;">Nenhum cliente encontrado para "' + esc(termo) + '"</div>';
+    return;
+  }
+
+  box.style.display = 'block';
+  box.innerHTML = lista.slice(0, 15).map(item => `
+    <div onclick="selecionarClienteBuscaRapida('${esc(item.nome)}', '${esc(item.tel)}', '${esc(item.end)}')" style="padding:8px 10px;border-radius:8px;border-bottom:1px solid rgba(255,255,255,0.06);cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:background 0.2s;" onmouseover="this.style.background='rgba(201,168,76,0.18)'" onmouseout="this.style.background='transparent'">
+      <div>
+        <div style="font-weight:800;font-size:13px;color:#fff;">👤 ${esc(item.nome)}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;">
+          ${item.tel ? '📞 ' + esc(item.tel) : ''} ${item.end ? ' · 📍 ' + esc(item.end) : ''}
+        </div>
+      </div>
+      <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(201,168,76,0.15);color:var(--gold-light);font-weight:700;">${item.origem}</span>
+    </div>
+  `).join('');
+}
+
+function selecionarClienteBuscaRapida(nome, tel, end) {
+  const nomeEl = document.getElementById('agenda-novo-cliente');
+  const telEl = document.getElementById('agenda-novo-tel');
+  const endEl = document.getElementById('agenda-novo-end');
+  const box = document.getElementById('agenda-busca-resultados-box');
+  const inpBusca = document.getElementById('agenda-busca-rapida-inp');
+
+  if (nomeEl && nome) nomeEl.value = nome;
+  if (telEl && tel) {
+    telEl.value = tel;
+    if (typeof atualizarBtnWhatsAppAgenda === 'function') atualizarBtnWhatsAppAgenda();
+  }
+  if (endEl && end) {
+    endEl.value = end;
+    if (typeof atualizarBotaoMapsAgenda === 'function') atualizarBotaoMapsAgenda();
+  }
+  if (inpBusca) inpBusca.value = '';
+  if (box) box.style.display = 'none';
+
+  if (typeof mostrarToastAprovacao === 'function') {
+    mostrarToastAprovacao('✅ Dados de ' + nome + ' carregados com sucesso!');
+  }
+}
+
+function limparBuscaRapidaAgenda() {
+  const inp = document.getElementById('agenda-busca-rapida-inp');
+  const box = document.getElementById('agenda-busca-resultados-box');
+  if (inp) inp.value = '';
+  if (box) box.style.display = 'none';
+}
+
 function aoSelecionarClienteAgenda() {
   const nome = document.getElementById('agenda-novo-cliente').value.trim();
   if (!nome || typeof clientes === 'undefined' || !clientes) return;
@@ -15059,6 +15163,13 @@ function direcionarAgendamentoParaOrcamento() {
   const end = (document.getElementById('agenda-novo-end') ? document.getElementById('agenda-novo-end').value : '').trim();
   const obs = (document.getElementById('agenda-novo-obs') ? document.getElementById('agenda-novo-obs').value : '').trim();
   const tipo = (document.getElementById('agenda-novo-tipo') ? document.getElementById('agenda-novo-tipo').value : '');
+  const data = (document.getElementById('agenda-novo-data') ? document.getElementById('agenda-novo-data').value : '');
+  const hora = (document.getElementById('agenda-novo-hora') ? document.getElementById('agenda-novo-hora').value : '');
+
+  try {
+    const agInfo = { cliente, tel, end, obs, tipo, data, hora, salvoEm: Date.now() };
+    localStorage.setItem('sdv_ultimo_agendamento_orcamento', JSON.stringify(agInfo));
+  } catch(_) {}
 
   // Fecha o modal do agendamento
   fecharModalNovoCompromissoAgenda();
@@ -15520,6 +15631,15 @@ function toggleMenuGaleriaAgenda() {
       };
       document.addEventListener('click', closeHandler);
     }, 50);
+  }
+}
+
+
+function abrirSeletorGaleriaFotosAgenda() {
+  const inp = document.getElementById('input-galeria-agenda');
+  if (inp) {
+    inp.value = '';
+    inp.click();
   }
 }
 

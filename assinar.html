@@ -1882,6 +1882,34 @@
 
     // Grava sessão no localStorage para login imediato
     try {
+      // Recupera dados do agendamento original para salvar na O.S.
+      let histAgendamento = null;
+      try {
+        const agSalvo = localStorage.getItem('sdv_ultimo_agendamento_orcamento');
+        if (agSalvo) histAgendamento = JSON.parse(agSalvo);
+      } catch(_) {}
+
+      if (!histAgendamento) {
+        try {
+          const evs = JSON.parse(localStorage.getItem('sdv_agenda_eventos') || '[]');
+          const cLimpo = (cliNome || '').toLowerCase().trim();
+          const tLimpo = (cliTel || '').replace(/\D/g, '');
+          histAgendamento = evs.find(e => {
+            const eTel = (e.tel || '').replace(/\D/g, '');
+            const eNome = (e.cliente || '').toLowerCase().trim();
+            return (tLimpo && eTel && (eTel === tLimpo || eTel.endsWith(tLimpo) || tLimpo.endsWith(eTel))) ||
+                   (cLimpo && eNome && (eNome === cLimpo || eNome.includes(cLimpo) || cLimpo.includes(eNome)));
+          });
+        } catch(_) {}
+      }
+
+      const numLimpoOs = String(osFormatada || '').replace(/\D/g, '');
+      if (histAgendamento && numLimpoOs) {
+        try {
+          localStorage.setItem('sdv_historico_os_' + numLimpoOs, JSON.stringify(histAgendamento));
+        } catch(_) {}
+      }
+
       const sessaoCli = {
         nome: cliNome || 'Cliente Especial',
         telefone: cliTel || '',
@@ -1889,11 +1917,14 @@
         ordem: {
           numero: osFormatada,
           nome: cliNome || 'Cliente Especial',
-          dados: { tel: cliTel, nome: cliNome },
+          dados: { tel: cliTel, nome: cliNome, end: (histAgendamento && histAgendamento.end) || '' },
           etapa_servico: 2,
           status_servico_texto: 'O.S. Aprovada & Em Produção',
           status_obs: 'Assinatura digital confirmada com sucesso. Materiais enviados para fábrica.',
-          previsao_instalacao: 'Em agendamento com a equipe'
+          previsao_instalacao: 'Em agendamento com a equipe',
+          historico_agendamento: histAgendamento,
+          assinado_por: cliNome || 'Cliente',
+          assinado_em: new Date().toISOString()
         }
       };
       localStorage.setItem('sdv_cliente_sessao', JSON.stringify(sessaoCli));
