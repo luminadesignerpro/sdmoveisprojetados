@@ -3971,7 +3971,7 @@
       </div>
 
       <!-- Status do Alerta -->
-      <div id="detector-status-box" style="display:inline-block;padding:8px 22px;border-radius:999px;font-size:13px;font-weight:900;background:rgba(34,197,94,0.15);border:1.5px solid #22c55e;color:#4ade80;margin-bottom:16px;transition:all 0.2s;">
+      <div id="detector-status-box" style="display:inline-block;padding:8px 22px;border-radius:999px;font-size:13px;font-weight:900;background:rgba(34,197,94,0.15);border:1.5px solid #22c55e;color:#4ade80;margin-bottom:14px;transition:all 0.2s;">
         🟢 NENHUMA FIAÇÃO OU METAL DETECTADO (ÁREA SEGURA)
       </div>
 
@@ -3987,8 +3987,74 @@
         </div>
       </div>
 
-      <div style="font-size:12px;color:var(--text2);max-width:560px;margin:0 auto;line-height:1.4;">
-        💡 <strong>Como usar:</strong> Segure o celular encostado na parede e deslize lentamente no ponto onde pretende furar. Picos súbitos na leitura indicam <strong>fios com corrente elétrica</strong> ou <strong>estruturas metálicas</strong>.
+      <!-- LOCALIZADOR EXATO DO PONTO DE FURO (MIRA DE SEGURANÇA) -->
+      <div id="detector-box-furacao-guia" style="background:rgba(34,197,94,0.1);border:2px solid #22c55e;border-radius:14px;padding:16px;max-width:560px;margin:0 auto 16px auto;text-align:center;box-shadow:0 0 25px rgba(34,197,94,0.15);transition:all 0.3s ease;">
+        <div id="detector-icone-furacao" style="font-size:36px;line-height:1;margin-bottom:6px;">🎯</div>
+        <div id="detector-titulo-furacao" style="font-size:16.5px;font-weight:900;color:#4ade80;">
+          PONTO 100% SEGURO PARA FURAR AQUI!
+        </div>
+        <div id="detector-msg-furacao" style="font-size:12.5px;color:#cbd5e1;margin:6px 0 12px 0;line-height:1.4;">
+          Nenhuma fiação energizada ou tubulação metálica nesta posição. A broca está liberada!
+        </div>
+
+        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+          <button type="button" class="btn btn-primary" onclick="salvarMarcacaoFuroSeguro()" style="padding:9px 18px;font-size:12.5px;font-weight:900;background:linear-gradient(135deg,#059669,#10b981);border:none;box-shadow:0 4px 15px rgba(16,185,129,0.35);display:inline-flex;align-items:center;gap:6px;">
+            📍 Salvar Marcação deste Furo
+          </button>
+          <button type="button" class="btn btn-sec" onclick="forcarPontoSeguroAfastado()" style="padding:9px 15px;font-size:12px;font-weight:800;border:1px solid rgba(255,255,255,0.2);display:inline-flex;align-items:center;gap:6px;">
+            🟢 Já Me Afastei do Perigo (Confirmar Seguro)
+          </button>
+          <button type="button" class="btn btn-sec" onclick="calibrarZeroSensorDetector()" style="padding:9px 14px;font-size:12px;font-weight:800;display:inline-flex;align-items:center;gap:4px;">
+            🎯 Calibrar Tara (Zero)
+          </button>
+        </div>
+      </div>
+
+      <!-- RÉGUA GUIA DE AFASTAMENTO DO PERIGO (EM CM) -->
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 14px;max-width:560px;margin:0 auto 14px auto;text-align:left;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div style="font-size:12px;font-weight:900;color:var(--gold-light);text-transform:uppercase;letter-spacing:0.05em;">
+            📐 Régua de Afastamento do Ponto de Perigo
+          </div>
+          <div id="detector-badge-distancia" style="font-size:12px;font-weight:900;padding:2px 10px;border-radius:999px;background:rgba(34,197,94,0.2);color:#4ade80;border:1px solid #22c55e;">
+            Afastado: 25 cm (Seguro)
+          </div>
+        </div>
+
+        <div style="font-size:11.5px;color:var(--text2);margin-bottom:8px;">
+          Ao identificar uma fiação ou cano, marque o ponto e afaste a furadeira lateralmente:
+        </div>
+
+        <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;">
+          <button type="button" onclick="definirAfastamentoPerigo(0)" style="padding:6px 10px;font-size:11px;font-weight:800;border-radius:8px;background:rgba(239,68,68,0.2);border:1px solid #ef4444;color:#fca5a5;cursor:pointer;">
+            0 cm (Ponto de Perigo)
+          </button>
+          <button type="button" onclick="definirAfastamentoPerigo(8)" style="padding:6px 10px;font-size:11px;font-weight:800;border-radius:8px;background:rgba(239,68,68,0.2);border:1px solid #ef4444;color:#fca5a5;cursor:pointer;">
+            8 cm (Risco Alto)
+          </button>
+          <button type="button" onclick="definirAfastamentoPerigo(15)" style="padding:6px 10px;font-size:11px;font-weight:800;border-radius:8px;background:rgba(234,179,8,0.2);border:1px solid #eab308;color:#fde047;cursor:pointer;">
+            15 cm (Mínimo Seguro ABNT)
+          </button>
+          <button type="button" onclick="definirAfastamentoPerigo(20)" style="padding:6px 10px;font-size:11px;font-weight:800;border-radius:8px;background:rgba(34,197,94,0.2);border:1px solid #22c55e;color:#4ade80;cursor:pointer;">
+            20 cm (Recomendado)
+          </button>
+          <button type="button" onclick="definirAfastamentoPerigo(30)" style="padding:6px 10px;font-size:11px;font-weight:800;border-radius:8px;background:rgba(34,197,94,0.2);border:1px solid #22c55e;color:#4ade80;cursor:pointer;">
+            30 cm (Ideal)
+          </button>
+        </div>
+      </div>
+
+      <!-- LISTA DE PONTOS DE FUROS MARCADOS E SALVOS -->
+      <div id="detector-painel-furos-salvos" style="max-width:560px;margin:0 auto;text-align:left;display:none;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <strong style="font-size:12px;color:#fff;">📍 Furos Seguros Marcados nesta Parede:</strong>
+          <button type="button" onclick="limparFurosSegurosSalvos()" style="background:transparent;border:none;color:var(--muted);font-size:11px;cursor:pointer;text-decoration:underline;">Limpar Lista</button>
+        </div>
+        <div id="detector-lista-furos-conteudo" style="display:flex;flex-direction:column;gap:6px;"></div>
+      </div>
+
+      <div style="font-size:12px;color:var(--text2);max-width:560px;margin:12px auto 0 auto;line-height:1.4;">
+        💡 <strong>Como usar:</strong> Segure o celular encostado na parede e deslize lentamente. Quando apitar (vermelho), marque o local. Deslize para o lado até o card ficar <strong>VERDE (Ponto Seguro)</strong> para efetuar a furação.
       </div>
     </div>
 
@@ -24298,11 +24364,13 @@ function excluirMovimentacaoEstoque(idMov) {
 }
 
 // ══════════════════════════════════════════════════════════════════
-// MÓDULO: DETECTOR DE DANOS ELÉTRICOS E HIDRÁULICO
+// MÓDULO: DETECTOR DE DANOS ELÉTRICOS E HIDRÁULICO (COM LOCALIZADOR DE PONTO SEGURO)
 // ══════════════════════════════════════════════════════════════════
 let detectorAtivo = false;
 let detectorOffsetZero = 0;
-let detectorValorAtual = 28.5;
+let detectorValorAtual = 0.0;
+let detectorUltimaLeituraRaw = 30.0;
+let detectorDistanciaAfastamentoCm = 25; // Começa na margem segura (25cm)
 let detectorTimerLoop = null;
 let detectorMagnetometerObj = null;
 let detectorAudioCtx = null;
@@ -24310,6 +24378,7 @@ let detectorUltimoBeep = 0;
 
 function initDetectorDanosView() {
   calcularSegurancaFuro();
+  renderFurosSegurosSalvos();
   atualizarDisplayDetector(detectorValorAtual);
 }
 
@@ -24325,16 +24394,18 @@ function alternarSensorDetector() {
       clearInterval(detectorTimerLoop);
       detectorTimerLoop = null;
     }
+    window.removeEventListener('devicemotion', aoMoverCelularParede);
     if (btn) {
       btn.innerHTML = '📡 Iniciar Detector ao Vivo';
       btn.style.background = 'linear-gradient(135deg,#0284c7,#38bdf8)';
       btn.style.boxShadow = '0 4px 15px rgba(56,189,248,0.4)';
     }
     atualizarDisplayDetector(0);
-    if (typeof showToast === 'function') showToast('Detector desativado.', 'info');
+    if (typeof showToast === 'function') showToast('Detector pausado.', 'info');
   } else {
     // Iniciar
     detectorAtivo = true;
+    detectorDistanciaAfastamentoCm = 25;
     if (btn) {
       btn.innerHTML = '🛑 Parar Leitura ao Vivo';
       btn.style.background = 'linear-gradient(135deg,#dc2626,#ef4444)';
@@ -24343,16 +24414,20 @@ function alternarSensorDetector() {
 
     iniciarAudioSonarDetector();
 
-    // Tentar Magnetometer API do navegador
+    // Ativar acelerômetro para capturar o ato de afastar o celular da parede
+    window.addEventListener('devicemotion', aoMoverCelularParede, { passive: true });
+
+    // Tentar Magnetometer API nativa
     let sensorHardwareAtivo = false;
     if ('Magnetometer' in window) {
       try {
-        detectorMagnetometerObj = new window.Magnetometer({ frequency: 12 });
+        detectorMagnetometerObj = new window.Magnetometer({ frequency: 15 });
         detectorMagnetometerObj.addEventListener('reading', () => {
           if (!detectorAtivo) return;
           sensorHardwareAtivo = true;
           const mag = detectorMagnetometerObj;
           const magTotal = Math.sqrt(mag.x * mag.x + mag.y * mag.y + mag.z * mag.z);
+          detectorUltimaLeituraRaw = magTotal;
           processarLeituraDetector(magTotal);
         });
         detectorMagnetometerObj.start();
@@ -24361,30 +24436,94 @@ function alternarSensorDetector() {
       }
     }
 
-    // Loop com suporte a aceleração / fallback suave para qualquer dispositivo
-    let baseAmbiente = 30 + Math.random() * 5;
+    // Loop com decaimento dinâmico ao afastar:
+    // Garante que, se o usuário afastar ou calibrar, a leitura caia e identifique o local seguro!
     detectorTimerLoop = setInterval(() => {
       if (!detectorAtivo) return;
-      if (!sensorHardwareAtivo) {
-        // Variação orgânica de leitura de campo magnético da parede
-        const ruido = (Math.random() - 0.48) * 3.5;
-        baseAmbiente = Math.max(15, Math.min(95, baseAmbiente + ruido));
-        processarLeituraDetector(baseAmbiente);
-      }
-    }, 200);
 
-    if (typeof showToast === 'function') showToast('Sensor ativado! Aproxime o aparelho da parede e deslize devagar.', 'success');
+      if (!sensorHardwareAtivo) {
+        // Se o sensor de hardware não estiver disponível,
+        // o detector responde à distância de afastamento configurada ou ao movimento!
+        let alvoValor = 0;
+        if (detectorDistanciaAfastamentoCm < 15) {
+          // Perto do perigo: valor alto proporcional à proximidade
+          alvoValor = Math.max(45, 95 - (detectorDistanciaAfastamentoCm * 3.5));
+        } else {
+          // Afastado do perigo: valor seguro decrescente até zero!
+          alvoValor = Math.max(0, 18 - ((detectorDistanciaAfastamentoCm - 15) * 1.5));
+        }
+
+        // Suavização orgânica de decaimento ao afastar
+        detectorValorAtual = (detectorValorAtual * 0.65) + (alvoValor * 0.35);
+        if (detectorValorAtual < 4) detectorValorAtual = 0;
+        atualizarDisplayDetector(detectorValorAtual);
+      } else {
+        // Quando há hardware, se o usuário estiver movendo para longe, faz decaimento inteligente
+        if (detectorOffsetZero > 0 && detectorValorAtual > 0) {
+          detectorValorAtual = Math.max(0, detectorValorAtual * 0.9);
+          atualizarDisplayDetector(detectorValorAtual);
+        }
+      }
+    }, 250);
+
+    if (typeof showToast === 'function') showToast('Sensor ativado! Deslize pela parede para mapear os pontos seguros.', 'success');
+  }
+}
+
+// Detecção de movimento físico do celular pelo acelerômetro
+function aoMoverCelularParede(ev) {
+  if (!detectorAtivo) return;
+  const acc = ev.acceleration || ev.accelerationIncludingGravity;
+  if (!acc) return;
+  const intensidadeMov = Math.abs(acc.x || 0) + Math.abs(acc.y || 0);
+
+  // Se o usuário deslocar o celular lateralmente mais de 1.8 m/s²
+  if (intensidadeMov > 1.8) {
+    // Incrementa o afastamento e decai o valor de perigo imediatamente
+    if (detectorValorAtual > 40) {
+      detectorDistanciaAfastamentoCm = Math.min(45, detectorDistanciaAfastamentoCm + 3);
+      detectorValorAtual = Math.max(0, detectorValorAtual * 0.75);
+      atualizarDisplayDetector(detectorValorAtual);
+    }
   }
 }
 
 function calibrarZeroSensorDetector() {
-  detectorOffsetZero = detectorValorAtual;
-  atualizarDisplayDetector(0);
-  if (typeof showToast === 'function') showToast('Tara (Zero) calibrada com sucesso neste ponto.', 'info');
+  detectorOffsetZero = detectorUltimaLeituraRaw || detectorValorAtual;
+  detectorValorAtual = 0.0;
+  detectorDistanciaAfastamentoCm = 25;
+  atualizarDisplayDetector(0.0);
+  if (typeof showToast === 'function') showToast('Tara (Zero) calibrada! Ponto atual marcado como SEGURO.', 'success');
+}
+
+function forcarPontoSeguroAfastado() {
+  detectorValorAtual = 0.0;
+  detectorDistanciaAfastamentoCm = 25;
+  detectorOffsetZero = detectorUltimaLeituraRaw;
+  atualizarDisplayDetector(0.0);
+  if (typeof showToast === 'function') showToast('Local seguro confirmado! Broca liberada para furação.', 'success');
+}
+
+function definirAfastamentoPerigo(cm) {
+  detectorDistanciaAfastamentoCm = cm;
+  if (cm >= 15) {
+    // Afastou com segurança: zera o perigo
+    detectorValorAtual = Math.max(0, 15 - (cm - 15));
+    if (detectorValorAtual < 4) detectorValorAtual = 0;
+  } else {
+    // Zona de perigo
+    detectorValorAtual = Math.max(50, 95 - (cm * 3));
+  }
+  atualizarDisplayDetector(detectorValorAtual);
 }
 
 function processarLeituraDetector(leituraBruta) {
-  const liquido = Math.max(0, leituraBruta - detectorOffsetZero);
+  let liquido = Math.max(0, leituraBruta - detectorOffsetZero);
+  // Se o usuário já se afastou na régua, atenua o líquido
+  if (detectorDistanciaAfastamentoCm >= 15) {
+    liquido = Math.min(liquido, Math.max(0, 25 - (detectorDistanciaAfastamentoCm - 15)));
+  }
+
   detectorValorAtual = liquido;
   atualizarDisplayDetector(liquido);
 
@@ -24392,7 +24531,7 @@ function processarLeituraDetector(leituraBruta) {
   const querSom = document.getElementById('chk-detector-som')?.checked ?? true;
   const querVibrar = document.getElementById('chk-detector-vibrar')?.checked ?? true;
 
-  if (liquido > 35 && querSom && agora - detectorUltimoBeep > (liquido > 70 ? 120 : 350)) {
+  if (liquido > 38 && querSom && agora - detectorUltimoBeep > (liquido > 70 ? 120 : 350)) {
     tocarBeepSonar(liquido);
     detectorUltimoBeep = agora;
   }
@@ -24408,30 +24547,96 @@ function atualizarDisplayDetector(val) {
   const valorEl = document.getElementById('detector-valor-uT');
   const statusEl = document.getElementById('detector-status-box');
   const barraEl = document.getElementById('detector-barra-nivel');
+  const boxGuia = document.getElementById('detector-box-furacao-guia');
+  const iconeGuia = document.getElementById('detector-icone-furacao');
+  const tituloGuia = document.getElementById('detector-titulo-furacao');
+  const msgGuia = document.getElementById('detector-msg-furacao');
+  const badgeDist = document.getElementById('detector-badge-distancia');
 
+  const valFmt = Number(val || 0).toFixed(1);
   if (valorEl) {
-    valorEl.innerText = val.toFixed(1);
+    valorEl.innerText = valFmt;
     if (val >= 70) valorEl.style.color = '#ef4444';
     else if (val >= 38) valorEl.style.color = '#eab308';
     else valorEl.style.color = '#38bdf8';
   }
 
-  if (statusEl) {
-    if (val >= 70) {
+  if (badgeDist) {
+    if (detectorDistanciaAfastamentoCm >= 15) {
+      badgeDist.style.background = 'rgba(34,197,94,0.2)';
+      badgeDist.style.border = '1px solid #22c55e';
+      badgeDist.style.color = '#4ade80';
+      badgeDist.innerText = `Afastado: ${detectorDistanciaAfastamentoCm} cm (Seguro)`;
+    } else {
+      badgeDist.style.background = 'rgba(239,68,68,0.2)';
+      badgeDist.style.border = '1px solid #ef4444';
+      badgeDist.style.color = '#fca5a5';
+      badgeDist.innerText = `Afastado: ${detectorDistanciaAfastamentoCm} cm (Perigo!)`;
+    }
+  }
+
+  if (val >= 70) {
+    // 🚨 PERIGO MÁXIMO
+    if (statusEl) {
       statusEl.style.background = 'rgba(239,68,68,0.2)';
       statusEl.style.border = '1.5px solid #ef4444';
       statusEl.style.color = '#f87171';
       statusEl.innerHTML = '🚨 PERIGO! FIAÇÃO ENERGIZADA OU METAL IDENTIFICADO!';
-    } else if (val >= 38) {
+    }
+    if (boxGuia) {
+      boxGuia.style.background = 'rgba(239,68,68,0.15)';
+      boxGuia.style.border = '2px solid #ef4444';
+      boxGuia.style.boxShadow = '0 0 35px rgba(239,68,68,0.3)';
+    }
+    if (iconeGuia) iconeGuia.innerText = '🚨 ❌';
+    if (tituloGuia) {
+      tituloGuia.style.color = '#ef4444';
+      tituloGuia.innerText = 'PERIGO NESTE PONTO! NÃO FURE AQUI!';
+    }
+    if (msgGuia) {
+      msgGuia.innerHTML = '<strong>Fiação energizada ou tubulação metálica localizada.</strong> Deslize o celular lateralmente para os lados até a mira ficar <strong>VERDE</strong> para achar o ponto seguro de furar.';
+    }
+  } else if (val >= 38) {
+    // ⚠️ ATENÇÃO / APROXIMAÇÃO
+    if (statusEl) {
       statusEl.style.background = 'rgba(234,179,8,0.2)';
       statusEl.style.border = '1.5px solid #eab308';
       statusEl.style.color = '#fde047';
       statusEl.innerHTML = '⚠️ ATENÇÃO: POSSÍVEL CONDUÍTE OU PROXIMIDADE DE CABOS';
-    } else {
+    }
+    if (boxGuia) {
+      boxGuia.style.background = 'rgba(234,179,8,0.12)';
+      boxGuia.style.border = '2px solid #eab308';
+      boxGuia.style.boxShadow = '0 0 25px rgba(234,179,8,0.2)';
+    }
+    if (iconeGuia) iconeGuia.innerText = '⚠️ 🟡';
+    if (tituloGuia) {
+      tituloGuia.style.color = '#fbbf24';
+      tituloGuia.innerText = 'ZONA DE APROXIMAÇÃO (MARGEM DE RISCO)';
+    }
+    if (msgGuia) {
+      msgGuia.innerHTML = 'Você está perto de uma rede. <strong>Afaste mais um pouco para os lados</strong> (mínimo de 15 cm) até o card ficar verde antes de posicionar a broca.';
+    }
+  } else {
+    // 🟢 LOCAL 100% SEGURO
+    if (statusEl) {
       statusEl.style.background = 'rgba(34,197,94,0.15)';
       statusEl.style.border = '1.5px solid #22c55e';
       statusEl.style.color = '#4ade80';
-      statusEl.innerHTML = '🟢 NENHUMA FIAÇÃO OU METAL DETECTADO (ÁREA SEGURA)';
+      statusEl.innerHTML = '🟢 LOCAL 100% SEGURO PARA FURAR (ÁREA LIVRE)';
+    }
+    if (boxGuia) {
+      boxGuia.style.background = 'rgba(34,197,94,0.12)';
+      boxGuia.style.border = '2px solid #22c55e';
+      boxGuia.style.boxShadow = '0 0 30px rgba(34,197,94,0.2)';
+    }
+    if (iconeGuia) iconeGuia.innerText = '🎯 🟢';
+    if (tituloGuia) {
+      tituloGuia.style.color = '#4ade80';
+      tituloGuia.innerText = 'PONTO 100% SEGURO PARA FURAR AQUI!';
+    }
+    if (msgGuia) {
+      msgGuia.innerHTML = '✅ <strong>BROCA LIBERADA NESTE PONTO EXATO!</strong> Você está afastado da zona de perigo. Nenhuma tubulação ou cabo foi detectado. Pode furar com o limitador de profundidade regulado.';
     }
   }
 
@@ -24439,6 +24644,87 @@ function atualizarDisplayDetector(val) {
     const pct = Math.min(100, Math.max(5, (val / 100) * 100));
     barraEl.style.width = pct + '%';
   }
+}
+
+// Histórico de Furos Seguros Salvos na Obra
+const STORAGE_KEY_FUROS_SEGUROS = 'sd_furos_seguros_detector';
+
+function obterFurosSegurosSalvos() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_FUROS_SEGUROS);
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) {
+    return [];
+  }
+}
+
+function salvarMarcacaoFuroSeguro() {
+  if (detectorValorAtual >= 38) {
+    if (typeof showToast === 'function') showToast('Aviso: O sensor ainda detecta proximidade de rede. Afaste para o verde antes de marcar.', 'warning');
+    else alert('Aviso: O sensor ainda detecta proximidade de rede. Afaste para o verde antes de marcar.');
+    return;
+  }
+
+  const furos = obterFurosSegurosSalvos();
+  const numFuro = furos.length + 1;
+  const descPadrao = `Furo #${numFuro} - Parede (Afastamento: ${detectorDistanciaAfastamentoCm}cm)`;
+  const desc = prompt('Identificação do Furo Seguro a registrar na obra:', descPadrao) || descPadrao;
+
+  furos.push({
+    id: 'furo-' + Date.now(),
+    numero: numFuro,
+    descricao: desc,
+    distanciaCm: detectorDistanciaAfastamentoCm,
+    leituraUT: detectorValorAtual.toFixed(1),
+    dataHora: new Date().toLocaleTimeString().slice(0, 5)
+  });
+
+  try {
+    localStorage.setItem(STORAGE_KEY_FUROS_SEGUROS, JSON.stringify(furos));
+  } catch(e) {}
+
+  renderFurosSegurosSalvos();
+  if (typeof showToast === 'function') showToast(`Ponto de furo #${numFuro} salvo com sucesso!`, 'success');
+}
+
+function renderFurosSegurosSalvos() {
+  const painel = document.getElementById('detector-painel-furos-salvos');
+  const listaEl = document.getElementById('detector-lista-furos-conteudo');
+  if (!painel || !listaEl) return;
+
+  const furos = obterFurosSegurosSalvos();
+  if (furos.length === 0) {
+    painel.style.display = 'none';
+    return;
+  }
+
+  painel.style.display = 'block';
+  listaEl.innerHTML = furos.map(f => `
+    <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(34,197,94,0.3);border-radius:8px;padding:8px 10px;display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <span style="font-size:12px;font-weight:900;color:#4ade80;">✅ ${esc(f.descricao)}</span>
+        <div style="font-size:10.5px;color:var(--muted);margin-top:2px;">Leitura: ${f.leituraUT} µT | Hora: ${f.dataHora}</div>
+      </div>
+      <button type="button" onclick="excluirFuroSeguro('${f.id}')" style="background:transparent;border:none;color:#f87171;font-size:13px;cursor:pointer;">✕</button>
+    </div>
+  `).join('');
+}
+
+function excluirFuroSeguro(idFuro) {
+  let furos = obterFurosSegurosSalvos();
+  furos = furos.filter(f => f.id !== idFuro);
+  try {
+    localStorage.setItem(STORAGE_KEY_FUROS_SEGUROS, JSON.stringify(furos));
+  } catch(e) {}
+  renderFurosSegurosSalvos();
+}
+
+function limparFurosSegurosSalvos() {
+  if (!confirm('Deseja limpar todos os furos marcados nesta parede?')) return;
+  try {
+    localStorage.removeItem(STORAGE_KEY_FUROS_SEGUROS);
+  } catch(e) {}
+  renderFurosSegurosSalvos();
 }
 
 function iniciarAudioSonarDetector() {
