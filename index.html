@@ -1625,9 +1625,31 @@
       cursor: grabbing !important;
       animation: tabWiggleAnim 0.35s ease-in-out infinite alternate !important;
     }
+    .tab.tab-drop-target {
+      border: 2px dashed #38bdf8 !important;
+      background: rgba(56, 189, 248, 0.28) !important;
+      color: #fff !important;
+      transform: scale(1.06) !important;
+      box-shadow: 0 0 25px rgba(56, 189, 248, 0.7) !important;
+      z-index: 9999 !important;
+      transition: all 0.1s ease !important;
+    }
+    .tab.tab-selecionada-para-mover {
+      border: 2.5px solid #fde047 !important;
+      background: linear-gradient(135deg, rgba(201,168,76,0.45), rgba(16,16,24,0.98)) !important;
+      color: #fff !important;
+      box-shadow: 0 0 28px rgba(253, 224, 71, 0.85) !important;
+      transform: scale(1.06) !important;
+      z-index: 9999 !important;
+      animation: tabWiggleAnim 0.4s ease-in-out infinite alternate !important;
+    }
+    .tabs.modo-organizar-ativo .tab {
+      border-color: rgba(201,168,76,0.35);
+      cursor: pointer;
+    }
     @keyframes tabWiggleAnim {
-      0% { transform: scale(1.12) rotate(-1.5deg); }
-      100% { transform: scale(1.12) rotate(1.5deg); }
+      0% { transform: scale(1.08) rotate(-1.5deg); }
+      100% { transform: scale(1.08) rotate(1.5deg); }
     }
     .tab-drag-hint-toast {
       position: fixed;
@@ -1874,6 +1896,26 @@
       } catch(_) {}
     })();
   </script>
+
+  <!-- BANNER DO MODO DE ORGANIZAÇÃO PRECISA DAS ABAS -->
+  <div id="banner-organizar-abas" style="display:none;background:linear-gradient(135deg, rgba(201,168,76,0.25), rgba(16,18,27,0.98));border:1.5px solid var(--gold);border-radius:12px;padding:12px 14px;margin-bottom:12px;box-shadow:0 8px 25px rgba(0,0,0,0.6);align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+    <div>
+      <div style="font-size:13px;font-weight:900;color:var(--gold-light);display:flex;align-items:center;gap:6px;">
+        <span>🔀</span> <span>Modo Organizar Abas com Precisão</span>
+      </div>
+      <div id="banner-organizar-msg" style="font-size:11.5px;color:#cbd5e1;margin-top:3px;">
+        1º Toque na aba que quer mover. 2º Toque na posição onde quer deixar.
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;">
+      <button type="button" onclick="restaurarOrdemAbasPadrao()" class="btn btn-sec" style="padding:7px 11px;font-size:11px;font-weight:800;border-radius:8px;">
+        🔄 Padrão
+      </button>
+      <button type="button" onclick="alternarModoOrganizarAbas(false)" class="btn btn-primary" style="padding:7px 16px;font-size:12px;font-weight:900;background:linear-gradient(135deg,#059669,#10b981);border:none;border-radius:8px;box-shadow:0 3px 12px rgba(16,185,129,0.4);">
+        ✓ Concluir
+      </button>
+    </div>
+  </div>
 
   <!-- TABS (20 ABAS PADRONIZADAS NO MESMO TAMANHO EM GRID 4 COLUNAS) -->
   <div class="tabs">
@@ -18978,45 +19020,84 @@ function restaurarOrdemAbasPadrao() {
       if (el && el.parentNode === container) container.appendChild(el);
     });
   }
-  const msg = document.getElementById('cfg-emp-msg');
-  if (msg) {
-    msg.innerHTML = '<span style="color:#10b981;">✅ Ordem padrão das abas restaurada com sucesso!</span>';
-    setTimeout(() => { msg.innerHTML = ''; }, 3500);
+  const bannerMsg = document.getElementById('banner-organizar-msg');
+  if (bannerMsg) bannerMsg.innerHTML = '✅ Ordem padrão restaurada!';
+  if (typeof showToast === 'function') showToast('✅ Ordem padrão das abas restaurada!', 'success');
+}
+
+let modoOrganizarAbasAtivo = false;
+let abaOrigemSelecionada = null;
+
+function alternarModoOrganizarAbas(forcar) {
+  const container = document.querySelector('.tabs');
+  const banner = document.getElementById('banner-organizar-abas');
+  const btnTop = document.getElementById('btn-top-organizar-abas');
+  if (!container) return;
+
+  if (typeof forcar === 'boolean') {
+    modoOrganizarAbasAtivo = forcar;
+  } else {
+    modoOrganizarAbasAtivo = !modoOrganizarAbasAtivo;
+  }
+
+  container.classList.toggle('modo-organizar-ativo', modoOrganizarAbasAtivo);
+  if (banner) banner.style.display = modoOrganizarAbasAtivo ? 'flex' : 'none';
+
+  if (btnTop) {
+    btnTop.style.background = modoOrganizarAbasAtivo ? 'linear-gradient(135deg, rgba(201,168,76,0.35), #2a2510)' : '#181824';
+    btnTop.style.borderColor = modoOrganizarAbasAtivo ? 'var(--gold)' : 'rgba(201,168,76,0.35)';
+    btnTop.innerHTML = modoOrganizarAbasAtivo ? '✓ Concluir Edição' : '🔀 Organizar Abas';
+  }
+
+  // Limpar seleção anterior
+  if (abaOrigemSelecionada) {
+    abaOrigemSelecionada.classList.remove('tab-selecionada-para-mover');
+    abaOrigemSelecionada = null;
+  }
+
+  if (modoOrganizarAbasAtivo) {
+    const bannerMsg = document.getElementById('banner-organizar-msg');
+    if (bannerMsg) {
+      bannerMsg.innerHTML = '👉 <strong>1º Passo:</strong> Toque no botão que você quer mover.';
+    }
+    try { if (navigator.vibrate) navigator.vibrate(30); } catch(_) {}
+    if (typeof showToast === 'function') {
+      showToast('🔀 Modo Organizar ativado! Toque no botão que quer mover.', 'info');
+    }
+  } else {
+    const tabs = Array.from(container.querySelectorAll('.tab'));
+    const order = tabs.map(t => t.id).filter(Boolean);
+    localStorage.setItem('sdm_tabs_custom_order', JSON.stringify(order));
+    try { if (navigator.vibrate) navigator.vibrate([20, 30]); } catch(_) {}
+    if (typeof showToast === 'function') {
+      showToast('✨ Posição salva! Suas abas foram organizadas.', 'success');
+    }
   }
 }
 
-function abrirModalOrganizarAbas() {
-  const modal = document.getElementById('modal-organizar-abas');
-  const lista = document.getElementById('lista-organizar-abas-conteudo');
+function trocarPosicaoAbas(tabA, tabB) {
   const container = document.querySelector('.tabs');
-  if (!modal || !lista || !container) return;
+  if (!container || !tabA || !tabB || tabA === tabB) return;
 
-  const tabs = Array.from(container.querySelectorAll('.tab'));
-  lista.innerHTML = tabs.map((t, idx) => {
-    const clone = t.cloneNode(true);
-    const badge = clone.querySelector('#badge-msg-clientes');
-    if (badge) badge.remove();
-    const texto = clone.innerText.trim().replace(/\s+/g, ' ');
+  const placeholder = document.createElement('div');
+  container.insertBefore(placeholder, tabA);
+  container.insertBefore(tabA, tabB);
+  container.insertBefore(tabB, placeholder);
+  placeholder.remove();
 
-    return `
-      <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:8px 12px;">
-        <span style="font-size:12.5px;font-weight:800;color:#fff;display:flex;align-items:center;gap:8px;">
-          <span style="color:var(--gold-light);font-size:11px;background:rgba(201,168,76,0.15);padding:2px 6px;border-radius:4px;">#${idx + 1}</span> ${esc(texto)}
-        </span>
-        <div style="display:flex;gap:6px;">
-          <button type="button" onclick="moverAbaPosicao('${t.id}', -1)" ${idx === 0 ? 'disabled style="opacity:0.25;cursor:not-allowed;"' : ''} style="width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);color:#fff;font-size:14px;font-weight:900;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;">⬆️</button>
-          <button type="button" onclick="moverAbaPosicao('${t.id}', 1)" ${idx === tabs.length - 1 ? 'disabled style="opacity:0.25;cursor:not-allowed;"' : ''} style="width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);color:#fff;font-size:14px;font-weight:900;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;">⬇️</button>
-        </div>
-      </div>
-    `;
-  }).join('');
+  const novaOrdem = Array.from(container.querySelectorAll('.tab')).map(t => t.id).filter(Boolean);
+  localStorage.setItem('sdm_tabs_custom_order', JSON.stringify(novaOrdem));
 
-  modal.style.display = 'flex';
+  try { if (navigator.vibrate) navigator.vibrate([35, 25]); } catch(_) {}
+}
+
+function abrirModalOrganizarAbas() {
+  // O botão de topo agora ativa o modo interativo direto na grade, com máxima precisão!
+  alternarModoOrganizarAbas(true);
 }
 
 function fecharModalOrganizarAbas() {
-  const modal = document.getElementById('modal-organizar-abas');
-  if (modal) modal.style.display = 'none';
+  alternarModoOrganizarAbas(false);
 }
 
 function moverAbaPosicao(tabId, direcao) {
@@ -19035,7 +19116,6 @@ function moverAbaPosicao(tabId, direcao) {
   localStorage.setItem('sdm_tabs_custom_order', JSON.stringify(order));
 
   try { if (navigator.vibrate) navigator.vibrate(15); } catch(_) {}
-  abrirModalOrganizarAbas();
 }
 
 (function initReordenacaoAbas() {
@@ -19045,10 +19125,10 @@ function moverAbaPosicao(tabId, direcao) {
 
     let isDragging = false;
     let draggedTab = null;
+    let currentDropTarget = null;
     let startX = 0, startY = 0;
+    let lastClientX = 0, lastClientY = 0;
     let holdTimer = null;
-    let lastTapTime = 0;
-    let lastTapTab = null;
     let toastEl = null;
 
     function showToast(msg, dur = 2000) {
@@ -19071,17 +19151,20 @@ function moverAbaPosicao(tabId, direcao) {
       if (isDragging) return;
       isDragging = true;
       draggedTab = tab;
+      currentDropTarget = null;
 
       try { if (navigator.vibrate) navigator.vibrate([45, 30]); } catch(_) {}
 
       container.classList.add('tabs-is-reordering');
       tab.classList.add('tab-reordering');
 
-      showToast('🖐️ <b>Organizando:</b> Arraste para reposicionar no menu!', 0);
+      showToast('🖐️ Arraste até o botão de destino e solte!', 0);
     }
 
     function moveDrag(clientX, clientY) {
       if (!isDragging || !draggedTab) return;
+      lastClientX = clientX;
+      lastClientY = clientY;
 
       draggedTab.style.pointerEvents = 'none';
       const under = document.elementFromPoint(clientX, clientY);
@@ -19089,8 +19172,7 @@ function moverAbaPosicao(tabId, direcao) {
 
       let targetTab = under ? under.closest('.tab') : null;
 
-      // Se o toque estiver no espaço entre as abas ou na borda do grid,
-      // calcula matematicamente a aba mais próxima para encaixe perfeito!
+      // Se o toque estiver entre abas ou nas bordas, calcula matematicamente a aba mais próxima
       if (!targetTab) {
         const allTabs = Array.from(container.querySelectorAll('.tab')).filter(t => t !== draggedTab);
         let menorDist = Infinity;
@@ -19110,27 +19192,19 @@ function moverAbaPosicao(tabId, direcao) {
         }
       }
 
+      // IMPORTANTE: NÃO FAZER reflow contínuo no DOM durante o movimento!
+      // Apenas iluminar visualmente o alvo exato com borda azul tracejada (.tab-drop-target)
       if (targetTab && targetTab !== draggedTab && targetTab.parentNode === container) {
-        const rect = targetTab.getBoundingClientRect();
-        const midX = rect.left + rect.width / 2;
-        const midY = rect.top + rect.height / 2;
-
-        const isAfter = (clientY > midY + 4) || (clientY >= rect.top && clientY <= rect.bottom && clientX > midX);
-
-        if (isAfter) {
-          container.insertBefore(draggedTab, targetTab.nextSibling);
-        } else {
-          container.insertBefore(draggedTab, targetTab);
+        if (currentDropTarget !== targetTab) {
+          if (currentDropTarget) currentDropTarget.classList.remove('tab-drop-target');
+          currentDropTarget = targetTab;
+          targetTab.classList.add('tab-drop-target');
+          try { if (navigator.vibrate) navigator.vibrate(12); } catch(_) {}
         }
-
-        try { if (navigator.vibrate) navigator.vibrate(8); } catch(_) {}
       } else {
-        // Encaixe seguro ao arrastar para a parte inferior/final da grade
-        const rectC = container.getBoundingClientRect();
-        if (clientY > rectC.bottom - 40) {
-          container.appendChild(draggedTab);
-        } else if (clientY < rectC.top + 35) {
-          container.insertBefore(draggedTab, container.firstChild);
+        if (currentDropTarget) {
+          currentDropTarget.classList.remove('tab-drop-target');
+          currentDropTarget = null;
         }
       }
     }
@@ -19138,22 +19212,39 @@ function moverAbaPosicao(tabId, direcao) {
     function endDrag() {
       if (!isDragging || !draggedTab) return;
 
+      // SOLTA COM PRECISÃO NO ALVO ILUMINADO!
+      if (currentDropTarget && currentDropTarget !== draggedTab && currentDropTarget.parentNode === container) {
+        const rect = currentDropTarget.getBoundingClientRect();
+        const midX = rect.left + rect.width / 2;
+        const isAfter = (lastClientX > midX);
+
+        if (isAfter) {
+          container.insertBefore(draggedTab, currentDropTarget.nextSibling);
+        } else {
+          container.insertBefore(draggedTab, currentDropTarget);
+        }
+        currentDropTarget.classList.remove('tab-drop-target');
+        currentDropTarget = null;
+      }
+
       draggedTab.classList.remove('tab-reordering');
       container.classList.remove('tabs-is-reordering');
 
-      try { if (navigator.vibrate) navigator.vibrate([25, 40]); } catch(_) {}
+      try { if (navigator.vibrate) navigator.vibrate([30, 40]); } catch(_) {}
 
       const tabs = Array.from(container.querySelectorAll('.tab'));
       const order = tabs.map(t => t.id).filter(Boolean);
       localStorage.setItem('sdm_tabs_custom_order', JSON.stringify(order));
 
-      showToast('✨ <b>Posição salva!</b> Suas abas foram organizadas.', 2200);
+      showToast('✨ <b>Posição salva!</b> O botão foi fixado com precisão.', 2200);
 
       isDragging = false;
       draggedTab = null;
     }
 
     function handlePointerDown(e) {
+      if (modoOrganizarAbasAtivo) return; // No modo tocar-para-mover, não inicia drag acidental
+
       const tab = e.target.closest('.tab');
       if (!tab) return;
 
@@ -19161,29 +19252,21 @@ function moverAbaPosicao(tabId, direcao) {
       startX = touch.clientX;
       startY = touch.clientY;
 
-      const now = Date.now();
-      const isDoubleTap = (lastTapTab === tab && (now - lastTapTime) < 450);
-      lastTapTime = now;
-      lastTapTab = tab;
-
       clearTimeout(holdTimer);
-
-      // Agilidade no toque: 140ms para duplo-toque, 220ms para segurar
-      const delay = isDoubleTap ? 140 : 220;
-
       holdTimer = setTimeout(() => {
         startDrag(tab);
-      }, delay);
+      }, 260);
     }
 
     function handlePointerMove(e) {
+      if (modoOrganizarAbasAtivo) return;
+
       const touch = e.touches ? e.touches[0] : e;
       const dx = touch.clientX - startX;
       const dy = touch.clientY - startY;
 
       if (!isDragging) {
-        // Tolerância de 22px para movimentos naturais do dedo sem cancelar
-        if (Math.hypot(dx, dy) > 22) {
+        if (Math.hypot(dx, dy) > 20) {
           clearTimeout(holdTimer);
         }
         return;
@@ -19200,7 +19283,54 @@ function moverAbaPosicao(tabId, direcao) {
       }
     }
 
+    // Clique nas abas: navegação normal OU seleção precisa no Modo Organizar
     container.addEventListener('click', (e) => {
+      const tab = e.target.closest('.tab');
+      if (!tab) return;
+
+      if (modoOrganizarAbasAtivo) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const bannerMsg = document.getElementById('banner-organizar-msg');
+        const clone = tab.cloneNode(true);
+        const b = clone.querySelector('#badge-msg-clientes'); if (b) b.remove();
+        const nomeTab = clone.innerText.trim().replace(/\s+/g, ' ');
+
+        if (!abaOrigemSelecionada) {
+          // 1º Passo: Selecionar o botão que vai mover
+          abaOrigemSelecionada = tab;
+          tab.classList.add('tab-selecionada-para-mover');
+          if (bannerMsg) {
+            bannerMsg.innerHTML = `📍 <strong>Mover "${esc(nomeTab)}" para onde?</strong> Toque agora no botão onde quer deixar.`;
+          }
+          try { if (navigator.vibrate) navigator.vibrate(30); } catch(_) {}
+        } else if (abaOrigemSelecionada === tab) {
+          // Deselecionar se tocou no mesmo
+          tab.classList.remove('tab-selecionada-para-mover');
+          abaOrigemSelecionada = null;
+          if (bannerMsg) {
+            bannerMsg.innerHTML = '👉 <strong>1º Passo:</strong> Toque no botão que você quer mover.';
+          }
+        } else {
+          // 2º Passo: Toque no destino -> Troca instantânea com 100% de precisão!
+          const tabOrigem = abaOrigemSelecionada;
+          const cloneOrig = tabOrigem.cloneNode(true);
+          const b2 = cloneOrig.querySelector('#badge-msg-clientes'); if (b2) b2.remove();
+          const nomeOrigem = cloneOrig.innerText.trim().replace(/\s+/g, ' ');
+
+          tabOrigem.classList.remove('tab-selecionada-para-mover');
+          abaOrigemSelecionada = null;
+
+          trocarPosicaoAbas(tabOrigem, tab);
+
+          if (bannerMsg) {
+            bannerMsg.innerHTML = `✅ <strong>"${esc(nomeOrigem)}"</strong> colocado no lugar de <strong>"${esc(nomeTab)}"</strong>! Toque em outro para continuar ou em ✓ Concluir.`;
+          }
+        }
+        return false;
+      }
+
       if (isDragging) {
         e.preventDefault();
         e.stopPropagation();
