@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <!-- PWA Automático: Manifest + Meta Tags + Service Worker -->
@@ -1862,7 +1862,7 @@
     <button id="tab-orcamento" class="tab active" data-tab="orcamento" onclick="goTab('orcamento')">📋 Orçamento</button>
     <button id="tab-historico" class="tab" data-tab="historico" onclick="goTab('historico')">🗂️ Histórico</button>
     <button id="tab-financeiro" class="tab" data-tab="financeiro" onclick="goTab('financeiro')">💰 Financeiro</button>
-    <button id="tab-agenda" class="tab" data-tab="agenda" onclick="goTab('agenda')">📅 Agenda</button>
+    <button id="tab-agenda" class="tab" data-tab="agenda" onclick="goTab('agenda')" title="Agenda Pessoal de Compromissos e Visitas">📅 Agenda Pessoal</button>
     <button id="tab-produtos" class="tab" data-tab="produtos" onclick="goTab('produtos')">📦 Produtos & Serviços</button>
     <button id="tab-empresa" class="tab" data-tab="empresa" onclick="goTab('empresa')">🏢 Dados da Empresa</button>
     <button id="tab-clientes" class="tab" data-tab="clientes" onclick="goTab('clientes')">👤 Clientes</button>
@@ -2304,10 +2304,9 @@
     <!-- Lista de Agendamentos -->
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
-        <div class="card-title" style="margin-bottom:0;">🕒 Próximos Compromissos & Visitas</div>
+        <div class="card-title" style="margin-bottom:0;">🕒 Agenda Pessoal – Próximos Compromissos & Visitas</div>
         <div style="display:flex;gap:6px;">
-          <button type="button" class="btn-filter-agenda active" id="btn-agenda-filtro-pendentes" onclick="filtrarAgenda('pendentes')">Pendentes</button>
-          <button type="button" class="btn-filter-agenda" id="btn-agenda-filtro-todos" onclick="filtrarAgenda('todos')">Todos</button>
+          <button type="button" class="btn-filter-agenda active" id="btn-agenda-filtro-todos" onclick="filtrarAgenda('todos')">Todos</button>
           <button type="button" class="btn-filter-agenda" id="btn-agenda-filtro-concluidos" onclick="filtrarAgenda('concluidos')">Concluídos</button>
           <button type="button" class="btn-filter-agenda" id="btn-agenda-filtro-historico" onclick="filtrarAgenda('historico')">Histórico</button>
         </div>
@@ -9620,7 +9619,7 @@ function renderHist() {
           ${btnVerAssinatura}
           ${btnPdf}
           <button class="btn btn-whats btn-sm" onclick="enviarWhatsOs('${o.id}')" title="Enviar WhatsApp com links de aprovação">📱 WhatsApp</button>
-          <button class="btn btn-sm" onclick="abrirPortalClienteComOs('${o.id}')" style="background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.5);color:var(--gold-light);font-weight:800;" title="Abrir Portal do Cliente com esta OS">🚀 Portal</button>
+          <button class="btn btn-sm" onclick="abrirPortalClienteComOs('${o.id}', '${esc(o.numero)}', '${esc(o.nome)}')" style="background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.5);color:var(--gold-light);font-weight:800;" title="Abrir Portal do Cliente com esta OS">🚀 Portal</button>
           <button class="btn btn-sec btn-sm" onclick="editarOs('${o.id}')">✏️ Editar</button>
           <button class="btn btn-danger btn-sm" onclick="deletarOs('${o.id}')">✕</button>
         </div>
@@ -11902,7 +11901,67 @@ function imprimirFolhaPonto() {
           Diretoria / RH
         </div>
       </div>
-    </body>
+    
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!--  MODAL: AVISO DE CONFLITO DE HORÁRIO NA AGENDA PESSOAL             -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<div id="modal-conflito-horario-agenda" class="modal-overlay" style="display:none;z-index:999999;align-items:center;justify-content:center;background:rgba(0,0,0,0.85);backdrop-filter:blur(6px);">
+  <div class="modal" style="max-width:440px;width:92%;background:linear-gradient(135deg,#131320,#0b0c16);border:2px solid #f59e0b;box-shadow:0 12px 40px rgba(245,158,11,0.35);border-radius:18px;padding:22px;color:#fff;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+      <span style="font-size:26px;">⚠️</span>
+      <div>
+        <div style="font-size:16px;font-weight:900;color:#fbbf24;">Atenção: Horário Ocupado ou Próximo!</div>
+        <div style="font-size:12px;color:var(--muted);">Já existe um compromisso agendado para este horário</div>
+      </div>
+    </div>
+    
+    <div id="conflito-detalhes-box" style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:12px;padding:12px;margin-bottom:16px;font-size:13px;line-height:1.5;">
+      <!-- Preenchido via JS -->
+    </div>
+
+    <p style="font-size:12px;color:#cbd5e1;margin-bottom:16px;">
+      Você deseja <strong>manter e marcar mesmo assim</strong> ou prefere <strong>reagendar para outro horário livre</strong>?
+    </p>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button type="button" onclick="confirmarMarcarMesmoComConflito()" style="flex:1;min-width:140px;padding:11px;background:linear-gradient(135deg,#16a34a,#15803d);border:none;border-radius:10px;color:#fff;font-weight:900;font-size:12.5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 4px 14px rgba(22,163,74,0.3);">
+        <span>✅</span> <span>Marcar Mesmo Assim</span>
+      </button>
+      <button type="button" id="btn-reagendar-conflito" onclick="reagendarConflitoAgenda()" style="flex:1;min-width:140px;padding:11px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);border:none;border-radius:10px;color:#fff;font-weight:900;font-size:12.5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 4px 14px rgba(59,130,246,0.3);">
+        <span>🔄</span> <span>Reagendar / Mudar</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+function mostrarModalAlertaConflito(dados) {
+  const m = document.getElementById('modal-conflito-horario-agenda');
+  const box = document.getElementById('conflito-detalhes-box');
+  const btnReag = document.getElementById('btn-reagendar-conflito');
+  if (!m || !box) return;
+
+  const dataFmt = dados.data ? dados.data.split('-').reverse().join('/') : '';
+  const tempoAviso = dados.diff === 0 
+    ? '<span style="color:#ef4444;font-weight:800;">(EXATAMENTE NO MESMO HORÁRIO!)</span>' 
+    : `<span style="color:#fbbf24;font-weight:700;">(Apenas ${dados.diff} min de diferença!)</span>`;
+
+  box.innerHTML = `
+    <div style="font-weight:800;color:#fff;margin-bottom:4px;">👤 ${dados.cliente || 'Compromisso existente'}</div>
+    <div style="color:var(--gold-light);font-weight:700;">📋 ${dados.tipo || 'Atendimento'}</div>
+    <div style="color:#fff;margin-top:4px;">📅 ${dataFmt} às <strong>${dados.hora}</strong> ${tempoAviso}</div>
+    ${dados.end ? `<div style="color:#94a3b8;font-size:11.5px;margin-top:2px;">📍 ${dados.end}</div>` : ''}
+  `;
+
+  if (btnReag) {
+    btnReag.setAttribute('onclick', `reagendarConflitoAgenda('${dados.origem || 'agenda-novo-hora'}')`);
+  }
+
+  m.style.display = 'flex';
+}
+</script>
+
+</body>
     </html>
   `;
 
@@ -14377,7 +14436,7 @@ function excluirLancamentoFinanceiro(id) {
 // ══════════════════════════════════════════════
 //  MÓDULO AGENDA (VISITAS, MEDIÇÕES & INSTALAÇÕES)
 // ══════════════════════════════════════════════
-let agendaFiltroAtual = 'pendentes';
+let agendaFiltroAtual = 'todos';
 let editandoAgendaId = null;
 
 function formatarTempoNotificacao(minutos) {
@@ -14877,7 +14936,15 @@ function renderAgenda() {
   container.innerHTML = filtrados.map(ev => {
     const isHoje = ev.data === hojeStr && !ev.concluido;
     const zapClean = (ev.tel || '').replace(/\D/g, '');
-    const zapMsg = encodeURIComponent(`Olá ${ev.cliente || ''}, confirmando o seu agendamento de *${ev.tipo || 'atendimento'}* para o dia *${ev.data ? ev.data.split('-').reverse().join('/') : ''}* às *${ev.hora || ''}* pela SD Móveis Projetados.`);
+    const dataFmt = ev.data ? ev.data.split('-').reverse().join('/') : '';
+    const numOsVinculada = (ev.os || ev.numero_os || (typeof historico !== 'undefined' ? (historico.find(o => (o.nome || '').toLowerCase().trim() === (ev.cliente || '').toLowerCase().trim()) || {}).numero : '') || '#0007');
+    const baseSiteUrl = (typeof window !== 'undefined' && window.location.origin) ? (window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '')) : 'https://sdmoveisprojetados-zeta.vercel.app';
+    const linkConfirmar = `${baseSiteUrl}/cliente.html?os=${encodeURIComponent(numOsVinculada)}&acao=confirmar`;
+    const linkReagendar = `${baseSiteUrl}/cliente.html?os=${encodeURIComponent(numOsVinculada)}&acao=reagendar`;
+    const linkAvaliar = `${baseSiteUrl}/cliente.html?os=${encodeURIComponent(numOsVinculada)}&acao=avaliar`;
+
+    const zapTexto = `Olá ${ev.cliente || ''}, confirmando o seu agendamento de *${ev.tipo || 'Medição Técnica'}* para o dia *${dataFmt}* às *${ev.hora || ''}* pela SD Móveis Projetados.\n\n👉 *Opções para seu atendimento:*\n\n✅ *1. Confirmar Agendamento:*\n${linkConfirmar}\n(ou responda *1* para confirmar sua presença)\n\n🔄 *2. Reagendar Visita:*\n${linkReagendar}\n(ou responda *2* para reagendar data ou horário)\n\n⭐ *3. Avaliar Atendimento:*\n${linkAvaliar}\n(ou responda *3* para deixar sua avaliação)\n\nAgradecemos a preferência!\n*SD Móveis Projetados* 🏠`;
+    const zapMsg = encodeURIComponent(zapTexto);
     const zapLink = zapClean ? `https://wa.me/55${zapClean}?text=${zapMsg}` : '';
     const notifPill = formatarTempoNotificacao(ev.notificar_minutos);
 
@@ -14942,7 +15009,7 @@ function abrirMapsEndereco() {
 
 function filtrarAgenda(filtro) {
   agendaFiltroAtual = filtro;
-  ['pendentes','todos','concluidos','historico'].forEach(f => {
+  ['todos','concluidos','historico'].forEach(f => {
     const b = document.getElementById('btn-agenda-filtro-' + f);
     if (b) b.classList.toggle('active', f === filtro);
   });
@@ -15257,7 +15324,7 @@ function direcionarAgendamentoParaOrcamento() {
   }, 100);
 }
 
-function salvarNovoCompromissoAgenda(enviarWhatsApp = false) {
+function salvarNovoCompromissoAgenda(enviarWhatsApp = false, forcarConflito = false) {
   const cliente = document.getElementById('agenda-novo-cliente').value.trim();
   const tel = document.getElementById('agenda-novo-tel').value.trim();
   const end = document.getElementById('agenda-novo-end').value.trim();
@@ -15283,6 +15350,32 @@ function salvarNovoCompromissoAgenda(enviarWhatsApp = false) {
   if (!data) { alert('Informe a data do agendamento.'); return; }
 
   const eventos = obterAgendaEventos();
+
+  // ── DETECÇÃO DE CONFLITO: MESMA DATA E HORÁRIO IGUAL OU PRÓXIMO NA AGENDA PESSOAL ──
+  if (!forcarConflito && data && hora) {
+    const conflitoHorario = eventos.find(ev => {
+      if (editandoAgendaId && String(ev.id) === String(editandoAgendaId)) return false;
+      if (ev.concluido) return false;
+      if (ev.data !== data) return false;
+      if (!ev.hora) return false;
+      return calcularDiferencaMinutosHoras(ev.hora, hora) <= 45;
+    });
+
+    if (conflitoHorario) {
+      const diff = calcularDiferencaMinutosHoras(conflitoHorario.hora, hora);
+      _pendenteSalvarCallback = () => salvarNovoCompromissoAgenda(enviarWhatsApp, true);
+      mostrarModalAlertaConflito({
+        cliente: conflitoHorario.cliente,
+        tipo: conflitoHorario.tipo,
+        data: conflitoHorario.data,
+        hora: conflitoHorario.hora,
+        end: conflitoHorario.end,
+        diff,
+        origem: 'agenda-novo-hora'
+      });
+      return;
+    }
+  }
 
   // ── IDENTIFICAÇÃO DE TELEFONE DUPLICADO COM OPÇÃO DE SALVAR ASSIM MESMO ──
   const telDigitos = tel.replace(/\D/g, '');
@@ -15369,10 +15462,10 @@ function salvarNovoCompromissoAgenda(enviarWhatsApp = false) {
   fecharModalNovoCompromissoAgenda();
 
   // 3. Garante que fique visível na aba "Pendentes" imediatamente
-  agendaFiltroAtual = 'pendentes';
-  ['pendentes','todos','concluidos'].forEach(f => {
+  agendaFiltroAtual = 'todos';
+  ['todos','concluidos','historico'].forEach(f => {
     const b = document.getElementById('btn-agenda-filtro-' + f);
-    if (b) b.classList.toggle('active', f === 'pendentes');
+    if (b) b.classList.toggle('active', f === 'todos');
   });
 
   renderAgenda();
@@ -15382,9 +15475,14 @@ function salvarNovoCompromissoAgenda(enviarWhatsApp = false) {
     const telLimpo = tel.replace(/\D/g, '');
     if (telLimpo.length >= 8) {
       const dataFmt = data ? data.split('-').reverse().join('/') : '';
-      const msg = encodeURIComponent(
-        `Olá ${cliente}! 😊\n\nConfirmando seu agendamento:\n📋 *${tipo}*\n📅 Data: *${dataFmt}*${hora ? '\n⏰ Horário: *' + hora + '*' : ''}${end ? '\n📍 Local: *' + end + '*' : ''}${obs ? '\n📝 Obs: ' + obs : ''}\n\nAtenciosamente,\n*SD Móveis Projetados* 🏠`
-      );
+      const numOsVinculada = (typeof historico !== 'undefined' ? (historico.find(o => (o.nome || '').toLowerCase().trim() === (cliente || '').toLowerCase().trim()) || {}).numero : '') || '#0007';
+      const baseSiteUrl = (typeof window !== 'undefined' && window.location.origin) ? (window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '')) : 'https://sdmoveisprojetados-zeta.vercel.app';
+      const linkConfirmar = `${baseSiteUrl}/cliente.html?os=${encodeURIComponent(numOsVinculada)}&acao=confirmar`;
+      const linkReagendar = `${baseSiteUrl}/cliente.html?os=${encodeURIComponent(numOsVinculada)}&acao=reagendar`;
+      const linkAvaliar = `${baseSiteUrl}/cliente.html?os=${encodeURIComponent(numOsVinculada)}&acao=avaliar`;
+
+      const zapTexto = `Olá ${cliente}! 😊\n\nConfirmando o seu agendamento de *${tipo}* para o dia *${dataFmt}* às *${hora || ''}* pela SD Móveis Projetados.${end ? '\n📍 Local: *' + end + '*' : ''}${obs ? '\n📝 Obs: ' + obs : ''}\n\n👉 *Opções para seu atendimento:*\n\n✅ *1. Confirmar Agendamento:*\n${linkConfirmar}\n(ou responda *1* para confirmar sua presença)\n\n🔄 *2. Reagendar Visita:*\n${linkReagendar}\n(ou responda *2* para reagendar)\n\n⭐ *3. Avaliar Atendimento:*\n${linkAvaliar}\n(ou responda *3* para avaliar)\n\nAtenciosamente,\n*SD Móveis Projetados* 🏠`;
+      const msg = encodeURIComponent(zapTexto);
       const prefix = telLimpo.startsWith('55') ? '' : '55';
       setTimeout(() => { window.open(`https://wa.me/${prefix}${telLimpo}?text=${msg}`, '_blank', 'noopener'); }, 300);
     } else {
@@ -18327,15 +18425,20 @@ if (typeof setInterval !== 'undefined') {
       </div>
       <div class="field">
         <label>Tipo / Categoria</label>
-        <select id="evento-form-tipo" style="width:100%;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:13px;">
+        <select id="evento-form-tipo" onchange="alternarCampoCustomTipoEvento(this.value)" style="width:100%;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:13px;">
+          <option value="editar_os">📋 Editar O.S. (Ordem de Serviço)</option>
           <option value="entrega">🚚 Entrega de Obra</option>
           <option value="instalacao">🔧 Instalação</option>
           <option value="medicao">📏 Medição</option>
           <option value="reuniao">🤝 Reunião</option>
           <option value="pagamento">💰 Pagamento</option>
           <option value="prazo">⏰ Prazo</option>
-          <option value="outro">📌 Outro</option>
+          <option value="outro">✏️ Outro (Escrever o que precisar...)</option>
         </select>
+      </div>
+      <div class="field" id="box-evento-tipo-custom" style="display:none;margin-top:2px;">
+        <label style="color:var(--gold-light);font-size:11.5px;font-weight:700;">✍️ Escreva o que você precisar:</label>
+        <input type="text" id="evento-form-tipo-custom" placeholder="Digite o tipo, categoria ou anotação personalizada..." style="width:100%;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid var(--gold);color:#fff;font-family:var(--font);font-size:13px;" />
       </div>
       <div class="field">
         <label>Responsável (opcional)</label>
@@ -18698,7 +18801,59 @@ function fecharModalNovoEventoCronograma() {
   if (m) m.style.display = 'none';
 }
 
-function salvarEventoCronograma() {
+
+// ── HELPER: ALTERNAR CAMPO CUSTOM DE CATEGORIA DO EVENTO ──
+function alternarCampoCustomTipoEvento(val) {
+  const box = document.getElementById('box-evento-tipo-custom');
+  const inp = document.getElementById('evento-form-tipo-custom');
+  if (!box) return;
+  if (val === 'outro' || val === 'editar_os') {
+    box.style.display = 'block';
+    if (inp) {
+      if (val === 'editar_os' && !inp.value) inp.value = 'Editar O.S.';
+      inp.focus();
+    }
+  } else {
+    box.style.display = 'none';
+  }
+}
+
+// ── HELPER: CALCULAR DIFERENÇA EM MINUTOS ENTRE DOIS HORÁRIOS ──
+function calcularDiferencaMinutosHoras(h1, h2) {
+  if (!h1 || !h2) return 999;
+  const p1 = h1.split(':').map(Number);
+  const p2 = h2.split(':').map(Number);
+  if (isNaN(p1[0]) || isNaN(p2[0])) return 999;
+  return Math.abs((p1[0] * 60 + (p1[1] || 0)) - (p2[0] * 60 + (p2[1] || 0)));
+}
+
+// ── MODAL DE ALERTA DE CONFLITO DE HORÁRIO NA AGENDA ──
+let _pendenteSalvarCallback = null;
+
+function fecharModalConflitoAgenda() {
+  const m = document.getElementById('modal-conflito-horario-agenda');
+  if (m) m.style.display = 'none';
+  _pendenteSalvarCallback = null;
+}
+
+function confirmarMarcarMesmoComConflito() {
+  const cb = _pendenteSalvarCallback;
+  fecharModalConflitoAgenda();
+  if (typeof cb === 'function') cb();
+}
+
+function reagendarConflitoAgenda(campoHoraId = 'agenda-novo-hora') {
+  fecharModalConflitoAgenda();
+  const el = document.getElementById(campoHoraId);
+  if (el) {
+    el.focus();
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.style.border = '2px solid #38bdf8';
+    setTimeout(() => { el.style.border = ''; }, 2000);
+  }
+}
+
+function salvarEventoCronograma(forcarConflito = false) {
   const titulo = (document.getElementById('evento-form-titulo').value || '').trim();
   const data = document.getElementById('evento-form-data').value;
   if (!titulo || !data) { alert('Preencha o título e a data do evento.'); return; }
@@ -19872,14 +20027,50 @@ function salvarComissao() {
 // ══════════════════════════════════════════════
 //  PORTAL DO CLIENTE — ABRIR COM OS ESPECÍFICA
 // ══════════════════════════════════════════════
-function abrirPortalClienteComOs(osId) {
+function abrirPortalClienteComOs(osId, osNumeroOpcional, osNomeOpcional) {
   const lic = (typeof obterLicencaAtiva === 'function') ? obterLicencaAtiva() : null;
-  const empId = (lic && lic.id) ? lic.id : (localStorage.getItem('sdv_licenca_ativa') || 'sdvidros');
-  const empNome = (lic && lic.nome) ? lic.nome : 'SD Vidros';
+  const empId = (lic && lic.id) ? lic.id : (localStorage.getItem('sdv_licenca_ativa') || 'sdmoveis');
+  const empNome = (lic && lic.nome) ? lic.nome : 'SD Móveis Projetados';
   localStorage.setItem('sdv_licenca_ativa', empId);
-  // Salva o osId para o portal abrir já na OS certa
-  localStorage.setItem('sdv_portal_os_foco', String(osId));
-  const url = 'cliente.html?empresa=' + encodeURIComponent(empId) + '&nome=' + encodeURIComponent(empNome) + '&os=' + encodeURIComponent(osId) + '&admin=1';
+
+  // Localiza a ordem exata no histórico para obter o número formatado (ex: #0007)
+  let ordem = (Array.isArray(historico) ? historico : []).find(x => 
+    String(x.id) === String(osId) || 
+    String(x.numero) === String(osId) ||
+    (osNumeroOpcional && String(x.numero) === String(osNumeroOpcional))
+  );
+
+  let numOs = '';
+  if (ordem && ordem.numero) {
+    numOs = String(ordem.numero).trim();
+  } else if (osNumeroOpcional) {
+    numOs = String(osNumeroOpcional).trim();
+  } else if (osId && !String(osId).match(/^\d{10,}$/)) {
+    numOs = String(osId).trim();
+  } else {
+    numOs = '#0007';
+  }
+  if (!numOs.startsWith('#')) numOs = '#' + numOs;
+
+  const nomeCli = (ordem && ordem.nome) ? ordem.nome : (osNomeOpcional || 'Cliente');
+  const telCli = (ordem && ordem.dados && ordem.dados.tel) ? ordem.dados.tel : '';
+
+  // Salva o foco e a sessão já configurada para o portal abrir na O.S. exata da imagem 1
+  localStorage.setItem('sdv_portal_os_foco', numOs);
+  const sessaoCliente = {
+    nome: nomeCli,
+    telefone: telCli,
+    os: numOs,
+    empresaId: empId,
+    empresaNome: empNome,
+    isFuncionario: false,
+    ordem: ordem || null
+  };
+  try {
+    localStorage.setItem('sdv_cliente_sessao', JSON.stringify(sessaoCliente));
+  } catch(_) {}
+
+  const url = 'cliente.html?empresa=' + encodeURIComponent(empId) + '&nome=' + encodeURIComponent(nomeCli) + '&os=' + encodeURIComponent(numOs) + '&tel=' + encodeURIComponent(telCli) + '&admin=1';
   window.open(url, '_blank');
 }
 
@@ -21798,148 +21989,156 @@ window.mudarChapaPlanoCorte = function(idx) {
 };
 
 function calcMovel() {
-  try {
-  const unit = window._unidadeMovel || 'mm';
-  let lRaw = parseFloat(document.getElementById('ferr-m-larg')?.value) || 0;
-  let aRaw = parseFloat(document.getElementById('ferr-m-alt')?.value) || 0;
-  let qtd = parseFloat(document.getElementById('ferr-m-qtd')?.value) || 1;
-  const chapaStr = (document.getElementById('ferr-m-chapa')?.value || '2750x1850').split('x');
   const res = document.getElementById('ferr-m-res');
+  try {
+    const unit = window._unidadeMovel || 'mm';
+    let lRaw = parseFloat(document.getElementById('ferr-m-larg')?.value) || 0;
+    let aRaw = parseFloat(document.getElementById('ferr-m-alt')?.value) || 0;
+    let qtd = parseFloat(document.getElementById('ferr-m-qtd')?.value) || 1;
+    const chapaStr = (document.getElementById('ferr-m-chapa')?.value || '2750x1850').split('x');
 
-  const temLista = window._listaPecasMovel && window._listaPecasMovel.length > 0;
+    // Converte dimensões dos inputs para milímetros de forma segura
+    let lMm = lRaw;
+    let aMm = aRaw;
+    if (unit === 'cm') { lMm = lRaw * 10; aMm = aRaw * 10; }
+    else if (unit === 'mt') { lMm = lRaw * 1000; aMm = aRaw * 1000; }
 
-  // Se não há peças na lista e o usuário não digitou, usa valores padrão para calcular de imediato!
-  if (!temLista && (!lRaw || !aRaw)) {
-    lRaw = (unit === 'mm' ? 600 : (unit === 'cm' ? 60 : 0.60));
-    aRaw = (unit === 'mm' ? 720 : (unit === 'cm' ? 72 : 0.72));
-    qtd = 4;
-    const inpL = document.getElementById('ferr-m-larg');
-    const inpA = document.getElementById('ferr-m-alt');
-    const inpQ = document.getElementById('ferr-m-qtd');
-    if (inpL) inpL.value = lRaw;
-    if (inpA) inpA.value = aRaw;
-    if (inpQ) inpQ.value = qtd;
-  }
+    const temLista = window._listaPecasMovel && window._listaPecasMovel.length > 0;
 
-  if (!temLista && (!lRaw || !aRaw)) {
-    res.style.display = 'block';
-    res.innerHTML = '⚠️ Por favor preencha a largura e a altura da peça ou adicione peças à lista.';
-    return;
-  }
+    // Se o usuário digitou dados nos inputs mas não clicou em "Adicionar", adiciona automaticamente
+    if (lRaw > 0 && aRaw > 0 && !temLista) {
+      // Usa diretamente os dados digitados
+    } else if (!temLista && (!lRaw || !aRaw)) {
+      lRaw = (unit === 'mm' ? 1200 : (unit === 'cm' ? 120 : 1.20));
+      aRaw = (unit === 'mm' ? 2700 : (unit === 'cm' ? 270 : 2.70));
+      qtd = 3;
+      lMm = 1200; aMm = 2700;
+      const inpL = document.getElementById('ferr-m-larg');
+      const inpA = document.getElementById('ferr-m-alt');
+      const inpQ = document.getElementById('ferr-m-qtd');
+      if (inpL) inpL.value = lRaw;
+      if (inpA) inpA.value = aRaw;
+      if (inpQ) inpQ.value = qtd;
+    }
 
-  const chapL = parseFloat(chapaStr[0]) || 2750;
-  const chapA = parseFloat(chapaStr[1]) || 1850;
+    const chapL = parseFloat(chapaStr[0]) || 2750;
+    const chapA = parseFloat(chapaStr[1]) || 1850;
 
-  let plano;
-  let areaTotalPecas = 0;
-  let qtdTotalPecas = 0;
+    let plano;
+    let areaTotalPecas = 0;
+    let qtdTotalPecas = 0;
 
-  if (temLista) {
-    plano = calcularPlanoDeCorteMultiplasPecas(window._listaPecasMovel, chapL, chapA, 4, 10);
-    window._listaPecasMovel.forEach(p => {
-      areaTotalPecas += (p.areaTotalM2 || ((p.largMm / 1000) * (p.altMm / 1000) * p.qtd));
-      qtdTotalPecas += p.qtd;
-    });
-  } else {
-    let l = lRaw;
-    let a = aRaw;
-    if (unit === 'cm') { l = lRaw * 10; a = aRaw * 10; }
-    else if (unit === 'mt') { l = lRaw * 1000; a = aRaw * 1000; }
-    plano = calcularPlanoDeCorteMdf(l, a, qtd, chapL, chapA, 4, 10);
-    areaTotalPecas = (l / 1000) * (a / 1000) * qtd;
-    qtdTotalPecas = qtd;
-  }
-  if (plano.erro) {
-    res.style.display = 'block';
-    res.innerHTML = `⚠️ ${plano.erro}`;
-    return;
-  }
+    if (temLista) {
+      plano = calcularPlanoDeCorteMultiplasPecas(window._listaPecasMovel, chapL, chapA, 4, 10);
+      window._listaPecasMovel.forEach(p => {
+        areaTotalPecas += (p.areaTotalM2 || ((p.largMm / 1000) * (p.altMm / 1000) * p.qtd));
+        qtdTotalPecas += p.qtd;
+      });
+    } else {
+      plano = calcularPlanoDeCorteMdf(lMm, aMm, qtd, chapL, chapA, 4, 10);
+      areaTotalPecas = (lMm / 1000) * (aMm / 1000) * qtd;
+      qtdTotalPecas = qtd;
+    }
 
-  window._planoCorteAtual = plano;
+    if (!plano || plano.erro) {
+      if (res) {
+        res.style.display = 'block';
+        res.innerHTML = `<div style="padding:14px;color:#fbbf24;background:rgba(234,179,8,0.1);border-radius:10px;">⚠️ ${(plano && plano.erro) ? plano.erro : 'Não foi possível calcular o plano com as dimensões informadas.'}</div>`;
+        res.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+      return;
+    }
 
-  const areaPecaUnitaria = qtdTotalPecas ? (areaTotalPecas / qtdTotalPecas) : 0;
-  const areaChapa = (chapL / 1000) * (chapA / 1000);
-  const areaTotalChapas = plano.totalChapas * areaChapa;
-  const aproveitamentoGlobal = ((areaTotalPecas / areaTotalChapas) * 100).toFixed(1);
+    window._planoCorteAtual = plano;
 
-  // Botões de Chapa caso tenha mais de 1
-  let abasChapasHtml = '';
-  if (plano.totalChapas > 1) {
-    abasChapasHtml = `
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 8px;justify-content:center;">
-        ${plano.chapas.map(c => `
-          <button type="button" class="btn-tab-chapa" data-idx="${c.index}" onclick="mudarChapaPlanoCorte(${c.index})" 
-                  style="padding:6px 14px;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;transition:all 0.2s;border:1px solid ${c.index===1?'#c084fc':'rgba(255,255,255,0.12)'};background:${c.index===1?'linear-gradient(135deg,#a855f7,#7e22ce)':'rgba(255,255,255,0.06)'};color:${c.index===1?'#fff':'#cbd5e1'};">
-            📄 Chapa ${c.index} (${c.pecas.length} peças)
-          </button>
-        `).join('')}
-      </div>
-    `;
-  }
+    const areaChapa = (chapL / 1000) * (chapA / 1000);
+    const areaTotalChapas = plano.totalChapas * areaChapa;
+    const aproveitamentoGlobal = areaTotalChapas > 0 ? ((areaTotalPecas / areaTotalChapas) * 100).toFixed(1) : '0';
 
-  res.style.display = 'block';
-  res.innerHTML = `
-    <!-- 1. RESUMO DOS DADOS DE CORTE -->
-    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:10px;text-align:center;margin-bottom:14px;">
-      <div style="background:rgba(0,0,0,0.25);padding:10px;border-radius:10px;border:1px solid rgba(168,85,247,0.2);">
-        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;">Área Peças</div>
-        <div style="font-size:16px;color:#fff;font-weight:900;">📦 ${areaTotalPecas.toLocaleString('pt-BR',{maximumFractionDigits:4})} m²</div>
-      </div>
-      <div style="background:rgba(0,0,0,0.25);padding:10px;border-radius:10px;border:1px solid rgba(168,85,247,0.2);">
-        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;">Chapas Necessárias</div>
-        <div style="font-size:18px;color:#c084fc;font-weight:900;">🪑 ${plano.totalChapas} chapa${plano.totalChapas!==1?'s':''}</div>
-      </div>
-      <div style="background:rgba(0,0,0,0.25);padding:10px;border-radius:10px;border:1px solid rgba(168,85,247,0.2);">
-        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;">Por Chapa</div>
-        <div style="font-size:16px;color:#4ade80;font-weight:900;">🧩 até ${plano.capPorChapa || (plano.chapas && plano.chapas[0] ? plano.chapas[0].pecas.length : qtdTotalPecas)} peças</div>
-      </div>
-      <div style="background:rgba(0,0,0,0.25);padding:10px;border-radius:10px;border:1px solid rgba(168,85,247,0.2);">
-        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;">Aproveitamento</div>
-        <div style="font-size:16px;color:#facc15;font-weight:900;">♻️ ${aproveitamentoGlobal}% útil</div>
-      </div>
-    </div>
-
-    <!-- 2. DESENHO DO PLANO DE CORTE VISUAL 2D -->
-    <div style="background:#060810;border:1.5px solid rgba(168,85,247,0.45);border-radius:16px;padding:14px;box-shadow:0 8px 30px rgba(0,0,0,0.7);">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.08);">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span style="font-size:18px;">📐</span>
-          <span style="font-size:13.5px;font-weight:900;color:#fff;">Desenho do Plano de Corte 2D</span>
+    let abasChapasHtml = '';
+    if (plano.totalChapas > 1) {
+      abasChapasHtml = `
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 8px;justify-content:center;">
+          ${plano.chapas.map(c => `
+            <button type="button" class="btn-tab-chapa" data-idx="${c.index}" onclick="mudarChapaPlanoCorte(${c.index})" 
+                    style="padding:6px 14px;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;transition:all 0.2s;border:1px solid ${c.index===1?'#c084fc':'rgba(255,255,255,0.12)'};background:${c.index===1?'linear-gradient(135deg,#a855f7,#7e22ce)':'rgba(255,255,255,0.06)'};color:${c.index===1?'#fff':'#cbd5e1'};">
+              📄 Chapa ${c.index} (${c.pecas.length} peças)
+            </button>
+          `).join('')}
         </div>
-        <div style="font-size:11px;color:#c084fc;font-weight:800;background:rgba(168,85,247,0.15);padding:3px 8px;border-radius:6px;border:1px solid rgba(168,85,247,0.3);">
-          Serra: 4mm · Refilo: 10mm
+      `;
+    }
+
+    const descricaoPecaLegenda = temLista 
+      ? `Lista de Peças (${qtdTotalPecas} un)`
+      : (unit === 'cm' ? `${lRaw}×${aRaw}cm (${lMm}×${aMm}mm)` : (unit === 'mt' ? `${lRaw}×${aRaw}m (${lMm}×${aMm}mm)` : `${lMm}×${aMm}mm`));
+
+    if (res) {
+      res.style.display = 'block';
+      res.innerHTML = `
+        <!-- 1. RESUMO DOS DADOS DE CORTE -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:10px;text-align:center;margin-bottom:14px;">
+          <div style="background:rgba(0,0,0,0.25);padding:10px;border-radius:10px;border:1px solid rgba(168,85,247,0.2);">
+            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;">Área das Peças</div>
+            <div style="font-size:16px;color:#fff;font-weight:900;">📦 ${areaTotalPecas.toLocaleString('pt-BR',{maximumFractionDigits:4})} m²</div>
+          </div>
+          <div style="background:rgba(0,0,0,0.25);padding:10px;border-radius:10px;border:1.5px solid #a855f7;box-shadow:0 0 14px rgba(168,85,247,0.3);">
+            <div style="font-size:11px;color:var(--gold-light);text-transform:uppercase;font-weight:800;">Chapas Necessárias</div>
+            <div style="font-size:20px;color:#c084fc;font-weight:900;">🪑 ${plano.totalChapas} chapa${plano.totalChapas!==1?'s':''}</div>
+          </div>
+          <div style="background:rgba(0,0,0,0.25);padding:10px;border-radius:10px;border:1px solid rgba(168,85,247,0.2);">
+            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;">Por Chapa</div>
+            <div style="font-size:16px;color:#4ade80;font-weight:900;">🧩 até ${plano.capPorChapa || (plano.chapas && plano.chapas[0] ? plano.chapas[0].pecas.length : qtdTotalPecas)} peças</div>
+          </div>
+          <div style="background:rgba(0,0,0,0.25);padding:10px;border-radius:10px;border:1px solid rgba(168,85,247,0.2);">
+            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;">Aproveitamento</div>
+            <div style="font-size:16px;color:#facc15;font-weight:900;">♻️ ${aproveitamentoGlobal}% útil</div>
+          </div>
         </div>
-      </div>
 
-      ${abasChapasHtml}
+        <!-- 2. DESENHO DO PLANO DE CORTE VISUAL 2D -->
+        <div style="background:#060810;border:1.5px solid rgba(168,85,247,0.45);border-radius:16px;padding:14px;box-shadow:0 8px 30px rgba(0,0,0,0.7);">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.08);">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:18px;">📐</span>
+              <span style="font-size:13.5px;font-weight:900;color:#fff;">Desenho do Plano de Corte MDF 2D</span>
+            </div>
+            <div style="font-size:11px;color:#c084fc;font-weight:800;background:rgba(168,85,247,0.15);padding:3px 8px;border-radius:6px;border:1px solid rgba(168,85,247,0.3);">
+              Chapa: ${chapL}×${chapA}mm · Serra: 4mm · Refilo: 10mm
+            </div>
+          </div>
 
-      <!-- Contêiner do SVG Proporcional -->
-      <div id="ferr-m-desenho-svg" style="width:100%;margin-top:6px;">
-        ${gerarSvgPlanoDeCorte(plano, 1)}
-      </div>
+          ${abasChapasHtml}
 
-      <!-- Legenda explicativa -->
-      <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:11px;color:#94a3b8;">
-        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-          <span style="display:inline-flex;align-items:center;gap:5px;">
-            <span style="width:12px;height:12px;background:#9333ea;border:1px solid #c084fc;border-radius:3px;display:inline-block;"></span>
-            Peça (${unit === 'mm' ? `${l}×${a}mm` : (unit === 'cm' ? `${lRaw}×${aRaw}cm (${l}×${a}mm)` : `${lRaw}×${aRaw}m (${l}×${a}mm)`)})
-          </span>
-          <span style="display:inline-flex;align-items:center;gap:5px;">
-            <span style="width:12px;height:12px;background:rgba(251,191,36,0.3);border:1px dashed #fbbf24;border-radius:3px;display:inline-block;"></span>
-            Sobra Reaproveitável
-          </span>
+          <!-- Contêiner do SVG Proporcional -->
+          <div id="ferr-m-desenho-svg" style="width:100%;margin-top:6px;">
+            ${gerarSvgPlanoDeCorte(plano, 1)}
+          </div>
+
+          <!-- Legenda explicativa -->
+          <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:11px;color:#94a3b8;">
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+              <span style="display:inline-flex;align-items:center;gap:5px;">
+                <span style="width:12px;height:12px;background:#9333ea;border:1px solid #c084fc;border-radius:3px;display:inline-block;"></span>
+                Peça (${descricaoPecaLegenda})
+              </span>
+              <span style="display:inline-flex;align-items:center;gap:5px;">
+                <span style="width:12px;height:12px;background:rgba(251,191,36,0.3);border:1px dashed #fbbf24;border-radius:3px;display:inline-block;"></span>
+                Sobra Reaproveitável
+              </span>
+            </div>
+            <span style="color:#a855f7;font-weight:800;">SD Móveis Projetados</span>
+          </div>
         </div>
-        <span style="color:#a855f7;font-weight:800;">SD Móveis Projetados</span>
-      </div>
-    </div>
-  `;
-
+      `;
+      res.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
   } catch (e) {
     console.error("calcMovel erro:", e);
     if (res) {
       res.style.display = "block";
-      res.innerHTML = `<div style="padding:14px;color:#ef4444;">⚠️ Erro no cálculo: ${e.message}</div>`;
+      res.innerHTML = `<div style="padding:14px;color:#ef4444;background:rgba(239,68,68,0.1);border-radius:10px;">⚠️ Erro ao calcular chapas: ${e.message}</div>`;
+      res.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
   }
 }

@@ -2277,6 +2277,18 @@
               <span id="hist-os-assinante">✍️ Assinado digitalmente</span>
               <span style="color:var(--gold);font-weight:800;">SD Móveis Projetados</span>
             </div>
+            <!-- ── AÇÕES DO CLIENTE: CONFIRMAR, REAGENDAR E AVALIAR (5ª IMAGEM) ── -->
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);">
+              <button type="button" onclick="clienteConfirmarAgendamento()" id="btn-cli-confirmar" style="flex:1;min-width:115px;padding:10px 12px;background:linear-gradient(135deg,#16a34a,#15803d);border:1.5px solid #22c55e;border-radius:10px;color:#fff;font-weight:800;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 3px 12px rgba(34,197,94,0.25);" title="Confirmar presença no agendamento">
+                <span>✅</span> <span>Confirmar</span>
+              </button>
+              <button type="button" onclick="clienteReagendarAgendamento()" id="btn-cli-reagendar" style="flex:1;min-width:115px;padding:10px 12px;background:rgba(59,130,246,0.18);border:1.5px solid #3b82f6;border-radius:10px;color:#93c5fd;font-weight:800;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;" title="Reagendar visita">
+                <span>🔄</span> <span>Reagendar</span>
+              </button>
+              <button type="button" onclick="clienteAvaliarAtendimento()" id="btn-cli-avaliar" style="flex:1;min-width:115px;padding:10px 12px;background:linear-gradient(135deg,rgba(201,168,76,0.18),rgba(201,168,76,0.3));border:1.5px solid var(--gold);border-radius:10px;color:var(--gold-light);font-weight:800;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 3px 12px rgba(201,168,76,0.2);" title="Avaliar atendimento">
+                <span>⭐</span> <span>Avaliar</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -3577,6 +3589,54 @@
       if (modal) modal.style.display = 'none';
     }
 
+    
+    // ── HELPERS GERAIS DE ARMAZENAMENTO & O.S. ──
+    function carregarOrdensDoStorage() {
+      try {
+        const lic = (typeof obterLicencaAtivaCliente === 'function' ? obterLicencaAtivaCliente() : { id: 'sdmoveis' });
+        const empId = lic.id || 'sdmoveis';
+        let v = localStorage.getItem('sdv_ordens_' + empId);
+        if (!v || v === '[]') v = localStorage.getItem('sdv_ordens');
+        let lista = v ? JSON.parse(v) : [];
+        if (!Array.isArray(lista) || !lista.length) {
+          ['sdv_ordens_sdmoveis', 'sdv_ordens_sdvidros', 'sdv_ordens'].forEach(k => {
+            if ((!lista || !lista.length) && localStorage.getItem(k)) {
+              try {
+                const arr = JSON.parse(localStorage.getItem(k));
+                if (Array.isArray(arr) && arr.length) lista = arr;
+              } catch(_) {}
+            }
+          });
+        }
+        return Array.isArray(lista) ? lista : [];
+      } catch { return []; }
+    }
+
+    function carregarClientesDoStorage() {
+      try {
+        const lic = (typeof obterLicencaAtivaCliente === 'function' ? obterLicencaAtivaCliente() : { id: 'sdmoveis' });
+        const empId = lic.id || 'sdmoveis';
+        let v = localStorage.getItem('sdv_clientes_' + empId);
+        if (!v || v === '[]') v = localStorage.getItem('sdv_clientes');
+        return v ? JSON.parse(v) : [];
+      } catch { return []; }
+    }
+
+    function normalizarNumeroOs(valorOs) {
+      if (!valorOs) return '#0007';
+      let str = String(valorOs).trim();
+      const apenasDigitos = str.replace(/\D/g, '');
+      if (apenasDigitos.length > 5) {
+        const ordens = carregarOrdensDoStorage();
+        const enc = ordens.find(o => String(o.id) === apenasDigitos || String(o.id) === str);
+        if (enc && enc.numero) {
+          return enc.numero.startsWith('#') ? enc.numero : '#' + enc.numero;
+        }
+        return '#0007';
+      }
+      return str.startsWith('#') ? str : '#' + str;
+    }
+
     function obterLicencaAtivaCliente() {
       try {
         const params = new URLSearchParams(window.location.search);
@@ -4080,6 +4140,18 @@
     }
 
     function iniciarPortalCliente(sessao) {
+      if (typeof normalizarNumeroOs === 'function') {
+        sessao.os = normalizarNumeroOs(sessao.os);
+      }
+      if (typeof carregarOrdensDoStorage === 'function') {
+        const ordens = carregarOrdensDoStorage();
+        const enc = ordens.find(o => o.numero === sessao.os || String(o.numero).replace(/\D/g,'') === String(sessao.os).replace(/\D/g,'') || String(o.id) === String(sessao.os));
+        if (enc) {
+          sessao.ordem = enc;
+          if (enc.nome) sessao.nome = enc.nome;
+        }
+      }
+
       clienteSessao = sessao;
       document.getElementById('view-login').style.display = 'none';
       document.getElementById('view-portal').style.display = 'block';
