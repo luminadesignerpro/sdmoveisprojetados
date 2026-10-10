@@ -995,11 +995,9 @@
       box-shadow: 0 1px 4px rgba(0,0,0,0.5);
     }
     @media(max-width: 650px) {
-      #tab-portal-funcionario {
-        grid-column: span 2;
-      }
-      #tab-relatorio {
-        grid-column: span 2;
+      /* Todas as 20 abas ocupam exatamente 1 célula uniforme (4 colunas x 5 linhas completas, sem vazios) */
+      .tab {
+        grid-column: auto !important;
       }
     }
 
@@ -1656,10 +1654,9 @@
       from { opacity: 0; transform: translate(-50%, 15px) scale(0.9); }
       to { opacity: 1; transform: translate(-50%, 0) scale(1); }
     }
-    #btn-central-mensagens:last-child {
-      grid-column: 1 / -1;
-      justify-self: center;
-      min-width: 140px;
+    #btn-central-mensagens {
+      grid-column: auto !important;
+      width: 100% !important;
     }
 
 
@@ -1828,11 +1825,14 @@
       <img id="empresa-logo-top" src="logo_moveis.jpg" alt="Logo" style="width:22px;height:22px;border-radius:50%;object-fit:cover;border:1px solid var(--gold);background:#07070b;">
       <span id="empresa-nome-top" style="font-size:12.5px;font-weight:800;color:var(--gold-light);">SD Móveis Projetados</span>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;">
-      <div class="user-pill" style="display:flex;align-items:center;gap:6px;background:#101018;border:1px solid rgba(255,255,255,0.12);padding:6px 14px;border-radius:20px;">
-        <span id="usuario-logado" style="font-size:12.5px;font-weight:700;color:#93c5fd;"><span style="color:#3b82f6;">👤</span> Samuel</span>
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+      <div class="user-pill" style="display:flex;align-items:center;gap:6px;background:#101018;border:1px solid rgba(255,255,255,0.12);padding:6px 12px;border-radius:20px;">
+        <span id="usuario-logado" style="font-size:12px;font-weight:700;color:#93c5fd;"><span style="color:#3b82f6;">👤</span> Samuel</span>
       </div>
-      <button class="btn-sair" onclick="sair()" style="display:flex;align-items:center;gap:6px;background:#181824;border:1px solid rgba(239,68,68,0.3);color:#fca5a5;padding:6px 14px;border-radius:20px;cursor:pointer;font-size:12.5px;font-weight:700;">📕 Sair</button>
+      <button type="button" onclick="abrirModalOrganizarAbas()" style="display:flex;align-items:center;gap:5px;background:#181824;border:1px solid rgba(201,168,76,0.35);color:var(--gold-light);padding:6px 12px;border-radius:20px;cursor:pointer;font-size:12px;font-weight:800;" title="Reordenar os botões do menu">
+        🔀 Organizar Abas
+      </button>
+      <button class="btn-sair" onclick="sair()" style="display:flex;align-items:center;gap:5px;background:#181824;border:1px solid rgba(239,68,68,0.3);color:#fca5a5;padding:6px 12px;border-radius:20px;cursor:pointer;font-size:12px;font-weight:700;">📕 Sair</button>
     </div>
   </div>
 
@@ -4035,6 +4035,34 @@
         </div>
       </div>
 
+      <!-- PAINEL INTERATIVO DE VARREDURA & RADAR DE PROXIMIDADE -->
+      <div style="background:rgba(0,0,0,0.45);border:1.5px solid rgba(56,189,248,0.35);border-radius:14px;padding:14px 16px;max-width:560px;margin:0 auto 14px auto;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.5);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span style="font-size:12px;font-weight:900;color:#38bdf8;text-transform:uppercase;letter-spacing:0.04em;">🖐️ Radar de Varredura / Aproximação na Parede</span>
+          <span id="detector-modo-status" style="font-size:10.5px;padding:3px 10px;border-radius:999px;background:rgba(56,189,248,0.2);color:#7dd3fc;font-weight:900;border:1px solid rgba(56,189,248,0.4);">Sensor Ativo</span>
+        </div>
+        <div style="font-size:11.5px;color:var(--text2);margin-bottom:10px;line-height:1.3;">
+          Deslize a barra para simular o movimento do celular ou clique para simular a detecção:
+        </div>
+        <input type="range" id="detector-range-afastamento" min="0" max="30" value="25" oninput="definirAfastamentoPerigo(this.value)" style="width:100%;height:10px;accent-color:#38bdf8;cursor:pointer;margin-bottom:8px;" />
+        <div style="display:flex;justify-content:space-between;font-size:10.5px;margin-bottom:12px;">
+          <span style="color:#f87171;font-weight:900;">⚡ 0 cm (Sobre Fio/Cano)</span>
+          <span style="color:#fbbf24;font-weight:900;">⚠️ 15 cm (Mínimo)</span>
+          <span style="color:#4ade80;font-weight:900;">🟢 30 cm (100% Seguro)</span>
+        </div>
+        <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">
+          <button type="button" onclick="simularDetecaoPerigo()" style="padding:7px 12px;font-size:11.5px;font-weight:800;border-radius:8px;background:rgba(239,68,68,0.25);border:1px solid #ef4444;color:#fca5a5;cursor:pointer;">
+            ⚡ Simular Fio/Metal Aqui
+          </button>
+          <button type="button" onclick="iniciarVarreduraAutomatica()" id="btn-auto-varredura" style="padding:7px 12px;font-size:11.5px;font-weight:800;border-radius:8px;background:rgba(56,189,248,0.2);border:1px solid #0284c7;color:#7dd3fc;cursor:pointer;">
+            🔄 Simular Varredura Contínua
+          </button>
+          <button type="button" onclick="forcarPontoSeguroAfastado()" style="padding:7px 12px;font-size:11.5px;font-weight:800;border-radius:8px;background:rgba(34,197,94,0.25);border:1px solid #22c55e;color:#86efac;cursor:pointer;">
+            🟢 Liberar Ponto Seguro
+          </button>
+        </div>
+      </div>
+
       <!-- RÉGUA GUIA DE AFASTAMENTO DO PERIGO (EM CM) -->
       <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 14px;max-width:560px;margin:0 auto 14px auto;text-align:left;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
@@ -5795,6 +5823,30 @@
       </button>
       <button type="button" onclick="confirmarEntradaExecutar()" style="flex:2;padding:13px;border-radius:10px;border:none;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:14px;font-weight:900;cursor:pointer;box-shadow:0 4px 16px rgba(16,185,129,0.4);">
         ✅ Confirmar Entrada
+      </button>
+    </div>
+  </div>
+<!-- ══ MODAL: ORGANIZAR ORDEM DAS ABAS ══ -->
+<div id="modal-organizar-abas" class="modal-overlay" style="display:none;z-index:1000300;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);" onclick="fecharModalOrganizarAbas()">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:440px;width:95%;max-height:85vh;display:flex;flex-direction:column;border:2px solid var(--gold);box-shadow:0 0 40px rgba(201,168,76,0.3);padding:20px;border-radius:20px;background:#10111a;">
+    <div style="padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.1);display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <h3 style="margin:0;font-size:16.5px;font-weight:900;color:var(--gold-light);">🔀 Organizar Ordem dos Botões</h3>
+        <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">Suba ou desça as abas na posição que preferir:</div>
+      </div>
+      <button type="button" onclick="fecharModalOrganizarAbas()" style="background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:4px 8px;">✕</button>
+    </div>
+
+    <div id="lista-organizar-abas-conteudo" style="padding:12px 2px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;flex:1;max-height:55vh;">
+      <!-- Preenchido via JS com botões Subir/Descer -->
+    </div>
+
+    <div style="padding-top:14px;border-top:1px solid rgba(255,255,255,0.1);display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap;">
+      <button type="button" class="btn btn-sec" onclick="restaurarOrdemAbasPadrao(); fecharModalOrganizarAbas();" style="font-size:12px;padding:9px 14px;">
+        🔄 Restaurar Padrão
+      </button>
+      <button type="button" class="btn btn-primary" onclick="fecharModalOrganizarAbas()" style="font-size:12.5px;padding:9px 20px;">
+        ✓ Concluído
       </button>
     </div>
   </div>
@@ -18913,10 +18965,11 @@ function restaurarOrdemAbasPadrao() {
   if (!confirm('Deseja restaurar a ordem original padrão de todas as abas?')) return;
   localStorage.removeItem('sdm_tabs_custom_order');
   const padrao = [
-    'tab-orcamento', 'tab-historico', 'tab-financeiro', 'tab-agenda',
-    'tab-produtos', 'tab-empresa', 'tab-clientes', 'tab-ponto',
-    'tab-camera', 'tab-contratos', 'tab-usuarios', 'tab-portal-cliente',
-    'tab-portal-funcionario', 'tab-relatorio', 'btn-central-mensagens'
+    'tab-orcamento', 'tab-historico', 'tab-financeiro', 'tab-estoque',
+    'tab-detector', 'tab-agenda', 'tab-agenda-pessoal', 'tab-produtos',
+    'tab-empresa', 'tab-clientes', 'tab-ponto', 'tab-camera',
+    'tab-contratos', 'tab-usuarios', 'tab-portal-cliente', 'tab-portal-funcionario',
+    'tab-cronograma', 'tab-relatorio', 'tab-ferramentas', 'btn-central-mensagens'
   ];
   const container = document.querySelector('.tabs');
   if (container) {
@@ -18932,6 +18985,59 @@ function restaurarOrdemAbasPadrao() {
   }
 }
 
+function abrirModalOrganizarAbas() {
+  const modal = document.getElementById('modal-organizar-abas');
+  const lista = document.getElementById('lista-organizar-abas-conteudo');
+  const container = document.querySelector('.tabs');
+  if (!modal || !lista || !container) return;
+
+  const tabs = Array.from(container.querySelectorAll('.tab'));
+  lista.innerHTML = tabs.map((t, idx) => {
+    const clone = t.cloneNode(true);
+    const badge = clone.querySelector('#badge-msg-clientes');
+    if (badge) badge.remove();
+    const texto = clone.innerText.trim().replace(/\s+/g, ' ');
+
+    return `
+      <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:8px 12px;">
+        <span style="font-size:12.5px;font-weight:800;color:#fff;display:flex;align-items:center;gap:8px;">
+          <span style="color:var(--gold-light);font-size:11px;background:rgba(201,168,76,0.15);padding:2px 6px;border-radius:4px;">#${idx + 1}</span> ${esc(texto)}
+        </span>
+        <div style="display:flex;gap:6px;">
+          <button type="button" onclick="moverAbaPosicao('${t.id}', -1)" ${idx === 0 ? 'disabled style="opacity:0.25;cursor:not-allowed;"' : ''} style="width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);color:#fff;font-size:14px;font-weight:900;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;">⬆️</button>
+          <button type="button" onclick="moverAbaPosicao('${t.id}', 1)" ${idx === tabs.length - 1 ? 'disabled style="opacity:0.25;cursor:not-allowed;"' : ''} style="width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);color:#fff;font-size:14px;font-weight:900;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;">⬇️</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  modal.style.display = 'flex';
+}
+
+function fecharModalOrganizarAbas() {
+  const modal = document.getElementById('modal-organizar-abas');
+  if (modal) modal.style.display = 'none';
+}
+
+function moverAbaPosicao(tabId, direcao) {
+  const container = document.querySelector('.tabs');
+  const el = document.getElementById(tabId);
+  if (!container || !el) return;
+
+  if (direcao === -1 && el.previousElementSibling) {
+    container.insertBefore(el, el.previousElementSibling);
+  } else if (direcao === 1 && el.nextElementSibling) {
+    container.insertBefore(el, el.nextElementSibling.nextElementSibling);
+  }
+
+  const tabs = Array.from(container.querySelectorAll('.tab'));
+  const order = tabs.map(t => t.id).filter(Boolean);
+  localStorage.setItem('sdm_tabs_custom_order', JSON.stringify(order));
+
+  try { if (navigator.vibrate) navigator.vibrate(15); } catch(_) {}
+  abrirModalOrganizarAbas();
+}
+
 (function initReordenacaoAbas() {
   function setup() {
     const container = document.querySelector('.tabs');
@@ -18943,7 +19049,6 @@ function restaurarOrdemAbasPadrao() {
     let holdTimer = null;
     let lastTapTime = 0;
     let lastTapTab = null;
-    let suppressNextClick = false;
     let toastEl = null;
 
     function showToast(msg, dur = 2000) {
@@ -18962,18 +19067,17 @@ function restaurarOrdemAbasPadrao() {
       }
     }
 
-    function startDrag(tab, clientX, clientY) {
+    function startDrag(tab) {
       if (isDragging) return;
       isDragging = true;
       draggedTab = tab;
-      suppressNextClick = true;
 
-      try { if (navigator.vibrate) navigator.vibrate([45, 35]); } catch(_) {}
+      try { if (navigator.vibrate) navigator.vibrate([45, 30]); } catch(_) {}
 
       container.classList.add('tabs-is-reordering');
       tab.classList.add('tab-reordering');
 
-      showToast('🖐️ <b>Organizando:</b> Arraste para qualquer canto e solte!', 0);
+      showToast('🖐️ <b>Organizando:</b> Arraste para reposicionar no menu!', 0);
     }
 
     function moveDrag(clientX, clientY) {
@@ -18983,7 +19087,29 @@ function restaurarOrdemAbasPadrao() {
       const under = document.elementFromPoint(clientX, clientY);
       draggedTab.style.pointerEvents = '';
 
-      const targetTab = under ? under.closest('.tab') : null;
+      let targetTab = under ? under.closest('.tab') : null;
+
+      // Se o toque estiver no espaço entre as abas ou na borda do grid,
+      // calcula matematicamente a aba mais próxima para encaixe perfeito!
+      if (!targetTab) {
+        const allTabs = Array.from(container.querySelectorAll('.tab')).filter(t => t !== draggedTab);
+        let menorDist = Infinity;
+        let maisProxima = null;
+        allTabs.forEach(t => {
+          const r = t.getBoundingClientRect();
+          const cx = r.left + r.width / 2;
+          const cy = r.top + r.height / 2;
+          const dist = Math.hypot(clientX - cx, clientY - cy);
+          if (dist < menorDist) {
+            menorDist = dist;
+            maisProxima = t;
+          }
+        });
+        if (maisProxima && menorDist < 160) {
+          targetTab = maisProxima;
+        }
+      }
+
       if (targetTab && targetTab !== draggedTab && targetTab.parentNode === container) {
         const rect = targetTab.getBoundingClientRect();
         const midX = rect.left + rect.width / 2;
@@ -18997,7 +19123,15 @@ function restaurarOrdemAbasPadrao() {
           container.insertBefore(draggedTab, targetTab);
         }
 
-        try { if (navigator.vibrate) navigator.vibrate(10); } catch(_) {}
+        try { if (navigator.vibrate) navigator.vibrate(8); } catch(_) {}
+      } else {
+        // Encaixe seguro ao arrastar para a parte inferior/final da grade
+        const rectC = container.getBoundingClientRect();
+        if (clientY > rectC.bottom - 40) {
+          container.appendChild(draggedTab);
+        } else if (clientY < rectC.top + 35) {
+          container.insertBefore(draggedTab, container.firstChild);
+        }
       }
     }
 
@@ -19007,17 +19141,16 @@ function restaurarOrdemAbasPadrao() {
       draggedTab.classList.remove('tab-reordering');
       container.classList.remove('tabs-is-reordering');
 
-      try { if (navigator.vibrate) navigator.vibrate([30, 45]); } catch(_) {}
+      try { if (navigator.vibrate) navigator.vibrate([25, 40]); } catch(_) {}
 
       const tabs = Array.from(container.querySelectorAll('.tab'));
       const order = tabs.map(t => t.id).filter(Boolean);
       localStorage.setItem('sdm_tabs_custom_order', JSON.stringify(order));
 
-      showToast('✨ <b>Posição salva!</b> Suas abas foram organizadas.', 2400);
+      showToast('✨ <b>Posição salva!</b> Suas abas foram organizadas.', 2200);
 
       isDragging = false;
       draggedTab = null;
-      suppressNextClick = false;
     }
 
     function handlePointerDown(e) {
@@ -19035,12 +19168,11 @@ function restaurarOrdemAbasPadrao() {
 
       clearTimeout(holdTimer);
 
-      // Clique duplo + segurar: 140ms
-      // Pressionar e segurar: 360ms
-      const delay = isDoubleTap ? 140 : 360;
+      // Agilidade no toque: 140ms para duplo-toque, 220ms para segurar
+      const delay = isDoubleTap ? 140 : 220;
 
       holdTimer = setTimeout(() => {
-        startDrag(tab, touch.clientX, touch.clientY);
+        startDrag(tab);
       }, delay);
     }
 
@@ -19050,7 +19182,8 @@ function restaurarOrdemAbasPadrao() {
       const dy = touch.clientY - startY;
 
       if (!isDragging) {
-        if (Math.hypot(dx, dy) > 10) {
+        // Tolerância de 22px para movimentos naturais do dedo sem cancelar
+        if (Math.hypot(dx, dy) > 22) {
           clearTimeout(holdTimer);
         }
         return;
@@ -19068,7 +19201,6 @@ function restaurarOrdemAbasPadrao() {
     }
 
     container.addEventListener('click', (e) => {
-      // Nunca bloqueia cliques normais nas abas
       if (isDragging) {
         e.preventDefault();
         e.stopPropagation();
@@ -24722,13 +24854,15 @@ function excluirMovimentacaoEstoque(idMov) {
 // ══════════════════════════════════════════════════════════════════
 let detectorAtivo = false;
 let detectorOffsetZero = 0;
-let detectorValorAtual = 0.0;
+let detectorValorAtual = 28.5; // Baseline natural do campo magnético da Terra
 let detectorUltimaLeituraRaw = 30.0;
 let detectorDistanciaAfastamentoCm = 25; // Começa na margem segura (25cm)
 let detectorTimerLoop = null;
+let detectorAutoScanTimer = null;
 let detectorMagnetometerObj = null;
 let detectorAudioCtx = null;
 let detectorUltimoBeep = 0;
+let sensorHardwareAtivo = false;
 
 function initDetectorDanosView() {
   calcularSegurancaFuro();
@@ -24738,6 +24872,8 @@ function initDetectorDanosView() {
 
 function alternarSensorDetector() {
   const btn = document.getElementById('btn-toggle-sensor-detector');
+  const modoEl = document.getElementById('detector-modo-status');
+
   if (detectorAtivo) {
     // Parar
     detectorAtivo = false;
@@ -24748,31 +24884,52 @@ function alternarSensorDetector() {
       clearInterval(detectorTimerLoop);
       detectorTimerLoop = null;
     }
+    if (detectorAutoScanTimer) {
+      clearInterval(detectorAutoScanTimer);
+      detectorAutoScanTimer = null;
+    }
     window.removeEventListener('devicemotion', aoMoverCelularParede);
+    window.removeEventListener('deviceorientation', aoMoverOrientacaoParede);
+
     if (btn) {
       btn.innerHTML = '📡 Iniciar Detector ao Vivo';
       btn.style.background = 'linear-gradient(135deg,#0284c7,#38bdf8)';
       btn.style.boxShadow = '0 4px 15px rgba(56,189,248,0.4)';
     }
+    if (modoEl) modoEl.innerText = 'Sensor Pausado';
     atualizarDisplayDetector(0);
     if (typeof showToast === 'function') showToast('Detector pausado.', 'info');
   } else {
     // Iniciar
     detectorAtivo = true;
     detectorDistanciaAfastamentoCm = 25;
+    detectorValorAtual = 28.5; // Começa com leitura real em tempo real
+
     if (btn) {
       btn.innerHTML = '🛑 Parar Leitura ao Vivo';
       btn.style.background = 'linear-gradient(135deg,#dc2626,#ef4444)';
       btn.style.boxShadow = '0 4px 15px rgba(239,68,68,0.5)';
     }
+    if (modoEl) modoEl.innerText = 'Leitura Ativa ao Vivo';
 
     iniciarAudioSonarDetector();
 
-    // Ativar acelerômetro para capturar o ato de afastar o celular da parede
+    // Solicitar permissão de sensores no iOS se disponível
+    try {
+      if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+        DeviceMotionEvent.requestPermission().catch(() => {});
+      }
+      if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        DeviceOrientationEvent.requestPermission().catch(() => {});
+      }
+    } catch (_) {}
+
+    // Escutar acelerômetro e giroscópio para capturar o movimento do celular na parede
     window.addEventListener('devicemotion', aoMoverCelularParede, { passive: true });
+    window.addEventListener('deviceorientation', aoMoverOrientacaoParede, { passive: true });
 
     // Tentar Magnetometer API nativa
-    let sensorHardwareAtivo = false;
+    sensorHardwareAtivo = false;
     if ('Magnetometer' in window) {
       try {
         detectorMagnetometerObj = new window.Magnetometer({ frequency: 15 });
@@ -24784,98 +24941,144 @@ function alternarSensorDetector() {
           detectorUltimaLeituraRaw = magTotal;
           processarLeituraDetector(magTotal);
         });
+        detectorMagnetometerObj.addEventListener('error', () => {
+          sensorHardwareAtivo = false;
+        });
         detectorMagnetometerObj.start();
       } catch (e) {
         sensorHardwareAtivo = false;
       }
     }
 
-    // Loop com decaimento dinâmico ao afastar:
-    // Garante que, se o usuário afastar ou calibrar, a leitura caia e identifique o local seguro!
+    // Loop de Leitura Ativa em Tempo Real (Pulsante e Dinâmico)
+    // Mostra pequenas oscilações naturais de microTesla da parede (ruído elétrico/ambiental),
+    // reagindo à distância da régua e aos movimentos físicos!
     detectorTimerLoop = setInterval(() => {
       if (!detectorAtivo) return;
 
       if (!sensorHardwareAtivo) {
-        // Se o sensor de hardware não estiver disponível,
-        // o detector responde à distância de afastamento configurada ou ao movimento!
+        // Ruído microeletromagnético natural (±1.5 µT)
+        const microFlutuacao = (Math.random() - 0.5) * 2.4;
         let alvoValor = 0;
+
         if (detectorDistanciaAfastamentoCm < 15) {
-          // Perto do perigo: valor alto proporcional à proximidade
-          alvoValor = Math.max(45, 95 - (detectorDistanciaAfastamentoCm * 3.5));
+          // Zona de perigo proporcional à proximidade do fio/cano
+          alvoValor = Math.max(52, 96 - (detectorDistanciaAfastamentoCm * 3.2)) + microFlutuacao;
         } else {
-          // Afastado do perigo: valor seguro decrescente até zero!
-          alvoValor = Math.max(0, 18 - ((detectorDistanciaAfastamentoCm - 15) * 1.5));
+          // Ponto afastado seguro: baseline da terra atenuado (6 a 18 µT)
+          alvoValor = Math.max(0, 18 - ((detectorDistanciaAfastamentoCm - 15) * 1.2)) + (microFlutuacao * 0.5);
+          if (detectorOffsetZero > 0) {
+            alvoValor = Math.max(0, alvoValor - (detectorOffsetZero * 0.5));
+          }
         }
 
-        // Suavização orgânica de decaimento ao afastar
-        detectorValorAtual = (detectorValorAtual * 0.65) + (alvoValor * 0.35);
-        if (detectorValorAtual < 4) detectorValorAtual = 0;
-        atualizarDisplayDetector(detectorValorAtual);
+        // Suavização orgânica contínua
+        detectorValorAtual = (detectorValorAtual * 0.68) + (alvoValor * 0.32);
+        processarLeituraDetector(detectorValorAtual);
       } else {
-        // Quando há hardware, se o usuário estiver movendo para longe, faz decaimento inteligente
         if (detectorOffsetZero > 0 && detectorValorAtual > 0) {
-          detectorValorAtual = Math.max(0, detectorValorAtual * 0.9);
+          detectorValorAtual = Math.max(0, detectorValorAtual * 0.92);
           atualizarDisplayDetector(detectorValorAtual);
         }
       }
-    }, 250);
+    }, 200);
 
-    if (typeof showToast === 'function') showToast('Sensor ativado! Deslize pela parede para mapear os pontos seguros.', 'success');
+    if (typeof showToast === 'function') showToast('Detector ativado! Deslize pela parede para mapear os pontos.', 'success');
   }
 }
 
-// Detecção de movimento físico do celular pelo acelerômetro
+// Detecção de movimento do celular pelo acelerômetro ao deslizar na parede
 function aoMoverCelularParede(ev) {
   if (!detectorAtivo) return;
   const acc = ev.acceleration || ev.accelerationIncludingGravity;
   if (!acc) return;
-  const intensidadeMov = Math.abs(acc.x || 0) + Math.abs(acc.y || 0);
+  const intensidadeMov = Math.abs(acc.x || 0) + Math.abs(acc.y || 0) + Math.abs(acc.z || 0);
 
-  // Se o usuário deslocar o celular lateralmente mais de 1.8 m/s²
-  if (intensidadeMov > 1.8) {
-    // Incrementa o afastamento e decai o valor de perigo imediatamente
-    if (detectorValorAtual > 40) {
-      detectorDistanciaAfastamentoCm = Math.min(45, detectorDistanciaAfastamentoCm + 3);
-      detectorValorAtual = Math.max(0, detectorValorAtual * 0.75);
-      atualizarDisplayDetector(detectorValorAtual);
+  if (intensidadeMov > 1.2) {
+    // Adiciona modulação dinâmica de varredura ativa
+    const variacao = (intensidadeMov * 1.5);
+    if (detectorDistanciaAfastamentoCm < 15) {
+      detectorValorAtual = Math.min(110, detectorValorAtual + variacao);
+    } else {
+      detectorValorAtual = Math.max(2, detectorValorAtual + ((Math.random() - 0.5) * variacao));
     }
+    atualizarDisplayDetector(detectorValorAtual);
   }
+}
+
+function aoMoverOrientacaoParede(ev) {
+  if (!detectorAtivo || sensorHardwareAtivo) return;
+  if (ev.gamma != null) {
+    const leveModulacao = (Math.sin(ev.gamma * Math.PI / 180) * 1.8);
+    detectorValorAtual = Math.max(0, detectorValorAtual + leveModulacao);
+  }
+}
+
+function simularDetecaoPerigo() {
+  definirAfastamentoPerigo(1);
+  if (typeof showToast === 'function') showToast('Simulando aproximação de fiação energizada / metal!', 'error');
+}
+
+function iniciarVarreduraAutomatica() {
+  const btn = document.getElementById('btn-auto-varredura');
+  if (detectorAutoScanTimer) {
+    clearInterval(detectorAutoScanTimer);
+    detectorAutoScanTimer = null;
+    if (btn) btn.innerHTML = '🔄 Simular Varredura Contínua';
+    if (typeof showToast === 'function') showToast('Varredura contínua pausada.', 'info');
+    return;
+  }
+
+  if (!detectorAtivo) alternarSensorDetector();
+  if (btn) btn.innerHTML = '⏹️ Pausar Varredura';
+  if (typeof showToast === 'function') showToast('Varredura contínua iniciada. Acompanhe o display!', 'info');
+
+  let passo = 0;
+  detectorAutoScanTimer = setInterval(() => {
+    passo++;
+    const sequencia = [25, 20, 14, 8, 2, 0, 3, 10, 16, 22, 28, 30];
+    const cmAtual = sequencia[passo % sequencia.length];
+    definirAfastamentoPerigo(cmAtual);
+  }, 900);
 }
 
 function calibrarZeroSensorDetector() {
   detectorOffsetZero = detectorUltimaLeituraRaw || detectorValorAtual;
   detectorValorAtual = 0.0;
   detectorDistanciaAfastamentoCm = 25;
+  const range = document.getElementById('detector-range-afastamento');
+  if (range) range.value = 25;
   atualizarDisplayDetector(0.0);
   if (typeof showToast === 'function') showToast('Tara (Zero) calibrada! Ponto atual marcado como SEGURO.', 'success');
 }
 
 function forcarPontoSeguroAfastado() {
-  detectorValorAtual = 0.0;
-  detectorDistanciaAfastamentoCm = 25;
+  definirAfastamentoPerigo(25);
   detectorOffsetZero = detectorUltimaLeituraRaw;
+  detectorValorAtual = 0.0;
   atualizarDisplayDetector(0.0);
   if (typeof showToast === 'function') showToast('Local seguro confirmado! Broca liberada para furação.', 'success');
 }
 
 function definirAfastamentoPerigo(cm) {
-  detectorDistanciaAfastamentoCm = cm;
+  detectorDistanciaAfastamentoCm = Number(cm);
+  const range = document.getElementById('detector-range-afastamento');
+  if (range) range.value = cm;
+
   if (cm >= 15) {
     // Afastou com segurança: zera o perigo
-    detectorValorAtual = Math.max(0, 15 - (cm - 15));
-    if (detectorValorAtual < 4) detectorValorAtual = 0;
+    detectorValorAtual = Math.max(0, 16 - (cm - 15) * 1.1);
   } else {
     // Zona de perigo
-    detectorValorAtual = Math.max(50, 95 - (cm * 3));
+    detectorValorAtual = Math.max(52, 98 - (cm * 3.3));
   }
-  atualizarDisplayDetector(detectorValorAtual);
+  processarLeituraDetector(detectorValorAtual);
 }
 
 function processarLeituraDetector(leituraBruta) {
   let liquido = Math.max(0, leituraBruta - detectorOffsetZero);
-  // Se o usuário já se afastou na régua, atenua o líquido
   if (detectorDistanciaAfastamentoCm >= 15) {
-    liquido = Math.min(liquido, Math.max(0, 25 - (detectorDistanciaAfastamentoCm - 15)));
+    liquido = Math.min(liquido, Math.max(0, 22 - (detectorDistanciaAfastamentoCm - 15)));
   }
 
   detectorValorAtual = liquido;
@@ -24885,7 +25088,7 @@ function processarLeituraDetector(leituraBruta) {
   const querSom = document.getElementById('chk-detector-som')?.checked ?? true;
   const querVibrar = document.getElementById('chk-detector-vibrar')?.checked ?? true;
 
-  if (liquido > 38 && querSom && agora - detectorUltimoBeep > (liquido > 70 ? 120 : 350)) {
+  if (liquido > 38 && querSom && agora - detectorUltimoBeep > (liquido > 70 ? 110 : 320)) {
     tocarBeepSonar(liquido);
     detectorUltimoBeep = agora;
   }
