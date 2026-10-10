@@ -1,5 +1,5 @@
-// Service Worker PWA para sdmoveisprojetados - v2.8
-const CACHE_NAME = 'sdmoveisprojetados-v2.8-' + Date.now();
+// Service Worker PWA para sdmoveisprojetados - v2.9
+const CACHE_NAME = 'sdmoveisprojetados-v2.9-' + Date.now();
 const ASSETS = [
   '/',
   '/index.html',

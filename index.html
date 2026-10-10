@@ -2305,9 +2305,10 @@
     <!-- Lista de Agendamentos -->
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
-        <div class="card-title" style="margin-bottom:0;">🕒 Agenda Pessoal – Próximos Compromissos & Visitas</div>
-        <div style="display:flex;gap:6px;">
-          <button type="button" class="btn-filter-agenda active" id="btn-agenda-filtro-todos" onclick="filtrarAgenda('todos')">Todos</button>
+        <div class="card-title" style="margin-bottom:0;">🕒 Próximos Compromissos & Visitas</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button type="button" class="btn-filter-agenda active" id="btn-agenda-filtro-pendentes" onclick="filtrarAgenda('pendentes')">Pendentes</button>
+          <button type="button" class="btn-filter-agenda" id="btn-agenda-filtro-todos" onclick="filtrarAgenda('todos')">Todos</button>
           <button type="button" class="btn-filter-agenda" id="btn-agenda-filtro-concluidos" onclick="filtrarAgenda('concluidos')">Concluídos</button>
           <button type="button" class="btn-filter-agenda" id="btn-agenda-filtro-historico" onclick="filtrarAgenda('historico')">Histórico</button>
         </div>
@@ -2361,9 +2362,11 @@
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
         <div class="card-title" style="margin-bottom:0;">📝 Meus Compromissos Pessoais</div>
-        <div style="display:flex;gap:6px;">
-          <button type="button" class="btn-filter-agenda active" id="btn-pessoal-filtro-todos" onclick="filtrarAgendaPessoal('todos')">Todos</button>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button type="button" class="btn-filter-agenda active" id="btn-pessoal-filtro-pendentes" onclick="filtrarAgendaPessoal('pendentes')">Pendentes</button>
+          <button type="button" class="btn-filter-agenda" id="btn-pessoal-filtro-todos" onclick="filtrarAgendaPessoal('todos')">Todos</button>
           <button type="button" class="btn-filter-agenda" id="btn-pessoal-filtro-concluidos" onclick="filtrarAgendaPessoal('concluidos')">Concluídos</button>
+          <button type="button" class="btn-filter-agenda" id="btn-pessoal-filtro-historico" onclick="filtrarAgendaPessoal('historico')">Histórico</button>
         </div>
       </div>
       <div id="agenda-pessoal-lista">
@@ -14506,7 +14509,7 @@ function excluirLancamentoFinanceiro(id) {
 // ══════════════════════════════════════════════
 //  MÓDULO AGENDA (VISITAS, MEDIÇÕES & INSTALAÇÕES)
 // ══════════════════════════════════════════════
-let agendaFiltroAtual = 'todos';
+let agendaFiltroAtual = 'pendentes';
 let editandoAgendaId = null;
 
 function formatarTempoNotificacao(minutos) {
@@ -15019,32 +15022,52 @@ function renderAgenda() {
     const notifPill = formatarTempoNotificacao(ev.notificar_minutos);
 
     return `
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:12px;border-bottom:1px solid rgba(255,255,255,0.05);gap:12px;flex-wrap:wrap;background:${isHoje ? 'rgba(201,168,76,0.08)' : 'rgba(255,255,255,0.01)'};border-radius:8px;margin-bottom:6px;border:1px solid ${isHoje ? 'rgba(201,168,76,0.25)' : 'rgba(255,255,255,0.04)'};">
-        <div style="display:flex;align-items:flex-start;gap:10px;min-width:0;flex:1;">
-          <button onclick="alternarConcluidoAgenda('${ev.id}')" title="${ev.concluido ? 'Reabrir compromisso' : 'Marcar como concluído'}" style="margin-top:2px;background:${ev.concluido ? '#10b981' : 'transparent'};border:1.5px solid ${ev.concluido ? '#10b981' : 'rgba(255,255,255,0.2)'};color:#fff;width:24px;height:24px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;">
-            ${ev.concluido ? '✓' : ''}
-          </button>
-          <div style="min-width:0;">
-            <div style="font-weight:800;font-size:14px;color:#fff;text-decoration:${ev.concluido ? 'line-through' : 'none'};opacity:${ev.concluido ? '0.6' : '1'};display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-              <span>${esc(ev.cliente)}</span>
-              <span style="font-size:10.5px;padding:2px 8px;border-radius:999px;background:rgba(201,168,76,0.18);color:var(--gold-light);font-weight:700;">${esc(ev.tipo || 'Atendimento')}</span>
-              <span style="font-size:10px;padding:2px 8px;border-radius:999px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:#93c5fd;font-weight:700;" title="Tempo de alarme configurado">⏰ ${notifPill}</span>
-              ${ev.notificado ? '<span style="font-size:10px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.4);color:#34d399;padding:1px 6px;border-radius:999px;font-weight:700;">🔔 Alarme tocado</span>' : ''}
-              ${isHoje ? '<span style="font-size:10px;background:#ef4444;color:#fff;padding:1px 6px;border-radius:999px;font-weight:800;">HOJE</span>' : ''}
-            </div>
-            <div style="font-size:12px;color:var(--muted);margin-top:4px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-              <span>📅 ${ev.data ? ev.data.split('-').reverse().join('/') : 'Sem data'} ${ev.hora ? ' às ' + ev.hora : ''}</span>
-              ${ev.tel ? `<span>📞 ${esc(ev.tel)}</span>` : ''}
-              ${ev.end ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.end)}" target="_blank" rel="noopener" style="color:#4ade80;text-decoration:none;font-weight:700;display:inline-flex;align-items:center;gap:3px;" title="Abrir no Google Maps">🗺️ ${esc(ev.end)}</a>` : ''}
-            </div>
-            ${ev.obs ? `<div style="font-size:11.5px;color:rgba(255,255,255,0.7);margin-top:4px;font-style:italic;">📝 ${esc(ev.obs)}</div>` : ''}
+      <div style="background:#10111a;border:1px solid ${isHoje ? 'rgba(56,189,248,0.35)' : 'rgba(255,255,255,0.08)'};border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 6px 20px rgba(0,0,0,0.5);position:relative;">
+        <!-- LINHA SUPERIOR: Checkbox + Botões de Ação Padronizados (como Imagem 3) -->
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <button onclick="alternarConcluidoAgenda('${ev.id}')" title="${ev.concluido ? 'Reabrir compromisso' : 'Marcar como concluído'}" style="background:${ev.concluido ? '#10b981' : 'transparent'};border:1.5px solid ${ev.concluido ? '#10b981' : 'rgba(255,255,255,0.25)'};color:#fff;width:26px;height:26px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">
+              ${ev.concluido ? '✓' : ''}
+            </button>
+            ${zapLink ? `<a href="${zapLink}" target="_blank" style="padding:6px 12px;font-size:12px;font-weight:800;border-radius:8px;text-decoration:none;background:linear-gradient(135deg,#25D366,#1cb85a);color:#fff;display:inline-flex;align-items:center;gap:5px;box-shadow:0 3px 10px rgba(37,211,102,0.3);">💬 WhatsApp</a>` : ''}
+          </div>
+
+          <div style="display:flex;align-items:center;gap:6px;">
+            <button onclick="reagendarCompromissoAgenda('${ev.id}')" style="background:rgba(59,130,246,0.18);border:1px solid rgba(59,130,246,0.4);color:#93c5fd;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:800;display:inline-flex;align-items:center;gap:4px;">🔄 Reagendar</button>
+            <button onclick="abrirModalNovoCompromissoAgenda('${ev.id}')" style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.35);color:#fbbf24;width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:12px;display:inline-flex;align-items:center;justify-content:center;" title="Editar">✏️</button>
+            <button class="item-del" onclick="excluirCompromissoAgenda('${ev.id}')" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.35);color:#f87171;width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:12px;display:inline-flex;align-items:center;justify-content:center;" title="Excluir">✕</button>
           </div>
         </div>
-        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-          ${zapLink ? `<a href="${zapLink}" target="_blank" class="btn btn-whats btn-xs" style="padding:4px 10px;font-size:11px;text-decoration:none;" title="Enviar lembrete pelo WhatsApp">💬 WhatsApp</a>` : ''}
-          <button onclick="reagendarCompromissoAgenda('${ev.id}')" title="Reagendar compromisso mantendo este no histórico" style="background:rgba(59,130,246,0.18);border:1px solid rgba(59,130,246,0.35);color:#93c5fd;padding:4px 9px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:4px;">🔄 Reagendar</button>
-          <button onclick="abrirModalNovoCompromissoAgenda('${ev.id}')" title="Editar agendamento e alarme" style="background:transparent;border:1px solid rgba(255,255,255,0.15);color:var(--gold-light);width:26px;height:26px;border-radius:6px;cursor:pointer;font-size:11px;display:inline-flex;align-items:center;justify-content:center;">✏️</button>
-          <button class="item-del" onclick="excluirCompromissoAgenda('${ev.id}')" title="Excluir agendamento" style="width:26px;height:26px;font-size:11px;">✕</button>
+
+        <!-- CONTEÚDO DO CARD: Nome grande e chips em fluxo vertical organizado (como Imagem 3) -->
+        <div>
+          <div style="font-weight:900;font-size:16px;color:#fff;margin-bottom:8px;word-break:break-word;text-decoration:${ev.concluido ? 'line-through' : 'none'};opacity:${ev.concluido ? '0.65' : '1'};">
+            ${esc(ev.cliente)}
+          </div>
+
+          <div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;">
+            <span style="font-size:11px;padding:3px 10px;border-radius:999px;background:rgba(201,168,76,0.18);color:var(--gold-light);font-weight:700;display:inline-block;">
+              ${esc(ev.tipo || 'Medição Técnica')}
+            </span>
+
+            <span style="font-size:10.5px;padding:3px 10px;border-radius:999px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:#93c5fd;font-weight:700;display:inline-block;">
+              ⏰ ${notifPill}
+            </span>
+
+            ${ev.notificado ? '<span style="font-size:10.5px;padding:3px 10px;border-radius:999px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.4);color:#34d399;font-weight:700;display:inline-block;">🔔 Alarme tocado</span>' : ''}
+
+            ${isHoje ? '<span style="font-size:10.5px;padding:2px 8px;border-radius:999px;background:#ef4444;color:#fff;font-weight:900;display:inline-block;">HOJE</span>' : ''}
+
+            <div style="font-size:12.5px;color:var(--text2);margin-top:2px;display:flex;align-items:center;gap:6px;">
+              <span>📅</span> <span>${dataFmt} ${ev.hora ? 'às ' + ev.hora : ''}</span>
+            </div>
+
+            ${ev.tel ? `<div style="font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px;"><span>📞</span> <span>${esc(ev.tel)}</span></div>` : ''}
+
+            ${ev.end ? `<div style="font-size:12.5px;margin-top:2px;"><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.end)}" target="_blank" rel="noopener" style="color:#4ade80;text-decoration:none;font-weight:700;display:inline-flex;align-items:center;gap:5px;"><span>🗺️</span> <span>${esc(ev.end)}</span></a></div>` : ''}
+
+            ${ev.obs ? `<div style="font-size:11.5px;color:rgba(255,255,255,0.7);margin-top:4px;font-style:italic;">📝 ${esc(ev.obs)}</div>` : ''}
+          </div>
         </div>
       </div>
     `;
@@ -15079,7 +15102,7 @@ function abrirMapsEndereco() {
 
 function filtrarAgenda(filtro) {
   agendaFiltroAtual = filtro;
-  ['todos','concluidos','historico'].forEach(f => {
+  ['pendentes','todos','concluidos','historico'].forEach(f => {
     const b = document.getElementById('btn-agenda-filtro-' + f);
     if (b) b.classList.toggle('active', f === filtro);
   });
