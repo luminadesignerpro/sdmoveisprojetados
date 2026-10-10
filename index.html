@@ -5053,6 +5053,44 @@
   </div>
 </div>
 
+<!-- ══ MODAL DE AVALIAÇÃO DE ATENDIMENTO (AGENDA) ══ -->
+<div id="modal-avaliar-agenda" class="modal-overlay" style="display:none;z-index:999999;background:rgba(0,0,0,0.88);backdrop-filter:blur(8px);">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:440px;text-align:center;border:1.5px solid var(--gold);box-shadow:0 0 45px rgba(201,168,76,0.5);padding:24px 20px;background:#0d0e17;border-radius:16px;">
+    <div style="font-size:44px;margin-bottom:6px;">⭐</div>
+    <div style="font-size:12px;font-weight:900;color:var(--gold);letter-spacing:0.12em;text-transform:uppercase;">Avaliação do Atendimento</div>
+    <h3 id="modal-aval-cliente" style="font-size:20px;font-weight:900;color:#fff;margin:6px 0 14px 0;">Cliente</h3>
+
+    <div style="margin-bottom:14px;background:rgba(255,255,255,0.03);padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Selecione a nota do atendimento:</div>
+      <div id="aval-estrelas-box" style="display:flex;justify-content:center;gap:12px;font-size:32px;cursor:pointer;user-select:none;">
+        <span onclick="definirNotaAvaliacaoAgenda(1)" id="star-ag-1" style="transition:transform 0.15s;">⭐</span>
+        <span onclick="definirNotaAvaliacaoAgenda(2)" id="star-ag-2" style="transition:transform 0.15s;">⭐</span>
+        <span onclick="definirNotaAvaliacaoAgenda(3)" id="star-ag-3" style="transition:transform 0.15s;">⭐</span>
+        <span onclick="definirNotaAvaliacaoAgenda(4)" id="star-ag-4" style="transition:transform 0.15s;">⭐</span>
+        <span onclick="definirNotaAvaliacaoAgenda(5)" id="star-ag-5" style="transition:transform 0.15s;">⭐</span>
+      </div>
+      <div id="aval-nota-texto" style="font-size:13px;font-weight:800;color:var(--gold-light);margin-top:8px;">5 / 5 - Excelente ⭐⭐⭐⭐⭐</div>
+    </div>
+
+    <div style="text-align:left;margin-bottom:16px;">
+      <label style="font-size:11.5px;font-weight:800;color:var(--text2);display:block;margin-bottom:4px;">Comentário / Opinião:</label>
+      <textarea id="aval-comentario" rows="3" placeholder="Ex: Medição feita no prazo com muita atenção aos detalhes..." style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:#fff;font-size:13px;resize:none;box-sizing:border-box;outline:none;font-family:inherit;"></textarea>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <button type="button" class="btn btn-primary" onclick="confirmarSalvarAvaliacaoAgenda()" style="width:100%;padding:12px;font-size:14px;font-weight:900;">
+        💾 Salvar Avaliação
+      </button>
+      <button type="button" class="btn btn-whats" onclick="enviarAvaliacaoEmpresaZapAgenda()" style="width:100%;padding:10px;font-size:12.5px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;gap:6px;">
+        💬 Enviar Avaliação no WhatsApp da Empresa
+      </button>
+      <button type="button" class="btn btn-sec" onclick="fecharModalAvaliarAgenda()" style="width:100%;padding:8px;font-size:12px;">
+        Fechar
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ MODAL ALARME DE PONTO DISPARADO (5 MIN ANTES) ══ -->
 <div id="modal-alarme-ponto-disparado" class="modal-overlay" style="display:none;z-index:999999;background:rgba(0,0,0,0.9);backdrop-filter:blur(10px);">
   <div class="modal-box" onclick="event.stopPropagation()" style="max-width:440px;text-align:center;border:2px solid #38bdf8;box-shadow:0 0 50px rgba(56,189,248,0.7);padding:26px 20px;">
@@ -14694,12 +14732,80 @@ function mostrarToastAgenda(htmlContent) {
 
 let alarmeAudioInterval = null;
 let alarmeAtivoEvento = null;
+let alarmeAudioEl = null;
+let alarmeWakeLock = null;
+
+function getAlarmeAudioEl() {
+  if (!alarmeAudioEl) {
+    alarmeAudioEl = document.getElementById('sdmoveis-alarme-audio');
+    if (!alarmeAudioEl) {
+      alarmeAudioEl = document.createElement('audio');
+      alarmeAudioEl.id = 'sdmoveis-alarme-audio';
+      alarmeAudioEl.src = 'alarme.wav';
+      alarmeAudioEl.loop = true;
+      alarmeAudioEl.preload = 'auto';
+      alarmeAudioEl.volume = 1.0;
+      document.body.appendChild(alarmeAudioEl);
+    }
+  }
+  return alarmeAudioEl;
+}
+
+// Pré-desbloqueio automático de áudio no primeiro toque do celular
+function desbloquearAudioMobile() {
+  try {
+    const a = getAlarmeAudioEl();
+    if (a) {
+      a.volume = 0.01;
+      const prom = a.play();
+      if (prom && prom.then) {
+        prom.then(() => {
+          a.pause();
+          a.currentTime = 0;
+          a.volume = 1.0;
+        }).catch(() => {});
+      }
+    }
+  } catch(_) {}
+  document.removeEventListener('touchstart', desbloquearAudioMobile);
+  document.removeEventListener('click', desbloquearAudioMobile);
+}
+document.addEventListener('touchstart', desbloquearAudioMobile, { once: true, passive: true });
+document.addEventListener('click', desbloquearAudioMobile, { once: true, passive: true });
 
 function tocarSomAlarmeSiren() {
   try {
+    // 1. Áudio HTML5 nativo contínuo (permanece tocando com tela fechada / bloqueada)
+    const audio = getAlarmeAudioEl();
+    if (audio) {
+      audio.volume = 1.0;
+      audio.play().catch(() => {});
+    }
+
+    // 2. MediaSession para o Android/iOS reconhecer como mídia em primeiro plano com tela apagada
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: '⏰ ALARME DE AGENDAMENTO',
+        artist: 'SD Móveis Projetados',
+        album: alarmeAtivoEvento ? (alarmeAtivoEvento.cliente || 'Agenda') : 'Alarme Ativo'
+      });
+      navigator.mediaSession.setActionHandler('stop', () => pararAlarmeAgenda());
+      navigator.mediaSession.setActionHandler('pause', () => pararAlarmeAgenda());
+    }
+
+    // 3. Screen Wake Lock para acordar a tela do aparelho
+    if ('wakeLock' in navigator && !alarmeWakeLock) {
+      navigator.wakeLock.request('screen').then(wl => { alarmeWakeLock = wl; }).catch(() => {});
+    }
+
+    // 4. Vibração forte contínua do celular
+    if ('vibrate' in navigator) {
+      navigator.vibrate([1000, 400, 1000, 400, 1000, 400, 2000]);
+    }
+
+    // 5. Síntese Web Audio como reforço sonoro
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const agora = audioCtx.currentTime;
-
     [
       { freq: 880, start: 0, dur: 0.14 },
       { freq: 1174.66, start: 0.18, dur: 0.14 },
@@ -14710,17 +14816,13 @@ function tocarSomAlarmeSiren() {
       const gain = audioCtx.createGain();
       osc.type = 'sawtooth';
       osc.frequency.setValueAtTime(note.freq, agora + note.start);
-      gain.gain.setValueAtTime(0.35, agora + note.start);
+      gain.gain.setValueAtTime(0.4, agora + note.start);
       gain.gain.exponentialRampToValueAtTime(0.01, agora + note.start + note.dur);
       osc.connect(gain);
       gain.connect(audioCtx.destination);
       osc.start(agora + note.start);
       osc.stop(agora + note.start + note.dur);
     });
-
-    if ('vibrate' in navigator) {
-      navigator.vibrate([200, 100, 200, 100, 350]);
-    }
   } catch (_) {}
 }
 
@@ -14775,7 +14877,7 @@ function iniciarLoopAlarme(ev, diffMinutos) {
   if (btnZap) {
     const zapClean = (ev.tel || '').replace(/\D/g, '');
     if (zapClean) {
-      const msg = encodeURIComponent(`Olá ${ev.cliente || ''}, confirmando o seu agendamento de ${ev.tipo || 'atendimento'} às ${ev.hora || ''} pela SD Vidros.`);
+      const msg = encodeURIComponent(`Olá ${ev.cliente || ''}! 😊\nConfirmando o seu agendamento de *${ev.tipo || 'Medição Técnica'}* às *${ev.hora || ''}* pela *SD Móveis Projetados*.\n\n👉 *Opções para seu atendimento:*\n✅ *CONFIRMAR* - Confirma sua presença\n🔄 *REAGENDAR* - Solicita nova data ou horário\n⭐ *AVALIAR* - Envia sua avaliação`);
       btnZap.href = `https://wa.me/55${zapClean}?text=${msg}`;
       btnZap.style.display = 'inline-flex';
     } else {
@@ -14787,13 +14889,25 @@ function iniciarLoopAlarme(ev, diffMinutos) {
   if (modal) modal.style.display = 'flex';
 
   tocarSomAlarmeSiren();
-  alarmeAudioInterval = setInterval(tocarSomAlarmeSiren, 1800);
+  alarmeAudioInterval = setInterval(tocarSomAlarmeSiren, 2500);
 }
 
 function pararAlarmeAgenda() {
   if (alarmeAudioInterval) {
     clearInterval(alarmeAudioInterval);
     alarmeAudioInterval = null;
+  }
+  if (alarmeAudioEl) {
+    try {
+      alarmeAudioEl.pause();
+      alarmeAudioEl.currentTime = 0;
+    } catch(_) {}
+  }
+  if (alarmeWakeLock) {
+    try {
+      alarmeWakeLock.release().catch(() => {});
+      alarmeWakeLock = null;
+    } catch(_) {}
   }
   const modal = document.getElementById('modal-alarme-disparado');
   if (modal) modal.style.display = 'none';
@@ -14816,7 +14930,7 @@ function adiarAlarmeAgenda(minutos = 5) {
 
 function testarSomAlarmeAgenda() {
   tocarSomAlarmeSiren();
-  mostrarToastAgenda('🔊 Teste do alarme sonoro executado!');
+  mostrarToastAgenda('🔊 Teste do alarme sonoro com áudio contínuo executado!');
 }
 
 function aoMudarOpcaoAlarmeAgenda() {
@@ -14850,7 +14964,20 @@ function dispararNotificacaoCompromisso(ev, diffMinutos) {
 
   mostrarToastAgenda(`<strong>${esc(tipoAtend)}</strong> com <strong>${esc(clienteNome)}</strong> ${tempoMsg}${horario ? ' (' + horario + ')' : ''}`);
 
-  if ('Notification' in window && Notification.permission === 'granted') {
+  // Disparo com Service Worker para tocar e vibrar no celular mesmo com tela bloqueada/fechada
+  if ('serviceWorker' in navigator && navigator.serviceWorker.ready) {
+    navigator.serviceWorker.ready.then(reg => {
+      reg.showNotification(`⏰ ALARME: ${tipoAtend} - ${clienteNome}`, {
+        body: `${tempoMsg} Horário: ${ev.hora || ''} | Local: ${ev.end || 'A combinar'}\nToque para abrir e desligar o alarme.`,
+        icon: 'icon-192.png',
+        badge: 'icon-192.png',
+        tag: 'alarme-sdmoveis-' + ev.id,
+        requireInteraction: true,
+        renotify: true,
+        vibrate: [1000, 400, 1000, 400, 1000, 400, 2000]
+      });
+    }).catch(() => {});
+  } else if ('Notification' in window && Notification.permission === 'granted') {
     try {
       new Notification(`⏰ Alarme de Agenda: ${tipoAtend}`, {
         body: `${clienteNome} - ${tempoMsg}\nHorário: ${ev.hora || ''} | Local: ${ev.end || 'A combinar'}`,
@@ -14859,6 +14986,136 @@ function dispararNotificacaoCompromisso(ev, diffMinutos) {
     } catch(_) {}
   }
 }
+
+// ── FUNÇÕES DE CONFIRMAÇÃO E AVALIAÇÃO DA AGENDA ──
+let avaliacaoAtivaEventoId = null;
+let notaAvaliacaoSelecionada = 5;
+
+function alternarConfirmadoAgenda(id) {
+  const eventos = obterAgendaEventos();
+  const ev = eventos.find(x => x.id === id);
+  if (!ev) return;
+  ev.confirmado = !ev.confirmado;
+  salvarAgendaEventos(eventos);
+  renderAgenda();
+  if (ev.confirmado) {
+    mostrarToastAgenda(`✅ Agendamento de <strong>${esc(ev.cliente)}</strong> marcado como <strong>Confirmado</strong>!`);
+  } else {
+    mostrarToastAgenda(`ℹ️ Confirmação de <strong>${esc(ev.cliente)}</strong> desmarcada.`);
+  }
+}
+
+function abrirModalAvaliarAgenda(id) {
+  const eventos = obterAgendaEventos();
+  const ev = eventos.find(x => x.id === id);
+  if (!ev) return;
+  avaliacaoAtivaEventoId = id;
+  notaAvaliacaoSelecionada = (ev.avaliacao && ev.avaliacao.nota) ? Number(ev.avaliacao.nota) : 5;
+
+  const elNome = document.getElementById('modal-aval-cliente');
+  if (elNome) elNome.textContent = ev.cliente || 'Cliente';
+
+  const txtComent = document.getElementById('aval-comentario');
+  if (txtComent) txtComent.value = (ev.avaliacao && ev.avaliacao.comentario) ? ev.avaliacao.comentario : '';
+
+  definirNotaAvaliacaoAgenda(notaAvaliacaoSelecionada);
+
+  const m = document.getElementById('modal-avaliar-agenda');
+  if (m) m.style.display = 'flex';
+}
+
+function fecharModalAvaliarAgenda() {
+  const m = document.getElementById('modal-avaliar-agenda');
+  if (m) m.style.display = 'none';
+  avaliacaoAtivaEventoId = null;
+}
+
+function definirNotaAvaliacaoAgenda(nota) {
+  notaAvaliacaoSelecionada = nota;
+  const labels = ['', '1 / 5 - Ruim ⭐', '2 / 5 - Regular ⭐⭐', '3 / 5 - Bom ⭐⭐⭐', '4 / 5 - Muito Bom ⭐⭐⭐⭐', '5 / 5 - Excelente ⭐⭐⭐⭐⭐'];
+  const elTexto = document.getElementById('aval-nota-texto');
+  if (elTexto) elTexto.textContent = labels[nota] || (nota + ' / 5');
+
+  for (let i = 1; i <= 5; i++) {
+    const star = document.getElementById('star-ag-' + i);
+    if (star) {
+      if (i <= nota) {
+        star.style.opacity = '1';
+        star.style.transform = 'scale(1.15)';
+        star.style.filter = 'drop-shadow(0 0 6px rgba(250,204,21,0.8))';
+      } else {
+        star.style.opacity = '0.3';
+        star.style.transform = 'scale(1)';
+        star.style.filter = 'none';
+      }
+    }
+  }
+}
+
+function confirmarSalvarAvaliacaoAgenda() {
+  if (!avaliacaoAtivaEventoId) return;
+  const eventos = obterAgendaEventos();
+  const ev = eventos.find(x => x.id === avaliacaoAtivaEventoId);
+  if (!ev) return;
+
+  const txtComent = document.getElementById('aval-comentario');
+  const comentario = txtComent ? txtComent.value.trim() : '';
+
+  ev.avaliacao = {
+    nota: notaAvaliacaoSelecionada,
+    comentario: comentario,
+    data: new Date().toISOString()
+  };
+
+  salvarAgendaEventos(eventos);
+  fecharModalAvaliarAgenda();
+  renderAgenda();
+  mostrarToastAgenda(`⭐ Avaliação de <strong>${esc(ev.cliente)}</strong> salva com sucesso! (${notaAvaliacaoSelecionada}/5★)`);
+}
+
+function enviarAvaliacaoEmpresaZapAgenda() {
+  if (!avaliacaoAtivaEventoId) return;
+  const eventos = obterAgendaEventos();
+  const ev = eventos.find(x => x.id === avaliacaoAtivaEventoId);
+  if (!ev) return;
+
+  const txtComent = document.getElementById('aval-comentario');
+  const comentario = txtComent ? txtComent.value.trim() : '';
+
+  ev.avaliacao = {
+    nota: notaAvaliacaoSelecionada,
+    comentario: comentario,
+    data: new Date().toISOString()
+  };
+  salvarAgendaEventos(eventos);
+  renderAgenda();
+
+  const textoZap = `⭐ *AVALIAÇÃO DE ATENDIMENTO - SD Móveis Projetados*\n\n` +
+    `👤 *Cliente:* ${ev.cliente || 'Cliente'}\n` +
+    `📋 *Compromisso:* ${ev.tipo || 'Medição Técnica'} (${ev.data ? ev.data.split('-').reverse().join('/') : ''} ${ev.hora || ''})\n` +
+    `⭐ *Nota:* ${notaAvaliacaoSelecionada} / 5 estrelas\n` +
+    (comentario ? `💬 *Comentário do Cliente:* "${comentario}"\n\n` : '\n') +
+    `_Avaliação registrada e enviada para a empresa!_`;
+
+  const msgEncoded = encodeURIComponent(textoZap);
+  const zapUrl = `https://wa.me/5585985749686?text=${msgEncoded}`;
+  window.open(zapUrl, '_blank', 'noopener');
+  fecharModalAvaliarAgenda();
+  mostrarToastAgenda('💬 Abrindo WhatsApp da SD Móveis com a avaliação!');
+}
+
+// Background Worker para manter checagem do alarme ativa com tela fechada
+try {
+  const workerBlob = new Blob([`
+    setInterval(function() { postMessage('tick'); }, 10000);
+  `], { type: 'application/javascript' });
+  const bgAlarmWorker = new Worker(URL.createObjectURL(workerBlob));
+  bgAlarmWorker.onmessage = function() {
+    if (typeof verificarNotificacoesAgenda === 'function') {
+      verificarNotificacoesAgenda();
+    }
+  };
+} catch(_) {}
 
 function verificarNotificacoesAgenda() {
   const eventos = obterAgendaEventos();
@@ -15103,53 +15360,63 @@ function renderAgenda() {
     const isHoje = ev.data === hojeStr && !ev.concluido;
     const zapClean = (ev.tel || '').replace(/\D/g, '');
     const dataFmt = ev.data ? ev.data.split('-').reverse().join('/') : '';
-    const numOsVinculada = (ev.os || ev.numero_os || (typeof historico !== 'undefined' ? (historico.find(o => (o.nome || '').toLowerCase().trim() === (ev.cliente || '').toLowerCase().trim()) || {}).numero : '') || '#0007');
-    const baseSiteUrl = (typeof window !== 'undefined' && window.location.origin) ? (window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '')) : 'https://sdmoveisprojetados-zeta.vercel.app';
-    const linkConfirmar = `${baseSiteUrl}/cliente.html?os=${encodeURIComponent(numOsVinculada)}&acao=confirmar`;
-    const linkReagendar = `${baseSiteUrl}/cliente.html?os=${encodeURIComponent(numOsVinculada)}&acao=reagendar`;
-    const linkAvaliar = `${baseSiteUrl}/cliente.html?os=${encodeURIComponent(numOsVinculada)}&acao=avaliar`;
+    const isConfirmado = !!ev.confirmado;
+    const temAvaliacao = !!ev.avaliacao;
 
-    const zapTexto = `Olá ${ev.cliente || ''}, confirmando o seu agendamento de *${ev.tipo || 'Medição Técnica'}* para o dia *${dataFmt}* às *${ev.hora || ''}* pela SD Móveis Projetados.\n\n👉 *Opções para seu atendimento:*\n\n✅ *1. Confirmar Agendamento:*\n${linkConfirmar}\n(ou responda *1* para confirmar sua presença)\n\n🔄 *2. Reagendar Visita:*\n${linkReagendar}\n(ou responda *2* para reagendar data ou horário)\n\n⭐ *3. Avaliar Atendimento:*\n${linkAvaliar}\n(ou responda *3* para deixar sua avaliação)\n\nAgradecemos a preferência!\n*SD Móveis Projetados* 🏠`;
+    // Mensagem WhatsApp limpa: SEM LINKS e SEM NÚMEROS (resposta direta avisa a empresa)
+    const zapTexto = `Olá ${ev.cliente || ''}! 😊\n\nConfirmando o seu agendamento de *${ev.tipo || 'Medição Técnica'}* para o dia *${dataFmt}* às *${ev.hora || ''}* pela *SD Móveis Projetados*.${ev.end ? '\n📍 Local: *' + ev.end + '*' : ''}${ev.obs ? '\n📝 Obs: ' + ev.obs : ''}\n\n👉 *Opções para seu atendimento:*\nResponda diretamente nesta mensagem com uma das opções abaixo:\n\n✅ *CONFIRMAR* - Para confirmar seu agendamento\n🔄 *REAGENDAR* - Para solicitar nova data ou horário\n⭐ *AVALIAR* - Para enviar sua avaliação do atendimento\n\n_Ao responder qualquer uma das opções, nossa equipe é notificada na hora!_\n\nAgradecemos a preferência!\n*SD Móveis Projetados* 🏠`;
     const zapMsg = encodeURIComponent(zapTexto);
     const zapLink = zapClean ? `https://wa.me/55${zapClean}?text=${zapMsg}` : '';
     const notifPill = formatarTempoNotificacao(ev.notificar_minutos);
 
     return `
       <div style="background:#10111a;border:1px solid ${isHoje ? 'rgba(56,189,248,0.35)' : 'rgba(255,255,255,0.08)'};border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 6px 20px rgba(0,0,0,0.5);position:relative;">
-        <!-- LINHA SUPERIOR: Checkbox + Botões de Ação Padronizados (como Imagem 3) -->
+        <!-- LINHA SUPERIOR: Checkbox + Botões de Ação Padronizados -->
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
-          <div style="display:flex;align-items:center;gap:8px;">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
             <button onclick="alternarConcluidoAgenda('${ev.id}')" title="${ev.concluido ? 'Reabrir compromisso' : 'Marcar como concluído'}" style="background:${ev.concluido ? '#10b981' : 'transparent'};border:1.5px solid ${ev.concluido ? '#10b981' : 'rgba(255,255,255,0.25)'};color:#fff;width:26px;height:26px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">
               ${ev.concluido ? '✓' : ''}
             </button>
-            ${zapLink ? `<a href="${zapLink}" target="_blank" style="padding:6px 12px;font-size:12px;font-weight:800;border-radius:8px;text-decoration:none;background:linear-gradient(135deg,#25D366,#1cb85a);color:#fff;display:inline-flex;align-items:center;gap:5px;box-shadow:0 3px 10px rgba(37,211,102,0.3);">💬 WhatsApp</a>` : ''}
+            ${zapLink ? `<a href="${zapLink}" target="_blank" style="padding:6px 11px;font-size:12px;font-weight:800;border-radius:8px;text-decoration:none;background:linear-gradient(135deg,#25D366,#1cb85a);color:#fff;display:inline-flex;align-items:center;gap:5px;box-shadow:0 3px 10px rgba(37,211,102,0.3);">💬 WhatsApp</a>` : ''}
           </div>
 
-          <div style="display:flex;align-items:center;gap:6px;">
-            <button onclick="reagendarCompromissoAgenda('${ev.id}')" style="background:rgba(59,130,246,0.18);border:1px solid rgba(59,130,246,0.4);color:#93c5fd;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:800;display:inline-flex;align-items:center;gap:4px;">🔄 Reagendar</button>
+          <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
+            <button onclick="alternarConfirmadoAgenda('${ev.id}')" title="Confirmar agendamento" style="background:${isConfirmado ? 'rgba(16,185,129,0.25)' : 'rgba(16,185,129,0.12)'};border:1px solid ${isConfirmado ? '#10b981' : 'rgba(16,185,129,0.35)'};color:${isConfirmado ? '#34d399' : '#a7f3d0'};padding:6px 10px;border-radius:8px;cursor:pointer;font-size:11.5px;font-weight:800;display:inline-flex;align-items:center;gap:4px;">
+              ${isConfirmado ? '✅ Confirmado' : '✅ Confirmar'}
+            </button>
+            <button onclick="reagendarCompromissoAgenda('${ev.id}')" style="background:rgba(59,130,246,0.18);border:1px solid rgba(59,130,246,0.4);color:#93c5fd;padding:6px 10px;border-radius:8px;cursor:pointer;font-size:11.5px;font-weight:800;display:inline-flex;align-items:center;gap:4px;">🔄 Reagendar</button>
+            <button onclick="abrirModalAvaliarAgenda('${ev.id}')" title="Avaliar atendimento" style="background:${temAvaliacao ? 'rgba(234,179,8,0.25)' : 'rgba(234,179,8,0.12)'};border:1px solid rgba(234,179,8,0.4);color:#facc15;padding:6px 10px;border-radius:8px;cursor:pointer;font-size:11.5px;font-weight:800;display:inline-flex;align-items:center;gap:4px;">
+              ⭐ ${temAvaliacao ? 'Avaliado (' + ev.avaliacao.nota + '★)' : 'Avaliar'}
+            </button>
             <button onclick="abrirModalNovoCompromissoAgenda('${ev.id}')" style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.35);color:#fbbf24;width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:12px;display:inline-flex;align-items:center;justify-content:center;" title="Editar">✏️</button>
             <button class="item-del" onclick="excluirCompromissoAgenda('${ev.id}')" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.35);color:#f87171;width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:12px;display:inline-flex;align-items:center;justify-content:center;" title="Excluir">✕</button>
           </div>
         </div>
 
-        <!-- CONTEÚDO DO CARD: Nome grande e chips em fluxo vertical organizado (como Imagem 3) -->
+        <!-- CONTEÚDO DO CARD: Nome grande e chips em fluxo vertical organizado -->
         <div>
           <div style="font-weight:900;font-size:16px;color:#fff;margin-bottom:8px;word-break:break-word;text-decoration:${ev.concluido ? 'line-through' : 'none'};opacity:${ev.concluido ? '0.65' : '1'};">
             ${esc(ev.cliente)}
           </div>
 
           <div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;">
-            <span style="font-size:11px;padding:3px 10px;border-radius:999px;background:rgba(201,168,76,0.18);color:var(--gold-light);font-weight:700;display:inline-block;">
-              ${esc(ev.tipo || 'Medição Técnica')}
-            </span>
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+              <span style="font-size:11px;padding:3px 10px;border-radius:999px;background:rgba(201,168,76,0.18);color:var(--gold-light);font-weight:700;display:inline-block;">
+                ${esc(ev.tipo || 'Medição Técnica')}
+              </span>
 
-            <span style="font-size:10.5px;padding:3px 10px;border-radius:999px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:#93c5fd;font-weight:700;display:inline-block;">
-              ⏰ ${notifPill}
-            </span>
+              <span style="font-size:10.5px;padding:3px 10px;border-radius:999px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:#93c5fd;font-weight:700;display:inline-block;">
+                ⏰ ${notifPill}
+              </span>
 
-            ${ev.notificado ? '<span style="font-size:10.5px;padding:3px 10px;border-radius:999px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.4);color:#34d399;font-weight:700;display:inline-block;">🔔 Alarme tocado</span>' : ''}
+              ${ev.notificado ? '<span style="font-size:10.5px;padding:3px 10px;border-radius:999px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.4);color:#34d399;font-weight:700;display:inline-block;">🔔 Alarme tocado</span>' : ''}
 
-            ${isHoje ? '<span style="font-size:10.5px;padding:2px 8px;border-radius:999px;background:#ef4444;color:#fff;font-weight:900;display:inline-block;">HOJE</span>' : ''}
+              ${isHoje ? '<span style="font-size:10.5px;padding:2px 8px;border-radius:999px;background:#ef4444;color:#fff;font-weight:900;display:inline-block;">HOJE</span>' : ''}
+            </div>
+
+            ${isConfirmado ? '<span style="font-size:10.5px;padding:3px 10px;border-radius:999px;background:rgba(16,185,129,0.2);border:1px solid rgba(16,185,129,0.45);color:#34d399;font-weight:800;display:inline-block;">✅ Confirmado pelo Cliente</span>' : ''}
+
+            ${temAvaliacao ? `<span style="font-size:10.5px;padding:3px 10px;border-radius:999px;background:rgba(234,179,8,0.2);border:1px solid rgba(234,179,8,0.45);color:#facc15;font-weight:800;display:inline-block;">⭐ Avaliação: ${ev.avaliacao.nota || 5}/5★ ${ev.avaliacao.comentario ? ' - "' + esc(ev.avaliacao.comentario) + '"' : ''}</span>` : ''}
 
             <div style="font-size:12.5px;color:var(--text2);margin-top:2px;display:flex;align-items:center;gap:6px;">
               <span>📅</span> <span>${dataFmt} ${ev.hora ? 'às ' + ev.hora : ''}</span>
@@ -15157,7 +15424,7 @@ function renderAgenda() {
 
             ${ev.tel ? `<div style="font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px;"><span>📞</span> <span>${esc(ev.tel)}</span></div>` : ''}
 
-            ${ev.end ? `<div style="font-size:12.5px;margin-top:2px;"><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.end)}" target="_blank" rel="noopener" style="color:#4ade80;text-decoration:none;font-weight:700;display:inline-flex;align-items:center;gap:5px;"><span>🗺️</span> <span>${esc(ev.end)}</span></a></div>` : ''}
+            ${ev.end ? `<div style="font-size:12.5px;margin-top:2px;"><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.end)}" target="_blank" rel="noopener" style="color:#4ade80;text-decoration:none;font-weight:700;display:inline-flex;align-items:center;gap:5px;"><span>📍</span> <span>${esc(ev.end)}</span> <span style="font-size:10.5px;color:#38bdf8;">(🗺️ Abrir Maps)</span></a></div>` : ''}
 
             ${ev.obs ? `<div style="font-size:11.5px;color:rgba(255,255,255,0.7);margin-top:4px;font-style:italic;">📝 ${esc(ev.obs)}</div>` : ''}
           </div>
@@ -15671,13 +15938,7 @@ function salvarNovoCompromissoAgenda(enviarWhatsApp = false, forcarConflito = fa
     const telLimpo = tel.replace(/\D/g, '');
     if (telLimpo.length >= 8) {
       const dataFmt = data ? data.split('-').reverse().join('/') : '';
-      const numOsVinculada = (typeof historico !== 'undefined' ? (historico.find(o => (o.nome || '').toLowerCase().trim() === (cliente || '').toLowerCase().trim()) || {}).numero : '') || '#0007';
-      const baseSiteUrl = (typeof window !== 'undefined' && window.location.origin) ? (window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '')) : 'https://sdmoveisprojetados-zeta.vercel.app';
-      const linkConfirmar = `${baseSiteUrl}/cliente.html?os=${encodeURIComponent(numOsVinculada)}&acao=confirmar`;
-      const linkReagendar = `${baseSiteUrl}/cliente.html?os=${encodeURIComponent(numOsVinculada)}&acao=reagendar`;
-      const linkAvaliar = `${baseSiteUrl}/cliente.html?os=${encodeURIComponent(numOsVinculada)}&acao=avaliar`;
-
-      const zapTexto = `Olá ${cliente}! 😊\n\nConfirmando o seu agendamento de *${tipo}* para o dia *${dataFmt}* às *${hora || ''}* pela SD Móveis Projetados.${end ? '\n📍 Local: *' + end + '*' : ''}${obs ? '\n📝 Obs: ' + obs : ''}\n\n👉 *Opções para seu atendimento:*\n\n✅ *1. Confirmar Agendamento:*\n${linkConfirmar}\n(ou responda *1* para confirmar sua presença)\n\n🔄 *2. Reagendar Visita:*\n${linkReagendar}\n(ou responda *2* para reagendar)\n\n⭐ *3. Avaliar Atendimento:*\n${linkAvaliar}\n(ou responda *3* para avaliar)\n\nAtenciosamente,\n*SD Móveis Projetados* 🏠`;
+      const zapTexto = `Olá ${cliente}! 😊\n\nConfirmando o seu agendamento de *${tipo}* para o dia *${dataFmt}* às *${hora || ''}* pela *SD Móveis Projetados*.${end ? '\n📍 Local: *' + end + '*' : ''}${obs ? '\n📝 Obs: ' + obs : ''}\n\n👉 *Opções para seu atendimento:*\nResponda diretamente nesta mensagem com uma das opções abaixo:\n\n✅ *CONFIRMAR* - Para confirmar seu agendamento\n🔄 *REAGENDAR* - Para solicitar nova data ou horário\n⭐ *AVALIAR* - Para enviar sua avaliação do atendimento\n\n_Ao responder qualquer uma das opções, nossa equipe é notificada na hora!_\n\nAgradecemos a preferência!\n*SD Móveis Projetados* 🏠`;
       const msg = encodeURIComponent(zapTexto);
       const prefix = telLimpo.startsWith('55') ? '' : '55';
       setTimeout(() => { window.open(`https://wa.me/${prefix}${telLimpo}?text=${msg}`, '_blank', 'noopener'); }, 300);
