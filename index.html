@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <!-- PWA Automático: Manifest + Meta Tags + Service Worker -->
@@ -21674,153 +21674,159 @@ function gerarSvgPlanoDeCorteVidro(plano, chapaIndex = 1) {
 }
 
 function calcVidro() {
+  const res = document.getElementById('ferr-v-res');
   try {
-  const unit = window._unidadeVidro || 'mm';
-  let lRaw = parseFloat(document.getElementById('ferr-v-larg')?.value) || 0;
-  let aRaw = parseFloat(document.getElementById('ferr-v-alt')?.value) || 0;
-  let qtd  = parseFloat(document.getElementById('ferr-v-qtd')?.value)  || 1;
-  const preco= parseFloat(document.getElementById('ferr-v-preco')?.value) || 0;
-  const esp  = parseInt(document.getElementById('ferr-v-esp')?.value)   || 6;
-  const chapaStr = (document.getElementById('ferr-v-chapa')?.value || '3210x2250').split('x');
-  const res  = document.getElementById('ferr-v-res');
+    const unit = window._unidadeVidro || 'mm';
+    let lRaw = parseFloat(document.getElementById('ferr-v-larg')?.value) || 0;
+    let aRaw = parseFloat(document.getElementById('ferr-v-alt')?.value) || 0;
+    let qtd = parseFloat(document.getElementById('ferr-v-qtd')?.value) || 1;
+    const preco = parseFloat(document.getElementById('ferr-v-preco')?.value) || 0;
+    const esp = parseInt(document.getElementById('ferr-v-esp')?.value) || 6;
+    const chapaStr = (document.getElementById('ferr-v-chapa')?.value || '3210x2250').split('x');
 
-  const temLista = window._listaPecasVidro && window._listaPecasVidro.length > 0;
+    const chapL = parseFloat(chapaStr[0]) || 3210;
+    const chapA = parseFloat(chapaStr[1]) || 2250;
 
-  // Se não há peças na lista e o usuário não digitou, usa valores padrão para calcular de imediato!
-  if (!temLista && (!lRaw || !aRaw)) {
-    lRaw = (unit === 'mm' ? 1200 : (unit === 'cm' ? 120 : 1.20));
-    aRaw = (unit === 'mm' ? 900 : (unit === 'cm' ? 90 : 0.90));
-    qtd = 4;
-    const inpL = document.getElementById('ferr-v-larg');
-    const inpA = document.getElementById('ferr-v-alt');
-    const inpQ = document.getElementById('ferr-v-qtd');
-    if (inpL) inpL.value = lRaw;
-    if (inpA) inpA.value = aRaw;
-    if (inpQ) inpQ.value = qtd;
-  }
+    let lMm = lRaw;
+    let aMm = aRaw;
+    if (unit === 'cm') { lMm = lRaw * 10; aMm = aRaw * 10; }
+    else if (unit === 'mt') { lMm = lRaw * 1000; aMm = aRaw * 1000; }
 
-  if (!temLista && (!lRaw || !aRaw)) {
-    res.style.display = 'block';
-    res.innerHTML = '<div style="padding:14px;">⚠️ Preencha largura e altura da peça ou adicione peças à lista.</div>';
-    return;
-  }
+    const temLista = window._listaPecasVidro && window._listaPecasVidro.length > 0;
 
-  const chapL = parseFloat(chapaStr[0]) || 3210;
-  const chapA = parseFloat(chapaStr[1]) || 2250;
+    // Se não há peças na lista e o usuário não digitou, preenche valores padrão de 120x85cm (ou equivalente na unidade)
+    if (!temLista && (!lRaw || !aRaw)) {
+      lRaw = (unit === 'mm' ? 1200 : (unit === 'cm' ? 120 : 1.20));
+      aRaw = (unit === 'mm' ? 850 : (unit === 'cm' ? 85 : 0.85));
+      qtd = 3;
+      lMm = 1200; aMm = 850;
+      const inpL = document.getElementById('ferr-v-larg');
+      const inpA = document.getElementById('ferr-v-alt');
+      const inpQ = document.getElementById('ferr-v-qtd');
+      if (inpL) inpL.value = lRaw;
+      if (inpA) inpA.value = aRaw;
+      if (inpQ) inpQ.value = qtd;
+    }
 
-  let plano;
-  let areaTotalPecas = 0;
-  let qtdTotalPecas = 0;
+    let plano;
+    let areaTotalPecas = 0;
+    let qtdTotalPecas = 0;
 
-  if (temLista) {
-    plano = calcularPlanoDeCorteMultiplasPecas(window._listaPecasVidro, chapL, chapA, 3, 15);
-    window._listaPecasVidro.forEach(p => {
-      areaTotalPecas += (p.areaTotalM2 || ((p.largMm / 1000) * (p.altMm / 1000) * p.qtd));
-      qtdTotalPecas += p.qtd;
-    });
-  } else {
-    let l = lRaw;
-    let a = aRaw;
-    if (unit === 'cm') { l = lRaw * 10; a = aRaw * 10; }
-    else if (unit === 'mt') { l = lRaw * 1000; a = aRaw * 1000; }
-    plano = calcularPlanoDeCorteMdf(l, a, qtd, chapL, chapA, 3, 15);
-    areaTotalPecas = (l / 1000) * (a / 1000) * qtd;
-    qtdTotalPecas = qtd;
-  }
-  if (plano.erro) {
-    res.style.display = 'block';
-    res.innerHTML = `<div style="padding:14px;">⚠️ ${plano.erro}</div>`;
-    return;
-  }
+    if (temLista) {
+      plano = calcularPlanoDeCorteMultiplasPecas(window._listaPecasVidro, chapL, chapA, 3, 15);
+      window._listaPecasVidro.forEach(p => {
+        areaTotalPecas += (p.areaTotalM2 || ((p.largMm / 1000) * (p.altMm / 1000) * p.qtd));
+        qtdTotalPecas += p.qtd;
+      });
+    } else {
+      plano = calcularPlanoDeCorteMdf(lMm, aMm, qtd, chapL, chapA, 3, 15);
+      areaTotalPecas = (lMm / 1000) * (aMm / 1000) * qtd;
+      qtdTotalPecas = qtd;
+    }
 
-  window._planoCorteVidroAtual = plano;
+    if (!plano || plano.erro) {
+      if (res) {
+        res.style.display = 'block';
+        res.innerHTML = `<div style="padding:14px;color:#fbbf24;background:rgba(234,179,8,0.1);border-radius:10px;">⚠️ ${(plano && plano.erro) ? plano.erro : 'Não foi possível calcular o plano com as dimensões informadas.'}</div>`;
+        res.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+      return;
+    }
 
-  const kgM2           = { 3:7.5, 4:10, 6:15, 8:20, 10:25, 12:30 }[esp] || 15;
-  const areaPecaUnit   = qtdTotalPecas ? (areaTotalPecas / qtdTotalPecas) : 0;
-  const areaChapa      = (chapL / 1000) * (chapA / 1000);
-  const areaTotalCh    = plano.totalChapas * areaChapa;
-  const pesoTotal      = areaTotalPecas * kgM2;
-  const aprovGlobal    = ((areaTotalPecas / areaTotalCh) * 100).toFixed(1);
-  const valorTotal     = preco ? areaTotalCh * preco : 0;
+    window._planoCorteVidroAtual = plano;
 
-  let abasHtml = '';
-  if (plano.totalChapas > 1) {
-    abasHtml = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 8px;justify-content:center;">
-      ${plano.chapas.map(c => `
-        <button type="button" class="btn-tab-chapa-v" data-idx="${c.index}" onclick="mudarChapaPlanoCorteVidro(${c.index})"
-                style="padding:6px 14px;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;transition:all 0.2s;
-                       border:1px solid ${c.index===1?'#22d3ee':'rgba(255,255,255,0.12)'};
-                       background:${c.index===1?'linear-gradient(135deg,#06b6d4,#0e7490)':'rgba(255,255,255,0.06)'};
-                       color:${c.index===1?'#fff':'#cbd5e1'};">
-          🪟 Chapa ${c.index} (${c.pecas.length} peças)
-        </button>`).join('')}
-    </div>`;
-  }
+    const kgM2 = { 3: 7.5, 4: 10, 6: 15, 8: 20, 10: 25, 12: 30 }[esp] || 15;
+    const areaChapa = (chapL / 1000) * (chapA / 1000);
+    const areaTotalCh = plano.totalChapas * areaChapa;
+    const pesoTotal = areaTotalPecas * kgM2;
+    const aprovGlobal = areaTotalCh > 0 ? ((areaTotalPecas / areaTotalCh) * 100).toFixed(1) : '0';
+    const valorTotal = preco ? areaTotalCh * preco : 0;
 
-  res.style.display = 'block';
-  res.innerHTML = `
-    <!-- 1. RESUMO MÉTRICAS -->
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;padding:14px;text-align:center;">
-      <div style="background:rgba(0,0,0,0.25);padding:10px;border-radius:10px;border:1px solid rgba(6,182,212,0.2);">
-        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;">Área Peças</div>
-        <div style="font-size:16px;color:#fff;font-weight:900;">🪟 ${areaTotalPecas.toLocaleString('pt-BR',{maximumFractionDigits:4})} m²</div>
-      </div>
-      <div style="background:rgba(0,0,0,0.25);padding:10px;border-radius:10px;border:1px solid rgba(6,182,212,0.2);">
-        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;">Chapas Necessárias</div>
-        <div style="font-size:18px;color:#22d3ee;font-weight:900;">📦 ${plano.totalChapas} chapa${plano.totalChapas!==1?'s':''}</div>
-      </div>
-      <div style="background:rgba(0,0,0,0.25);padding:10px;border-radius:10px;border:1px solid rgba(6,182,212,0.2);">
-        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;">Peso Total (${esp}mm)</div>
-        <div style="font-size:16px;color:#67e8f9;font-weight:900;">⚖️ ${pesoTotal.toLocaleString('pt-BR',{maximumFractionDigits:2})} kg</div>
-      </div>
-      <div style="background:rgba(0,0,0,0.25);padding:10px;border-radius:10px;border:1px solid rgba(6,182,212,0.2);">
-        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;">Aproveitamento</div>
-        <div style="font-size:16px;color:#facc15;font-weight:900;">♻️ ${aprovGlobal}% útil</div>
-      </div>
-      ${preco ? `
-      <div style="background:rgba(0,0,0,0.25);padding:10px;border-radius:10px;border:1px solid rgba(6,182,212,0.2);grid-column:1/-1;">
-        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;">Custo estimado (chapas)</div>
-        <div style="font-size:22px;color:#22d3ee;font-weight:900;">💰 R$ ${valorTotal.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
-      </div>` : ''}
-    </div>
+    let abasHtml = '';
+    if (plano.totalChapas > 1) {
+      abasHtml = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 8px;justify-content:center;">
+        ${plano.chapas.map(c => `
+          <button type="button" class="btn-tab-chapa-v" data-idx="${c.index}" onclick="mudarChapaPlanoCorteVidro(${c.index})"
+                  style="padding:6px 14px;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;transition:all 0.2s;
+                         border:1px solid ${c.index===1?'#22d3ee':'rgba(255,255,255,0.12)'};
+                         background:${c.index===1?'linear-gradient(135deg,#06b6d4,#0e7490)':'rgba(255,255,255,0.06)'};
+                         color:${c.index===1?'#fff':'#cbd5e1'};">
+            🪟 Chapa ${c.index} (${c.pecas.length} peças)
+          </button>`).join('')}
+      </div>`;
+    }
 
-    <!-- 2. PLANO VISUAL 2D -->
-    <div style="background:#04080f;border:1.5px solid rgba(6,182,212,0.45);border-radius:16px;padding:14px;margin:0 14px 14px;box-shadow:0 8px 30px rgba(0,0,0,0.7);">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.08);">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span style="font-size:18px;">📐</span>
-          <span style="font-size:13.5px;font-weight:900;color:#fff;">Desenho do Plano de Corte 2D — Vidro</span>
+    const descPecaVidro = temLista
+      ? `Lista de Peças (${qtdTotalPecas} un)`
+      : (unit === 'cm' ? `${lRaw}×${aRaw}cm (${lMm}×${aMm}mm)` : (unit === 'mt' ? `${lRaw}×${aRaw}m (${lMm}×${aMm}mm)` : `${lMm}×${aMm}mm`));
+
+    if (res) {
+      res.style.display = 'block';
+      res.innerHTML = `
+        <!-- 1. RESUMO MÉTRICAS -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;padding:14px;text-align:center;">
+          <div style="background:rgba(0,0,0,0.25);padding:10px;border-radius:10px;border:1px solid rgba(6,182,212,0.2);">
+            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;">Área Peças</div>
+            <div style="font-size:16px;color:#fff;font-weight:900;">🪟 ${areaTotalPecas.toLocaleString('pt-BR',{maximumFractionDigits:4})} m²</div>
+          </div>
+          <div style="background:rgba(0,0,0,0.25);padding:10px;border-radius:10px;border:1px solid rgba(6,182,212,0.2);">
+            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;">Chapas Necessárias</div>
+            <div style="font-size:18px;color:#22d3ee;font-weight:900;">📦 ${plano.totalChapas} chapa${plano.totalChapas!==1?'s':''}</div>
+          </div>
+          <div style="background:rgba(0,0,0,0.25);padding:10px;border-radius:10px;border:1px solid rgba(6,182,212,0.2);">
+            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;">Peso Total (${esp}mm)</div>
+            <div style="font-size:16px;color:#67e8f9;font-weight:900;">⚖️ ${pesoTotal.toLocaleString('pt-BR',{maximumFractionDigits:2})} kg</div>
+          </div>
+          <div style="background:rgba(0,0,0,0.25);padding:10px;border-radius:10px;border:1px solid rgba(6,182,212,0.2);">
+            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;">Aproveitamento</div>
+            <div style="font-size:16px;color:#facc15;font-weight:900;">♻️ ${aprovGlobal}% útil</div>
+          </div>
+          ${preco ? `
+          <div style="background:rgba(0,0,0,0.25);padding:10px;border-radius:10px;border:1px solid rgba(6,182,212,0.2);grid-column:1/-1;">
+            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;">Custo estimado (chapas)</div>
+            <div style="font-size:22px;color:#22d3ee;font-weight:900;">💰 R$ ${valorTotal.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+          </div>` : ''}
         </div>
-        <div style="font-size:11px;color:#22d3ee;font-weight:800;background:rgba(6,182,212,0.15);padding:3px 8px;border-radius:6px;border:1px solid rgba(6,182,212,0.3);">
-          Disco: 3mm · Refilo: 15mm
-        </div>
-      </div>
-      ${abasHtml}
-      <div id="ferr-v-desenho-svg" style="width:100%;margin-top:6px;">
-        ${gerarSvgPlanoDeCorteVidro(plano, 1)}
-      </div>
-      <!-- Legenda -->
-      <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:11px;color:#94a3b8;">
-        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-          <span style="display:inline-flex;align-items:center;gap:5px;">
-            <span style="width:12px;height:12px;background:#0891b2;border:1px solid #22d3ee;border-radius:3px;display:inline-block;"></span>
-            Peça (${unit === 'mm' ? `${l}×${a}mm` : (unit === 'cm' ? `${lRaw}×${aRaw}cm (${l}×${a}mm)` : `${lRaw}×${aRaw}m (${l}×${a}mm)`)})
-          </span>
-          <span style="display:inline-flex;align-items:center;gap:5px;">
-            <span style="width:12px;height:12px;background:rgba(251,191,36,0.3);border:1px dashed #fbbf24;border-radius:3px;display:inline-block;"></span>
-            Sobra Reaproveitável
-          </span>
-        </div>
-        <span style="color:#06b6d4;font-weight:800;">SD Móveis Projetados</span>
-      </div>
-    </div>
-  `;
 
+        <!-- 2. PLANO VISUAL 2D -->
+        <div style="background:#04080f;border:1.5px solid rgba(6,182,212,0.45);border-radius:16px;padding:14px;margin:0 14px 14px;box-shadow:0 8px 30px rgba(0,0,0,0.7);">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.08);">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:18px;">📐</span>
+              <span style="font-size:13.5px;font-weight:900;color:#fff;">Desenho do Plano de Corte 2D — Vidro</span>
+            </div>
+            <div style="font-size:11px;color:#22d3ee;font-weight:800;background:rgba(6,182,212,0.15);padding:3px 8px;border-radius:6px;border:1px solid rgba(6,182,212,0.3);">
+              Chapa: ${chapL}×${chapA}mm · Disco: 3mm · Refilo: 15mm
+            </div>
+          </div>
+          ${abasHtml}
+          <div id="ferr-v-desenho-svg" style="width:100%;margin-top:6px;">
+            ${gerarSvgPlanoDeCorteVidro(plano, 1)}
+          </div>
+          <!-- Legenda -->
+          <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:11px;color:#94a3b8;">
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+              <span style="display:inline-flex;align-items:center;gap:5px;">
+                <span style="width:12px;height:12px;background:#0891b2;border:1px solid #22d3ee;border-radius:3px;display:inline-block;"></span>
+                Peça (${descPecaVidro})
+              </span>
+              <span style="display:inline-flex;align-items:center;gap:5px;">
+                <span style="width:12px;height:12px;background:rgba(251,191,36,0.3);border:1px dashed #fbbf24;border-radius:3px;display:inline-block;"></span>
+                Sobra Reaproveitável
+              </span>
+            </div>
+            <span style="color:#06b6d4;font-weight:800;">SD Móveis Projetados</span>
+          </div>
+        </div>
+      `;
+      res.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
   } catch (e) {
     console.error("calcVidro erro:", e);
     if (res) {
       res.style.display = "block";
-      res.innerHTML = `<div style="padding:14px;color:#ef4444;">⚠️ Erro no cálculo: ${e.message}</div>`;
+      res.innerHTML = `<div style="padding:14px;color:#ef4444;background:rgba(239,68,68,0.1);border-radius:10px;">⚠️ Erro no cálculo: ${e.message}</div>`;
+      res.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
   }
 }
@@ -22226,7 +22232,9 @@ function calcMovel() {
     let qtd = parseFloat(document.getElementById('ferr-m-qtd')?.value) || 1;
     const chapaStr = (document.getElementById('ferr-m-chapa')?.value || '2750x1850').split('x');
 
-    // Converte dimensões dos inputs para milímetros de forma segura
+    const chapL = parseFloat(chapaStr[0]) || 2750;
+    const chapA = parseFloat(chapaStr[1]) || 1850;
+
     let lMm = lRaw;
     let aMm = aRaw;
     if (unit === 'cm') { lMm = lRaw * 10; aMm = aRaw * 10; }
@@ -22234,14 +22242,12 @@ function calcMovel() {
 
     const temLista = window._listaPecasMovel && window._listaPecasMovel.length > 0;
 
-    // Se o usuário digitou dados nos inputs mas não clicou em "Adicionar", adiciona automaticamente
-    if (lRaw > 0 && aRaw > 0 && !temLista) {
-      // Usa diretamente os dados digitados
-    } else if (!temLista && (!lRaw || !aRaw)) {
-      lRaw = (unit === 'mm' ? 1200 : (unit === 'cm' ? 120 : 1.20));
-      aRaw = (unit === 'mm' ? 2700 : (unit === 'cm' ? 270 : 2.70));
-      qtd = 3;
-      lMm = 1200; aMm = 2700;
+    // Se o usuário não adicionou peças e não preencheu, usa valores padrão (600x720, 4 unidades)
+    if (!temLista && (!lRaw || !aRaw)) {
+      lRaw = (unit === 'mm' ? 600 : (unit === 'cm' ? 60 : 0.60));
+      aRaw = (unit === 'mm' ? 720 : (unit === 'cm' ? 72 : 0.72));
+      qtd = 4;
+      lMm = 600; aMm = 720;
       const inpL = document.getElementById('ferr-m-larg');
       const inpA = document.getElementById('ferr-m-alt');
       const inpQ = document.getElementById('ferr-m-qtd');
@@ -22249,9 +22255,6 @@ function calcMovel() {
       if (inpA) inpA.value = aRaw;
       if (inpQ) inpQ.value = qtd;
     }
-
-    const chapL = parseFloat(chapaStr[0]) || 2750;
-    const chapA = parseFloat(chapaStr[1]) || 1850;
 
     let plano;
     let areaTotalPecas = 0;
