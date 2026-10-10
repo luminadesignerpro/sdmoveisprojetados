@@ -1808,11 +1808,11 @@
   <div class="top-nav-bar" style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px;padding:4px 2px;flex-wrap:wrap;">
     <div class="empresa-pill" onclick="abrirModalEmpresas()" style="display:flex;align-items:center;gap:8px;background:#101018;border:1px solid rgba(201,168,76,0.4);padding:6px 14px;border-radius:20px;cursor:pointer;transition:all 0.2s;">
       <img id="empresa-logo-top" src="logo_moveis.jpg" alt="Logo" style="width:22px;height:22px;border-radius:50%;object-fit:cover;border:1px solid var(--gold);background:#07070b;">
-      <span id="empresa-nome-top" style="font-size:12.5px;font-weight:800;color:var(--gold-light);">SD móveis</span>
+      <span id="empresa-nome-top" style="font-size:12.5px;font-weight:800;color:var(--gold-light);">SD Móveis Projetados</span>
     </div>
     <div style="display:flex;align-items:center;gap:8px;">
       <div class="user-pill" style="display:flex;align-items:center;gap:6px;background:#101018;border:1px solid rgba(255,255,255,0.12);padding:6px 14px;border-radius:20px;">
-        <span id="usuario-logado" style="font-size:12.5px;font-weight:700;color:#93c5fd;"><span style="color:#3b82f6;">👤</span> samuel</span>
+        <span id="usuario-logado" style="font-size:12.5px;font-weight:700;color:#93c5fd;"><span style="color:#3b82f6;">👤</span> Samuel</span>
       </div>
       <button class="btn-sair" onclick="sair()" style="display:flex;align-items:center;gap:6px;background:#181824;border:1px solid rgba(239,68,68,0.3);color:#fca5a5;padding:6px 14px;border-radius:20px;cursor:pointer;font-size:12.5px;font-weight:700;">📕 Sair</button>
     </div>
@@ -1851,8 +1851,8 @@
         if (nOverlay) nOverlay.textContent = 'SD MÓVEIS PROJETADOS';
         if (sOverlay) { sOverlay.textContent = 'AMBIENTES SOB MEDIDA'; sOverlay.style.display = 'block'; }
         if (lTop) lTop.src = 'logo_moveis.jpg';
-        if (pNome) pNome.textContent = 'SD móveis';
-        if (uLogado) uLogado.innerHTML = '<span style="color:#3b82f6;">👤</span> samuel';
+        if (pNome) pNome.textContent = 'SD Móveis Projetados';
+        if (uLogado) uLogado.innerHTML = '<span style="color:#3b82f6;">👤</span> Samuel';
       } catch(_) {}
     })();
   </script>
@@ -1862,7 +1862,8 @@
     <button id="tab-orcamento" class="tab active" data-tab="orcamento" onclick="goTab('orcamento')">📋 Orçamento</button>
     <button id="tab-historico" class="tab" data-tab="historico" onclick="goTab('historico')">🗂️ Histórico</button>
     <button id="tab-financeiro" class="tab" data-tab="financeiro" onclick="goTab('financeiro')">💰 Financeiro</button>
-    <button id="tab-agenda" class="tab" data-tab="agenda" onclick="goTab('agenda')" title="Agenda Pessoal de Compromissos e Visitas">📅 Agenda Pessoal</button>
+    <button id="tab-agenda" class="tab" data-tab="agenda" onclick="goTab('agenda')">📅 Agenda</button>
+    <button id="tab-agenda-pessoal" class="tab" data-tab="agenda-pessoal" onclick="goTab('agenda-pessoal')">📅 Agenda Pessoal</button>
     <button id="tab-produtos" class="tab" data-tab="produtos" onclick="goTab('produtos')">📦 Produtos & Serviços</button>
     <button id="tab-empresa" class="tab" data-tab="empresa" onclick="goTab('empresa')">🏢 Dados da Empresa</button>
     <button id="tab-clientes" class="tab" data-tab="clientes" onclick="goTab('clientes')">👤 Clientes</button>
@@ -2321,6 +2322,101 @@
   </div>
 
   <!-- ══════════════════════════════════════════ -->
+  
+  <!-- ══════════════════════════════════════════ -->
+  <!-- PANEL: AGENDA PESSOAL                      -->
+  <!-- ══════════════════════════════════════════ -->
+  <div id="panel-agenda-pessoal" class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+      <div>
+        <h2 style="font-size:18px;font-weight:900;color:var(--gold-light);margin:0;display:flex;align-items:center;gap:8px;">
+          📅 Agenda Pessoal
+        </h2>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">Compromissos particulares, reuniões, lembretes e tarefas</div>
+      </div>
+      <div>
+        <button class="btn btn-primary btn-sm" onclick="abrirModalNovoCompromissoPessoal()" style="font-size:12px;padding:9px 15px;font-weight:800;">
+          ➕ Novo Compromisso Pessoal
+        </button>
+      </div>
+    </div>
+
+    <!-- KPI CARDS DA AGENDA PESSOAL -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:10px;margin-bottom:16px;">
+      <div class="card" style="margin-bottom:0;padding:12px;border-left:4px solid #38bdf8;background:linear-gradient(135deg,rgba(56,189,248,0.08),rgba(20,20,30,0.7));">
+        <div style="font-size:10.5px;font-weight:700;color:#7dd3fc;text-transform:uppercase;">Hoje</div>
+        <div id="agenda-pessoal-kpi-hoje" style="font-size:20px;font-weight:900;color:#fff;margin-top:4px;">0</div>
+      </div>
+      <div class="card" style="margin-bottom:0;padding:12px;border-left:4px solid #f59e0b;background:linear-gradient(135deg,rgba(245,158,11,0.08),rgba(20,20,30,0.7));">
+        <div style="font-size:10.5px;font-weight:700;color:#fcd34d;text-transform:uppercase;">Pendentes</div>
+        <div id="agenda-pessoal-kpi-pendentes" style="font-size:20px;font-weight:900;color:#fff;margin-top:4px;">0</div>
+      </div>
+      <div class="card" style="margin-bottom:0;padding:12px;border-left:4px solid #10b981;background:linear-gradient(135deg,rgba(16,185,129,0.08),rgba(20,20,30,0.7));">
+        <div style="font-size:10.5px;font-weight:700;color:#6ee7b7;text-transform:uppercase;">Concluídos</div>
+        <div id="agenda-pessoal-kpi-concluidos" style="font-size:20px;font-weight:900;color:#fff;margin-top:4px;">0</div>
+      </div>
+    </div>
+
+    <!-- Lista de Compromissos Pessoais -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+        <div class="card-title" style="margin-bottom:0;">📝 Meus Compromissos Pessoais</div>
+        <div style="display:flex;gap:6px;">
+          <button type="button" class="btn-filter-agenda active" id="btn-pessoal-filtro-todos" onclick="filtrarAgendaPessoal('todos')">Todos</button>
+          <button type="button" class="btn-filter-agenda" id="btn-pessoal-filtro-concluidos" onclick="filtrarAgendaPessoal('concluidos')">Concluídos</button>
+        </div>
+      </div>
+      <div id="agenda-pessoal-lista">
+        <div class="empty">Nenhum compromisso pessoal cadastrado ainda.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: NOVO COMPROMISSO PESSOAL -->
+  <div id="modal-novo-compromisso-pessoal" class="modal-overlay" style="display:none;z-index:99999;" onclick="if(event.target===this)fecharModalNovoCompromissoPessoal()">
+    <div class="modal" style="max-width:440px;width:92%;background:#0d0e18;border:1.5px solid rgba(201,168,76,0.5);border-radius:16px;padding:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <div style="font-size:16px;font-weight:900;color:#fff;display:flex;align-items:center;gap:8px;">
+          <span>📅</span> <span id="modal-pessoal-titulo">Novo Compromisso Pessoal</span>
+        </div>
+        <button type="button" onclick="fecharModalNovoCompromissoPessoal()" style="background:none;border:none;color:#aaa;font-size:18px;cursor:pointer;">✕</button>
+      </div>
+
+      <input type="hidden" id="pessoal-edit-id" value="">
+
+      <div class="field" style="margin-bottom:10px;">
+        <label style="font-size:11.5px;font-weight:700;color:var(--gold-light);display:block;margin-bottom:4px;">Título / Compromisso *</label>
+        <input type="text" id="pessoal-novo-titulo" placeholder="Ex: Dentista, Reunião banco, Comprar material..." style="width:100%;box-sizing:border-box;padding:10px 12px;background:#06070e;border:1px solid rgba(201,168,76,0.3);border-radius:10px;color:#fff;font-size:13px;" />
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div>
+          <label style="font-size:11.5px;font-weight:700;color:var(--gold-light);display:block;margin-bottom:4px;">Data *</label>
+          <input type="date" id="pessoal-novo-data" style="width:100%;box-sizing:border-box;padding:10px 12px;background:#06070e;border:1px solid rgba(201,168,76,0.3);border-radius:10px;color:#fff;font-size:13px;" />
+        </div>
+        <div>
+          <label style="font-size:11.5px;font-weight:700;color:var(--gold-light);display:block;margin-bottom:4px;">Horário</label>
+          <input type="time" id="pessoal-novo-hora" style="width:100%;box-sizing:border-box;padding:10px 12px;background:#06070e;border:1px solid rgba(201,168,76,0.3);border-radius:10px;color:#fff;font-size:13px;" />
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom:10px;">
+        <label style="font-size:11.5px;font-weight:700;color:var(--gold-light);display:block;margin-bottom:4px;">Local (opcional)</label>
+        <input type="text" id="pessoal-novo-local" placeholder="Ex: Av. Santos Dumont, 123" style="width:100%;box-sizing:border-box;padding:10px 12px;background:#06070e;border:1px solid rgba(201,168,76,0.3);border-radius:10px;color:#fff;font-size:13px;" />
+      </div>
+
+      <div class="field" style="margin-bottom:14px;">
+        <label style="font-size:11.5px;font-weight:700;color:var(--gold-light);display:block;margin-bottom:4px;">Observações / Detalhes</label>
+        <textarea id="pessoal-novo-obs" rows="2" placeholder="Detalhes, lembretes..." style="width:100%;box-sizing:border-box;padding:10px 12px;background:#06070e;border:1px solid rgba(201,168,76,0.3);border-radius:10px;color:#fff;font-size:13px;resize:vertical;"></textarea>
+      </div>
+
+      <div style="display:flex;gap:10px;">
+        <button type="button" class="btn btn-sec btn-sm" onclick="fecharModalNovoCompromissoPessoal()" style="flex:1;">Cancelar</button>
+        <button type="button" class="btn btn-primary btn-sm" onclick="salvarCompromissoPessoal(false)" style="flex:2;background:linear-gradient(135deg,var(--gold-light),var(--gold));color:#000;font-weight:900;">💾 Salvar Compromisso</button>
+      </div>
+    </div>
+  </div>
+
   <!-- PANEL: PRODUTOS E SERVIÇOS (CATÁLOGO DA SEGUNDA IMAGEM) -->
   <!-- ══════════════════════════════════════════ -->
   <div id="panel-produtos" class="panel">
@@ -4744,6 +4840,39 @@
   </div>
 </div>
 
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!--  MODAL: AVISO DE CONFLITO DE HORARIO NA AGENDA                    -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<div id="modal-conflito-horario-agenda" class="modal-overlay" style="display:none;z-index:9999999;align-items:center;justify-content:center;background:rgba(0,0,0,0.85);backdrop-filter:blur(6px);">
+  <div class="modal" style="max-width:440px;width:92%;background:linear-gradient(135deg,#131320,#0b0c16);border:2px solid #f59e0b;box-shadow:0 12px 40px rgba(245,158,11,0.35);border-radius:18px;padding:22px;color:#fff;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+      <span style="font-size:26px;">⚠️</span>
+      <div>
+        <div style="font-size:16px;font-weight:900;color:#fbbf24;">Atenção: Horário Ocupado ou Próximo!</div>
+        <div style="font-size:12px;color:var(--muted);">Já existe um compromisso agendado para este horário</div>
+      </div>
+    </div>
+    
+    <div id="conflito-detalhes-box" style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:12px;padding:12px;margin-bottom:16px;font-size:13px;line-height:1.5;">
+      <!-- Preenchido via JS com detalhes do compromisso existente -->
+    </div>
+
+    <p style="font-size:12.5px;color:#cbd5e1;margin-bottom:16px;line-height:1.4;">
+      Já existe agendamento nessa data e horário. Você tem a opção de <strong>marcar mesmo assim</strong> ou <strong>reagendar</strong> para outro horário:
+    </p>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button type="button" onclick="confirmarMarcarMesmoComConflito()" style="flex:1;min-width:140px;padding:12px;background:linear-gradient(135deg,#16a34a,#15803d);border:none;border-radius:10px;color:#fff;font-weight:900;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 4px 14px rgba(22,163,74,0.3);">
+        <span>✅</span> <span>Marcar Mesmo Assim</span>
+      </button>
+      <button type="button" id="btn-reagendar-conflito" onclick="reagendarConflitoAgenda()" style="flex:1;min-width:140px;padding:12px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);border:none;border-radius:10px;color:#fff;font-weight:900;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 4px 14px rgba(59,130,246,0.3);">
+        <span>🔄</span> <span>Reagendar / Mudar</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ MODAL SELEÇÃO DOS 2 WHATSAPPS PARA BUSCA DE CONTATO ══ -->
 <div id="modal-buscar-contato-whatsapp" class="modal-overlay" style="display:none;z-index:9999999;" onclick="if(event.target===this)fecharModalBuscaWhatsApp()">
   <div class="modal-box" onclick="event.stopPropagation()" style="max-width:380px;width:92%;padding:18px;border-radius:16px;background:#0d0e19;border:1.5px solid rgba(201,168,76,0.4);box-shadow:0 20px 50px rgba(0,0,0,0.9);">
@@ -6348,7 +6477,7 @@ function getUser() {
 //  TABS
 // ══════════════════════════════════════════════
 function goTab(t) {
-  ['orcamento','historico','financeiro','agenda','produtos','empresa','clientes','ponto','contratos','usuarios','licenca','camera','relatorio','cronograma','ferramentas'].forEach(p => {
+  ['orcamento','historico','financeiro','agenda','agenda-pessoal','produtos','empresa','clientes','ponto','contratos','usuarios','licenca','camera','relatorio','cronograma','ferramentas'].forEach(p => {
     const pan = document.getElementById('panel-'+p);
     if (pan) pan.classList.toggle('active', p===t);
     const tab = document.getElementById('tab-'+p);
@@ -6357,6 +6486,7 @@ function goTab(t) {
   if (t==='historico')  { renderHist(); sincronizarStatusContratos(); }
   if (t==='financeiro') { renderFinanceiro(); }
   if (t==='agenda')     { renderAgenda(); }
+  if (t==='agenda-pessoal') { renderAgendaPessoal(); }
   if (t==='produtos')   { atualizarBannerSelecaoProduto(); renderProdutos(); }
   if (t==='empresa') { carregarDadosConfiguracaoEmpresa(); }
   if (t==='clientes')   renderCli();
@@ -11901,67 +12031,7 @@ function imprimirFolhaPonto() {
           Diretoria / RH
         </div>
       </div>
-    
-<!-- ══════════════════════════════════════════════════════════════════ -->
-<!--  MODAL: AVISO DE CONFLITO DE HORÁRIO NA AGENDA PESSOAL             -->
-<!-- ══════════════════════════════════════════════════════════════════ -->
-<div id="modal-conflito-horario-agenda" class="modal-overlay" style="display:none;z-index:999999;align-items:center;justify-content:center;background:rgba(0,0,0,0.85);backdrop-filter:blur(6px);">
-  <div class="modal" style="max-width:440px;width:92%;background:linear-gradient(135deg,#131320,#0b0c16);border:2px solid #f59e0b;box-shadow:0 12px 40px rgba(245,158,11,0.35);border-radius:18px;padding:22px;color:#fff;">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-      <span style="font-size:26px;">⚠️</span>
-      <div>
-        <div style="font-size:16px;font-weight:900;color:#fbbf24;">Atenção: Horário Ocupado ou Próximo!</div>
-        <div style="font-size:12px;color:var(--muted);">Já existe um compromisso agendado para este horário</div>
-      </div>
-    </div>
-    
-    <div id="conflito-detalhes-box" style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:12px;padding:12px;margin-bottom:16px;font-size:13px;line-height:1.5;">
-      <!-- Preenchido via JS -->
-    </div>
-
-    <p style="font-size:12px;color:#cbd5e1;margin-bottom:16px;">
-      Você deseja <strong>manter e marcar mesmo assim</strong> ou prefere <strong>reagendar para outro horário livre</strong>?
-    </p>
-
-    <div style="display:flex;gap:10px;flex-wrap:wrap;">
-      <button type="button" onclick="confirmarMarcarMesmoComConflito()" style="flex:1;min-width:140px;padding:11px;background:linear-gradient(135deg,#16a34a,#15803d);border:none;border-radius:10px;color:#fff;font-weight:900;font-size:12.5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 4px 14px rgba(22,163,74,0.3);">
-        <span>✅</span> <span>Marcar Mesmo Assim</span>
-      </button>
-      <button type="button" id="btn-reagendar-conflito" onclick="reagendarConflitoAgenda()" style="flex:1;min-width:140px;padding:11px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);border:none;border-radius:10px;color:#fff;font-weight:900;font-size:12.5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 4px 14px rgba(59,130,246,0.3);">
-        <span>🔄</span> <span>Reagendar / Mudar</span>
-      </button>
-    </div>
-  </div>
-</div>
-
-<script>
-function mostrarModalAlertaConflito(dados) {
-  const m = document.getElementById('modal-conflito-horario-agenda');
-  const box = document.getElementById('conflito-detalhes-box');
-  const btnReag = document.getElementById('btn-reagendar-conflito');
-  if (!m || !box) return;
-
-  const dataFmt = dados.data ? dados.data.split('-').reverse().join('/') : '';
-  const tempoAviso = dados.diff === 0 
-    ? '<span style="color:#ef4444;font-weight:800;">(EXATAMENTE NO MESMO HORÁRIO!)</span>' 
-    : `<span style="color:#fbbf24;font-weight:700;">(Apenas ${dados.diff} min de diferença!)</span>`;
-
-  box.innerHTML = `
-    <div style="font-weight:800;color:#fff;margin-bottom:4px;">👤 ${dados.cliente || 'Compromisso existente'}</div>
-    <div style="color:var(--gold-light);font-weight:700;">📋 ${dados.tipo || 'Atendimento'}</div>
-    <div style="color:#fff;margin-top:4px;">📅 ${dataFmt} às <strong>${dados.hora}</strong> ${tempoAviso}</div>
-    ${dados.end ? `<div style="color:#94a3b8;font-size:11.5px;margin-top:2px;">📍 ${dados.end}</div>` : ''}
-  `;
-
-  if (btnReag) {
-    btnReag.setAttribute('onclick', `reagendarConflitoAgenda('${dados.origem || 'agenda-novo-hora'}')`);
-  }
-
-  m.style.display = 'flex';
-}
-</script>
-
-</body>
+    </body>
     </html>
   `;
 
@@ -15351,9 +15421,9 @@ function salvarNovoCompromissoAgenda(enviarWhatsApp = false, forcarConflito = fa
 
   const eventos = obterAgendaEventos();
 
-  // ── DETECÇÃO DE CONFLITO: MESMA DATA E HORÁRIO IGUAL OU PRÓXIMO NA AGENDA PESSOAL ──
+  // ── DETECÇÃO DE CONFLITO: MESMA DATA E HORÁRIO IGUAL OU PRÓXIMO ──
   if (!forcarConflito && data && hora) {
-    const conflitoHorario = eventos.find(ev => {
+    const conflitoAgenda = eventos.find(ev => {
       if (editandoAgendaId && String(ev.id) === String(editandoAgendaId)) return false;
       if (ev.concluido) return false;
       if (ev.data !== data) return false;
@@ -15361,15 +15431,25 @@ function salvarNovoCompromissoAgenda(enviarWhatsApp = false, forcarConflito = fa
       return calcularDiferencaMinutosHoras(ev.hora, hora) <= 45;
     });
 
+    const listaPessoal = (typeof obterEventosAgendaPessoal === 'function') ? obterEventosAgendaPessoal() : [];
+    const conflitoPessoal = listaPessoal.find(ev => {
+      if (ev.concluido) return false;
+      if (ev.data !== data) return false;
+      if (!ev.hora) return false;
+      return calcularDiferencaMinutosHoras(ev.hora, hora) <= 45;
+    });
+
+    const conflitoHorario = conflitoAgenda || conflitoPessoal;
+
     if (conflitoHorario) {
       const diff = calcularDiferencaMinutosHoras(conflitoHorario.hora, hora);
       _pendenteSalvarCallback = () => salvarNovoCompromissoAgenda(enviarWhatsApp, true);
       mostrarModalAlertaConflito({
-        cliente: conflitoHorario.cliente,
-        tipo: conflitoHorario.tipo,
+        cliente: conflitoHorario.cliente || conflitoHorario.titulo || 'Compromisso agendado',
+        tipo: conflitoHorario.tipo || 'Agenda Pessoal',
         data: conflitoHorario.data,
         hora: conflitoHorario.hora,
-        end: conflitoHorario.end,
+        end: conflitoHorario.end || conflitoHorario.local || '',
         diff,
         origem: 'agenda-novo-hora'
       });
@@ -18827,8 +18907,12 @@ function calcularDiferencaMinutosHoras(h1, h2) {
   return Math.abs((p1[0] * 60 + (p1[1] || 0)) - (p2[0] * 60 + (p2[1] || 0)));
 }
 
-// ── MODAL DE ALERTA DE CONFLITO DE HORÁRIO NA AGENDA ──
+
+// ══════════════════════════════════════════════════════════════════
+//  CONTROLE DO MODAL DE CONFLITO DE HORÁRIO NA AGENDA
+// ══════════════════════════════════════════════════════════════════
 let _pendenteSalvarCallback = null;
+let _campoOrigemConflito = 'agenda-novo-hora';
 
 function fecharModalConflitoAgenda() {
   const m = document.getElementById('modal-conflito-horario-agenda');
@@ -18842,16 +18926,45 @@ function confirmarMarcarMesmoComConflito() {
   if (typeof cb === 'function') cb();
 }
 
-function reagendarConflitoAgenda(campoHoraId = 'agenda-novo-hora') {
+function reagendarConflitoAgenda(campoHoraId) {
+  const targetId = campoHoraId || _campoOrigemConflito || 'agenda-novo-hora';
   fecharModalConflitoAgenda();
-  const el = document.getElementById(campoHoraId);
+  const el = document.getElementById(targetId);
   if (el) {
     el.focus();
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     el.style.border = '2px solid #38bdf8';
-    setTimeout(() => { el.style.border = ''; }, 2000);
+    setTimeout(() => { el.style.border = ''; }, 2500);
   }
 }
+
+function mostrarModalAlertaConflito(dados) {
+  const m = document.getElementById('modal-conflito-horario-agenda');
+  const box = document.getElementById('conflito-detalhes-box');
+  const btnReag = document.getElementById('btn-reagendar-conflito');
+  if (!m || !box) return;
+
+  _campoOrigemConflito = dados.origem || 'agenda-novo-hora';
+
+  const dataFmt = dados.data ? dados.data.split('-').reverse().join('/') : '';
+  const tempoAviso = dados.diff === 0 
+    ? '<span style="color:#ef4444;font-weight:900;">(EXATAMENTE NO MESMO HORÁRIO!)</span>' 
+    : `<span style="color:#fbbf24;font-weight:800;">(Apenas ${dados.diff} min de diferença!)</span>`;
+
+  box.innerHTML = `
+    <div style="font-weight:900;color:#fff;font-size:14px;margin-bottom:4px;">👤 ${esc(dados.cliente || 'Compromisso agendado')}</div>
+    <div style="color:var(--gold-light);font-weight:700;font-size:12.5px;">📋 ${esc(dados.tipo || 'Agendamento')}</div>
+    <div style="color:#fff;margin-top:4px;font-size:13px;">📅 ${dataFmt} às <strong>${dados.hora}</strong> ${tempoAviso}</div>
+    ${dados.end ? `<div style="color:#94a3b8;font-size:12px;margin-top:3px;">📍 ${esc(dados.end)}</div>` : ''}
+  `;
+
+  if (btnReag) {
+    btnReag.setAttribute('onclick', `reagendarConflitoAgenda('${_campoOrigemConflito}')`);
+  }
+
+  m.style.display = 'flex';
+}
+
 
 function salvarEventoCronograma(forcarConflito = false) {
   const titulo = (document.getElementById('evento-form-titulo').value || '').trim();
@@ -22212,6 +22325,233 @@ function calcRapida(k) {
   cr.expr += k === '.' ? '.' : k === '−' ? '-' : k;
   d.textContent = cr.expr;
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  MÓDULO: AGENDA PESSOAL (COMPROMISSOS & LEMBRETES PARTICULARES)
+// ══════════════════════════════════════════════════════════════════════════════
+let _filtroAgendaPessoal = 'todos';
+
+function obterEventosAgendaPessoal() {
+  try {
+    const s = localStorage.getItem('sdv_agenda_pessoal_eventos');
+    return s ? JSON.parse(s) : [];
+  } catch(_) { return []; }
+}
+
+function salvarEventosAgendaPessoal(lista) {
+  try {
+    localStorage.setItem('sdv_agenda_pessoal_eventos', JSON.stringify(lista));
+  } catch(_) {}
+}
+
+function filtrarAgendaPessoal(filtro) {
+  _filtroAgendaPessoal = filtro;
+  const bTodos = document.getElementById('btn-pessoal-filtro-todos');
+  const bConc = document.getElementById('btn-pessoal-filtro-concluidos');
+  if (bTodos) bTodos.classList.toggle('active', filtro === 'todos');
+  if (bConc) bConc.classList.toggle('active', filtro === 'concluidos');
+  renderAgendaPessoal();
+}
+
+function renderAgendaPessoal() {
+  const lista = obterEventosAgendaPessoal();
+  const hojeStr = new Date().toISOString().split('T')[0];
+
+  let totalHoje = 0;
+  let totalPendentes = 0;
+  let totalConcluidos = 0;
+
+  lista.forEach(ev => {
+    if (ev.concluido) totalConcluidos++;
+    else {
+      totalPendentes++;
+      if (ev.data === hojeStr) totalHoje++;
+    }
+  });
+
+  const kHoje = document.getElementById('agenda-pessoal-kpi-hoje');
+  const kPend = document.getElementById('agenda-pessoal-kpi-pendentes');
+  const kConc = document.getElementById('agenda-pessoal-kpi-concluidos');
+  if (kHoje) kHoje.textContent = totalHoje;
+  if (kPend) kPend.textContent = totalPendentes;
+  if (kConc) kConc.textContent = totalConcluidos;
+
+  const cont = document.getElementById('agenda-pessoal-lista');
+  if (!cont) return;
+
+  let filtrados = [...lista];
+  if (_filtroAgendaPessoal === 'concluidos') {
+    filtrados = filtrados.filter(x => x.concluido);
+  }
+
+  filtrados.sort((a,b) => {
+    if (a.concluido !== b.concluido) return a.concluido ? 1 : -1;
+    const dA = a.data ? (a.data + ' ' + (a.hora || '00:00')) : '';
+    const dB = b.data ? (b.data + ' ' + (b.hora || '00:00')) : '';
+    return dA.localeCompare(dB);
+  });
+
+  if (!filtrados.length) {
+    cont.innerHTML = '<div class="empty">Nenhum compromisso pessoal ' + (_filtroAgendaPessoal === 'concluidos' ? 'concluído' : '') + ' no momento.</div>';
+    return;
+  }
+
+  cont.innerHTML = filtrados.map(ev => {
+    const isHoje = ev.data === hojeStr && !ev.concluido;
+    const dataFmt = ev.data ? ev.data.split('-').reverse().join('/') : '';
+    return `
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:12px;border-bottom:1px solid rgba(255,255,255,0.05);gap:12px;flex-wrap:wrap;background:${isHoje ? 'rgba(56,189,248,0.08)' : 'rgba(255,255,255,0.01)'};border-radius:10px;margin-bottom:8px;border:1px solid ${isHoje ? 'rgba(56,189,248,0.3)' : 'rgba(255,255,255,0.06)'};">
+        <div style="display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0;">
+          <button onclick="alternarConcluidoPessoal('${ev.id}')" title="${ev.concluido ? 'Reabrir' : 'Concluir'}" style="margin-top:2px;background:${ev.concluido ? '#10b981' : 'transparent'};border:1.5px solid ${ev.concluido ? '#10b981' : 'rgba(255,255,255,0.2)'};color:#fff;width:24px;height:24px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;">
+            ${ev.concluido ? '✓' : ''}
+          </button>
+          <div style="min-width:0;">
+            <div style="font-weight:800;font-size:14px;color:#fff;text-decoration:${ev.concluido ? 'line-through' : 'none'};opacity:${ev.concluido ? '0.6' : '1'};display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <span>${esc(ev.titulo)}</span>
+              ${isHoje ? '<span style="font-size:10px;background:#38bdf8;color:#000;padding:1px 6px;border-radius:999px;font-weight:900;">HOJE</span>' : ''}
+            </div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+              <span>📅 ${dataFmt} ${ev.hora ? 'às ' + ev.hora : ''}</span>
+              ${ev.local ? '<span>📍 ' + esc(ev.local) + '</span>' : ''}
+            </div>
+            ${ev.obs ? '<div style="font-size:11.5px;color:rgba(255,255,255,0.7);margin-top:4px;font-style:italic;">📝 ' + esc(ev.obs) + '</div>' : ''}
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <button onclick="editarCompromissoPessoal('${ev.id}')" title="Editar" style="background:transparent;border:1px solid rgba(255,255,255,0.15);color:var(--gold-light);width:26px;height:26px;border-radius:6px;cursor:pointer;font-size:11px;display:inline-flex;align-items:center;justify-content:center;">✏️</button>
+          <button class="item-del" onclick="excluirCompromissoPessoal('${ev.id}')" title="Excluir" style="width:26px;height:26px;font-size:11px;">✕</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function abrirModalNovoCompromissoPessoal(id) {
+  const m = document.getElementById('modal-novo-compromisso-pessoal');
+  if (!m) return;
+  const titEl = document.getElementById('modal-pessoal-titulo');
+  const editIdEl = document.getElementById('pessoal-edit-id');
+  const inpTit = document.getElementById('pessoal-novo-titulo');
+  const inpData = document.getElementById('pessoal-novo-data');
+  const inpHora = document.getElementById('pessoal-novo-hora');
+  const inpLocal = document.getElementById('pessoal-novo-local');
+  const inpObs = document.getElementById('pessoal-novo-obs');
+
+  editIdEl.value = '';
+  inpTit.value = '';
+  inpData.value = new Date().toISOString().split('T')[0];
+  inpHora.value = '10:00';
+  inpLocal.value = '';
+  inpObs.value = '';
+  if (titEl) titEl.textContent = 'Novo Compromisso Pessoal';
+
+  if (id) {
+    const ev = obterEventosAgendaPessoal().find(x => String(x.id) === String(id));
+    if (ev) {
+      editIdEl.value = ev.id;
+      inpTit.value = ev.titulo || '';
+      inpData.value = ev.data || '';
+      inpHora.value = ev.hora || '';
+      inpLocal.value = ev.local || '';
+      inpObs.value = ev.obs || '';
+      if (titEl) titEl.textContent = 'Editar Compromisso Pessoal';
+    }
+  }
+
+  m.style.display = 'flex';
+  setTimeout(() => inpTit && inpTit.focus(), 100);
+}
+
+function fecharModalNovoCompromissoPessoal() {
+  const m = document.getElementById('modal-novo-compromisso-pessoal');
+  if (m) m.style.display = 'none';
+}
+
+function salvarCompromissoPessoal(forcarConflito = false) {
+  const editId = document.getElementById('pessoal-edit-id').value;
+  const titulo = (document.getElementById('pessoal-novo-titulo').value || '').trim();
+  const data = document.getElementById('pessoal-novo-data').value;
+  const hora = document.getElementById('pessoal-novo-hora').value;
+  const local = (document.getElementById('pessoal-novo-local').value || '').trim();
+  const obs = (document.getElementById('pessoal-novo-obs').value || '').trim();
+
+  if (!titulo || !data) {
+    alert('Preencha o título e a data do compromisso pessoal.');
+    return;
+  }
+
+  const lista = obterEventosAgendaPessoal();
+
+  // ── DETECÇÃO DE CONFLITO: MESMA DATA E HORÁRIO IGUAL OU PRÓXIMO ──
+  if (!forcarConflito && data && hora) {
+    // Verifica conflito tanto na Agenda Pessoal quanto na Agenda Geral
+    const conflitoPessoal = lista.find(e => !e.concluido && String(e.id) !== String(editId) && e.data === data && e.hora && calcularDiferencaMinutosHoras(e.hora, hora) <= 45);
+    const eventosGerais = (typeof obterAgendaEventos === 'function') ? obterAgendaEventos() : [];
+    const conflitoGeral = eventosGerais.find(e => !e.concluido && e.data === data && e.hora && calcularDiferencaMinutosHoras(e.hora, hora) <= 45);
+
+    const conflito = conflitoPessoal || conflitoGeral;
+    if (conflito) {
+      const diff = calcularDiferencaMinutosHoras(conflito.hora, hora);
+      _pendenteSalvarCallback = () => salvarCompromissoPessoal(true);
+      mostrarModalAlertaConflito({
+        cliente: conflito.titulo || conflito.cliente || 'Compromisso agendado',
+        tipo: conflito.tipo || 'Agenda Pessoal',
+        data: conflito.data,
+        hora: conflito.hora,
+        end: conflito.local || conflito.end,
+        diff,
+        origem: 'pessoal-novo-hora'
+      });
+      return;
+    }
+  }
+
+  const obj = {
+    id: editId || ('pess_' + Date.now()),
+    titulo,
+    data,
+    hora,
+    local,
+    obs,
+    concluido: false,
+    criadoEm: new Date().toISOString()
+  };
+
+  if (editId) {
+    const idx = lista.findIndex(x => String(x.id) === String(editId));
+    if (idx !== -1) lista[idx] = { ...lista[idx], ...obj };
+    else lista.push(obj);
+  } else {
+    lista.push(obj);
+  }
+
+  salvarEventosAgendaPessoal(lista);
+  fecharModalNovoCompromissoPessoal();
+  renderAgendaPessoal();
+  mostrarToastAprovacao('✅ Compromisso pessoal salvo com sucesso!');
+}
+
+function alternarConcluidoPessoal(id) {
+  let lista = obterEventosAgendaPessoal();
+  const idx = lista.findIndex(x => String(x.id) === String(id));
+  if (idx !== -1) {
+    lista[idx].concluido = !lista[idx].concluido;
+    salvarEventosAgendaPessoal(lista);
+    renderAgendaPessoal();
+  }
+}
+
+function editarCompromissoPessoal(id) {
+  abrirModalNovoCompromissoPessoal(id);
+}
+
+function excluirCompromissoPessoal(id) {
+  if (!confirm('Excluir este compromisso pessoal?')) return;
+  let lista = obterEventosAgendaPessoal().filter(x => String(x.id) !== String(id));
+  salvarEventosAgendaPessoal(lista);
+  renderAgendaPessoal();
+}
+
 </script>
 </body>
 </html>
