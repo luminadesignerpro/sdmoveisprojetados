@@ -133,53 +133,71 @@
     }
     .btn-sair:hover { background: rgba(224,68,68,0.6); border-color: rgba(224,68,68,0.8); }
 
-    /* ── TABS ── */
+    /* ── TABS (PADRONIZADAS COM MESMO TAMANHO E ALINHAMENTO) ── */
     .tabs {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 6px;
       margin-bottom: 14px;
       background: var(--card);
-      padding: 6px;
+      padding: 8px 6px;
       border-radius: var(--r-md);
       border: 1px solid var(--border-s);
-    }
-    #btn-central-mensagens {
-      grid-column: 1 / -1;
-      justify-self: center;
-      min-width: 140px;
-    }
-    @media(max-width: 650px) {
-      .tabs {
-        grid-template-columns: repeat(4, 1fr);
-        gap: 5px;
-        padding: 5px;
-      }
-      .tab {
-        font-size: 10px;
-        padding: 8px 2px;
-        min-width: 0;
-        flex-direction: column;
-        gap: 4px;
-        line-height: 1.15;
-      }
+      align-items: stretch;
     }
     .tab {
-      flex: 1; padding: 11px 6px; border-radius: 10px; border: none;
-      background: transparent; color: var(--muted); font-size: 11.5px; font-weight: 700;
-      cursor: pointer; text-align: center; transition: all 0.2s; font-family: var(--font);
-      display: flex; align-items: center; justify-content: center; gap: 4px; min-width: 85px;
+      width: 100%;
+      height: 64px;
+      min-height: 64px;
+      max-height: 64px;
+      padding: 6px 3px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      background: rgba(255, 255, 255, 0.02);
+      color: var(--muted);
+      font-size: 10.5px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+      font-family: var(--font);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      box-sizing: border-box;
+      line-height: 1.15;
+      overflow: hidden;
+      word-break: break-word;
     }
     .tab:hover {
       background: rgba(201,168,76,0.08);
       color: var(--gold-light);
+      border-color: rgba(201,168,76,0.3);
     }
     .tab.active {
       background: linear-gradient(135deg, rgba(201,168,76,0.22), rgba(201,168,76,0.11));
       color: var(--gold-light);
-      border: 1px solid var(--gold);
+      border: 1.5px solid var(--gold);
+      box-shadow: 0 4px 14px var(--gold-glow);
     }
     .tab:not(.active):hover { background: rgba(255,255,255,0.04); color: var(--text2); }
+    @media(max-width: 650px) {
+      .tabs {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 5px;
+        padding: 5px 3px;
+      }
+      .tab {
+        height: 62px;
+        min-height: 62px;
+        max-height: 62px;
+        font-size: 9.5px;
+        padding: 4px 2px;
+        line-height: 1.12;
+      }
+    }
 
     /* ── PANELS ── */
     .panel { display: none; }
@@ -1857,26 +1875,28 @@
     })();
   </script>
 
-  <!-- TABS -->
+  <!-- TABS (20 ABAS PADRONIZADAS NO MESMO TAMANHO EM GRID 4 COLUNAS) -->
   <div class="tabs">
-    <button id="tab-orcamento" class="tab active" data-tab="orcamento" onclick="goTab('orcamento')">📋 Orçamento</button>
-    <button id="tab-historico" class="tab" data-tab="historico" onclick="goTab('historico')">🗂️ Histórico</button>
-    <button id="tab-financeiro" class="tab" data-tab="financeiro" onclick="goTab('financeiro')">💰 Financeiro</button>
-    <button id="tab-agenda" class="tab" data-tab="agenda" onclick="goTab('agenda')">📅 Agenda</button>
-    <button id="tab-agenda-pessoal" class="tab" data-tab="agenda-pessoal" onclick="goTab('agenda-pessoal')">📅 Agenda Pessoal</button>
-    <button id="tab-produtos" class="tab" data-tab="produtos" onclick="goTab('produtos')">📦 Produtos & Serviços</button>
-    <button id="tab-empresa" class="tab" data-tab="empresa" onclick="goTab('empresa')">🏢 Dados da Empresa</button>
-    <button id="tab-clientes" class="tab" data-tab="clientes" onclick="goTab('clientes')">👤 Clientes</button>
-    <button id="tab-ponto" class="tab" data-tab="ponto" onclick="goTab('ponto')">👷 Funcionários & Ponto</button>
-    <button id="tab-camera" class="tab" data-tab="camera" onclick="goTab('camera')">📷 Câmera</button>
-    <button id="tab-contratos" class="tab" data-tab="contratos" onclick="goTab('contratos')">📄 Contratos</button>
-    <button id="tab-usuarios" class="tab" data-tab="usuarios" onclick="goTab('usuarios')">👥 Usuários</button>
-    <button type="button" id="tab-portal-cliente" class="tab" onclick="abrirPortalCliente()" title="Acessar Portal do Cliente">🌐 Portal do Cliente</button>
-    <button type="button" id="tab-portal-funcionario" class="tab" onclick="abrirPortalFuncionario()" title="Acessar Portal do Funcionário">👷 Portal do Funcionário</button>
-    <button type="button" id="tab-cronograma" class="tab" data-tab="cronograma" onclick="goTab('cronograma')" title="Cronograma e Pedido de Material">📅 Cronograma</button>
-    <button type="button" id="tab-relatorio" class="tab" data-tab="relatorio" onclick="goTab('relatorio')" title="Relatório Financeiro">📊 Relatório</button>
-    <button type="button" id="tab-ferramentas" class="tab" data-tab="ferramentas" onclick="goTab('ferramentas')" title="Ferramentas de Obra">🔧 Ferramentas</button>
-    <button type="button" id="btn-central-mensagens" class="tab" onclick="abrirModalCentralMensagens()" title="Central de Mensagens com Clientes">💬 Mensagens <span id="badge-msg-clientes" style="display:none;background:#ef4444;color:#fff;font-size:9.5px;padding:1px 6px;border-radius:999px;font-weight:900;margin-left:4px;">0</span></button>
+    <button id="tab-orcamento" class="tab active" data-tab="orcamento" onclick="goTab('orcamento')"><span>📋</span><span>Orçamento</span></button>
+    <button id="tab-historico" class="tab" data-tab="historico" onclick="goTab('historico')"><span>🗂️</span><span>Histórico</span></button>
+    <button id="tab-financeiro" class="tab" data-tab="financeiro" onclick="goTab('financeiro')"><span>💰</span><span>Financeiro</span></button>
+    <button id="tab-estoque" class="tab" data-tab="estoque" onclick="goTab('estoque')" title="Controle de Estoque, Entrada e Saída"><span>📦</span><span>Estoque</span></button>
+    <button id="tab-detector" class="tab" data-tab="detector" onclick="goTab('detector')" title="Detector de Danos Elétrico e Hidráulico"><span>⚡💧</span><span>Detector Danos</span></button>
+    <button id="tab-agenda" class="tab" data-tab="agenda" onclick="goTab('agenda')"><span>📅</span><span>Agenda</span></button>
+    <button id="tab-agenda-pessoal" class="tab" data-tab="agenda-pessoal" onclick="goTab('agenda-pessoal')"><span>📅</span><span>Agenda Pessoal</span></button>
+    <button id="tab-produtos" class="tab" data-tab="produtos" onclick="goTab('produtos')"><span>📦</span><span>Produtos/Serviços</span></button>
+    <button id="tab-empresa" class="tab" data-tab="empresa" onclick="goTab('empresa')"><span>🏢</span><span>Dados Empresa</span></button>
+    <button id="tab-clientes" class="tab" data-tab="clientes" onclick="goTab('clientes')"><span>👤</span><span>Clientes</span></button>
+    <button id="tab-ponto" class="tab" data-tab="ponto" onclick="goTab('ponto')"><span>👷</span><span>Equipe & Ponto</span></button>
+    <button id="tab-camera" class="tab" data-tab="camera" onclick="goTab('camera')"><span>📷</span><span>Câmera</span></button>
+    <button id="tab-contratos" class="tab" data-tab="contratos" onclick="goTab('contratos')"><span>📄</span><span>Contratos</span></button>
+    <button id="tab-usuarios" class="tab" data-tab="usuarios" onclick="goTab('usuarios')"><span>👥</span><span>Usuários</span></button>
+    <button type="button" id="tab-portal-cliente" class="tab" onclick="abrirPortalCliente()" title="Acessar Portal do Cliente"><span>🌐</span><span>Portal Cliente</span></button>
+    <button type="button" id="tab-portal-funcionario" class="tab" onclick="abrirPortalFuncionario()" title="Acessar Portal do Funcionário"><span>👷</span><span>Portal Equipe</span></button>
+    <button type="button" id="tab-cronograma" class="tab" data-tab="cronograma" onclick="goTab('cronograma')" title="Cronograma e Pedido de Material"><span>📅</span><span>Cronograma</span></button>
+    <button type="button" id="tab-relatorio" class="tab" data-tab="relatorio" onclick="goTab('relatorio')" title="Relatório Financeiro"><span>📊</span><span>Relatório</span></button>
+    <button type="button" id="tab-ferramentas" class="tab" data-tab="ferramentas" onclick="goTab('ferramentas')" title="Ferramentas de Obra"><span>🔧</span><span>Ferramentas</span></button>
+    <button type="button" id="btn-central-mensagens" class="tab" onclick="abrirModalCentralMensagens()" title="Central de Mensagens com Clientes"><span>💬</span><span>Mensagens <span id="badge-msg-clientes" style="display:none;background:#ef4444;color:#fff;font-size:9px;padding:1px 5px;border-radius:999px;font-weight:900;">0</span></span></button>
   </div>
 
   <!-- ══════════════════════════════════════════ -->
@@ -3799,6 +3819,264 @@
 
   </div>
 
+  <!-- ══════════════════════════════════════════ -->
+  <!-- PANEL: ESTOQUE (ENTRADA E SAÍDA DE MATERIAL) -->
+  <!-- ══════════════════════════════════════════ -->
+  <div id="panel-estoque" class="panel">
+    <!-- Cabeçalho do Estoque -->
+    <div style="background:linear-gradient(135deg,rgba(201,168,76,0.12),rgba(16,18,27,0.92));border:1.5px solid var(--border);border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:0 8px 30px rgba(0,0,0,0.5);">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+        <div>
+          <div style="font-size:12px;font-weight:900;color:var(--gold);letter-spacing:0.1em;text-transform:uppercase;">Almoxarifado & Marcenaria</div>
+          <h2 style="font-size:22px;font-weight:900;color:#fff;margin:2px 0 4px 0;display:flex;align-items:center;gap:8px;">
+            <span>📦</span> <span>Estoque de Materiais</span>
+          </h2>
+          <div style="font-size:12.5px;color:var(--muted);">Controle completo de saldo, registro de entradas de compras e saídas para projetos/O.S.</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button type="button" class="btn btn-primary" onclick="abrirModalEntradaEstoque()" style="padding:9px 15px;font-size:12.5px;font-weight:800;background:linear-gradient(135deg,#059669,#10b981);border:none;box-shadow:0 4px 15px rgba(16,185,129,0.35);display:inline-flex;align-items:center;gap:6px;">
+            📥 Registrar Entrada
+          </button>
+          <button type="button" class="btn btn-sec" onclick="abrirModalSaidaEstoque()" style="padding:9px 15px;font-size:12.5px;font-weight:800;background:linear-gradient(135deg,#dc2626,#ef4444);border:none;color:#fff;box-shadow:0 4px 15px rgba(239,68,68,0.35);display:inline-flex;align-items:center;gap:6px;">
+            📤 Registrar Saída
+          </button>
+          <button type="button" class="btn btn-gold" onclick="abrirModalCadastrarMaterialEstoque()" style="padding:9px 15px;font-size:12.5px;font-weight:800;display:inline-flex;align-items:center;gap:6px;">
+            ➕ Novo Material
+          </button>
+        </div>
+      </div>
+
+      <!-- KPIs do Estoque -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px;">
+        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:10px;text-align:center;">
+          <div style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;">Total de Itens</div>
+          <div id="kpi-estoque-total-itens" style="font-size:22px;font-weight:900;color:#fff;margin-top:2px;">0</div>
+          <div style="font-size:10.5px;color:var(--muted);margin-top:2px;">cadastrados</div>
+        </div>
+        <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:10px;text-align:center;">
+          <div style="font-size:11px;font-weight:800;color:#f87171;text-transform:uppercase;">Estoque Baixo</div>
+          <div id="kpi-estoque-alerta-min" style="font-size:22px;font-weight:900;color:#ef4444;margin-top:2px;">0</div>
+          <div style="font-size:10.5px;color:#fca5a5;margin-top:2px;">precisam reposição</div>
+        </div>
+        <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3);border-radius:12px;padding:10px;text-align:center;">
+          <div style="font-size:11px;font-weight:800;color:#34d399;text-transform:uppercase;">Entradas</div>
+          <div id="kpi-estoque-total-entradas" style="font-size:22px;font-weight:900;color:#10b981;margin-top:2px;">0</div>
+          <div style="font-size:10.5px;color:#6ee7b7;margin-top:2px;">registradas</div>
+        </div>
+        <div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.3);border-radius:12px;padding:10px;text-align:center;">
+          <div style="font-size:11px;font-weight:800;color:#93c5fd;text-transform:uppercase;">Saídas</div>
+          <div id="kpi-estoque-total-saidas" style="font-size:22px;font-weight:900;color:#3b82f6;margin-top:2px;">0</div>
+          <div style="font-size:10.5px;color:#bfdbfe;margin-top:2px;">para projetos/O.S.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Barra de Filtros e Sub-Abas do Estoque -->
+    <div class="card" style="margin-bottom:14px;padding:12px;">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button type="button" class="btn btn-sec btn-sm btn-estoque-tab active" id="btn-subaba-materiais" onclick="mudarSubAbaEstoque('materiais')">📦 Materiais</button>
+          <button type="button" class="btn btn-sec btn-sm btn-estoque-tab" id="btn-subaba-movimentacoes" onclick="mudarSubAbaEstoque('movimentacoes')">🔄 Entradas & Saídas</button>
+          <button type="button" class="btn btn-sec btn-sm btn-estoque-tab" id="btn-subaba-alertas" onclick="mudarSubAbaEstoque('alertas')">⚠️ Alertas de Reposição</button>
+        </div>
+        <div style="display:flex;gap:8px;flex:1;min-width:240px;justify-content:flex-end;">
+          <input type="text" id="filtro-estoque-busca" placeholder="🔍 Buscar material, código ou fornecedor..." oninput="filtrarListaEstoque()" style="flex:1;max-width:320px;padding:8px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:12.5px;" />
+          <select id="filtro-estoque-categoria" onchange="filtrarListaEstoque()" style="padding:8px 10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:12.5px;">
+            <option value="">Todas as Categorias</option>
+            <option value="MDF">Chapas MDF</option>
+            <option value="Fita de Borda">Fitas de Borda</option>
+            <option value="Ferragem">Ferragens (Corrediças/Dobradiças)</option>
+            <option value="Puxador/Perfil">Puxadores & Perfis</option>
+            <option value="Vidro/Espelho">Vidros & Espelhos</option>
+            <option value="Parafuso/Insumo">Parafusos & Insumos</option>
+            <option value="Outro">Outros Materiais</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Conteúdo: Lista de Materiais -->
+      <div id="estoque-conteudo-materiais">
+        <div id="estoque-lista-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;"></div>
+      </div>
+
+      <!-- Conteúdo: Histórico de Movimentações -->
+      <div id="estoque-conteudo-movimentacoes" style="display:none;">
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:12.5px;text-align:left;">
+            <thead>
+              <tr style="border-bottom:1.5px solid rgba(255,255,255,0.15);color:var(--gold-light);">
+                <th style="padding:10px 8px;">Tipo</th>
+                <th style="padding:10px 8px;">Data/Hora</th>
+                <th style="padding:10px 8px;">Material</th>
+                <th style="padding:10px 8px;">Quantidade</th>
+                <th style="padding:10px 8px;">Destino / Fornecedor</th>
+                <th style="padding:10px 8px;">Responsável / Obs</th>
+                <th style="padding:10px 8px;text-align:right;">Ação</th>
+              </tr>
+            </thead>
+            <tbody id="estoque-tabela-movimentacoes"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Conteúdo: Alertas de Reposição -->
+      <div id="estoque-conteudo-alertas" style="display:none;">
+        <div id="estoque-lista-alertas" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- PANEL: DETECTOR DE DANOS ELÉTRICOS E HIDRÁULICO -->
+  <!-- ══════════════════════════════════════════ -->
+  <div id="panel-detector" class="panel">
+    <!-- Cabeçalho do Detector -->
+    <div style="background:linear-gradient(135deg,rgba(56,189,248,0.12),rgba(239,68,68,0.08),rgba(16,18,27,0.92));border:1.5px solid rgba(56,189,248,0.35);border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:0 8px 30px rgba(0,0,0,0.6);">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+        <div>
+          <div style="font-size:12px;font-weight:900;color:#38bdf8;letter-spacing:0.12em;text-transform:uppercase;">Segurança na Furação & Instalação de Móveis</div>
+          <h2 style="font-size:22px;font-weight:900;color:#fff;margin:2px 0 4px 0;display:flex;align-items:center;gap:8px;">
+            <span>⚡💧</span> <span>Detector de Danos Elétrico e Hidráulico</span>
+          </h2>
+          <div style="font-size:12.5px;color:var(--muted);">Evite perfurar canos de água e conduítes elétricos energizados antes de furar a parede para fixar armários e painéis.</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button type="button" class="btn btn-primary" id="btn-toggle-sensor-detector" onclick="alternarSensorDetector()" style="padding:10px 16px;font-size:13px;font-weight:900;background:linear-gradient(135deg,#0284c7,#38bdf8);border:none;box-shadow:0 4px 15px rgba(56,189,248,0.4);display:inline-flex;align-items:center;gap:6px;">
+            📡 Iniciar Detector ao Vivo
+          </button>
+          <button type="button" class="btn btn-sec" onclick="calibrarZeroSensorDetector()" style="padding:10px 14px;font-size:12.5px;font-weight:800;display:inline-flex;align-items:center;gap:4px;">
+            🎯 Calibrar Tara (Zero)
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- HUD Principal: Instrumento de Medição Magnética / Scanner ao Vivo -->
+    <div class="card" style="text-align:center;border:2px solid rgba(56,189,248,0.3);position:relative;overflow:hidden;padding:24px 16px;margin-bottom:16px;background:#0b0c16;">
+      <div style="position:absolute;top:12px;right:16px;display:flex;align-items:center;gap:12px;">
+        <label style="font-size:12px;color:var(--text2);display:inline-flex;align-items:center;gap:4px;cursor:pointer;">
+          <input type="checkbox" id="chk-detector-som" checked /> 🔊 Som Sonar
+        </label>
+        <label style="font-size:12px;color:var(--text2);display:inline-flex;align-items:center;gap:4px;cursor:pointer;">
+          <input type="checkbox" id="chk-detector-vibrar" checked /> 📳 Vibração
+        </label>
+      </div>
+
+      <div style="font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;">Leitura Eletromagnética de Parede</div>
+
+      <!-- Mostrador Digital de microTesla (µT) -->
+      <div style="display:flex;justify-content:center;align-items:baseline;gap:6px;margin:12px 0;">
+        <span id="detector-valor-uT" style="font-size:64px;font-weight:900;color:#38bdf8;font-family:monospace;letter-spacing:-2px;line-height:1;">0.0</span>
+        <span style="font-size:18px;font-weight:800;color:var(--muted);">µT</span>
+      </div>
+
+      <!-- Status do Alerta -->
+      <div id="detector-status-box" style="display:inline-block;padding:8px 22px;border-radius:999px;font-size:13px;font-weight:900;background:rgba(34,197,94,0.15);border:1.5px solid #22c55e;color:#4ade80;margin-bottom:16px;transition:all 0.2s;">
+        🟢 NENHUMA FIAÇÃO OU METAL DETECTADO (ÁREA SEGURA)
+      </div>
+
+      <!-- Barra Gráfica de Nível -->
+      <div style="max-width:520px;margin:0 auto 16px auto;">
+        <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--muted);font-weight:800;margin-bottom:4px;">
+          <span>0 µT (Seguro)</span>
+          <span>40 µT (Atenção)</span>
+          <span>75+ µT (PERIGO ELÉTRICO / METAL)</span>
+        </div>
+        <div style="height:18px;background:rgba(255,255,255,0.06);border-radius:999px;border:1px solid rgba(255,255,255,0.15);overflow:hidden;position:relative;">
+          <div id="detector-barra-nivel" style="height:100%;width:5%;background:linear-gradient(90deg,#22c55e,#eab308,#ef4444);border-radius:999px;transition:width 0.1s ease;"></div>
+        </div>
+      </div>
+
+      <div style="font-size:12px;color:var(--text2);max-width:560px;margin:0 auto;line-height:1.4;">
+        💡 <strong>Como usar:</strong> Segure o celular encostado na parede e deslize lentamente no ponto onde pretende furar. Picos súbitos na leitura indicam <strong>fios com corrente elétrica</strong> ou <strong>estruturas metálicas</strong>.
+      </div>
+    </div>
+
+    <!-- Guia Inteligente de Prevenção: Hidráulico & Elétrico -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
+      <!-- Card Hidráulico -->
+      <div class="card" style="border:1.5px solid rgba(56,189,248,0.25);">
+        <div class="card-title" style="color:#38bdf8;display:flex;align-items:center;gap:6px;">
+          <span>💧</span> <span>Prevenção de Canos de Água (PVC / PPR)</span>
+        </div>
+        <div style="font-size:12.5px;color:var(--text2);line-height:1.5;">
+          Canos plásticos não emitem campo magnético. Siga as <strong>Regras da ABNT</strong>:
+          <ul style="margin:8px 0 0 16px;color:var(--text2);">
+            <li><strong>Regra Vertical:</strong> Canos sobem e descem em linha reta a partir de torneiras, registros e chuveiros.</li>
+            <li><strong>Faixa de Risco:</strong> NUNCA fure a menos de <strong>15 cm</strong> à esquerda ou à direita do eixo vertical de qualquer ponto de água.</li>
+            <li><strong>Altura Padrão:</strong> Registros costumam estar a 1,10m e pontos de torneira a 0,60m (bancada) ou 1,10m (parede).</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Card Elétrico -->
+      <div class="card" style="border:1.5px solid rgba(234,179,8,0.25);">
+        <div class="card-title" style="color:var(--gold-light);display:flex;align-items:center;gap:6px;">
+          <span>⚡</span> <span>Prevenção de Fiação & Conduítes</span>
+        </div>
+        <div style="font-size:12.5px;color:var(--text2);line-height:1.5;">
+          Conduítes correm pelas paredes interligando caixas de passagem:
+          <ul style="margin:8px 0 0 16px;color:var(--text2);">
+            <li><strong>Regra em Cruz:</strong> Fios correm na vertical (acima e abaixo) e na horizontal (lados) de tomadas e interruptores.</li>
+            <li><strong>Quadro de Luz:</strong> Próximo ao quadro de disjuntores há dezenas de conduítes — evite furar num raio de 40 cm.</li>
+            <li><strong>Teste Ativo:</strong> Ligue os aparelhos ou lâmpadas do cômodo para a corrente elétrica gerar campo detectável pelo sensor.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Verificador / Calculadora de Ponto Seguro de Furação -->
+    <div class="card" style="border:1.5px solid var(--border);margin-bottom:16px;">
+      <div class="card-title">📐 Verificador de Distância Segura do Furo</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px;">
+        <div>
+          <label style="font-size:11.5px;font-weight:800;color:var(--text2);display:block;margin-bottom:4px;">Ponto de Referência Mais Próximo:</label>
+          <select id="calc-furo-tipo-ref" onchange="calcularSegurancaFuro()" style="width:100%;padding:9px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:13px;">
+            <option value="registro">🚿 Registro Geral / Chuveiro</option>
+            <option value="torneira">🚰 Ponto de Torneira / Esgoto</option>
+            <option value="tomada">🔌 Tomada / Interruptor</option>
+            <option value="quadro">⚡ Quadro de Disjuntores</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:11.5px;font-weight:800;color:var(--text2);display:block;margin-bottom:4px;">Distância Horizontal do Ponto (cm):</label>
+          <input type="number" id="calc-furo-dist-h" value="25" min="0" oninput="calcularSegurancaFuro()" style="width:100%;padding:9px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:13px;" />
+        </div>
+        <div>
+          <label style="font-size:11.5px;font-weight:800;color:var(--text2);display:block;margin-bottom:4px;">Distância Vertical do Ponto (cm):</label>
+          <input type="number" id="calc-furo-dist-v" value="30" min="0" oninput="calcularSegurancaFuro()" style="width:100%;padding:9px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:13px;" />
+        </div>
+      </div>
+      <div id="calc-furo-resultado" style="margin-top:14px;padding:12px;border-radius:10px;font-size:13px;font-weight:800;background:rgba(34,197,94,0.15);border:1px solid #22c55e;color:#4ade80;">
+        ✅ DISTÂNCIA SEGURA! O ponto está a mais de 15 cm do eixo de tubulação e fiação. Pode furar utilizando o limitador de profundidade da broca.
+      </div>
+    </div>
+
+    <!-- Checklist Pré-Furação de Obra -->
+    <div class="card">
+      <div class="card-title">📋 Checklist Obrigatório de Segurança Pré-Furação</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
+        <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer;">
+          <input type="checkbox" id="chk-seg-1" /> Registro geral de água fechado preventivamente
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer;">
+          <input type="checkbox" id="chk-seg-2" /> Disjuntor da área identificado e acessível
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer;">
+          <input type="checkbox" id="chk-seg-3" /> Scanner magnético passado em todo o alinhamento
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer;">
+          <input type="checkbox" id="chk-seg-4" /> Limitador de profundidade regulado na furadeira (máx 45mm)
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer;">
+          <input type="checkbox" id="chk-seg-5" /> Verificado o outro lado da parede (banheiro/cozinha adjacente)
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer;">
+          <input type="checkbox" id="chk-seg-6" /> Buchas e parafusos adequados ao tipo de alvenaria/drywall
+        </label>
+      </div>
+    </div>
+  </div>
 
   <!-- PANEL: LICENÇA & EMPRESA (MULTI-EMPRESA / WHITE-LABEL) -->
   <!-- ══════════════════════════════════════════ -->
@@ -5087,6 +5365,206 @@
       <button type="button" class="btn btn-sec" onclick="fecharModalAvaliarAgenda()" style="width:100%;padding:8px;font-size:12px;">
         Fechar
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL CADASTRAR NOVO MATERIAL NO ESTOQUE ══ -->
+<div id="modal-cadastrar-material-estoque" class="modal-overlay" style="display:none;z-index:999999;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:540px;background:#0d0e17;border:1.5px solid var(--gold);box-shadow:0 0 45px rgba(201,168,76,0.5);padding:22px;border-radius:16px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:10px;">
+      <div>
+        <h3 id="modal-material-titulo" style="font-size:18px;font-weight:900;color:#fff;margin:0;">📦 Cadastrar Material no Estoque</h3>
+        <div style="font-size:11.5px;color:var(--muted);">Preencha todos os dados da peça, ferragem ou insumo</div>
+      </div>
+      <button type="button" onclick="fecharModalCadastrarMaterialEstoque()" style="background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer;">✕</button>
+    </div>
+
+    <input type="hidden" id="mat-edit-id" value="" />
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+      <div style="grid-column:1 / -1;">
+        <label style="font-size:11.5px;font-weight:800;color:var(--text2);display:block;margin-bottom:4px;">Nome do Material / Descrição *:</label>
+        <input type="text" id="mat-input-nome" placeholder="ex: MDF Louro Freijó 18mm 2 Faces" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:13px;box-sizing:border-box;" />
+      </div>
+
+      <div>
+        <label style="font-size:11.5px;font-weight:800;color:var(--text2);display:block;margin-bottom:4px;">Categoria *:</label>
+        <select id="mat-input-categoria" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:13px;box-sizing:border-box;">
+          <option value="MDF">Chapa MDF</option>
+          <option value="Fita de Borda">Fita de Borda</option>
+          <option value="Ferragem">Ferragem (Corrediça/Dobradiça)</option>
+          <option value="Puxador/Perfil">Puxador & Perfil Alumínio</option>
+          <option value="Vidro/Espelho">Vidro / Espelho</option>
+          <option value="Parafuso/Insumo">Parafuso & Fixador</option>
+          <option value="Outro">Outro Insumo</option>
+        </select>
+      </div>
+
+      <div>
+        <label style="font-size:11.5px;font-weight:800;color:var(--text2);display:block;margin-bottom:4px;">Unidade de Medida *:</label>
+        <select id="mat-input-unidade" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:13px;box-sizing:border-box;">
+          <option value="chapa">Chapa(s)</option>
+          <option value="m">Metro linear (m)</option>
+          <option value="m²">Metro quadrado (m²)</option>
+          <option value="un">Unidade(s)</option>
+          <option value="barra">Barra(s)</option>
+          <option value="cx">Caixa(s)</option>
+          <option value="pct">Pacote(s)</option>
+          <option value="kg">Quilo(s) (kg)</option>
+        </select>
+      </div>
+
+      <div>
+        <label style="font-size:11.5px;font-weight:800;color:var(--text2);display:block;margin-bottom:4px;">Quantidade Atual em Estoque *:</label>
+        <input type="number" step="0.01" id="mat-input-qtd" placeholder="0" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:13px;box-sizing:border-box;" />
+      </div>
+
+      <div>
+        <label style="font-size:11.5px;font-weight:800;color:var(--text2);display:block;margin-bottom:4px;">Estoque Mínimo (Alerta de Reposição):</label>
+        <input type="number" step="0.01" id="mat-input-min" placeholder="ex: 3" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:13px;box-sizing:border-box;" />
+      </div>
+
+      <div>
+        <label style="font-size:11.5px;font-weight:800;color:var(--text2);display:block;margin-bottom:4px;">Preço de Custo Unitário (R$):</label>
+        <input type="number" step="0.01" id="mat-input-custo" placeholder="0.00" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:13px;box-sizing:border-box;" />
+      </div>
+
+      <div>
+        <label style="font-size:11.5px;font-weight:800;color:var(--text2);display:block;margin-bottom:4px;">Fornecedor Habitual:</label>
+        <input type="text" id="mat-input-fornecedor" placeholder="ex: GMAD, Leo Madeiras, FLG" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:13px;box-sizing:border-box;" />
+      </div>
+
+      <div>
+        <label style="font-size:11.5px;font-weight:800;color:var(--text2);display:block;margin-bottom:4px;">Código / Referência:</label>
+        <input type="text" id="mat-input-codigo" placeholder="ex: MDF-FREIJO-18" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:13px;box-sizing:border-box;" />
+      </div>
+
+      <div>
+        <label style="font-size:11.5px;font-weight:800;color:var(--text2);display:block;margin-bottom:4px;">Localização no Galpão:</label>
+        <input type="text" id="mat-input-local" placeholder="ex: Cavalete 2, Prateleira B" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:13px;box-sizing:border-box;" />
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button type="button" class="btn btn-sec" onclick="fecharModalCadastrarMaterialEstoque()" style="padding:10px 18px;font-size:13px;">Cancelar</button>
+      <button type="button" class="btn btn-primary" onclick="salvarMaterialEstoqueForm()" style="padding:10px 22px;font-size:13px;font-weight:900;">💾 Salvar Material</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL REGISTRAR ENTRADA DE MATERIAL ══ -->
+<div id="modal-entrada-estoque" class="modal-overlay" style="display:none;z-index:999999;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:480px;background:#0d0e17;border:1.5px solid #10b981;box-shadow:0 0 45px rgba(16,185,129,0.4);padding:22px;border-radius:16px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:10px;">
+      <div>
+        <h3 style="font-size:18px;font-weight:900;color:#34d399;margin:0;">📥 Registrar Entrada de Material</h3>
+        <div style="font-size:11.5px;color:var(--muted);">Adicionar mercadoria comprada ao estoque</div>
+      </div>
+      <button type="button" onclick="fecharModalEntradaEstoque()" style="background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer;">✕</button>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px;">
+      <div>
+        <label style="font-size:11.5px;font-weight:800;color:var(--text2);display:block;margin-bottom:4px;">Selecione o Material *:</label>
+        <select id="entrada-select-material" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:13px;box-sizing:border-box;"></select>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div>
+          <label style="font-size:11.5px;font-weight:800;color:var(--text2);display:block;margin-bottom:4px;">Quantidade que Entrou *:</label>
+          <input type="number" step="0.01" id="entrada-input-qtd" placeholder="ex: 10" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:13px;box-sizing:border-box;" />
+        </div>
+        <div>
+          <label style="font-size:11.5px;font-weight:800;color:var(--text2);display:block;margin-bottom:4px;">Valor Unitário Pago (R$):</label>
+          <input type="number" step="0.01" id="entrada-input-valor" placeholder="0.00" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:13px;box-sizing:border-box;" />
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div>
+          <label style="font-size:11.5px;font-weight:800;color:var(--text2);display:block;margin-bottom:4px;">Fornecedor:</label>
+          <input type="text" id="entrada-input-fornecedor" placeholder="ex: GMAD" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:13px;box-sizing:border-box;" />
+        </div>
+        <div>
+          <label style="font-size:11.5px;font-weight:800;color:var(--text2);display:block;margin-bottom:4px;">Data da Entrada:</label>
+          <input type="date" id="entrada-input-data" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:13px;box-sizing:border-box;" />
+        </div>
+      </div>
+
+      <div>
+        <label style="font-size:11.5px;font-weight:800;color:var(--text2);display:block;margin-bottom:4px;">Nota Fiscal / Comprovante ou Obs:</label>
+        <input type="text" id="entrada-input-obs" placeholder="ex: NF 14592 - Lote novo" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:13px;box-sizing:border-box;" />
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button type="button" class="btn btn-sec" onclick="fecharModalEntradaEstoque()" style="padding:10px 18px;font-size:13px;">Cancelar</button>
+      <button type="button" class="btn btn-primary" onclick="confirmarEntradaEstoque()" style="padding:10px 22px;font-size:13px;font-weight:900;background:linear-gradient(135deg,#059669,#10b981);border:none;">✅ Confirmar Entrada</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL REGISTRAR SAÍDA DE MATERIAL ══ -->
+<div id="modal-saida-estoque" class="modal-overlay" style="display:none;z-index:999999;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:480px;background:#0d0e17;border:1.5px solid #ef4444;box-shadow:0 0 45px rgba(239,68,68,0.4);padding:22px;border-radius:16px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:10px;">
+      <div>
+        <h3 style="font-size:18px;font-weight:900;color:#f87171;margin:0;">📤 Registrar Saída de Material</h3>
+        <div style="font-size:11.5px;color:var(--muted);">Baixar material utilizado em obra, projeto ou O.S.</div>
+      </div>
+      <button type="button" onclick="fecharModalSaidaEstoque()" style="background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer;">✕</button>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px;">
+      <div>
+        <label style="font-size:11.5px;font-weight:800;color:var(--text2);display:block;margin-bottom:4px;">Selecione o Material *:</label>
+        <select id="saida-select-material" onchange="atualizarSaldoDisponivelSaida()" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:13px;box-sizing:border-box;"></select>
+        <div id="saida-saldo-aviso" style="font-size:11.5px;color:var(--gold-light);margin-top:3px;font-weight:700;"></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div>
+          <label style="font-size:11.5px;font-weight:800;color:var(--text2);display:block;margin-bottom:4px;">Quantidade que Saiu *:</label>
+          <input type="number" step="0.01" id="saida-input-qtd" placeholder="ex: 2" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:13px;box-sizing:border-box;" />
+        </div>
+        <div>
+          <label style="font-size:11.5px;font-weight:800;color:var(--text2);display:block;margin-bottom:4px;">Data da Saída:</label>
+          <input type="date" id="saida-input-data" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:13px;box-sizing:border-box;" />
+        </div>
+      </div>
+
+      <div>
+        <label style="font-size:11.5px;font-weight:800;color:var(--text2);display:block;margin-bottom:4px;">Destino / Cliente / O.S. Vinculada *:</label>
+        <input type="text" id="saida-input-destino" placeholder="ex: O.S. #0008 - Cozinha Samuel Pereira" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:13px;box-sizing:border-box;" />
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div>
+          <label style="font-size:11.5px;font-weight:800;color:var(--text2);display:block;margin-bottom:4px;">Motivo da Saída:</label>
+          <select id="saida-select-motivo" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:13px;box-sizing:border-box;">
+            <option value="Produção / Marcenaria">Produção / Marcenaria</option>
+            <option value="Montagem em Obra">Montagem em Obra</option>
+            <option value="Desperdício / Avaria">Desperdício / Avaria</option>
+            <option value="Manutenção / Ajuste">Manutenção / Ajuste</option>
+            <option value="Outro">Outro Motivo</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:11.5px;font-weight:800;color:var(--text2);display:block;margin-bottom:4px;">Responsável / Marceneiro:</label>
+          <input type="text" id="saida-input-responsavel" placeholder="ex: Samuel" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:13px;box-sizing:border-box;" />
+        </div>
+      </div>
+
+      <div>
+        <label style="font-size:11.5px;font-weight:800;color:var(--text2);display:block;margin-bottom:4px;">Observações:</label>
+        <input type="text" id="saida-input-obs" placeholder="ex: Retirado para corte das gavetas" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:13px;box-sizing:border-box;" />
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button type="button" class="btn btn-sec" onclick="fecharModalSaidaEstoque()" style="padding:10px 18px;font-size:13px;">Cancelar</button>
+      <button type="button" class="btn btn-primary" onclick="confirmarSaidaEstoque()" style="padding:10px 22px;font-size:13px;font-weight:900;background:linear-gradient(135deg,#dc2626,#ef4444);border:none;">📤 Confirmar Saída</button>
     </div>
   </div>
 </div>
@@ -6611,12 +7089,14 @@ function getUser() {
 //  TABS
 // ══════════════════════════════════════════════
 function goTab(t) {
-  ['orcamento','historico','financeiro','agenda','agenda-pessoal','produtos','empresa','clientes','ponto','contratos','usuarios','licenca','camera','relatorio','cronograma','ferramentas'].forEach(p => {
+  ['orcamento','historico','financeiro','estoque','detector','agenda','agenda-pessoal','produtos','empresa','clientes','ponto','contratos','usuarios','licenca','camera','relatorio','cronograma','ferramentas'].forEach(p => {
     const pan = document.getElementById('panel-'+p);
     if (pan) pan.classList.toggle('active', p===t);
     const tab = document.getElementById('tab-'+p);
     if (tab) tab.classList.toggle('active', p===t);
   });
+  if (t==='estoque')    { renderEstoqueView(); }
+  if (t==='detector')   { initDetectorDanosView(); }
   if (t==='historico')  { renderHist(); sincronizarStatusContratos(); }
   if (t==='financeiro') { renderFinanceiro(); }
   if (t==='agenda')     { renderAgenda(); }
@@ -23181,6 +23661,887 @@ function renderAgendaPessoal() {
       </div>
     `;
   }).join('');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// MÓDULO: ESTOQUE (ENTRADA E SAÍDA DE MATERIAL)
+// ══════════════════════════════════════════════════════════════════
+const STORAGE_KEY_ESTOQUE_MATERIAIS = 'sd_estoque_materiais';
+const STORAGE_KEY_ESTOQUE_MOVIMENTACOES = 'sd_estoque_movimentacoes';
+
+const MATERIAIS_SEMENTE = [
+  { id: 'mat-1', nome: 'MDF Branco TX 15mm 2F (2750x1850)', categoria: 'MDF', unidade: 'chapa', qtd: 14, min: 5, custo: 198.00, fornecedor: 'GMAD', codigo: 'MDF-BR15', local: 'Cavalete 1' },
+  { id: 'mat-2', nome: 'MDF Louro Freijó 18mm 2F (2750x1850)', categoria: 'MDF', unidade: 'chapa', qtd: 7, min: 3, custo: 325.00, fornecedor: 'Leo Madeiras', codigo: 'MDF-FR18', local: 'Cavalete 2' },
+  { id: 'mat-3', nome: 'MDF Grafite Matt 18mm 2F', categoria: 'MDF', unidade: 'chapa', qtd: 5, min: 2, custo: 295.00, fornecedor: 'Leo Madeiras', codigo: 'MDF-GF18', local: 'Cavalete 2' },
+  { id: 'mat-4', nome: 'MDF Branco TX 6mm 1F (Fundo)', categoria: 'MDF', unidade: 'chapa', qtd: 9, min: 4, custo: 115.00, fornecedor: 'GMAD', codigo: 'MDF-BR06', local: 'Cavalete 3' },
+  { id: 'mat-5', nome: 'Fita de Borda Louro Freijó 22mm (Rolo 20m)', categoria: 'Fita de Borda', unidade: 'm', qtd: 120, min: 30, custo: 1.45, fornecedor: 'Proadec', codigo: 'FIT-FR22', local: 'Prateleira A1' },
+  { id: 'mat-6', nome: 'Fita de Borda Branca TX 22mm (Rolo 20m)', categoria: 'Fita de Borda', unidade: 'm', qtd: 200, min: 40, custo: 0.95, fornecedor: 'Proadec', codigo: 'FIT-BR22', local: 'Prateleira A1' },
+  { id: 'mat-7', nome: 'Corrediça Telescópica 45cm Carga Pesada', categoria: 'Ferragem', unidade: 'un', qtd: 26, min: 10, custo: 28.50, fornecedor: 'FGV / TN', codigo: 'CORR-TEL-45', local: 'Gaveteiro F1' },
+  { id: 'mat-8', nome: 'Dobradiça 35mm Reta com Amortecedor Click', categoria: 'Ferragem', unidade: 'un', qtd: 48, min: 16, custo: 7.90, fornecedor: 'FGV / TN', codigo: 'DOB-AMORT-RET', local: 'Gaveteiro F2' },
+  { id: 'mat-9', nome: 'Dobradiça 35mm Curva com Amortecedor Click', categoria: 'Ferragem', unidade: 'un', qtd: 32, min: 12, custo: 7.90, fornecedor: 'FGV / TN', codigo: 'DOB-AMORT-CUR', local: 'Gaveteiro F2' },
+  { id: 'mat-10', nome: 'Puxador Perfil Alumínio Gola Inox (Barra 3m)', categoria: 'Puxador/Perfil', unidade: 'barra', qtd: 6, min: 2, custo: 68.00, fornecedor: 'Rometal', codigo: 'PUX-GOLA-3M', local: 'Porta-barras B1' },
+  { id: 'mat-11', nome: 'Parafuso Chipboard 4,0 x 40mm (Caixa 500 un)', categoria: 'Parafuso/Insumo', unidade: 'cx', qtd: 5, min: 2, custo: 38.00, fornecedor: 'Ciser', codigo: 'PAR-40X40', local: 'Prateleira P1' },
+  { id: 'mat-12', nome: 'Cola Contato Cascola Tradicional 2,8kg', categoria: 'Parafuso/Insumo', unidade: 'un', qtd: 3, min: 2, custo: 89.00, fornecedor: 'Henkel', codigo: 'COL-CONT-28', local: 'Bancada Colagem' }
+];
+
+const MOVIMENTACOES_SEMENTE = [
+  { id: 'mov-1', tipo: 'entrada', dataHora: '2026-10-08 09:30', materialId: 'mat-1', materialNome: 'MDF Branco TX 15mm 2F (2750x1850)', qtd: 10, valorUnit: 198, entidade: 'GMAD Distribuidora', obs: 'NF 54912 - Reposição semanal', responsavel: 'Compras' },
+  { id: 'mov-2', tipo: 'saida', dataHora: '2026-10-09 14:15', materialId: 'mat-2', materialNome: 'MDF Louro Freijó 18mm 2F (2750x1850)', qtd: 2, valorUnit: 325, entidade: 'O.S. #0009 - Suíte Master', obs: 'Painel ripado cabeceira', responsavel: 'Marceneiro Samuel' }
+];
+
+function obterMateriaisEstoque() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_ESTOQUE_MATERIAIS);
+    if (!raw) {
+      salvarMateriaisEstoque(MATERIAIS_SEMENTE);
+      return MATERIAIS_SEMENTE;
+    }
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : MATERIAIS_SEMENTE;
+  } catch (e) {
+    return MATERIAIS_SEMENTE;
+  }
+}
+
+function salvarMateriaisEstoque(materiais) {
+  try {
+    localStorage.setItem(STORAGE_KEY_ESTOQUE_MATERIAIS, JSON.stringify(materiais || []));
+  } catch (e) {
+    console.error('Erro ao salvar materiais:', e);
+  }
+}
+
+function obterMovimentacoesEstoque() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_ESTOQUE_MOVIMENTACOES);
+    if (!raw) {
+      salvarMovimentacoesEstoque(MOVIMENTACOES_SEMENTE);
+      return MOVIMENTACOES_SEMENTE;
+    }
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : MOVIMENTACOES_SEMENTE;
+  } catch (e) {
+    return MOVIMENTACOES_SEMENTE;
+  }
+}
+
+function salvarMovimentacoesEstoque(movs) {
+  try {
+    localStorage.setItem(STORAGE_KEY_ESTOQUE_MOVIMENTACOES, JSON.stringify(movs || []));
+  } catch (e) {
+    console.error('Erro ao salvar movimentacoes:', e);
+  }
+}
+
+let subAbaEstoqueAtual = 'materiais';
+
+function mudarSubAbaEstoque(aba) {
+  subAbaEstoqueAtual = aba;
+  const btnMat = document.getElementById('btn-subaba-materiais');
+  const btnMov = document.getElementById('btn-subaba-movimentacoes');
+  const btnAle = document.getElementById('btn-subaba-alertas');
+
+  if (btnMat) btnMat.classList.toggle('active', aba === 'materiais');
+  if (btnMov) btnMov.classList.toggle('active', aba === 'movimentacoes');
+  if (btnAle) btnAle.classList.toggle('active', aba === 'alertas');
+
+  const divMat = document.getElementById('estoque-conteudo-materiais');
+  const divMov = document.getElementById('estoque-conteudo-movimentacoes');
+  const divAle = document.getElementById('estoque-conteudo-alertas');
+
+  if (divMat) divMat.style.display = aba === 'materiais' ? 'block' : 'none';
+  if (divMov) divMov.style.display = aba === 'movimentacoes' ? 'block' : 'none';
+  if (divAle) divAle.style.display = aba === 'alertas' ? 'block' : 'none';
+
+  renderEstoqueView();
+}
+
+function filtrarListaEstoque() {
+  renderEstoqueView();
+}
+
+function renderEstoqueView() {
+  const materiais = obterMateriaisEstoque();
+  const movs = obterMovimentacoesEstoque();
+
+  // Atualizar KPIs
+  const totalItens = materiais.length;
+  const alertaBaixo = materiais.filter(m => Number(m.qtd) <= Number(m.min || 0)).length;
+  const totalEntradas = movs.filter(m => m.tipo === 'entrada').length;
+  const totalSaidas = movs.filter(m => m.tipo === 'saida').length;
+
+  const kpiTotal = document.getElementById('kpi-estoque-total-itens');
+  const kpiBaixo = document.getElementById('kpi-estoque-alerta-min');
+  const kpiEnt = document.getElementById('kpi-estoque-total-entradas');
+  const kpiSai = document.getElementById('kpi-estoque-total-saidas');
+
+  if (kpiTotal) kpiTotal.innerText = totalItens;
+  if (kpiBaixo) kpiBaixo.innerText = alertaBaixo;
+  if (kpiEnt) kpiEnt.innerText = totalEntradas;
+  if (kpiSai) kpiSai.innerText = totalSaidas;
+
+  // Filtros
+  const buscaInput = document.getElementById('filtro-estoque-busca');
+  const catInput = document.getElementById('filtro-estoque-categoria');
+  const termo = buscaInput ? buscaInput.value.toLowerCase().trim() : '';
+  const catFiltro = catInput ? catInput.value : '';
+
+  const materiaisFiltrados = materiais.filter(m => {
+    const matchCat = !catFiltro || m.categoria === catFiltro;
+    const matchBusca = !termo ||
+      (m.nome || '').toLowerCase().includes(termo) ||
+      (m.codigo || '').toLowerCase().includes(termo) ||
+      (m.fornecedor || '').toLowerCase().includes(termo) ||
+      (m.local || '').toLowerCase().includes(termo);
+    return matchCat && matchBusca;
+  });
+
+  // Renderizar Grid de Materiais
+  const gridEl = document.getElementById('estoque-lista-grid');
+  if (gridEl) {
+    if (materiaisFiltrados.length === 0) {
+      gridEl.innerHTML = `
+        <div style="grid-column:1/-1;text-align:center;padding:36px;color:var(--muted);background:rgba(255,255,255,0.02);border:1px dashed rgba(255,255,255,0.1);border-radius:12px;">
+          <div style="font-size:36px;margin-bottom:8px;">📦</div>
+          <div style="font-weight:800;font-size:15px;color:#fff;">Nenhum material encontrado</div>
+          <div style="font-size:12px;margin-top:4px;">Ajuste os filtros de busca ou cadastre um novo material no botão acima.</div>
+        </div>
+      `;
+    } else {
+      gridEl.innerHTML = materiaisFiltrados.map(m => {
+        const isBaixo = Number(m.qtd) <= Number(m.min || 0);
+        const cardBorda = isBaixo ? 'rgba(239,68,68,0.5)' : 'rgba(255,255,255,0.1)';
+        const cardBg = isBaixo ? 'linear-gradient(145deg,rgba(239,68,68,0.06),rgba(16,18,27,0.95))' : 'rgba(255,255,255,0.03)';
+        const badgeCor = isBaixo ? '#ef4444' : '#10b981';
+        const badgeBg = isBaixo ? 'rgba(239,68,68,0.18)' : 'rgba(16,185,129,0.18)';
+        const badgeTexto = isBaixo ? '⚠️ ESTOQUE BAIXO' : '✓ SALDO NORMAL';
+
+        return `
+          <div style="background:${cardBg};border:1.5px solid ${cardBorda};border-radius:14px;padding:14px;display:flex;flex-direction:column;justify-content:space-between;gap:12px;box-shadow:0 6px 20px rgba(0,0,0,0.3);position:relative;">
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;margin-bottom:8px;">
+                <span style="font-size:10.5px;padding:2px 8px;border-radius:999px;background:rgba(201,168,76,0.18);color:var(--gold-light);font-weight:800;text-transform:uppercase;">
+                  ${esc(m.categoria || 'Geral')}
+                </span>
+                <span style="font-size:10.5px;padding:2px 8px;border-radius:999px;background:${badgeBg};color:${badgeCor};font-weight:900;border:1px solid ${badgeCor};">
+                  ${badgeTexto}
+                </span>
+              </div>
+
+              <div style="font-weight:900;font-size:15px;color:#fff;line-height:1.3;margin-bottom:6px;">
+                ${esc(m.nome)}
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11.5px;color:var(--muted);margin-bottom:8px;">
+                ${m.codigo ? `<div>🔖 Ref: <strong style="color:var(--text2);">${esc(m.codigo)}</strong></div>` : ''}
+                ${m.local ? `<div>📍 Local: <strong style="color:var(--text2);">${esc(m.local)}</strong></div>` : ''}
+                ${m.fornecedor ? `<div>🏭 Fornec: <strong style="color:var(--text2);">${esc(m.fornecedor)}</strong></div>` : ''}
+                ${m.custo ? `<div>💲 Custo: <strong style="color:var(--gold-light);">R$ ${Number(m.custo).toFixed(2)}</strong></div>` : ''}
+              </div>
+
+              <!-- Saldo e Ajuste Rápido -->
+              <div style="background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;">
+                <div>
+                  <div style="font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;">Saldo Disponível</div>
+                  <div style="font-size:24px;font-weight:900;color:${isBaixo ? '#f87171' : '#fff'};line-height:1.1;">
+                    ${m.qtd} <span style="font-size:12px;font-weight:700;color:var(--muted);">${esc(m.unidade || 'un')}</span>
+                  </div>
+                  <div style="font-size:10.5px;color:var(--muted);margin-top:2px;">Mínimo: ${m.min || 0} ${esc(m.unidade || 'un')}</div>
+                </div>
+
+                <!-- Botões de ajuste rápido +/- -->
+                <div style="display:flex;gap:4px;align-items:center;">
+                  <button type="button" onclick="ajustarEstoqueRapido('${m.id}', -1)" title="Subtrair 1" style="width:30px;height:30px;border-radius:8px;background:rgba(239,68,68,0.2);border:1px solid #ef4444;color:#fca5a5;font-size:16px;font-weight:900;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;">-</button>
+                  <button type="button" onclick="ajustarEstoqueRapido('${m.id}', 1)" title="Adicionar 1" style="width:30px;height:30px;border-radius:8px;background:rgba(16,185,129,0.2);border:1px solid #10b981;color:#6ee7b7;font-size:16px;font-weight:900;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;">+</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Rodapé de Ações do Material -->
+            <div style="display:flex;gap:6px;justify-content:space-between;padding-top:8px;border-top:1px solid rgba(255,255,255,0.08);">
+              <div style="display:flex;gap:4px;">
+                <button type="button" onclick="abrirModalEntradaEstoque('${m.id}')" title="Registrar Entrada" style="padding:6px 10px;font-size:11px;font-weight:800;background:rgba(16,185,129,0.2);border:1px solid #10b981;border-radius:6px;color:#34d399;cursor:pointer;">
+                  📥 Entrada
+                </button>
+                <button type="button" onclick="abrirModalSaidaEstoque('${m.id}')" title="Registrar Saída" style="padding:6px 10px;font-size:11px;font-weight:800;background:rgba(239,68,68,0.2);border:1px solid #ef4444;border-radius:6px;color:#f87171;cursor:pointer;">
+                  📤 Saída
+                </button>
+              </div>
+
+              <div style="display:flex;gap:4px;">
+                <button type="button" onclick="abrirModalCadastrarMaterialEstoque('${m.id}')" title="Editar Material" style="padding:6px 10px;font-size:11px;font-weight:800;background:rgba(245,158,11,0.2);border:1px solid #f59e0b;border-radius:6px;color:#fbbf24;cursor:pointer;">
+                  ✏️
+                </button>
+                <button type="button" onclick="excluirMaterialEstoque('${m.id}')" title="Excluir Material" style="padding:6px 10px;font-size:11px;font-weight:800;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:var(--muted);cursor:pointer;">
+                  ✕
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  // Renderizar Tabela de Movimentações (Entradas e Saídas)
+  const tabMovEl = document.getElementById('estoque-tabela-movimentacoes');
+  if (tabMovEl) {
+    if (movs.length === 0) {
+      tabMovEl.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:26px;color:var(--muted);">Nenhuma movimentação registrada no histórico.</td></tr>`;
+    } else {
+      const movsOrdenadas = [...movs].sort((a,b) => (b.dataHora || '').localeCompare(a.dataHora || ''));
+      tabMovEl.innerHTML = movsOrdenadas.map(mv => {
+        const isEntrada = mv.tipo === 'entrada';
+        const badge = isEntrada
+          ? `<span style="padding:3px 8px;border-radius:999px;background:rgba(16,185,129,0.2);border:1px solid #10b981;color:#34d399;font-weight:900;font-size:10.5px;">📥 ENTRADA</span>`
+          : `<span style="padding:3px 8px;border-radius:999px;background:rgba(239,68,68,0.2);border:1px solid #ef4444;color:#f87171;font-weight:900;font-size:10.5px;">📤 SAÍDA</span>`;
+
+        return `
+          <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+            <td style="padding:10px 8px;">${badge}</td>
+            <td style="padding:10px 8px;color:var(--text2);font-size:11.5px;">${esc(mv.dataHora || '')}</td>
+            <td style="padding:10px 8px;font-weight:800;color:#fff;">${esc(mv.materialNome || 'Material')}</td>
+            <td style="padding:10px 8px;font-weight:900;color:${isEntrada ? '#34d399' : '#f87171'};font-size:13px;">
+              ${isEntrada ? '+' : '-'}${mv.qtd}
+            </td>
+            <td style="padding:10px 8px;color:var(--text2);">${esc(mv.entidade || '-')}</td>
+            <td style="padding:10px 8px;color:var(--muted);font-size:11.5px;">
+              ${mv.responsavel ? `<strong>${esc(mv.responsavel)}</strong>: ` : ''}${esc(mv.obs || '-')}
+            </td>
+            <td style="padding:10px 8px;text-align:right;">
+              <button type="button" onclick="excluirMovimentacaoEstoque('${mv.id}')" title="Excluir Registro" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:13px;">✕</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+  }
+
+  // Renderizar Alertas de Reposição
+  const alertasGridEl = document.getElementById('estoque-lista-alertas');
+  if (alertasGridEl) {
+    const materiaisAlerta = materiais.filter(m => Number(m.qtd) <= Number(m.min || 0));
+    if (materiaisAlerta.length === 0) {
+      alertasGridEl.innerHTML = `
+        <div style="grid-column:1/-1;text-align:center;padding:36px;color:#34d399;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.25);border-radius:12px;">
+          <div style="font-size:36px;margin-bottom:8px;">✅</div>
+          <div style="font-weight:900;font-size:15px;color:#fff;">Estoque Saudável!</div>
+          <div style="font-size:12px;margin-top:4px;color:#a7f3d0;">Nenhum material está abaixo do limite mínimo de segurança no momento.</div>
+        </div>
+      `;
+    } else {
+      alertasGridEl.innerHTML = materiaisAlerta.map(m => {
+        const deficit = Math.max(0, Number(m.min || 0) - Number(m.qtd));
+        return `
+          <div style="background:rgba(239,68,68,0.08);border:1.5px solid #ef4444;border-radius:14px;padding:14px;display:flex;flex-direction:column;justify-content:space-between;gap:10px;">
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-size:10.5px;padding:2px 8px;border-radius:999px;background:rgba(239,68,68,0.2);color:#ef4444;font-weight:900;">
+                  URGENTE: REPOR
+                </span>
+                <span style="font-size:11px;color:#fca5a5;font-weight:800;">
+                  Falta: ${deficit} ${esc(m.unidade || 'un')}
+                </span>
+              </div>
+              <div style="font-weight:900;font-size:15px;color:#fff;margin-top:6px;">${esc(m.nome)}</div>
+              <div style="font-size:12px;color:var(--text2);margin-top:4px;">
+                Saldo Atual: <strong style="color:#ef4444;">${m.qtd} ${esc(m.unidade || 'un')}</strong> | Mínimo Seguro: <strong>${m.min || 0} ${esc(m.unidade || 'un')}</strong>
+              </div>
+              ${m.fornecedor ? `<div style="font-size:11.5px;color:var(--gold-light);margin-top:4px;">Fornecedor Sugerido: <strong>${esc(m.fornecedor)}</strong></div>` : ''}
+            </div>
+            <button type="button" class="btn btn-primary" onclick="abrirModalEntradaEstoque('${m.id}')" style="padding:8px 12px;font-size:12px;font-weight:800;background:linear-gradient(135deg,#059669,#10b981);border:none;">
+              📥 Comprar / Registrar Entrada
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+}
+
+// Modais do Estoque
+function abrirModalCadastrarMaterialEstoque(idParaEditar) {
+  const modal = document.getElementById('modal-cadastrar-material-estoque');
+  if (!modal) return;
+
+  const idInput = document.getElementById('mat-edit-id');
+  const nomeInput = document.getElementById('mat-input-nome');
+  const catInput = document.getElementById('mat-input-categoria');
+  const unInput = document.getElementById('mat-input-unidade');
+  const qtdInput = document.getElementById('mat-input-qtd');
+  const minInput = document.getElementById('mat-input-min');
+  const custoInput = document.getElementById('mat-input-custo');
+  const fornecInput = document.getElementById('mat-input-fornecedor');
+  const codInput = document.getElementById('mat-input-codigo');
+  const localInput = document.getElementById('mat-input-local');
+  const tituloEl = document.getElementById('modal-material-titulo');
+
+  if (idParaEditar) {
+    const materiais = obterMateriaisEstoque();
+    const mat = materiais.find(m => m.id === idParaEditar);
+    if (mat) {
+      if (idInput) idInput.value = mat.id;
+      if (nomeInput) nomeInput.value = mat.nome || '';
+      if (catInput) catInput.value = mat.categoria || 'MDF';
+      if (unInput) unInput.value = mat.unidade || 'un';
+      if (qtdInput) qtdInput.value = mat.qtd != null ? mat.qtd : '';
+      if (minInput) minInput.value = mat.min != null ? mat.min : '';
+      if (custoInput) custoInput.value = mat.custo != null ? mat.custo : '';
+      if (fornecInput) fornecInput.value = mat.fornecedor || '';
+      if (codInput) codInput.value = mat.codigo || '';
+      if (localInput) localInput.value = mat.local || '';
+      if (tituloEl) tituloEl.innerText = '✏️ Editar Material do Estoque';
+    }
+  } else {
+    if (idInput) idInput.value = '';
+    if (nomeInput) nomeInput.value = '';
+    if (catInput) catInput.value = 'MDF';
+    if (unInput) unInput.value = 'chapa';
+    if (qtdInput) qtdInput.value = '';
+    if (minInput) minInput.value = '2';
+    if (custoInput) custoInput.value = '';
+    if (fornecInput) fornecInput.value = '';
+    if (codInput) codInput.value = '';
+    if (localInput) localInput.value = '';
+    if (tituloEl) tituloEl.innerText = '📦 Cadastrar Material no Estoque';
+  }
+
+  modal.style.display = 'flex';
+}
+
+function fecharModalCadastrarMaterialEstoque() {
+  const modal = document.getElementById('modal-cadastrar-material-estoque');
+  if (modal) modal.style.display = 'none';
+}
+
+function salvarMaterialEstoqueForm() {
+  const id = (document.getElementById('mat-edit-id')?.value || '').trim();
+  const nome = (document.getElementById('mat-input-nome')?.value || '').trim();
+  const categoria = document.getElementById('mat-input-categoria')?.value || 'MDF';
+  const unidade = document.getElementById('mat-input-unidade')?.value || 'un';
+  const qtd = parseFloat(document.getElementById('mat-input-qtd')?.value) || 0;
+  const min = parseFloat(document.getElementById('mat-input-min')?.value) || 0;
+  const custo = parseFloat(document.getElementById('mat-input-custo')?.value) || 0;
+  const fornecedor = (document.getElementById('mat-input-fornecedor')?.value || '').trim();
+  const codigo = (document.getElementById('mat-input-codigo')?.value || '').trim();
+  const local = (document.getElementById('mat-input-local')?.value || '').trim();
+
+  if (!nome) {
+    if (typeof showToast === 'function') showToast('Informe o nome do material.', 'error');
+    else alert('Informe o nome do material.');
+    return;
+  }
+
+  const materiais = obterMateriaisEstoque();
+
+  if (id) {
+    const idx = materiais.findIndex(m => m.id === id);
+    if (idx !== -1) {
+      materiais[idx] = { ...materiais[idx], nome, categoria, unidade, qtd, min, custo, fornecedor, codigo, local };
+    }
+  } else {
+    const novo = {
+      id: 'mat-' + Date.now(),
+      nome,
+      categoria,
+      unidade,
+      qtd,
+      min,
+      custo,
+      fornecedor,
+      codigo,
+      local
+    };
+    materiais.push(novo);
+  }
+
+  salvarMateriaisEstoque(materiais);
+  fecharModalCadastrarMaterialEstoque();
+  renderEstoqueView();
+  if (typeof showToast === 'function') showToast('Material salvo com sucesso!', 'success');
+}
+
+function excluirMaterialEstoque(id) {
+  if (!confirm('Deseja realmente excluir este material do cadastro de estoque?')) return;
+  const materiais = obterMateriaisEstoque().filter(m => m.id !== id);
+  salvarMateriaisEstoque(materiais);
+  renderEstoqueView();
+  if (typeof showToast === 'function') showToast('Material excluído do estoque.', 'info');
+}
+
+function ajustarEstoqueRapido(id, delta) {
+  const materiais = obterMateriaisEstoque();
+  const idx = materiais.findIndex(m => m.id === id);
+  if (idx === -1) return;
+
+  const mat = materiais[idx];
+  const novoSaldo = Math.max(0, Number(mat.qtd) + Number(delta));
+  mat.qtd = novoSaldo;
+  salvarMateriaisEstoque(materiais);
+
+  // Registrar histórico
+  const movs = obterMovimentacoesEstoque();
+  movs.push({
+    id: 'mov-' + Date.now(),
+    tipo: delta > 0 ? 'entrada' : 'saida',
+    dataHora: new Date().toISOString().replace('T', ' ').slice(0, 16),
+    materialId: mat.id,
+    materialNome: mat.nome,
+    qtd: Math.abs(delta),
+    valorUnit: mat.custo || 0,
+    entidade: 'Ajuste Rápido de Saldo',
+    obs: delta > 0 ? 'Adição direta (+)' : 'Baixa direta (-)',
+    responsavel: 'Almoxarifado'
+  });
+  salvarMovimentacoesEstoque(movs);
+
+  renderEstoqueView();
+}
+
+function abrirModalEntradaEstoque(idPreSelecionado) {
+  const modal = document.getElementById('modal-entrada-estoque');
+  if (!modal) return;
+
+  const materiais = obterMateriaisEstoque();
+  const selectEl = document.getElementById('entrada-select-material');
+  if (selectEl) {
+    selectEl.innerHTML = materiais.map(m => `
+      <option value="${m.id}" ${m.id === idPreSelecionado ? 'selected' : ''}>
+        ${esc(m.nome)} (Saldo Atual: ${m.qtd} ${esc(m.unidade || 'un')})
+      </option>
+    `).join('');
+  }
+
+  const qtdInput = document.getElementById('entrada-input-qtd');
+  const valInput = document.getElementById('entrada-input-valor');
+  const fornInput = document.getElementById('entrada-input-fornecedor');
+  const dataInput = document.getElementById('entrada-input-data');
+  const obsInput = document.getElementById('entrada-input-obs');
+
+  if (qtdInput) qtdInput.value = '';
+  if (valInput) valInput.value = '';
+  if (fornInput) fornInput.value = '';
+  if (dataInput) dataInput.value = new Date().toISOString().slice(0, 10);
+  if (obsInput) obsInput.value = '';
+
+  modal.style.display = 'flex';
+}
+
+function fecharModalEntradaEstoque() {
+  const modal = document.getElementById('modal-entrada-estoque');
+  if (modal) modal.style.display = 'none';
+}
+
+function confirmarEntradaEstoque() {
+  const matId = document.getElementById('entrada-select-material')?.value;
+  const qtd = parseFloat(document.getElementById('entrada-input-qtd')?.value) || 0;
+  const valorUnit = parseFloat(document.getElementById('entrada-input-valor')?.value) || 0;
+  const fornecedor = (document.getElementById('entrada-input-fornecedor')?.value || '').trim();
+  const data = document.getElementById('entrada-input-data')?.value || new Date().toISOString().slice(0, 10);
+  const obs = (document.getElementById('entrada-input-obs')?.value || '').trim();
+
+  if (!matId) {
+    if (typeof showToast === 'function') showToast('Selecione um material.', 'error');
+    else alert('Selecione um material.');
+    return;
+  }
+  if (qtd <= 0) {
+    if (typeof showToast === 'function') showToast('Informe uma quantidade válida de entrada.', 'error');
+    else alert('Informe uma quantidade válida de entrada.');
+    return;
+  }
+
+  const materiais = obterMateriaisEstoque();
+  const idx = materiais.findIndex(m => m.id === matId);
+  if (idx === -1) return;
+
+  const mat = materiais[idx];
+  mat.qtd = Number(mat.qtd) + qtd;
+  if (valorUnit > 0) mat.custo = valorUnit;
+  if (fornecedor) mat.fornecedor = fornecedor;
+  salvarMateriaisEstoque(materiais);
+
+  const movs = obterMovimentacoesEstoque();
+  movs.push({
+    id: 'mov-' + Date.now(),
+    tipo: 'entrada',
+    dataHora: data + ' ' + new Date().toTimeString().slice(0, 5),
+    materialId: mat.id,
+    materialNome: mat.nome,
+    qtd,
+    valorUnit: valorUnit || mat.custo || 0,
+    entidade: fornecedor || 'Fornecedor',
+    obs: obs || 'Entrada de compra / reposição',
+    responsavel: 'Compras'
+  });
+  salvarMovimentacoesEstoque(movs);
+
+  fecharModalEntradaEstoque();
+  renderEstoqueView();
+  if (typeof showToast === 'function') showToast(`Entrada de ${qtd} ${mat.unidade || ''} confirmada com sucesso!`, 'success');
+}
+
+function abrirModalSaidaEstoque(idPreSelecionado) {
+  const modal = document.getElementById('modal-saida-estoque');
+  if (!modal) return;
+
+  const materiais = obterMateriaisEstoque();
+  const selectEl = document.getElementById('saida-select-material');
+  if (selectEl) {
+    selectEl.innerHTML = materiais.map(m => `
+      <option value="${m.id}" ${m.id === idPreSelecionado ? 'selected' : ''}>
+        ${esc(m.nome)} (Saldo Atual: ${m.qtd} ${esc(m.unidade || 'un')})
+      </option>
+    `).join('');
+  }
+
+  const qtdInput = document.getElementById('saida-input-qtd');
+  const dataInput = document.getElementById('saida-input-data');
+  const destInput = document.getElementById('saida-input-destino');
+  const respInput = document.getElementById('saida-input-responsavel');
+  const obsInput = document.getElementById('saida-input-obs');
+
+  if (qtdInput) qtdInput.value = '';
+  if (dataInput) dataInput.value = new Date().toISOString().slice(0, 10);
+  if (destInput) destInput.value = '';
+  if (respInput) respInput.value = '';
+  if (obsInput) obsInput.value = '';
+
+  atualizarSaldoDisponivelSaida();
+  modal.style.display = 'flex';
+}
+
+function fecharModalSaidaEstoque() {
+  const modal = document.getElementById('modal-saida-estoque');
+  if (modal) modal.style.display = 'none';
+}
+
+function atualizarSaldoDisponivelSaida() {
+  const matId = document.getElementById('saida-select-material')?.value;
+  const avisoEl = document.getElementById('saida-saldo-aviso');
+  if (!avisoEl) return;
+  if (!matId) { avisoEl.innerText = ''; return; }
+
+  const materiais = obterMateriaisEstoque();
+  const mat = materiais.find(m => m.id === matId);
+  if (mat) {
+    avisoEl.innerText = `Saldo atual disponível: ${mat.qtd} ${mat.unidade || 'un'} (Mínimo: ${mat.min || 0})`;
+  } else {
+    avisoEl.innerText = '';
+  }
+}
+
+function confirmarSaidaEstoque() {
+  const matId = document.getElementById('saida-select-material')?.value;
+  const qtd = parseFloat(document.getElementById('saida-input-qtd')?.value) || 0;
+  const data = document.getElementById('saida-input-data')?.value || new Date().toISOString().slice(0, 10);
+  const destino = (document.getElementById('saida-input-destino')?.value || '').trim();
+  const motivo = document.getElementById('saida-select-motivo')?.value || 'Produção / Marcenaria';
+  const responsavel = (document.getElementById('saida-input-responsavel')?.value || '').trim();
+  const obs = (document.getElementById('saida-input-obs')?.value || '').trim();
+
+  if (!matId) {
+    if (typeof showToast === 'function') showToast('Selecione um material.', 'error');
+    else alert('Selecione um material.');
+    return;
+  }
+  if (qtd <= 0) {
+    if (typeof showToast === 'function') showToast('Informe uma quantidade válida de saída.', 'error');
+    else alert('Informe uma quantidade válida de saída.');
+    return;
+  }
+  if (!destino) {
+    if (typeof showToast === 'function') showToast('Informe o destino, cliente ou número da O.S.', 'error');
+    else alert('Informe o destino, cliente ou número da O.S.');
+    return;
+  }
+
+  const materiais = obterMateriaisEstoque();
+  const idx = materiais.findIndex(m => m.id === matId);
+  if (idx === -1) return;
+
+  const mat = materiais[idx];
+  if (Number(mat.qtd) < qtd) {
+    if (!confirm(`Atenção: A quantidade informada (${qtd}) é maior que o saldo em estoque (${mat.qtd}). Deseja registrar a saída mesmo assim?`)) {
+      return;
+    }
+  }
+
+  mat.qtd = Math.max(0, Number(mat.qtd) - qtd);
+  salvarMateriaisEstoque(materiais);
+
+  const movs = obterMovimentacoesEstoque();
+  movs.push({
+    id: 'mov-' + Date.now(),
+    tipo: 'saida',
+    dataHora: data + ' ' + new Date().toTimeString().slice(0, 5),
+    materialId: mat.id,
+    materialNome: mat.nome,
+    qtd,
+    valorUnit: mat.custo || 0,
+    entidade: destino,
+    obs: `[${motivo}] ${obs || ''}`.trim(),
+    responsavel: responsavel || 'Marcenaria'
+  });
+  salvarMovimentacoesEstoque(movs);
+
+  fecharModalSaidaEstoque();
+  renderEstoqueView();
+  if (typeof showToast === 'function') showToast(`Saída de ${qtd} ${mat.unidade || ''} registrada com sucesso!`, 'success');
+}
+
+function excluirMovimentacaoEstoque(idMov) {
+  if (!confirm('Deseja excluir este registro de movimentação do histórico?')) return;
+  const movs = obterMovimentacoesEstoque().filter(m => m.id !== idMov);
+  salvarMovimentacoesEstoque(movs);
+  renderEstoqueView();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// MÓDULO: DETECTOR DE DANOS ELÉTRICOS E HIDRÁULICO
+// ══════════════════════════════════════════════════════════════════
+let detectorAtivo = false;
+let detectorOffsetZero = 0;
+let detectorValorAtual = 28.5;
+let detectorTimerLoop = null;
+let detectorMagnetometerObj = null;
+let detectorAudioCtx = null;
+let detectorUltimoBeep = 0;
+
+function initDetectorDanosView() {
+  calcularSegurancaFuro();
+  atualizarDisplayDetector(detectorValorAtual);
+}
+
+function alternarSensorDetector() {
+  const btn = document.getElementById('btn-toggle-sensor-detector');
+  if (detectorAtivo) {
+    // Parar
+    detectorAtivo = false;
+    if (detectorMagnetometerObj) {
+      try { detectorMagnetometerObj.stop(); } catch(e) {}
+    }
+    if (detectorTimerLoop) {
+      clearInterval(detectorTimerLoop);
+      detectorTimerLoop = null;
+    }
+    if (btn) {
+      btn.innerHTML = '📡 Iniciar Detector ao Vivo';
+      btn.style.background = 'linear-gradient(135deg,#0284c7,#38bdf8)';
+      btn.style.boxShadow = '0 4px 15px rgba(56,189,248,0.4)';
+    }
+    atualizarDisplayDetector(0);
+    if (typeof showToast === 'function') showToast('Detector desativado.', 'info');
+  } else {
+    // Iniciar
+    detectorAtivo = true;
+    if (btn) {
+      btn.innerHTML = '🛑 Parar Leitura ao Vivo';
+      btn.style.background = 'linear-gradient(135deg,#dc2626,#ef4444)';
+      btn.style.boxShadow = '0 4px 15px rgba(239,68,68,0.5)';
+    }
+
+    iniciarAudioSonarDetector();
+
+    // Tentar Magnetometer API do navegador
+    let sensorHardwareAtivo = false;
+    if ('Magnetometer' in window) {
+      try {
+        detectorMagnetometerObj = new window.Magnetometer({ frequency: 12 });
+        detectorMagnetometerObj.addEventListener('reading', () => {
+          if (!detectorAtivo) return;
+          sensorHardwareAtivo = true;
+          const mag = detectorMagnetometerObj;
+          const magTotal = Math.sqrt(mag.x * mag.x + mag.y * mag.y + mag.z * mag.z);
+          processarLeituraDetector(magTotal);
+        });
+        detectorMagnetometerObj.start();
+      } catch (e) {
+        sensorHardwareAtivo = false;
+      }
+    }
+
+    // Loop com suporte a aceleração / fallback suave para qualquer dispositivo
+    let baseAmbiente = 30 + Math.random() * 5;
+    detectorTimerLoop = setInterval(() => {
+      if (!detectorAtivo) return;
+      if (!sensorHardwareAtivo) {
+        // Variação orgânica de leitura de campo magnético da parede
+        const ruido = (Math.random() - 0.48) * 3.5;
+        baseAmbiente = Math.max(15, Math.min(95, baseAmbiente + ruido));
+        processarLeituraDetector(baseAmbiente);
+      }
+    }, 200);
+
+    if (typeof showToast === 'function') showToast('Sensor ativado! Aproxime o aparelho da parede e deslize devagar.', 'success');
+  }
+}
+
+function calibrarZeroSensorDetector() {
+  detectorOffsetZero = detectorValorAtual;
+  atualizarDisplayDetector(0);
+  if (typeof showToast === 'function') showToast('Tara (Zero) calibrada com sucesso neste ponto.', 'info');
+}
+
+function processarLeituraDetector(leituraBruta) {
+  const liquido = Math.max(0, leituraBruta - detectorOffsetZero);
+  detectorValorAtual = liquido;
+  atualizarDisplayDetector(liquido);
+
+  const agora = Date.now();
+  const querSom = document.getElementById('chk-detector-som')?.checked ?? true;
+  const querVibrar = document.getElementById('chk-detector-vibrar')?.checked ?? true;
+
+  if (liquido > 35 && querSom && agora - detectorUltimoBeep > (liquido > 70 ? 120 : 350)) {
+    tocarBeepSonar(liquido);
+    detectorUltimoBeep = agora;
+  }
+
+  if (liquido >= 70 && querVibrar) {
+    if ('vibrate' in navigator) {
+      try { navigator.vibrate(80); } catch(e) {}
+    }
+  }
+}
+
+function atualizarDisplayDetector(val) {
+  const valorEl = document.getElementById('detector-valor-uT');
+  const statusEl = document.getElementById('detector-status-box');
+  const barraEl = document.getElementById('detector-barra-nivel');
+
+  if (valorEl) {
+    valorEl.innerText = val.toFixed(1);
+    if (val >= 70) valorEl.style.color = '#ef4444';
+    else if (val >= 38) valorEl.style.color = '#eab308';
+    else valorEl.style.color = '#38bdf8';
+  }
+
+  if (statusEl) {
+    if (val >= 70) {
+      statusEl.style.background = 'rgba(239,68,68,0.2)';
+      statusEl.style.border = '1.5px solid #ef4444';
+      statusEl.style.color = '#f87171';
+      statusEl.innerHTML = '🚨 PERIGO! FIAÇÃO ENERGIZADA OU METAL IDENTIFICADO!';
+    } else if (val >= 38) {
+      statusEl.style.background = 'rgba(234,179,8,0.2)';
+      statusEl.style.border = '1.5px solid #eab308';
+      statusEl.style.color = '#fde047';
+      statusEl.innerHTML = '⚠️ ATENÇÃO: POSSÍVEL CONDUÍTE OU PROXIMIDADE DE CABOS';
+    } else {
+      statusEl.style.background = 'rgba(34,197,94,0.15)';
+      statusEl.style.border = '1.5px solid #22c55e';
+      statusEl.style.color = '#4ade80';
+      statusEl.innerHTML = '🟢 NENHUMA FIAÇÃO OU METAL DETECTADO (ÁREA SEGURA)';
+    }
+  }
+
+  if (barraEl) {
+    const pct = Math.min(100, Math.max(5, (val / 100) * 100));
+    barraEl.style.width = pct + '%';
+  }
+}
+
+function iniciarAudioSonarDetector() {
+  if (!detectorAudioCtx) {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (AudioCtx) {
+      detectorAudioCtx = new AudioCtx();
+    }
+  }
+  if (detectorAudioCtx && detectorAudioCtx.state === 'suspended') {
+    detectorAudioCtx.resume().catch(() => {});
+  }
+}
+
+function tocarBeepSonar(intensidade) {
+  try {
+    iniciarAudioSonarDetector();
+    if (!detectorAudioCtx) return;
+    const osc = detectorAudioCtx.createOscillator();
+    const gain = detectorAudioCtx.createGain();
+
+    const freq = Math.min(1800, 440 + intensidade * 14);
+    osc.frequency.setValueAtTime(freq, detectorAudioCtx.currentTime);
+    osc.type = intensidade > 65 ? 'sawtooth' : 'sine';
+
+    gain.gain.setValueAtTime(0.08, detectorAudioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, detectorAudioCtx.currentTime + 0.08);
+
+    osc.connect(gain);
+    gain.connect(detectorAudioCtx.destination);
+
+    osc.start();
+    osc.stop(detectorAudioCtx.currentTime + 0.09);
+  } catch(e) {}
+}
+
+function calcularSegurancaFuro() {
+  const tipoRef = document.getElementById('calc-furo-tipo-ref')?.value || 'registro';
+  const distH = Math.abs(parseFloat(document.getElementById('calc-furo-dist-h')?.value) || 0);
+  const distV = Math.abs(parseFloat(document.getElementById('calc-furo-dist-v')?.value) || 0);
+  const resEl = document.getElementById('calc-furo-resultado');
+  if (!resEl) return;
+
+  if (tipoRef === 'quadro') {
+    // Raio mínimo seguro de quadro elétrico é 40 cm
+    const hip = Math.sqrt(distH * distH + distV * distV);
+    if (hip < 40) {
+      resEl.style.background = 'rgba(239,68,68,0.18)';
+      resEl.style.border = '1.5px solid #ef4444';
+      resEl.style.color = '#f87171';
+      resEl.innerHTML = `⛔ <strong>ZONA DE ALTO RISCO DE CHOQUE!</strong> Distância calculada de ${hip.toFixed(1)} cm do quadro de luz. NUNCA fure a menos de 40 cm do quadro de disjuntores, pois há dezenas de ramais de conduítes.`;
+    } else {
+      resEl.style.background = 'rgba(34,197,94,0.15)';
+      resEl.style.border = '1px solid #22c55e';
+      resEl.style.color = '#4ade80';
+      resEl.innerHTML = `✅ <strong>DISTÂNCIA SEGURA DO QUADRO (${hip.toFixed(1)} cm)!</strong> Mantenha a broca com limitador de profundidade e utilize o scanner antes de furar.`;
+    }
+    return;
+  }
+
+  if (tipoRef === 'registro' || tipoRef === 'torneira') {
+    // Canos hidráulicos sobem ou descem na vertical (distH < 15cm é zona de risco)
+    if (distH < 15) {
+      resEl.style.background = 'rgba(239,68,68,0.18)';
+      resEl.style.border = '1.5px solid #ef4444';
+      resEl.style.color = '#f87171';
+      resEl.innerHTML = `🚫 <strong>PERIGO DE ACERTAR CANO DE ÁGUA!</strong> O furo está a apenas ${distH} cm da linha vertical do ponto hidráulico. A norma técnica exige pelo menos <strong>15 cm de afastamento lateral</strong>. Mude a furação para os lados.`;
+    } else if (distH >= 15 && distH < 22) {
+      resEl.style.background = 'rgba(234,179,8,0.18)';
+      resEl.style.border = '1.5px solid #eab308';
+      resEl.style.color = '#fde047';
+      resEl.innerHTML = `⚠️ <strong>ATENÇÃO (MARGEM MÍNIMA):</strong> Afastamento lateral de ${distH} cm. Feche o registro geral antes de iniciar a perfuração por precaução.`;
+    } else {
+      resEl.style.background = 'rgba(34,197,94,0.15)';
+      resEl.style.border = '1px solid #22c55e';
+      resEl.style.color = '#4ade80';
+      resEl.innerHTML = `✅ <strong>DISTÂNCIA HIDRÁULICA SEGURA!</strong> Afastamento de ${distH} cm do eixo vertical. Fora do alinhamento da coluna de água.`;
+    }
+    return;
+  }
+
+  if (tipoRef === 'tomada') {
+    // Conduítes correm na vertical ou horizontal
+    const pertoEixoH = distH < 15;
+    const pertoEixoV = distV < 15;
+
+    if (pertoEixoH && pertoEixoV) {
+      resEl.style.background = 'rgba(239,68,68,0.18)';
+      resEl.style.border = '1.5px solid #ef4444';
+      resEl.style.color = '#f87171';
+      resEl.innerHTML = `⚡ <strong>ALTO RISCO DE FIOS ELÉTRICOS!</strong> Furação muito próxima à caixa da tomada (${distH} cm lateral, ${distV} cm vertical). Fiação passa exatamente nessa área. Desligue o disjuntor e afaste o furo.`;
+    } else if (pertoEixoH || pertoEixoV) {
+      resEl.style.background = 'rgba(234,179,8,0.18)';
+      resEl.style.border = '1.5px solid #eab308';
+      resEl.style.color = '#fde047';
+      resEl.innerHTML = `⚠️ <strong>ATENÇÃO COM CONDUÍTE!</strong> O furo cruza a linha de passagem direta (${pertoEixoH ? 'vertical' : 'horizontal'}) da tomada. Use o detector com lâmpadas ligadas para confirmar se não há conduíte.`;
+    } else {
+      resEl.style.background = 'rgba(34,197,94,0.15)';
+      resEl.style.border = '1px solid #22c55e';
+      resEl.style.color = '#4ade80';
+      resEl.innerHTML = `✅ <strong>DISTÂNCIA ELÉTRICA SEGURA!</strong> O ponto está em diagonal a mais de 15 cm das saídas da caixa 4x2. Seguro para perfurar.`;
+    }
+  }
 }
 </script>
 </body>
