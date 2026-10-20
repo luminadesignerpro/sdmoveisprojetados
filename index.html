@@ -2022,7 +2022,10 @@
       </div>
 
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;">
-        <button class="btn btn-sec btn-sm" onclick="addItem()">+ Adicionar linha</button>
+        <button type="button" class="btn btn-sec btn-sm" onclick="addItem()">+ Adicionar linha</button>
+        <button type="button" class="btn btn-sm" id="btn-galeria-orc-linha" onclick="abrirGaleriaAgenda()" style="background:rgba(6,182,212,0.15);border:1.5px solid #06b6d4;color:#22d3ee;font-weight:800;display:inline-flex;align-items:center;gap:6px;cursor:pointer;" title="Galeria de fotos anexadas a esta O.S.">
+          <span>🖼️</span> <span id="label-galeria-orc-linha">Galeria (0)</span>
+        </button>
       </div>
 
       <!-- Resumo Financeiro Completo: Produtos, Serviço, Taxa de Acréscimo, Frete, Desconto e Total -->
@@ -3891,27 +3894,27 @@
         </button>
       </div>
 
-      <!-- KPIs do Estoque -->
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px;">
-        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:8px 4px;text-align:center;">
-          <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;">Total Itens</div>
-          <div id="kpi-estoque-total-itens" style="font-size:20px;font-weight:900;color:#fff;margin-top:2px;">0</div>
-          <div style="font-size:9.5px;color:var(--muted);margin-top:2px;">cadastrados</div>
+      <!-- KPIs do Estoque (Organizados: 2 colunas no mobile / 4 colunas no tablet/desktop) -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:14px;width:100%;box-sizing:border-box;">
+        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:10px 8px;text-align:center;">
+          <div style="font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;">Total Itens</div>
+          <div id="kpi-estoque-total-itens" style="font-size:22px;font-weight:900;color:#fff;margin-top:2px;">0</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px;">cadastrados</div>
         </div>
-        <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:8px 4px;text-align:center;">
-          <div style="font-size:10px;font-weight:800;color:#f87171;text-transform:uppercase;">Estoque Baixo</div>
-          <div id="kpi-estoque-alerta-min" style="font-size:20px;font-weight:900;color:#ef4444;margin-top:2px;">0</div>
-          <div style="font-size:9.5px;color:#fca5a5;margin-top:2px;">repor</div>
+        <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:10px 8px;text-align:center;">
+          <div style="font-size:10.5px;font-weight:800;color:#f87171;text-transform:uppercase;">Estoque Baixo</div>
+          <div id="kpi-estoque-alerta-min" style="font-size:22px;font-weight:900;color:#ef4444;margin-top:2px;">0</div>
+          <div style="font-size:10px;color:#fca5a5;margin-top:2px;">repor</div>
         </div>
-        <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3);border-radius:12px;padding:8px 4px;text-align:center;">
-          <div style="font-size:10px;font-weight:800;color:#34d399;text-transform:uppercase;">Entradas</div>
-          <div id="kpi-estoque-total-entradas" style="font-size:20px;font-weight:900;color:#10b981;margin-top:2px;">0</div>
-          <div style="font-size:9.5px;color:#6ee7b7;margin-top:2px;">registradas</div>
+        <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3);border-radius:12px;padding:10px 8px;text-align:center;">
+          <div style="font-size:10.5px;font-weight:800;color:#34d399;text-transform:uppercase;">Entradas</div>
+          <div id="kpi-estoque-total-entradas" style="font-size:22px;font-weight:900;color:#10b981;margin-top:2px;">0</div>
+          <div style="font-size:10px;color:#6ee7b7;margin-top:2px;">registradas</div>
         </div>
-        <div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.3);border-radius:12px;padding:8px 4px;text-align:center;">
-          <div style="font-size:10px;font-weight:800;color:#93c5fd;text-transform:uppercase;">Saídas</div>
-          <div id="kpi-estoque-total-saidas" style="font-size:20px;font-weight:900;color:#3b82f6;margin-top:2px;">0</div>
-          <div style="font-size:9.5px;color:#bfdbfe;margin-top:2px;">p/ obras</div>
+        <div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.3);border-radius:12px;padding:10px 8px;text-align:center;">
+          <div style="font-size:10.5px;font-weight:800;color:#93c5fd;text-transform:uppercase;">Saídas</div>
+          <div id="kpi-estoque-total-saidas" style="font-size:22px;font-weight:900;color:#3b82f6;margin-top:2px;">0</div>
+          <div style="font-size:10px;color:#bfdbfe;margin-top:2px;">p/ obras</div>
         </div>
       </div>
     </div>
@@ -3926,10 +3929,10 @@
         <button type="button" class="btn btn-sec btn-sm btn-estoque-tab" id="btn-subaba-clientes" onclick="mudarSubAbaEstoque('clientes')" style="justify-content:center;padding:9px 6px;font-size:11.5px;font-weight:800;width:100%;box-sizing:border-box;">👤 Por Cliente / Obra</button>
       </div>
 
-      <!-- Filtros Responsivos (Sem cortar o texto da busca) -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;width:100%;box-sizing:border-box;">
-        <input type="text" id="filtro-estoque-busca" placeholder="🔍 Buscar material, código ou cliente..." oninput="filtrarListaEstoque()" style="width:100%;box-sizing:border-box;padding:9px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:12.5px;" />
-        <select id="filtro-estoque-categoria" onchange="filtrarListaEstoque()" style="width:100%;box-sizing:border-box;padding:9px 10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:12.5px;">
+      <!-- Filtros Responsivos (Largura total sem cortar texto) -->
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;width:100%;box-sizing:border-box;">
+        <input type="text" id="filtro-estoque-busca" placeholder="🔍 Buscar por material, código, fornecedor ou cliente..." oninput="filtrarListaEstoque()" style="width:100%;box-sizing:border-box;padding:10px 14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:#fff;font-size:12.5px;" />
+        <select id="filtro-estoque-categoria" onchange="filtrarListaEstoque()" style="width:100%;box-sizing:border-box;padding:10px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:#fff;font-size:12.5px;">
           <option value="">Todas as Categorias</option>
           <option value="MDF">Chapas MDF</option>
           <option value="Fita de Borda">Fitas de Borda</option>
@@ -3946,24 +3949,9 @@
         <div id="estoque-lista-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;"></div>
       </div>
 
-      <!-- Conteúdo: Histórico de Movimentações -->
+      <!-- Conteúdo: Histórico de Movimentações (Cartões Responsivos e Perfeitamente Alinhados) -->
       <div id="estoque-conteudo-movimentacoes" style="display:none;">
-        <div style="overflow-x:auto;">
-          <table style="width:100%;border-collapse:collapse;font-size:12.5px;text-align:left;">
-            <thead>
-              <tr style="border-bottom:1.5px solid rgba(255,255,255,0.15);color:var(--gold-light);">
-                <th style="padding:10px 8px;">Tipo</th>
-                <th style="padding:10px 8px;">Data/Hora</th>
-                <th style="padding:10px 8px;">Material</th>
-                <th style="padding:10px 8px;">Quantidade</th>
-                <th style="padding:10px 8px;">Destino / Fornecedor</th>
-                <th style="padding:10px 8px;">Responsável / Obs</th>
-                <th style="padding:10px 8px;text-align:right;">Ação</th>
-              </tr>
-            </thead>
-            <tbody id="estoque-tabela-movimentacoes"></tbody>
-          </table>
-        </div>
+        <div id="estoque-lista-movimentacoes" style="display:flex;flex-direction:column;gap:8px;"></div>
       </div>
 
       <!-- Conteúdo: Alertas de Reposição -->
@@ -4019,7 +4007,7 @@
     </div>
 
     <!-- HUD Principal: Instrumento de Medição Magnética / Scanner ao Vivo -->
-    <div class="card" style="text-align:center;border:2px solid rgba(56,189,248,0.3);position:relative;overflow:hidden;padding:24px 16px;margin-bottom:16px;background:#0b0c16;">
+    <div class="card" style="text-align:center;border:2px solid rgba(56,189,248,0.3);position:relative;overflow:hidden;padding:22px 16px;margin-bottom:16px;background:#0b0c16;">
       <div style="position:absolute;top:12px;right:16px;display:flex;align-items:center;gap:12px;">
         <label style="font-size:12px;color:var(--text2);display:inline-flex;align-items:center;gap:4px;cursor:pointer;">
           <input type="checkbox" id="chk-detector-som" checked /> 🔊 Som Sonar
@@ -4029,17 +4017,38 @@
         </label>
       </div>
 
-      <div style="font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;">Leitura Eletromagnética de Parede</div>
-
-      <!-- Mostrador Digital de microTesla (µT) -->
-      <div style="display:flex;justify-content:center;align-items:baseline;gap:6px;margin:12px 0;">
-        <span id="detector-valor-uT" style="font-size:64px;font-weight:900;color:#38bdf8;font-family:monospace;letter-spacing:-2px;line-height:1;">0.0</span>
-        <span style="font-size:18px;font-weight:800;color:var(--muted);">µT</span>
+      <!-- SELETOR DE MODO DE DETECÇÃO -->
+      <div style="margin-bottom:14px;">
+        <div style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Modo de Varredura da Parede:</div>
+        <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">
+          <button type="button" class="btn btn-sm btn-detector-modo active" id="btn-modo-auto" onclick="setDetectorModo('auto')" style="padding:6px 12px;font-size:11px;font-weight:900;border-radius:20px;background:#38bdf8;color:#000;border:none;">
+            🔀 Auto (Multi-Rede)
+          </button>
+          <button type="button" class="btn btn-sm btn-detector-modo" id="btn-modo-eletrico" onclick="setDetectorModo('eletrico')" style="padding:6px 12px;font-size:11px;font-weight:800;border-radius:20px;background:rgba(255,255,255,0.06);color:#fde047;border:1px solid rgba(253,224,71,0.35);">
+            ⚡ Cabos de Energia
+          </button>
+          <button type="button" class="btn btn-sm btn-detector-modo" id="btn-modo-agua" onclick="setDetectorModo('agua')" style="padding:6px 12px;font-size:11px;font-weight:800;border-radius:20px;background:rgba(255,255,255,0.06);color:#7dd3fc;border:1px solid rgba(56,189,248,0.35);">
+            💧 Canos de Água
+          </button>
+          <button type="button" class="btn btn-sm btn-detector-modo" id="btn-modo-esgoto" onclick="setDetectorModo('esgoto')" style="padding:6px 12px;font-size:11px;font-weight:800;border-radius:20px;background:rgba(255,255,255,0.06);color:#d8b4fe;border:1px solid rgba(192,132,252,0.35);">
+            🚽 Tubos de Esgoto
+          </button>
+        </div>
       </div>
 
-      <!-- Status do Alerta -->
-      <div id="detector-status-box" style="display:inline-block;padding:8px 22px;border-radius:999px;font-size:13px;font-weight:900;background:rgba(34,197,94,0.15);border:1.5px solid #22c55e;color:#4ade80;margin-bottom:14px;transition:all 0.2s;">
-        🟢 NENHUMA FIAÇÃO OU METAL DETECTADO (ÁREA SEGURA)
+      <!-- Mostrador Digital de microTesla (µT) e Status do Sensor -->
+      <div style="display:flex;justify-content:center;align-items:baseline;gap:6px;margin:8px 0;">
+        <span id="detector-valor-uT" style="font-size:62px;font-weight:900;color:#38bdf8;font-family:monospace;letter-spacing:-2px;line-height:1;">28.5</span>
+        <span style="font-size:17px;font-weight:800;color:var(--muted);">µT</span>
+      </div>
+
+      <!-- PAINEL DE IDENTIFICAÇÃO AUTOMÁTICA DO TIPO DE TUBULAÇÃO / FIAÇÃO -->
+      <div id="detector-alvo-tipo-box" style="margin:10px auto 14px auto;padding:12px 16px;border-radius:14px;background:rgba(34,197,94,0.15);border:1.5px solid #22c55e;max-width:540px;display:flex;align-items:center;justify-content:center;gap:12px;transition:all 0.25s ease;">
+        <span id="detector-alvo-icone" style="font-size:32px;line-height:1;">🎯</span>
+        <div style="text-align:left;">
+          <div id="detector-alvo-titulo" style="font-size:14px;font-weight:900;color:#4ade80;">ÁREA LIVRE (ALVENARIA SEGURA)</div>
+          <div id="detector-alvo-sub" style="font-size:11.5px;color:#cbd5e1;margin-top:2px;line-height:1.3;">Nenhuma fiação energizada, tubulação de água ou cano de esgoto nesta posição.</div>
+        </div>
       </div>
 
       <!-- Barra Gráfica de Nível -->
@@ -4047,61 +4056,68 @@
         <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--muted);font-weight:800;margin-bottom:4px;">
           <span>0 µT (Seguro)</span>
           <span>40 µT (Atenção)</span>
-          <span>75+ µT (PERIGO ELÉTRICO / METAL)</span>
+          <span>75+ µT (PERIGO ELÉTRICO / CANO)</span>
         </div>
         <div style="height:18px;background:rgba(255,255,255,0.06);border-radius:999px;border:1px solid rgba(255,255,255,0.15);overflow:hidden;position:relative;">
-          <div id="detector-barra-nivel" style="height:100%;width:5%;background:linear-gradient(90deg,#22c55e,#eab308,#ef4444);border-radius:999px;transition:width 0.1s ease;"></div>
+          <div id="detector-barra-nivel" style="height:100%;width:28%;background:linear-gradient(90deg,#22c55e,#eab308,#ef4444);border-radius:999px;transition:width 0.15s ease;"></div>
         </div>
       </div>
 
-      <!-- LOCALIZADOR EXATO DO PONTO DE FURO (MIRA DE SEGURANÇA) -->
-      <div id="detector-box-furacao-guia" style="background:rgba(34,197,94,0.1);border:2px solid #22c55e;border-radius:14px;padding:16px;max-width:560px;margin:0 auto 16px auto;text-align:center;box-shadow:0 0 25px rgba(34,197,94,0.15);transition:all 0.3s ease;">
-        <div id="detector-icone-furacao" style="font-size:36px;line-height:1;margin-bottom:6px;">🎯</div>
+      <!-- CERTIFICADOR DE FURAÇÃO SEGURA (VALIDAÇÃO DE VERDADE COM MARGEM ABNT) -->
+      <div id="detector-box-furacao-guia" style="background:rgba(34,197,94,0.1);border:2px solid #22c55e;border-radius:16px;padding:16px;max-width:560px;margin:0 auto 16px auto;text-align:center;box-shadow:0 0 25px rgba(34,197,94,0.15);transition:all 0.3s ease;">
+        <div id="detector-icone-furacao" style="font-size:36px;line-height:1;margin-bottom:6px;">🎯 🟢</div>
         <div id="detector-titulo-furacao" style="font-size:16.5px;font-weight:900;color:#4ade80;">
-          PONTO 100% SEGURO PARA FURAR AQUI!
+          PONTO SEGURO PARA FURAR AQUI!
         </div>
-        <div id="detector-msg-furacao" style="font-size:12.5px;color:#cbd5e1;margin:6px 0 12px 0;line-height:1.4;">
-          Nenhuma fiação energizada ou tubulação metálica nesta posição. A broca está liberada!
+        <div id="detector-msg-furacao" style="font-size:12.5px;color:#cbd5e1;margin:6px 0 14px 0;line-height:1.4;">
+          Nenhum cabo de força ou tubulação identificada neste ponto. Broca liberada para instalação.
         </div>
 
         <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
-          <button type="button" class="btn btn-primary" onclick="salvarMarcacaoFuroSeguro()" style="padding:9px 18px;font-size:12.5px;font-weight:900;background:linear-gradient(135deg,#059669,#10b981);border:none;box-shadow:0 4px 15px rgba(16,185,129,0.35);display:inline-flex;align-items:center;gap:6px;">
-            📍 Salvar Marcação deste Furo
+          <button type="button" class="btn btn-primary" onclick="iniciarVerificacaoTriplaSeguranca()" style="padding:10px 18px;font-size:12.5px;font-weight:900;background:linear-gradient(135deg,#059669,#10b981);border:none;box-shadow:0 4px 15px rgba(16,185,129,0.35);display:inline-flex;align-items:center;gap:6px;">
+            🛡️ Fazer Checagem Tripla de Segurança (ABNT)
           </button>
-          <button type="button" class="btn btn-sec" onclick="forcarPontoSeguroAfastado()" style="padding:9px 15px;font-size:12px;font-weight:800;border:1px solid rgba(255,255,255,0.2);display:inline-flex;align-items:center;gap:6px;">
-            🟢 Já Me Afastei do Perigo (Confirmar Seguro)
+          <button type="button" class="btn btn-sec" onclick="salvarMarcacaoFuroSeguro()" style="padding:10px 14px;font-size:12px;font-weight:800;border:1px solid rgba(255,255,255,0.2);display:inline-flex;align-items:center;gap:5px;">
+            📍 Salvar Marcação
           </button>
-          <button type="button" class="btn btn-sec" onclick="calibrarZeroSensorDetector()" style="padding:9px 14px;font-size:12px;font-weight:800;display:inline-flex;align-items:center;gap:4px;">
+          <button type="button" class="btn btn-sec" onclick="calibrarZeroSensorDetector()" style="padding:10px 14px;font-size:12px;font-weight:800;display:inline-flex;align-items:center;gap:4px;">
             🎯 Calibrar Tara (Zero)
           </button>
         </div>
       </div>
 
-      <!-- PAINEL INTERATIVO DE VARREDURA & RADAR DE PROXIMIDADE -->
-      <div style="background:rgba(0,0,0,0.45);border:1.5px solid rgba(56,189,248,0.35);border-radius:14px;padding:14px 16px;max-width:560px;margin:0 auto 14px auto;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.5);">
+      <!-- PAINEL DE CONTROLE DE SENSIBILIDADE E TESTES RÁPIDOS DA MARCENARIA -->
+      <div style="background:rgba(0,0,0,0.45);border:1.5px solid rgba(56,189,248,0.35);border-radius:14px;padding:14px 16px;max-width:560px;margin:0 auto 14px auto;text-align:center;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-          <span style="font-size:12px;font-weight:900;color:#38bdf8;text-transform:uppercase;letter-spacing:0.04em;">🖐️ Radar de Varredura / Aproximação na Parede</span>
+          <span style="font-size:12px;font-weight:900;color:#38bdf8;text-transform:uppercase;">🖐️ Teste de Aproximação / Simulação Rápida</span>
           <span id="detector-modo-status" style="font-size:10.5px;padding:3px 10px;border-radius:999px;background:rgba(56,189,248,0.2);color:#7dd3fc;font-weight:900;border:1px solid rgba(56,189,248,0.4);">Sensor Ativo</span>
         </div>
-        <div style="font-size:11.5px;color:var(--text2);margin-bottom:10px;line-height:1.3;">
-          Deslize a barra para simular o movimento do celular ou clique para simular a detecção:
+        <div style="font-size:11.5px;color:var(--text2);margin-bottom:10px;">
+          Teste a resposta do aplicativo para cada tipo de tubulação ou encoste na parede ao vivo:
         </div>
-        <input type="range" id="detector-range-afastamento" min="0" max="30" value="25" oninput="definirAfastamentoPerigo(this.value)" style="width:100%;height:10px;accent-color:#38bdf8;cursor:pointer;margin-bottom:8px;" />
-        <div style="display:flex;justify-content:space-between;font-size:10.5px;margin-bottom:12px;">
-          <span style="color:#f87171;font-weight:900;">⚡ 0 cm (Sobre Fio/Cano)</span>
-          <span style="color:#fbbf24;font-weight:900;">⚠️ 15 cm (Mínimo)</span>
-          <span style="color:#4ade80;font-weight:900;">🟢 30 cm (100% Seguro)</span>
+
+        <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:10px;">
+          <button type="button" onclick="testarRedeParede('energia')" style="padding:8px 12px;font-size:11.5px;font-weight:900;border-radius:8px;background:rgba(239,68,68,0.25);border:1px solid #ef4444;color:#fca5a5;cursor:pointer;">
+            ⚡ Cabo de Energia (Choque)
+          </button>
+          <button type="button" onclick="testarRedeParede('agua')" style="padding:8px 12px;font-size:11.5px;font-weight:900;border-radius:8px;background:rgba(2,132,199,0.25);border:1px solid #0284c7;color:#7dd3fc;cursor:pointer;">
+            💧 Cano de Água (Vazamento)
+          </button>
+          <button type="button" onclick="testarRedeParede('esgoto')" style="padding:8px 12px;font-size:11.5px;font-weight:900;border-radius:8px;background:rgba(168,85,247,0.25);border:1px solid #a855f7;color:#e9d5ff;cursor:pointer;">
+            🚽 Cano de Esgoto (PVC)
+          </button>
+          <button type="button" onclick="testarRedeParede('seguro')" style="padding:8px 12px;font-size:11.5px;font-weight:900;border-radius:8px;background:rgba(34,197,94,0.25);border:1px solid #22c55e;color:#86efac;cursor:pointer;">
+            🟢 Ponto 100% Seguro
+          </button>
         </div>
-        <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">
-          <button type="button" onclick="simularDetecaoPerigo()" style="padding:7px 12px;font-size:11.5px;font-weight:800;border-radius:8px;background:rgba(239,68,68,0.25);border:1px solid #ef4444;color:#fca5a5;cursor:pointer;">
-            ⚡ Simular Fio/Metal Aqui
-          </button>
-          <button type="button" onclick="iniciarVarreduraAutomatica()" id="btn-auto-varredura" style="padding:7px 12px;font-size:11.5px;font-weight:800;border-radius:8px;background:rgba(56,189,248,0.2);border:1px solid #0284c7;color:#7dd3fc;cursor:pointer;">
-            🔄 Simular Varredura Contínua
-          </button>
-          <button type="button" onclick="forcarPontoSeguroAfastado()" style="padding:7px 12px;font-size:11.5px;font-weight:800;border-radius:8px;background:rgba(34,197,94,0.25);border:1px solid #22c55e;color:#86efac;cursor:pointer;">
-            🟢 Liberar Ponto Seguro
-          </button>
+
+        <!-- Slider de Afastamento da Linha -->
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px;text-align:left;">Distância do Ponto Suspeito:</div>
+        <input type="range" id="detector-range-afastamento" min="0" max="30" value="25" oninput="definirAfastamentoPerigo(this.value)" style="width:100%;height:10px;accent-color:#38bdf8;cursor:pointer;margin-bottom:6px;" />
+        <div style="display:flex;justify-content:space-between;font-size:10.5px;">
+          <span style="color:#f87171;font-weight:900;">0 cm (Em cima do cano/fio)</span>
+          <span style="color:#fbbf24;font-weight:900;">15 cm (Mínimo ABNT)</span>
+          <span style="color:#4ade80;font-weight:900;">30 cm (Seguro)</span>
         </div>
       </div>
 
@@ -4109,33 +4125,14 @@
       <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 14px;max-width:560px;margin:0 auto 14px auto;text-align:left;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
           <div style="font-size:12px;font-weight:900;color:var(--gold-light);text-transform:uppercase;letter-spacing:0.05em;">
-            📐 Régua de Afastamento do Ponto de Perigo
+            📐 Margem Normativa de Segurança (ABNT NBR 5410 & 5626)
           </div>
           <div id="detector-badge-distancia" style="font-size:12px;font-weight:900;padding:2px 10px;border-radius:999px;background:rgba(34,197,94,0.2);color:#4ade80;border:1px solid #22c55e;">
             Afastado: 25 cm (Seguro)
           </div>
         </div>
-
-        <div style="font-size:11.5px;color:var(--text2);margin-bottom:8px;">
-          Ao identificar uma fiação ou cano, marque o ponto e afaste a furadeira lateralmente:
-        </div>
-
-        <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;">
-          <button type="button" onclick="definirAfastamentoPerigo(0)" style="padding:6px 10px;font-size:11px;font-weight:800;border-radius:8px;background:rgba(239,68,68,0.2);border:1px solid #ef4444;color:#fca5a5;cursor:pointer;">
-            0 cm (Ponto de Perigo)
-          </button>
-          <button type="button" onclick="definirAfastamentoPerigo(8)" style="padding:6px 10px;font-size:11px;font-weight:800;border-radius:8px;background:rgba(239,68,68,0.2);border:1px solid #ef4444;color:#fca5a5;cursor:pointer;">
-            8 cm (Risco Alto)
-          </button>
-          <button type="button" onclick="definirAfastamentoPerigo(15)" style="padding:6px 10px;font-size:11px;font-weight:800;border-radius:8px;background:rgba(234,179,8,0.2);border:1px solid #eab308;color:#fde047;cursor:pointer;">
-            15 cm (Mínimo Seguro ABNT)
-          </button>
-          <button type="button" onclick="definirAfastamentoPerigo(20)" style="padding:6px 10px;font-size:11px;font-weight:800;border-radius:8px;background:rgba(34,197,94,0.2);border:1px solid #22c55e;color:#4ade80;cursor:pointer;">
-            20 cm (Recomendado)
-          </button>
-          <button type="button" onclick="definirAfastamentoPerigo(30)" style="padding:6px 10px;font-size:11px;font-weight:800;border-radius:8px;background:rgba(34,197,94,0.2);border:1px solid #22c55e;color:#4ade80;cursor:pointer;">
-            30 cm (Ideal)
-          </button>
+        <div style="font-size:11.5px;color:var(--text2);line-height:1.4;">
+          Canos e fios correm em linha reta a partir de torneiras, registros e tomadas. Para ter certeza de que o local é seguro, mantenha no mínimo <strong>15 cm de distância</strong> de qualquer eixo de instalação.
         </div>
       </div>
 
@@ -5070,7 +5067,7 @@
 </div>
 
 <!-- ══ MODAL CENTRAL DE MENSAGENS DOS CLIENTES ══ -->
-<div id="modal-central-mensagens" class="modal-overlay" style="display:none" onclick="fecharModalCentralMensagens(event)">
+<div id="modal-central-mensagens" class="modal-overlay" style="display:none; z-index:99999;" onclick="fecharModalCentralMensagens(event)">
   <div class="modal-box chat-admin-modal-box" onclick="event.stopPropagation()">
     <div class="modal-title" style="margin-bottom:12px;flex-shrink:0;">
       <div style="display:flex;align-items:center;gap:8px;">
@@ -5121,9 +5118,9 @@
           </div>
         </div>
 
-        <div class="chat-admin-footer">
-          <input type="text" id="admin-chat-input" placeholder="Digite uma resposta para o cliente..." style="flex:1;background:#070710;border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:10px 14px;color:#fff;font-family:var(--font);font-size:13px;outline:none;" onkeydown="if(event.key==='Enter') enviarRespostaAdmin()">
-          <button type="button" class="btn btn-gold btn-sm" onclick="enviarRespostaAdmin()" style="padding:10px 18px;font-weight:800;flex-shrink:0;">
+        <div class="chat-admin-footer" style="position:relative;z-index:20;pointer-events:auto;">
+          <input type="text" id="admin-chat-input" placeholder="Digite uma resposta para o cliente..." style="flex:1;background:#070710;border:1.5px solid rgba(255,255,255,0.2);border-radius:10px;padding:11px 14px;color:#fff;font-family:var(--font);font-size:15px;outline:none;position:relative;z-index:30;pointer-events:auto;user-select:text;-webkit-user-select:text;" onkeydown="if(event.key==='Enter') enviarRespostaAdmin()" onclick="this.focus()" ontouchstart="this.focus()">
+          <button type="button" class="btn btn-gold btn-sm" onclick="enviarRespostaAdmin()" style="padding:11px 18px;font-weight:800;flex-shrink:0;position:relative;z-index:30;cursor:pointer;">
             Enviar ➔
           </button>
         </div>
@@ -7951,6 +7948,7 @@ function getOrc() {
 function formatNum(n) { return '#'+String(n).padStart(4,'0'); }
 function atualizarNumeroDisplay() {
   if (!editandoOsId) document.getElementById('orc-numero-display').textContent = formatNum(proxNumero);
+  if (typeof atualizarBadgeGaleriaOrcamento === 'function') atualizarBadgeGaleriaOrcamento();
 }
 
 function alterarProximoNumero() {
@@ -8290,10 +8288,26 @@ function salvarOrdem() {
         }
       } catch (_) {}
 
+      try {
+        let fotosAtuais = [];
+        const sFotos = localStorage.getItem('sdm_cam_capturas');
+        if (sFotos) fotosAtuais = JSON.parse(sFotos);
+        if (Array.isArray(fotosAtuais) && fotosAtuais.length > 0) {
+          historico[idx].fotos = fotosAtuais;
+          localStorage.setItem(getGaleriaKey(o.numero), JSON.stringify(fotosAtuais));
+        }
+      } catch (_) {}
+
       alert('✅ Todos os dados da Ordem ' + o.numero + ' foram atualizados com sucesso!\n• Cliente, valores, itens e contrato sincronizados.');
       cancelarEdicaoOs();
     } else {
       // Nova Ordem
+      let fotosIniciais = [];
+      try {
+        const sFotos = localStorage.getItem('sdm_cam_capturas');
+        if (sFotos) fotosIniciais = JSON.parse(sFotos);
+      } catch (_) {}
+
       const ord = {
         id: Date.now(),
         numero: o.numero,
@@ -8304,6 +8318,7 @@ function salvarOrdem() {
         status: 'pendente',
         empresaId: licAtiva.id,
         empresaNome: licAtiva.nome,
+        fotos: fotosIniciais,
         versoes_pdf: [{
           versao: 1,
           titulo: 'v1 (Original)',
@@ -8313,6 +8328,9 @@ function salvarOrdem() {
           dados: JSON.parse(JSON.stringify(o))
         }]
       };
+      if (Array.isArray(fotosIniciais) && fotosIniciais.length > 0) {
+        try { localStorage.setItem(getGaleriaKey(o.numero), JSON.stringify(fotosIniciais)); } catch (_) {}
+      }
       historico.push(ord);
       save(K.orders, historico);
       notificarNovaOrdemGerada(ord);
@@ -8352,6 +8370,20 @@ function cancelarEdicaoOs() {
   itemId = 0; addItem();
   selChip(document.querySelector('.chip'),'À vista');
   atualizarNumeroDisplay();
+
+  // Limpa a galeria para que ao começar uma nova O.S. a galeria esteja limpa
+  try {
+    localStorage.removeItem('sdm_cam_capturas');
+    if (typeof _capturas !== 'undefined') _capturas = [];
+    const boxCam = document.getElementById('agenda-preview-fotos-capturadas');
+    if (boxCam) boxCam.style.display = 'none';
+    const thumbsCam = document.getElementById('agenda-fotos-thumbs');
+    if (thumbsCam) thumbsCam.innerHTML = '';
+    const countCam = document.getElementById('agenda-fotos-count');
+    if (countCam) countCam.textContent = '0';
+    if (typeof _renderGaleriaGrid === 'function') _renderGaleriaGrid();
+    atualizarBadgeGaleriaOrcamento();
+  } catch(_) {}
 }
 
 function abrirPortalCliente() {
@@ -9505,15 +9537,68 @@ function editarOs(id) {
     btnAssinaturaTxt.textContent = foiAprovadoOuReajuste ? '✍️ Reenviar Assinatura Digital' : '✍️ Enviar para Assinatura Digital';
   }
 
+  // Carrega a galeria salva desta O.S.
+  try {
+    const fotosOs = o.fotos || JSON.parse(localStorage.getItem(getGaleriaKey(o.numero)) || '[]');
+    if (Array.isArray(fotosOs) && fotosOs.length > 0) {
+      localStorage.setItem('sdm_cam_capturas', JSON.stringify(fotosOs));
+      if (typeof _capturas !== 'undefined') _capturas = [...fotosOs];
+      const boxCam = document.getElementById('agenda-preview-fotos-capturadas');
+      const thumbsCam = document.getElementById('agenda-fotos-thumbs');
+      const countCam = document.getElementById('agenda-fotos-count');
+      if (boxCam && thumbsCam && countCam) {
+        boxCam.style.display = 'block';
+        thumbsCam.innerHTML = '';
+        fotosOs.forEach(f => {
+          const imgEl = document.createElement('img');
+          imgEl.src = f.dataUrl || f.url || (typeof f === 'string' ? f : '');
+          imgEl.style.cssText = 'width:56px;height:56px;object-fit:cover;border-radius:8px;border:1.5px solid #06b6d4;flex-shrink:0;cursor:pointer;';
+          imgEl.onclick = abrirGaleriaAgenda;
+          thumbsCam.appendChild(imgEl);
+        });
+        countCam.textContent = fotosOs.length;
+      }
+      if (typeof _renderGaleriaGrid === 'function') _renderGaleriaGrid();
+    } else {
+      localStorage.removeItem('sdm_cam_capturas');
+      if (typeof _capturas !== 'undefined') _capturas = [];
+      const boxCam = document.getElementById('agenda-preview-fotos-capturadas');
+      if (boxCam) boxCam.style.display = 'none';
+      const thumbsCam = document.getElementById('agenda-fotos-thumbs');
+      if (thumbsCam) thumbsCam.innerHTML = '';
+      const countCam = document.getElementById('agenda-fotos-count');
+      if (countCam) countCam.textContent = '0';
+      if (typeof _renderGaleriaGrid === 'function') _renderGaleriaGrid();
+    }
+    atualizarBadgeGaleriaOrcamento();
+  } catch(_) {}
+
   goTab('orcamento');
   window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function atualizarBadgeGaleriaOrcamento() {
+  try {
+    let count = 0;
+    const s = localStorage.getItem('sdm_cam_capturas');
+    if (s) {
+      const arr = JSON.parse(s);
+      if (Array.isArray(arr)) count = arr.length;
+    }
+    const lbl = document.getElementById('label-galeria-orc-linha');
+    if (lbl) lbl.textContent = `Galeria (${count})`;
+  } catch(_) {}
 }
 
 let osIdEditandoStatus = null;
 
 
 function avisarStatusTravadoAguardando(id) {
-  mostrarToastAprovacao('🔒 Esta opção está travada. A atualização ocorrerá quando o cliente fizer a escolha no link (aprovar e assinar digitalmente ou solicitar ajustes).');
+  mostrarToastAprovacao('🔒 Esta opção está bloqueada. O status é atualizado de forma 100% automática conforme a assinatura digital e aprovação do cliente.');
+}
+
+function avisarStatusAutomatico(id) {
+  mostrarToastAprovacao('🔒 O status da O.S. é atualizado de forma 100% automática conforme a assinatura digital e aprovação do cliente.');
 }
 
 // Sincronização em tempo real quando o cliente assina em outra aba/dispositivo
@@ -10596,9 +10681,7 @@ function renderHist() {
       <div class="hist-top">
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
           <span class="hist-num">${esc(o.numero)}</span>
-          ${st === 'pendente'
-            ? `<span class="status-pill pendente status-bloqueada" onclick="avisarStatusTravadoAguardando('${o.id}')" style="cursor:not-allowed; opacity:0.95; user-select:none; border:1.2px dashed rgba(234,179,8,0.5);" title="Opção travada: aguardando o cliente aprovar e assinar pelo link ou solicitar ajustes">${statusLabels[st] || '🟡 Aguardando Resposta'}</span>`
-            : `<span class="status-pill ${st}" onclick="abrirModalSeletorStatus('${o.id}')" style="cursor:pointer;" title="Clique para alterar o status">${statusLabels[st] || '🟡 Aguardando'} ▾</span>`}
+          <span class="status-pill ${st} status-bloqueada" onclick="avisarStatusAutomatico('${o.id}')" style="cursor:default; opacity:0.95; user-select:none;" title="🔒 Status gerenciado automaticamente pelo sistema">${statusLabels[st] || '🟡 Aguardando'}</span>
         </div>
         <span class="hist-date">${esc(o.data_orc || '')}</span>
       </div>
@@ -13389,7 +13472,6 @@ function aplicarAprovacaoOs(numeroOs, assinante = 'Confirmado via WhatsApp', ass
     }
     save(K.orders, historico);
     renderHist();
-    mostrarToastAprovacao(`🎉 Orçamento ${target} aprovado automaticamente por ${assinante}!`);
   }
 }
 
@@ -13398,16 +13480,18 @@ function mostrarToastAprovacao(txt) {
   if (!toast) {
     toast = document.createElement('div');
     toast.id = 'toast-aprovacao-realtime';
-    toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-weight:800;font-size:14px;padding:12px 24px;border-radius:999px;box-shadow:0 10px 30px rgba(16,185,129,0.5);z-index:9999;transition:all 0.3s cubic-bezier(0.16,1,0.3,1);display:flex;align-items:center;gap:8px;';
+    toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-weight:800;font-size:14px;padding:12px 24px;border-radius:999px;box-shadow:0 10px 30px rgba(16,185,129,0.5);z-index:9999;transition:all 0.3s cubic-bezier(0.16,1,0.3,1);display:flex;align-items:center;gap:8px;pointer-events:none;';
     document.body.appendChild(toast);
   }
   toast.innerHTML = txt;
+  toast.style.display = 'flex';
   toast.style.opacity = '1';
   toast.style.transform = 'translateX(-50%) translateY(0)';
   setTimeout(() => {
     if (toast) {
       toast.style.opacity = '0';
       toast.style.transform = 'translateX(-50%) translateY(20px)';
+      setTimeout(() => { if (toast && toast.style.opacity === '0') toast.style.display = 'none'; }, 350);
     }
   }, 4500);
 }
@@ -14231,14 +14315,18 @@ async function gerarPdfOrcamentoDoc(dados) {
   page.drawText(txtValProdutos, { x: rightCardX + rightCardW - 10 - fontBold.widthOfTextAtSize(txtValProdutos, 7.2), y: totY, size: 7.2, font: fontBold, color: DARK });
 
   totY -= 13;
-  const txtValServico = valServicoFinal > 0 ? ('R$ ' + formatarValorPtBr(valServicoFinal)) : 'Inclusa';
+  const txtValServico = valServicoFinal > 0 ? ('R$ ' + formatarValorPtBr(valServicoFinal)) : '';
   page.drawText('Mão de Obra e Instalação:', { x: rightCardX + 10, y: totY, size: 6.8, font: fontRegular, color: GRAY });
-  page.drawText(txtValServico, { x: rightCardX + rightCardW - 10 - (valServicoFinal > 0 ? fontBold : fontRegular).widthOfTextAtSize(txtValServico, 7.2), y: totY, size: 7.2, font: valServicoFinal > 0 ? fontBold : fontRegular, color: DARK });
+  if (txtValServico) {
+    page.drawText(txtValServico, { x: rightCardX + rightCardW - 10 - fontBold.widthOfTextAtSize(txtValServico, 7.2), y: totY, size: 7.2, font: fontBold, color: DARK });
+  }
 
   totY -= 13;
-  const txtValFrete = valFreteNum > 0 ? ('R$ ' + formatarValorPtBr(valFreteNum)) : 'Incluso';
+  const txtValFrete = valFreteNum > 0 ? ('R$ ' + formatarValorPtBr(valFreteNum)) : '';
   page.drawText('Frete e Deslocamento:', { x: rightCardX + 10, y: totY, size: 6.8, font: fontRegular, color: GRAY });
-  page.drawText(txtValFrete, { x: rightCardX + rightCardW - 10 - (valFreteNum > 0 ? fontBold : fontRegular).widthOfTextAtSize(txtValFrete, 7.2), y: totY, size: 7.2, font: valFreteNum > 0 ? fontBold : fontRegular, color: DARK });
+  if (txtValFrete) {
+    page.drawText(txtValFrete, { x: rightCardX + rightCardW - 10 - fontBold.widthOfTextAtSize(txtValFrete, 7.2), y: totY, size: 7.2, font: fontBold, color: DARK });
+  }
 
   if (valDescNum > 0) {
     totY -= 13;
@@ -17062,6 +17150,10 @@ function aoCapturarFotoAgenda(event) {
         imgEl.title = 'Clique para ver na Galeria';
         thumbs.insertBefore(imgEl, thumbs.firstChild);
         count.textContent = thumbs.children.length;
+      }
+
+      if (typeof atualizarBadgeGaleriaOrcamento === 'function') {
+        atualizarBadgeGaleriaOrcamento();
       }
 
       mostrarToastAprovacao('📸 Foto capturada e salva na Galeria com sucesso!');
@@ -24310,35 +24402,40 @@ function renderEstoqueView() {
     }
   }
 
-  // Renderizar Tabela de Movimentações (Entradas e Saídas)
-  const tabMovEl = document.getElementById('estoque-tabela-movimentacoes');
+  // Renderizar Lista de Movimentações (Entradas e Saídas em Cartões 100% Organizados)
+  const tabMovEl = document.getElementById('estoque-lista-movimentacoes');
   if (tabMovEl) {
     if (movs.length === 0) {
-      tabMovEl.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:26px;color:var(--muted);">Nenhuma movimentação registrada no histórico.</td></tr>`;
+      tabMovEl.innerHTML = `<div style="text-align:center;padding:32px;color:var(--muted);background:rgba(255,255,255,0.02);border:1px dashed rgba(255,255,255,0.1);border-radius:12px;">Nenhuma movimentação registrada no histórico.</div>`;
     } else {
       const movsOrdenadas = [...movs].sort((a,b) => (b.dataHora || '').localeCompare(a.dataHora || ''));
       tabMovEl.innerHTML = movsOrdenadas.map(mv => {
         const isEntrada = mv.tipo === 'entrada';
         const badge = isEntrada
-          ? `<span style="padding:3px 8px;border-radius:999px;background:rgba(16,185,129,0.2);border:1px solid #10b981;color:#34d399;font-weight:900;font-size:10.5px;">📥 ENTRADA</span>`
-          : `<span style="padding:3px 8px;border-radius:999px;background:rgba(239,68,68,0.2);border:1px solid #ef4444;color:#f87171;font-weight:900;font-size:10.5px;">📤 SAÍDA</span>`;
+          ? `<span style="padding:4px 10px;border-radius:999px;background:rgba(16,185,129,0.18);border:1px solid #10b981;color:#34d399;font-weight:900;font-size:11px;display:inline-flex;align-items:center;gap:4px;">📥 ENTRADA</span>`
+          : `<span style="padding:4px 10px;border-radius:999px;background:rgba(239,68,68,0.18);border:1px solid #ef4444;color:#f87171;font-weight:900;font-size:11px;display:inline-flex;align-items:center;gap:4px;">📤 SAÍDA</span>`;
 
         return `
-          <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
-            <td style="padding:10px 8px;">${badge}</td>
-            <td style="padding:10px 8px;color:var(--text2);font-size:11.5px;">${esc(mv.dataHora || '')}</td>
-            <td style="padding:10px 8px;font-weight:800;color:#fff;">${esc(mv.materialNome || 'Material')}</td>
-            <td style="padding:10px 8px;font-weight:900;color:${isEntrada ? '#34d399' : '#f87171'};font-size:13px;">
-              ${isEntrada ? '+' : '-'}${mv.qtd}
-            </td>
-            <td style="padding:10px 8px;color:var(--text2);">${esc(mv.entidade || '-')}</td>
-            <td style="padding:10px 8px;color:var(--muted);font-size:11.5px;">
-              ${mv.responsavel ? `<strong>${esc(mv.responsavel)}</strong>: ` : ''}${esc(mv.obs || '-')}
-            </td>
-            <td style="padding:10px 8px;text-align:right;">
-              <button type="button" onclick="excluirMovimentacaoEstoque('${mv.id}')" title="Excluir Registro" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:13px;">✕</button>
-            </td>
-          </tr>
+          <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px 14px;box-shadow:0 4px 15px rgba(0,0,0,0.25);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                ${badge}
+                <span style="font-size:11.5px;color:var(--muted);font-weight:700;">📅 ${esc(mv.dataHora || '')}</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span style="font-size:17px;font-weight:900;color:${isEntrada ? '#34d399' : '#f87171'};">
+                  ${isEntrada ? '+' : '-'}${mv.qtd} un
+                </span>
+                <button type="button" onclick="excluirMovimentacaoEstoque('${mv.id}')" title="Excluir Registro" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);border-radius:6px;color:#fca5a5;cursor:pointer;padding:4px 8px;font-size:12px;">✕</button>
+              </div>
+            </div>
+            <div style="font-size:15px;font-weight:900;color:#fff;">${esc(mv.materialNome || 'Material')}</div>
+            <div style="font-size:12px;color:var(--text2);margin-top:4px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+              <span>Destino / Cliente: <strong style="color:var(--gold-light);">${esc(mv.entidade || 'Estoque Geral')}</strong></span>
+              ${mv.responsavel ? `<span>Resp: <strong style="color:#cbd5e1;">${esc(mv.responsavel)}</strong></span>` : ''}
+            </div>
+            ${mv.obs ? `<div style="font-size:11.5px;color:var(--muted);margin-top:6px;background:rgba(0,0,0,0.25);padding:5px 8px;border-radius:6px;">📝 ${esc(mv.obs)}</div>` : ''}
+          </div>
         `;
       }).join('');
     }
