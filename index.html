@@ -23393,6 +23393,22 @@ function gerarSvgPlanoDeCorteVidro(plano, chapaIndex = 1) {
                      window._pecaSelecionada.tipo === 'vidro' &&
                      window._pecaSelecionada.chapaIndex === chapaIndex &&
                      window._pecaSelecionada.pecaId === p.id;
+    const mostrarBolinha = window._modoReorganizarChapa || sel;
+    const rBolinha = Math.max(28, Math.min(55, Math.min(p.w, p.h) * 0.18));
+    const bx = px + p.w - rBolinha - 8;
+    const by = py + rBolinha + 8;
+    const bolinhaGirarHtml = mostrarBolinha ? `
+      <g class="bolinha-girar-peca" data-id="${p.id}"
+         onclick="girarPecaDireta('vidro', ${chapaIndex}, ${p.id}, event)"
+         onpointerdown="event.stopPropagation()"
+         onmousedown="event.stopPropagation()"
+         style="cursor:pointer;">
+        <circle cx="${bx}" cy="${by}" r="${rBolinha + 3}" fill="rgba(0,0,0,0.6)" />
+        <circle cx="${bx}" cy="${by}" r="${rBolinha}" fill="#f59e0b" stroke="#ffffff" stroke-width="3" />
+        <text x="${bx}" y="${by}" fill="#ffffff" font-size="${rBolinha * 1.15}px" font-weight="900" font-family="system-ui,sans-serif" text-anchor="middle" dominant-baseline="central" pointer-events="none">
+          🔄
+        </text>
+      </g>` : '';
     return `
       <g class="peca-corte-item" data-tipo="vidro" data-chapa="${chapaIndex}" data-id="${p.id}"
          onclick="selecionarPecaCorte('vidro', ${chapaIndex}, ${p.id}, event)"
@@ -23405,12 +23421,13 @@ function gerarSvgPlanoDeCorteVidro(plano, chapaIndex = 1) {
               fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="1.5" rx="4" />
         <text x="${px+p.w/2}" y="${py+p.h/2 - fontSize*0.4}" fill="#ffffff" font-size="${fontSize}px"
               font-weight="900" font-family="system-ui,sans-serif" text-anchor="middle" dominant-baseline="middle" pointer-events="none">
-          #${p.id} ${p.rotacionada ? '🔄' : ''}
+          #${p.id}
         </text>
         <text x="${px+p.w/2}" y="${py+p.h/2 + fontSize*0.6}" fill="#e0f7fa" font-size="${fontSub}px"
               font-weight="700" font-family="system-ui,sans-serif" text-anchor="middle" dominant-baseline="middle" pointer-events="none">
           ${p.w} × ${p.h} mm
         </text>
+        ${bolinhaGirarHtml}
       </g>`;
   }).join('');
 
@@ -23612,7 +23629,6 @@ function calcVidro() {
           <div id="ferr-v-desenho-svg" style="width:100%;margin-top:6px;">
             ${gerarSvgPlanoDeCorteVidro(plano, 1)}
           </div>
-          <div id="ferr-v-controle-peca" style="display:none;margin-top:10px;"></div>
           <!-- Legenda -->
           <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:11px;color:#94a3b8;">
             <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
@@ -23930,6 +23946,22 @@ function gerarSvgPlanoDeCorte(plano, chapaIndex = 1) {
                 window._pecaSelecionada.tipo === 'movel' &&
                 window._pecaSelecionada.chapaIndex === chapaIndex &&
                 window._pecaSelecionada.pecaId === p.id;
+    const mostrarBolinha = window._modoReorganizarChapa || sel;
+    const rBolinha = Math.max(28, Math.min(55, Math.min(p.w, p.h) * 0.18));
+    const bx = px + p.w - rBolinha - 8;
+    const by = py + rBolinha + 8;
+    const bolinhaGirarHtml = mostrarBolinha ? `
+      <g class="bolinha-girar-peca" data-id="${p.id}"
+         onclick="girarPecaDireta('movel', ${chapaIndex}, ${p.id}, event)"
+         onpointerdown="event.stopPropagation()"
+         onmousedown="event.stopPropagation()"
+         style="cursor:pointer;">
+        <circle cx="${bx}" cy="${by}" r="${rBolinha + 3}" fill="rgba(0,0,0,0.6)" />
+        <circle cx="${bx}" cy="${by}" r="${rBolinha}" fill="#f59e0b" stroke="#ffffff" stroke-width="3" />
+        <text x="${bx}" y="${by}" fill="#ffffff" font-size="${rBolinha * 1.15}px" font-weight="900" font-family="system-ui, sans-serif" text-anchor="middle" dominant-baseline="central" pointer-events="none">
+          🔄
+        </text>
+      </g>` : '';
     return `
       <g class="peca-corte-item" data-tipo="movel" data-chapa="${chapaIndex}" data-id="${p.id}"
          onclick="selecionarPecaCorte('movel', ${chapaIndex}, ${p.id}, event)"
@@ -23941,11 +23973,12 @@ function gerarSvgPlanoDeCorte(plano, chapaIndex = 1) {
         <rect x="${px + 4}" y="${py + 4}" width="${Math.max(0, p.w - 8)}" height="${Math.max(0, p.h - 8)}" 
               fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="1.5" rx="4" />
         <text x="${px + p.w/2}" y="${py + p.h/2 - fontSize*0.4}" fill="#ffffff" font-size="${fontSize}px" font-weight="900" font-family="system-ui, sans-serif" text-anchor="middle" dominant-baseline="middle" pointer-events="none">
-          #${p.id} ${p.rotacionada ? '🔄' : ''}
+          #${p.id}
         </text>
         <text x="${px + p.w/2}" y="${py + p.h/2 + fontSize*0.6}" fill="#f3e8ff" font-size="${fontSub}px" font-weight="700" font-family="system-ui, sans-serif" text-anchor="middle" dominant-baseline="middle" pointer-events="none">
           ${p.w} × ${p.h} mm
         </text>
+        ${bolinhaGirarHtml}
       </g>
     `;
   }).join('');
@@ -24174,7 +24207,6 @@ function calcMovel() {
           <div id="ferr-m-desenho-svg" style="width:100%;margin-top:6px;">
             ${gerarSvgPlanoDeCorte(plano, 1)}
           </div>
-          <div id="ferr-m-controle-peca" style="display:none;margin-top:10px;"></div>
 
           <!-- Legenda explicativa -->
           <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:11px;color:#94a3b8;">
@@ -24294,16 +24326,26 @@ function reorganizarChapa() {
         }
       }
 
-      if (btn) { btn.disabled = false; btn.innerHTML = '🔀 Reorganizar Chapa'; }
+      window._modoReorganizarChapa = true;
+
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '✨ Reorganização Ativa';
+        btn.style.boxShadow = '0 0 16px rgba(245,158,11,0.7)';
+        btn.style.border = '1px solid #fde047';
+      }
 
       if (!melhorPlano) {
-        _toastReorganizarChapa('✅ Plano já está no máximo! Aproveitamento: ' + aprovAtual.toFixed(1) + '%', '#4ade80');
+        // Re-renderiza SVG para exibir a bolinha de girar no canto de todas as peças
+        const svgEl = document.getElementById('ferr-m-desenho-svg');
+        if (svgEl) svgEl.innerHTML = gerarSvgPlanoDeCorte(planoAtual, 1);
+        _toastReorganizarChapa('✨ Modo Reorganizar Ativo! Toque na bolinha 🔄 no canto da peça para girar ou arraste para mover.', '#f59e0b');
         return;
       }
 
       window._planoCorteAtual = melhorPlano;
 
-      // Atualiza SVG
+      // Atualiza SVG com o novo plano e bolinhas ativas
       const svgEl = document.getElementById('ferr-m-desenho-svg');
       if (svgEl) svgEl.innerHTML = gerarSvgPlanoDeCorte(melhorPlano, 1);
 
@@ -24326,8 +24368,8 @@ function reorganizarChapa() {
 
       const ganho = (melhorAprov - aprovAtual).toFixed(1);
       const msg = parseFloat(ganho) > 0
-        ? `🔀 Reorganizado! ${aprovAtual.toFixed(1)}% → ${melhorAprov.toFixed(1)}% (+${ganho}%) · ${melhorNome}`
-        : `✅ Layout otimizado (${melhorAprov.toFixed(1)}%) · Estratégia: ${melhorNome}`;
+        ? `🔀 Reorganizado! ${aprovAtual.toFixed(1)}% → ${melhorAprov.toFixed(1)}% (+${ganho}%) · Toque na bolinha 🔄 no canto para girar`
+        : `✨ Modo Reorganizar Ativo! Toque na bolinha 🔄 no canto para girar ou arraste a peça`;
       _toastReorganizarChapa(msg, '#f59e0b');
 
     } catch(e) {
@@ -24411,7 +24453,7 @@ function selecionarPecaCorte(tipo, chapaIndex, pecaId, e) {
   }
   window._pecaSelecionada = { tipo, chapaIndex, pecaId };
 
-  // Atualiza destaque no SVG
+  // Atualiza destaque no SVG para mostrar a peça selecionada com a bolinha no canto
   if (tipo === 'vidro') {
     const cont = document.getElementById('ferr-v-desenho-svg');
     if (cont && window._planoCorteVidroAtual) {
@@ -24423,19 +24465,10 @@ function selecionarPecaCorte(tipo, chapaIndex, pecaId, e) {
       cont.innerHTML = gerarSvgPlanoDeCorte(window._planoCorteAtual, chapaIndex);
     }
   }
-
-  renderPainelControlePeca(tipo, chapaIndex, pecaId);
 }
 
 function deselecionarPeca(tipo) {
   window._pecaSelecionada = null;
-  const painelId = (tipo === 'vidro') ? 'ferr-v-controle-peca' : 'ferr-m-controle-peca';
-  const painel = document.getElementById(painelId);
-  if (painel) {
-    painel.style.display = 'none';
-    painel.innerHTML = '';
-  }
-
   const chapaIndex = (tipo === 'vidro') ? (window._chapaVidroAtiva || 1) : (window._chapaMovelAtiva || 1);
   if (tipo === 'vidro') {
     const cont = document.getElementById('ferr-v-desenho-svg');
@@ -24451,78 +24484,23 @@ function deselecionarPeca(tipo) {
 }
 
 function renderPainelControlePeca(tipo, chapaIndex, pecaId) {
-  const painelId = (tipo === 'vidro') ? 'ferr-v-controle-peca' : 'ferr-m-controle-peca';
-  const painel = document.getElementById(painelId);
-  if (!painel) return;
+  // Painel inferior desativado: usuário interage diretamente na peça via bolinha no canto
+  const p1 = document.getElementById('ferr-v-controle-peca');
+  if (p1) { p1.style.display = 'none'; p1.innerHTML = ''; }
+  const p2 = document.getElementById('ferr-m-controle-peca');
+  if (p2) { p2.style.display = 'none'; p2.innerHTML = ''; }
+}
 
+function girarPecaDireta(tipo, chapaIndex, pecaId, e) {
+  if (e) {
+    e.stopPropagation();
+    if (e.preventDefault) e.preventDefault();
+  }
   const plano = (tipo === 'vidro') ? window._planoCorteVidroAtual : window._planoCorteAtual;
   if (!plano) return;
   const chapa = plano.chapas[chapaIndex - 1];
   if (!chapa) return;
   const peca = chapa.pecas.find(p => p.id === pecaId);
-  if (!peca) return;
-
-  const themeColor = (tipo === 'vidro') ? '#06b6d4' : '#a855f7';
-  const themeGrad = (tipo === 'vidro') ? 'linear-gradient(135deg,#06b6d4,#0e7490)' : 'linear-gradient(135deg,#a855f7,#7e22ce)';
-
-  painel.style.display = 'block';
-  painel.innerHTML = `
-    <div style="background:rgba(15,23,42,0.95);border:1.5px solid ${themeColor};border-radius:14px;padding:12px;box-shadow:0 6px 20px rgba(0,0,0,0.5);">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.08);">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span style="font-size:16px;">🧩</span>
-          <span style="font-weight:900;color:#fff;font-size:13.5px;">Peça #${peca.id} ${peca.nome ? '('+peca.nome+')' : ''}</span>
-          <span style="font-size:12px;color:#facc15;font-weight:800;">${peca.w} × ${peca.h} mm</span>
-          <span style="font-size:11px;color:#cbd5e1;background:rgba(255,255,255,0.08);padding:2px 7px;border-radius:6px;">X: ${Math.round(peca.x)} | Y: ${Math.round(peca.y)} mm</span>
-        </div>
-        <button type="button" onclick="deselecionarPeca('${tipo}')" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#cbd5e1;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;">
-          ✖️ Desmarcar
-        </button>
-      </div>
-
-      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;">
-        <!-- Botão Girar -->
-        <button type="button" onclick="girarPecaSelecionada('${tipo}')" 
-                style="padding:8px 14px;background:${themeGrad};border:none;border-radius:9px;color:#fff;font-weight:900;font-size:12.5px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 3px 12px ${themeColor}55;">
-          🔄 Girar (90°)
-        </button>
-
-        <!-- Ajuste Fino Horizontal -->
-        <div style="display:inline-flex;gap:4px;background:rgba(255,255,255,0.05);padding:4px;border-radius:9px;border:1px solid rgba(255,255,255,0.1);">
-          <span style="font-size:11px;font-weight:800;color:var(--muted);display:flex;align-items:center;padding:0 4px;">Horizontal:</span>
-          <button type="button" onclick="moverPecaPasso('${tipo}', -50, 0)" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:800;cursor:pointer;" title="Esquerda 50mm">⬅️ 50</button>
-          <button type="button" onclick="moverPecaPasso('${tipo}', -10, 0)" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:800;cursor:pointer;" title="Esquerda 10mm">◀️ 10</button>
-          <button type="button" onclick="moverPecaPasso('${tipo}', 10, 0)" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:800;cursor:pointer;" title="Direita 10mm">10 ▶️</button>
-          <button type="button" onclick="moverPecaPasso('${tipo}', 50, 0)" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:800;cursor:pointer;" title="Direita 50mm">50 ➡️</button>
-        </div>
-
-        <!-- Ajuste Fino Vertical -->
-        <div style="display:inline-flex;gap:4px;background:rgba(255,255,255,0.05);padding:4px;border-radius:9px;border:1px solid rgba(255,255,255,0.1);">
-          <span style="font-size:11px;font-weight:800;color:var(--muted);display:flex;align-items:center;padding:0 4px;">Vertical:</span>
-          <button type="button" onclick="moverPecaPasso('${tipo}', 0, -50)" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:800;cursor:pointer;" title="Cima 50mm">⬆️ 50</button>
-          <button type="button" onclick="moverPecaPasso('${tipo}', 0, -10)" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:800;cursor:pointer;" title="Cima 10mm">▲ 10</button>
-          <button type="button" onclick="moverPecaPasso('${tipo}', 0, 10)" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:800;cursor:pointer;" title="Baixo 10mm">10 ▼</button>
-          <button type="button" onclick="moverPecaPasso('${tipo}', 0, 50)" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:800;cursor:pointer;" title="Baixo 50mm">50 ⬇️</button>
-        </div>
-      </div>
-      <div style="margin-top:8px;font-size:11px;color:#94a3b8;display:flex;align-items:center;gap:6px;">
-        <span>💡 Dica: toque e arraste a peça na tela para mover livremente. O sistema <strong>bloqueia colisões automaticamente</strong> ao encostar em outra peça.</span>
-      </div>
-    </div>
-  `;
-}
-
-function girarPecaSelecionada(tipo) {
-  const sel = window._pecaSelecionada;
-  if (!sel || sel.tipo !== tipo) {
-    alert('Selecione uma peça clicando nela primeiro.');
-    return;
-  }
-  const plano = (tipo === 'vidro') ? window._planoCorteVidroAtual : window._planoCorteAtual;
-  if (!plano) return;
-  const chapa = plano.chapas[sel.chapaIndex - 1];
-  if (!chapa) return;
-  const peca = chapa.pecas.find(p => p.id === sel.pecaId);
   if (!peca) return;
 
   const novoW = peca.h;
@@ -24533,6 +24511,7 @@ function girarPecaSelecionada(tipo) {
   const usableW = Math.max(0, plano.chapW - 2 * plano.refilo);
   const usableH = Math.max(0, plano.chapH - 2 * plano.refilo);
 
+  // Se ao girar ultrapassar as bordas da chapa, ajusta para dentro
   if (posX + novoW > usableW) {
     posX = Math.max(0, usableW - novoW);
   }
@@ -24540,9 +24519,9 @@ function girarPecaSelecionada(tipo) {
     posY = Math.max(0, usableH - novoH);
   }
 
-  const check = verificarColisaoPeca(tipo, sel.chapaIndex, peca.id, posX, posY, novoW, novoH);
+  const check = verificarColisaoPeca(tipo, chapaIndex, peca.id, posX, posY, novoW, novoH);
   if (check.colidiu) {
-    _toastColisaoPeca(`⛔ Bloqueado: Não é possível girar (encosta na ${check.obstaculo})!`, '#ef4444');
+    _toastColisaoPeca(`⛔ Bloqueado: Não cabe girar aqui (encosta na ${check.obstaculo})! Arraste a peça para uma área com espaço.`, '#ef4444');
     return;
   }
 
@@ -24552,9 +24531,18 @@ function girarPecaSelecionada(tipo) {
   peca.y = posY;
   peca.rotacionada = !peca.rotacionada;
 
-  atualizarSvgEDados(tipo, sel.chapaIndex);
-  renderPainelControlePeca(tipo, sel.chapaIndex, peca.id);
+  window._pecaSelecionada = { tipo, chapaIndex, pecaId };
+  atualizarSvgEDados(tipo, chapaIndex);
   _toastColisaoPeca(`🔄 Peça #${peca.id} girada: ${peca.w}×${peca.h}mm`, '#10b981');
+}
+
+function girarPecaSelecionada(tipo) {
+  const sel = window._pecaSelecionada;
+  if (!sel || sel.tipo !== tipo) {
+    alert('Selecione uma peça clicando nela primeiro.');
+    return;
+  }
+  girarPecaDireta(tipo, sel.chapaIndex, sel.pecaId);
 }
 
 function moverPecaPasso(tipo, deltaX, deltaY) {
@@ -24579,7 +24567,6 @@ function moverPecaPasso(tipo, deltaX, deltaY) {
   peca.x = candX;
   peca.y = candY;
   atualizarSvgEDados(tipo, sel.chapaIndex);
-  renderPainelControlePeca(tipo, sel.chapaIndex, peca.id);
 }
 
 let _dragCorte = null;
@@ -24713,6 +24700,19 @@ function moverArrastoPecaCorte(e) {
     texts[1].setAttribute('x', px + peca.w / 2);
     texts[1].setAttribute('y', py + peca.h / 2 + fontSize * 0.6);
   }
+
+  // Atualiza posição da bolinha de girar no canto se presente
+  const bolinha = _dragCorte.elem.querySelector('.bolinha-girar-peca');
+  if (bolinha) {
+    const rBolinha = Math.max(28, Math.min(55, Math.min(peca.w, peca.h) * 0.18));
+    const bx = px + peca.w - rBolinha - 8;
+    const by = py + rBolinha + 8;
+    const circles = bolinha.querySelectorAll('circle');
+    if (circles[0]) { circles[0].setAttribute('cx', bx); circles[0].setAttribute('cy', by); }
+    if (circles[1]) { circles[1].setAttribute('cx', bx); circles[1].setAttribute('cy', by); }
+    const txtBolinha = bolinha.querySelector('text');
+    if (txtBolinha) { txtBolinha.setAttribute('x', bx); txtBolinha.setAttribute('y', by); }
+  }
 }
 
 function soltarArrastoPecaCorte(e) {
@@ -24727,7 +24727,6 @@ function soltarArrastoPecaCorte(e) {
   _dragCorte = null;
 
   atualizarSvgEDados(tipo, chapaIndex);
-  renderPainelControlePeca(tipo, chapaIndex, pecaId);
 }
 
 function atualizarSvgEDados(tipo, chapaIndex) {
@@ -24869,16 +24868,25 @@ function reorganizarChapaVidro() {
         }
       }
 
-      if (btn) { btn.disabled = false; btn.innerHTML = '🔀 Reorganizar Chapa'; }
+      window._modoReorganizarChapa = true;
+
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '✨ Reorganização Ativa';
+        btn.style.boxShadow = '0 0 16px rgba(6,182,212,0.7)';
+        btn.style.border = '1px solid #67e8f9';
+      }
 
       if (!melhorPlano) {
-        _toastColisaoPeca('✅ Layout atual já está no melhor aproveitamento (' + aprovAtual.toFixed(1) + '%)!', '#10b981');
+        const svgEl = document.getElementById('ferr-v-desenho-svg');
+        if (svgEl) svgEl.innerHTML = gerarSvgPlanoDeCorteVidro(planoAtual, 1);
+        _toastColisaoPeca('✨ Modo Reorganizar Ativo! Toque na bolinha 🔄 no canto da peça para girar ou arraste para mover.', '#06b6d4');
         return;
       }
 
       window._planoCorteVidroAtual = melhorPlano;
 
-      // Re-renderiza SVG
+      // Re-renderiza SVG com o novo plano e bolinhas ativas
       const svgEl = document.getElementById('ferr-v-desenho-svg');
       if (svgEl) svgEl.innerHTML = gerarSvgPlanoDeCorteVidro(melhorPlano, 1);
 
@@ -24904,8 +24912,8 @@ function reorganizarChapaVidro() {
 
       const ganho = (melhorAprov - aprovAtual).toFixed(1);
       const msg = parseFloat(ganho) > 0
-        ? `🔀 Reorganizado! ${aprovAtual.toFixed(1)}% → ${melhorAprov.toFixed(1)}% (+${ganho}%) · ${melhorNome}`
-        : `✅ Layout otimizado (${melhorAprov.toFixed(1)}%) · Estratégia: ${melhorNome}`;
+        ? `🔀 Reorganizado! ${aprovAtual.toFixed(1)}% → ${melhorAprov.toFixed(1)}% (+${ganho}%) · Toque na bolinha 🔄 no canto para girar`
+        : `✨ Modo Reorganizar Ativo! Toque na bolinha 🔄 no canto para girar ou arraste a peça`;
       _toastColisaoPeca(msg, '#06b6d4');
 
     } catch(e) {

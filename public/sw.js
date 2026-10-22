@@ -1,5 +1,5 @@
-// Service Worker PWA para sdmoveisprojetados - v6.8 (Reorganizar Chapa + Mover/Girar Interativo com Bloqueio de Colisao)
-const CACHE_NAME = 'sdmoveisprojetados-v6.8';
+// Service Worker PWA para sdmoveisprojetados - v6.9 (Girar peca via bolinha no canto + Modo Reorganizar Chapa)
+const CACHE_NAME = 'sdmoveisprojetados-v6.9';
 const ASSETS = [
   '/',
   '/index.html',
