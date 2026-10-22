@@ -1,11 +1,12 @@
-// Service Worker PWA para sdmoveisprojetados - v6.3 (Histórico Agrupado por Abas de Cliente)
-const CACHE_NAME = 'sdmoveisprojetados-v6.3';
+// Service Worker PWA para sdmoveisprojetados - v6.4 (Remoção Setor Financeiro Duplicado em Funcionário)
+const CACHE_NAME = 'sdmoveisprojetados-v6.4';
 const ASSETS = [
   '/',
   '/index.html',
   '/banner.jpg',
   '/logo_moveis.jpg',
   '/cliente.html',
+  '/funcionario.html',
   '/assinar.html',
   '/alarme.wav',
   '/manifest.json',

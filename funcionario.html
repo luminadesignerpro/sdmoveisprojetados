@@ -2380,9 +2380,6 @@
           <button type="button" class="portal-tab" id="btn-tab-mensagens" onclick="mudarAba('mensagens')">
             <span>💬</span> <span>Mensagens</span> <span class="tab-badge" id="badge-msg-count" style="display:none">0</span>
           </button>
-          <button type="button" class="portal-tab" id="btn-tab-financeiro" onclick="mudarAba('financeiro')">
-            <span id="tab-fin-icone">💳</span> <span id="tab-fin-rotulo">Setor Financeiro</span>
-          </button>
           <button type="button" class="portal-tab" id="btn-tab-meu-financeiro" onclick="mudarAba('meu-financeiro')">
             <span>💰</span> <span>Meu Setor Financeiro</span>
           </button>
@@ -5476,7 +5473,8 @@ function validarCodigoLiberadoManual() {}
 function checarLiberacaoEmpresaAutomatica() {}
 
 function mudarAba(tab) {
-      ['status', 'galeria', 'mensagens', 'financeiro', 'meu-financeiro', 'cronograma', 'opiniao', 'jogos', 'financeiro-pessoal', 'camera'].forEach(t => {
+      if (tab === 'financeiro') tab = 'meu-financeiro';
+      ['status', 'galeria', 'mensagens', 'meu-financeiro', 'cronograma', 'opiniao', 'jogos', 'financeiro-pessoal', 'camera'].forEach(t => {
         const pane = document.getElementById('pane-' + t);
         const btn = document.getElementById('btn-tab-' + t);
         if (pane) pane.classList.toggle('active', t === tab);
