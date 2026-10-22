@@ -3201,7 +3201,21 @@
         </div>
       </div>
       <div id="crono-semana-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;"></div>
-      <div id="crono-semana-eventos" style="margin-top:14px;display:flex;flex-direction:column;gap:8px;"></div>
+      
+      <!-- ── FILTROS: PENDENTES, TODOS, CONCLUÍDOS, HISTÓRICO ── -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+        <div style="font-size:13.5px;font-weight:800;color:var(--gold-light);display:flex;align-items:center;gap:6px;">
+          <span>🕒</span> <span>Eventos da Semana</span>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button type="button" class="btn-filter-agenda active" id="btn-crono-filtro-pendentes" onclick="filtrarCrono('pendentes')">Pendentes</button>
+          <button type="button" class="btn-filter-agenda" id="btn-crono-filtro-todos" onclick="filtrarCrono('todos')">Todos</button>
+          <button type="button" class="btn-filter-agenda" id="btn-crono-filtro-concluidos" onclick="filtrarCrono('concluidos')">Concluídos</button>
+          <button type="button" class="btn-filter-agenda" id="btn-crono-filtro-historico" onclick="filtrarCrono('historico')">Histórico</button>
+        </div>
+      </div>
+
+      <div id="crono-semana-eventos" style="display:flex;flex-direction:column;gap:8px;"></div>
       <div style="text-align:center;margin-top:14px;">
         <button class="btn btn-gold btn-sm" onclick="abrirModalNovoEventoCronograma()" style="font-size:12.5px;display:inline-flex;align-items:center;gap:6px;">
           <span>➕</span> Adicionar Evento / Prazo
@@ -3222,7 +3236,21 @@
         </div>
       </div>
       <div id="crono-mes-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;min-height:200px;"></div>
-      <div id="crono-mes-eventos" style="margin-top:14px;display:flex;flex-direction:column;gap:8px;"></div>
+      
+      <!-- ── FILTROS MÊS: PENDENTES, TODOS, CONCLUÍDOS, HISTÓRICO ── -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+        <div style="font-size:13.5px;font-weight:800;color:var(--gold-light);display:flex;align-items:center;gap:6px;">
+          <span>🕒</span> <span>Eventos do Mês</span>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button type="button" class="btn-filter-agenda active" id="btn-crono-mes-filtro-pendentes" onclick="filtrarCrono('pendentes')">Pendentes</button>
+          <button type="button" class="btn-filter-agenda" id="btn-crono-mes-filtro-todos" onclick="filtrarCrono('todos')">Todos</button>
+          <button type="button" class="btn-filter-agenda" id="btn-crono-mes-filtro-concluidos" onclick="filtrarCrono('concluidos')">Concluídos</button>
+          <button type="button" class="btn-filter-agenda" id="btn-crono-mes-filtro-historico" onclick="filtrarCrono('historico')">Histórico</button>
+        </div>
+      </div>
+
+      <div id="crono-mes-eventos" style="display:flex;flex-direction:column;gap:8px;"></div>
       <div style="text-align:center;margin-top:14px;">
         <button class="btn btn-gold btn-sm" onclick="abrirModalNovoEventoCronograma()" style="font-size:12.5px;display:inline-flex;align-items:center;gap:6px;">
           <span>➕</span> Adicionar Evento / Prazo
@@ -15855,6 +15883,29 @@ function definirNotaAvaliacaoAgenda(nota) {
 }
 
 function confirmarSalvarAvaliacaoAgenda() {
+  if (avaliacaoAtivaCronoId) {
+    const eventos = carregarEventosCrono();
+    const ev = eventos.find(x => x.id === avaliacaoAtivaCronoId);
+    if (ev) {
+      const txtComent = document.getElementById('aval-comentario');
+      const comentario = txtComent ? txtComent.value.trim() : '';
+      ev.avaliacao = {
+        nota: notaAvaliacaoSelecionada,
+        comentario: comentario,
+        data: new Date().toISOString()
+      };
+      salvarEventosCrono(eventos);
+      fecharModalAvaliarAgenda();
+      avaliacaoAtivaCronoId = null;
+      if (_cronoAbaAtual === 'semana') renderCronoSemana();
+      else if (_cronoAbaAtual === 'mes') renderCronoMes();
+      if (typeof mostrarToastAprovacao === 'function') {
+        mostrarToastAprovacao(`⭐ Avaliação de <strong>${esc(ev.clienteNome || ev.titulo)}</strong> salva com sucesso! (${notaAvaliacaoSelecionada}/5★)`);
+      }
+      return;
+    }
+  }
+
   if (!avaliacaoAtivaEventoId) return;
   const eventos = obterAgendaEventos();
   const ev = eventos.find(x => x.id === avaliacaoAtivaEventoId);
@@ -15876,6 +15927,40 @@ function confirmarSalvarAvaliacaoAgenda() {
 }
 
 function enviarAvaliacaoEmpresaZapAgenda() {
+  if (avaliacaoAtivaCronoId) {
+    const eventos = carregarEventosCrono();
+    const ev = eventos.find(x => x.id === avaliacaoAtivaCronoId);
+    if (ev) {
+      const txtComent = document.getElementById('aval-comentario');
+      const comentario = txtComent ? txtComent.value.trim() : '';
+      ev.avaliacao = {
+        nota: notaAvaliacaoSelecionada,
+        comentario: comentario,
+        data: new Date().toISOString()
+      };
+      salvarEventosCrono(eventos);
+      if (_cronoAbaAtual === 'semana') renderCronoSemana();
+      else if (_cronoAbaAtual === 'mes') renderCronoMes();
+      
+      const textoZap = `⭐ *AVALIAÇÃO DE ATENDIMENTO - SD Móveis Projetados*\n\n` +
+        `👤 *Cliente / Evento:* ${ev.clienteNome || ev.titulo || 'Cliente'}\n` +
+        `📋 *Compromisso:* ${ev.tipo || 'Evento'} (${formatDataBR(ev.data)} ${ev.hora || ''})\n` +
+        `⭐ *Nota:* ${notaAvaliacaoSelecionada} / 5 estrelas\n` +
+        (comentario ? `💬 *Comentário do Cliente:* "${comentario}"\n\n` : '\n') +
+        `_Avaliação registrada e enviada para a empresa!_`;
+
+      const msgEncoded = encodeURIComponent(textoZap);
+      const zapUrl = `https://wa.me/5585985749686?text=${msgEncoded}`;
+      window.open(zapUrl, '_blank', 'noopener');
+      fecharModalAvaliarAgenda();
+      avaliacaoAtivaCronoId = null;
+      if (typeof mostrarToastAprovacao === 'function') {
+        mostrarToastAprovacao('💬 Abrindo WhatsApp da SD Móveis com a avaliação!');
+      }
+      return;
+    }
+  }
+
   if (!avaliacaoAtivaEventoId) return;
   const eventos = obterAgendaEventos();
   const ev = eventos.find(x => x.id === avaliacaoAtivaEventoId);
@@ -19880,6 +19965,10 @@ if (typeof setInterval !== 'undefined') {
         <input type="text" id="evento-form-cliente-nome" placeholder="Ex: João Silva" style="width:100%;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:13px;">
       </div>
       <div class="field">
+        <label>Telefone / WhatsApp do Cliente</label>
+        <input type="tel" id="evento-form-cliente-tel" placeholder="Ex: (85) 98888-7777" style="width:100%;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:13px;">
+      </div>
+      <div class="field">
         <label>Endereço do Cliente</label>
         <input type="text" id="evento-form-cliente-endereco" placeholder="Ex: Rua das Flores, 123 – Bairro, Cidade" style="width:100%;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:13px;">
       </div>
@@ -20008,6 +20097,21 @@ function tipoEventoInfo(tipo) {
   return m[tipo] || { emoji: '📌', color: '#94a3b8' };
 }
 
+// ── FILTROS DO CRONOGRAMA ───────────────────────────────────────
+let _cronoFiltroAtual = 'pendentes';
+
+function filtrarCrono(filtro) {
+  _cronoFiltroAtual = filtro;
+  ['pendentes', 'todos', 'concluidos', 'historico'].forEach(f => {
+    const bSemana = document.getElementById('btn-crono-filtro-' + f);
+    if (bSemana) bSemana.classList.toggle('active', f === filtro);
+    const bMes = document.getElementById('btn-crono-mes-filtro-' + f);
+    if (bMes) bMes.classList.toggle('active', f === filtro);
+  });
+  if (_cronoAbaAtual === 'semana') renderCronoSemana();
+  else if (_cronoAbaAtual === 'mes') renderCronoMes();
+}
+
 // ── SEMANA ───────────────────────────────────────────────────────
 function navCronoSemana(dir) {
   if (dir === 0) _cronoSemanaOffset = 0;
@@ -20055,14 +20159,114 @@ function renderCronoSemana() {
   }
   grid.innerHTML = gridHTML;
 
-  // Lista de eventos da semana
   const evList = document.getElementById('crono-semana-eventos');
-  if (evList) {
-    if (!eventosDaSemana.length) {
-      evList.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:12.5px;padding:12px;">Nenhum evento nessa semana.</div>`;
-    } else {
-      evList.innerHTML = eventosDaSemana.map(ev => renderEventoCard(ev)).join('');
+  if (!evList) return;
+
+  // ── ABA HISTÓRICO AGRUPADO POR CLIENTE ──
+  if (_cronoFiltroAtual === 'historico') {
+    const todosEventos = carregarEventosCrono();
+    if (!todosEventos.length) {
+      evList.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:12.5px;padding:12px;">Nenhum histórico registrado no cronograma ainda.</div>';
+      return;
     }
+    const grupos = {};
+    todosEventos.forEach(ev => {
+      const nomeChave = (ev.clienteNome || ev.titulo || 'Sem Nome').trim();
+      if (!grupos[nomeChave]) {
+        grupos[nomeChave] = {
+          nome: nomeChave,
+          tel: ev.clienteTel || ev.tel || '',
+          end: ev.clienteEndereco || ev.end || '',
+          eventos: []
+        };
+      }
+      if (!grupos[nomeChave].tel && (ev.clienteTel || ev.tel)) grupos[nomeChave].tel = ev.clienteTel || ev.tel;
+      if (!grupos[nomeChave].end && (ev.clienteEndereco || ev.end)) grupos[nomeChave].end = ev.clienteEndereco || ev.end;
+      grupos[nomeChave].eventos.push(ev);
+    });
+
+    const listaGrupos = Object.values(grupos);
+    listaGrupos.sort((a, b) => a.nome.localeCompare(b.nome));
+
+    let htmlHistorico = '<div style="display:flex;flex-direction:column;gap:14px;">';
+    listaGrupos.forEach(g => {
+      const totalVisitas = g.eventos.length;
+      const concCount = g.eventos.filter(x => x.concluido).length;
+      const pendCount = totalVisitas - concCount;
+      const telClean = (g.tel || '').replace(/\D/g, '');
+      const zapLink = telClean ? ('https://wa.me/55' + telClean) : '';
+
+      g.eventos.sort((a, b) => {
+        const dA = a.data ? (a.data + ' ' + (a.hora || '00:00')) : '';
+        const dB = b.data ? (b.data + ' ' + (b.hora || '00:00')) : '';
+        return dB.localeCompare(dA);
+      });
+
+      htmlHistorico += `
+        <div style="background:rgba(255,255,255,0.02);border:1.5px solid rgba(201,168,76,0.22);border-radius:12px;padding:12px;box-shadow:0 4px 16px rgba(0,0,0,0.4);">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.08);">
+            <div>
+              <div style="font-size:15px;font-weight:900;color:#fff;display:flex;align-items:center;gap:8px;">
+                <span>👤 ${esc(g.nome)}</span>
+                <span style="font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(201,168,76,0.18);color:var(--gold-light);font-weight:800;">
+                  ${totalVisitas} evento${totalVisitas !== 1 ? 's' : ''} (${concCount} ✓ • ${pendCount} ⏳)
+                </span>
+              </div>
+              <div style="font-size:12px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                ${g.tel ? `<span>📞 ${esc(g.tel)}</span>` : ''}
+                ${g.end ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(g.end)}" target="_blank" rel="noopener" style="color:#4ade80;text-decoration:none;font-weight:700;">🗺️ ${esc(g.end)}</a>` : ''}
+              </div>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center;">
+              ${g.eventos[0] ? `<button onclick="enviarWhatsAppCrono('${g.eventos[0].id}')" class="btn btn-whats btn-xs" style="padding:4px 10px;font-size:11px;text-decoration:none;cursor:pointer;border:none;">💬 WhatsApp</button>` : ''}
+              ${g.eventos[0] ? `<button onclick="reagendarEventoCronograma('${g.eventos[0].id}')" style="background:rgba(59,130,246,0.18);border:1px solid rgba(59,130,246,0.4);color:#93c5fd;padding:5px 10px;border-radius:8px;cursor:pointer;font-size:11.5px;font-weight:800;display:inline-flex;align-items:center;gap:4px;">🔄 Reagendar</button>` : ''}
+            </div>
+          </div>
+          <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px;">
+            ${g.eventos.map(ev => {
+              const dataFmt = formatDataBR(ev.data);
+              const info = tipoEventoInfo(ev.tipo);
+              const atrasado = !ev.concluido && ev.data && ev.data < isoHoje();
+              return `
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:8px 10px;background:rgba(0,0,0,0.25);border-radius:8px;border-left:3px solid ${ev.concluido ? '#10b981' : (atrasado ? '#f59e0b' : info.color)};gap:8px;flex-wrap:wrap;">
+                  <div style="flex:1;min-width:0;">
+                    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                      <span style="font-weight:800;font-size:12.5px;color:#fff;">📅 ${dataFmt} ${ev.hora ? 'às ' + ev.hora : ''}</span>
+                      <span style="font-size:10px;padding:1px 6px;border-radius:999px;background:rgba(201,168,76,0.15);color:var(--gold-light);font-weight:700;">${info.emoji} ${esc(ev.titulo || ev.tipo)}</span>
+                      ${ev.concluido ? '<span style="font-size:10px;background:rgba(16,185,129,0.2);color:#34d399;padding:1px 6px;border-radius:999px;font-weight:800;">✓ Concluído</span>' : (atrasado ? '<span style="font-size:10px;background:rgba(245,158,11,0.2);color:#fbbf24;padding:1px 6px;border-radius:999px;font-weight:800;">⏳ Pendente (Atrasado)</span>' : '<span style="font-size:10px;background:rgba(59,130,246,0.2);color:#93c5fd;padding:1px 6px;border-radius:999px;font-weight:800;">⏳ Agendado</span>')}
+                    </div>
+                    ${ev.desc ? `<div style="font-size:11px;color:rgba(255,255,255,0.7);margin-top:2px;font-style:italic;">📝 ${esc(ev.desc)}</div>` : ''}
+                  </div>
+                  <div style="display:flex;align-items:center;gap:5px;">
+                    <button onclick="alternarConcluidoCrono('${ev.id}')" title="${ev.concluido ? 'Marcar como pendente' : 'Marcar como concluído'}" style="background:${ev.concluido ? '#10b981' : 'transparent'};border:1px solid rgba(255,255,255,0.2);color:#fff;width:24px;height:24px;border-radius:6px;cursor:pointer;font-size:11px;display:inline-flex;align-items:center;justify-content:center;">${ev.concluido ? '✓' : '○'}</button>
+                    <button onclick="reagendarEventoCronograma('${ev.id}')" title="Reagendar mantendo este no histórico" style="background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:#93c5fd;padding:3px 7px;border-radius:6px;cursor:pointer;font-size:10.5px;font-weight:700;">🔄 Reagendar</button>
+                    <button onclick="editarEventoCronograma('${ev.id}')" title="Editar" style="background:transparent;border:1px solid rgba(255,255,255,0.15);color:var(--gold-light);width:24px;height:24px;border-radius:6px;cursor:pointer;font-size:10px;display:inline-flex;align-items:center;justify-content:center;">✏️</button>
+                    <button onclick="excluirEventoCronograma('${ev.id}')" title="Excluir" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#f87171;width:24px;height:24px;border-radius:6px;cursor:pointer;font-size:10px;display:inline-flex;align-items:center;justify-content:center;">✕</button>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    });
+    htmlHistorico += '</div>';
+    evList.innerHTML = htmlHistorico;
+    return;
+  }
+
+  // Filtragem padrão por status
+  let filtrados = [...eventosDaSemana];
+  if (_cronoFiltroAtual === 'pendentes') {
+    filtrados = filtrados.filter(x => !x.concluido);
+  } else if (_cronoFiltroAtual === 'concluidos') {
+    filtrados = filtrados.filter(x => x.concluido);
+  }
+
+  if (!filtrados.length) {
+    evList.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:12.5px;padding:12px;">Nenhum evento ${_cronoFiltroAtual === 'pendentes' ? 'pendente' : (_cronoFiltroAtual === 'concluidos' ? 'concluído' : '')} nessa semana.</div>`;
+  } else {
+    evList.innerHTML = filtrados.map(ev => renderEventoCard(ev)).join('');
   }
 }
 
@@ -20127,9 +20331,16 @@ function renderCronoMes() {
   // Eventos do mês
   const evList = document.getElementById('crono-mes-eventos');
   if (evList) {
-    const evMes = carregarEventosCrono().filter(e => e.data && e.data.startsWith(`${ano}-${String(mes+1).padStart(2,'0')}`)).sort((a,b) => a.data.localeCompare(b.data));
+    let evMes = carregarEventosCrono().filter(e => e.data && e.data.startsWith(`${ano}-${String(mes+1).padStart(2,'0')}`)).sort((a,b) => a.data.localeCompare(b.data));
+    
+    if (_cronoFiltroAtual === 'pendentes') {
+      evMes = evMes.filter(x => !x.concluido);
+    } else if (_cronoFiltroAtual === 'concluidos') {
+      evMes = evMes.filter(x => x.concluido);
+    }
+
     if (!evMes.length) {
-      evList.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:12.5px;padding:12px;">Nenhum evento nesse mês.</div>`;
+      evList.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:12.5px;padding:12px;">Nenhum evento ${_cronoFiltroAtual === 'pendentes' ? 'pendente' : (_cronoFiltroAtual === 'concluidos' ? 'concluído' : '')} nesse mês.</div>`;
     } else {
       evList.innerHTML = evMes.map(ev => renderEventoCard(ev)).join('');
     }
@@ -20178,22 +20389,198 @@ function renderCronoAno() {
   grid.innerHTML = html;
 }
 
-// ── CARD DE EVENTO ──────────────────────────────────────────────
+// ── CARD DE EVENTO DO CRONOGRAMA COM TODAS AS OPÇÕES DA SEGUNDA TELA ──
 function renderEventoCard(ev) {
   const info = tipoEventoInfo(ev.tipo);
-  return `<div style="background:rgba(255,255,255,0.03);border:1.5px solid rgba(255,255,255,0.07);border-left:4px solid ${info.color};border-radius:10px;padding:10px 14px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
-    <div style="flex:1;min-width:0;">
-      <div style="font-size:13px;font-weight:800;color:#fff;display:flex;align-items:center;gap:6px;">${info.emoji} ${esc(ev.titulo || '')}</div>
-      <div style="font-size:11px;color:var(--muted);margin-top:3px;">
-        📅 ${formatDataBR(ev.data)}${ev.hora ? ' · ⏰ ' + ev.hora : ''}${ev.responsavel ? ' · 👤 ' + esc(ev.responsavel) : ''}
+  const hojeStr = isoHoje();
+  const isHoje = ev.data === hojeStr && !ev.concluido;
+  const isConfirmado = !!ev.confirmado;
+  const temAvaliacao = !!ev.avaliacao;
+  const dataFmt = formatDataBR(ev.data);
+  const telExib = ev.clienteTel || ev.tel || '';
+  const endExib = ev.clienteEndereco || ev.end || '';
+  const tituloExib = ev.clienteNome || ev.titulo || 'Evento';
+
+  return `
+    <div style="background:#10111a;border:1px solid ${isHoje ? 'rgba(56,189,248,0.35)' : 'rgba(255,255,255,0.08)'};border-left:4px solid ${ev.concluido ? '#10b981' : info.color};border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 6px 20px rgba(0,0,0,0.5);position:relative;">
+      <!-- LINHA SUPERIOR: Checkbox de Marcar + Botões de Ação Padronizados -->
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <button onclick="alternarConcluidoCrono('${ev.id}')" title="${ev.concluido ? 'Reabrir evento como pendente' : 'Marcar como concluído'}" style="background:${ev.concluido ? '#10b981' : 'transparent'};border:1.5px solid ${ev.concluido ? '#10b981' : 'rgba(255,255,255,0.25)'};color:#fff;width:26px;height:26px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">
+            ${ev.concluido ? '✓' : ''}
+          </button>
+          <button onclick="enviarWhatsAppCrono('${ev.id}')" style="padding:6px 11px;font-size:12px;font-weight:800;border-radius:8px;border:none;cursor:pointer;background:linear-gradient(135deg,#25D366,#1cb85a);color:#fff;display:inline-flex;align-items:center;gap:5px;box-shadow:0 3px 10px rgba(37,211,102,0.3);">
+            💬 WhatsApp
+          </button>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
+          <button onclick="alternarConfirmadoCrono('${ev.id}')" title="Confirmar agendamento" style="background:${isConfirmado ? 'rgba(16,185,129,0.25)' : 'rgba(16,185,129,0.12)'};border:1px solid ${isConfirmado ? '#10b981' : 'rgba(16,185,129,0.35)'};color:${isConfirmado ? '#34d399' : '#a7f3d0'};padding:6px 10px;border-radius:8px;cursor:pointer;font-size:11.5px;font-weight:800;display:inline-flex;align-items:center;gap:4px;">
+            ${isConfirmado ? '✅ Confirmado' : '✅ Confirmar'}
+          </button>
+          <button onclick="reagendarEventoCronograma('${ev.id}')" style="background:rgba(59,130,246,0.18);border:1px solid rgba(59,130,246,0.4);color:#93c5fd;padding:6px 10px;border-radius:8px;cursor:pointer;font-size:11.5px;font-weight:800;display:inline-flex;align-items:center;gap:4px;">
+            🔄 Reagendar
+          </button>
+          <button onclick="abrirModalAvaliarCrono('${ev.id}')" title="Avaliar atendimento" style="background:${temAvaliacao ? 'rgba(234,179,8,0.25)' : 'rgba(234,179,8,0.12)'};border:1px solid rgba(234,179,8,0.4);color:#facc15;padding:6px 10px;border-radius:8px;cursor:pointer;font-size:11.5px;font-weight:800;display:inline-flex;align-items:center;gap:4px;">
+            ⭐ ${temAvaliacao ? 'Avaliado (' + ev.avaliacao.nota + '★)' : 'Avaliar'}
+          </button>
+          <button onclick="editarEventoCronograma('${ev.id}')" style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.35);color:#fbbf24;width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:12px;display:inline-flex;align-items:center;justify-content:center;" title="Editar">✏️</button>
+          <button onclick="excluirEventoCronograma('${ev.id}')" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.35);color:#f87171;width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:12px;display:inline-flex;align-items:center;justify-content:center;" title="Excluir">✕</button>
+        </div>
       </div>
-      ${ev.desc ? `<div style="font-size:11.5px;color:var(--text2);margin-top:4px;">${esc(ev.desc)}</div>` : ''}
+
+      <!-- CONTEÚDO DO CARD: Nome/Título em destaque e fluxo vertical organizado -->
+      <div>
+        <div style="font-weight:900;font-size:16px;color:#fff;margin-bottom:8px;word-break:break-word;text-decoration:${ev.concluido ? 'line-through' : 'none'};opacity:${ev.concluido ? '0.65' : '1'};">
+          ${info.emoji} ${esc(tituloExib)}
+        </div>
+
+        <div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <span style="font-size:11px;padding:3px 10px;border-radius:999px;background:rgba(201,168,76,0.18);color:var(--gold-light);font-weight:700;display:inline-block;">
+              ${info.emoji} ${esc(ev.tipo ? (ev.tipo.charAt(0).toUpperCase() + ev.tipo.slice(1)) : 'Evento')}
+            </span>
+
+            ${ev.responsavel ? `<span style="font-size:10.5px;padding:3px 10px;border-radius:999px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:#93c5fd;font-weight:700;display:inline-block;">👤 ${esc(ev.responsavel)}</span>` : ''}
+
+            ${ev.concluido ? '<span style="font-size:10.5px;padding:3px 10px;border-radius:999px;background:rgba(16,185,129,0.2);border:1px solid rgba(16,185,129,0.45);color:#34d399;font-weight:800;display:inline-block;">✓ Concluído</span>' : '<span style="font-size:10.5px;padding:3px 10px;border-radius:999px;background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.35);color:#fcd34d;font-weight:700;display:inline-block;">⏳ Pendente</span>'}
+
+            ${isHoje ? '<span style="font-size:10.5px;padding:2px 8px;border-radius:999px;background:#ef4444;color:#fff;font-weight:900;display:inline-block;">HOJE</span>' : ''}
+          </div>
+
+          ${isConfirmado ? '<span style="font-size:10.5px;padding:3px 10px;border-radius:999px;background:rgba(16,185,129,0.2);border:1px solid rgba(16,185,129,0.45);color:#34d399;font-weight:800;display:inline-block;">✅ Confirmado pelo Cliente</span>' : ''}
+
+          ${temAvaliacao ? `<span style="font-size:10.5px;padding:3px 10px;border-radius:999px;background:rgba(234,179,8,0.2);border:1px solid rgba(234,179,8,0.45);color:#facc15;font-weight:800;display:inline-block;">⭐ Avaliação: ${ev.avaliacao.nota || 5}/5★ ${ev.avaliacao.comentario ? ' - "' + esc(ev.avaliacao.comentario) + '"' : ''}</span>` : ''}
+
+          <div style="font-size:12.5px;color:var(--text2);margin-top:2px;display:flex;align-items:center;gap:6px;">
+            <span>📅</span> <span>${dataFmt} ${ev.hora ? 'às ' + ev.hora : ''}</span>
+          </div>
+
+          ${telExib ? `<div style="font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px;"><span>📞</span> <span>${esc(telExib)}</span></div>` : ''}
+
+          ${endExib ? `<div style="font-size:12.5px;margin-top:2px;"><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(endExib)}" target="_blank" rel="noopener" style="color:#4ade80;text-decoration:none;font-weight:700;display:inline-flex;align-items:center;gap:5px;"><span>📍</span> <span>${esc(endExib)}</span> <span style="font-size:10.5px;color:#38bdf8;">(🗺️ Abrir Maps)</span></a></div>` : ''}
+
+          ${ev.desc ? `<div style="font-size:11.5px;color:rgba(255,255,255,0.7);margin-top:4px;font-style:italic;">📝 ${esc(ev.desc)}</div>` : ''}
+        </div>
+      </div>
     </div>
-    <div style="display:flex;gap:4px;flex-shrink:0;">
-      <button onclick="editarEventoCronograma('${ev.id}')" title="Editar" style="padding:4px 7px;font-size:12px;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.35);border-radius:6px;color:var(--gold-light);cursor:pointer;">✏️</button>
-      <button onclick="excluirEventoCronograma('${ev.id}')" title="Excluir" style="padding:4px 7px;font-size:12px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);border-radius:6px;color:#f87171;cursor:pointer;">🗑️</button>
-    </div>
-  </div>`;
+  `;
+}
+
+// ── AÇÕES AVANÇADAS DO CRONOGRAMA (WHATSAPP, CONCLUÍDO, CONFIRMADO, REAGENDAR, AVALIAR) ──
+function alternarConcluidoCrono(id) {
+  const eventos = carregarEventosCrono();
+  const ev = eventos.find(e => e.id === id);
+  if (!ev) return;
+  ev.concluido = !ev.concluido;
+  salvarEventosCrono(eventos);
+  if (_cronoAbaAtual === 'semana') renderCronoSemana();
+  else if (_cronoAbaAtual === 'mes') renderCronoMes();
+  if (typeof mostrarToastAprovacao === 'function') {
+    mostrarToastAprovacao(ev.concluido ? `✓ Evento "${ev.clienteNome || ev.titulo}" marcado como Concluído!` : `⏳ Evento "${ev.clienteNome || ev.titulo}" reaberto como Pendente.`);
+  }
+}
+
+function alternarConfirmadoCrono(id) {
+  const eventos = carregarEventosCrono();
+  const ev = eventos.find(e => e.id === id);
+  if (!ev) return;
+  ev.confirmado = !ev.confirmado;
+  salvarEventosCrono(eventos);
+  if (_cronoAbaAtual === 'semana') renderCronoSemana();
+  else if (_cronoAbaAtual === 'mes') renderCronoMes();
+  if (typeof mostrarToastAprovacao === 'function') {
+    mostrarToastAprovacao(ev.confirmado ? `✅ Agendamento de "${ev.clienteNome || ev.titulo}" Confirmado!` : `ℹ️ Confirmação de "${ev.clienteNome || ev.titulo}" desmarcada.`);
+  }
+}
+
+function enviarWhatsAppCrono(id) {
+  const eventos = carregarEventosCrono();
+  const ev = eventos.find(e => e.id === id);
+  if (!ev) return;
+
+  let tel = ev.clienteTel || ev.tel || '';
+  let nome = ev.clienteNome || ev.titulo || 'Cliente';
+  let end = ev.clienteEndereco || ev.end || '';
+
+  if (!tel && typeof clientes !== 'undefined' && Array.isArray(clientes)) {
+    const cli = clientes.find(c => 
+      (c.nome && nome && c.nome.toLowerCase().trim() === nome.toLowerCase().trim()) ||
+      (c.nome && ev.titulo && ev.titulo.toLowerCase().includes(c.nome.toLowerCase()))
+    );
+    if (cli) {
+      if (cli.tel) tel = cli.tel;
+      if (!end && cli.end) end = cli.end + (cli.cidade ? ' - ' + cli.cidade : '');
+    }
+  }
+
+  if (!tel) {
+    const digitado = prompt(`📱 Informe o número de WhatsApp do cliente "${nome}" (com DDD):`);
+    if (!digitado) return;
+    tel = digitado.trim();
+    ev.clienteTel = tel;
+    salvarEventosCrono(eventos);
+  }
+
+  const telClean = tel.replace(/\D/g, '');
+  if (telClean.length < 8) {
+    alert('Número de WhatsApp inválido.');
+    return;
+  }
+
+  const dataFmt = formatDataBR(ev.data);
+  const tipoLabel = ev.tipo ? (ev.tipo.charAt(0).toUpperCase() + ev.tipo.slice(1)) : 'Agendamento';
+
+  const zapTexto = `Olá ${nome}! 😊\n\nConfirmando o seu agendamento de *${tipoLabel}* (${ev.titulo || 'Móveis Planejados'}) para o dia *${dataFmt}* às *${ev.hora || 'horário comercial'}* pela *SD Móveis Projetados*.${end ? '\n📍 Local: *' + end + '*' : ''}${ev.desc ? '\n📝 Detalhes: ' + ev.desc : ''}\n\n👉 *Opções para seu atendimento:*\nResponda diretamente nesta mensagem com uma das opções abaixo:\n\n✅ *CONFIRMAR* - Para confirmar seu agendamento\n🔄 *REAGENDAR* - Para solicitar nova data ou horário\n⭐ *AVALIAR* - Para enviar sua avaliação do atendimento\n\n_Ao responder qualquer uma das opções, nossa equipe é notificada na hora!_\n\nAgradecemos a preferência!\n*SD Móveis Projetados* 🏠`;
+
+  const prefix = telClean.startsWith('55') ? '' : '55';
+  window.open(`https://wa.me/${prefix}${telClean}?text=${encodeURIComponent(zapTexto)}`, '_blank', 'noopener');
+}
+
+function reagendarEventoCronograma(id) {
+  const eventos = carregarEventosCrono();
+  const ev = eventos.find(e => e.id === id);
+  if (!ev) return;
+
+  abrirModalNovoEventoCronograma();
+  document.getElementById('evento-cronograma-titulo').textContent = '🔄 Reagendar Evento (Novo)';
+  document.getElementById('evento-form-titulo').value = ev.titulo || '';
+  document.getElementById('evento-form-tipo').value = ev.tipo || 'entrega';
+  document.getElementById('evento-form-responsavel').value = ev.responsavel || '';
+  document.getElementById('evento-form-cliente-nome').value = ev.clienteNome || '';
+  document.getElementById('evento-form-cliente-endereco').value = ev.clienteEndereco || '';
+  const telInp = document.getElementById('evento-form-cliente-tel');
+  if (telInp) telInp.value = ev.clienteTel || ev.tel || '';
+  const dataAntFmt = formatDataBR(ev.data);
+  document.getElementById('evento-form-desc').value = 'Reagendado do dia ' + dataAntFmt + (ev.desc ? (' - ' + ev.desc) : '');
+  document.getElementById('evento-form-data').value = isoHoje();
+  document.getElementById('evento-form-hora').value = ev.hora || '09:00';
+
+  if (typeof mostrarToastAprovacao === 'function') {
+    mostrarToastAprovacao('🔄 Escolha a nova data para o evento. O original continuará registrado no histórico!');
+  }
+}
+
+let avaliacaoAtivaCronoId = null;
+
+function abrirModalAvaliarCrono(id) {
+  const eventos = carregarEventosCrono();
+  const ev = eventos.find(e => e.id === id);
+  if (!ev) return;
+  avaliacaoAtivaCronoId = id;
+  avaliacaoAtivaEventoId = null;
+
+  const elNome = document.getElementById('modal-aval-cliente');
+  if (elNome) elNome.textContent = ev.clienteNome || ev.titulo || 'Cliente';
+
+  const txtComent = document.getElementById('aval-comentario');
+  if (txtComent) txtComent.value = (ev.avaliacao && ev.avaliacao.comentario) ? ev.avaliacao.comentario : '';
+
+  const nota = (ev.avaliacao && ev.avaliacao.nota) ? Number(ev.avaliacao.nota) : 5;
+  definirNotaAvaliacaoAgenda(nota);
+
+  const m = document.getElementById('modal-avaliar-agenda');
+  if (m) m.style.display = 'flex';
 }
 
 // ── MODAL: NOVO EVENTO ──────────────────────────────────────────
@@ -20208,6 +20595,8 @@ function abrirModalNovoEventoCronograma(id) {
   document.getElementById('evento-form-tipo').value = 'entrega';
   document.getElementById('evento-form-responsavel').value = '';
   document.getElementById('evento-form-cliente-nome').value = '';
+  const telInp = document.getElementById('evento-form-cliente-tel');
+  if (telInp) telInp.value = '';
   document.getElementById('evento-form-cliente-endereco').value = '';
   document.getElementById('evento-form-desc').value = '';
 
@@ -20221,6 +20610,9 @@ function abrirModalNovoEventoCronograma(id) {
       document.getElementById('evento-form-hora').value = ev.hora || '';
       document.getElementById('evento-form-tipo').value = ev.tipo || 'outro';
       document.getElementById('evento-form-responsavel').value = ev.responsavel || '';
+      document.getElementById('evento-form-cliente-nome').value = ev.clienteNome || '';
+      if (telInp) telInp.value = ev.clienteTel || ev.tel || '';
+      document.getElementById('evento-form-cliente-endereco').value = ev.clienteEndereco || '';
       document.getElementById('evento-form-desc').value = ev.desc || '';
     }
   }
@@ -20324,6 +20716,8 @@ function salvarEventoCronograma(forcarConflito = false) {
 
   const lista = carregarEventosCrono();
   const editId = document.getElementById('evento-cronograma-edit-id').value;
+  const telInp = document.getElementById('evento-form-cliente-tel');
+  const clienteTel = telInp ? telInp.value.trim() : '';
 
   const obj = {
     id: editId || `ev_${Date.now()}`,
@@ -20333,6 +20727,7 @@ function salvarEventoCronograma(forcarConflito = false) {
     tipo: document.getElementById('evento-form-tipo').value,
     responsavel: document.getElementById('evento-form-responsavel').value.trim(),
     clienteNome: (document.getElementById('evento-form-cliente-nome').value || '').trim(),
+    clienteTel: clienteTel,
     clienteEndereco: (document.getElementById('evento-form-cliente-endereco').value || '').trim(),
     desc: document.getElementById('evento-form-desc').value.trim(),
     criadoEm: editId ? undefined : new Date().toISOString()
@@ -20347,6 +20742,24 @@ function salvarEventoCronograma(forcarConflito = false) {
   }
 
   salvarEventosCrono(lista);
+
+  // Sincroniza cliente no cadastro geral se tiver telefone e nome
+  try {
+    const nomeCli = obj.clienteNome || obj.titulo;
+    if (nomeCli && clienteTel && typeof clientes !== 'undefined' && Array.isArray(clientes)) {
+      const cliExist = clientes.find(c => (c.nome || '').toLowerCase().trim() === nomeCli.toLowerCase().trim());
+      if (cliExist) {
+        if (!cliExist.tel) cliExist.tel = clienteTel;
+        if (obj.clienteEndereco && !cliExist.end) cliExist.end = obj.clienteEndereco;
+        save(K.clients, clientes);
+      } else {
+        clientes.push({ id: Date.now(), nome: nomeCli, tel: clienteTel, end: obj.clienteEndereco || '' });
+        save(K.clients, clientes);
+        if (typeof renderCli === 'function') renderCli();
+      }
+    }
+  } catch(_) {}
+
   fecharModalNovoEventoCronograma();
   if (_cronoAbaAtual === 'semana') renderCronoSemana();
   else if (_cronoAbaAtual === 'mes') renderCronoMes();

@@ -1,5 +1,5 @@
-// Service Worker PWA para sdmoveisprojetados - v5.0 (Forçar limpeza de cache e UTF-8)
-const CACHE_NAME = 'sdmoveisprojetados-v5.0';
+// Service Worker PWA para sdmoveisprojetados - v6.0 (Opções da Agenda no Cronograma)
+const CACHE_NAME = 'sdmoveisprojetados-v6.0';
 const ASSETS = [
   '/',
   '/index.html',
