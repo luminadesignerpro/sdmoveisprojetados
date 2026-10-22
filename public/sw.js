@@ -1,5 +1,5 @@
-// Service Worker PWA para sdmoveisprojetados - v6.4 (Remoção Setor Financeiro Duplicado em Funcionário)
-const CACHE_NAME = 'sdmoveisprojetados-v6.4';
+// Service Worker PWA para sdmoveisprojetados - v6.5 (Ponto do Funcionario e Correcao Botoes)
+const CACHE_NAME = 'sdmoveisprojetados-v6.5';
 const ASSETS = [
   '/',
   '/index.html',

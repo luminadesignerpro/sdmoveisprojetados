@@ -2380,8 +2380,8 @@
           <button type="button" class="portal-tab" id="btn-tab-mensagens" onclick="mudarAba('mensagens')">
             <span>💬</span> <span>Mensagens</span> <span class="tab-badge" id="badge-msg-count" style="display:none">0</span>
           </button>
-          <button type="button" class="portal-tab" id="btn-tab-meu-financeiro" onclick="mudarAba('meu-financeiro')">
-            <span>💰</span> <span>Meu Setor Financeiro</span>
+          <button type="button" class="portal-tab" id="btn-tab-ponto" onclick="mudarAba('ponto')">
+            <span id="tab-fin-icone">👷</span> <span id="tab-fin-rotulo">Ponto do Funcionário</span>
           </button>
           <button type="button" class="portal-tab" id="btn-tab-cronograma" onclick="mudarAba('cronograma')">
             <span>📅</span> <span>Cronograma</span>
@@ -5438,13 +5438,13 @@
         try { renderizarResumoPontoCliente(); } catch(_) {}
         try { renderizarEspelhoPontoCliente(); } catch(_) {}
         try { atualizarMenuJogosVisiveis(); } catch(_) {}
-        try { mudarAba('financeiro'); } catch(_) {}
+        try { mudarAba('ponto'); } catch(_) {}
       } else {
-        if (tabRotulo) tabRotulo.textContent = 'Setor Financeiro';
-        if (tabIcone) tabIcone.textContent = '💳';
-        if (contFin) contFin.style.display = 'block';
-        if (contPonto) contPonto.style.display = 'none';
-        try { carregarDadosFinanceiros(sessao); } catch(_) {}
+        if (tabRotulo) tabRotulo.textContent = 'Ponto do Funcionário';
+        if (tabIcone) tabIcone.textContent = '👷';
+        if (contFin) contFin.style.display = 'none';
+        if (contPonto) contPonto.style.display = 'block';
+        try { mudarAba('ponto'); } catch(_) {}
       }
 
       try { carregarDadosStatus(sessao); } catch(_) {}
@@ -5473,16 +5473,24 @@ function validarCodigoLiberadoManual() {}
 function checarLiberacaoEmpresaAutomatica() {}
 
 function mudarAba(tab) {
-      if (tab === 'financeiro') tab = 'meu-financeiro';
-      ['status', 'galeria', 'mensagens', 'meu-financeiro', 'cronograma', 'opiniao', 'jogos', 'financeiro-pessoal', 'camera'].forEach(t => {
-        const pane = document.getElementById('pane-' + t);
-        const btn = document.getElementById('btn-tab-' + t);
+      if (tab === 'financeiro') tab = 'ponto';
+      ['status', 'galeria', 'mensagens', 'ponto', 'cronograma', 'opiniao', 'jogos', 'meu-financeiro', 'financeiro-pessoal', 'camera'].forEach(t => {
+        const pane = document.getElementById(t === 'ponto' ? 'pane-financeiro' : ('pane-' + t));
+        const btn = document.getElementById(t === 'ponto' ? 'btn-tab-ponto' : ('btn-tab-' + t));
         if (pane) pane.classList.toggle('active', t === tab);
         if (btn) btn.classList.toggle('active', t === tab);
       });
 
       try {
-        if (tab === 'cronograma') {
+        if (tab === 'ponto') {
+          const contFin = document.getElementById('conteudo-financeiro-cliente');
+          const contPonto = document.getElementById('conteudo-ponto-funcionario');
+          if (contFin) contFin.style.display = 'none';
+          if (contPonto) contPonto.style.display = 'block';
+          if (typeof iniciarRelogioPontoCliente === 'function') iniciarRelogioPontoCliente();
+          if (typeof renderizarResumoPontoCliente === 'function') renderizarResumoPontoCliente();
+          if (typeof renderizarEspelhoPontoCliente === 'function') renderizarEspelhoPontoCliente();
+        } else if (tab === 'cronograma') {
           if (typeof mudarAbaCronograma === 'function') mudarAbaCronograma(_cronoAbaAtual || 'semana');
         } else if (tab === 'mensagens') {
           const badge = document.getElementById('badge-msg-count');
@@ -7508,6 +7516,14 @@ function mudarAba(tab) {
         return parts[0] * 60 + parts[1];
       };
 
+      const parseNum = (val) => {
+        if (typeof val === 'number') return isNaN(val) ? 0 : val;
+        if (!val) return 0;
+        const clean = String(val).replace(/[^\d,.-]/g, '').replace(',', '.');
+        const n = parseFloat(clean);
+        return isNaN(n) ? 0 : n;
+      };
+
       const expEnt = parseMin(colab?.horarioEntrada || '08:00') || 480;
       const expAlmSai = parseMin(colab?.horarioAlmocoSai || '12:00') || 720;
       const expAlmVol = parseMin(colab?.horarioAlmocoVolta || '13:00') || 780;
@@ -8038,9 +8054,6 @@ function mudarAba(tab) {
     }
 
     let _saidaFinalCliPendente = null;
-
-    
-let _saidaFinalCliPendente = null;
 
 function abrirModalSaidaFinalCliente(horaStr) {
   const colab = (typeof obterFuncionarioAtivoPonto === 'function') ? obterFuncionarioAtivoPonto() : null;
@@ -11380,58 +11393,6 @@ function testarSireneFuncionario() {
   if (typeof mostrarToastNotificacao === 'function') {
     mostrarToastNotificacao('Teste de Som', 'Sirene de alarme executada com sucesso!', '🔊');
   }
-}
-
-
-}
-
-function salvarConfigHorariosAlarmeCliente() {
-  const ent = document.getElementById('cfg-ponto-ent-func')?.value || '08:00';
-  const alm = document.getElementById('cfg-ponto-alm-func')?.value || '12:00';
-  const vol = document.getElementById('cfg-ponto-vol-func')?.value || '13:30';
-  const sai = document.getElementById('cfg-ponto-sai-func')?.value || '17:30';
-  const ant = Number(document.getElementById('cfg-ponto-antecedencia-func')?.value) || 5;
-
-  const diasSalvar = [];
-  [0, 1, 2, 3, 4, 5, 6].forEach(d => {
-    const chk = document.getElementById('cfg-dia-func-' + d);
-    if (chk && chk.checked) diasSalvar.push(d);
-  });
-
-  const cfg = {
-    ativo: true,
-    antecedenciaMin: ant,
-    ent: ent,
-    alm: alm,
-    vol: vol,
-    sai: sai,
-    diasSemana: diasSalvar.length ? diasSalvar : [1, 2, 3, 4, 5],
-    bloquearInativos: true
-  };
-
-  try {
-    localStorage.setItem('sdv_config_alarme_ponto', JSON.stringify(cfg));
-  } catch(_) {}
-
-  // Sincroniza com serviceWorker se disponível
-  const turnos = [
-    { hora: ent, label: 'Entrada' },
-    { hora: alm, label: 'Saída para Almoço' },
-    { hora: vol, label: 'Retorno do Almoço' },
-    { hora: sai, label: 'Saída Final' }
-  ];
-
-  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-    navigator.serviceWorker.controller.postMessage({
-      action: 'configurarAlarmesPonto',
-      alarmes: turnos,
-      antecedenciaMin: ant,
-      nome: (typeof clienteSessao !== 'undefined' && clienteSessao ? clienteSessao.nome : 'Colaborador')
-    });
-  }
-
-  fecharConfigHorariosAlarmeCliente();
-  mostrarToastNotificacao('Alarme Salvo', 'Horários do alarme configurados e ativos!', '⏰');
 }
 
 
