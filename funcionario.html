@@ -3502,11 +3502,6 @@
             </div>
             <div id="crono-semana-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;"></div>
             <div id="crono-semana-eventos" style="margin-top:14px;display:flex;flex-direction:column;gap:8px;"></div>
-            <div style="text-align:center;margin-top:14px;">
-              <button class="btn btn-gold btn-sm" onclick="abrirModalNovoEventoCronograma()" style="font-size:12px;display:inline-flex;align-items:center;gap:6px;">
-                <span>➕</span> Adicionar Evento / Prazo
-              </button>
-            </div>
           </div>
 
           <!-- PAINEL: MÊS -->
@@ -3523,11 +3518,6 @@
             </div>
             <div id="crono-mes-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;min-height:200px;"></div>
             <div id="crono-mes-eventos" style="margin-top:14px;display:flex;flex-direction:column;gap:8px;"></div>
-            <div style="text-align:center;margin-top:14px;">
-              <button class="btn btn-gold btn-sm" onclick="abrirModalNovoEventoCronograma()" style="font-size:12px;display:inline-flex;align-items:center;gap:6px;">
-                <span>➕</span> Adicionar Evento / Prazo
-              </button>
-            </div>
           </div>
 
           <!-- PAINEL: ANO -->
@@ -12499,10 +12489,6 @@ function renderCronoSemana() {
           </div>
           ${ev.desc ? `<div style="font-size:11px;color:rgba(255,255,255,0.6);margin-top:2px;">${esc(ev.desc)}</div>` : ''}
         </div>
-        <div style="display:flex;gap:4px;">
-          <button onclick="abrirModalNovoEventoCronograma('${ev.id}')" class="btn btn-sec btn-xs" title="Editar" style="padding:4px 8px;">✏️</button>
-          <button onclick="excluirEventoCronograma('${ev.id}')" class="btn btn-sec btn-xs" title="Excluir" style="padding:4px 8px;color:#f87171;">✕</button>
-        </div>
       </div>
     `;
   }).join('');
@@ -12579,10 +12565,6 @@ function renderCronoMes() {
             <div style="min-width:0;flex:1;">
               <div style="font-weight:800;font-size:12.5px;color:#fff;">${tInfo.emoji} ${esc(ev.titulo)}</div>
               <div style="font-size:11px;color:var(--text2);">📅 ${formatDataBR(ev.data)}${ev.hora ? ' às ' + ev.hora : ''}</div>
-            </div>
-            <div style="display:flex;gap:4px;">
-              <button onclick="abrirModalNovoEventoCronograma('${ev.id}')" class="btn btn-sec btn-xs" style="padding:2px 6px;">✏️</button>
-              <button onclick="excluirEventoCronograma('${ev.id}')" class="btn btn-sec btn-xs" style="padding:2px 6px;color:#f87171;">✕</button>
             </div>
           </div>
         `;
