@@ -20124,6 +20124,156 @@ function tipoEventoInfo(tipo) {
 
 // ── FILTROS DO CRONOGRAMA ───────────────────────────────────────
 let _cronoFiltroAtual = 'pendentes';
+let _cronoClienteHistoricoAba = 'todos';
+
+function normalizarNomeCliente(nome) {
+  if (!nome) return '';
+  return String(nome)
+    .trim()
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\w\s]/g, '')
+    .replace(/\s+/g, ' ');
+}
+
+function selecionarAbaClienteHistorico(chave) {
+  _cronoClienteHistoricoAba = chave;
+  if (_cronoAbaAtual === 'semana') renderCronoSemana();
+  else if (_cronoAbaAtual === 'mes') renderCronoMes();
+}
+window.selecionarAbaClienteHistorico = selecionarAbaClienteHistorico;
+
+function renderCronoHistoricoAgrupado(evList) {
+  if (!evList) return;
+  const todosEventos = carregarEventosCrono();
+  if (!todosEventos.length) {
+    evList.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:12.5px;padding:16px;">Nenhum histórico registrado no cronograma ainda.</div>';
+    return;
+  }
+
+  const grupos = {};
+  todosEventos.forEach(ev => {
+    const rawNome = (ev.clienteNome || ev.titulo || 'Sem Nome').trim();
+    const chave = normalizarNomeCliente(rawNome) || 'sem_nome';
+
+    if (!grupos[chave]) {
+      grupos[chave] = {
+        chave: chave,
+        nome: rawNome,
+        tel: ev.clienteTel || ev.tel || '',
+        end: ev.clienteEndereco || ev.end || '',
+        eventos: []
+      };
+    }
+    // Prioriza o nome com letras maiúsculas e melhor formatação visual (ex: 'Dra Isabelle' em vez de 'dra isabelle')
+    if (rawNome.length > grupos[chave].nome.length || (/[A-Z]/.test(rawNome) && !/[A-Z]/.test(grupos[chave].nome))) {
+      grupos[chave].nome = rawNome;
+    }
+    if (!grupos[chave].tel && (ev.clienteTel || ev.tel)) grupos[chave].tel = ev.clienteTel || ev.tel;
+    if (!grupos[chave].end && (ev.clienteEndereco || ev.end)) grupos[chave].end = ev.clienteEndereco || ev.end;
+    grupos[chave].eventos.push(ev);
+  });
+
+  const listaGrupos = Object.values(grupos);
+  listaGrupos.sort((a, b) => a.nome.localeCompare(b.nome));
+
+  if (_cronoClienteHistoricoAba !== 'todos' && !grupos[_cronoClienteHistoricoAba]) {
+    _cronoClienteHistoricoAba = 'todos';
+  }
+
+  const totalEventosHistorico = todosEventos.length;
+  const gruposExibir = _cronoClienteHistoricoAba === 'todos' 
+    ? listaGrupos 
+    : listaGrupos.filter(g => g.chave === _cronoClienteHistoricoAba);
+
+  let htmlHistorico = '<div style="display:flex;flex-direction:column;gap:14px;">';
+
+  // ── SELETOR DE ABAS POR CLIENTE ──
+  htmlHistorico += `
+    <div style="background:rgba(255,255,255,0.02);border:1.5px solid rgba(201,168,76,0.3);border-radius:14px;padding:12px;box-shadow:0 4px 16px rgba(0,0,0,0.35);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
+        <span style="font-size:11.5px;font-weight:900;color:var(--gold-light);text-transform:uppercase;letter-spacing:0.06em;display:flex;align-items:center;gap:6px;">
+          <span>📑</span> <span>Abas por Cliente no Histórico:</span>
+        </span>
+        ${_cronoClienteHistoricoAba !== 'todos' ? `<button type="button" onclick="selecionarAbaClienteHistorico('todos')" style="background:rgba(201,168,76,0.18);border:1px solid rgba(201,168,76,0.4);color:var(--gold-light);font-size:11px;font-weight:800;padding:3px 10px;border-radius:8px;cursor:pointer;">👁️ Ver Todos os Clientes</button>` : ''}
+      </div>
+      <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch;">
+        <button type="button" onclick="selecionarAbaClienteHistorico('todos')" class="btn-filter-agenda ${_cronoClienteHistoricoAba === 'todos' ? 'active' : ''}" style="white-space:nowrap;padding:7px 14px;font-size:12px;font-weight:900;border-radius:9px;cursor:pointer;">
+          👥 Todos (${totalEventosHistorico})
+        </button>
+        ${listaGrupos.map(g => `
+          <button type="button" onclick="selecionarAbaClienteHistorico('${g.chave}')" class="btn-filter-agenda ${_cronoClienteHistoricoAba === g.chave ? 'active' : ''}" style="white-space:nowrap;padding:7px 14px;font-size:12px;font-weight:900;border-radius:9px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+            <span>👤</span>
+            <span>${esc(g.nome)}</span>
+            <span style="background:rgba(201,168,76,0.25);color:var(--gold-light);border-radius:999px;padding:1px 7px;font-size:10.5px;font-weight:800;">${g.eventos.length}</span>
+          </button>
+        `).join('')}
+      </div>
+    </div>
+  `;
+
+  gruposExibir.forEach(g => {
+    const totalVisitas = g.eventos.length;
+    const concCount = g.eventos.filter(x => x.concluido).length;
+    const pendCount = totalVisitas - concCount;
+
+    g.eventos.sort((a, b) => {
+      const dA = a.data ? (a.data + ' ' + (a.hora || '00:00')) : '';
+      const dB = b.data ? (b.data + ' ' + (b.hora || '00:00')) : '';
+      return dB.localeCompare(dA);
+    });
+
+    htmlHistorico += `
+      <div style="background:rgba(255,255,255,0.02);border:1.5px solid rgba(201,168,76,0.28);border-radius:14px;padding:14px;box-shadow:0 6px 20px rgba(0,0,0,0.45);">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.08);">
+          <div>
+            <div style="font-size:15.5px;font-weight:900;color:#fff;display:flex;align-items:center;gap:8px;">
+              <span>👤 ${esc(g.nome)}</span>
+              <span style="font-size:11.5px;padding:2px 9px;border-radius:999px;background:rgba(201,168,76,0.2);color:var(--gold-light);font-weight:900;">
+                ${totalVisitas} evento${totalVisitas !== 1 ? 's' : ''} (${concCount} ✓ • ${pendCount} ⏳)
+              </span>
+            </div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+              ${g.tel ? `<span>📞 ${esc(g.tel)}</span>` : ''}
+              ${g.end ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(g.end)}" target="_blank" rel="noopener" style="color:#4ade80;text-decoration:none;font-weight:700;">🗺️ ${esc(g.end)}</a>` : ''}
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            ${g.eventos[0] ? `<button onclick="enviarWhatsAppCrono('${g.eventos[0].id}')" class="btn btn-whats btn-xs" style="padding:5px 12px;font-size:11.5px;text-decoration:none;cursor:pointer;border:none;border-radius:8px;">💬 WhatsApp</button>` : ''}
+            ${g.eventos[0] ? `<button onclick="reagendarEventoCronograma('${g.eventos[0].id}')" style="background:rgba(59,130,246,0.18);border:1px solid rgba(59,130,246,0.4);color:#93c5fd;padding:5px 12px;border-radius:8px;cursor:pointer;font-size:11.5px;font-weight:800;display:inline-flex;align-items:center;gap:4px;">🔄 Reagendar</button>` : ''}
+          </div>
+        </div>
+        <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px;">
+          ${g.eventos.map(ev => {
+            const dataFmt = formatDataBR(ev.data);
+            const info = tipoEventoInfo(ev.tipo);
+            const atrasado = !ev.concluido && ev.data && ev.data < isoHoje();
+            return `
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:10px 12px;background:rgba(0,0,0,0.3);border-radius:10px;border-left:3.5px solid ${ev.concluido ? '#10b981' : (atrasado ? '#f59e0b' : info.color)};gap:8px;flex-wrap:wrap;">
+                <div style="flex:1;min-width:0;">
+                  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                    <span style="font-weight:900;font-size:13px;color:#fff;">📅 ${dataFmt} ${ev.hora ? 'às ' + ev.hora : ''}</span>
+                    <span style="font-size:10.5px;padding:2px 8px;border-radius:999px;background:rgba(201,168,76,0.18);color:var(--gold-light);font-weight:800;">${info.emoji} ${esc(ev.titulo || ev.tipo)}</span>
+                    ${ev.concluido ? '<span style="font-size:10.5px;background:rgba(16,185,129,0.22);color:#34d399;padding:2px 8px;border-radius:999px;font-weight:800;">✓ Concluído</span>' : (atrasado ? '<span style="font-size:10.5px;background:rgba(245,158,11,0.22);color:#fbbf24;padding:2px 8px;border-radius:999px;font-weight:800;">⏳ Pendente (Atrasado)</span>' : '<span style="font-size:10.5px;background:rgba(59,130,246,0.22);color:#93c5fd;padding:2px 8px;border-radius:999px;font-weight:800;">⏳ Agendado</span>')}
+                  </div>
+                  ${ev.desc ? `<div style="font-size:11.5px;color:rgba(255,255,255,0.78);margin-top:4px;font-style:italic;line-height:1.4;">📝 ${esc(ev.desc)}</div>` : ''}
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;margin-top:2px;">
+                  <button onclick="alternarConcluidoCrono('${ev.id}')" title="${ev.concluido ? 'Marcar como pendente' : 'Marcar como concluído'}" style="background:${ev.concluido ? '#10b981' : 'transparent'};border:1.5px solid ${ev.concluido ? '#10b981' : 'rgba(255,255,255,0.3)'};color:#fff;width:26px;height:26px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;">${ev.concluido ? '✓' : '○'}</button>
+                  <button onclick="reagendarEventoCronograma('${ev.id}')" title="Reagendar mantendo este no histórico" style="background:rgba(59,130,246,0.18);border:1px solid rgba(59,130,246,0.4);color:#93c5fd;padding:4px 8px;border-radius:7px;cursor:pointer;font-size:11px;font-weight:800;">🔄 Reagendar</button>
+                  <button onclick="editarEventoCronograma('${ev.id}')" title="Editar" style="background:transparent;border:1px solid rgba(255,255,255,0.2);color:var(--gold-light);width:26px;height:26px;border-radius:7px;cursor:pointer;font-size:11px;display:inline-flex;align-items:center;justify-content:center;">✏️</button>
+                  <button onclick="excluirEventoCronograma('${ev.id}')" title="Excluir" style="background:rgba(239,68,68,0.18);border:1px solid rgba(239,68,68,0.4);color:#f87171;width:26px;height:26px;border-radius:7px;cursor:pointer;font-size:11px;display:inline-flex;align-items:center;justify-content:center;">✕</button>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  });
+  htmlHistorico += '</div>';
+  evList.innerHTML = htmlHistorico;
+}
 
 function filtrarCrono(filtro) {
   _cronoFiltroAtual = filtro;
@@ -20189,94 +20339,7 @@ function renderCronoSemana() {
 
   // ── ABA HISTÓRICO AGRUPADO POR CLIENTE ──
   if (_cronoFiltroAtual === 'historico') {
-    const todosEventos = carregarEventosCrono();
-    if (!todosEventos.length) {
-      evList.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:12.5px;padding:12px;">Nenhum histórico registrado no cronograma ainda.</div>';
-      return;
-    }
-    const grupos = {};
-    todosEventos.forEach(ev => {
-      const nomeChave = (ev.clienteNome || ev.titulo || 'Sem Nome').trim();
-      if (!grupos[nomeChave]) {
-        grupos[nomeChave] = {
-          nome: nomeChave,
-          tel: ev.clienteTel || ev.tel || '',
-          end: ev.clienteEndereco || ev.end || '',
-          eventos: []
-        };
-      }
-      if (!grupos[nomeChave].tel && (ev.clienteTel || ev.tel)) grupos[nomeChave].tel = ev.clienteTel || ev.tel;
-      if (!grupos[nomeChave].end && (ev.clienteEndereco || ev.end)) grupos[nomeChave].end = ev.clienteEndereco || ev.end;
-      grupos[nomeChave].eventos.push(ev);
-    });
-
-    const listaGrupos = Object.values(grupos);
-    listaGrupos.sort((a, b) => a.nome.localeCompare(b.nome));
-
-    let htmlHistorico = '<div style="display:flex;flex-direction:column;gap:14px;">';
-    listaGrupos.forEach(g => {
-      const totalVisitas = g.eventos.length;
-      const concCount = g.eventos.filter(x => x.concluido).length;
-      const pendCount = totalVisitas - concCount;
-      const telClean = (g.tel || '').replace(/\D/g, '');
-      const zapLink = telClean ? ('https://wa.me/55' + telClean) : '';
-
-      g.eventos.sort((a, b) => {
-        const dA = a.data ? (a.data + ' ' + (a.hora || '00:00')) : '';
-        const dB = b.data ? (b.data + ' ' + (b.hora || '00:00')) : '';
-        return dB.localeCompare(dA);
-      });
-
-      htmlHistorico += `
-        <div style="background:rgba(255,255,255,0.02);border:1.5px solid rgba(201,168,76,0.22);border-radius:12px;padding:12px;box-shadow:0 4px 16px rgba(0,0,0,0.4);">
-          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.08);">
-            <div>
-              <div style="font-size:15px;font-weight:900;color:#fff;display:flex;align-items:center;gap:8px;">
-                <span>👤 ${esc(g.nome)}</span>
-                <span style="font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(201,168,76,0.18);color:var(--gold-light);font-weight:800;">
-                  ${totalVisitas} evento${totalVisitas !== 1 ? 's' : ''} (${concCount} ✓ • ${pendCount} ⏳)
-                </span>
-              </div>
-              <div style="font-size:12px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-                ${g.tel ? `<span>📞 ${esc(g.tel)}</span>` : ''}
-                ${g.end ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(g.end)}" target="_blank" rel="noopener" style="color:#4ade80;text-decoration:none;font-weight:700;">🗺️ ${esc(g.end)}</a>` : ''}
-              </div>
-            </div>
-            <div style="display:flex;gap:6px;align-items:center;">
-              ${g.eventos[0] ? `<button onclick="enviarWhatsAppCrono('${g.eventos[0].id}')" class="btn btn-whats btn-xs" style="padding:4px 10px;font-size:11px;text-decoration:none;cursor:pointer;border:none;">💬 WhatsApp</button>` : ''}
-              ${g.eventos[0] ? `<button onclick="reagendarEventoCronograma('${g.eventos[0].id}')" style="background:rgba(59,130,246,0.18);border:1px solid rgba(59,130,246,0.4);color:#93c5fd;padding:5px 10px;border-radius:8px;cursor:pointer;font-size:11.5px;font-weight:800;display:inline-flex;align-items:center;gap:4px;">🔄 Reagendar</button>` : ''}
-            </div>
-          </div>
-          <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px;">
-            ${g.eventos.map(ev => {
-              const dataFmt = formatDataBR(ev.data);
-              const info = tipoEventoInfo(ev.tipo);
-              const atrasado = !ev.concluido && ev.data && ev.data < isoHoje();
-              return `
-                <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:8px 10px;background:rgba(0,0,0,0.25);border-radius:8px;border-left:3px solid ${ev.concluido ? '#10b981' : (atrasado ? '#f59e0b' : info.color)};gap:8px;flex-wrap:wrap;">
-                  <div style="flex:1;min-width:0;">
-                    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-                      <span style="font-weight:800;font-size:12.5px;color:#fff;">📅 ${dataFmt} ${ev.hora ? 'às ' + ev.hora : ''}</span>
-                      <span style="font-size:10px;padding:1px 6px;border-radius:999px;background:rgba(201,168,76,0.15);color:var(--gold-light);font-weight:700;">${info.emoji} ${esc(ev.titulo || ev.tipo)}</span>
-                      ${ev.concluido ? '<span style="font-size:10px;background:rgba(16,185,129,0.2);color:#34d399;padding:1px 6px;border-radius:999px;font-weight:800;">✓ Concluído</span>' : (atrasado ? '<span style="font-size:10px;background:rgba(245,158,11,0.2);color:#fbbf24;padding:1px 6px;border-radius:999px;font-weight:800;">⏳ Pendente (Atrasado)</span>' : '<span style="font-size:10px;background:rgba(59,130,246,0.2);color:#93c5fd;padding:1px 6px;border-radius:999px;font-weight:800;">⏳ Agendado</span>')}
-                    </div>
-                    ${ev.desc ? `<div style="font-size:11px;color:rgba(255,255,255,0.7);margin-top:2px;font-style:italic;">📝 ${esc(ev.desc)}</div>` : ''}
-                  </div>
-                  <div style="display:flex;align-items:center;gap:5px;">
-                    <button onclick="alternarConcluidoCrono('${ev.id}')" title="${ev.concluido ? 'Marcar como pendente' : 'Marcar como concluído'}" style="background:${ev.concluido ? '#10b981' : 'transparent'};border:1px solid rgba(255,255,255,0.2);color:#fff;width:24px;height:24px;border-radius:6px;cursor:pointer;font-size:11px;display:inline-flex;align-items:center;justify-content:center;">${ev.concluido ? '✓' : '○'}</button>
-                    <button onclick="reagendarEventoCronograma('${ev.id}')" title="Reagendar mantendo este no histórico" style="background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:#93c5fd;padding:3px 7px;border-radius:6px;cursor:pointer;font-size:10.5px;font-weight:700;">🔄 Reagendar</button>
-                    <button onclick="editarEventoCronograma('${ev.id}')" title="Editar" style="background:transparent;border:1px solid rgba(255,255,255,0.15);color:var(--gold-light);width:24px;height:24px;border-radius:6px;cursor:pointer;font-size:10px;display:inline-flex;align-items:center;justify-content:center;">✏️</button>
-                    <button onclick="excluirEventoCronograma('${ev.id}')" title="Excluir" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#f87171;width:24px;height:24px;border-radius:6px;cursor:pointer;font-size:10px;display:inline-flex;align-items:center;justify-content:center;">✕</button>
-                  </div>
-                </div>
-              `;
-            }).join('')}
-          </div>
-        </div>
-      `;
-    });
-    htmlHistorico += '</div>';
-    evList.innerHTML = htmlHistorico;
+    renderCronoHistoricoAgrupado(evList);
     return;
   }
 
@@ -20356,6 +20419,11 @@ function renderCronoMes() {
   // Eventos do mês
   const evList = document.getElementById('crono-mes-eventos');
   if (evList) {
+    if (_cronoFiltroAtual === 'historico') {
+      renderCronoHistoricoAgrupado(evList);
+      return;
+    }
+
     let evMes = carregarEventosCrono().filter(e => e.data && e.data.startsWith(`${ano}-${String(mes+1).padStart(2,'0')}`)).sort((a,b) => a.data.localeCompare(b.data));
     
     if (_cronoFiltroAtual === 'pendentes') {

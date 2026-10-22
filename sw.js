@@ -1,5 +1,5 @@
-// Service Worker PWA para sdmoveisprojetados - v6.2 (Correções Modais Ponto e Chat)
-const CACHE_NAME = 'sdmoveisprojetados-v6.2';
+// Service Worker PWA para sdmoveisprojetados - v6.3 (Histórico Agrupado por Abas de Cliente)
+const CACHE_NAME = 'sdmoveisprojetados-v6.3';
 const ASSETS = [
   '/',
   '/index.html',
