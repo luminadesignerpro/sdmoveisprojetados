@@ -23349,9 +23349,12 @@ function copiarLinkAssinaturaOs(osId) {
 //  CALCULADORA DE VIDRO — PLANO DE CORTE VISUAL 2D (IDÊNTICO AO MDF)
 // ══════════════════════════════════════════════════════════════════════════════
 window._planoCorteVidroAtual = null;
+window._chapaVidroAtiva = 1;
 
 window.mudarChapaPlanoCorteVidro = function(idx) {
   if (!window._planoCorteVidroAtual) return;
+  window._chapaVidroAtiva = idx;
+  if (typeof deselecionarPeca === 'function') deselecionarPeca('vidro');
   const container = document.getElementById('ferr-v-desenho-svg');
   if (container) container.innerHTML = gerarSvgPlanoDeCorteVidro(window._planoCorteVidroAtual, idx);
   document.querySelectorAll('.btn-tab-chapa-v').forEach(btn => {
@@ -23363,6 +23366,7 @@ window.mudarChapaPlanoCorteVidro = function(idx) {
 };
 
 function gerarSvgPlanoDeCorteVidro(plano, chapaIndex = 1) {
+  window._chapaVidroAtiva = chapaIndex;
   const chapa = plano.chapas[chapaIndex - 1];
   if (!chapa) return '';
 
@@ -23385,18 +23389,26 @@ function gerarSvgPlanoDeCorteVidro(plano, chapaIndex = 1) {
     const py       = ref + p.y;
     const fontSize = Math.max(28, Math.min(p.w, p.h) * 0.12);
     const fontSub  = Math.max(18, fontSize * 0.65);
+    const sel      = window._pecaSelecionada &&
+                     window._pecaSelecionada.tipo === 'vidro' &&
+                     window._pecaSelecionada.chapaIndex === chapaIndex &&
+                     window._pecaSelecionada.pecaId === p.id;
     return `
-      <g class="peca-corte-item">
+      <g class="peca-corte-item" data-tipo="vidro" data-chapa="${chapaIndex}" data-id="${p.id}"
+         onclick="selecionarPecaCorte('vidro', ${chapaIndex}, ${p.id}, event)"
+         onpointerdown="iniciarArrastoPecaCorte(event, 'vidro', ${chapaIndex}, ${p.id})"
+         style="cursor:grab;touch-action:none;">
         <rect x="${px}" y="${py}" width="${p.w}" height="${p.h}"
-              fill="url(#gradVidPeca)" stroke="#22d3ee" stroke-width="4" rx="6" />
+              fill="url(#gradVidPeca)" stroke="${sel ? '#facc15' : '#22d3ee'}" stroke-width="${sel ? '6' : '4'}" rx="6" />
+        ${sel ? `<rect x="${px-4}" y="${py-4}" width="${p.w+8}" height="${p.h+8}" fill="none" stroke="#facc15" stroke-width="3" stroke-dasharray="10,6" rx="8" />` : ''}
         <rect x="${px+4}" y="${py+4}" width="${Math.max(0,p.w-8)}" height="${Math.max(0,p.h-8)}"
               fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="1.5" rx="4" />
         <text x="${px+p.w/2}" y="${py+p.h/2 - fontSize*0.4}" fill="#ffffff" font-size="${fontSize}px"
-              font-weight="900" font-family="system-ui,sans-serif" text-anchor="middle" dominant-baseline="middle">
-          #${p.id}
+              font-weight="900" font-family="system-ui,sans-serif" text-anchor="middle" dominant-baseline="middle" pointer-events="none">
+          #${p.id} ${p.rotacionada ? '🔄' : ''}
         </text>
         <text x="${px+p.w/2}" y="${py+p.h/2 + fontSize*0.6}" fill="#e0f7fa" font-size="${fontSub}px"
-              font-weight="700" font-family="system-ui,sans-serif" text-anchor="middle" dominant-baseline="middle">
+              font-weight="700" font-family="system-ui,sans-serif" text-anchor="middle" dominant-baseline="middle" pointer-events="none">
           ${p.w} × ${p.h} mm
         </text>
       </g>`;
@@ -23587,14 +23599,20 @@ function calcVidro() {
               <span style="font-size:18px;">📐</span>
               <span style="font-size:13.5px;font-weight:900;color:#fff;">Desenho do Plano de Corte 2D — Vidro</span>
             </div>
-            <div style="font-size:11px;color:#22d3ee;font-weight:800;background:rgba(6,182,212,0.15);padding:3px 8px;border-radius:6px;border:1px solid rgba(6,182,212,0.3);">
-              Chapa: ${chapL}×${chapA}mm · Disco: 3mm · Refilo: 15mm
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <button type="button" id="btn-reorganizar-chapa-vidro" onclick="reorganizarChapaVidro()" style="padding:6px 14px;background:linear-gradient(135deg,#06b6d4,#0891b2);border:none;border-radius:9px;color:#fff;font-weight:900;font-size:12px;cursor:pointer;box-shadow:0 3px 12px rgba(6,182,212,0.4);display:flex;align-items:center;gap:6px;transition:all 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                🔀 Reorganizar Chapa
+              </button>
+              <div style="font-size:11px;color:#22d3ee;font-weight:800;background:rgba(6,182,212,0.15);padding:3px 8px;border-radius:6px;border:1px solid rgba(6,182,212,0.3);">
+                Chapa: ${chapL}×${chapA}mm · Disco: 3mm · Refilo: 15mm
+              </div>
             </div>
           </div>
           ${abasHtml}
           <div id="ferr-v-desenho-svg" style="width:100%;margin-top:6px;">
             ${gerarSvgPlanoDeCorteVidro(plano, 1)}
           </div>
+          <div id="ferr-v-controle-peca" style="display:none;margin-top:10px;"></div>
           <!-- Legenda -->
           <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:11px;color:#94a3b8;">
             <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
@@ -23884,6 +23902,7 @@ function calcularPlanoDeCorteMdf(largPeca, altPeca, qtdTotal, chapW, chapH, kerf
 }
 
 function gerarSvgPlanoDeCorte(plano, chapaIndex = 1) {
+  window._chapaMovelAtiva = chapaIndex;
   const chapa = plano.chapas[chapaIndex - 1];
   if (!chapa) return '';
 
@@ -23907,16 +23926,24 @@ function gerarSvgPlanoDeCorte(plano, chapaIndex = 1) {
     const py = ref + p.y;
     const fontSize = Math.max(30, Math.min(p.w, p.h) * 0.12);
     const fontSub = Math.max(20, fontSize * 0.65);
+    const sel = window._pecaSelecionada &&
+                window._pecaSelecionada.tipo === 'movel' &&
+                window._pecaSelecionada.chapaIndex === chapaIndex &&
+                window._pecaSelecionada.pecaId === p.id;
     return `
-      <g class="peca-corte-item">
+      <g class="peca-corte-item" data-tipo="movel" data-chapa="${chapaIndex}" data-id="${p.id}"
+         onclick="selecionarPecaCorte('movel', ${chapaIndex}, ${p.id}, event)"
+         onpointerdown="iniciarArrastoPecaCorte(event, 'movel', ${chapaIndex}, ${p.id})"
+         style="cursor:grab;touch-action:none;">
         <rect x="${px}" y="${py}" width="${p.w}" height="${p.h}" 
-              fill="url(#gradMdfPeca)" stroke="#c084fc" stroke-width="4" rx="6" />
+              fill="url(#gradMdfPeca)" stroke="${sel ? '#facc15' : '#c084fc'}" stroke-width="${sel ? '6' : '4'}" rx="6" />
+        ${sel ? `<rect x="${px-4}" y="${py-4}" width="${p.w+8}" height="${p.h+8}" fill="none" stroke="#facc15" stroke-width="3" stroke-dasharray="10,6" rx="8" />` : ''}
         <rect x="${px + 4}" y="${py + 4}" width="${Math.max(0, p.w - 8)}" height="${Math.max(0, p.h - 8)}" 
               fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="1.5" rx="4" />
-        <text x="${px + p.w/2}" y="${py + p.h/2 - fontSize*0.4}" fill="#ffffff" font-size="${fontSize}px" font-weight="900" font-family="system-ui, sans-serif" text-anchor="middle" dominant-baseline="middle">
-          #${p.id}
+        <text x="${px + p.w/2}" y="${py + p.h/2 - fontSize*0.4}" fill="#ffffff" font-size="${fontSize}px" font-weight="900" font-family="system-ui, sans-serif" text-anchor="middle" dominant-baseline="middle" pointer-events="none">
+          #${p.id} ${p.rotacionada ? '🔄' : ''}
         </text>
-        <text x="${px + p.w/2}" y="${py + p.h/2 + fontSize*0.6}" fill="#f3e8ff" font-size="${fontSub}px" font-weight="700" font-family="system-ui, sans-serif" text-anchor="middle" dominant-baseline="middle">
+        <text x="${px + p.w/2}" y="${py + p.h/2 + fontSize*0.6}" fill="#f3e8ff" font-size="${fontSub}px" font-weight="700" font-family="system-ui, sans-serif" text-anchor="middle" dominant-baseline="middle" pointer-events="none">
           ${p.w} × ${p.h} mm
         </text>
       </g>
@@ -23995,8 +24022,12 @@ function gerarSvgPlanoDeCorte(plano, chapaIndex = 1) {
   `;
 }
 
+window._chapaMovelAtiva = 1;
+
 window.mudarChapaPlanoCorte = function(idx) {
   if (!window._planoCorteAtual) return;
+  window._chapaMovelAtiva = idx;
+  if (typeof deselecionarPeca === 'function') deselecionarPeca('movel');
   const container = document.getElementById('ferr-m-desenho-svg');
   if (container) {
     container.innerHTML = gerarSvgPlanoDeCorte(window._planoCorteAtual, idx);
@@ -24143,6 +24174,7 @@ function calcMovel() {
           <div id="ferr-m-desenho-svg" style="width:100%;margin-top:6px;">
             ${gerarSvgPlanoDeCorte(plano, 1)}
           </div>
+          <div id="ferr-m-controle-peca" style="display:none;margin-top:10px;"></div>
 
           <!-- Legenda explicativa -->
           <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:11px;color:#94a3b8;">
@@ -24318,6 +24350,569 @@ function _toastReorganizarChapa(msg, cor) {
   t.textContent = msg;
   clearTimeout(t._to);
   t._to = setTimeout(() => { t.style.opacity = '0'; }, 4500);
+}
+
+// ─── SISTEMA INTERATIVO DE PEÇAS (MOVER / GIRAR / BLOQUEIO POR COLISÃO) ─────
+window._pecaSelecionada = null;
+let _toastColisaoTimer = null;
+
+function _toastColisaoPeca(msg, cor = '#ef4444') {
+  let t = document.getElementById('_toast-corte-colisao');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = '_toast-corte-colisao';
+    t.style.cssText = 'position:fixed;bottom:75px;left:50%;transform:translateX(-50%);z-index:999999;padding:11px 20px;border-radius:14px;font-size:13px;font-weight:900;color:#fff;text-align:center;max-width:92vw;transition:all 0.3s;pointer-events:none;box-shadow:0 6px 24px rgba(0,0,0,0.6);';
+    document.body.appendChild(t);
+  }
+  t.style.background = cor;
+  t.style.border = '1.5px solid rgba(255,255,255,0.25)';
+  t.style.opacity = '1';
+  t.style.transform = 'translateX(-50%) translateY(0)';
+  t.textContent = msg;
+  clearTimeout(_toastColisaoTimer);
+  _toastColisaoTimer = setTimeout(() => {
+    t.style.opacity = '0';
+    t.style.transform = 'translateX(-50%) translateY(12px)';
+  }, 3200);
+}
+
+function verificarColisaoPeca(tipo, chapaIndex, pecaId, candX, candY, candW, candH) {
+  const plano = (tipo === 'vidro') ? window._planoCorteVidroAtual : window._planoCorteAtual;
+  if (!plano) return { colidiu: true, obstaculo: 'plano' };
+  const chapa = plano.chapas[chapaIndex - 1];
+  if (!chapa) return { colidiu: true, obstaculo: 'chapa' };
+
+  const usableW = Math.max(0, plano.chapW - 2 * plano.refilo);
+  const usableH = Math.max(0, plano.chapH - 2 * plano.refilo);
+  const kerf = plano.kerf || (tipo === 'vidro' ? 3 : 4);
+
+  // 1. Limites externos da chapa
+  if (candX < 0) return { colidiu: true, obstaculo: 'borda esquerda' };
+  if (candY < 0) return { colidiu: true, obstaculo: 'borda superior' };
+  if (candX + candW > usableW) return { colidiu: true, obstaculo: 'borda direita' };
+  if (candY + candH > usableH) return { colidiu: true, obstaculo: 'borda inferior' };
+
+  // 2. Colisão com todas as outras peças na mesma chapa
+  for (const other of chapa.pecas) {
+    if (other.id === pecaId) continue;
+    const overlapX = (candX < other.x + other.w + kerf) && (candX + candW + kerf > other.x);
+    const overlapY = (candY < other.y + other.h + kerf) && (candY + candH + kerf > other.y);
+    if (overlapX && overlapY) {
+      return { colidiu: true, obstaculo: `peça #${other.id}` };
+    }
+  }
+
+  return { colidiu: false };
+}
+
+function selecionarPecaCorte(tipo, chapaIndex, pecaId, e) {
+  if (e) {
+    e.stopPropagation();
+  }
+  window._pecaSelecionada = { tipo, chapaIndex, pecaId };
+
+  // Atualiza destaque no SVG
+  if (tipo === 'vidro') {
+    const cont = document.getElementById('ferr-v-desenho-svg');
+    if (cont && window._planoCorteVidroAtual) {
+      cont.innerHTML = gerarSvgPlanoDeCorteVidro(window._planoCorteVidroAtual, chapaIndex);
+    }
+  } else {
+    const cont = document.getElementById('ferr-m-desenho-svg');
+    if (cont && window._planoCorteAtual) {
+      cont.innerHTML = gerarSvgPlanoDeCorte(window._planoCorteAtual, chapaIndex);
+    }
+  }
+
+  renderPainelControlePeca(tipo, chapaIndex, pecaId);
+}
+
+function deselecionarPeca(tipo) {
+  window._pecaSelecionada = null;
+  const painelId = (tipo === 'vidro') ? 'ferr-v-controle-peca' : 'ferr-m-controle-peca';
+  const painel = document.getElementById(painelId);
+  if (painel) {
+    painel.style.display = 'none';
+    painel.innerHTML = '';
+  }
+
+  const chapaIndex = (tipo === 'vidro') ? (window._chapaVidroAtiva || 1) : (window._chapaMovelAtiva || 1);
+  if (tipo === 'vidro') {
+    const cont = document.getElementById('ferr-v-desenho-svg');
+    if (cont && window._planoCorteVidroAtual) {
+      cont.innerHTML = gerarSvgPlanoDeCorteVidro(window._planoCorteVidroAtual, chapaIndex);
+    }
+  } else {
+    const cont = document.getElementById('ferr-m-desenho-svg');
+    if (cont && window._planoCorteAtual) {
+      cont.innerHTML = gerarSvgPlanoDeCorte(window._planoCorteAtual, chapaIndex);
+    }
+  }
+}
+
+function renderPainelControlePeca(tipo, chapaIndex, pecaId) {
+  const painelId = (tipo === 'vidro') ? 'ferr-v-controle-peca' : 'ferr-m-controle-peca';
+  const painel = document.getElementById(painelId);
+  if (!painel) return;
+
+  const plano = (tipo === 'vidro') ? window._planoCorteVidroAtual : window._planoCorteAtual;
+  if (!plano) return;
+  const chapa = plano.chapas[chapaIndex - 1];
+  if (!chapa) return;
+  const peca = chapa.pecas.find(p => p.id === pecaId);
+  if (!peca) return;
+
+  const themeColor = (tipo === 'vidro') ? '#06b6d4' : '#a855f7';
+  const themeGrad = (tipo === 'vidro') ? 'linear-gradient(135deg,#06b6d4,#0e7490)' : 'linear-gradient(135deg,#a855f7,#7e22ce)';
+
+  painel.style.display = 'block';
+  painel.innerHTML = `
+    <div style="background:rgba(15,23,42,0.95);border:1.5px solid ${themeColor};border-radius:14px;padding:12px;box-shadow:0 6px 20px rgba(0,0,0,0.5);">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.08);">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:16px;">🧩</span>
+          <span style="font-weight:900;color:#fff;font-size:13.5px;">Peça #${peca.id} ${peca.nome ? '('+peca.nome+')' : ''}</span>
+          <span style="font-size:12px;color:#facc15;font-weight:800;">${peca.w} × ${peca.h} mm</span>
+          <span style="font-size:11px;color:#cbd5e1;background:rgba(255,255,255,0.08);padding:2px 7px;border-radius:6px;">X: ${Math.round(peca.x)} | Y: ${Math.round(peca.y)} mm</span>
+        </div>
+        <button type="button" onclick="deselecionarPeca('${tipo}')" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#cbd5e1;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;">
+          ✖️ Desmarcar
+        </button>
+      </div>
+
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;">
+        <!-- Botão Girar -->
+        <button type="button" onclick="girarPecaSelecionada('${tipo}')" 
+                style="padding:8px 14px;background:${themeGrad};border:none;border-radius:9px;color:#fff;font-weight:900;font-size:12.5px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 3px 12px ${themeColor}55;">
+          🔄 Girar (90°)
+        </button>
+
+        <!-- Ajuste Fino Horizontal -->
+        <div style="display:inline-flex;gap:4px;background:rgba(255,255,255,0.05);padding:4px;border-radius:9px;border:1px solid rgba(255,255,255,0.1);">
+          <span style="font-size:11px;font-weight:800;color:var(--muted);display:flex;align-items:center;padding:0 4px;">Horizontal:</span>
+          <button type="button" onclick="moverPecaPasso('${tipo}', -50, 0)" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:800;cursor:pointer;" title="Esquerda 50mm">⬅️ 50</button>
+          <button type="button" onclick="moverPecaPasso('${tipo}', -10, 0)" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:800;cursor:pointer;" title="Esquerda 10mm">◀️ 10</button>
+          <button type="button" onclick="moverPecaPasso('${tipo}', 10, 0)" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:800;cursor:pointer;" title="Direita 10mm">10 ▶️</button>
+          <button type="button" onclick="moverPecaPasso('${tipo}', 50, 0)" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:800;cursor:pointer;" title="Direita 50mm">50 ➡️</button>
+        </div>
+
+        <!-- Ajuste Fino Vertical -->
+        <div style="display:inline-flex;gap:4px;background:rgba(255,255,255,0.05);padding:4px;border-radius:9px;border:1px solid rgba(255,255,255,0.1);">
+          <span style="font-size:11px;font-weight:800;color:var(--muted);display:flex;align-items:center;padding:0 4px;">Vertical:</span>
+          <button type="button" onclick="moverPecaPasso('${tipo}', 0, -50)" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:800;cursor:pointer;" title="Cima 50mm">⬆️ 50</button>
+          <button type="button" onclick="moverPecaPasso('${tipo}', 0, -10)" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:800;cursor:pointer;" title="Cima 10mm">▲ 10</button>
+          <button type="button" onclick="moverPecaPasso('${tipo}', 0, 10)" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:800;cursor:pointer;" title="Baixo 10mm">10 ▼</button>
+          <button type="button" onclick="moverPecaPasso('${tipo}', 0, 50)" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:800;cursor:pointer;" title="Baixo 50mm">50 ⬇️</button>
+        </div>
+      </div>
+      <div style="margin-top:8px;font-size:11px;color:#94a3b8;display:flex;align-items:center;gap:6px;">
+        <span>💡 Dica: toque e arraste a peça na tela para mover livremente. O sistema <strong>bloqueia colisões automaticamente</strong> ao encostar em outra peça.</span>
+      </div>
+    </div>
+  `;
+}
+
+function girarPecaSelecionada(tipo) {
+  const sel = window._pecaSelecionada;
+  if (!sel || sel.tipo !== tipo) {
+    alert('Selecione uma peça clicando nela primeiro.');
+    return;
+  }
+  const plano = (tipo === 'vidro') ? window._planoCorteVidroAtual : window._planoCorteAtual;
+  if (!plano) return;
+  const chapa = plano.chapas[sel.chapaIndex - 1];
+  if (!chapa) return;
+  const peca = chapa.pecas.find(p => p.id === sel.pecaId);
+  if (!peca) return;
+
+  const novoW = peca.h;
+  const novoH = peca.w;
+  let posX = peca.x;
+  let posY = peca.y;
+
+  const usableW = Math.max(0, plano.chapW - 2 * plano.refilo);
+  const usableH = Math.max(0, plano.chapH - 2 * plano.refilo);
+
+  if (posX + novoW > usableW) {
+    posX = Math.max(0, usableW - novoW);
+  }
+  if (posY + novoH > usableH) {
+    posY = Math.max(0, usableH - novoH);
+  }
+
+  const check = verificarColisaoPeca(tipo, sel.chapaIndex, peca.id, posX, posY, novoW, novoH);
+  if (check.colidiu) {
+    _toastColisaoPeca(`⛔ Bloqueado: Não é possível girar (encosta na ${check.obstaculo})!`, '#ef4444');
+    return;
+  }
+
+  peca.w = novoW;
+  peca.h = novoH;
+  peca.x = posX;
+  peca.y = posY;
+  peca.rotacionada = !peca.rotacionada;
+
+  atualizarSvgEDados(tipo, sel.chapaIndex);
+  renderPainelControlePeca(tipo, sel.chapaIndex, peca.id);
+  _toastColisaoPeca(`🔄 Peça #${peca.id} girada: ${peca.w}×${peca.h}mm`, '#10b981');
+}
+
+function moverPecaPasso(tipo, deltaX, deltaY) {
+  const sel = window._pecaSelecionada;
+  if (!sel || sel.tipo !== tipo) return;
+  const plano = (tipo === 'vidro') ? window._planoCorteVidroAtual : window._planoCorteAtual;
+  if (!plano) return;
+  const chapa = plano.chapas[sel.chapaIndex - 1];
+  if (!chapa) return;
+  const peca = chapa.pecas.find(p => p.id === sel.pecaId);
+  if (!peca) return;
+
+  const candX = Math.round(peca.x + deltaX);
+  const candY = Math.round(peca.y + deltaY);
+
+  const check = verificarColisaoPeca(tipo, sel.chapaIndex, peca.id, candX, candY, peca.w, peca.h);
+  if (check.colidiu) {
+    _toastColisaoPeca(`⛔ Bloqueio: Encostou na ${check.obstaculo}!`, '#ef4444');
+    return;
+  }
+
+  peca.x = candX;
+  peca.y = candY;
+  atualizarSvgEDados(tipo, sel.chapaIndex);
+  renderPainelControlePeca(tipo, sel.chapaIndex, peca.id);
+}
+
+let _dragCorte = null;
+
+function iniciarArrastoPecaCorte(e, tipo, chapaIndex, pecaId) {
+  if (e.button !== undefined && e.button !== 0) return;
+  e.preventDefault();
+  e.stopPropagation();
+
+  window._pecaSelecionada = { tipo, chapaIndex, pecaId };
+
+  const plano = (tipo === 'vidro') ? window._planoCorteVidroAtual : window._planoCorteAtual;
+  if (!plano) return;
+  const chapa = plano.chapas[chapaIndex - 1];
+  if (!chapa) return;
+  const peca = chapa.pecas.find(p => p.id === pecaId);
+  if (!peca) return;
+
+  const svg = e.currentTarget.closest('svg');
+  if (!svg) return;
+
+  const pt = svg.createSVGPoint();
+  pt.x = e.clientX;
+  pt.y = e.clientY;
+  const ctm = svg.getScreenCTM();
+  if (!ctm) return;
+  const svgP = pt.matrixTransform(ctm.inverse());
+
+  _dragCorte = {
+    tipo,
+    chapaIndex,
+    pecaId,
+    startX: svgP.x,
+    startY: svgP.y,
+    origX: peca.x,
+    origY: peca.y,
+    svg,
+    elem: e.currentTarget,
+    pointerId: e.pointerId
+  };
+
+  try {
+    e.currentTarget.setPointerCapture(e.pointerId);
+  } catch(_) {}
+
+  e.currentTarget.onpointermove = moverArrastoPecaCorte;
+  e.currentTarget.onpointerup = soltarArrastoPecaCorte;
+  e.currentTarget.onpointercancel = soltarArrastoPecaCorte;
+
+  renderPainelControlePeca(tipo, chapaIndex, pecaId);
+}
+
+function moverArrastoPecaCorte(e) {
+  if (!_dragCorte) return;
+  e.preventDefault();
+  e.stopPropagation();
+
+  const { tipo, chapaIndex, pecaId, startX, startY, origX, origY, svg } = _dragCorte;
+  const plano = (tipo === 'vidro') ? window._planoCorteVidroAtual : window._planoCorteAtual;
+  if (!plano) return;
+  const chapa = plano.chapas[chapaIndex - 1];
+  if (!chapa) return;
+  const peca = chapa.pecas.find(p => p.id === pecaId);
+  if (!peca) return;
+
+  const pt = svg.createSVGPoint();
+  pt.x = e.clientX;
+  pt.y = e.clientY;
+  const ctm = svg.getScreenCTM();
+  if (!ctm) return;
+  const svgP = pt.matrixTransform(ctm.inverse());
+
+  const deltaX = svgP.x - startX;
+  const deltaY = svgP.y - startY;
+
+  const candX = Math.round(origX + deltaX);
+  const candY = Math.round(origY + deltaY);
+
+  const usableW = Math.max(0, plano.chapW - 2 * plano.refilo);
+  const usableH = Math.max(0, plano.chapH - 2 * plano.refilo);
+
+  const targetX = Math.max(0, Math.min(usableW - peca.w, candX));
+  const targetY = Math.max(0, Math.min(usableH - peca.h, candY));
+
+  // Testa colisão direta
+  const checkFull = verificarColisaoPeca(tipo, chapaIndex, pecaId, targetX, targetY, peca.w, peca.h);
+  if (!checkFull.colidiu) {
+    peca.x = targetX;
+    peca.y = targetY;
+  } else {
+    // Tenta deslizar no eixo X mantendo Y
+    const checkX = verificarColisaoPeca(tipo, chapaIndex, pecaId, targetX, peca.y, peca.w, peca.h);
+    if (!checkX.colidiu) {
+      peca.x = targetX;
+    } else {
+      // Tenta deslizar no eixo Y mantendo X
+      const checkY = verificarColisaoPeca(tipo, chapaIndex, pecaId, peca.x, targetY, peca.w, peca.h);
+      if (!checkY.colidiu) {
+        peca.y = targetY;
+      } else {
+        _toastColisaoPeca(`⛔ Bloqueio: Encostou na ${checkFull.obstaculo}!`);
+      }
+    }
+  }
+
+  // Atualiza coordenadas no SVG durante o arrasto
+  const ref = plano.refilo;
+  const px = ref + peca.x;
+  const py = ref + peca.y;
+  const rects = _dragCorte.elem.querySelectorAll('rect');
+  if (rects[0]) {
+    rects[0].setAttribute('x', px);
+    rects[0].setAttribute('y', py);
+    rects[0].setAttribute('stroke', checkFull.colidiu ? '#ef4444' : '#facc15');
+  }
+  if (rects[1]) {
+    rects[1].setAttribute('x', px - 4);
+    rects[1].setAttribute('y', py - 4);
+  }
+  if (rects[2]) {
+    rects[2].setAttribute('x', px + 4);
+    rects[2].setAttribute('y', py + 4);
+  }
+  const texts = _dragCorte.elem.querySelectorAll('text');
+  const fontSize = Math.max(28, Math.min(peca.w, peca.h) * 0.12);
+  if (texts[0]) {
+    texts[0].setAttribute('x', px + peca.w / 2);
+    texts[0].setAttribute('y', py + peca.h / 2 - fontSize * 0.4);
+  }
+  if (texts[1]) {
+    texts[1].setAttribute('x', px + peca.w / 2);
+    texts[1].setAttribute('y', py + peca.h / 2 + fontSize * 0.6);
+  }
+}
+
+function soltarArrastoPecaCorte(e) {
+  if (!_dragCorte) return;
+  const { tipo, chapaIndex, pecaId, elem, pointerId } = _dragCorte;
+  try {
+    elem.releasePointerCapture(pointerId);
+  } catch(_) {}
+  elem.onpointermove = null;
+  elem.onpointerup = null;
+  elem.onpointercancel = null;
+  _dragCorte = null;
+
+  atualizarSvgEDados(tipo, chapaIndex);
+  renderPainelControlePeca(tipo, chapaIndex, pecaId);
+}
+
+function atualizarSvgEDados(tipo, chapaIndex) {
+  if (tipo === 'vidro') {
+    const cont = document.getElementById('ferr-v-desenho-svg');
+    if (cont && window._planoCorteVidroAtual) {
+      cont.innerHTML = gerarSvgPlanoDeCorteVidro(window._planoCorteVidroAtual, chapaIndex);
+    }
+    atualizarMetricasAproveitamentoVidro();
+  } else {
+    const cont = document.getElementById('ferr-m-desenho-svg');
+    if (cont && window._planoCorteAtual) {
+      cont.innerHTML = gerarSvgPlanoDeCorte(window._planoCorteAtual, chapaIndex);
+    }
+    atualizarMetricasAproveitamentoMovel();
+  }
+}
+
+function atualizarMetricasAproveitamentoVidro() {
+  const plano = window._planoCorteVidroAtual;
+  if (!plano) return;
+  const res = document.getElementById('ferr-v-res');
+  if (!res) return;
+  const areaChapa = (plano.chapW / 1000) * (plano.chapH / 1000);
+  const areaTotalCh = plano.totalChapas * areaChapa;
+  let areaPecasTotal = 0;
+  plano.chapas.forEach(c => c.pecas.forEach(p => { areaPecasTotal += (p.w / 1000) * (p.h / 1000); }));
+  const aprov = areaTotalCh > 0 ? ((areaPecasTotal / areaTotalCh) * 100).toFixed(1) : '0';
+
+  res.querySelectorAll('div').forEach(d => {
+    if (d.textContent.includes('% útil') && d.style.fontSize === '16px') {
+      d.textContent = `♻️ ${aprov}% útil`;
+    }
+  });
+}
+
+function atualizarMetricasAproveitamentoMovel() {
+  const plano = window._planoCorteAtual;
+  if (!plano) return;
+  const res = document.getElementById('ferr-m-res');
+  if (!res) return;
+  const areaChapa = (plano.chapW / 1000) * (plano.chapH / 1000);
+  const areaTotalCh = plano.totalChapas * areaChapa;
+  let areaPecasTotal = 0;
+  plano.chapas.forEach(c => c.pecas.forEach(p => { areaPecasTotal += (p.w / 1000) * (p.h / 1000); }));
+  const aprov = areaTotalCh > 0 ? ((areaPecasTotal / areaTotalCh) * 100).toFixed(1) : '0';
+
+  res.querySelectorAll('div').forEach(d => {
+    if (d.textContent.includes('% útil') && d.style.fontSize === '16px') {
+      d.textContent = `♻️ ${aprov}% útil`;
+    }
+  });
+}
+
+// ─── REORGANIZAR CHAPA VIDRO (Multi-estratégia com empacotador 2D) ───────────
+function reorganizarChapaVidro() {
+  const btn = document.getElementById('btn-reorganizar-chapa-vidro');
+  if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Otimizando...'; }
+  setTimeout(() => {
+    try {
+      const planoAtual = window._planoCorteVidroAtual;
+      if (!planoAtual) {
+        if (btn) { btn.disabled = false; btn.innerHTML = '🔀 Reorganizar Chapa'; }
+        alert('⚠️ Calcule o plano de corte primeiro.');
+        return;
+      }
+      const { chapW, chapH, kerf = 3, refilo = 15, pecasOriginais } = planoAtual;
+
+      let pecasFlat = [];
+      let gid = 1;
+      if (pecasOriginais && pecasOriginais.length > 0) {
+        pecasOriginais.forEach(p => {
+          const qtd = parseInt(p.qtd) || 1;
+          for (let i = 0; i < qtd; i++) {
+            pecasFlat.push({ id: gid++, nome: p.nome || ('#'+gid), w: parseFloat(p.largMm)||0, h: parseFloat(p.altMm)||0 });
+          }
+        });
+      } else {
+        planoAtual.chapas.forEach(c => {
+          c.pecas.forEach(p => {
+            pecasFlat.push({ id: p.id, nome: p.nome, w: p.rotacionada ? p.h : p.w, h: p.rotacionada ? p.w : p.h });
+          });
+        });
+      }
+
+      const estrategias = [
+        { nome: 'Maior lado',   fn: arr => [...arr].sort((a,b) => Math.max(b.w,b.h) - Math.max(a.w,a.h)) },
+        { nome: 'Menor lado',   fn: arr => [...arr].sort((a,b) => Math.min(b.w,b.h) - Math.min(a.w,a.h)) },
+        { nome: 'Maior área',   fn: arr => [...arr].sort((a,b) => (b.w*b.h) - (a.w*a.h)) },
+        { nome: 'Largura',      fn: arr => [...arr].sort((a,b) => b.w - a.w) },
+        { nome: 'Altura',       fn: arr => [...arr].sort((a,b) => b.h - a.h) },
+        { nome: 'Ordem atual',  fn: arr => [...arr] },
+      ];
+
+      function empacotar(pecas) {
+        const usableW = Math.max(0, chapW - 2*refilo);
+        const usableH = Math.max(0, chapH - 2*refilo);
+        const chapas = [];
+        let rest = [...pecas];
+        while (rest.length > 0) {
+          const idx = chapas.length + 1;
+          const nesta = [], sobrou = [];
+          let curX=0, curY=0, shelfH=0;
+          for (const p of rest) {
+            let fw=p.w, fh=p.h, rot=false;
+            let cab = (curX+fw<=usableW)&&(curY+fh<=usableH);
+            if (!cab && (curX+p.h<=usableW)&&(curY+p.w<=usableH)) { fw=p.h; fh=p.w; rot=true; cab=true; }
+            if (!cab) {
+              const ny=curY+shelfH+kerf;
+              const cp=(fw<=usableW)&&(ny+fh<=usableH);
+              const cr=(p.h<=usableW)&&(ny+p.w<=usableH);
+              if (cp||cr) { curX=0; curY=ny; shelfH=0; if(!cp&&cr){fw=p.h;fh=p.w;rot=true;} cab=true; }
+            }
+            if (cab) { nesta.push({id:p.id,nome:p.nome,x:curX,y:curY,w:fw,h:fh,rotacionada:rot}); curX+=fw+kerf; shelfH=Math.max(shelfH,fh); }
+            else sobrou.push(p);
+          }
+          if (nesta.length===0) break;
+          chapas.push({ index:idx, pecas:nesta, totalSlots:nesta.length });
+          rest = sobrou;
+        }
+        return { chapW, chapH, refilo, kerf, totalChapas:chapas.length, chapas, pecasOriginais: pecasOriginais || [] };
+      }
+
+      function calcAprov(plano) {
+        const areaChapa = (plano.chapW/1000)*(plano.chapH/1000);
+        let areaPecas = 0;
+        plano.chapas.forEach(c => c.pecas.forEach(p => { areaPecas += (p.w/1000)*(p.h/1000); }));
+        return plano.totalChapas > 0 ? (areaPecas / (plano.totalChapas * areaChapa)) * 100 : 0;
+      }
+
+      const aprovAtual = calcAprov(planoAtual);
+      let melhorPlano = null, melhorAprov = aprovAtual, melhorNome = 'Original';
+
+      for (const est of estrategias) {
+        const plano = empacotar(est.fn(pecasFlat));
+        const a = calcAprov(plano);
+        if (a > melhorAprov || (Math.abs(a - melhorAprov) < 0.01 && plano.totalChapas < (melhorPlano||planoAtual).totalChapas)) {
+          melhorAprov = a; melhorPlano = plano; melhorNome = est.nome;
+        }
+      }
+
+      if (btn) { btn.disabled = false; btn.innerHTML = '🔀 Reorganizar Chapa'; }
+
+      if (!melhorPlano) {
+        _toastColisaoPeca('✅ Layout atual já está no melhor aproveitamento (' + aprovAtual.toFixed(1) + '%)!', '#10b981');
+        return;
+      }
+
+      window._planoCorteVidroAtual = melhorPlano;
+
+      // Re-renderiza SVG
+      const svgEl = document.getElementById('ferr-v-desenho-svg');
+      if (svgEl) svgEl.innerHTML = gerarSvgPlanoDeCorteVidro(melhorPlano, 1);
+
+      // Atualiza abas se necessário
+      const res = document.getElementById('ferr-v-res');
+      if (res && melhorPlano.totalChapas > 1) {
+        const abasHtml = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 8px;justify-content:center;">
+          ${melhorPlano.chapas.map(c => `
+            <button type="button" class="btn-tab-chapa-v" data-idx="${c.index}" onclick="mudarChapaPlanoCorteVidro(${c.index})"
+                    style="padding:6px 14px;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;transition:all 0.2s;
+                           border:1px solid ${c.index===1?'#22d3ee':'rgba(255,255,255,0.12)'};
+                           background:${c.index===1?'linear-gradient(135deg,#06b6d4,#0e7490)':'rgba(255,255,255,0.06)'};
+                           color:${c.index===1?'#fff':'#cbd5e1'};">
+              🪟 Chapa ${c.index} (${c.pecas.length} peças)
+            </button>`).join('')}
+        </div>`;
+        const abasContainer = res.querySelector('.btn-tab-chapa-v')?.closest('div');
+        if (abasContainer) abasContainer.outerHTML = abasHtml;
+      }
+
+      // Atualiza métricas
+      atualizarMetricasAproveitamentoVidro();
+
+      const ganho = (melhorAprov - aprovAtual).toFixed(1);
+      const msg = parseFloat(ganho) > 0
+        ? `🔀 Reorganizado! ${aprovAtual.toFixed(1)}% → ${melhorAprov.toFixed(1)}% (+${ganho}%) · ${melhorNome}`
+        : `✅ Layout otimizado (${melhorAprov.toFixed(1)}%) · Estratégia: ${melhorNome}`;
+      _toastColisaoPeca(msg, '#06b6d4');
+
+    } catch(e) {
+      console.error('reorganizarChapaVidro erro:', e);
+      if (btn) { btn.disabled = false; btn.innerHTML = '🔀 Reorganizar Chapa'; }
+    }
+  }, 80);
 }
 
 // Conversão de medidas
@@ -26313,5 +26908,13 @@ function calcularSegurancaFuro() {
 window.calcVidro = calcVidro;
 window.calcMovel = calcMovel;
 window.reorganizarChapa = reorganizarChapa;
-
+window.reorganizarChapaVidro = reorganizarChapaVidro;
+window.selecionarPecaCorte = selecionarPecaCorte;
+window.deselecionarPeca = deselecionarPeca;
+window.girarPecaSelecionada = girarPecaSelecionada;
+window.moverPecaPasso = moverPecaPasso;
+window.iniciarArrastoPecaCorte = iniciarArrastoPecaCorte;
+window.moverArrastoPecaCorte = moverArrastoPecaCorte;
+window.soltarArrastoPecaCorte = soltarArrastoPecaCorte;
 </script>
+
