@@ -1,5 +1,5 @@
-// Service Worker PWA para sdmoveisprojetados - v6.0 (Opções da Agenda no Cronograma)
-const CACHE_NAME = 'sdmoveisprojetados-v6.0';
+// Service Worker PWA para sdmoveisprojetados - v6.1 (Correções Cronograma e Chat SD Móveis)
+const CACHE_NAME = 'sdmoveisprojetados-v6.1';
 const ASSETS = [
   '/',
   '/index.html',

@@ -3181,11 +3181,18 @@
     </div>
 
     <!-- SUB-ABAS: SEMANA / MÊS / ANO / PEDIDO DE MATERIAL -->
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px;">
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
       <button id="crono-tab-semana" class="btn btn-primary btn-sm" onclick="mudarAbaCronograma('semana')" style="font-size:12px;font-weight:800;border-radius:8px;">📆 Semana</button>
       <button id="crono-tab-mes" class="btn btn-sec btn-sm" onclick="mudarAbaCronograma('mes')" style="font-size:12px;font-weight:700;border-radius:8px;">📅 Mês</button>
       <button id="crono-tab-ano" class="btn btn-sec btn-sm" onclick="mudarAbaCronograma('ano')" style="font-size:12px;font-weight:700;border-radius:8px;">🗓️ Ano</button>
       <button id="crono-tab-material" class="btn btn-sec btn-sm" onclick="mudarAbaCronograma('material')" style="font-size:12px;font-weight:700;border-radius:8px;">📦 Pedido de Material</button>
+    </div>
+
+    <!-- BOTÃO ADICIONAR EVENTO / PRAZO (ABAIXO DE PEDIDO DE MATERIAL) -->
+    <div style="margin-bottom:16px;">
+      <button type="button" id="btn-crono-add-evento-topo" class="btn btn-gold btn-sm" onclick="abrirModalNovoEventoCronograma()" style="font-size:12.5px;font-weight:900;display:inline-flex;align-items:center;gap:7px;padding:9px 16px;box-shadow:0 3px 12px rgba(201,168,76,0.35);cursor:pointer;border-radius:9px;">
+        <span style="font-size:14px;">➕</span> Adicionar Evento / Prazo
+      </button>
     </div>
 
     <!-- PAINEL: SEMANA -->
@@ -3216,11 +3223,6 @@
       </div>
 
       <div id="crono-semana-eventos" style="display:flex;flex-direction:column;gap:8px;"></div>
-      <div style="text-align:center;margin-top:14px;">
-        <button class="btn btn-gold btn-sm" onclick="abrirModalNovoEventoCronograma()" style="font-size:12.5px;display:inline-flex;align-items:center;gap:6px;">
-          <span>➕</span> Adicionar Evento / Prazo
-        </button>
-      </div>
     </div>
 
     <!-- PAINEL: MÊS -->
@@ -15100,7 +15102,7 @@ function selecionarConversaAdmin(osNum, nomeCliente, telefone) {
     return `
       <div style="max-width:85%;padding:10px 14px;border-radius:14px;${ehEmpresa ? 'align-self:flex-start;background:rgba(201,168,76,0.14);border:1px solid rgba(201,168,76,0.35);' : 'align-self:flex-end;background:linear-gradient(135deg,#108548,#075e33);'};box-shadow:0 2px 8px rgba(0,0,0,0.35);animation:fadeUp 0.2s ease;">
         <div style="font-size:10px;font-weight:800;color:${ehEmpresa ? 'var(--gold-light)' : '#bbf7d0'};margin-bottom:3px;display:flex;align-items:center;gap:4px;">
-          <span>${ehEmpresa ? '💎 SD Vidros' : '👤 ' + esc(nomeCliente)}</span>
+          <span>${ehEmpresa ? '💎 SD Móveis' : '👤 ' + esc(nomeCliente)}</span>
         </div>
         <div style="font-size:13px;color:#fff;word-break:break-word;line-height:1.4;">${esc(m.texto || '')}</div>
         <div style="font-size:9.5px;opacity:0.65;text-align:right;margin-top:4px;">${m.hora || ''}</div>
@@ -15517,7 +15519,7 @@ function solicitarPermissaoNotificacaoAgenda() {
   if (Notification.permission === 'granted') {
     mostrarToastAgenda('✅ Alertas de agendamento já estão habilitados e ativos!');
     try {
-      new Notification('SD Vidros - Agenda', {
+      new Notification('SD Móveis - Agenda', {
         body: '🔔 Notificações e lembretes da agenda ativos!',
         icon: 'icon-192.png'
       });
@@ -15529,7 +15531,7 @@ function solicitarPermissaoNotificacaoAgenda() {
     if (permission === 'granted') {
       mostrarToastAgenda('✅ Permissão concedida! Você receberá alertas dos agendamentos.');
       try {
-        new Notification('SD Vidros - Agenda', {
+        new Notification('SD Móveis - Agenda', {
           body: '🔔 Notificações ativadas com sucesso!',
           icon: 'icon-192.png'
         });
@@ -20585,44 +20587,95 @@ function abrirModalAvaliarCrono(id) {
 
 // ── MODAL: NOVO EVENTO ──────────────────────────────────────────
 function abrirModalNovoEventoCronograma(id) {
-  const m = document.getElementById('modal-novo-evento-cronograma');
-  if (!m) return;
-  document.getElementById('evento-cronograma-edit-id').value = '';
-  document.getElementById('evento-cronograma-titulo').textContent = 'Novo Evento / Prazo';
-  document.getElementById('evento-form-titulo').value = '';
-  document.getElementById('evento-form-data').value = _cronoDiaSelecionado || isoHoje();
-  document.getElementById('evento-form-hora').value = '';
-  document.getElementById('evento-form-tipo').value = 'entrega';
-  document.getElementById('evento-form-responsavel').value = '';
-  document.getElementById('evento-form-cliente-nome').value = '';
-  const telInp = document.getElementById('evento-form-cliente-tel');
-  if (telInp) telInp.value = '';
-  document.getElementById('evento-form-cliente-endereco').value = '';
-  document.getElementById('evento-form-desc').value = '';
+  try {
+    const m = document.getElementById('modal-novo-evento-cronograma');
+    if (!m) {
+      console.warn('modal-novo-evento-cronograma não encontrado');
+      return;
+    }
 
-  if (id) {
-    const ev = carregarEventosCrono().find(e => e.id === id);
-    if (ev) {
-      document.getElementById('evento-cronograma-edit-id').value = ev.id;
-      document.getElementById('evento-cronograma-titulo').textContent = 'Editar Evento';
-      document.getElementById('evento-form-titulo').value = ev.titulo || '';
-      document.getElementById('evento-form-data').value = ev.data || '';
-      document.getElementById('evento-form-hora').value = ev.hora || '';
-      document.getElementById('evento-form-tipo').value = ev.tipo || 'outro';
-      document.getElementById('evento-form-responsavel').value = ev.responsavel || '';
-      document.getElementById('evento-form-cliente-nome').value = ev.clienteNome || '';
-      if (telInp) telInp.value = ev.clienteTel || ev.tel || '';
-      document.getElementById('evento-form-cliente-endereco').value = ev.clienteEndereco || '';
-      document.getElementById('evento-form-desc').value = ev.desc || '';
+    const editIdEl = document.getElementById('evento-cronograma-edit-id');
+    if (editIdEl) editIdEl.value = '';
+
+    const titEl = document.getElementById('evento-cronograma-titulo');
+    if (titEl) titEl.textContent = 'Novo Evento / Prazo';
+
+    const formTit = document.getElementById('evento-form-titulo');
+    if (formTit) formTit.value = '';
+
+    const formData = document.getElementById('evento-form-data');
+    if (formData) {
+      let dataPadrao = (typeof _cronoDiaSelecionado !== 'undefined' && _cronoDiaSelecionado) ? _cronoDiaSelecionado : '';
+      if (!dataPadrao && typeof isoHoje === 'function') dataPadrao = isoHoje();
+      if (!dataPadrao) dataPadrao = new Date().toISOString().split('T')[0];
+      formData.value = dataPadrao;
+    }
+
+    const formHora = document.getElementById('evento-form-hora');
+    if (formHora) formHora.value = '';
+
+    const formTipo = document.getElementById('evento-form-tipo');
+    if (formTipo) formTipo.value = 'entrega';
+
+    const formResp = document.getElementById('evento-form-responsavel');
+    if (formResp) formResp.value = '';
+
+    const formCliNome = document.getElementById('evento-form-cliente-nome');
+    if (formCliNome) formCliNome.value = '';
+
+    const telInp = document.getElementById('evento-form-cliente-tel');
+    if (telInp) telInp.value = '';
+
+    const formCliEnd = document.getElementById('evento-form-cliente-endereco');
+    if (formCliEnd) formCliEnd.value = '';
+
+    const formDesc = document.getElementById('evento-form-desc');
+    if (formDesc) formDesc.value = '';
+
+    if (id && typeof carregarEventosCrono === 'function') {
+      const ev = carregarEventosCrono().find(e => String(e.id) === String(id));
+      if (ev) {
+        if (editIdEl) editIdEl.value = ev.id;
+        if (titEl) titEl.textContent = 'Editar Evento';
+        if (formTit) formTit.value = ev.titulo || '';
+        if (formData) formData.value = ev.data || '';
+        if (formHora) formHora.value = ev.hora || '';
+        if (formTipo) formTipo.value = ev.tipo || 'outro';
+        if (formResp) formResp.value = ev.responsavel || '';
+        if (formCliNome) formCliNome.value = ev.clienteNome || '';
+        if (telInp) telInp.value = ev.clienteTel || ev.tel || '';
+        if (formCliEnd) formCliEnd.value = ev.clienteEndereco || '';
+        if (formDesc) formDesc.value = ev.desc || '';
+      }
+    }
+
+    m.style.setProperty('display', 'flex', 'important');
+    m.classList.add('active');
+    m.style.zIndex = '99999';
+
+    if (formTit) {
+      setTimeout(() => { formTit.focus(); }, 120);
+    }
+  } catch(err) {
+    console.error('Erro ao abrir modal do cronograma:', err);
+    const m = document.getElementById('modal-novo-evento-cronograma');
+    if (m) {
+      m.style.display = 'flex';
+      m.classList.add('active');
     }
   }
-  m.style.display = 'flex';
 }
 
 function fecharModalNovoEventoCronograma() {
   const m = document.getElementById('modal-novo-evento-cronograma');
-  if (m) m.style.display = 'none';
+  if (m) {
+    m.classList.remove('active');
+    m.style.setProperty('display', 'none', 'important');
+  }
 }
+
+window.abrirModalNovoEventoCronograma = abrirModalNovoEventoCronograma;
+window.fecharModalNovoEventoCronograma = fecharModalNovoEventoCronograma;
 
 
 // ── HELPER: ALTERNAR CAMPO CUSTOM DE CATEGORIA DO EVENTO ──
