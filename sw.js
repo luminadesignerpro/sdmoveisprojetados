@@ -1,8 +1,10 @@
-// Service Worker PWA para sdmoveisprojetados - v3.8
-const CACHE_NAME = 'sdmoveisprojetados-v3.8-' + Date.now();
+// Service Worker PWA para sdmoveisprojetados - v5.0 (Forçar limpeza de cache e UTF-8)
+const CACHE_NAME = 'sdmoveisprojetados-v5.0';
 const ASSETS = [
   '/',
   '/index.html',
+  '/banner.jpg',
+  '/logo_moveis.jpg',
   '/cliente.html',
   '/assinar.html',
   '/alarme.wav',
@@ -32,6 +34,7 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+  // Network first para garantir sempre a versão mais atualizada e limpa
   event.respondWith(
     fetch(event.request)
       .then((response) => {
@@ -60,4 +63,3 @@ self.addEventListener('notificationclick', (event) => {
     })
   );
 });
-
