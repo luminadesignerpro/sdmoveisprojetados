@@ -2421,9 +2421,9 @@
             <!-- Balões de mensagens inseridos dinamicamente -->
           </div>
 
-          <div class="chat-input-bar">
-            <input type="text" id="chat-input-text" class="chat-input" placeholder="Digite sua mensagem ou dúvida para a SD Móveis Projetados..." onkeydown="if(event.key==='Enter') enviarMensagemCliente()">
-            <button class="btn-send-msg" onclick="enviarMensagemCliente()">
+          <div class="chat-input-bar" style="position:relative;z-index:30;pointer-events:auto;">
+            <input type="text" id="chat-input-text" class="chat-input" placeholder="Digite sua mensagem ou dúvida para a SD Móveis Projetados..." onkeydown="if(event.key==='Enter') enviarMensagemCliente()" onclick="this.focus()" ontouchstart="this.focus()" style="position:relative;z-index:35;pointer-events:auto;user-select:text;-webkit-user-select:text;">
+            <button class="btn-send-msg" onclick="enviarMensagemCliente()" style="position:relative;z-index:35;cursor:pointer;">
               Enviar ➔
             </button>
           </div>

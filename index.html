@@ -5877,6 +5877,8 @@
       </button>
     </div>
   </div>
+</div>
+
 <!-- ══ MODAL: ORGANIZAR ORDEM DAS ABAS ══ -->
 <div id="modal-organizar-abas" class="modal-overlay" style="display:none;z-index:1000300;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);" onclick="fecharModalOrganizarAbas()">
   <div class="modal-box" onclick="event.stopPropagation()" style="max-width:440px;width:95%;max-height:85vh;display:flex;flex-direction:column;border:2px solid var(--gold);box-shadow:0 0 40px rgba(201,168,76,0.3);padding:20px;border-radius:20px;background:#10111a;">
@@ -12064,14 +12066,9 @@ function confirmarSaidaAlmocoPonto() {
 
   const horaProg = colab.horarioAlmocoSai || '12:00';
   const agora = new Date();
-  const minAgora = agora.getHours() * 60 + agora.getMinutes();
-  const [hP, mP] = horaProg.split(':').map(Number);
-  const minProg = (hP * 60) + mP;
   const hh = String(agora.getHours()).padStart(2, '0');
   const mm = String(agora.getMinutes()).padStart(2, '0');
   const horaStr = `${hh}:${mm}`;
-
-  // Permite confirmação da Saída para Almoço pelo colaborador no modal
 
   const elNome = document.getElementById('modal-conf-almsai-nome');
   const elHora = document.getElementById('modal-conf-almsai-hora');
@@ -12081,7 +12078,10 @@ function confirmarSaidaAlmocoPonto() {
   if (elProg) elProg.textContent = horaProg;
 
   const modal = document.getElementById('modal-confirmacao-almsai');
-  if (modal) modal.style.display = 'flex';
+  if (modal) {
+    modal.style.setProperty('display', 'flex', 'important');
+    modal.style.zIndex = '1000200';
+  }
 }
 
 function confirmarAlmocoSaiExecutar() {
@@ -12132,14 +12132,9 @@ function confirmarVoltaAlmocoPonto() {
 
   const horaProg = colab.horarioAlmocoVolta || '13:00';
   const agora = new Date();
-  const minAgora = agora.getHours() * 60 + agora.getMinutes();
-  const [hP, mP] = horaProg.split(':').map(Number);
-  const minProg = (hP * 60) + mP;
   const hh = String(agora.getHours()).padStart(2, '0');
   const mm = String(agora.getMinutes()).padStart(2, '0');
   const horaStr = `${hh}:${mm}`;
-
-  // Permite confirmação da Volta do Almoço pelo colaborador no modal
 
   const elNome = document.getElementById('modal-conf-almvol-nome');
   const elHora = document.getElementById('modal-conf-almvol-hora');
@@ -12149,7 +12144,10 @@ function confirmarVoltaAlmocoPonto() {
   if (elProg) elProg.textContent = horaProg;
 
   const modal = document.getElementById('modal-confirmacao-almvol');
-  if (modal) modal.style.display = 'flex';
+  if (modal) {
+    modal.style.setProperty('display', 'flex', 'important');
+    modal.style.zIndex = '1000200';
+  }
 }
 
 function confirmarAlmocoVoltaExecutar() {
@@ -12208,12 +12206,13 @@ function confirmarSaidaFinalPonto() {
   const horaStr = `${hh}:${mm}`;
   const ehFds = ehFimDeSemanaPonto(dataHoje);
 
-  // Bloqueio rigoroso antes do horário programado
-  if (minAgora < minProg && !ehFds && !p.saidaAntecipadaJustificada) {
-    mostrarMsgPonto(`🔒 Registro Bloqueado! A Saída Final não pode ser registrada antes do horário programado (${horaProg}). Horário atual: ${horaStr}.`, false);
-    setTimeout(() => {
-      abrirModalSaidaFinal(colabId, horaStr, p);
-    }, 1000);
+  const cargoStr = (colab.cargo || '').toLowerCase();
+  const nomeStr = (colab.nome || '').toLowerCase();
+  const isEmpresario = cargoStr.includes('empresário') || cargoStr.includes('diretor') || cargoStr.includes('gerente') || cargoStr.includes('proprietário') || nomeStr.includes('samuel');
+
+  // Se funcionário estiver saindo antes do horário e ainda não justificou, abre o modal de justificativa/dispensa autorizada imediatamente
+  if (minAgora < minProg && !ehFds && !p.saidaAntecipadaJustificada && !isEmpresario) {
+    abrirModalSaidaFinal(colabId, horaStr, p);
     return;
   }
 
@@ -12225,7 +12224,10 @@ function confirmarSaidaFinalPonto() {
   if (elProg) elProg.textContent = horaProg;
 
   const modal = document.getElementById('modal-confirmacao-saida-final');
-  if (modal) modal.style.display = 'flex';
+  if (modal) {
+    modal.style.setProperty('display', 'flex', 'important');
+    modal.style.zIndex = '1000200';
+  }
 }
 
 function confirmarSaidaFinalExecutar() {
@@ -12357,10 +12359,12 @@ function registrarBatidaPonto(tipo) {
     const expSaiMin = parseMin(colab?.horarioSaida || '17:30') || 1050;
     const horaAgoraMin = agora.getHours() * 60 + agora.getMinutes();
     const ehFds = ehFimDeSemanaPonto(p.data);
+    const cargoStr = (colab?.cargo || '').toLowerCase();
+    const nomeStr = (colab?.nome || '').toLowerCase();
+    const isEmpresario = cargoStr.includes('empresário') || cargoStr.includes('diretor') || cargoStr.includes('gerente') || cargoStr.includes('proprietário') || nomeStr.includes('samuel');
 
     // Se saiu antes do horário e ainda não justificou, abre modal para justificar
-    if (horaAgoraMin < expSaiMin && !ehFds && !p.saidaAntecipadaJustificada) {
-      mostrarMsgPonto(`🔒 Registro Bloqueado! A Saída Final não pode ser registrada antes do horário programado (${colab?.horarioSaida || '17:30'}). Horário atual: ${horaStr}.`, false);
+    if (horaAgoraMin < expSaiMin && !ehFds && !p.saidaAntecipadaJustificada && !isEmpresario) {
       abrirModalSaidaFinal(colabId, horaStr, p);
       return;
     }
@@ -12456,6 +12460,25 @@ function registrarBatidaPontoComJustificativa() {
 
   mostrarMsgPonto(`✅ Falta registrada com justificativa para ${colab.nome} (${motivo})!`, true);
 }
+
+// Vincula funções do fluxo de ponto globalmente no window para garantir funcionamento mobile e desktop
+window.confirmarEntradaPonto = typeof confirmarEntradaPonto !== 'undefined' ? confirmarEntradaPonto : null;
+window.confirmarEntradaExecutar = typeof confirmarEntradaExecutar !== 'undefined' ? confirmarEntradaExecutar : null;
+window.cancelarConfirmacaoEntrada = typeof cancelarConfirmacaoEntrada !== 'undefined' ? cancelarConfirmacaoEntrada : null;
+window.confirmarSaidaAlmocoPonto = typeof confirmarSaidaAlmocoPonto !== 'undefined' ? confirmarSaidaAlmocoPonto : null;
+window.confirmarAlmocoSaiExecutar = typeof confirmarAlmocoSaiExecutar !== 'undefined' ? confirmarAlmocoSaiExecutar : null;
+window.cancelarConfirmacaoAlmocoSai = typeof cancelarConfirmacaoAlmocoSai !== 'undefined' ? cancelarConfirmacaoAlmocoSai : null;
+window.confirmarVoltaAlmocoPonto = typeof confirmarVoltaAlmocoPonto !== 'undefined' ? confirmarVoltaAlmocoPonto : null;
+window.confirmarAlmocoVoltaExecutar = typeof confirmarAlmocoVoltaExecutar !== 'undefined' ? confirmarAlmocoVoltaExecutar : null;
+window.cancelarConfirmacaoAlmocoVolta = typeof cancelarConfirmacaoAlmocoVolta !== 'undefined' ? cancelarConfirmacaoAlmocoVolta : null;
+window.confirmarSaidaFinalPonto = typeof confirmarSaidaFinalPonto !== 'undefined' ? confirmarSaidaFinalPonto : null;
+window.confirmarSaidaFinalExecutar = typeof confirmarSaidaFinalExecutar !== 'undefined' ? confirmarSaidaFinalExecutar : null;
+window.cancelarConfirmacaoSaidaFinal = typeof cancelarConfirmacaoSaidaFinal !== 'undefined' ? cancelarConfirmacaoSaidaFinal : null;
+window.abrirModalSaidaFinal = typeof abrirModalSaidaFinal !== 'undefined' ? abrirModalSaidaFinal : null;
+window.fecharModalSaidaFinal = typeof fecharModalSaidaFinal !== 'undefined' ? fecharModalSaidaFinal : null;
+window.confirmarSaidaFinalComJustificativa = typeof confirmarSaidaFinalComJustificativa !== 'undefined' ? confirmarSaidaFinalComJustificativa : null;
+window.registrarBatidaPonto = typeof registrarBatidaPonto !== 'undefined' ? registrarBatidaPonto : null;
+window.registrarBatidaPontoComJustificativa = typeof registrarBatidaPontoComJustificativa !== 'undefined' ? registrarBatidaPontoComJustificativa : null;
 
 function recalcularHorasPonto(p, colab) {
   if (!p) return;
