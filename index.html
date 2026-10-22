@@ -24127,8 +24127,13 @@ function calcMovel() {
               <span style="font-size:18px;">📐</span>
               <span style="font-size:13.5px;font-weight:900;color:#fff;">Desenho do Plano de Corte MDF 2D</span>
             </div>
-            <div style="font-size:11px;color:#c084fc;font-weight:800;background:rgba(168,85,247,0.15);padding:3px 8px;border-radius:6px;border:1px solid rgba(168,85,247,0.3);">
-              Chapa: ${chapL}×${chapA}mm · Serra: 4mm · Refilo: 10mm
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <button type="button" id="btn-reorganizar-chapa" onclick="reorganizarChapa()" style="padding:6px 14px;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;border-radius:9px;color:#fff;font-weight:900;font-size:12px;cursor:pointer;box-shadow:0 3px 12px rgba(245,158,11,0.4);display:flex;align-items:center;gap:6px;transition:all 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                🔀 Reorganizar Chapa
+              </button>
+              <div style="font-size:11px;color:#c084fc;font-weight:800;background:rgba(168,85,247,0.15);padding:3px 8px;border-radius:6px;border:1px solid rgba(168,85,247,0.3);">
+                Chapa: ${chapL}×${chapA}mm · Serra: 4mm · Refilo: 10mm
+              </div>
             </div>
           </div>
 
@@ -24167,7 +24172,156 @@ function calcMovel() {
   }
 }
 
+// ─── REORGANIZAR CHAPA (MDF) ────────────────────────────────────────────────
+function reorganizarChapa() {
+  const btn = document.getElementById('btn-reorganizar-chapa');
+  if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Otimizando...'; }
+  setTimeout(() => {
+    try {
+      const planoAtual = window._planoCorteAtual;
+      if (!planoAtual) {
+        if (btn) { btn.disabled = false; btn.innerHTML = '🔀 Reorganizar Chapa'; }
+        alert('⚠️ Calcule as chapas primeiro antes de reorganizar.');
+        return;
+      }
+      const { chapW, chapH, kerf = 4, refilo = 10, pecasOriginais } = planoAtual;
+
+      // Monta lista plana de peças
+      let pecasFlat = [];
+      let gid = 1;
+      if (pecasOriginais && pecasOriginais.length > 0) {
+        pecasOriginais.forEach(p => {
+          const qtd = parseInt(p.qtd) || 1;
+          for (let i = 0; i < qtd; i++) {
+            pecasFlat.push({ id: gid++, nome: p.nome || ('#'+gid), w: parseFloat(p.largMm)||0, h: parseFloat(p.altMm)||0 });
+          }
+        });
+      } else {
+        planoAtual.chapas.forEach(c => {
+          c.pecas.forEach(p => {
+            pecasFlat.push({ id: p.id, nome: p.nome, w: p.rotacionada ? p.h : p.w, h: p.rotacionada ? p.w : p.h });
+          });
+        });
+      }
+
+      // Estratégias de ordenação
+      const estrategias = [
+        { nome: 'Maior lado',   fn: arr => [...arr].sort((a,b) => Math.max(b.w,b.h) - Math.max(a.w,a.h)) },
+        { nome: 'Menor lado',   fn: arr => [...arr].sort((a,b) => Math.min(b.w,b.h) - Math.min(a.w,a.h)) },
+        { nome: 'Maior área',   fn: arr => [...arr].sort((a,b) => (b.w*b.h) - (a.w*a.h)) },
+        { nome: 'Largura',      fn: arr => [...arr].sort((a,b) => b.w - a.w) },
+        { nome: 'Altura',       fn: arr => [...arr].sort((a,b) => b.h - a.h) },
+        { nome: 'Ordem atual',  fn: arr => [...arr] },
+      ];
+
+      // Shelf-BL packer
+      function empacotar(pecas) {
+        const usableW = Math.max(0, chapW - 2*refilo);
+        const usableH = Math.max(0, chapH - 2*refilo);
+        const chapas = [];
+        let rest = [...pecas];
+        while (rest.length > 0) {
+          const idx = chapas.length + 1;
+          const nesta = [], sobrou = [];
+          let curX=0, curY=0, shelfH=0;
+          for (const p of rest) {
+            let fw=p.w, fh=p.h, rot=false;
+            let cab = (curX+fw<=usableW)&&(curY+fh<=usableH);
+            if (!cab && (curX+p.h<=usableW)&&(curY+p.w<=usableH)) { fw=p.h; fh=p.w; rot=true; cab=true; }
+            if (!cab) {
+              const ny=curY+shelfH+kerf;
+              const cp=(fw<=usableW)&&(ny+fh<=usableH);
+              const cr=(p.h<=usableW)&&(ny+p.w<=usableH);
+              if (cp||cr) { curX=0; curY=ny; shelfH=0; if(!cp&&cr){fw=p.h;fh=p.w;rot=true;} cab=true; }
+            }
+            if (cab) { nesta.push({id:p.id,nome:p.nome,x:curX,y:curY,w:fw,h:fh,rotacionada:rot}); curX+=fw+kerf; shelfH=Math.max(shelfH,fh); }
+            else sobrou.push(p);
+          }
+          if (nesta.length===0) break;
+          chapas.push({ index:idx, pecas:nesta, totalSlots:nesta.length });
+          rest = sobrou;
+        }
+        return { chapW, chapH, refilo, kerf, totalChapas:chapas.length, chapas, pecasOriginais: pecasOriginais || [] };
+      }
+
+      function aprov(plano) {
+        const areaChapa = (plano.chapW/1000)*(plano.chapH/1000);
+        let areaPecas = 0;
+        plano.chapas.forEach(c => c.pecas.forEach(p => { areaPecas += (p.w/1000)*(p.h/1000); }));
+        return plano.totalChapas > 0 ? (areaPecas / (plano.totalChapas * areaChapa)) * 100 : 0;
+      }
+
+      const aprovAtual = aprov(planoAtual);
+      let melhorPlano = null, melhorAprov = aprovAtual, melhorNome = 'Original';
+
+      for (const est of estrategias) {
+        const plano = empacotar(est.fn(pecasFlat));
+        const a = aprov(plano);
+        if (a > melhorAprov || (Math.abs(a - melhorAprov) < 0.01 && plano.totalChapas < (melhorPlano||planoAtual).totalChapas)) {
+          melhorAprov = a; melhorPlano = plano; melhorNome = est.nome;
+        }
+      }
+
+      if (btn) { btn.disabled = false; btn.innerHTML = '🔀 Reorganizar Chapa'; }
+
+      if (!melhorPlano) {
+        _toastReorganizarChapa('✅ Plano já está no máximo! Aproveitamento: ' + aprovAtual.toFixed(1) + '%', '#4ade80');
+        return;
+      }
+
+      window._planoCorteAtual = melhorPlano;
+
+      // Atualiza SVG
+      const svgEl = document.getElementById('ferr-m-desenho-svg');
+      if (svgEl) svgEl.innerHTML = gerarSvgPlanoDeCorte(melhorPlano, 1);
+
+      // Atualiza abas de chapas
+      const res = document.getElementById('ferr-m-res');
+      if (res) {
+        // Atualiza número de chapas
+        res.querySelectorAll('div').forEach(d => {
+          if (d.textContent.includes('chapa') && d.style.fontSize === '20px') {
+            d.textContent = `🪑 ${melhorPlano.totalChapas} chapa${melhorPlano.totalChapas!==1?'s':''}`;
+          }
+        });
+        // Atualiza aproveitamento
+        res.querySelectorAll('div').forEach(d => {
+          if (d.textContent.includes('% útil') && d.style.color === 'rgb(250, 204, 21)') {
+            d.textContent = `♻️ ${melhorAprov.toFixed(1)}% útil`;
+          }
+        });
+      }
+
+      const ganho = (melhorAprov - aprovAtual).toFixed(1);
+      const msg = parseFloat(ganho) > 0
+        ? `🔀 Reorganizado! ${aprovAtual.toFixed(1)}% → ${melhorAprov.toFixed(1)}% (+${ganho}%) · ${melhorNome}`
+        : `✅ Layout otimizado (${melhorAprov.toFixed(1)}%) · Estratégia: ${melhorNome}`;
+      _toastReorganizarChapa(msg, '#f59e0b');
+
+    } catch(e) {
+      console.error('reorganizarChapa erro:', e);
+      if (btn) { btn.disabled = false; btn.innerHTML = '🔀 Reorganizar Chapa'; }
+    }
+  }, 80);
+}
+
+function _toastReorganizarChapa(msg, cor) {
+  let t = document.getElementById('_toast-reorg');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = '_toast-reorg';
+    t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:99999;padding:10px 20px;border-radius:14px;font-size:13px;font-weight:800;color:#fff;text-align:center;max-width:90vw;transition:opacity 0.4s;pointer-events:none;box-shadow:0 4px 22px rgba(0,0,0,0.4);';
+    document.body.appendChild(t);
+  }
+  t.style.background = cor || '#f59e0b';
+  t.style.opacity = '1';
+  t.textContent = msg;
+  clearTimeout(t._to);
+  t._to = setTimeout(() => { t.style.opacity = '0'; }, 4500);
+}
+
 // Conversão de medidas
+
 function calcConversao() {
   const v = parseFloat(document.getElementById('ferr-c-val').value);
   const de = document.getElementById('ferr-c-de').value;
@@ -26158,4 +26312,6 @@ function calcularSegurancaFuro() {
 <script>
 window.calcVidro = calcVidro;
 window.calcMovel = calcMovel;
+window.reorganizarChapa = reorganizarChapa;
+
 </script>

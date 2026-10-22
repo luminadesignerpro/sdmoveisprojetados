@@ -1,5 +1,5 @@
-// Service Worker PWA para sdmoveisprojetados - v6.6 (Remocao Botoes Cronograma Funcionario)
-const CACHE_NAME = 'sdmoveisprojetados-v6.6';
+// Service Worker PWA para sdmoveisprojetados - v6.7 (Botao Reorganizar Chapa MDF)
+const CACHE_NAME = 'sdmoveisprojetados-v6.7';
 const ASSETS = [
   '/',
   '/index.html',
