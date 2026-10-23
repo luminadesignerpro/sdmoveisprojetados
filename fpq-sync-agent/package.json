@@ -1,0 +1,17 @@
+{
+  "name": "fpq-sync-agent",
+  "version": "1.0.0",
+  "description": "Worker de sincronização automática FPQ System -> Supabase",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.101.1",
+    "dotenv": "^16.6.1",
+    "node-firebird": "^1.1.10"
+  },
+  "devDependencies": {
+    "pkg": "^5.8.1"
+  }
+}

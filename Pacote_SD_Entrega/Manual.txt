@@ -1,0 +1,8 @@
+PACOTE FINAL - SD MOVEIS PROJETADOS
+------------------------------------
+INSTRUCOES:
+1. Instale o APK no Celular.
+2. Instale o Firebird no PC (Link no LEIA-ME anterior).
+3. Execute o .reg no Windows com dois cliques.
+4. Rode o FPQSync.exe para sincronizar.
+------------------------------------

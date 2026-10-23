@@ -2447,6 +2447,31 @@
 
       <!-- ── ABA 1: STATUS DO SERVIÇO ── -->
       <div id="pane-status" class="tab-pane active">
+
+        <!-- ══ SELETOR DE O.S. – PORTAL DO CLIENTE ══ -->
+        <div id="card-seletor-os-cliente" style="background:linear-gradient(135deg,rgba(201,168,76,0.13),rgba(14,165,233,0.08));border:1.5px solid rgba(201,168,76,0.4);border-radius:16px;padding:16px 18px;margin-bottom:14px;box-shadow:0 8px 24px rgba(0,0,0,0.45);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:18px;">📋</span>
+              <div>
+                <div style="font-size:11px;color:var(--gold-light);font-weight:800;text-transform:uppercase;letter-spacing:0.1em;">Meu Pedido</div>
+                <div style="font-size:15px;font-weight:900;color:#fff;">Selecione sua Ordem de Serviço</div>
+              </div>
+            </div>
+            <div id="badge-os-selecionada-cliente" style="display:none;background:linear-gradient(135deg,rgba(201,168,76,0.3),rgba(201,168,76,0.15));border:1.5px solid var(--gold);border-radius:999px;padding:4px 14px;font-size:12px;font-weight:900;color:var(--gold-light);"></div>
+          </div>
+
+          <!-- Campo de busca rápida -->
+          <div style="position:relative;margin-bottom:10px;">
+            <input type="text" id="input-busca-os-cliente" placeholder="🔍 Buscar por número ou nome…" oninput="filtrarOSCliente(this.value)" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.07);border:1.5px solid rgba(255,255,255,0.15);border-radius:10px;padding:10px 14px;color:#fff;font-size:13px;outline:none;transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='rgba(255,255,255,0.15)'">
+          </div>
+
+          <!-- Lista de O.S. clicáveis -->
+          <div id="lista-os-seletor-cliente" style="display:flex;flex-direction:column;gap:8px;max-height:260px;overflow-y:auto;padding-right:2px;">
+            <div style="text-align:center;padding:16px;color:var(--muted);font-size:12.5px;">Carregando suas ordens de serviço…</div>
+          </div>
+        </div>
+
         <!-- Card Destaque de Status -->
         <div class="status-hero">
           <div>
@@ -4417,7 +4442,10 @@
       renderizarOrdensMensagens();
       conectarRealtimePortal(sessao);
       atualizarBotaoHeaderBiometria();
+      // Renderiza seletor de O.S. para o cliente
+      if (typeof renderizarSeletorOSCliente === 'function') renderizarSeletorOSCliente();
     }
+
 
     function inicializarFinanceiroPessoal() {}
 function abrirModalLancamentoPessoal() {}
@@ -6926,7 +6954,114 @@ function mudarAba(tab) {
     // ══════════════════════════════════════════════
     //  DADOS DE STATUS DO SERVIÇO
     // ══════════════════════════════════════════════
+    // ══════════════════════════════════════════════
+    //  SELETOR DE O.S. DO PORTAL DO CLIENTE
+    // ══════════════════════════════════════════════
+    function renderizarSeletorOSCliente(filtro) {
+      const container = document.getElementById('lista-os-seletor-cliente');
+      const cardSeletor = document.getElementById('card-seletor-os-cliente');
+      if (!container) return;
+
+      const ordens = (typeof carregarOrdensDoStorage === 'function') ? carregarOrdensDoStorage() : [];
+
+      // Se só existe 1 OS, esconde o seletor e usa automaticamente
+      if (ordens.length <= 1 && !filtro) {
+        if (cardSeletor) cardSeletor.style.display = 'none';
+        return;
+      }
+
+      // Filtra as ordens do cliente (por nome/telefone da sessão atual)
+      let ordensCliente = ordens;
+      if (clienteSessao && clienteSessao.nome && !clienteSessao.isFuncionario) {
+        const nLimpo = (clienteSessao.nome || '').toLowerCase().trim();
+        const telLimpo = String(clienteSessao.telefone || '').replace(/\D/g, '');
+        const ordensFiltradas = ordens.filter(o => {
+          const oNome = (o.nome || (o.dados && o.dados.nome) || '').toLowerCase();
+          const oTel = String(o.telefone || (o.dados && o.dados.telefone) || '').replace(/\D/g, '');
+          return oNome.includes(nLimpo) || (telLimpo && oTel && oTel.includes(telLimpo));
+        });
+        if (ordensFiltradas.length > 0) ordensCliente = ordensFiltradas;
+      }
+
+      // Aplica filtro de busca
+      if (filtro && filtro.trim()) {
+        const f = filtro.trim().toLowerCase();
+        ordensCliente = ordensCliente.filter(o => {
+          const n = (o.numero || (o.dados && o.dados.numero) || '').toLowerCase();
+          const nome = (o.nome || (o.dados && o.dados.nome) || '').toLowerCase();
+          return n.includes(f) || nome.includes(f);
+        });
+      }
+
+      if (!ordensCliente.length) {
+        container.innerHTML = '<div style="text-align:center;padding:16px;color:var(--muted);font-size:12.5px;">Nenhuma ordem encontrada.</div>';
+        return;
+      }
+
+      const osAtivaNum = clienteSessao ? String(clienteSessao.os || '').replace(/\D/g, '') : '';
+
+      container.innerHTML = ordensCliente.map(o => {
+        const numOs = esc(o.numero || (o.dados && o.dados.numero) || '#0001');
+        const numDigitos = String(numOs).replace(/\D/g, '');
+        const nomeCliente = esc(o.nome || (o.dados && o.dados.nome) || 'Cliente');
+        const etapa = Number(o.etapa_servico || 1);
+        const statusTxt = esc(o.status_servico_texto || ['Orçamento', 'Medição Técnica', 'Em Fabricação', 'Pronto', 'Em Instalação', 'Concluído'][etapa - 1] || 'Em andamento');
+        const isAtiva = (osAtivaNum && numDigitos === osAtivaNum);
+
+        const corEtapa = etapa >= 6 ? '#4ade80' : etapa >= 4 ? '#38bdf8' : '#fbbf24';
+
+        return `
+          <div style="background:${isAtiva ? 'linear-gradient(135deg,rgba(201,168,76,0.18),rgba(14,165,233,0.10))' : 'rgba(255,255,255,0.04)'};border:${isAtiva ? '1.5px solid var(--gold)' : '1px solid rgba(255,255,255,0.08)'};border-radius:12px;padding:12px 14px;box-shadow:${isAtiva ? '0 4px 18px rgba(201,168,76,0.2)' : 'none'};transition:all 0.2s;cursor:pointer;" onclick="selecionarOSCliente('${numOs}', '${nomeCliente}')">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="background:linear-gradient(135deg,rgba(201,168,76,0.25),rgba(201,168,76,0.1));border:1.5px solid var(--gold);color:var(--gold-light);padding:3px 10px;border-radius:8px;font-weight:900;font-size:13.5px;">${numOs}</span>
+                ${isAtiva ? '<span style="background:rgba(201,168,76,0.2);border:1px solid var(--gold);color:var(--gold-light);padding:2px 8px;border-radius:999px;font-size:10px;font-weight:800;">✓ Selecionada</span>' : ''}
+              </div>
+              <span style="font-size:11px;color:${corEtapa};font-weight:800;">⬤ ${statusTxt}</span>
+            </div>
+            <div style="margin-top:8px;font-size:13px;font-weight:800;color:#fff;">👤 ${nomeCliente}</div>
+            <div style="margin-top:6px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06);display:flex;justify-content:center;">
+              <button type="button" onclick="event.stopPropagation();selecionarOSCliente('${numOs}', '${nomeCliente}')" style="flex:1;padding:8px 14px;background:${isAtiva ? 'linear-gradient(135deg,var(--gold),#eab308)' : 'rgba(255,255,255,0.1)'};color:${isAtiva ? '#000' : '#fff'};border:none;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:5px;">
+                ${isAtiva ? '✓ Acompanhando esta O.S.' : '▶ Ver esta O.S.'}
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function filtrarOSCliente(termo) {
+      renderizarSeletorOSCliente(termo);
+    }
+
+    function selecionarOSCliente(numOs, nomeCliente) {
+      if (!clienteSessao) {
+        clienteSessao = { nome: nomeCliente || 'Cliente', os: numOs };
+      } else {
+        clienteSessao.os = numOs;
+        if (nomeCliente) clienteSessao.nome = nomeCliente;
+      }
+      localStorage.setItem('sdv_cliente_sessao', JSON.stringify(clienteSessao));
+
+      // Atualiza badge do seletor
+      const badge = document.getElementById('badge-os-selecionada-cliente');
+      if (badge) { badge.textContent = numOs; badge.style.display = 'inline-block'; }
+
+      // Recarrega status, galeria e mensagens para a nova OS
+      carregarDadosStatus(clienteSessao);
+      if (typeof carregarGaleriaFotos === 'function') carregarGaleriaFotos(clienteSessao);
+      if (typeof carregarMensagensChat === 'function') carregarMensagensChat(clienteSessao);
+
+      // Atualiza header da página
+      const elOsTxt = document.getElementById('lbl-cliente-os-texto');
+      if (elOsTxt) elOsTxt.textContent = 'O.S. ' + numOs;
+
+      renderizarSeletorOSCliente();
+      mostrarToastNotificacao('O.S. Selecionada!', `Acompanhando o pedido ${numOs}.`, '📋');
+    }
+
     function carregarDadosStatus(sessao) {
+
       const ordens = carregarOrdensDoStorage();
       const osData = ordens.find(o => o.numero === sessao.os) || sessao.ordem;
       dadosOsCliente = osData;

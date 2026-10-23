@@ -12035,28 +12035,48 @@ function ativarAlarmePontoCelularSegundoPlano() {
     return;
   }
   Notification.requestPermission().then(permission => {
-    if (permission === 'granted') {
-      const cfgSalva = (function(){ try { return JSON.parse(localStorage.getItem('sdv_config_alarme_ponto')||'{}'); } catch(_){ return {}; } })();
-      const turnos = [
-        { hora: cfgSalva.ent || '08:00', label: 'Entrada' },
-        { hora: cfgSalva.alm || '12:00', label: 'Saída para Almoço' },
-        { hora: cfgSalva.vol || '13:30', label: 'Retorno do Almoço' },
-        { hora: cfgSalva.sai || '17:30', label: 'Saída Final' }
-      ];
-      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-        navigator.serviceWorker.controller.postMessage({
-          action: 'configurarAlarmesPonto',
-          alarmes: turnos,
-          nome: (typeof clienteSessao !== 'undefined' && clienteSessao ? clienteSessao.nome : 'Colaborador'),
-          testar: true
-        });
-      }
-      alert('🔔 Alarme de Ponto ativado no celular com sucesso! Você receberá aviso 5 minutos antes de cada turno mesmo com o app fechado.');
+    if (permission !== 'granted') {
+      mostrarToastNotificacao('Permissão Necessária', 'Permita notificações para receber alarmes de ponto.', '⚠️');
+      return;
+    }
+
+    const cfgSalva = (function(){ try { return JSON.parse(localStorage.getItem('sdv_config_alarme_ponto')||'{}'); } catch(_){ return {}; } })();
+    const diasCfg = cfgSalva.dias || [1,2,3,4,5]; // padrão seg-sex
+
+    const turnos = [
+      { hora: cfgSalva.ent || '08:00', label: 'Entrada', dias: diasCfg },
+      { hora: cfgSalva.alm || '12:00', label: 'Saída para Almoço', dias: diasCfg },
+      { hora: cfgSalva.vol || '13:30', label: 'Retorno do Almoço', dias: diasCfg },
+      { hora: cfgSalva.sai || '17:30', label: 'Saída Final', dias: diasCfg }
+    ];
+
+    const nomeColab = (typeof clienteSessao !== 'undefined' && clienteSessao ? clienteSessao.nome : 'Colaborador');
+
+    if ('serviceWorker' in navigator) {
+      // Usa .ready para garantir que o SW está ativo antes de enviar mensagem
+      navigator.serviceWorker.ready.then(reg => {
+        if (reg.active) {
+          reg.active.postMessage({
+            action: 'configurarAlarmesPonto',
+            alarmes: turnos,
+            nome: nomeColab,
+            testar: true
+          });
+          mostrarToastNotificacao(
+            '⏰ Alarme de Ponto Ativado!',
+            `Você receberá avisos 5 min antes de cada batida mesmo com o celular bloqueado.`,
+            '🔔'
+          );
+        }
+      }).catch(() => {
+        mostrarToastNotificacao('Erro no Alarme', 'Não foi possível ativar o alarme em segundo plano. Tente novamente.', '⚠️');
+      });
     } else {
-      alert('Por favor, permita as notificações no navegador para receber os alarmes de ponto no celular.');
+      alert('Seu navegador não suporta Service Worker. Alarmes em segundo plano indisponíveis.');
     }
   });
 }
+
 
 function baixarSincronizacaoAlarmeCalendario() {
   const icsContent = [
@@ -12450,7 +12470,32 @@ function salvarConfigHorariosAlarmeCliente() {
   } else {
     alert(`Configurações salvas: ${statusTxt}!`);
   }
+
+  // Reenvia configuração atualizada para o Service Worker
+  if (cfg.ativo && 'serviceWorker' in navigator) {
+    navigator.serviceWorker.ready.then(reg => {
+      if (reg.active) {
+        const turnos = [
+          { hora: cfg.ent || '08:00', label: 'Entrada', dias: cfg.diasSemana || [1,2,3,4,5] },
+          { hora: cfg.alm || '12:00', label: 'Saída para Almoço', dias: cfg.diasSemana || [1,2,3,4,5] },
+          { hora: cfg.vol || '13:30', label: 'Retorno do Almoço', dias: cfg.diasSemana || [1,2,3,4,5] },
+          { hora: cfg.sai || '17:30', label: 'Saída Final', dias: cfg.diasSemana || [1,2,3,4,5] }
+        ];
+        reg.active.postMessage({
+          action: 'configurarAlarmesPonto',
+          alarmes: turnos,
+          nome: (typeof clienteSessao !== 'undefined' && clienteSessao ? clienteSessao.nome : 'Colaborador'),
+          testar: false
+        });
+      }
+    }).catch(() => {});
+  } else if (!cfg.ativo && 'serviceWorker' in navigator) {
+    navigator.serviceWorker.ready.then(reg => {
+      if (reg.active) reg.active.postMessage({ action: 'desativarAlarmes' });
+    }).catch(() => {});
+  }
 }
+
 
 function testarSireneFuncionario() {
   if (typeof tocarSireneAlarmePonto === 'function') {
