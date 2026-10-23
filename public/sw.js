@@ -1,5 +1,5 @@
-// Service Worker PWA para sdmoveisprojetados - v7.4 (Layout de Ações Atualizado)
-const CACHE_NAME = 'sdmoveisprojetados-v7.4';
+// Service Worker PWA para sdmoveisprojetados - v7.5 (Espelho de Ponto Ajustado)
+const CACHE_NAME = 'sdmoveisprojetados-v7.5';
 const ASSETS = [
   '/',
   '/index.html',
