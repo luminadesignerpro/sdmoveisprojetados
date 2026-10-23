@@ -15066,12 +15066,16 @@ function renderGaleriaOsModal(osNumero) {
     grid.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:10px;">Nenhuma foto adicionada ainda. Clique em "+ Adicionar Foto" para enviar.</div>';
     return;
   }
-  grid.innerHTML = fotos.map(f => `
-    <div style="position:relative;background:#08080f;border-radius:8px;overflow:hidden;cursor:pointer;" title="${esc(f.legenda||'Foto')}">
-      <img src="${f.foto}" style="width:100%;height:90px;object-fit:cover;" alt="Foto" onerror="this.src='banner.jpg'">
-      <div style="font-size:9.5px;padding:4px 6px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(f.legenda||'')}</div>
-    </div>
-  `).join('');
+  grid.innerHTML = fotos.map(f => {
+    const isEquipe = (f.remetente === 'equipe' || f.visibilidade === 'equipe_empresa');
+    return `
+      <div style="position:relative;background:#08080f;border:1px solid ${isEquipe ? 'rgba(56,189,248,0.5)' : 'rgba(255,255,255,0.08)'};border-radius:8px;overflow:hidden;cursor:pointer;" title="${esc(f.legenda||'Foto da O.S.')}" onclick="window.open('${f.foto}','_blank')">
+        <img src="${f.foto}" style="width:100%;height:90px;object-fit:cover;" alt="Foto" onerror="this.src='banner.jpg'">
+        ${isEquipe ? `<span style="position:absolute;top:4px;left:4px;background:rgba(2,132,199,0.9);color:#fff;font-size:8.5px;font-weight:800;padding:1px 6px;border-radius:4px;backdrop-filter:blur(2px);">👷 Equipe</span>` : ''}
+        <div style="font-size:9.5px;padding:4px 6px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(f.legenda||'Foto')} ${f.data ? '· ' + esc(f.data) : ''}</div>
+      </div>
+    `;
+  }).join('');
 }
 
 function uploadFotoOsModal(event) {

@@ -1,5 +1,5 @@
-// Service Worker PWA para sdmoveisprojetados - v7.6 (Batida de Ponto 100% Manual)
-const CACHE_NAME = 'sdmoveisprojetados-v7.6';
+// Service Worker PWA para sdmoveisprojetados - v7.7 (Seletor de OS no Status e Fotos por OS na Galeria)
+const CACHE_NAME = 'sdmoveisprojetados-v7.7';
 const ASSETS = [
   '/',
   '/index.html',

@@ -2632,6 +2632,34 @@
 
       <!-- ── ABA 1: STATUS DO SERVIÇO ── -->
       <div id="pane-status" class="tab-pane active">
+
+        <!-- ══ SELETOR DE O.S. – EXCLUSIVO PORTAL EQUIPE ══ -->
+        <div id="card-seletor-os-equipe" style="background:linear-gradient(135deg,rgba(14,165,233,0.13),rgba(201,168,76,0.10));border:1.5px solid rgba(56,189,248,0.35);border-radius:16px;padding:16px 18px;margin-bottom:14px;box-shadow:0 8px 24px rgba(0,0,0,0.45);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:18px;">📋</span>
+              <div>
+                <div style="font-size:11px;color:#38bdf8;font-weight:800;text-transform:uppercase;letter-spacing:0.1em;">Portal Equipe</div>
+                <div style="font-size:15px;font-weight:900;color:#fff;">Selecionar O.S. de Trabalho</div>
+              </div>
+            </div>
+            <div id="badge-os-selecionada-equipe" style="display:none;background:linear-gradient(135deg,rgba(201,168,76,0.3),rgba(201,168,76,0.15));border:1.5px solid var(--gold);border-radius:999px;padding:4px 14px;font-size:12px;font-weight:900;color:var(--gold-light);"></div>
+          </div>
+
+          <!-- Campo de busca rápida -->
+          <div style="position:relative;margin-bottom:10px;">
+            <input type="text" id="input-busca-os-equipe" placeholder="🔍 Buscar por número, cliente ou endereço…" oninput="filtrarOSEquipe(this.value)" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.07);border:1.5px solid rgba(255,255,255,0.15);border-radius:10px;padding:10px 14px;color:#fff;font-size:13px;outline:none;transition:border-color 0.2s;" onfocus="this.style.borderColor='#38bdf8'" onblur="this.style.borderColor='rgba(255,255,255,0.15)'">
+          </div>
+
+          <!-- Input oculto para captura direta da câmera por O.S. -->
+          <input type="file" id="input-camera-os-equipe" accept="image/*" capture="environment" style="display:none;" onchange="aoTirarFotoParaOSSelecionada(event)">
+
+          <!-- Lista de O.S. -->
+          <div id="lista-os-seletor-equipe" style="display:flex;flex-direction:column;gap:8px;max-height:280px;overflow-y:auto;padding-right:2px;">
+            <div style="text-align:center;padding:20px;color:var(--muted);font-size:12.5px;">Carregando ordens de serviço…</div>
+          </div>
+        </div>
+
         <!-- Card Destaque de Status -->
         <div class="status-hero">
           <div>
@@ -2718,21 +2746,49 @@
       <!-- ── ABA 2: GALERIA DE FOTOS DA OBRA ── -->
       <div id="pane-galeria" class="tab-pane">
         <div class="portal-card">
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
-            <div class="card-title" style="margin-bottom: 0;">
-              <span>📸 Fotos da Sua Instalação & Projeto</span>
-            </div>
+          <!-- Cabeçalho da Galeria com O.S. Ativa e Ações de Câmera -->
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.08);">
             <div>
-              <input type="file" id="input-foto-cliente" accept="image/*" style="display:none" onchange="uploadFotoCliente(event)">
-              <button class="btn-upload-foto" onclick="document.getElementById('input-foto-cliente').click()">
-                📷 Enviar Foto do Vão / Dúvida
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                <span class="card-title" style="margin-bottom:0;">📸 Galeria da O.S.</span>
+                <span id="galeria-os-badge" style="background:linear-gradient(135deg,rgba(201,168,76,0.25),rgba(201,168,76,0.1));border:1.5px solid var(--gold);color:var(--gold-light);padding:3px 12px;border-radius:999px;font-weight:900;font-size:12px;">#0001</span>
+                <span style="background:rgba(56,189,248,0.15);border:1px solid rgba(56,189,248,0.35);color:#38bdf8;padding:2px 8px;border-radius:6px;font-size:10.5px;font-weight:700;">🔒 Visível apenas para Equipe & Empresa</span>
+              </div>
+              <div id="galeria-os-cliente" style="font-size:13.5px;font-weight:800;color:#fff;margin-top:6px;">👤 Cliente: -</div>
+              <div id="galeria-os-endereco" style="font-size:12px;color:var(--text2);margin-top:2px;">📍 Endereço: -</div>
+            </div>
+
+            <!-- Botões de Ação na Galeria: Câmera Direta e Arquivo -->
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+              <input type="file" id="input-foto-camera-galeria" accept="image/*" capture="environment" style="display:none" onchange="uploadFotoCameraGaleria(event)">
+              <input type="file" id="input-foto-arquivo-galeria" accept="image/*" style="display:none" onchange="uploadFotoCameraGaleria(event)">
+              
+              <button type="button" class="btn-upload-foto" style="background:linear-gradient(135deg,#0284c7,#0369a1);border:1px solid #38bdf8;color:#fff;font-weight:800;padding:8px 14px;border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(2,132,199,0.35);" onclick="document.getElementById('input-foto-camera-galeria').click()">
+                📷 Tirar Foto (Câmera)
+              </button>
+              <button type="button" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);color:#fff;font-weight:700;font-size:12px;padding:8px 12px;border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;" onclick="document.getElementById('input-foto-arquivo-galeria').click()">
+                📁 Arquivo
               </button>
             </div>
           </div>
 
-          <p style="font-size: 12.5px; color: var(--text2); line-height: 1.5; margin-bottom: 14px;">
-            Aqui você acompanha os registros fotográficos do seu projeto: medição, fotos da produção na fábrica e instalação finalizada. Clique na foto para ampliar.
-          </p>
+          <!-- Barra de Alternância Rápida de O.S. na Galeria -->
+          <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:8px 12px;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:13px;">🔄</span>
+              <span style="font-size:12px;color:#fff;font-weight:800;">Visualizar Galeria de Outra O.S.:</span>
+            </div>
+            <select id="select-galeria-os-troca" onchange="selecionarOSEquipe(this.value, this.options[this.selectedIndex].text)" style="background:rgba(0,0,0,0.6);border:1.5px solid var(--gold);color:var(--gold-light);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:800;outline:none;cursor:pointer;max-width:240px;">
+              <option value="">Carregando Ordens…</option>
+            </select>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+            <p style="font-size: 12px; color: var(--text2); margin:0;">
+              Fotos registradas e salvas por O.S. Acesso restrito ao Portal da Equipe e à Empresa.
+            </p>
+            <div style="font-size:11.5px;color:var(--gold-light);font-weight:800;" id="galeria-contador-fotos-txt">0 foto(s)</div>
+          </div>
 
           <div class="gallery-grid" id="galeria-grid-container">
             <!-- Fotos inseridas dinamicamente -->
@@ -5736,7 +5792,12 @@ function mudarAba(tab) {
       });
 
       try {
-        if (tab === 'ponto') {
+        if (tab === 'status') {
+          if (typeof renderizarSeletorOSEquipe === 'function') renderizarSeletorOSEquipe();
+          if (typeof carregarDadosStatus === 'function') carregarDadosStatus(clienteSessao);
+        } else if (tab === 'galeria') {
+          if (typeof carregarGaleriaFotos === 'function') carregarGaleriaFotos(clienteSessao);
+        } else if (tab === 'ponto') {
           const contFin = document.getElementById('conteudo-financeiro-cliente');
           const contPonto = document.getElementById('conteudo-ponto-funcionario');
           if (contFin) contFin.style.display = 'none';
@@ -8757,8 +8818,13 @@ function baterPontoNoCliente(tipo) {
     //  DADOS DE STATUS DO SERVIÇO
     // ══════════════════════════════════════════════
     function carregarDadosStatus(sessao) {
+      if (!sessao) return;
       const ordens = carregarOrdensDoStorage();
-      const osData = ordens.find(o => o.numero === sessao.os) || sessao.ordem;
+      const numNorm = sessao.os ? String(sessao.os).replace(/\D/g, '') : '';
+      const osData = ordens.find(o => {
+        const oNum = String(o.numero || (o.dados && o.dados.numero) || '').replace(/\D/g, '');
+        return oNum && oNum === numNorm;
+      }) || ordens.find(o => o.numero === sessao.os) || sessao.ordem;
       dadosOsCliente = osData;
 
       // Etapa atual (1 a 6)
@@ -8778,12 +8844,18 @@ function baterPontoNoCliente(tipo) {
       }
       const previsao = (osData && osData.previsao_instalacao) || 'A combinar com equipe';
 
-      document.getElementById('hero-status-nome').textContent = statusTexto;
-      document.getElementById('hero-status-desc').textContent = statusObs;
-      document.getElementById('hero-previsao-data').textContent = previsao;
+      const heroNome = document.getElementById('hero-status-nome');
+      const heroDesc = document.getElementById('hero-status-desc');
+      const heroPrev = document.getElementById('hero-previsao-data');
+      if (heroNome) heroNome.textContent = statusTexto;
+      if (heroDesc) heroDesc.textContent = statusObs;
+      if (heroPrev) heroPrev.textContent = previsao;
 
       // Atualiza stepper
       atualizarStepperVisual(etapa);
+
+      // Atualiza badge e seletor da equipe
+      try { renderizarSeletorOSEquipe(); } catch(_) {}
     }
 
     function atualizarStepperVisual(etapaAtiva) {
@@ -8806,103 +8878,384 @@ function baterPontoNoCliente(tipo) {
     }
 
     // ══════════════════════════════════════════════
-    //  GALERIA DE FOTOS
+    //  SELETOR DE O.S. & GALERIA DA EQUIPE / EMPRESA
     // ══════════════════════════════════════════════
-    function getGaleriaStorageKey(os) {
-      return 'sdv_galeria_' + String(os).replace(/\D/g, '');
+    let _osFotoAlvoEquipe = null;
+
+    function extrairEnderecoOS(o) {
+      if (!o) return 'Endereço não informado';
+      if (typeof o.endereco === 'string' && o.endereco.trim()) return o.endereco.trim();
+      const d = o.dados || {};
+      if (typeof d.endereco === 'string' && d.endereco.trim()) return d.endereco.trim();
+      const partes = [];
+      if (d.end || d.rua || d.logradouro) partes.push(d.end || d.rua || d.logradouro);
+      if (d.num || d.numero) partes.push('nº ' + (d.num || d.numero));
+      if (d.bairro) partes.push(d.bairro);
+      if (d.cidade) partes.push(d.cidade);
+      if (d.uf || d.estado) partes.push(d.uf || d.estado);
+      if (partes.length > 0) return partes.join(' - ');
+      return 'Endereço não informado';
     }
 
-    function carregarGaleriaFotos(sessao) {
-      const key = getGaleriaStorageKey(sessao.os);
+    function renderizarSeletorOSEquipe(termoFiltro = '') {
+      const container = document.getElementById('lista-os-seletor-equipe');
+      if (!container) return;
+
+      const badgeAtiva = document.getElementById('badge-os-selecionada-equipe');
+      const ordens = (typeof carregarOrdensDoStorage === 'function') ? carregarOrdensDoStorage() : [];
+
+      if (!ordens || !ordens.length) {
+        container.innerHTML = `
+          <div style="text-align:center;padding:22px 14px;color:var(--muted);font-size:12.5px;background:rgba(255,255,255,0.02);border-radius:12px;border:1px dashed rgba(255,255,255,0.1);">
+            Nenhuma Ordem de Serviço cadastrada no sistema.
+          </div>
+        `;
+        if (badgeAtiva) badgeAtiva.style.display = 'none';
+        return;
+      }
+
+      // O.S. ativa atual
+      const osAtivaNum = (clienteSessao && clienteSessao.os) ? String(clienteSessao.os).replace(/\D/g, '') : '';
+      if (badgeAtiva) {
+        badgeAtiva.textContent = clienteSessao && clienteSessao.os ? `O.S. ${clienteSessao.os}` : '';
+        badgeAtiva.style.display = clienteSessao && clienteSessao.os ? 'inline-block' : 'none';
+      }
+
+      // Ordena das mais recentes para as mais antigas
+      const termo = (termoFiltro || '').trim().toLowerCase();
+      const filtradas = ordens.filter(o => {
+        if (!termo) return true;
+        const num = String(o.numero || (o.dados && o.dados.numero) || '').toLowerCase();
+        const nome = String(o.nome || (o.dados && o.dados.nome) || '').toLowerCase();
+        const end = extrairEnderecoOS(o).toLowerCase();
+        return num.includes(termo) || nome.includes(termo) || end.includes(termo);
+      });
+
+      if (!filtradas.length) {
+        container.innerHTML = `
+          <div style="text-align:center;padding:20px;color:var(--muted);font-size:12px;">
+            Nenhuma O.S. encontrada para "<strong>${esc(termoFiltro)}</strong>".
+          </div>
+        `;
+        return;
+      }
+
+      // Renderiza cada card com SOMENTE: Número da O.S., Nome do Cliente e Endereço
+      container.innerHTML = filtradas.map(o => {
+        const numOs = esc(o.numero || (o.dados && o.dados.numero) || '#0001');
+        const numApenasDigitos = String(numOs).replace(/\D/g, '');
+        const nomeCliente = esc(o.nome || (o.dados && o.dados.nome) || 'Cliente');
+        const endereco = esc(extrairEnderecoOS(o));
+        const isAtiva = (osAtivaNum && numApenasDigitos === osAtivaNum);
+
+        // Quantidade de fotos salvas nesta O.S.
+        const keyGaleria = 'sdv_galeria_' + numApenasDigitos;
+        let qtdFotos = 0;
+        try {
+          const arr = JSON.parse(localStorage.getItem(keyGaleria) || '[]');
+          qtdFotos = Array.isArray(arr) ? arr.length : 0;
+        } catch(_) {}
+
+        return `
+          <div style="background:${isAtiva ? 'linear-gradient(135deg,rgba(14,165,233,0.18),rgba(201,168,76,0.12))' : 'rgba(255,255,255,0.04)'};border:${isAtiva ? '1.5px solid #38bdf8' : '1px solid rgba(255,255,255,0.08)'};border-radius:12px;padding:12px 14px;box-shadow:${isAtiva ? '0 4px 18px rgba(56,189,248,0.2)' : 'none'};transition:all 0.2s;">
+            <!-- Topo: Número da O.S. e Status Ativo -->
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="background:linear-gradient(135deg,rgba(201,168,76,0.25),rgba(201,168,76,0.1));border:1.5px solid var(--gold);color:var(--gold-light);padding:3px 10px;border-radius:8px;font-weight:900;font-size:13.5px;letter-spacing:0.04em;">
+                  ${numOs}
+                </span>
+                ${isAtiva ? `
+                  <span style="background:rgba(56,189,248,0.2);border:1px solid #38bdf8;color:#38bdf8;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:800;">
+                    ✓ O.S. Selecionada
+                  </span>
+                ` : ''}
+              </div>
+              <span style="font-size:11px;color:rgba(255,255,255,0.55);display:inline-flex;align-items:center;gap:4px;">
+                <span>📸</span> <span>${qtdFotos} foto(s)</span>
+              </span>
+            </div>
+
+            <!-- Dados Essenciais Solicitados: Nome do Cliente e Endereço -->
+            <div style="margin-bottom:10px;line-height:1.45;">
+              <div style="font-size:13.5px;font-weight:800;color:#fff;">
+                👤 <span style="color:var(--gold-light);">${nomeCliente}</span>
+              </div>
+              <div style="font-size:12px;color:rgba(255,255,255,0.75);margin-top:3px;display:flex;align-items:flex-start;gap:4px;">
+                <span>📍</span>
+                <span>${endereco}</span>
+              </div>
+            </div>
+
+            <!-- Botões de Ação na O.S. (Selecionar, Tirar Foto, Ver Galeria) -->
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-top:1px solid rgba(255,255,255,0.06);padding-top:10px;">
+              <button type="button" onclick="selecionarOSEquipe('${numOs}', '${nomeCliente}')" style="flex:1;min-width:120px;padding:7px 12px;background:${isAtiva ? 'linear-gradient(135deg,var(--gold),#eab308)' : 'rgba(255,255,255,0.1)'};color:${isAtiva ? '#000' : '#fff'};border:none;border-radius:8px;font-size:11.5px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:5px;box-shadow:${isAtiva ? '0 2px 8px rgba(201,168,76,0.35)' : 'none'};">
+                <span>${isAtiva ? '✓ Selecionada' : '▶ Escolher O.S.'}</span>
+              </button>
+
+              <button type="button" onclick="abrirCameraParaOS('${numOs}', '${nomeCliente}', '${endereco}')" style="padding:7px 12px;background:linear-gradient(135deg,#0284c7,#0369a1);border:1px solid #38bdf8;color:#fff;border-radius:8px;font-size:11.5px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:5px;box-shadow:0 2px 8px rgba(2,132,199,0.35);" title="Tirar foto com a câmera para esta O.S.">
+                <span>📷</span> <span>Tirar Foto</span>
+              </button>
+
+              <button type="button" onclick="abrirGaleriaDaOS('${numOs}', '${nomeCliente}')" style="padding:7px 10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:8px;font-size:11.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px;" title="Ver fotos desta O.S.">
+                <span>🖼️</span> <span>Galeria</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function filtrarOSEquipe(termo) {
+      renderizarSeletorOSEquipe(termo);
+    }
+
+    function selecionarOSEquipe(numOs, nomeCliente) {
+      if (!clienteSessao) {
+        clienteSessao = { nome: nomeCliente || 'Cliente', os: numOs, isFuncionario: true };
+      } else {
+        clienteSessao.os = numOs;
+        if (nomeCliente && !clienteSessao.isFuncionario) clienteSessao.nome = nomeCliente;
+      }
+      localStorage.setItem('sdv_cliente_sessao', JSON.stringify(clienteSessao));
+
+      carregarDadosStatus(clienteSessao);
+      carregarGaleriaFotos(clienteSessao);
+      renderizarSeletorOSEquipe();
+      mostrarToastNotificacao('O.S. Selecionada!', `O.S. ${numOs} ativa para acompanhamento e fotos.`, '📋');
+    }
+
+    function abrirGaleriaDaOS(numOs, nomeCliente) {
+      selecionarOSEquipe(numOs, nomeCliente);
+      mudarAba('galeria');
+    }
+
+    // ── CÂMERA & REGISTRO DE FOTOS POR O.S. ──
+    function abrirCameraParaOS(numOs, nomeCliente, endereco) {
+      _osFotoAlvoEquipe = {
+        numOs: numOs,
+        nome: nomeCliente,
+        endereco: endereco
+      };
+      // Garante que a O.S. fique selecionada também
+      selecionarOSEquipe(numOs, nomeCliente);
+
+      const inp = document.getElementById('input-camera-os-equipe');
+      if (inp) {
+        inp.value = '';
+        inp.click();
+      }
+    }
+
+    function aoTirarFotoParaOSSelecionada(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+
+      const osAlvo = _osFotoAlvoEquipe ? _osFotoAlvoEquipe.numOs : (clienteSessao ? clienteSessao.os : '#0001');
+      const nomeAlvo = _osFotoAlvoEquipe ? _osFotoAlvoEquipe.nome : (clienteSessao ? clienteSessao.nome : 'Cliente');
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const base64 = e.target.result;
+        salvarFotoNaGaleriaOS(osAlvo, nomeAlvo, base64, 'Foto tirada pela Equipe no local');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function uploadFotoCameraGaleria(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+
+      const osAlvo = clienteSessao ? clienteSessao.os : '#0001';
+      const nomeAlvo = clienteSessao ? clienteSessao.nome : 'Cliente';
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const base64 = e.target.result;
+        salvarFotoNaGaleriaOS(osAlvo, nomeAlvo, base64, 'Registro fotográfico da obra');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function salvarFotoNaGaleriaOS(numOs, nomeCliente, base64, legendaPadrao) {
+      const key = getGaleriaStorageKey(numOs);
       let fotos = [];
       try {
         fotos = JSON.parse(localStorage.getItem(key) || '[]');
+        if (!Array.isArray(fotos)) fotos = [];
+      } catch(_) { fotos = []; }
+
+      const agora = new Date();
+      const dataStr = agora.toLocaleDateString('pt-BR');
+      const horaStr = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+      const novaFoto = {
+        id: Date.now(),
+        foto: base64,
+        legenda: legendaPadrao || `Foto da O.S. ${numOs}`,
+        tag: 'Equipe / Obra',
+        data: `${dataStr} às ${horaStr}`,
+        remetente: 'equipe',
+        visibilidade: 'equipe_empresa',
+        os: numOs,
+        cliente: nomeCliente
+      };
+
+      fotos.unshift(novaFoto);
+      localStorage.setItem(key, JSON.stringify(fotos));
+
+      // Atualiza galeria e seletor
+      if (clienteSessao) {
+        carregarGaleriaFotos(clienteSessao);
+      }
+      renderizarSeletorOSEquipe();
+
+      mostrarToastNotificacao('Foto Salva com Sucesso!', `Foto arquivada na O.S. ${numOs}. Visível para Equipe e Empresa.`, '📸');
+
+      // Notifica em tempo real (opcional para webhook de equipe)
+      try {
+        fetch('/api/portal-cliente', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'adicionar_foto',
+            os: numOs,
+            cliente_nome: nomeCliente,
+            foto_url: '',
+            legenda: novaFoto.legenda,
+            remetente: 'equipe',
+            visibilidade: 'equipe_empresa'
+          })
+        }).catch(() => {});
+      } catch(_) {}
+
+      // Direciona para a aba galeria para conferência
+      mudarAba('galeria');
+    }
+
+    function removerFotoGaleriaEquipe(idFoto) {
+      if (!confirm('Deseja realmente excluir esta foto da galeria desta O.S.?')) return;
+      if (!clienteSessao || !clienteSessao.os) return;
+
+      const key = getGaleriaStorageKey(clienteSessao.os);
+      let fotos = [];
+      try {
+        fotos = JSON.parse(localStorage.getItem(key) || '[]');
+      } catch(_) {}
+
+      fotos = fotos.filter(f => String(f.id) !== String(idFoto));
+      localStorage.setItem(key, JSON.stringify(fotos));
+      carregarGaleriaFotos(clienteSessao);
+      renderizarSeletorOSEquipe();
+      mostrarToastNotificacao('Foto Excluída', 'A foto foi removida da galeria.', '🗑️');
+    }
+
+    // ══════════════════════════════════════════════
+    //  EXIBIÇÃO DA GALERIA DE FOTOS POR O.S.
+    // ══════════════════════════════════════════════
+    function getGaleriaStorageKey(os) {
+      return 'sdv_galeria_' + String(os || '').replace(/\D/g, '');
+    }
+
+    function carregarGaleriaFotos(sessao) {
+      const osAtual = (sessao && sessao.os) || (clienteSessao && clienteSessao.os) || '#0001';
+      const key = getGaleriaStorageKey(osAtual);
+      let fotos = [];
+      try {
+        fotos = JSON.parse(localStorage.getItem(key) || '[]');
+        if (!Array.isArray(fotos)) fotos = [];
       } catch (_) {}
 
-      // Fotos padrão de demonstração se vazio
-      if (!fotos.length) {
-        fotos = [
-          {
-            id: 1,
-            foto: 'banner.jpg',
-            legenda: 'Projeto e Especificações Aprovadas',
-            tag: 'Projeto',
-            data: 'Início da Produção'
-          }
-        ];
-        localStorage.setItem(key, JSON.stringify(fotos));
+      // Busca dados completos da O.S. ativa para o cabeçalho
+      const ordens = (typeof carregarOrdensDoStorage === 'function') ? carregarOrdensDoStorage() : [];
+      const osObj = ordens.find(o => String(o.numero || (o.dados && o.dados.numero) || '').replace(/\D/g, '') === String(osAtual).replace(/\D/g, ''));
+      const clienteNome = osObj ? (osObj.nome || (osObj.dados && osObj.dados.nome) || 'Cliente') : (sessao && sessao.nome ? sessao.nome : 'Cliente');
+      const endereco = extrairEnderecoOS(osObj);
+
+      // Atualiza elementos do cabeçalho da galeria
+      const bOs = document.getElementById('galeria-os-badge');
+      if (bOs) bOs.textContent = osAtual;
+      const cNome = document.getElementById('galeria-os-cliente');
+      if (cNome) cNome.innerHTML = `👤 Cliente: <strong style="color:var(--gold-light);">${esc(clienteNome)}</strong>`;
+      const cEnd = document.getElementById('galeria-os-endereco');
+      if (cEnd) cEnd.innerHTML = `📍 Endereço: <span style="color:#fff;">${esc(endereco)}</span>`;
+
+      const txtContador = document.getElementById('galeria-contador-fotos-txt');
+      if (txtContador) txtContador.textContent = `${fotos.length} foto(s) registradas`;
+
+      // Atualiza o select de troca de O.S. na galeria
+      const selTroca = document.getElementById('select-galeria-os-troca');
+      if (selTroca && ordens && ordens.length) {
+        selTroca.innerHTML = ordens.map(o => {
+          const num = esc(o.numero || (o.dados && o.dados.numero) || '#0001');
+          const cli = esc(o.nome || (o.dados && o.dados.nome) || 'Cliente');
+          const isSel = (String(num).replace(/\D/g, '') === String(osAtual).replace(/\D/g, ''));
+          return `<option value="${num}" ${isSel ? 'selected' : ''}>O.S. ${num} - ${cli}</option>`;
+        }).join('');
       }
 
       const grid = document.getElementById('galeria-grid-container');
-      const badge = document.getElementById('badge-galeria-count');
-      if (badge) {
-        badge.textContent = fotos.length;
-        badge.style.display = fotos.length ? 'inline-block' : 'none';
+      const badgeAba = document.getElementById('badge-galeria-count');
+      if (badgeAba) {
+        badgeAba.textContent = fotos.length;
+        badgeAba.style.display = fotos.length ? 'inline-block' : 'none';
+      }
+
+      if (!grid) return;
+
+      if (!fotos.length) {
+        grid.innerHTML = `
+          <div style="grid-column:1/-1;text-align:center;padding:34px 18px;background:rgba(255,255,255,0.02);border:1.5px dashed rgba(255,255,255,0.12);border-radius:14px;">
+            <div style="font-size:36px;margin-bottom:8px;">📷</div>
+            <div style="font-size:14px;font-weight:800;color:#fff;">Nenhuma foto registrada para a O.S. ${esc(osAtual)}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px;margin-bottom:14px;">
+              Tire fotos do local, medição, produção ou instalação. As fotos ficam salvas por O.S. e são visíveis apenas para a equipe e empresa.
+            </div>
+            <button type="button" onclick="document.getElementById('input-foto-camera-galeria').click()" style="padding:9px 18px;background:linear-gradient(135deg,#0284c7,#0369a1);border:1px solid #38bdf8;color:#fff;font-weight:800;border-radius:10px;font-size:12.5px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 4px 14px rgba(2,132,199,0.35);">
+              <span>📷</span> <span>Tirar Primeira Foto da O.S.</span>
+            </button>
+          </div>
+        `;
+        return;
       }
 
       grid.innerHTML = fotos.map(f => `
-        <div class="gallery-card" onclick="abrirLightbox('${f.foto}', '${f.legenda || 'Foto da obra'}')">
-          <div class="gallery-img-box">
-            <img src="${f.foto}" alt="${f.legenda || 'Foto'}" onerror="this.src='banner.jpg'">
+        <div class="gallery-card" style="position:relative;background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.1);border-radius:12px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,0.4);">
+          <div class="gallery-img-box" style="height:150px;position:relative;cursor:pointer;" onclick="abrirLightbox('${f.foto}', '${esc(f.legenda || 'Foto O.S. ' + osAtual)}')">
+            <img src="${f.foto}" alt="${esc(f.legenda || 'Foto')}" onerror="this.src='banner.jpg'" style="width:100%;height:100%;object-fit:cover;">
+            <span style="position:absolute;top:6px;left:6px;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);border:1px solid rgba(56,189,248,0.5);color:#38bdf8;font-size:10px;font-weight:800;padding:2px 7px;border-radius:6px;">
+              🔒 Equipe & Empresa
+            </span>
+            <button type="button" onclick="event.stopPropagation();removerFotoGaleriaEquipe('${f.id}')" style="position:absolute;top:6px;right:6px;background:rgba(220,38,38,0.85);border:none;color:#fff;width:24px;height:24px;border-radius:50%;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;" title="Excluir foto">
+              ✕
+            </button>
           </div>
-          <div class="gallery-info">
-            <div class="gallery-tag">${f.tag || 'Obra'}</div>
-            <div class="gallery-caption">${f.legenda || 'Foto do serviço'}</div>
-            <div class="gallery-date">${f.data || 'Hoje'}</div>
+          <div class="gallery-info" style="padding:10px 12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+              <span class="gallery-tag" style="font-size:10px;background:rgba(201,168,76,0.2);color:var(--gold-light);border:1px solid rgba(201,168,76,0.3);padding:1px 6px;border-radius:4px;font-weight:800;">${esc(f.tag || 'Obra')}</span>
+              <span class="gallery-date" style="font-size:10.5px;color:rgba(255,255,255,0.5);">${esc(f.data || 'Hoje')}</span>
+            </div>
+            <div class="gallery-caption" style="font-size:12px;font-weight:700;color:#fff;line-height:1.3;">${esc(f.legenda || 'Registro da obra')}</div>
           </div>
         </div>
       `).join('');
     }
 
     function uploadFotoCliente(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const base64 = e.target.result;
-        const key = getGaleriaStorageKey(clienteSessao.os);
-        let fotos = [];
-        try { fotos = JSON.parse(localStorage.getItem(key) || '[]'); } catch(_) {}
-
-        const novaFoto = {
-          id: Date.now(),
-          foto: base64,
-          legenda: 'Enviada pelo Cliente',
-          tag: 'Cliente',
-          data: new Date().toLocaleDateString('pt-BR')
-        };
-
-        fotos.unshift(novaFoto);
-        localStorage.setItem(key, JSON.stringify(fotos));
-        carregarGaleriaFotos(clienteSessao);
-        mostrarToastNotificacao('Foto Adicionada!', 'Sua foto foi enviada para a equipe da SD Vidros.', '📸');
-
-        // Notifica o Admin em tempo real
-        fetch('/api/portal-cliente', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'adicionar_foto',
-            os: clienteSessao.os,
-            cliente_nome: clienteSessao.nome,
-            foto_url: '',
-            legenda: 'Cliente enviou uma foto do local/dúvida',
-            remetente: 'cliente'
-          })
-        }).catch(() => {});
-      };
-      reader.readAsDataURL(file);
+      uploadFotoCameraGaleria(event);
     }
 
     function abrirLightbox(src, caption) {
-      document.getElementById('lightbox-img').src = src;
-      document.getElementById('lightbox-caption').textContent = caption;
-      document.getElementById('lightbox').style.display = 'flex';
+      const img = document.getElementById('lightbox-img');
+      const cap = document.getElementById('lightbox-caption');
+      const lb = document.getElementById('lightbox');
+      if (img) img.src = src;
+      if (cap) cap.textContent = caption || 'Foto da O.S.';
+      if (lb) lb.style.display = 'flex';
     }
 
     function fecharLightbox() {
-      document.getElementById('lightbox').style.display = 'none';
+      const lb = document.getElementById('lightbox');
+      if (lb) lb.style.display = 'none';
     }
 
     // ══════════════════════════════════════════════
@@ -10748,12 +11101,111 @@ function baterPontoNoCliente(tipo) {
       try {
         const lic = (typeof obterLicencaAtivaCliente === 'function' ? obterLicencaAtivaCliente() : { id: 'sdvidros' });
         const empId = lic.id || 'sdvidros';
-        const key = 'sdv_ordens_' + empId;
-        let v = localStorage.getItem(key);
-        if (!v && (empId === 'sdvidros' || !v)) {
-          v = localStorage.getItem('sdv_ordens');
+
+        const chaves = [
+          'sdv_ordens_' + empId,
+          'sdv_ordens_sdmoveis',
+          'sdv_ordens_sdvidros',
+          'sdv_ordens',
+          'sdv_ordens_sd-moveis'
+        ];
+
+        try {
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && k.startsWith('sdv_ordens') && !chaves.includes(k)) {
+              chaves.push(k);
+            }
+          }
+        } catch(_) {}
+
+        const mapUnicas = new Map();
+        for (const k of chaves) {
+          try {
+            const raw = localStorage.getItem(k);
+            if (raw) {
+              const arr = JSON.parse(raw);
+              if (Array.isArray(arr)) {
+                arr.forEach(o => {
+                  const num = String(o.numero || (o.dados && o.dados.numero) || o.id || '').trim();
+                  if (num && !mapUnicas.has(num)) {
+                    mapUnicas.set(num, o);
+                  }
+                });
+              }
+            }
+          } catch(_) {}
         }
-        return v ? JSON.parse(v) : [];
+
+        let todasOrdens = Array.from(mapUnicas.values());
+
+        // Se ainda não houver ordens locais no dispositivo, provê ordens iniciais para uso imediato
+        if (!todasOrdens.length) {
+          todasOrdens = [
+            {
+              id: 1,
+              numero: '#0001',
+              nome: 'Residência Samuel David',
+              endereco: 'Rua das Palmeiras, 120 - Centro, Itaitinga - CE',
+              dados: {
+                numero: '#0001',
+                nome: 'Residência Samuel David',
+                end: 'Rua das Palmeiras',
+                num: '120',
+                bairro: 'Centro',
+                cidade: 'Itaitinga',
+                uf: 'CE'
+              },
+              etapa_servico: 3,
+              status: 'Em Fabricação & Têmpera',
+              status_obs: 'Vidros cortados e encaminhados para têmpera e lapidação.',
+              previsao_instalacao: 'A combinar com equipe'
+            },
+            {
+              id: 2,
+              numero: '#0002',
+              nome: 'Apartamento Carlos Eduardo',
+              endereco: 'Av. Beira Mar, 450 - Apto 302 - Meireles, Fortaleza - CE',
+              dados: {
+                numero: '#0002',
+                nome: 'Apartamento Carlos Eduardo',
+                end: 'Av. Beira Mar',
+                num: '450',
+                bairro: 'Meireles',
+                cidade: 'Fortaleza',
+                uf: 'CE'
+              },
+              etapa_servico: 5,
+              status: 'Em Instalação',
+              status_obs: 'Equipe em montagem e ajustes finos no local.',
+              previsao_instalacao: 'Hoje até às 17h'
+            },
+            {
+              id: 7,
+              numero: '#0007',
+              nome: 'Mariana Silveira',
+              endereco: 'Rua Pedro I, 880 - Aldeota, Fortaleza - CE',
+              dados: {
+                numero: '#0007',
+                nome: 'Mariana Silveira',
+                end: 'Rua Pedro I',
+                num: '880',
+                bairro: 'Aldeota',
+                cidade: 'Fortaleza',
+                uf: 'CE'
+              },
+              etapa_servico: 2,
+              status: 'Medição Técnica',
+              status_obs: 'Conferência milimétrica dos vãos e detalhes de fixação.',
+              previsao_instalacao: 'Em agendamento'
+            }
+          ];
+          try {
+            localStorage.setItem('sdv_ordens_' + empId, JSON.stringify(todasOrdens));
+          } catch(_) {}
+        }
+
+        return todasOrdens;
       } catch { return []; }
     }
     function carregarClientesDoStorage() {
