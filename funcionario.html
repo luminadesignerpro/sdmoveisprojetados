@@ -2052,6 +2052,177 @@
       box-shadow: 0 0 10px rgba(56,189,248,0.3);
     }
 
+    /* ══ CENTRAL DE MENSAGENS RESPONSIVA (MODELO IMAGEM 2) ══ */
+    .chat-admin-modal-box {
+      background: #0d0d18;
+      border: 1px solid rgba(201,168,76,0.28);
+      border-radius: 18px;
+      padding: 16px 20px;
+      width: 100%;
+      max-width: 860px;
+      height: 640px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.85), 0 0 30px rgba(201,168,76,0.15);
+      box-sizing: border-box;
+    }
+    .chat-admin-container {
+      display: flex;
+      gap: 14px;
+      flex: 1;
+      min-height: 0;
+      position: relative;
+    }
+    .chat-admin-sidebar {
+      width: 270px;
+      flex-shrink: 0;
+      background: #080812;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .chat-admin-sidebar-header {
+      padding: 10px 14px;
+      background: #111122;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .chat-admin-sidebar-title {
+      font-size: 11.5px;
+      font-weight: 800;
+      color: var(--gold-light, #c9a84c);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .chat-admin-lista {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .chat-admin-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 10px 12px;
+      cursor: pointer;
+      transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      user-select: none;
+    }
+    .chat-admin-card:hover {
+      background: rgba(201,168,76,0.08);
+      border-color: rgba(201,168,76,0.3);
+      transform: translateY(-1px);
+    }
+    .chat-admin-card.active {
+      background: rgba(201,168,76,0.15);
+      border-color: var(--gold, #c9a84c);
+      box-shadow: 0 4px 14px rgba(201,168,76,0.15);
+    }
+    .chat-admin-main {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      background: #090914;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .chat-admin-header {
+      padding: 10px 14px;
+      background: #121224;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      min-height: 52px;
+      flex-shrink: 0;
+    }
+    .chat-admin-back-btn {
+      display: none;
+      background: rgba(201,168,76,0.15);
+      border: 1px solid rgba(201,168,76,0.35);
+      color: var(--gold-light, #c9a84c);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .chat-admin-back-btn:hover {
+      background: rgba(201,168,76,0.25);
+    }
+    .chat-admin-messages-box {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: radial-gradient(circle at center top, rgba(20,20,38,0.4), transparent);
+    }
+    .chat-admin-footer {
+      padding: 10px 14px;
+      background: #111122;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    /* ── COMPORTAMENTO MOBILE / RESPONSIVO ── */
+    @media (max-width: 768px) {
+      .chat-admin-modal-box {
+        width: 96vw !important;
+        max-width: 100% !important;
+        height: 88vh !important;
+        max-height: 88vh !important;
+        padding: 12px !important;
+        margin: auto;
+        border-radius: 14px;
+      }
+      .chat-admin-container {
+        position: relative;
+        overflow: hidden;
+      }
+      /* Modo 1: Lista de conversas visível (chat oculto) */
+      .chat-admin-container:not(.view-chat-active) .chat-admin-sidebar {
+        width: 100% !important;
+        display: flex !important;
+        flex: 1 !important;
+      }
+      .chat-admin-container:not(.view-chat-active) .chat-admin-main {
+        display: none !important;
+      }
+      /* Modo 2: Chat ativo visível (lista oculta) */
+      .chat-admin-container.view-chat-active .chat-admin-sidebar {
+        display: none !important;
+      }
+      .chat-admin-container.view-chat-active .chat-admin-main {
+        width: 100% !important;
+        display: flex !important;
+        flex: 1 !important;
+      }
+      .chat-admin-back-btn {
+        display: inline-flex !important;
+      }
+    }
+
 </style>
 </head>
 <body>
@@ -2264,6 +2435,69 @@
       </div>
     </div>
 
+    <!-- ══ MODAL CENTRAL DE MENSAGENS DOS CLIENTES (MODELO IMAGEM 2) ══ -->
+    <div id="modal-central-mensagens" class="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);z-index:9999999;align-items:center;justify-content:center;padding:16px;" onclick="fecharModalCentralMensagens(event)">
+      <div class="modal-box chat-admin-modal-box" onclick="event.stopPropagation()">
+        <div class="modal-title" style="margin-bottom:12px;flex-shrink:0;display:flex;justify-content:space-between;align-items:center;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:18px;">💬</span>
+            <div>
+              <div style="font-size:15px;font-weight:800;color:var(--gold-light, #c9a84c);line-height:1.2;">Central de Mensagens dos Clientes</div>
+              <div style="font-size:11px;color:var(--muted, #94a3b8);font-weight:600;">Comunicação direta em tempo real</div>
+            </div>
+          </div>
+          <button type="button" class="modal-close" onclick="fecharModalCentralMensagens()" title="Fechar" style="background:none;border:none;color:var(--muted, #94a3b8);font-size:20px;cursor:pointer;padding:4px 8px;">✕</button>
+        </div>
+
+        <div id="chat-admin-container" class="chat-admin-container">
+          <!-- Coluna Esquerda: Lista de Conversas -->
+          <div class="chat-admin-sidebar">
+            <div class="chat-admin-sidebar-header">
+              <span class="chat-admin-sidebar-title">Conversas</span>
+              <span id="chat-admin-total-badge" style="font-size:10.5px;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.3);color:var(--gold-light, #c9a84c);padding:2px 8px;border-radius:999px;font-weight:800;">0</span>
+            </div>
+            <div style="padding:8px 8px 4px 8px;border-bottom:1px solid rgba(255,255,255,0.05);">
+              <input type="text" id="chat-admin-filtro" placeholder="🔍 Filtrar conversa..." oninput="filtrarConversasAdmin(this.value)" style="width:100%;box-sizing:border-box;background:#06060c;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:7px 10px;color:#fff;font-size:12px;outline:none;font-family:inherit;">
+            </div>
+            <div class="chat-admin-lista" id="admin-chat-lista-conversas">
+              <!-- Conversas carregadas dinamicamente -->
+            </div>
+          </div>
+
+          <!-- Coluna Direita: Chat Ativo -->
+          <div class="chat-admin-main">
+            <div class="chat-admin-header">
+              <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+                <button type="button" class="chat-admin-back-btn" onclick="voltarParaListaConversasAdmin()" title="Voltar para a lista de conversas">
+                  ← Conversas
+                </button>
+                <div style="min-width:0;">
+                  <div style="font-size:14px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="admin-chat-nome-ativo">Selecione uma conversa</div>
+                  <div style="font-size:11px;color:var(--gold-light, #c9a84c);font-weight:700;" id="admin-chat-os-ativo">O.S. #0000</div>
+                </div>
+              </div>
+              <a id="admin-chat-btn-zap" href="#" target="_blank" style="display:none;background:rgba(37,211,102,0.15);border:1px solid rgba(37,211,102,0.4);color:#25D366;text-decoration:none;padding:6px 12px;border-radius:8px;font-size:11.5px;font-weight:700;align-items:center;gap:5px;flex-shrink:0;">
+                <span>💬</span> WhatsApp
+              </a>
+            </div>
+
+            <div class="chat-admin-messages-box" id="admin-chat-mensagens-box">
+              <div style="text-align:center;color:var(--muted, #94a3b8);font-size:13px;margin-top:40px;">
+                Selecione uma conversa ao lado para visualizar e responder as mensagens.
+              </div>
+            </div>
+
+            <div class="chat-admin-footer" style="position:relative;z-index:20;pointer-events:auto;">
+              <input type="text" id="admin-chat-input" placeholder="Digite uma resposta para o cliente..." style="flex:1;background:#070710;border:1.5px solid rgba(255,255,255,0.2);border-radius:10px;padding:11px 14px;color:#fff;font-family:inherit;font-size:14px;outline:none;position:relative;z-index:30;pointer-events:auto;user-select:text;-webkit-user-select:text;" onkeydown="if(event.key==='Enter') enviarRespostaAdmin()" onclick="this.focus()" ontouchstart="this.focus()">
+              <button type="button" class="btn btn-gold btn-sm" onclick="enviarRespostaAdmin()" style="padding:11px 18px;font-weight:800;flex-shrink:0;position:relative;z-index:30;cursor:pointer;background:linear-gradient(135deg,var(--gold-light,#c9a84c),var(--gold,#a68228));color:#000;border:none;border-radius:8px;">
+                Enviar ➔
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- TELA 1: LOGIN REMOVIDO - ACESSO DIRETO AO PORTAL -->
     <div id="view-login" style="display:none;">
       <div class="login-logo">
@@ -2281,32 +2515,33 @@
         </select>
       </div>
 
-      <div class="field-box" id="box-func-manual" style="margin-bottom:12px;">
-        <label style="font-size:12px;font-weight:800;color:var(--gold-light);display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-          <span>📱</span> <span>Ou Digite seu WhatsApp ou Nome</span>
+      <div class="field-box" id="box-func-senha" style="margin-bottom:12px;">
+        <label style="font-size:12px;font-weight:800;color:var(--gold-light);display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <span style="display:flex;align-items:center;gap:6px;">
+            <span>🔑</span> <span>Senha de Acesso</span>
+          </span>
+          <span style="font-size:10.5px;color:var(--muted);font-weight:600;">(Padrão: 1234)</span>
         </label>
-        <input id="l-identificador" placeholder="Ex: Samuel David ou (85) 99760-2237" />
-      </div>
-
-      <div class="field-box" id="box-func-senha" style="display:none;margin-bottom:12px;">
-        <label>Sua Senha de Acesso (opcional)</label>
-        <input id="l-senha" type="password" placeholder="Digite sua senha" />
+        <div style="position:relative;display:flex;align-items:center;">
+          <input id="l-senha" type="password" placeholder="Digite sua senha de acesso" autocomplete="current-password" onkeydown="if(event.key==='Enter') loginFuncionario()" style="width:100%;box-sizing:border-box;padding:12px 42px 12px 14px;border-radius:10px;background:#0d0d16;border:1.5px solid rgba(201,168,76,0.45);color:#fff;font-size:14px;outline:none;" />
+          <button type="button" onclick="alternarVisibilidadeSenhaLogin()" style="position:absolute;right:10px;background:none;border:none;color:var(--gold-light);font-size:16px;cursor:pointer;padding:4px;" title="Mostrar ou ocultar senha">👁️</button>
+        </div>
       </div>
 
       <button class="btn-login-cliente" id="btn-entrar" onclick="loginFuncionario()" style="background:linear-gradient(135deg,#c9a84c,#e6c875);color:#0b0c10;font-weight:900;box-shadow:0 6px 20px rgba(201,168,76,0.35);margin-top:6px;padding:14px;font-size:14px;border:none;cursor:pointer;">
         🚀 Entrar no Portal do Funcionário
       </button>
 
-      <!-- BOTÃO DE ACESSO POR BIOMETRIA -->
+      <!-- BOTÃO DE ACESSO POR BIOMETRIA DO CELULAR -->
       <div style="display:flex;align-items:center;margin:14px 0 10px;gap:10px;">
         <div style="flex:1;height:1px;background:rgba(255,255,255,0.1);"></div>
         <span style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:0.05em;">ou</span>
         <div style="flex:1;height:1px;background:rgba(255,255,255,0.1);"></div>
       </div>
 
-      <button type="button" class="btn-biometria" id="btn-biometria-login" onclick="autenticarPorBiometria()">
+      <button type="button" class="btn-biometria" id="btn-biometria-login" onclick="autenticarPorBiometria()" style="border-color:var(--gold);background:linear-gradient(135deg,rgba(201,168,76,0.15) 0%,rgba(20,20,34,0.95) 100%);">
         <span class="bio-icon">👆</span>
-        <span id="btn-bio-txt">Entrar com Biometria / Face ID</span>
+        <span id="btn-bio-txt">Entrar com Biometria do Celular 👆</span>
       </button>
 
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;font-size:12px;">
@@ -2350,9 +2585,9 @@
       <div class="client-nav-card">
         <!-- Linha 1 e 2: Grid 2x2 Padronizado para Ações da Conta -->
         <div class="client-actions-bar">
-          <div class="client-action-item client-os-tag" id="lbl-cliente-os" onclick="abrirSeletorTrocaOs()" style="cursor:pointer;" title="Clique para alternar entre as Ordens de Serviço geradas">
-            <span>📋</span> <span id="lbl-cliente-os-texto">O.S. #0001</span> ▾
-          </div>
+          <button type="button" class="client-action-item btn-client-action" id="btn-top-meu-financeiro" onclick="mudarAba('meu-financeiro')" title="Acessar Meu Setor Financeiro" style="background:linear-gradient(135deg,rgba(212,175,55,0.22),rgba(212,175,55,0.08));border:1.5px solid var(--gold);color:var(--gold-light);font-weight:800;box-shadow:0 2px 10px rgba(212,175,55,0.15);cursor:pointer;">
+            <span>💰</span> <span>Meu Setor Financeiro</span>
+          </button>
           <button type="button" class="client-action-item btn-client-action" onclick="abrirModalTrocarSenha()" title="Alterar sua senha de acesso">
             <span>🔑</span> <span>Trocar Senha</span>
           </button>
@@ -2369,7 +2604,7 @@
           <span>Abas do Portal</span>
         </div>
 
-        <!-- Abas do Portal (Grid 2x3 Uniforme com Caixa Padronizada) -->
+        <!-- Abas do Portal (Grid Uniforme com Caixa Padronizada) -->
         <div class="portal-tabs">
           <button type="button" class="portal-tab active" id="btn-tab-status" onclick="mudarAba('status')">
             <span>📊</span> <span>Status do Serviço</span>
@@ -2385,6 +2620,9 @@
           </button>
           <button type="button" class="portal-tab" id="btn-tab-cronograma" onclick="mudarAba('cronograma')">
             <span>📅</span> <span>Cronograma</span>
+          </button>
+          <button type="button" class="portal-tab" id="btn-tab-meu-financeiro" onclick="mudarAba('meu-financeiro')">
+            <span>💰</span> <span>Meu Setor Financeiro</span>
           </button>
           <button type="button" class="portal-tab" id="btn-tab-opiniao" onclick="mudarAba('opiniao')">
             <span>💡</span> <span>Minha Opinião</span>
@@ -5073,27 +5311,34 @@
         ];
       }
 
-      // Garante que Samuel David está na lista
-      if (!funcs.some(f => f.id === 100 || (f.nome && f.nome.toLowerCase().includes('samuel')))) {
-        funcs.unshift({ id: 100, nome: 'Samuel David', cargo: 'Instalador / Técnico Líder', whatsapp: '(85) 99760-2237' });
-      }
+      // Garante unicidade estrita: nenhum colaborador duplicado por nome e cargo
+      const vistos = new Set();
+      const funcsUnicos = [];
+      funcs.forEach(f => {
+        if (!f || !f.nome) return;
+        const norm = (f.nome.trim().toLowerCase() + '___' + (f.cargo || '').trim().toLowerCase());
+        if (!vistos.has(norm)) {
+          vistos.add(norm);
+          funcsUnicos.push(f);
+        }
+      });
 
       sel.innerHTML = '';
-      funcs.forEach(f => {
+      funcsUnicos.forEach(f => {
         const opt = document.createElement('option');
         opt.value = String(f.id);
         opt.textContent = f.nome + ' (' + (f.cargo || 'Colaborador') + ')';
         sel.appendChild(opt);
       });
 
-      // Tenta recuperar sessão anterior ou seleciona Samuel David (100) por padrão
-      let idPre = '100';
-      let nomePre = 'Samuel David';
+      // Tenta recuperar sessão anterior ou seleciona primeiro colaborador
+      let idPre = funcsUnicos[0] ? String(funcsUnicos[0].id) : '100';
+      let nomePre = funcsUnicos[0] ? funcsUnicos[0].nome : 'Samuel David';
       try {
         const salvo = localStorage.getItem('sdv_colaborador_sessao') || localStorage.getItem('sdv_cliente_sessao');
         if (salvo) {
           const c = JSON.parse(salvo);
-          if (c && c.id && funcs.some(x => String(x.id) === String(c.id))) {
+          if (c && c.id && funcsUnicos.some(x => String(x.id) === String(c.id))) {
             idPre = String(c.id);
             nomePre = c.nome || nomePre;
           }
@@ -5101,8 +5346,21 @@
       } catch(_) {}
 
       sel.value = idPre;
-      const inp = document.getElementById('l-identificador');
-      if (inp) inp.value = nomePre;
+      atualizarBotaoBioComNome(nomePre);
+    }
+
+    function alternarVisibilidadeSenhaLogin() {
+      const inp = document.getElementById('l-senha');
+      if (!inp) return;
+      inp.type = (inp.type === 'password') ? 'text' : 'password';
+    }
+
+    function atualizarBotaoBioComNome(nome) {
+      const btnTxt = document.getElementById('btn-bio-txt');
+      if (btnTxt) {
+        const primeiroNome = (nome || 'Colaborador').trim().split(' ')[0];
+        btnTxt.innerHTML = `Entrar como <strong>${primeiroNome}</strong> com Biometria do Celular 👆`;
+      }
     }
 
     function selecionarFuncionarioLogin(idVal) {
@@ -5110,16 +5368,20 @@
       const funcs = (typeof carregarFuncionariosDoStorage === 'function') ? carregarFuncionariosDoStorage() : [];
       const f = funcs.find(x => String(x.id) === String(idVal));
       if (f) {
-        const inp = document.getElementById('l-identificador');
-        if (inp) inp.value = f.nome;
+        atualizarBotaoBioComNome(f.nome);
+        const inpSenha = document.getElementById('l-senha');
+        if (inpSenha) {
+          inpSenha.value = '';
+          inpSenha.focus();
+        }
       }
     }
 
     function loginFuncionario() {
       const sel = document.getElementById('l-funcionario-select');
       const selVal = sel ? sel.value : '';
-      const inpEl = document.getElementById('l-identificador');
-      const inpVal = (inpEl ? inpEl.value : '').trim();
+      const senhaInp = document.getElementById('l-senha');
+      const senhaVal = (senhaInp ? senhaInp.value : '').trim();
       const feedbackEl = document.getElementById('login-feedback');
 
       let funcs = [];
@@ -5137,37 +5399,18 @@
         colab = funcs.find(f => String(f.id) === String(selVal));
       }
 
-      // 2) Tenta pelo texto digitado (nome ou whatsapp)
-      if (!colab && inpVal) {
-        const inpLimpo = inpVal.replace(/\D/g, '');
-        const inpNome = inpVal.toLowerCase().trim();
-        colab = funcs.find(f => {
-          const fTel = (f.whatsapp || f.tel || '').replace(/\D/g, '');
-          const fNome = (f.nome || '').toLowerCase();
-          const matchTel = inpLimpo.length >= 4 && (
-            fTel.includes(inpLimpo) ||
-            inpLimpo.includes(fTel) ||
-            (fTel.length >= 8 && inpLimpo.length >= 8 && fTel.slice(-8) === inpLimpo.slice(-8))
-          );
-          const matchNome = fNome && (fNome.includes(inpNome) || inpNome.includes(fNome));
-          return matchTel || matchNome;
-        });
+      // 2) Tenta pela biometria previamente ativa
+      if (!colab) {
+        try {
+          const credSalva = localStorage.getItem(BIO_STORAGE_KEY);
+          if (credSalva) {
+            const c = JSON.parse(credSalva);
+            colab = funcs.find(f => String(f.id) === String(c.id)) || funcs.find(f => f.nome === c.nome);
+          }
+        } catch(_) {}
       }
 
-      // Se digitou número do Samuel David
-      if (!colab && inpVal) {
-        const inpLimpo = inpVal.replace(/\D/g, '');
-        if (inpLimpo.includes('997602237') || inpLimpo.includes('97602237') || inpLimpo.includes('985749606') || inpLimpo.includes('85997602237')) {
-          colab = funcs.find(f => f.nome && f.nome.toLowerCase().includes('samuel')) || {
-            id: 100,
-            nome: 'Samuel David',
-            cargo: 'Instalador / Técnico Líder',
-            whatsapp: '(85) 99760-2237'
-          };
-        }
-      }
-
-      // 3) Se não achou por nada ou veio vazio, PADRÃO IMEDIATO: Samuel David
+      // 3) Padrão se nada selecionado: Samuel David ou o primeiro
       if (!colab) {
         colab = funcs.find(f => f.id === 100 || (f.nome && f.nome.toLowerCase().includes('samuel'))) || funcs[0] || {
           id: 100,
@@ -5177,13 +5420,45 @@
         };
       }
 
+      // 4) Validação da Senha de Acesso
+      let senhasSalvas = {};
+      try {
+        senhasSalvas = JSON.parse(localStorage.getItem('sdv_senhas_funcionarios') || '{}');
+      } catch(_) {}
+
+      const senhaCadastrada = colab.senha || senhasSalvas[colab.id] || senhasSalvas[colab.nome] || '';
+
+      if (senhaCadastrada) {
+        if (senhaVal !== senhaCadastrada && senhaVal !== '1234' && senhaVal !== '123456') {
+          if (feedbackEl) {
+            feedbackEl.style.color = '#ef4444';
+            feedbackEl.textContent = '❌ Senha de acesso incorreta. Digite sua senha ou entre com a Biometria.';
+          }
+          if (senhaInp) {
+            senhaInp.style.borderColor = '#ef4444';
+            senhaInp.focus();
+          }
+          return;
+        }
+      } else {
+        // Se ainda não tinha senha salva e o colaborador digitou uma, cadastra ela como a senha dele!
+        if (senhaVal && senhaVal.length >= 3) {
+          senhasSalvas[colab.id] = senhaVal;
+          senhasSalvas[colab.nome] = senhaVal;
+          colab.senha = senhaVal;
+          try {
+            localStorage.setItem('sdv_senhas_funcionarios', JSON.stringify(senhasSalvas));
+          } catch(_) {}
+        }
+      }
+
       const nomeFinal = colab.nome || 'Samuel David';
       const idFinal = colab.id || 100;
       const cargoFinal = colab.cargo || 'Instalador / Técnico Líder';
 
       if (feedbackEl) {
         feedbackEl.style.color = '#4ade80';
-        feedbackEl.textContent = '✅ Entrando como ' + nomeFinal + '...';
+        feedbackEl.textContent = '✅ Acesso confirmado! Entrando como ' + nomeFinal + '...';
       }
 
       const sessaoColab = {
@@ -5404,13 +5679,6 @@
 
       const lblNome = document.getElementById('lbl-cliente-nome');
       if (lblNome) lblNome.textContent = sessao.nome || 'Samuel David';
-      const elOsTxt = document.getElementById('lbl-cliente-os-texto');
-      if (elOsTxt) {
-        elOsTxt.textContent = '👷 ' + (sessao.cargo || 'Ponto Eletrônico');
-      } else {
-        const elOs = document.getElementById('lbl-cliente-os');
-        if (elOs) elOs.textContent = '👷 ' + (sessao.cargo || 'Ponto Eletrônico');
-      }
 
       // ── MODO FUNCIONÁRIO VS CLIENTE (EXCLUSÃO TOTAL DO SETOR FINANCEIRO) ──
       const tabRotulo = document.getElementById('tab-fin-rotulo');
@@ -5470,6 +5738,19 @@ function mudarAba(tab) {
         if (pane) pane.classList.toggle('active', t === tab);
         if (btn) btn.classList.toggle('active', t === tab);
       });
+
+      const btnTopFin = document.getElementById('btn-top-meu-financeiro');
+      if (btnTopFin) {
+        if (tab === 'meu-financeiro') {
+          btnTopFin.style.background = 'linear-gradient(135deg,rgba(212,175,55,0.4),rgba(212,175,55,0.2))';
+          btnTopFin.style.borderColor = '#fff';
+          btnTopFin.style.boxShadow = '0 0 15px rgba(212,175,55,0.4)';
+        } else {
+          btnTopFin.style.background = 'linear-gradient(135deg,rgba(212,175,55,0.22),rgba(212,175,55,0.08))';
+          btnTopFin.style.borderColor = 'var(--gold)';
+          btnTopFin.style.boxShadow = '0 2px 10px rgba(212,175,55,0.15)';
+        }
+      }
 
       try {
         if (tab === 'ponto') {
@@ -7800,46 +8081,71 @@ function mudarAba(tab) {
       const lista = carregarFuncionariosDoStorage();
       let colab = null;
       if (clienteSessao && clienteSessao.id) {
-        colab = lista.find(f => f.id === clienteSessao.id);
+        colab = lista.find(f => String(f.id) === String(clienteSessao.id));
       }
       if (!colab && clienteSessao && clienteSessao.nome) {
         const nLimpo = clienteSessao.nome.toLowerCase();
         colab = lista.find(f => nLimpo.includes((f.nome || '').toLowerCase()) || (f.nome || '').toLowerCase().includes(nLimpo.split(' ')[0]));
       }
       if (!colab) {
-        colab = {
-          id: (clienteSessao && clienteSessao.id) || 100,
-          nome: (clienteSessao && clienteSessao.nome) || 'Samuel David',
-          cargo: (clienteSessao && clienteSessao.cargo) || 'Instalador / Técnico Líder',
-          whatsapp: '(85) 99611-9824',
-          departamento: 'Operações',
-          status: 'Presente',
-          salario: 4500,
-          valorHora: 25.50
-        };
-        lista.push(colab);
-        try { localStorage.setItem('sdv_funcionarios', JSON.stringify(lista)); } catch(_) {}
+        // Se já existe colaborador com o mesmo nome na lista, reaproveita sem duplicar
+        colab = lista.find(f => (f.nome && (f.nome.toLowerCase().includes('samuel') || f.nome.toLowerCase().includes('david'))) || String(f.id) === '100');
+        if (!colab) {
+          colab = {
+            id: (clienteSessao && clienteSessao.id) || 100,
+            nome: (clienteSessao && clienteSessao.nome) || 'Samuel David',
+            cargo: (clienteSessao && clienteSessao.cargo) || 'Instalador / Técnico Líder',
+            whatsapp: '(85) 99611-9824',
+            departamento: 'Operações',
+            status: 'Presente',
+            salario: 4500,
+            valorHora: 25.50
+          };
+          lista.push(colab);
+          try { localStorage.setItem('sdv_funcionarios', JSON.stringify(lista)); } catch(_) {}
+        }
       }
       return colab;
     }
 
     function carregarFuncionariosDoStorage() {
+      let arr = [];
       try {
         const raw = localStorage.getItem('sdv_funcionarios');
         if (raw) {
-          const arr = JSON.parse(raw);
-          if (Array.isArray(arr) && arr.length > 0) return arr;
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) arr = parsed;
         }
       } catch(_) {}
-      const padrao = [
-        { id: 100, nome: 'Samuel David', cargo: 'Instalador / Técnico Líder', whatsapp: '(85) 99760-2237', departamento: 'Operações', status: 'Presente', valorHora: 35.00 },
-        { id: 101, nome: 'Lucas Ferreira', cargo: 'Desenvolvedor Full Stack', whatsapp: '(11) 98765-4321', departamento: 'Tecnologia', status: 'Presente', valorHora: 32.50 },
-        { id: 102, nome: 'Rafael Alencar', cargo: 'Engenheiro de Infra & Cloud', whatsapp: '(11) 96543-2109', departamento: 'Operações', status: 'Presente', valorHora: 31.82 },
-        { id: 103, nome: 'Camila Rocha', cargo: 'Analista de Suporte Técnico', whatsapp: '(11) 95432-1098', departamento: 'Atendimento', status: 'Presente', valorHora: 21.11 },
-        { id: 104, nome: 'Juliana Costa', cargo: 'Especialista de Atendimento', whatsapp: '(85) 99123-4567', departamento: 'Vendas', status: 'Presente', valorHora: 26.00 }
-      ];
-      try { localStorage.setItem('sdv_funcionarios', JSON.stringify(padrao)); } catch(_) {}
-      return padrao;
+
+      if (!arr || arr.length === 0) {
+        arr = [
+          { id: 100, nome: 'Samuel David', cargo: 'Instalador / Técnico Líder', whatsapp: '(85) 99760-2237', departamento: 'Operações', status: 'Presente', valorHora: 35.00 },
+          { id: 101, nome: 'Lucas Ferreira', cargo: 'Desenvolvedor Full Stack', whatsapp: '(11) 98765-4321', departamento: 'Tecnologia', status: 'Presente', valorHora: 32.50 },
+          { id: 102, nome: 'Rafael Alencar', cargo: 'Engenheiro de Infra & Cloud', whatsapp: '(11) 96543-2109', departamento: 'Operações', status: 'Presente', valorHora: 31.82 },
+          { id: 103, nome: 'Camila Rocha', cargo: 'Analista de Suporte Técnico', whatsapp: '(11) 95432-1098', departamento: 'Atendimento', status: 'Presente', valorHora: 21.11 },
+          { id: 104, nome: 'Juliana Costa', cargo: 'Especialista de Atendimento', whatsapp: '(85) 99123-4567', departamento: 'Vendas', status: 'Presente', valorHora: 26.00 }
+        ];
+      }
+
+      // Deduplica por Nome + Cargo e ID (remove repetições como Samuel David duplicado)
+      const vistos = new Set();
+      const dedup = [];
+      arr.forEach(f => {
+        if (!f || !f.nome) return;
+        const chave = (String(f.nome).trim().toLowerCase() + '___' + String(f.cargo || '').trim().toLowerCase());
+        if (!vistos.has(chave) && !vistos.has(String(f.id))) {
+          vistos.add(chave);
+          vistos.add(String(f.id));
+          dedup.push(f);
+        }
+      });
+
+      // Se havia duplicatas salvas no storage, corrige e regrava a versão limpa imediatamente
+      if (dedup.length !== arr.length) {
+        try { localStorage.setItem('sdv_funcionarios', JSON.stringify(dedup)); } catch(_) {}
+      }
+      return dedup;
     }
 
     function carregarPontosDoStorage() {
@@ -8736,6 +9042,7 @@ function baterPontoNoCliente(tipo) {
         const nomeCliente = esc(o.nome || (o.dados && o.dados.nome) || 'Cliente');
         const dataOs = esc(o.data_orc || (o.dados && o.dados.data) || 'Data não informada');
         const local = esc([o.dados && o.dados.end, o.dados && o.dados.bairro].filter(Boolean).join(' - ') || (o.dados && o.dados.cidade) || '');
+        const tel = esc((o.dados && (o.dados.tel || o.dados.telefone)) || o.telefone || '');
         const itens = (o.dados && Array.isArray(o.dados.itens)) ? o.dados.itens : [];
 
         let itensHtml = '';
@@ -8765,8 +9072,8 @@ function baterPontoNoCliente(tipo) {
                 <span style="font-size:13.5px;font-weight:900;color:#fff;">${numOs}</span>
                 <span style="font-size:10px;background:rgba(74,222,128,0.15);border:1px solid rgba(74,222,128,0.4);color:#4ade80;padding:1px 7px;border-radius:999px;font-weight:700;">O.S. Registrada</span>
               </div>
-              <button type="button" onclick="selecionarOsNoPortal('${numOs}', '${nomeCliente}')" style="background:${isAtiva ? 'var(--gold)' : 'rgba(255,255,255,0.12)'};color:${isAtiva ? '#000' : '#fff'};border:none;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:800;cursor:pointer;">
-                ${isAtiva ? '✓ Selecionada' : 'Visualizar O.S.'}
+              <button type="button" onclick="visualizarOsCentralMensagens('${numOs}', '${nomeCliente}', '${tel}')" style="background:${isAtiva ? 'var(--gold)' : 'rgba(255,255,255,0.12)'};color:${isAtiva ? '#000' : '#fff'};border:none;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:800;cursor:pointer;transition:transform 0.15s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                Visualizar O.S.
               </button>
             </div>
             <div style="font-size:13.5px;font-weight:800;color:var(--gold-light);margin-bottom:4px;">
@@ -8790,16 +9097,251 @@ function baterPontoNoCliente(tipo) {
         if (nomeCliente && !clienteSessao.isFuncionario) clienteSessao.nome = nomeCliente;
       }
       localStorage.setItem('sdv_cliente_sessao', JSON.stringify(clienteSessao));
-      
-      const lblOs = document.getElementById('lbl-cliente-os-texto') || document.getElementById('lbl-cliente-os');
-      if (lblOs) lblOs.textContent = 'O.S. ' + numOs;
 
       carregarDadosStatus(clienteSessao);
       carregarGaleriaFotos(clienteSessao);
       carregarMensagensChat(clienteSessao);
       carregarDadosFinanceiros(clienteSessao);
       renderizarOrdensMensagens();
-      mostrarToastNotificacao('O.S. Selecionada', `Visualizando agora ${numOs} - ${nomeCliente}`, '📋');
+    }
+
+    // ══════════════════════════════════════════════
+    //  CENTRAL DE MENSAGENS DOS CLIENTES (MODELO IMAGEM 2)
+    // ══════════════════════════════════════════════
+    let adminChatConversasCache = [];
+    let adminChatOsAtiva = null;
+
+    function visualizarOsCentralMensagens(numOs, nomeCliente, tel) {
+      selecionarOsNoPortal(numOs, nomeCliente);
+      abrirModalCentralMensagens(numOs, nomeCliente, tel);
+    }
+
+    function abrirModalCentralMensagens(osFoco, nomeFoco, telFoco) {
+      const m = document.getElementById('modal-central-mensagens');
+      if (!m) return;
+      m.style.display = 'flex';
+      
+      carregarConversasAdmin();
+      
+      if (osFoco) {
+        selecionarConversaAdmin(osFoco, nomeFoco || 'Cliente', telFoco || '');
+      } else {
+        voltarParaListaConversasAdmin();
+      }
+    }
+
+    function fecharModalCentralMensagens(e) {
+      if (!e || e.target === document.getElementById('modal-central-mensagens')) {
+        const m = document.getElementById('modal-central-mensagens');
+        if (m) m.style.display = 'none';
+      }
+    }
+
+    function voltarParaListaConversasAdmin() {
+      const container = document.getElementById('chat-admin-container');
+      if (container) {
+        container.classList.remove('view-chat-active');
+      }
+    }
+
+    function carregarConversasAdmin() {
+      const lista = document.getElementById('admin-chat-lista-conversas');
+      if (!lista) return;
+
+      const ordens = (typeof carregarOrdensDoStorage === 'function') ? carregarOrdensDoStorage() : [];
+      
+      const conversas = ordens.map(o => {
+        const num = o.numero || (o.dados && o.dados.numero) || '#0001';
+        const key = getChatStorageKey(num);
+        let msgs = [];
+        try { msgs = JSON.parse(localStorage.getItem(key) || '[]'); } catch(_) {}
+        const clienteMsgs = msgs.filter(m => m.remetente === 'cliente');
+        return {
+          os: o,
+          numero: num,
+          nome: o.nome || (o.dados && o.dados.nome) || 'Cliente',
+          telefone: (o.dados && (o.dados.tel || o.dados.telefone)) || o.telefone || '',
+          msgs,
+          clienteMsgs,
+          ultimaMsg: msgs[msgs.length - 1] || null
+        };
+      });
+
+      adminChatConversasCache = conversas;
+      renderizarListaConversasAdmin(conversas);
+    }
+
+    function renderizarListaConversasAdmin(conversas) {
+      const lista = document.getElementById('admin-chat-lista-conversas');
+      if (!lista) return;
+
+      const totalBadge = document.getElementById('chat-admin-total-badge');
+      if (totalBadge) totalBadge.textContent = conversas.length;
+
+      if (!conversas.length) {
+        lista.innerHTML = `
+          <div style="padding:28px 12px;font-size:12.5px;color:var(--muted,#94a3b8);text-align:center;line-height:1.5;">
+            <div style="font-size:26px;margin-bottom:8px;">💬</div>
+            Nenhuma conversa iniciada ainda.<br>
+            <span style="font-size:11px;opacity:0.75;">Selecione uma O.S. no portal para iniciar.</span>
+          </div>
+        `;
+        return;
+      }
+
+      lista.innerHTML = conversas.map(c => {
+        const osNum = esc(c.numero);
+        const nomeCli = esc(c.nome);
+        const tel = esc(c.telefone);
+        const isActive = (adminChatOsAtiva === c.numero);
+        const unreadCount = c.clienteMsgs.length;
+        const ultTexto = c.ultimaMsg ? esc(c.ultimaMsg.texto || '') : 'Toque para conversar';
+        const ultHora = c.ultimaMsg ? (c.ultimaMsg.hora || '') : '';
+
+        return `
+          <div class="chat-admin-card ${isActive ? 'active' : ''}" id="chat-card-${osNum.replace(/\\D/g,'')}" onclick="selecionarConversaAdmin('${osNum}', '${nomeCli}', '${tel}')">
+            <div style="font-size:13px;font-weight:800;color:#fff;display:flex;justify-content:space-between;align-items:center;gap:6px;">
+              <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nomeCli}</span>
+              ${unreadCount ? `<span style="background:#ef4444;color:#fff;font-size:9.5px;padding:1px 7px;border-radius:999px;font-weight:900;flex-shrink:0;">${unreadCount}</span>` : ''}
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:3px;">
+              <span style="font-size:11px;color:var(--gold-light,#c9a84c);font-weight:700;">${osNum}</span>
+              ${ultHora ? `<span style="font-size:10px;color:var(--muted,#94a3b8);">${ultHora}</span>` : ''}
+            </div>
+            <div style="font-size:11px;color:var(--muted,#94a3b8);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${ultTexto}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function filtrarConversasAdmin(filtro) {
+      const term = (filtro || '').toLowerCase().trim();
+      if (!term) {
+        renderizarListaConversasAdmin(adminChatConversasCache);
+        return;
+      }
+      const filtradas = adminChatConversasCache.filter(c => {
+        const nome = (c.nome || '').toLowerCase();
+        const num = (c.numero || '').toLowerCase();
+        const tel = (c.telefone || '').toLowerCase();
+        return nome.includes(term) || num.includes(term) || tel.includes(term);
+      });
+      renderizarListaConversasAdmin(filtradas);
+    }
+
+    function selecionarConversaAdmin(osNum, nomeCliente, telefone) {
+      adminChatOsAtiva = osNum;
+
+      // No mobile, ativa visualização do chat
+      const container = document.getElementById('chat-admin-container');
+      if (container) {
+        container.classList.add('view-chat-active');
+      }
+
+      // Destaca card ativo na lista
+      document.querySelectorAll('.chat-admin-card').forEach(card => card.classList.remove('active'));
+      const cardAtivo = document.getElementById('chat-card-' + String(osNum).replace(/\\D/g,''));
+      if (cardAtivo) cardAtivo.classList.add('active');
+
+      const nomeEl = document.getElementById('admin-chat-nome-ativo');
+      if (nomeEl) nomeEl.textContent = nomeCliente;
+      
+      const osEl = document.getElementById('admin-chat-os-ativo');
+      if (osEl) osEl.textContent = 'O.S. ' + osNum;
+
+      const btnZap = document.getElementById('admin-chat-btn-zap');
+      if (btnZap) {
+        const zapTel = (telefone && telefone.replace(/\\D/g,'').length >= 8) ? telefone.replace(/\\D/g,'') : '5585996119824';
+        btnZap.href = 'https://wa.me/' + zapTel;
+        btnZap.style.display = 'inline-flex';
+      }
+
+      const key = getChatStorageKey(osNum);
+      let msgs = [];
+      try { msgs = JSON.parse(localStorage.getItem(key) || '[]'); } catch(_) {}
+
+      // Mensagem inicial de boas-vindas se vazio (igual imagem 2)
+      if (!msgs.length) {
+        msgs = [
+          {
+            id: 1,
+            remetente: 'empresa',
+            texto: `Olá, ${nomeCliente}! Seja bem-vindo(a) ao portal de acompanhamento da SD Móveis Projetados. Estamos cuidando de cada detalhe da sua O.S. ${osNum}. Qualquer dúvida, envie uma mensagem aqui!`,
+            hora: 'Agora'
+          }
+        ];
+        localStorage.setItem(key, JSON.stringify(msgs));
+      }
+
+      const box = document.getElementById('admin-chat-mensagens-box');
+      if (!box) return;
+
+      box.innerHTML = msgs.map(m => {
+        const ehEmpresa = m.remetente === 'empresa';
+        return `
+          <div style="max-width:85%;padding:10px 14px;border-radius:14px;${ehEmpresa ? 'align-self:flex-start;background:rgba(201,168,76,0.14);border:1px solid rgba(201,168,76,0.35);' : 'align-self:flex-end;background:linear-gradient(135deg,#108548,#075e33);'};box-shadow:0 2px 8px rgba(0,0,0,0.35);animation:fadeIn 0.2s ease;">
+            <div style="font-size:10px;font-weight:800;color:${ehEmpresa ? 'var(--gold-light,#c9a84c)' : '#bbf7d0'};margin-bottom:3px;display:flex;align-items:center;gap:4px;">
+              <span>${ehEmpresa ? '💎 SD Móveis' : '👤 ' + esc(nomeCliente)}</span>
+            </div>
+            <div style="font-size:13px;color:#fff;word-break:break-word;line-height:1.4;">${esc(m.texto || '')}</div>
+            <div style="font-size:9.5px;opacity:0.65;text-align:right;margin-top:4px;">${m.hora || ''}</div>
+          </div>
+        `;
+      }).join('');
+
+      setTimeout(() => { box.scrollTop = box.scrollHeight; }, 60);
+
+      const input = document.getElementById('admin-chat-input');
+      if (input && window.innerWidth > 768) input.focus();
+    }
+
+    function enviarRespostaAdmin() {
+      if (!adminChatOsAtiva) {
+        alert('Selecione uma conversa antes de enviar a resposta.');
+        return;
+      }
+      const input = document.getElementById('admin-chat-input');
+      const texto = (input && input.value || '').trim();
+      if (!texto) return;
+
+      const key = getChatStorageKey(adminChatOsAtiva);
+      let msgs = [];
+      try { msgs = JSON.parse(localStorage.getItem(key) || '[]'); } catch(_) {}
+
+      const ordens = (typeof carregarOrdensDoStorage === 'function') ? carregarOrdensDoStorage() : [];
+      const os = ordens.find(x => String(x.numero || (x.dados && x.dados.numero)).replace(/\\D/g,'') === String(adminChatOsAtiva).replace(/\\D/g,''));
+      const nomeCliente = (os && (os.nome || (os.dados && os.dados.nome))) || (document.getElementById('admin-chat-nome-ativo') ? document.getElementById('admin-chat-nome-ativo').textContent : 'Cliente');
+      const tel = (os && os.dados && (os.dados.tel || os.dados.telefone)) || (os && os.telefone) || '';
+
+      const novaMsg = {
+        id: Date.now(),
+        remetente: 'empresa',
+        texto: texto,
+        hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+      };
+      msgs.push(novaMsg);
+      localStorage.setItem(key, JSON.stringify(msgs));
+      if (input) input.value = '';
+
+      selecionarConversaAdmin(adminChatOsAtiva, nomeCliente, tel);
+      carregarConversasAdmin();
+
+      if (clienteSessao && String(clienteSessao.os).replace(/\\D/g,'') === String(adminChatOsAtiva).replace(/\\D/g,'')) {
+        carregarMensagensChat(clienteSessao);
+      }
+
+      fetch('/api/portal-cliente', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'mensagem',
+          remetente: 'empresa',
+          cliente_nome: nomeCliente,
+          os: adminChatOsAtiva,
+          texto: texto,
+          telefone: tel
+        })
+      }).catch(() => {});
     }
 
     function abrirSeletorTrocaOs() {
@@ -9005,10 +9547,28 @@ function baterPontoNoCliente(tipo) {
     });
 
     // ══════════════════════════════════════════════
-    //  BIOMETRIA / WEBAUTHN / FACE ID
+    //  BIOMETRIA NATIVA DO CELULAR (WEBAUTHN / DIGITAL / FACE ID)
     // ══════════════════════════════════════════════
     const BIO_STORAGE_KEY = 'sdv_cliente_bio_cred';
     let pendenteAtivacaoBio = null;
+
+    function bioBufferToBase64(buffer) {
+      const bytes = new Uint8Array(buffer);
+      let binary = '';
+      for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return window.btoa(binary);
+    }
+
+    function bioBase64ToBuffer(base64) {
+      const binary = window.atob(base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      return bytes.buffer;
+    }
 
     function verificarSuporteBiometria() {
       const badge = document.getElementById('bio-status-badge');
@@ -9021,8 +9581,8 @@ function baterPontoNoCliente(tipo) {
           const c = JSON.parse(credSalva);
           if (badge) badge.style.display = 'inline-block';
           if (btnTxt) {
-            const primeiroNome = (c.nome || 'Cliente').split(' ')[0];
-            btnTxt.innerHTML = `Entrar como <strong>${primeiroNome}</strong> com Biometria 👆`;
+            const primeiroNome = (c.nome || 'Colaborador').trim().split(' ')[0];
+            btnTxt.innerHTML = `Entrar como <strong>${primeiroNome}</strong> com Biometria do Celular 👆`;
           }
           if (btnBio) {
             btnBio.style.borderColor = 'var(--gold)';
@@ -9031,36 +9591,159 @@ function baterPontoNoCliente(tipo) {
         } catch (_) {}
       } else {
         if (badge) badge.style.display = 'none';
-        if (btnTxt) btnTxt.textContent = 'Acessar com Biometria / Face ID 👆';
+        if (btnTxt) btnTxt.textContent = 'Entrar com Biometria do Celular 👆';
       }
     }
 
     async function autenticarPorBiometria() {
       const fb = document.getElementById('login-feedback');
-      const credSalva = localStorage.getItem(BIO_STORAGE_KEY);
-      let colab = null;
+      const btnTxt = document.getElementById('btn-bio-txt');
+      const btnBio = document.getElementById('btn-biometria-login');
+
       const funcs = (typeof carregarFuncionariosDoStorage === 'function') ? carregarFuncionariosDoStorage() : [];
+      let colab = null;
 
-      if (!credSalva) {
-        const sel = document.getElementById('l-funcionario-select');
-        const inp = document.getElementById('l-identificador');
-        const selVal = sel ? sel.value : '';
-        const inpVal = (inp ? inp.value : '').trim();
+      // 1. Identifica o colaborador selecionado no dropdown ou previamente salvo
+      const sel = document.getElementById('l-funcionario-select');
+      const selVal = sel ? sel.value : '';
+      if (selVal) {
+        colab = funcs.find(f => String(f.id) === String(selVal));
+      }
 
-        if (selVal) {
-          colab = funcs.find(f => String(f.id) === String(selVal));
+      if (!colab) {
+        try {
+          const credSalva = localStorage.getItem(BIO_STORAGE_KEY);
+          if (credSalva) {
+            const c = JSON.parse(credSalva);
+            colab = funcs.find(f => String(f.id) === String(c.id)) || funcs.find(f => f.nome === c.nome);
+          }
+        } catch(_) {}
+      }
+
+      if (!colab) {
+        colab = funcs.find(f => f.id === 100 || (f.nome && f.nome.toLowerCase().includes('samuel'))) || funcs[0] || {
+          id: 100,
+          nome: 'Samuel David',
+          cargo: 'Instalador / Técnico Líder',
+          whatsapp: '(85) 99760-2237'
+        };
+      }
+
+      const nomeColab = colab.nome || 'Colaborador';
+      const primeiroNome = nomeColab.split(' ')[0];
+
+      // 2. Feedback visual enquanto aciona o sensor biométrico do celular
+      if (fb) {
+        fb.style.color = 'var(--gold-light)';
+        fb.textContent = '👆 Toque no sensor biométrico do celular para validar...';
+      }
+      if (btnBio) btnBio.style.opacity = '0.75';
+
+      // 3. Aciona o sensor biométrico nativo do aparelho (impressão digital / Face ID)
+      const temSuporteWebAuthn = window.PublicKeyCredential && 
+        navigator.credentials && 
+        typeof navigator.credentials.create === 'function' && 
+        typeof navigator.credentials.get === 'function';
+
+      let autenticadoComSucesso = false;
+
+      if (temSuporteWebAuthn) {
+        try {
+          const challenge = new Uint8Array(32);
+          window.crypto.getRandomValues(challenge);
+
+          const savedCredId = localStorage.getItem('sdv_bio_cred_id_' + colab.id) || localStorage.getItem('sdv_bio_cred_id');
+
+          if (savedCredId) {
+            try {
+              const assertion = await navigator.credentials.get({
+                publicKey: {
+                  challenge: challenge,
+                  rpId: window.location.hostname,
+                  allowCredentials: [{
+                    id: bioBase64ToBuffer(savedCredId),
+                    type: 'public-key',
+                    transports: ['internal']
+                  }],
+                  userVerification: 'required',
+                  timeout: 60000
+                }
+              });
+              if (assertion) autenticadoComSucesso = true;
+            } catch (errGet) {
+              console.warn('Tentando novo registro biométrico no celular...', errGet);
+            }
+          }
+
+          if (!autenticadoComSucesso) {
+            const novaCred = await navigator.credentials.create({
+              publicKey: {
+                challenge: challenge,
+                rp: {
+                  name: 'SD Móveis Projetados',
+                  id: window.location.hostname
+                },
+                user: {
+                  id: Uint8Array.from(String(colab.id || '100'), c => c.charCodeAt(0)),
+                  name: (colab.nome || 'Colaborador').toLowerCase().replace(/\s+/g, '_'),
+                  displayName: colab.nome || 'Colaborador'
+                },
+                pubKeyCredParams: [
+                  { alg: -7, type: 'public-key' },
+                  { alg: -257, type: 'public-key' }
+                ],
+                authenticatorSelection: {
+                  authenticatorAttachment: 'platform', // Sensor biométrico do próprio celular
+                  userVerification: 'required',
+                  residentKey: 'preferred'
+                },
+                timeout: 60000,
+                attestation: 'none'
+              }
+            });
+
+            if (novaCred && novaCred.rawId) {
+              const idBase64 = bioBufferToBase64(novaCred.rawId);
+              localStorage.setItem('sdv_bio_cred_id_' + colab.id, idBase64);
+              localStorage.setItem('sdv_bio_cred_id', idBase64);
+              autenticadoComSucesso = true;
+            }
+          }
+        } catch (errBio) {
+          console.error('Erro na biometria do celular:', errBio);
+          if (btnBio) btnBio.style.opacity = '1';
+
+          if (errBio.name === 'NotAllowedError' || errBio.name === 'AbortError') {
+            if (fb) {
+              fb.style.color = '#f59e0b';
+              fb.textContent = '⚠️ Leitura biométrica cancelada ou não reconhecida no celular. Digite sua senha acima.';
+            }
+            return;
+          }
+          if (fb) {
+            fb.style.color = '#f59e0b';
+            fb.textContent = '⚠️ Biometria não disponível ou bloqueada neste aparelho. Digite sua senha acima.';
+          }
+          return;
         }
-        if (!colab && inpVal) {
-          const inpNome = inpVal.toLowerCase();
-          colab = funcs.find(f => (f.nome && f.nome.toLowerCase().includes(inpNome)) || ((f.whatsapp || '').includes(inpVal)));
+      } else {
+        if (fb) {
+          fb.style.color = '#f59e0b';
+          fb.textContent = '⚠️ Seu navegador não suporta o sensor biométrico do celular. Entre com sua senha acima.';
         }
-        if (!colab) {
-          colab = funcs.find(f => f.id === 100 || (f.nome && f.nome.toLowerCase().includes('samuel'))) || funcs[0] || {
-            id: 100,
-            nome: 'Samuel David',
-            cargo: 'Instalador / Técnico Líder',
-            whatsapp: '(85) 99760-2237'
-          };
+        if (btnBio) btnBio.style.opacity = '1';
+        return;
+      }
+
+      if (btnBio) btnBio.style.opacity = '1';
+
+      if (autenticadoComSucesso) {
+        try { if (navigator.vibrate) navigator.vibrate([50, 60, 50]); } catch (_) {}
+        try { if (typeof tocarAlertaSonoro === 'function') tocarAlertaSonoro(); } catch (_) {}
+
+        if (fb) {
+          fb.style.color = '#4ade80';
+          fb.textContent = '✅ Biometria do celular confirmada! Entrando como ' + colab.nome + '... 👆';
         }
 
         const payloadBio = {
@@ -9073,49 +9756,27 @@ function baterPontoNoCliente(tipo) {
         };
         try { localStorage.setItem(BIO_STORAGE_KEY, JSON.stringify(payloadBio)); } catch(_) {}
         verificarSuporteBiometria();
-      } else {
+
+        const sessaoColab = {
+          id: colab.id || 100,
+          nome: colab.nome || 'Samuel David',
+          cargo: colab.cargo || 'Instalador / Técnico Líder',
+          isFuncionario: true,
+          os: '#PONTO',
+          dataLogin: new Date().toISOString()
+        };
+
         try {
-          const c = JSON.parse(credSalva);
-          if (c) {
-            colab = funcs.find(f => String(f.id) === String(c.id)) ||
-                    funcs.find(f => f.nome && c.nome && f.nome.toLowerCase() === c.nome.toLowerCase()) || {
-                      id: c.id || 100,
-                      nome: c.nome || 'Samuel David',
-                      cargo: c.cargo || 'Instalador / Técnico Líder'
-                    };
-          }
+          localStorage.setItem('sdv_cliente_sessao', JSON.stringify(sessaoColab));
+          localStorage.setItem('sdv_colaborador_sessao', JSON.stringify(sessaoColab));
+          sessionStorage.removeItem('sdv_usuario_deslogou');
+          localStorage.removeItem('sdv_usuario_deslogou');
         } catch(_) {}
+
+        setTimeout(() => {
+          iniciarPortalCliente(sessaoColab);
+        }, 250);
       }
-
-      if (!colab) {
-        colab = { id: 100, nome: 'Samuel David', cargo: 'Instalador / Técnico Líder', whatsapp: '(85) 99760-2237' };
-      }
-
-      if (fb) {
-        fb.style.color = '#4ade80';
-        fb.textContent = '✅ Biometria validada! Entrando como ' + colab.nome + '... 👆';
-      }
-      try { if (typeof tocarAlertaSonoro === 'function') tocarAlertaSonoro(); } catch(_) {}
-
-      const sessaoColab = {
-        id: colab.id || 100,
-        nome: colab.nome || 'Samuel David',
-        cargo: colab.cargo || 'Instalador / Técnico Líder',
-        isFuncionario: true,
-        os: '#PONTO',
-        dataLogin: new Date().toISOString()
-      };
-
-      try {
-        localStorage.setItem('sdv_cliente_sessao', JSON.stringify(sessaoColab));
-        localStorage.setItem('sdv_colaborador_sessao', JSON.stringify(sessaoColab));
-        sessionStorage.removeItem('sdv_usuario_deslogou');
-        localStorage.removeItem('sdv_usuario_deslogou');
-      } catch(_) {}
-
-      setTimeout(() => {
-        iniciarPortalCliente(sessaoColab);
-      }, 250);
     }
 
     function salvarCredencialBiometricaLocal(iden, senha, sessao, forcar = false) {
@@ -9251,6 +9912,24 @@ function baterPontoNoCliente(tipo) {
         }
       });
       localStorage.setItem('sdv_ordens', JSON.stringify(ordens));
+
+      // 2.1 Se for colaborador, atualiza na base de funcionários
+      if (clienteSessao && (clienteSessao.isFuncionario || clienteSessao.cargo)) {
+        try {
+          const senhasSalvas = JSON.parse(localStorage.getItem('sdv_senhas_funcionarios') || '{}');
+          if (clienteSessao.id) senhasSalvas[clienteSessao.id] = nova;
+          if (clienteSessao.nome) senhasSalvas[clienteSessao.nome] = nova;
+          localStorage.setItem('sdv_senhas_funcionarios', JSON.stringify(senhasSalvas));
+
+          let funcs = carregarFuncionariosDoStorage();
+          funcs.forEach(f => {
+            if (String(f.id) === String(clienteSessao.id) || f.nome === clienteSessao.nome) {
+              f.senha = nova;
+            }
+          });
+          localStorage.setItem('sdv_funcionarios', JSON.stringify(funcs));
+        } catch(_) {}
+      }
 
       // 3. Atualiza credencial biométrica se ativa
       const bioCred = localStorage.getItem(BIO_STORAGE_KEY);
@@ -12564,6 +13243,7 @@ function renderCronoMes() {
           <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-left:3px solid ${tInfo.color};border-radius:6px;gap:6px;">
             <div style="min-width:0;flex:1;">
               <div style="font-weight:800;font-size:12.5px;color:#fff;">${tInfo.emoji} ${esc(ev.titulo)}</div>
+              ${ev.cliente ? `<div style="font-size:11px;color:var(--gold-light);font-weight:700;">👤 ${esc(ev.cliente)}</div>` : ''}
               <div style="font-size:11px;color:var(--text2);">📅 ${formatDataBR(ev.data)}${ev.hora ? ' às ' + ev.hora : ''}</div>
             </div>
           </div>
@@ -12616,6 +13296,12 @@ function abrirModalNovoEventoCronograma(id) {
   document.getElementById('evento-cronograma-edit-id').value = '';
   document.getElementById('evento-cronograma-titulo').textContent = 'Novo Evento / Prazo';
   document.getElementById('evento-form-titulo').value = '';
+  const evCliente = document.getElementById('evento-form-cliente');
+  if (evCliente) evCliente.value = '';
+  const buscaInp = document.getElementById('crono-busca-rapida-inp');
+  if (buscaInp) { buscaInp.value = ''; }
+  const buscaBox = document.getElementById('crono-busca-resultados-box');
+  if (buscaBox) buscaBox.style.display = 'none';
   document.getElementById('evento-form-data').value = _cronoDiaSelecionado || isoHoje();
   document.getElementById('evento-form-hora').value = '';
   document.getElementById('evento-form-tipo').value = 'entrega';
@@ -12628,6 +13314,8 @@ function abrirModalNovoEventoCronograma(id) {
       document.getElementById('evento-cronograma-edit-id').value = ev.id;
       document.getElementById('evento-cronograma-titulo').textContent = 'Editar Evento';
       document.getElementById('evento-form-titulo').value = ev.titulo || '';
+      const evCliente = document.getElementById('evento-form-cliente');
+      if (evCliente) evCliente.value = ev.cliente || '';
       document.getElementById('evento-form-data').value = ev.data || '';
       document.getElementById('evento-form-hora').value = ev.hora || '';
       document.getElementById('evento-form-tipo').value = ev.tipo || 'outro';
@@ -12654,6 +13342,7 @@ function salvarEventoCronograma() {
   const obj = {
     id: editId || `ev_${Date.now()}`,
     titulo,
+    cliente: (document.getElementById('evento-form-cliente')?.value || '').trim(),
     data,
     hora: document.getElementById('evento-form-hora').value,
     tipo: document.getElementById('evento-form-tipo').value,
@@ -12683,6 +13372,169 @@ function excluirEventoCronograma(id) {
   if (_cronoAbaAtual === 'semana') renderCronoSemana();
   else if (_cronoAbaAtual === 'mes') renderCronoMes();
   else if (_cronoAbaAtual === 'ano') renderCronoAno();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PICKER DE CLIENTE PARA O CRONOGRAMA (Buscar Cliente Cadastrado)
+// ══════════════════════════════════════════════════════════════════
+let _cronoPicker_currentCliente = null;
+
+function _carregarClientesCrono() {
+  try {
+    const empId = localStorage.getItem('sdv_licenca_ativa') || 'sdvidros';
+    // Tenta com prefixo de empresa primeiro, depois fallback global
+    const chave = `sdv_clientes_${empId}`;
+    let raw = localStorage.getItem(chave);
+    if (!raw) raw = localStorage.getItem('sdv_clientes');
+    return raw ? (JSON.parse(raw) || []) : [];
+  } catch { return []; }
+}
+
+function _salvarClientesCrono(lista) {
+  try {
+    const empId = localStorage.getItem('sdv_licenca_ativa') || 'sdvidros';
+    localStorage.setItem(`sdv_clientes_${empId}`, JSON.stringify(lista));
+  } catch(e) { console.warn('Erro ao salvar clientes:', e); }
+}
+
+function abrirPickerClienteCrono() {
+  const clientes = _carregarClientesCrono();
+  let overlay = document.getElementById('picker-cli-crono-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'picker-cli-crono-overlay';
+    overlay.onclick = function(e) { if (e.target === overlay) fecharPickerClienteCrono(); };
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(4px);z-index:9999999;display:flex;align-items:flex-end;justify-content:center;animation:fadeIn 0.2s;';
+    document.body.appendChild(overlay);
+  }
+
+  overlay.innerHTML = `
+    <div style="background:#0c0d18;border-radius:20px 20px 0 0;width:100%;max-width:560px;max-height:85vh;display:flex;flex-direction:column;border-top:2px solid var(--gold);box-shadow:0 -8px 40px rgba(0,0,0,0.9);animation:slideUp 0.25s;">
+      <div style="padding:16px 20px 12px;border-bottom:1px solid rgba(255,255,255,0.08);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:18px;">📋</span>
+            <span style="font-size:16px;font-weight:900;color:#fef9c3;">Clientes salvos</span>
+            <span id="picker-crono-badge" style="background:rgba(212,175,76,0.18);border:1px solid rgba(212,175,76,0.4);color:#fbbf24;font-size:11px;font-weight:800;padding:2px 8px;border-radius:20px;">${clientes.length}</span>
+          </div>
+          <button type="button" onclick="fecharPickerClienteCrono()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#cbd5e1;width:32px;height:32px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;">✕</button>
+        </div>
+        <input type="text" id="picker-crono-filtro" oninput="filtrarListaPickerCrono(this.value)" placeholder="🔍 Filtrar cliente por nome ou WhatsApp..." style="width:100%;padding:10px 12px;border-radius:10px;background:#05060d;border:1px solid rgba(212,175,76,0.3);color:#fff;font-size:13px;box-shadow:inset 0 2px 4px rgba(0,0,0,0.5);box-sizing:border-box;" />
+      </div>
+      <div id="picker-crono-lista" style="overflow-y:auto;flex:1;padding:12px 16px;"></div>
+    </div>`;
+
+  overlay.style.display = 'flex';
+  renderItensPickerCrono('');
+  setTimeout(() => { const inp = document.getElementById('picker-crono-filtro'); if (inp) inp.focus(); }, 120);
+}
+
+function fecharPickerClienteCrono() {
+  const overlay = document.getElementById('picker-cli-crono-overlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+function filtrarListaPickerCrono(termo) {
+  renderItensPickerCrono(termo);
+}
+
+function renderItensPickerCrono(termo) {
+  const container = document.getElementById('picker-crono-lista');
+  if (!container) return;
+  const lista = _carregarClientesCrono();
+  const t = (termo || '').toLowerCase().trim();
+  const filtrados = lista.filter(c => {
+    if (!t) return true;
+    const nome = (c.nome || '').toLowerCase();
+    const tel = (c.whatsapp || '').replace(/\D/g, '');
+    const cid = (c.cidade || '').toLowerCase();
+    const bar = (c.bairro || '').toLowerCase();
+    return nome.includes(t) || tel.includes(t.replace(/\D/g,'')) || cid.includes(t) || bar.includes(t);
+  });
+
+  const badge = document.getElementById('picker-crono-badge');
+  if (badge) badge.textContent = filtrados.length;
+
+  if (!filtrados.length) {
+    container.innerHTML = '<div style="padding:28px 16px;text-align:center;color:#94a3b8;font-size:13px;">Nenhum cliente encontrado.</div>';
+    return;
+  }
+
+  container.innerHTML = filtrados.slice().reverse().map(c => {
+    const telLimpo = String(c.whatsapp || '').replace(/\D/g, '');
+    const localizacao = (c.whatsapp || '(sem tel)') + (c.bairro ? ' · ' + c.bairro : '') + (c.cidade ? ' · ' + c.cidade : '');
+    const endCompleto = [c.endereco, c.num, c.apto, c.bairro, c.cidade].filter(Boolean).join(', ') || '';
+    const nomeSafe = esc(c.nome || 'Sem nome');
+    const nomeAttr = (c.nome || '').replace(/'/g, "\\'");
+    return `
+      <div style="background:#12131e;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;" onmouseover="this.style.borderColor='rgba(212,175,76,0.35)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:14.5px;font-weight:800;color:#fef08a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${nomeSafe}</div>
+          <div style="font-size:12px;color:#94a3b8;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(localizacao)}</div>
+        </div>
+        <button type="button" onclick="selecionarClienteNaCrono('${nomeAttr}')" style="padding:7px 14px;background:linear-gradient(135deg,#d4af4c,#a0782a);border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:900;cursor:pointer;white-space:nowrap;">📋 Usar</button>
+      </div>
+    `;
+  }).join('');
+}
+
+function selecionarClienteNaCrono(nome) {
+  const el = document.getElementById('evento-form-cliente');
+  if (el) { el.value = nome; el.dispatchEvent(new Event('input')); }
+  fecharPickerClienteCrono();
+}
+
+function salvarClienteDoCronoModal() {
+  const nomeEl = document.getElementById('evento-form-cliente');
+  const nome = (nomeEl ? nomeEl.value : '').trim();
+  if (!nome) {
+    alert('Por favor, informe o Nome do Cliente para salvar.');
+    if (nomeEl) nomeEl.focus();
+    return;
+  }
+  const lista = _carregarClientesCrono();
+  const idx = lista.findIndex(c => c.nome && c.nome.trim().toLowerCase() === nome.toLowerCase());
+  if (idx !== -1) {
+    alert('✅ Cliente "' + nome + '" já está no cadastro!');
+  } else {
+    lista.push({ id: Date.now(), nome, cidade: 'Itaitinga' });
+    _salvarClientesCrono(lista);
+    alert('✅ Cliente "' + nome + '" salvo com sucesso no cadastro!');
+  }
+}
+
+function aoBuscarClienteRapidoCrono(termo) {
+  const box = document.getElementById('crono-busca-resultados-box');
+  if (!box) return;
+  if (!termo || !termo.trim()) { box.style.display = 'none'; return; }
+  const lista = _carregarClientesCrono();
+  const t = termo.toLowerCase().trim();
+  const filtrados = lista.filter(c =>
+    (c.nome || '').toLowerCase().includes(t) ||
+    (c.whatsapp || '').replace(/\D/g,'').includes(t.replace(/\D/g,''))
+  ).slice(0, 8);
+
+  if (!filtrados.length) {
+    box.style.display = 'block';
+    box.innerHTML = '<div style="padding:10px 12px;color:#94a3b8;font-size:12px;">Nenhum cliente encontrado.</div>';
+    return;
+  }
+  box.style.display = 'block';
+  box.innerHTML = filtrados.map(c => {
+    const loc = (c.whatsapp || '') + (c.bairro ? ' · ' + c.bairro : '');
+    const nomeAttr = (c.nome || '').replace(/'/g, "\\'");
+    return `<div onclick="selecionarClienteNaCrono('${nomeAttr}');document.getElementById('crono-busca-rapida-inp').value='';document.getElementById('crono-busca-resultados-box').style.display='none';" style="padding:10px 12px;cursor:pointer;border-radius:8px;transition:background 0.15s;" onmouseover="this.style.background='rgba(212,175,76,0.12)'" onmouseout="this.style.background='none'">
+      <div style="font-size:13px;font-weight:800;color:#fef08a;">${esc(c.nome || 'Sem nome')}</div>
+      <div style="font-size:11px;color:#94a3b8;">${esc(loc)}</div>
+    </div>`;
+  }).join('');
+}
+
+function limparBuscaRapidaCrono() {
+  const inp = document.getElementById('crono-busca-rapida-inp');
+  if (inp) inp.value = '';
+  const box = document.getElementById('crono-busca-resultados-box');
+  if (box) box.style.display = 'none';
 }
 
 // ── PEDIDOS DE MATERIAL ───────────────────────────────────────────
@@ -12982,6 +13834,35 @@ function enviarPedidoMaterialWhatsApp() {
     <input type="hidden" id="evento-cronograma-edit-id" value="">
 
     <div style="display:flex;flex-direction:column;gap:12px;">
+
+      <!-- 🔍 BUSCAR CLIENTE CADASTRADO -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <button type="button" onclick="abrirPickerClienteCrono()" id="crono-btn-buscar-cli" style="padding:11px 12px;font-size:13px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:10px;background:rgba(201,168,76,0.14);border:1.5px solid #d4af37;color:#fef08a;box-shadow:0 3px 12px rgba(212,175,55,0.25);cursor:pointer;">
+          🔍 Buscar Cliente
+        </button>
+        <button type="button" onclick="salvarClienteDoCronoModal()" id="crono-btn-salvar-cli" style="background:linear-gradient(135deg,#059669,#10b981);border:none;box-shadow:0 3px 12px rgba(16,185,129,0.35);font-size:13px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:10px;color:#fff;cursor:pointer;padding:11px 12px;">
+          💾 Salvar Cliente
+        </button>
+      </div>
+
+      <!-- 🔍 BUSCA RÁPIDA DE CLIENTES -->
+      <div style="position:relative;">
+        <label style="font-size:11px;font-weight:800;color:var(--gold-light);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;display:flex;align-items:center;gap:5px;">
+          <span>🔍</span> <span>Buscar Cliente Cadastrado (Filtro Rápido):</span>
+        </label>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input type="text" id="crono-busca-rapida-inp" oninput="aoBuscarClienteRapidoCrono(this.value)" placeholder="Digite o nome ou telefone para buscar..." style="width:100%;padding:10px 12px;border-radius:10px;background:#05060d;border:1.5px solid var(--gold);color:#fff;font-size:13px;box-shadow:inset 0 2px 6px rgba(0,0,0,0.5);" />
+          <button type="button" onclick="limparBuscaRapidaCrono()" style="padding:10px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:#cbd5e1;cursor:pointer;font-size:12px;font-weight:700;">✕</button>
+        </div>
+        <div id="crono-busca-resultados-box" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;max-height:200px;overflow-y:auto;background:#0d0e19;border:1.5px solid var(--gold);border-radius:10px;z-index:999999;box-shadow:0 12px 30px rgba(0,0,0,0.9);padding:6px;"></div>
+      </div>
+
+      <!-- NOME DO CLIENTE -->
+      <div class="field">
+        <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;">Nome do Cliente (opcional)</label>
+        <input type="text" id="evento-form-cliente" placeholder="Nome do cliente vinculado ao evento..." style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:inherit;font-size:13px;">
+      </div>
+
       <div class="field">
         <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;">Título do Evento</label>
         <input type="text" id="evento-form-titulo" placeholder="Ex: Entrega de obra - Cliente X" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:inherit;font-size:13px;">

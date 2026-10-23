@@ -1882,6 +1882,177 @@
 
     #btn-tab-jogos, #pane-jogos { display: none !important; }
 
+    /* ══ CENTRAL DE MENSAGENS RESPONSIVA (MODELO IMAGEM 2) ══ */
+    .chat-admin-modal-box {
+      background: #0d0d18;
+      border: 1px solid rgba(201,168,76,0.28);
+      border-radius: 18px;
+      padding: 16px 20px;
+      width: 100%;
+      max-width: 860px;
+      height: 640px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.85), 0 0 30px rgba(201,168,76,0.15);
+      box-sizing: border-box;
+    }
+    .chat-admin-container {
+      display: flex;
+      gap: 14px;
+      flex: 1;
+      min-height: 0;
+      position: relative;
+    }
+    .chat-admin-sidebar {
+      width: 270px;
+      flex-shrink: 0;
+      background: #080812;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .chat-admin-sidebar-header {
+      padding: 10px 14px;
+      background: #111122;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .chat-admin-sidebar-title {
+      font-size: 11.5px;
+      font-weight: 800;
+      color: var(--gold-light, #c9a84c);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .chat-admin-lista {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .chat-admin-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 10px 12px;
+      cursor: pointer;
+      transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      user-select: none;
+    }
+    .chat-admin-card:hover {
+      background: rgba(201,168,76,0.08);
+      border-color: rgba(201,168,76,0.3);
+      transform: translateY(-1px);
+    }
+    .chat-admin-card.active {
+      background: rgba(201,168,76,0.15);
+      border-color: var(--gold, #c9a84c);
+      box-shadow: 0 4px 14px rgba(201,168,76,0.15);
+    }
+    .chat-admin-main {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      background: #090914;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .chat-admin-header {
+      padding: 10px 14px;
+      background: #121224;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      min-height: 52px;
+      flex-shrink: 0;
+    }
+    .chat-admin-back-btn {
+      display: none;
+      background: rgba(201,168,76,0.15);
+      border: 1px solid rgba(201,168,76,0.35);
+      color: var(--gold-light, #c9a84c);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .chat-admin-back-btn:hover {
+      background: rgba(201,168,76,0.25);
+    }
+    .chat-admin-messages-box {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: radial-gradient(circle at center top, rgba(20,20,38,0.4), transparent);
+    }
+    .chat-admin-footer {
+      padding: 10px 14px;
+      background: #111122;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    /* ── COMPORTAMENTO MOBILE / RESPONSIVO ── */
+    @media (max-width: 768px) {
+      .chat-admin-modal-box {
+        width: 96vw !important;
+        max-width: 100% !important;
+        height: 88vh !important;
+        max-height: 88vh !important;
+        padding: 12px !important;
+        margin: auto;
+        border-radius: 14px;
+      }
+      .chat-admin-container {
+        position: relative;
+        overflow: hidden;
+      }
+      /* Modo 1: Lista de conversas visível (chat oculto) */
+      .chat-admin-container:not(.view-chat-active) .chat-admin-sidebar {
+        width: 100% !important;
+        display: flex !important;
+        flex: 1 !important;
+      }
+      .chat-admin-container:not(.view-chat-active) .chat-admin-main {
+        display: none !important;
+      }
+      /* Modo 2: Chat ativo visível (lista oculta) */
+      .chat-admin-container.view-chat-active .chat-admin-sidebar {
+        display: none !important;
+      }
+      .chat-admin-container.view-chat-active .chat-admin-main {
+        width: 100% !important;
+        display: flex !important;
+        flex: 1 !important;
+      }
+      .chat-admin-back-btn {
+        display: inline-flex !important;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -2091,6 +2262,69 @@
         <button type="button" onclick="fecharModalInstrucoesPwa()" style="width:100%;padding:11px;background:linear-gradient(135deg,var(--gold-light),var(--gold));border:none;border-radius:10px;color:#000;font-weight:900;font-size:13px;cursor:pointer;">
           Entendido! 👍
         </button>
+      </div>
+    </div>
+
+    <!-- ══ MODAL CENTRAL DE MENSAGENS DOS CLIENTES (MODELO IMAGEM 2) ══ -->
+    <div id="modal-central-mensagens" class="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);z-index:9999999;align-items:center;justify-content:center;padding:16px;" onclick="fecharModalCentralMensagens(event)">
+      <div class="modal-box chat-admin-modal-box" onclick="event.stopPropagation()">
+        <div class="modal-title" style="margin-bottom:12px;flex-shrink:0;display:flex;justify-content:space-between;align-items:center;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:18px;">💬</span>
+            <div>
+              <div style="font-size:15px;font-weight:800;color:var(--gold-light, #c9a84c);line-height:1.2;">Central de Mensagens dos Clientes</div>
+              <div style="font-size:11px;color:var(--muted, #94a3b8);font-weight:600;">Comunicação direta em tempo real</div>
+            </div>
+          </div>
+          <button type="button" class="modal-close" onclick="fecharModalCentralMensagens()" title="Fechar" style="background:none;border:none;color:var(--muted, #94a3b8);font-size:20px;cursor:pointer;padding:4px 8px;">✕</button>
+        </div>
+
+        <div id="chat-admin-container" class="chat-admin-container">
+          <!-- Coluna Esquerda: Lista de Conversas -->
+          <div class="chat-admin-sidebar">
+            <div class="chat-admin-sidebar-header">
+              <span class="chat-admin-sidebar-title">Conversas</span>
+              <span id="chat-admin-total-badge" style="font-size:10.5px;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.3);color:var(--gold-light, #c9a84c);padding:2px 8px;border-radius:999px;font-weight:800;">0</span>
+            </div>
+            <div style="padding:8px 8px 4px 8px;border-bottom:1px solid rgba(255,255,255,0.05);">
+              <input type="text" id="chat-admin-filtro" placeholder="🔍 Filtrar conversa..." oninput="filtrarConversasAdmin(this.value)" style="width:100%;box-sizing:border-box;background:#06060c;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:7px 10px;color:#fff;font-size:12px;outline:none;font-family:inherit;">
+            </div>
+            <div class="chat-admin-lista" id="admin-chat-lista-conversas">
+              <!-- Conversas carregadas dinamicamente -->
+            </div>
+          </div>
+
+          <!-- Coluna Direita: Chat Ativo -->
+          <div class="chat-admin-main">
+            <div class="chat-admin-header">
+              <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+                <button type="button" class="chat-admin-back-btn" onclick="voltarParaListaConversasAdmin()" title="Voltar para a lista de conversas">
+                  ← Conversas
+                </button>
+                <div style="min-width:0;">
+                  <div style="font-size:14px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="admin-chat-nome-ativo">Selecione uma conversa</div>
+                  <div style="font-size:11px;color:var(--gold-light, #c9a84c);font-weight:700;" id="admin-chat-os-ativo">O.S. #0000</div>
+                </div>
+              </div>
+              <a id="admin-chat-btn-zap" href="#" target="_blank" style="display:none;background:rgba(37,211,102,0.15);border:1px solid rgba(37,211,102,0.4);color:#25D366;text-decoration:none;padding:6px 12px;border-radius:8px;font-size:11.5px;font-weight:700;align-items:center;gap:5px;flex-shrink:0;">
+                <span>💬</span> WhatsApp
+              </a>
+            </div>
+
+            <div class="chat-admin-messages-box" id="admin-chat-mensagens-box">
+              <div style="text-align:center;color:var(--muted, #94a3b8);font-size:13px;margin-top:40px;">
+                Selecione uma conversa ao lado para visualizar e responder as mensagens.
+              </div>
+            </div>
+
+            <div class="chat-admin-footer" style="position:relative;z-index:20;pointer-events:auto;">
+              <input type="text" id="admin-chat-input" placeholder="Digite uma resposta para o cliente..." style="flex:1;background:#070710;border:1.5px solid rgba(255,255,255,0.2);border-radius:10px;padding:11px 14px;color:#fff;font-family:inherit;font-size:14px;outline:none;position:relative;z-index:30;pointer-events:auto;user-select:text;-webkit-user-select:text;" onkeydown="if(event.key==='Enter') enviarRespostaAdmin()" onclick="this.focus()" ontouchstart="this.focus()">
+              <button type="button" class="btn btn-gold btn-sm" onclick="enviarRespostaAdmin()" style="padding:11px 18px;font-weight:800;flex-shrink:0;position:relative;z-index:30;cursor:pointer;background:linear-gradient(135deg,var(--gold-light,#c9a84c),var(--gold,#a68228));color:#000;border:none;border-radius:8px;">
+                Enviar ➔
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -6323,18 +6557,21 @@ function mudarAba(tab) {
         colab = lista.find(f => nLimpo.includes((f.nome || '').toLowerCase()) || (f.nome || '').toLowerCase().includes(nLimpo.split(' ')[0]));
       }
       if (!colab) {
-        colab = {
-          id: (clienteSessao && clienteSessao.id) || 100,
-          nome: (clienteSessao && clienteSessao.nome) || 'Samuel David',
-          cargo: (clienteSessao && clienteSessao.cargo) || 'Instalador / Técnico Líder',
-          whatsapp: '(85) 99611-9824',
-          departamento: 'Operações',
-          status: 'Presente',
-          salario: 4500,
-          valorHora: 25.50
-        };
-        lista.push(colab);
-        try { localStorage.setItem('sdv_funcionarios', JSON.stringify(lista)); } catch(_) {}
+        colab = lista.find(f => (f.nome && (f.nome.toLowerCase().includes('samuel') || f.nome.toLowerCase().includes('david'))) || String(f.id) === '100');
+        if (!colab) {
+          colab = {
+            id: (clienteSessao && clienteSessao.id) || 100,
+            nome: (clienteSessao && clienteSessao.nome) || 'Samuel David',
+            cargo: (clienteSessao && clienteSessao.cargo) || 'Instalador / Técnico Líder',
+            whatsapp: '(85) 99611-9824',
+            departamento: 'Operações',
+            status: 'Presente',
+            salario: 4500,
+            valorHora: 25.50
+          };
+          lista.push(colab);
+          try { localStorage.setItem('sdv_funcionarios', JSON.stringify(lista)); } catch(_) {}
+        }
       }
       return colab;
     }
@@ -6342,7 +6579,19 @@ function mudarAba(tab) {
     function carregarFuncionariosDoStorage() {
       try {
         const raw = localStorage.getItem('sdv_funcionarios');
-        if (raw) return JSON.parse(raw);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const vistos = new Set();
+            return parsed.filter(f => {
+              if (!f || !f.nome) return false;
+              const k = f.nome.trim().toLowerCase() + '___' + (f.cargo||'').trim().toLowerCase();
+              if (vistos.has(k)) return false;
+              vistos.add(k);
+              return true;
+            });
+          }
+        }
       } catch(_) {}
       return [
         { id: 100, nome: 'Samuel David', cargo: 'Instalador / Técnico Líder', whatsapp: '(85) 99611-9824', departamento: 'Operações', status: 'Presente', valorHora: 25.50 }
@@ -6996,6 +7245,7 @@ function mudarAba(tab) {
         const nomeCliente = esc(o.nome || (o.dados && o.dados.nome) || 'Cliente');
         const dataOs = esc(o.data_orc || (o.dados && o.dados.data) || 'Data não informada');
         const local = esc([o.dados && o.dados.end, o.dados && o.dados.bairro].filter(Boolean).join(' - ') || (o.dados && o.dados.cidade) || '');
+        const tel = esc((o.dados && (o.dados.tel || o.dados.telefone)) || o.telefone || '');
         const itens = (o.dados && Array.isArray(o.dados.itens)) ? o.dados.itens : [];
 
         let itensHtml = '';
@@ -7025,8 +7275,8 @@ function mudarAba(tab) {
                 <span style="font-size:13.5px;font-weight:900;color:#fff;">${numOs}</span>
                 <span style="font-size:10px;background:rgba(74,222,128,0.15);border:1px solid rgba(74,222,128,0.4);color:#4ade80;padding:1px 7px;border-radius:999px;font-weight:700;">O.S. Registrada</span>
               </div>
-              <button type="button" onclick="selecionarOsNoPortal('${numOs}', '${nomeCliente}')" style="background:${isAtiva ? 'var(--gold)' : 'rgba(255,255,255,0.12)'};color:${isAtiva ? '#000' : '#fff'};border:none;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:800;cursor:pointer;">
-                ${isAtiva ? '✓ Selecionada' : 'Visualizar O.S.'}
+              <button type="button" onclick="visualizarOsCentralMensagens('${numOs}', '${nomeCliente}', '${tel}')" style="background:${isAtiva ? 'var(--gold)' : 'rgba(255,255,255,0.12)'};color:${isAtiva ? '#000' : '#fff'};border:none;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:800;cursor:pointer;transition:transform 0.15s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                Visualizar O.S.
               </button>
             </div>
             <div style="font-size:13.5px;font-weight:800;color:var(--gold-light);margin-bottom:4px;">
@@ -7059,7 +7309,245 @@ function mudarAba(tab) {
       carregarMensagensChat(clienteSessao);
       carregarDadosFinanceiros(clienteSessao);
       renderizarOrdensMensagens();
-      mostrarToastNotificacao('O.S. Selecionada', `Visualizando agora ${numOs} - ${nomeCliente}`, '📋');
+    }
+
+    // ══════════════════════════════════════════════
+    //  CENTRAL DE MENSAGENS DOS CLIENTES (MODELO IMAGEM 2)
+    // ══════════════════════════════════════════════
+    let adminChatConversasCache = [];
+    let adminChatOsAtiva = null;
+
+    function visualizarOsCentralMensagens(numOs, nomeCliente, tel) {
+      selecionarOsNoPortal(numOs, nomeCliente);
+      abrirModalCentralMensagens(numOs, nomeCliente, tel);
+    }
+
+    function abrirModalCentralMensagens(osFoco, nomeFoco, telFoco) {
+      const m = document.getElementById('modal-central-mensagens');
+      if (!m) return;
+      m.style.display = 'flex';
+      
+      carregarConversasAdmin();
+      
+      if (osFoco) {
+        selecionarConversaAdmin(osFoco, nomeFoco || 'Cliente', telFoco || '');
+      } else {
+        voltarParaListaConversasAdmin();
+      }
+    }
+
+    function fecharModalCentralMensagens(e) {
+      if (!e || e.target === document.getElementById('modal-central-mensagens')) {
+        const m = document.getElementById('modal-central-mensagens');
+        if (m) m.style.display = 'none';
+      }
+    }
+
+    function voltarParaListaConversasAdmin() {
+      const container = document.getElementById('chat-admin-container');
+      if (container) {
+        container.classList.remove('view-chat-active');
+      }
+    }
+
+    function carregarConversasAdmin() {
+      const lista = document.getElementById('admin-chat-lista-conversas');
+      if (!lista) return;
+
+      const ordens = (typeof carregarOrdensDoStorage === 'function') ? carregarOrdensDoStorage() : [];
+      
+      const conversas = ordens.map(o => {
+        const num = o.numero || (o.dados && o.dados.numero) || '#0001';
+        const key = getChatStorageKey(num);
+        let msgs = [];
+        try { msgs = JSON.parse(localStorage.getItem(key) || '[]'); } catch(_) {}
+        const clienteMsgs = msgs.filter(m => m.remetente === 'cliente');
+        return {
+          os: o,
+          numero: num,
+          nome: o.nome || (o.dados && o.dados.nome) || 'Cliente',
+          telefone: (o.dados && (o.dados.tel || o.dados.telefone)) || o.telefone || '',
+          msgs,
+          clienteMsgs,
+          ultimaMsg: msgs[msgs.length - 1] || null
+        };
+      });
+
+      adminChatConversasCache = conversas;
+      renderizarListaConversasAdmin(conversas);
+    }
+
+    function renderizarListaConversasAdmin(conversas) {
+      const lista = document.getElementById('admin-chat-lista-conversas');
+      if (!lista) return;
+
+      const totalBadge = document.getElementById('chat-admin-total-badge');
+      if (totalBadge) totalBadge.textContent = conversas.length;
+
+      if (!conversas.length) {
+        lista.innerHTML = `
+          <div style="padding:28px 12px;font-size:12.5px;color:var(--muted,#94a3b8);text-align:center;line-height:1.5;">
+            <div style="font-size:26px;margin-bottom:8px;">💬</div>
+            Nenhuma conversa iniciada ainda.<br>
+            <span style="font-size:11px;opacity:0.75;">Selecione uma O.S. no portal para iniciar.</span>
+          </div>
+        `;
+        return;
+      }
+
+      lista.innerHTML = conversas.map(c => {
+        const osNum = esc(c.numero);
+        const nomeCli = esc(c.nome);
+        const tel = esc(c.telefone);
+        const isActive = (adminChatOsAtiva === c.numero);
+        const unreadCount = c.clienteMsgs.length;
+        const ultTexto = c.ultimaMsg ? esc(c.ultimaMsg.texto || '') : 'Toque para conversar';
+        const ultHora = c.ultimaMsg ? (c.ultimaMsg.hora || '') : '';
+
+        return `
+          <div class="chat-admin-card ${isActive ? 'active' : ''}" id="chat-card-${osNum.replace(/\\D/g,'')}" onclick="selecionarConversaAdmin('${osNum}', '${nomeCli}', '${tel}')">
+            <div style="font-size:13px;font-weight:800;color:#fff;display:flex;justify-content:space-between;align-items:center;gap:6px;">
+              <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nomeCli}</span>
+              ${unreadCount ? `<span style="background:#ef4444;color:#fff;font-size:9.5px;padding:1px 7px;border-radius:999px;font-weight:900;flex-shrink:0;">${unreadCount}</span>` : ''}
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:3px;">
+              <span style="font-size:11px;color:var(--gold-light,#c9a84c);font-weight:700;">${osNum}</span>
+              ${ultHora ? `<span style="font-size:10px;color:var(--muted,#94a3b8);">${ultHora}</span>` : ''}
+            </div>
+            <div style="font-size:11px;color:var(--muted,#94a3b8);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${ultTexto}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function filtrarConversasAdmin(filtro) {
+      const term = (filtro || '').toLowerCase().trim();
+      if (!term) {
+        renderizarListaConversasAdmin(adminChatConversasCache);
+        return;
+      }
+      const filtradas = adminChatConversasCache.filter(c => {
+        const nome = (c.nome || '').toLowerCase();
+        const num = (c.numero || '').toLowerCase();
+        const tel = (c.telefone || '').toLowerCase();
+        return nome.includes(term) || num.includes(term) || tel.includes(term);
+      });
+      renderizarListaConversasAdmin(filtradas);
+    }
+
+    function selecionarConversaAdmin(osNum, nomeCliente, telefone) {
+      adminChatOsAtiva = osNum;
+
+      // No mobile, ativa visualização do chat
+      const container = document.getElementById('chat-admin-container');
+      if (container) {
+        container.classList.add('view-chat-active');
+      }
+
+      // Destaca card ativo na lista
+      document.querySelectorAll('.chat-admin-card').forEach(card => card.classList.remove('active'));
+      const cardAtivo = document.getElementById('chat-card-' + String(osNum).replace(/\\D/g,''));
+      if (cardAtivo) cardAtivo.classList.add('active');
+
+      const nomeEl = document.getElementById('admin-chat-nome-ativo');
+      if (nomeEl) nomeEl.textContent = nomeCliente;
+      
+      const osEl = document.getElementById('admin-chat-os-ativo');
+      if (osEl) osEl.textContent = 'O.S. ' + osNum;
+
+      const btnZap = document.getElementById('admin-chat-btn-zap');
+      if (btnZap) {
+        const zapTel = (telefone && telefone.replace(/\\D/g,'').length >= 8) ? telefone.replace(/\\D/g,'') : '5585996119824';
+        btnZap.href = 'https://wa.me/' + zapTel;
+        btnZap.style.display = 'inline-flex';
+      }
+
+      const key = getChatStorageKey(osNum);
+      let msgs = [];
+      try { msgs = JSON.parse(localStorage.getItem(key) || '[]'); } catch(_) {}
+
+      // Mensagem inicial de boas-vindas se vazio (igual imagem 2)
+      if (!msgs.length) {
+        msgs = [
+          {
+            id: 1,
+            remetente: 'empresa',
+            texto: `Olá, ${nomeCliente}! Seja bem-vindo(a) ao portal de acompanhamento da SD Móveis Projetados. Estamos cuidando de cada detalhe da sua O.S. ${osNum}. Qualquer dúvida, envie uma mensagem aqui!`,
+            hora: 'Agora'
+          }
+        ];
+        localStorage.setItem(key, JSON.stringify(msgs));
+      }
+
+      const box = document.getElementById('admin-chat-mensagens-box');
+      if (!box) return;
+
+      box.innerHTML = msgs.map(m => {
+        const ehEmpresa = m.remetente === 'empresa';
+        return `
+          <div style="max-width:85%;padding:10px 14px;border-radius:14px;${ehEmpresa ? 'align-self:flex-start;background:rgba(201,168,76,0.14);border:1px solid rgba(201,168,76,0.35);' : 'align-self:flex-end;background:linear-gradient(135deg,#108548,#075e33);'};box-shadow:0 2px 8px rgba(0,0,0,0.35);animation:fadeIn 0.2s ease;">
+            <div style="font-size:10px;font-weight:800;color:${ehEmpresa ? 'var(--gold-light,#c9a84c)' : '#bbf7d0'};margin-bottom:3px;display:flex;align-items:center;gap:4px;">
+              <span>${ehEmpresa ? '💎 SD Móveis' : '👤 ' + esc(nomeCliente)}</span>
+            </div>
+            <div style="font-size:13px;color:#fff;word-break:break-word;line-height:1.4;">${esc(m.texto || '')}</div>
+            <div style="font-size:9.5px;opacity:0.65;text-align:right;margin-top:4px;">${m.hora || ''}</div>
+          </div>
+        `;
+      }).join('');
+
+      setTimeout(() => { box.scrollTop = box.scrollHeight; }, 60);
+
+      const input = document.getElementById('admin-chat-input');
+      if (input && window.innerWidth > 768) input.focus();
+    }
+
+    function enviarRespostaAdmin() {
+      if (!adminChatOsAtiva) {
+        alert('Selecione uma conversa antes de enviar a resposta.');
+        return;
+      }
+      const input = document.getElementById('admin-chat-input');
+      const texto = (input && input.value || '').trim();
+      if (!texto) return;
+
+      const key = getChatStorageKey(adminChatOsAtiva);
+      let msgs = [];
+      try { msgs = JSON.parse(localStorage.getItem(key) || '[]'); } catch(_) {}
+
+      const ordens = (typeof carregarOrdensDoStorage === 'function') ? carregarOrdensDoStorage() : [];
+      const os = ordens.find(x => String(x.numero || (x.dados && x.dados.numero)).replace(/\\D/g,'') === String(adminChatOsAtiva).replace(/\\D/g,''));
+      const nomeCliente = (os && (os.nome || (os.dados && os.dados.nome))) || (document.getElementById('admin-chat-nome-ativo') ? document.getElementById('admin-chat-nome-ativo').textContent : 'Cliente');
+      const tel = (os && os.dados && (os.dados.tel || os.dados.telefone)) || (os && os.telefone) || '';
+
+      const novaMsg = {
+        id: Date.now(),
+        remetente: 'empresa',
+        texto: texto,
+        hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+      };
+      msgs.push(novaMsg);
+      localStorage.setItem(key, JSON.stringify(msgs));
+      if (input) input.value = '';
+
+      selecionarConversaAdmin(adminChatOsAtiva, nomeCliente, tel);
+      carregarConversasAdmin();
+
+      if (clienteSessao && String(clienteSessao.os).replace(/\\D/g,'') === String(adminChatOsAtiva).replace(/\\D/g,'')) {
+        carregarMensagensChat(clienteSessao);
+      }
+
+      fetch('/api/portal-cliente', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'mensagem',
+          remetente: 'empresa',
+          cliente_nome: nomeCliente,
+          os: adminChatOsAtiva,
+          texto: texto,
+          telefone: tel
+        })
+      }).catch(() => {});
     }
 
     function abrirSeletorTrocaOs() {

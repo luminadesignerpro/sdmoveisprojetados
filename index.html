@@ -1779,6 +1779,14 @@
       color: #fff;
       box-shadow: 0 0 10px rgba(56,189,248,0.3);
     }
+    @keyframes slideUp {
+      from { transform: translateY(100%); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
 </style>
   <script src="pdf-lib.min.js"></script>
   <script src="pdf.min.js"></script>
@@ -2444,6 +2452,16 @@
       <div style="padding:16px 20px;overflow-y:auto;flex:1;">
         <input type="hidden" id="pessoal-edit-id" value="">
 
+        <!-- 🔍 BOTÕES BUSCAR CLIENTE E SALVAR CLIENTE (COMO NA IMAGEM 4) -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+          <button type="button" class="btn btn-gold btn-full" onclick="abrirPickerClienteAgendamento('pessoal-novo-titulo','pessoal-novo-tel','pessoal-novo-local')" id="pessoal-btn-buscar-cli" style="padding:11px 12px;font-size:13px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:10px;background:rgba(201,168,76,0.14);border:1.5px solid #d4af37;color:#fef08a;box-shadow:0 3px 12px rgba(212,175,55,0.25);cursor:pointer;">
+            🔍 Buscar Cliente
+          </button>
+          <button type="button" class="btn btn-primary btn-full" onclick="salvarClienteDoPessoalModal()" id="pessoal-btn-salvar-cli" style="background:linear-gradient(135deg,#059669,#10b981);border:none;box-shadow:0 3px 12px rgba(16,185,129,0.35);font-size:13px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:10px;color:#fff;cursor:pointer;">
+            💾 Salvar Cliente
+          </button>
+        </div>
+
         <!-- 🔍 BUSCA RÁPIDA (COMO IMAGEM 2) -->
         <div style="margin-bottom:12px;position:relative;">
           <div style="display:flex;gap:6px;align-items:center;">
@@ -2455,7 +2473,10 @@
 
         <!-- NOME DO CLIENTE / TÍTULO (COMO IMAGEM 2) -->
         <div class="field" style="margin-bottom:12px;">
-          <label style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:4px;">Nome do Cliente</label>
+          <label style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+            <span>Nome do Cliente</span>
+            <button type="button" onclick="abrirPickerClienteAgendamento('pessoal-novo-titulo','pessoal-novo-tel','pessoal-novo-local')" style="padding:4px 10px;background:linear-gradient(135deg,#d4af4c,#a0782a);border:none;border-radius:7px;color:#fff;font-size:11px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:5px;box-shadow:0 2px 8px rgba(212,175,76,0.4);transition:all 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">📋 Clientes salvos ▾</button>
+          </label>
           <input id="pessoal-novo-titulo" placeholder="Ex: Claudia ou selecione o cliente..." style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.12);color:#fff;font-family:var(--font);" />
         </div>
 
@@ -5272,7 +5293,17 @@
         </div>
       </div>
 
-            <!-- 🔍 BUSCA RÁPIDA DE CLIENTES / CONTATOS -->
+            <!-- 🔍 BOTÕES BUSCAR CLIENTE E SALVAR CLIENTE (EXATAMENTE COMO NA IMAGEM 4) -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+        <button type="button" class="btn btn-gold btn-full" onclick="abrirPickerClienteAgendamento('agenda-novo-cliente','agenda-novo-tel','agenda-novo-end')" id="agenda-btn-buscar-cli" style="padding:11px 12px;font-size:13px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:10px;background:rgba(201,168,76,0.14);border:1.5px solid #d4af37;color:#fef08a;box-shadow:0 3px 12px rgba(212,175,55,0.25);cursor:pointer;">
+          🔍 Buscar Cliente
+        </button>
+        <button type="button" class="btn btn-primary btn-full" onclick="salvarClienteDoAgendamentoModal()" id="agenda-btn-salvar-cli" style="background:linear-gradient(135deg,#059669,#10b981);border:none;box-shadow:0 3px 12px rgba(16,185,129,0.35);font-size:13px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:10px;color:#fff;cursor:pointer;">
+          💾 Salvar Cliente
+        </button>
+      </div>
+
+      <!-- 🔍 BUSCA RÁPIDA DE CLIENTES / CONTATOS -->
       <div style="margin-bottom:12px;position:relative;">
         <label style="font-size:11px;font-weight:800;color:var(--gold-light);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;display:flex;align-items:center;gap:5px;">
           <span>🔍</span> <span>Buscar Cliente Cadastrado (Filtro Rápido):</span>
@@ -5285,7 +5316,10 @@
       </div>
 
 <div class="field" style="margin-bottom:12px;">
-        <label>Nome do Cliente</label>
+        <label style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+          <span>Nome do Cliente</span>
+          <button type="button" onclick="abrirPickerClienteAgendamento('agenda-novo-cliente','agenda-novo-tel','agenda-novo-end')" style="padding:4px 10px;background:linear-gradient(135deg,#d4af4c,#a0782a);border:none;border-radius:7px;color:#fff;font-size:11px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:5px;box-shadow:0 2px 8px rgba(212,175,76,0.4);transition:all 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">📋 Clientes salvos ▾</button>
+        </label>
         <input id="agenda-novo-cliente" list="agenda-lista-sugestoes-clientes" oninput="aoSelecionarClienteAgenda()" placeholder="Ex: Claudia ou selecione o cliente..." style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.12);color:#fff;font-family:var(--font);" />
       </div>
 
@@ -8063,14 +8097,18 @@ function gerarMensagemWhatsAppAprovacao(o) {
   const numDestinoZap = zapNumLimpo.startsWith("55") ? zapNumLimpo : ("55" + zapNumLimpo);
 
   const iconeEmpresa = (lic.tipoContrato === "moveis" || lic.id === "sdmoveis" || (lic.nome && lic.nome.toLowerCase().includes("moveis"))) ? "🛋️" : "🪟";
-  let m = `*${(lic.nome || "SD VIDROS").toUpperCase()}* ${iconeEmpresa}\n`;
-  m += `Orçamento *${numOs}* em anexo (PDF).\n\n`;
+  let m = `*${(lic.nome || "SD MÓVEIS PROJETADOS").toUpperCase()}* ${iconeEmpresa}\n`;
+  m += `Orçamento *${numOs}* em anexo (PDF)\n\n`;
   if (nomeCli) m += `👤 Cliente: *${nomeCli}*\n`;
   if (totalVal) m += `💰 Valor Total: *${totalVal}*\n\n`;
-  m += `Para visualizar o PDF do orçamento e ter a opção de aprovar e assinar, toque no link abaixo:\n\n`;
+
+  // 1. Solicitar Ajustes (posicionado no início para NUNCA ser cortado pelo "Ler mais" do WhatsApp)
+  const textoAjuste = `Olá! Recebi o orçamento ${numOs}, mas gostaria de falar sobre ajustes e condições com ${lic.nome}.`;
+  m += `💬 *Solicitar Ajustes:*\nhttps://wa.me/${numDestinoZap}?text=${encodeURIComponent(textoAjuste)}\n\n`;
+
+  // 2. Visualizar Proposta e Assinar
   m += `👉 *CLIQUE AQUI PARA ABRIR O PDF E ASSINAR:*\n${linkVisualizarEAssinar}\n\n`;
-  m += `_(Ao abrir o link, você visualiza a proposta completa com a opção de aprovar e assinar na tela)_\n\n`;
-  m += `👉 *Solicitar Ajustes:*\nhttps://wa.me/${numDestinoZap}?text=${encodeURIComponent(`Olá! Recebi o orçamento ${numOs}, mas gostaria de falar sobre ajustes e condições com ${lic.nome}.`)}`;
+  m += `_(Ao abrir o link, você visualiza a proposta completa com a opção de aprovar e assinar na tela)_`;
   return m;
 }
 
@@ -10996,6 +11034,215 @@ function usarCliente(id) {
   if (document.getElementById('o-apto') && c.apto) document.getElementById('o-apto').value = c.apto;
   if (document.getElementById('o-resp') && c.responsavel) document.getElementById('o-resp').value = c.responsavel;
   goTab('orcamento');
+}
+
+// ─── PICKER DE CLIENTE PARA AGENDAMENTO ──────────────────────────────────────
+let _pickerCurrentTarget = { nome: 'agenda-novo-cliente', tel: 'agenda-novo-tel', end: 'agenda-novo-end' };
+
+function abrirPickerClienteAgendamento(campoNome, campoTel, campoEnd) {
+  if (campoNome) _pickerCurrentTarget.nome = campoNome;
+  if (campoTel)  _pickerCurrentTarget.tel  = campoTel;
+  if (campoEnd)  _pickerCurrentTarget.end  = campoEnd;
+
+  let overlay = document.getElementById('picker-cli-agend-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'picker-cli-agend-overlay';
+    overlay.onclick = function(e) { if (e.target === overlay) fecharPickerClienteAgendamento(); };
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);backdrop-filter:blur(4px);z-index:9999999;display:flex;align-items:flex-end;justify-content:center;animation:fadeIn 0.2s;';
+    document.body.appendChild(overlay);
+  }
+
+  const total = (typeof clientes !== 'undefined' ? clientes.length : 0);
+
+  overlay.innerHTML = `
+    <div style="background:#0c0d18;border-radius:20px 20px 0 0;width:100%;max-width:560px;max-height:85vh;display:flex;flex-direction:column;border-top:2px solid var(--gold);box-shadow:0 -8px 40px rgba(0,0,0,0.9);animation:slideUp 0.25s;">
+      <div style="padding:16px 20px 12px;border-bottom:1px solid rgba(255,255,255,0.08);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:18px;">📋</span>
+            <span style="font-size:16px;font-weight:900;color:#fef9c3;">Clientes salvos</span>
+            <span id="picker-cli-badge" style="background:rgba(212,175,76,0.18);border:1px solid rgba(212,175,76,0.4);color:#fbbf24;font-size:11px;font-weight:800;padding:2px 8px;border-radius:20px;">${total}</span>
+          </div>
+          <button type="button" onclick="fecharPickerClienteAgendamento()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#cbd5e1;width:32px;height:32px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;">✕</button>
+        </div>
+        <div style="position:relative;">
+          <input type="text" id="picker-cli-filtro" oninput="filtrarListaPickerCliente(this.value)" placeholder="🔍 Filtrar cliente por nome ou WhatsApp..." style="width:100%;padding:10px 12px;border-radius:10px;background:#05060d;border:1px solid rgba(212,175,76,0.3);color:#fff;font-size:13px;box-shadow:inset 0 2px 4px rgba(0,0,0,0.5);">
+        </div>
+      </div>
+      <div id="picker-cli-lista-container" style="overflow-y:auto;flex:1;padding:12px 16px;">
+      </div>
+    </div>`;
+
+  overlay.style.display = 'flex';
+  renderItensPickerCliente('');
+  setTimeout(() => {
+    const inp = document.getElementById('picker-cli-filtro');
+    if (inp) inp.focus();
+  }, 120);
+}
+
+function fecharPickerClienteAgendamento() {
+  const overlay = document.getElementById('picker-cli-agend-overlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+function filtrarListaPickerCliente(termo) {
+  renderItensPickerCliente(termo);
+}
+
+function renderItensPickerCliente(termo) {
+  const container = document.getElementById('picker-cli-lista-container');
+  if (!container) return;
+  const lista = (typeof clientes !== 'undefined' ? clientes : []);
+  const t = (termo || '').toLowerCase().trim();
+  const filtrados = lista.filter(c => {
+    if (!t) return true;
+    const nome = (c.nome || '').toLowerCase();
+    const tel = (c.whatsapp || '').toLowerCase().replace(/\D/g, '');
+    const cid = (c.cidade || '').toLowerCase();
+    const bar = (c.bairro || '').toLowerCase();
+    return nome.includes(t) || tel.includes(t) || cid.includes(t) || bar.includes(t);
+  });
+
+  const badge = document.getElementById('picker-cli-badge');
+  if (badge) badge.textContent = filtrados.length;
+
+  if (!filtrados.length) {
+    container.innerHTML = '<div style="padding:28px 16px;text-align:center;color:#94a3b8;font-size:13px;">Nenhum cliente encontrado.</div>';
+    return;
+  }
+
+  container.innerHTML = filtrados.slice().reverse().map(c => {
+    const telLimpo = String(c.whatsapp || '').replace(/\D/g, '');
+    const senhaExibir = c.senha ? c.senha : (telLimpo.length >= 4 ? telLimpo.slice(-4) : '1234');
+    const localizacao = (c.whatsapp ? c.whatsapp : '(sem tel)') + (c.bairro ? ' · ' + c.bairro : '') + (c.cidade ? ' · ' + c.cidade : ' · Itaitinga');
+    const endCompleto = [c.endereco, c.num, c.apto, c.bairro, c.cidade].filter(Boolean).join(', ') || (c.bairro || c.cidade || '');
+    return `
+      <div style="background:#12131e;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 3px 10px rgba(0,0,0,0.3);transition:border-color 0.2s;" onmouseover="this.style.borderColor='rgba(212,175,76,0.35)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:14.5px;font-weight:800;color:#fef08a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(c.nome || 'Sem nome')}</div>
+          <div style="font-size:12px;color:#94a3b8;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(localizacao)}</div>
+          <div style="font-size:11px;color:#fbbf24;margin-top:3px;font-weight:700;">🔑 Senha Portal: ${esc(senhaExibir)}</div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
+          <button type="button" onclick="selecionarClienteNaAgenda('${esc(c.nome||'').replace(/'/g,"\\'")}','${esc(c.whatsapp||'').replace(/'/g,"\\'")}','${esc(endCompleto).replace(/'/g,"\\'")}')" style="padding:7px 14px;background:linear-gradient(135deg,#d4af4c,#a0782a);border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:900;cursor:pointer;display:inline-flex;align-items:center;gap:4px;box-shadow:0 2px 8px rgba(212,175,76,0.4);white-space:nowrap;">
+            📋 Usar
+          </button>
+          <button type="button" onclick="fecharPickerClienteAgendamento();editarCli(${c.id});" title="Editar cliente" style="padding:7px 10px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#cbd5e1;cursor:pointer;font-size:12px;">
+            ✏️
+          </button>
+          <button type="button" onclick="deletarClienteDoPicker(${c.id})" title="Excluir cliente" style="padding:7px 10px;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);border-radius:8px;color:#f87171;cursor:pointer;font-size:12px;">
+            ✕
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function deletarClienteDoPicker(id) {
+  if (!confirm('Deseja realmente excluir este cliente do cadastro?')) return;
+  if (typeof deletarCli === 'function') {
+    deletarCli(id);
+    renderItensPickerCliente(document.getElementById('picker-cli-filtro')?.value || '');
+  } else {
+    const idx = clientes.findIndex(c => c.id === id);
+    if (idx !== -1) {
+      clientes.splice(idx, 1);
+      save(K.clients, clientes);
+      renderItensPickerCliente(document.getElementById('picker-cli-filtro')?.value || '');
+      if (typeof renderCli === 'function') renderCli();
+    }
+  }
+}
+
+function selecionarClienteNaAgenda(nome, tel, endereco) {
+  const elNome = document.getElementById(_pickerCurrentTarget.nome);
+  const elTel  = document.getElementById(_pickerCurrentTarget.tel);
+  const elEnd  = document.getElementById(_pickerCurrentTarget.end);
+  if (elNome) { elNome.value = nome; elNome.dispatchEvent(new Event('input')); }
+  if (elTel && tel)      { elTel.value = tel; elTel.dispatchEvent(new Event('input')); }
+  if (elEnd && endereco) { elEnd.value = endereco; elEnd.dispatchEvent(new Event('input')); }
+  fecharPickerClienteAgendamento();
+}
+
+function salvarClienteDoAgendamentoModal() {
+  const nomeEl = document.getElementById('agenda-novo-cliente');
+  const telEl = document.getElementById('agenda-novo-tel');
+  const endEl = document.getElementById('agenda-novo-end');
+  const nome = (nomeEl ? nomeEl.value : '').trim();
+  const tel = (telEl ? telEl.value : '').trim();
+  const end = (endEl ? endEl.value : '').trim();
+  if (!nome) {
+    alert('Por favor, informe o Nome do Cliente para salvar.');
+    if (nomeEl) nomeEl.focus();
+    return;
+  }
+  const telDigitos = tel.replace(/\D/g, '');
+  const senhaPadrao = telDigitos.length >= 4 ? telDigitos.slice(-4) : '1234';
+  const cliData = {
+    nome,
+    whatsapp: tel,
+    endereco: end,
+    cidade: 'Itaitinga',
+    senha: senhaPadrao
+  };
+  const idx = clientes.findIndex(c => {
+    const cTelDigitos = String(c.whatsapp || '').replace(/\D/g, '');
+    const mesmoTel = telDigitos && cTelDigitos && (telDigitos === cTelDigitos);
+    const mesmoNome = c.nome && c.nome.trim().toLowerCase() === nome.toLowerCase();
+    return mesmoTel || mesmoNome;
+  });
+  if (idx !== -1) {
+    clientes[idx] = { ...clientes[idx], ...cliData };
+    alert('✅ Cliente "' + nome + '" atualizado com sucesso no cadastro!');
+  } else {
+    cliData.id = Date.now();
+    clientes.push(cliData);
+    alert('✅ Cliente "' + nome + '" salvo com sucesso no cadastro!');
+  }
+  save(K.clients, clientes);
+  if (typeof renderCli === 'function') renderCli();
+}
+
+function salvarClienteDoPessoalModal() {
+  const nomeEl = document.getElementById('pessoal-novo-titulo');
+  const telEl = document.getElementById('pessoal-novo-tel');
+  const endEl = document.getElementById('pessoal-novo-local');
+  const nome = (nomeEl ? nomeEl.value : '').trim();
+  const tel = (telEl ? telEl.value : '').trim();
+  const end = (endEl ? endEl.value : '').trim();
+  if (!nome) {
+    alert('Por favor, informe o Nome do Cliente para salvar.');
+    if (nomeEl) nomeEl.focus();
+    return;
+  }
+  const telDigitos = tel.replace(/\D/g, '');
+  const senhaPadrao = telDigitos.length >= 4 ? telDigitos.slice(-4) : '1234';
+  const cliData = {
+    nome,
+    whatsapp: tel,
+    endereco: end,
+    cidade: 'Itaitinga',
+    senha: senhaPadrao
+  };
+  const idx = clientes.findIndex(c => {
+    const cTelDigitos = String(c.whatsapp || '').replace(/\D/g, '');
+    const mesmoTel = telDigitos && cTelDigitos && (telDigitos === cTelDigitos);
+    const mesmoNome = c.nome && c.nome.trim().toLowerCase() === nome.toLowerCase();
+    return mesmoTel || mesmoNome;
+  });
+  if (idx !== -1) {
+    clientes[idx] = { ...clientes[idx], ...cliData };
+    alert('✅ Cliente "' + nome + '" atualizado com sucesso no cadastro!');
+  } else {
+    cliData.id = Date.now();
+    clientes.push(cliData);
+    alert('✅ Cliente "' + nome + '" salvo com sucesso no cadastro!');
+  }
+  save(K.clients, clientes);
+  if (typeof renderCli === 'function') renderCli();
 }
 
 function salvarClienteDoOrcamento() {

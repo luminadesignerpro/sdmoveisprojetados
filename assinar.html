@@ -1825,7 +1825,8 @@
       subTit.textContent = lic.nome;
     }
     if (btnAjustar) {
-      btnAjustar.href = zapHref;
+      const txtAjuste = `Olá! Recebi o orçamento ${numeroOs || ''}, mas gostaria de falar sobre ajustes e condições com ${lic.nome}.`;
+      btnAjustar.href = zapHref + '?text=' + encodeURIComponent(txtAjuste);
       btnAjustar.textContent = `💬 Falar com ${lic.nome} / Solicitar Ajustes`;
 
     if (btnAjustar) {
