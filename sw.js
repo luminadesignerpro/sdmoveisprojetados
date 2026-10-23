@@ -1,5 +1,5 @@
-// Service Worker PWA para sdmoveisprojetados - v7.3 (Meu Setor Financeiro no Portal Equipe)
-const CACHE_NAME = 'sdmoveisprojetados-v7.3';
+// Service Worker PWA para sdmoveisprojetados - v7.4 (Layout de Ações Atualizado)
+const CACHE_NAME = 'sdmoveisprojetados-v7.4';
 const ASSETS = [
   '/',
   '/index.html',

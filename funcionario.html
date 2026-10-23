@@ -2583,18 +2583,15 @@
 
       <!-- ══ CARD DE AÇÕES E NAVEGAÇÃO ORGANIZADO & PADRONIZADO ══ -->
       <div class="client-nav-card">
-        <!-- Linha 1 e 2: Grid 2x2 Padronizado para Ações da Conta -->
+        <!-- Ações da Conta -->
         <div class="client-actions-bar">
-          <button type="button" class="client-action-item btn-client-action" id="btn-top-meu-financeiro" onclick="mudarAba('meu-financeiro')" title="Acessar Meu Setor Financeiro" style="background:linear-gradient(135deg,rgba(212,175,55,0.22),rgba(212,175,55,0.08));border:1.5px solid var(--gold);color:var(--gold-light);font-weight:800;box-shadow:0 2px 10px rgba(212,175,55,0.15);cursor:pointer;">
-            <span>💰</span> <span>Meu Setor Financeiro</span>
-          </button>
           <button type="button" class="client-action-item btn-client-action" onclick="abrirModalTrocarSenha()" title="Alterar sua senha de acesso">
             <span>🔑</span> <span>Trocar Senha</span>
           </button>
           <button type="button" class="client-action-item btn-client-action btn-bio-active" id="btn-header-biometria" onclick="gerenciarBiometria()" title="Configurar biometria neste aparelho">
             <span>👆</span> <span>Biometria Ativa ✓</span>
           </button>
-          <button type="button" class="client-action-item btn-client-action btn-sair-action" onclick="sairCliente()" title="Encerrar sessão">
+          <button type="button" class="client-action-item btn-client-action btn-sair-action" onclick="sairCliente()" title="Encerrar sessão" style="grid-column: span 2;">
             <span>🚪</span> <span>Sair do Portal</span>
           </button>
         </div>
@@ -5738,19 +5735,6 @@ function mudarAba(tab) {
         if (pane) pane.classList.toggle('active', t === tab);
         if (btn) btn.classList.toggle('active', t === tab);
       });
-
-      const btnTopFin = document.getElementById('btn-top-meu-financeiro');
-      if (btnTopFin) {
-        if (tab === 'meu-financeiro') {
-          btnTopFin.style.background = 'linear-gradient(135deg,rgba(212,175,55,0.4),rgba(212,175,55,0.2))';
-          btnTopFin.style.borderColor = '#fff';
-          btnTopFin.style.boxShadow = '0 0 15px rgba(212,175,55,0.4)';
-        } else {
-          btnTopFin.style.background = 'linear-gradient(135deg,rgba(212,175,55,0.22),rgba(212,175,55,0.08))';
-          btnTopFin.style.borderColor = 'var(--gold)';
-          btnTopFin.style.boxShadow = '0 2px 10px rgba(212,175,55,0.15)';
-        }
-      }
 
       try {
         if (tab === 'ponto') {
