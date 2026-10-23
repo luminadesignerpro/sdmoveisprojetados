@@ -1,5 +1,5 @@
-// Service Worker PWA para sdmoveisprojetados - v7.5 (Espelho de Ponto Ajustado)
-const CACHE_NAME = 'sdmoveisprojetados-v7.5';
+// Service Worker PWA para sdmoveisprojetados - v7.6 (Batida de Ponto 100% Manual)
+const CACHE_NAME = 'sdmoveisprojetados-v7.6';
 const ASSETS = [
   '/',
   '/index.html',

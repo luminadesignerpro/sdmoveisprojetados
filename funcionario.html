@@ -10803,43 +10803,27 @@ function baterPontoNoCliente(tipo) {
       if (!tbody) return;
 
       const colab = obterFuncionarioAtivoPonto();
-      const todosPontos = JSON.parse(localStorage.getItem('sdv_pontos') || '[]');
+      let todosPontos = JSON.parse(localStorage.getItem('sdv_pontos') || '[]');
       const nomeColab = (colab.nome || obterNomeColaboradorPonto() || '').toLowerCase();
 
-      // Recalcula horas trabalhadas e salários para todos os pontos
+      // Limpeza de batidas automáticas/fictícias geradas por versões anteriores
+      const lenAntes = todosPontos.length;
+      todosPontos = todosPontos.filter(p => !(p.entrada1 === '08:00' && p.saidaAlmoco === '12:00' && p.voltaAlmoco === '13:00' && !p.saidaFinal && (!p.justificativa && !p.justificativaSaida)));
+      if (todosPontos.length !== lenAntes) {
+        try { localStorage.setItem('sdv_pontos', JSON.stringify(todosPontos)); } catch(_) {}
+      }
+
+      // Recalcula horas trabalhadas e salários apenas para registros reais batidos
       todosPontos.forEach(p => {
         recalcularHorasPontoCliente(p, colab);
       });
 
-      // Filtra pontos apenas deste colaborador
+      // Filtra pontos apenas deste colaborador (somente batidas reais realizadas)
       let pontosColab = todosPontos.filter(function(p) {
         const pNome = (p.colaboradorNome || '').toLowerCase();
         return (p.colaboradorId && colab.id && String(p.colaboradorId) === String(colab.id)) ||
                pNome === nomeColab || pNome.includes(nomeColab) || (nomeColab.includes(pNome) && pNome.length > 3);
       });
-
-      // Se lista vazia ou sem registro de hoje, inicializa o dia de hoje
-      const hojeData = getHojeFormatadoPonto();
-      const temHoje = pontosColab.some(p => ehDataHojePonto(p.data));
-      if (!temHoje) {
-        const pHoje = {
-          id: Date.now(),
-          colaboradorId: colab.id,
-          colaboradorNome: colab.nome,
-          data: hojeData,
-          entrada1: '08:00',
-          saidaAlmoco: '12:00',
-          voltaAlmoco: '13:00',
-          saidaFinal: '',
-          tempoTrabalhado: '00h 00m',
-          valorSalario: 'R$ 0,00',
-          status: colab.status || 'Presente'
-        };
-        recalcularHorasPontoCliente(pHoje, colab);
-        todosPontos.unshift(pHoje);
-        pontosColab.unshift(pHoje);
-        try { localStorage.setItem('sdv_pontos', JSON.stringify(todosPontos)); } catch(_) {}
-      }
 
       // Filtro de Período (Dia, Semana, Mês, Ano)
       const agora = new Date();
