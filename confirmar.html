@@ -397,7 +397,10 @@
     const horaAgendamento = params.get('hora') || '';
     const localAgendamento = params.get('end') || params.get('local') || '';
     const obsAgendamento = params.get('obs') || '';
-    const telEmpresaParam = params.get('zap') || params.get('tel') || '85996119824';
+    let empCfg = {};
+    try { empCfg = JSON.parse(localStorage.getItem('sdv_empresa_config') || '{}'); } catch(_) {}
+    const telStorage = localStorage.getItem('sdv_whatsapp_agenda') || empCfg.whatsapp_agenda || empCfg.whatsapp || empCfg.telefone;
+    const telEmpresaParam = params.get('zap') || params.get('tel') || telStorage || '85996119824';
     const numEmpresaLimpo = telEmpresaParam.replace(/\D/g, '') || '85996119824';
 
     let notaSelecionada = 5;

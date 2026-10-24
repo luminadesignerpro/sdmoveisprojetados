@@ -420,6 +420,7 @@
     .status-pill.reajustar { background: rgba(245,158,11,0.18); color: #fbbf24; border-color: rgba(245,158,11,0.5); }
     .status-pill.modificacao_aprovada { background: rgba(16,185,129,0.22); color: #34d399; border-color: #10b981; font-weight:800; }
     .status-pill.recusado { background: rgba(224,68,68,0.15); color: #ff8585; border-color: rgba(224,68,68,0.35); }
+    .status-pill.concluido { background: rgba(100,116,139,0.18); color: #94a3b8; border-color: rgba(148,163,184,0.35); }
 
     /* ── OPÇÕES DE STATUS NA EDIÇÃO DE O.S. ── */
     .btn-status-choice {
@@ -2747,8 +2748,24 @@
           <span>📞</span> Contato & Redes Sociais
         </div>
 
+        <!-- WHATSAPP EXCLUSIVO DA AGENDA (ENVIA E RECEBE MENSAGENS) -->
+        <div style="background:rgba(37,211,102,0.08);border:1.5px solid rgba(37,211,102,0.35);border-radius:12px;padding:12px 14px;margin-bottom:14px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+            <label style="font-weight:900;color:#4ade80;font-size:12.5px;display:flex;align-items:center;gap:6px;margin:0;">
+              <span>📅</span> WhatsApp da Agenda (Envia e Recebe Mensagens)
+            </label>
+            <span style="font-size:10px;font-weight:800;background:rgba(37,211,102,0.18);border:1px solid #10b981;color:#34d399;padding:2px 8px;border-radius:999px;">
+              Agenda & Confirmações
+            </span>
+          </div>
+          <input id="cfg-emp-whatsapp-agenda" placeholder="(85) 99611-9824" style="font-weight:700;color:#fff;background:rgba(0,0,0,0.4);border:1.5px solid rgba(37,211,102,0.4);" oninput="atualizarPreviewEmpresaAoDigitar()" />
+          <div style="font-size:11px;color:#cbd5e1;margin-top:6px;line-height:1.4;">
+            📲 <strong>Número exclusivo para a Agenda:</strong> envia as mensagens de agendamento e é para este número que os clientes respondem ao tocar em <em>Confirmar</em>, <em>Reagendar</em> ou <em>Avaliar</em> na Agenda.
+          </div>
+        </div>
+
         <div class="field">
-          <label>WhatsApp Comercial (Com DDD)</label>
+          <label>WhatsApp Comercial Geral (Com DDD)</label>
           <input id="cfg-emp-whatsapp" placeholder="(85) 99611-9824" oninput="atualizarPreviewEmpresaAoDigitar()" />
           <span style="font-size:10.5px;color:#94a3b8;">Usado para envio de mensagens, orçamentos e contato com clientes</span>
         </div>
@@ -6738,6 +6755,7 @@ function carregarDadosConfiguracaoEmpresa() {
   setVal('cfg-emp-logo', lic.logo || 'logo_moveis.jpg');
   setVal('cfg-emp-banner', lic.banner || 'banner_moveis.jpg');
   
+  setVal('cfg-emp-whatsapp-agenda', lic.whatsapp_agenda || lic.whatsapp || lic.telefone || '(85) 99611-9824');
   setVal('cfg-emp-whatsapp', lic.whatsapp || lic.telefone || '(85) 99611-9824');
   setVal('cfg-emp-telefone', lic.telefone || '(85) 99611-9824');
   setVal('cfg-emp-email', lic.email || 'contato@sdmoveisprojetados.com.br');
@@ -6868,6 +6886,7 @@ function restaurarPadraoSDMoveisConfig() {
     slogan: 'Cozinhas Planejadas, Closets & Ambientes Sob Medida',
     telefone: '(85) 99611-9824',
     whatsapp: '(85) 99611-9824',
+    whatsapp_agenda: '(85) 99611-9824',
     email: 'contato@sdmoveisprojetados.com.br',
     instagram: '@sdmoveisprojetados',
     site: 'https://sdmoveisprojetados.vercel.app',
@@ -6915,6 +6934,7 @@ function salvarDadosEmpresaConfig() {
   const logo = getVal('cfg-emp-logo') || 'logo_moveis.jpg';
   const banner = getVal('cfg-emp-banner') || 'banner_moveis.jpg';
   
+  const whatsappAgenda = getVal('cfg-emp-whatsapp-agenda') || getVal('cfg-emp-whatsapp') || '(85) 99611-9824';
   const whatsapp = getVal('cfg-emp-whatsapp') || '(85) 99611-9824';
   const telefone = getVal('cfg-emp-telefone') || whatsapp;
   const email = getVal('cfg-emp-email');
@@ -6961,6 +6981,7 @@ function salvarDadosEmpresaConfig() {
     logo,
     banner,
     whatsapp,
+    whatsapp_agenda: whatsappAgenda,
     telefone,
     email,
     instagram,
@@ -6992,6 +7013,7 @@ function salvarDadosEmpresaConfig() {
   if (typeof salvarLicencas === 'function') salvarLicencas(licencas);
   localStorage.setItem('sdv_licenca_ativa', idAtivo);
   localStorage.setItem('sdv_empresa_config', JSON.stringify(lic));
+  localStorage.setItem('sdv_whatsapp_agenda', whatsappAgenda.replace(/\D/g, ''));
 
   // Aplicar visual imediato
   if (typeof aplicarLicencaVisual === 'function') aplicarLicencaVisual(lic);
@@ -16675,9 +16697,11 @@ function gerarMensagemWhatsAppAgendamento(ev) {
   const obs = ev.obs || ev.desc || '';
 
   const lic = (typeof obterLicencaAtiva === 'function' ? obterLicencaAtiva() : null) || {};
-  const nomeEmpresa = lic.nome || 'SD Móveis Projetados';
-  const telEmpresaRaw = lic.telefone || '85996119824';
-  const zapEmpresa = String(telEmpresaRaw).replace(/\D/g, '') || '85996119824';
+  let empCfg = {};
+  try { empCfg = JSON.parse(localStorage.getItem('sdv_empresa_config') || '{}'); } catch(_) {}
+  const nomeEmpresa = lic.nome || empCfg.nome || 'SD Móveis Projetados';
+  const telAgendaRaw = lic.whatsapp_agenda || empCfg.whatsapp_agenda || localStorage.getItem('sdv_whatsapp_agenda') || lic.whatsapp || lic.telefone || '85996119824';
+  const zapEmpresa = String(telAgendaRaw).replace(/\D/g, '') || '85996119824';
 
   const baseOrigin = window.location.origin || 'https://sdmoveisprojetados.vercel.app';
   const basePath = window.location.pathname.replace(/\/[^\/]*$/, '/');
@@ -17282,7 +17306,7 @@ function renderAgenda() {
     return;
   }
 
-  container.innerHTML = filtrados.map(ev => {
+  container.innerHTML = filtrados.map((ev, idx) => {
     const isHoje = ev.data === hojeStr && !ev.concluido;
     const zapClean = (ev.tel || '').replace(/\D/g, '');
     const dataFmt = ev.data ? ev.data.split('-').reverse().join('/') : '';
@@ -17301,9 +17325,40 @@ function renderAgenda() {
     const zapLink = zapClean ? `https://wa.me/55${zapClean}?text=${zapMsg}` : '';
     const notifPill = formatarTempoNotificacao(ev.notificar_minutos);
 
+    // ── Status pill e Identificação (Idêntico ao hist-card da Imagem 1) ──
+    const numAg = ev.numero ? esc(ev.numero) : ('#' + String(idx + 1).padStart(4, '0'));
+    let statusAgLabel, statusAgClass;
+    if (ev.concluido) {
+      statusAgLabel = '⚫ Concluído';
+      statusAgClass = 'concluido';
+    } else if (isReagendadoCli) {
+      statusAgLabel = '🟠 Reagendamento Solicitado';
+      statusAgClass = 'reajustar';
+    } else if (isConfirmadoCli) {
+      statusAgLabel = '🟢 Confirmado pelo Cliente';
+      statusAgClass = 'aprovado';
+    } else if (isConfirmado) {
+      statusAgLabel = '🟢 Confirmado';
+      statusAgClass = 'aprovado';
+    } else {
+      statusAgLabel = '🟡 Aguardando Confirmação';
+      statusAgClass = 'pendente';
+    }
+
     return `
       <div style="background:#10111a;border:1.5px solid ${isConfirmadoCli ? '#10b981' : (isHoje ? 'rgba(56,189,248,0.35)' : 'rgba(255,255,255,0.08)')};border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 6px 20px rgba(0,0,0,0.5);position:relative;">
-        <!-- LINHA SUPERIOR: Checkbox + Botões de Ação Padronizados -->
+
+        <!-- TOPO: #ID + Status Pill + Data (Exatamente como na primeira imagem) -->
+        <div class="hist-top" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <span class="hist-num">${numAg}</span>
+            <span class="status-pill ${statusAgClass}" onclick="alternarConfirmadoAgenda('${ev.id}')" title="Toque para alternar confirmação" style="cursor:pointer;user-select:none;">${statusAgLabel}</span>
+            ${isHoje ? '<span style="font-size:10px;padding:2px 8px;border-radius:999px;background:#ef4444;color:#fff;font-weight:900;">HOJE</span>' : ''}
+          </div>
+          <span class="hist-date">${dataFmt}</span>
+        </div>
+
+        <!-- LINHA AÇÕES: Checkbox + Botões -->
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
             <button onclick="alternarConcluidoAgenda('${ev.id}')" title="${ev.concluido ? 'Reabrir compromisso' : 'Marcar como concluído'}" style="background:${ev.concluido ? '#10b981' : 'transparent'};border:1.5px solid ${ev.concluido ? '#10b981' : 'rgba(255,255,255,0.25)'};color:#fff;width:26px;height:26px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">
@@ -17313,8 +17368,8 @@ function renderAgenda() {
           </div>
 
           <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
-            <button onclick="alternarConfirmadoAgenda('${ev.id}')" title="Confirmar agendamento" style="background:${isConfirmado ? 'rgba(16,185,129,0.25)' : 'rgba(16,185,129,0.12)'};border:1px solid ${isConfirmado ? '#10b981' : 'rgba(16,185,129,0.35)'};color:${isConfirmado ? '#34d399' : '#a7f3d0'};padding:6px 10px;border-radius:8px;cursor:pointer;font-size:11.5px;font-weight:800;display:inline-flex;align-items:center;gap:4px;">
-              ${isConfirmadoCli ? '✅ Confirmado p/ Cliente' : (isConfirmado ? '✅ Confirmado' : '✅ Confirmar')}
+            <button onclick="alternarConfirmadoAgenda('${ev.id}')" title="Alternar status de confirmação" style="background:${isConfirmado ? 'rgba(16,185,129,0.25)' : 'rgba(16,185,129,0.12)'};border:1px solid ${isConfirmado ? '#10b981' : 'rgba(16,185,129,0.35)'};color:${isConfirmado ? '#34d399' : '#a7f3d0'};padding:6px 10px;border-radius:8px;cursor:pointer;font-size:11.5px;font-weight:800;display:inline-flex;align-items:center;gap:4px;">
+              ${isConfirmado ? '✅ Confirmado' : '✅ Confirmar'}
             </button>
             <button onclick="reagendarCompromissoAgenda('${ev.id}')" style="background:rgba(59,130,246,0.18);border:1px solid rgba(59,130,246,0.4);color:#93c5fd;padding:6px 10px;border-radius:8px;cursor:pointer;font-size:11.5px;font-weight:800;display:inline-flex;align-items:center;gap:4px;">🔄 Reagendar</button>
             <button onclick="abrirModalAvaliarAgenda('${ev.id}')" title="Avaliar atendimento" style="background:${temAvaliacao ? 'rgba(234,179,8,0.25)' : 'rgba(234,179,8,0.12)'};border:1px solid rgba(234,179,8,0.4);color:#facc15;padding:6px 10px;border-radius:8px;cursor:pointer;font-size:11.5px;font-weight:800;display:inline-flex;align-items:center;gap:4px;">
@@ -17342,11 +17397,7 @@ function renderAgenda() {
               </span>
 
               ${ev.notificado ? '<span style="font-size:10.5px;padding:3px 10px;border-radius:999px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.4);color:#34d399;font-weight:700;display:inline-block;">🔔 Alarme tocado</span>' : ''}
-
-              ${isHoje ? '<span style="font-size:10.5px;padding:2px 8px;border-radius:999px;background:#ef4444;color:#fff;font-weight:900;display:inline-block;">HOJE</span>' : ''}
             </div>
-
-            ${isConfirmado ? '<span style="font-size:10.5px;padding:3px 10px;border-radius:999px;background:rgba(16,185,129,0.2);border:1px solid rgba(16,185,129,0.45);color:#34d399;font-weight:800;display:inline-block;">✅ Confirmado pelo Cliente</span>' : ''}
 
             ${temAvaliacao ? `<span style="font-size:10.5px;padding:3px 10px;border-radius:999px;background:rgba(234,179,8,0.2);border:1px solid rgba(234,179,8,0.45);color:#facc15;font-weight:800;display:inline-block;">⭐ Avaliação: ${ev.avaliacao.nota || 5}/5★ ${ev.avaliacao.comentario ? ' - "' + esc(ev.avaliacao.comentario) + '"' : ''}</span>` : ''}
 
@@ -26451,16 +26502,30 @@ function renderAgendaPessoal() {
     return;
   }
 
-  cont.innerHTML = filtrados.map(ev => {
+  cont.innerHTML = filtrados.map((ev, idx) => {
     const isHoje = ev.data === hojeStr && !ev.concluido;
     const dataFmt = ev.data ? ev.data.split('-').reverse().join('/') : '';
     const zapClean = (ev.tel || '').replace(/\D/g, '');
     const zapLink = zapClean.length >= 8 ? `https://wa.me/55${zapClean}` : '';
     const notifPill = formatarTempoNotificacao(ev.notificar_minutos || 30);
 
+    const numAg = ev.numero ? esc(ev.numero) : ('#' + String(idx + 1).padStart(4, '0'));
+    const statusAgLabel = ev.concluido ? '⚫ Concluído' : '🟡 Aguardando';
+    const statusAgClass = ev.concluido ? 'concluido' : 'pendente';
+
     return `
       <div style="background:#10111a;border:1px solid ${isHoje ? 'rgba(56,189,248,0.35)' : 'rgba(255,255,255,0.08)'};border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 6px 20px rgba(0,0,0,0.5);">
-        <!-- LINHA SUPERIOR: Checkbox + Botões de Ação Padronizados (como Imagem 3) -->
+        <!-- TOPO: #ID + Status Pill + Data (Exatamente como na primeira imagem) -->
+        <div class="hist-top" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <span class="hist-num">${numAg}</span>
+            <span class="status-pill ${statusAgClass}" onclick="alternarConcluidoPessoal('${ev.id}')" title="Toque para alternar status" style="cursor:pointer;user-select:none;">${statusAgLabel}</span>
+            ${isHoje ? '<span style="font-size:10px;padding:2px 8px;border-radius:999px;background:#ef4444;color:#fff;font-weight:900;">HOJE</span>' : ''}
+          </div>
+          <span class="hist-date">${dataFmt}</span>
+        </div>
+
+        <!-- LINHA SUPERIOR: Checkbox + Botões de Ação Padronizados -->
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
           <div style="display:flex;align-items:center;gap:8px;">
             <button onclick="alternarConcluidoPessoal('${ev.id}')" title="${ev.concluido ? 'Reabrir' : 'Concluir'}" style="background:${ev.concluido ? '#10b981' : 'transparent'};border:1.5px solid ${ev.concluido ? '#10b981' : 'rgba(255,255,255,0.25)'};color:#fff;width:26px;height:26px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">
