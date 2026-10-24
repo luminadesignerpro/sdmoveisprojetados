@@ -16663,6 +16663,38 @@ function tocarSomAlarmeSiren() {
   } catch (_) {}
 }
 
+function gerarMensagemWhatsAppAgendamento(ev) {
+  const cliente = ev.cliente || ev.nome || 'Cliente';
+  const tipo = ev.tipo || 'Medição Técnica';
+  let dataFmt = ev.data || '';
+  if (dataFmt.includes('-')) {
+    dataFmt = dataFmt.split('-').reverse().join('/');
+  }
+  const hora = ev.hora || '';
+  const end = ev.end || ev.local || ev.endereco || '';
+  const obs = ev.obs || ev.desc || '';
+
+  const lic = (typeof obterLicencaAtiva === 'function' ? obterLicencaAtiva() : null) || {};
+  const nomeEmpresa = lic.nome || 'SD Móveis Projetados';
+  const telEmpresaRaw = lic.telefone || '85996119824';
+  const zapEmpresa = String(telEmpresaRaw).replace(/\D/g, '') || '85996119824';
+
+  const baseOrigin = window.location.origin || 'https://sdmoveisprojetados.vercel.app';
+  const basePath = window.location.pathname.replace(/\/[^\/]*$/, '/');
+  const linkPortalConfirmacao = `${baseOrigin}${basePath}confirmar.html?id=${encodeURIComponent(ev.id || '')}&cliente=${encodeURIComponent(cliente)}&tipo=${encodeURIComponent(tipo)}&data=${encodeURIComponent(dataFmt)}&hora=${encodeURIComponent(hora)}&end=${encodeURIComponent(end)}&zap=${encodeURIComponent(zapEmpresa)}`;
+
+  // Mensagens pré-formatadas para resposta direta em 1 toque
+  const msgConfirma = encodeURIComponent(`✅ Olá! Gostaria de CONFIRMAR meu agendamento de *${tipo}* no dia *${dataFmt}* às *${hora}*. (Cliente: ${cliente})`);
+  const msgReagenda = encodeURIComponent(`🔄 Olá! Gostaria de solicitar o REAGENDAMENTO da minha visita de *${tipo}*. Poderiam me informar novas opções de horário? (Cliente: ${cliente})`);
+  const msgAvalia = encodeURIComponent(`⭐ Olá! Gostaria de AVALIAR o atendimento da *${nomeEmpresa}*. (Cliente: ${cliente})`);
+
+  const linkZapConfirma = `https://wa.me/55${zapEmpresa}?text=${msgConfirma}`;
+  const linkZapReagenda = `https://wa.me/55${zapEmpresa}?text=${msgReagenda}`;
+  const linkZapAvalia = `https://wa.me/55${zapEmpresa}?text=${msgAvalia}`;
+
+  return `Olá ${cliente}! 😊\n\nConfirmando o seu agendamento de *${tipo}* para o dia *${dataFmt}* às *${hora}* pela *${nomeEmpresa}*.${end ? '\n📍 Local: *' + end + '*' : ''}${obs ? '\n📝 Obs: ' + obs : ''}\n\n👉 *Escolha uma opção tocando no link:*:\n\n✅ *1. CONFIRMAR AGENDAMENTO:*\n👉 ${linkZapConfirma}\n\n🔄 *2. SOLICITAR REAGENDAMENTO:*\n👉 ${linkZapReagenda}\n\n⭐ *3. AVALIAR ATENDIMENTO:*\n👉 ${linkZapAvalia}\n\n📲 *Ou escolha pela página oficial:*\n👉 ${linkPortalConfirmacao}\n\n_Ao tocar em qualquer opção, nossa equipe é notificada na hora!_\n\nAgradecemos a preferência!\n*${nomeEmpresa}* 🏠`;
+}
+
 function iniciarLoopAlarme(ev, diffMinutos) {
   pararAlarmeAgenda();
   alarmeAtivoEvento = ev;
@@ -16714,7 +16746,7 @@ function iniciarLoopAlarme(ev, diffMinutos) {
   if (btnZap) {
     const zapClean = (ev.tel || '').replace(/\D/g, '');
     if (zapClean) {
-      const msg = encodeURIComponent(`Olá ${ev.cliente || ''}! 😊\nConfirmando o seu agendamento de *${ev.tipo || 'Medição Técnica'}* às *${ev.hora || ''}* pela *SD Móveis Projetados*.\n\n👉 *Opções para seu atendimento:*\n✅ *CONFIRMAR* - Confirma sua presença\n🔄 *REAGENDAR* - Solicita nova data ou horário\n⭐ *AVALIAR* - Envia sua avaliação`);
+      const msg = encodeURIComponent(gerarMensagemWhatsAppAgendamento(ev));
       btnZap.href = `https://wa.me/55${zapClean}?text=${msg}`;
       btnZap.style.display = 'inline-flex';
     } else {
@@ -17254,17 +17286,23 @@ function renderAgenda() {
     const isHoje = ev.data === hojeStr && !ev.concluido;
     const zapClean = (ev.tel || '').replace(/\D/g, '');
     const dataFmt = ev.data ? ev.data.split('-').reverse().join('/') : '';
-    const isConfirmado = !!ev.confirmado;
-    const temAvaliacao = !!ev.avaliacao;
+    // Verifica confirmação salva pelo portal confirmar.html
+    const confirmacoes = (() => {
+      try { return JSON.parse(localStorage.getItem('sdv_confirmacoes_agenda') || '{}'); } catch(_) { return {}; }
+    })();
+    const confCli = confirmacoes[ev.id] || confirmacoes[ev.cliente];
+    const isConfirmadoCli = !!confCli && confCli.acao === 'confirmado';
+    const isReagendadoCli = !!confCli && confCli.acao === 'reagendamento';
+    const isConfirmado = isConfirmadoCli || !!ev.confirmado;
+    const temAvaliacao = !!ev.avaliacao || (!!confCli && confCli.acao === 'avaliacao');
 
-    // Mensagem WhatsApp limpa: SEM LINKS e SEM NÚMEROS (resposta direta avisa a empresa)
-    const zapTexto = `Olá ${ev.cliente || ''}! 😊\n\nConfirmando o seu agendamento de *${ev.tipo || 'Medição Técnica'}* para o dia *${dataFmt}* às *${ev.hora || ''}* pela *SD Móveis Projetados*.${ev.end ? '\n📍 Local: *' + ev.end + '*' : ''}${ev.obs ? '\n📝 Obs: ' + ev.obs : ''}\n\n👉 *Opções para seu atendimento:*\nResponda diretamente nesta mensagem com uma das opções abaixo:\n\n✅ *CONFIRMAR* - Para confirmar seu agendamento\n🔄 *REAGENDAR* - Para solicitar nova data ou horário\n⭐ *AVALIAR* - Para enviar sua avaliação do atendimento\n\n_Ao responder qualquer uma das opções, nossa equipe é notificada na hora!_\n\nAgradecemos a preferência!\n*SD Móveis Projetados* 🏠`;
+    const zapTexto = gerarMensagemWhatsAppAgendamento(ev);
     const zapMsg = encodeURIComponent(zapTexto);
     const zapLink = zapClean ? `https://wa.me/55${zapClean}?text=${zapMsg}` : '';
     const notifPill = formatarTempoNotificacao(ev.notificar_minutos);
 
     return `
-      <div style="background:#10111a;border:1px solid ${isHoje ? 'rgba(56,189,248,0.35)' : 'rgba(255,255,255,0.08)'};border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 6px 20px rgba(0,0,0,0.5);position:relative;">
+      <div style="background:#10111a;border:1.5px solid ${isConfirmadoCli ? '#10b981' : (isHoje ? 'rgba(56,189,248,0.35)' : 'rgba(255,255,255,0.08)')};border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 6px 20px rgba(0,0,0,0.5);position:relative;">
         <!-- LINHA SUPERIOR: Checkbox + Botões de Ação Padronizados -->
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
@@ -17276,11 +17314,11 @@ function renderAgenda() {
 
           <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
             <button onclick="alternarConfirmadoAgenda('${ev.id}')" title="Confirmar agendamento" style="background:${isConfirmado ? 'rgba(16,185,129,0.25)' : 'rgba(16,185,129,0.12)'};border:1px solid ${isConfirmado ? '#10b981' : 'rgba(16,185,129,0.35)'};color:${isConfirmado ? '#34d399' : '#a7f3d0'};padding:6px 10px;border-radius:8px;cursor:pointer;font-size:11.5px;font-weight:800;display:inline-flex;align-items:center;gap:4px;">
-              ${isConfirmado ? '✅ Confirmado' : '✅ Confirmar'}
+              ${isConfirmadoCli ? '✅ Confirmado p/ Cliente' : (isConfirmado ? '✅ Confirmado' : '✅ Confirmar')}
             </button>
             <button onclick="reagendarCompromissoAgenda('${ev.id}')" style="background:rgba(59,130,246,0.18);border:1px solid rgba(59,130,246,0.4);color:#93c5fd;padding:6px 10px;border-radius:8px;cursor:pointer;font-size:11.5px;font-weight:800;display:inline-flex;align-items:center;gap:4px;">🔄 Reagendar</button>
             <button onclick="abrirModalAvaliarAgenda('${ev.id}')" title="Avaliar atendimento" style="background:${temAvaliacao ? 'rgba(234,179,8,0.25)' : 'rgba(234,179,8,0.12)'};border:1px solid rgba(234,179,8,0.4);color:#facc15;padding:6px 10px;border-radius:8px;cursor:pointer;font-size:11.5px;font-weight:800;display:inline-flex;align-items:center;gap:4px;">
-              ⭐ ${temAvaliacao ? 'Avaliado (' + ev.avaliacao.nota + '★)' : 'Avaliar'}
+              ⭐ ${temAvaliacao ? 'Avaliado' : 'Avaliar'}
             </button>
             <button onclick="abrirModalNovoCompromissoAgenda('${ev.id}')" style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.35);color:#fbbf24;width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:12px;display:inline-flex;align-items:center;justify-content:center;" title="Editar">✏️</button>
             <button class="item-del" onclick="excluirCompromissoAgenda('${ev.id}')" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.35);color:#f87171;width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:12px;display:inline-flex;align-items:center;justify-content:center;" title="Excluir">✕</button>
@@ -17831,8 +17869,16 @@ function salvarNovoCompromissoAgenda(enviarWhatsApp = false, forcarConflito = fa
   if (enviarWhatsApp && tel) {
     const telLimpo = tel.replace(/\D/g, '');
     if (telLimpo.length >= 8) {
-      const dataFmt = data ? data.split('-').reverse().join('/') : '';
-      const zapTexto = `Olá ${cliente}! 😊\n\nConfirmando o seu agendamento de *${tipo}* para o dia *${dataFmt}* às *${hora || ''}* pela *SD Móveis Projetados*.${end ? '\n📍 Local: *' + end + '*' : ''}${obs ? '\n📝 Obs: ' + obs : ''}\n\n👉 *Opções para seu atendimento:*\nResponda diretamente nesta mensagem com uma das opções abaixo:\n\n✅ *CONFIRMAR* - Para confirmar seu agendamento\n🔄 *REAGENDAR* - Para solicitar nova data ou horário\n⭐ *AVALIAR* - Para enviar sua avaliação do atendimento\n\n_Ao responder qualquer uma das opções, nossa equipe é notificada na hora!_\n\nAgradecemos a preferência!\n*SD Móveis Projetados* 🏠`;
+      const zapTexto = gerarMensagemWhatsAppAgendamento({
+        id: editandoIdCompromisso || '',
+        cliente,
+        tipo,
+        data,
+        hora,
+        end,
+        obs,
+        tel
+      });
       const msg = encodeURIComponent(zapTexto);
       const prefix = telLimpo.startsWith('55') ? '' : '55';
       setTimeout(() => { window.open(`https://wa.me/${prefix}${telLimpo}?text=${msg}`, '_blank', 'noopener'); }, 300);
@@ -21606,7 +21652,17 @@ function enviarWhatsAppCrono(id) {
   const dataFmt = formatDataBR(ev.data);
   const tipoLabel = ev.tipo ? (ev.tipo.charAt(0).toUpperCase() + ev.tipo.slice(1)) : 'Agendamento';
 
-  const zapTexto = `Olá ${nome}! 😊\n\nConfirmando o seu agendamento de *${tipoLabel}* (${ev.titulo || 'Móveis Planejados'}) para o dia *${dataFmt}* às *${ev.hora || 'horário comercial'}* pela *SD Móveis Projetados*.${end ? '\n📍 Local: *' + end + '*' : ''}${ev.desc ? '\n📝 Detalhes: ' + ev.desc : ''}\n\n👉 *Opções para seu atendimento:*\nResponda diretamente nesta mensagem com uma das opções abaixo:\n\n✅ *CONFIRMAR* - Para confirmar seu agendamento\n🔄 *REAGENDAR* - Para solicitar nova data ou horário\n⭐ *AVALIAR* - Para enviar sua avaliação do atendimento\n\n_Ao responder qualquer uma das opções, nossa equipe é notificada na hora!_\n\nAgradecemos a preferência!\n*SD Móveis Projetados* 🏠`;
+  const zapTexto = (typeof gerarMensagemWhatsAppAgendamento === 'function')
+    ? gerarMensagemWhatsAppAgendamento({
+        id: ev.id,
+        cliente: nome,
+        tipo: `${tipoLabel} (${ev.titulo || 'Móveis Planejados'})`,
+        data: ev.data,
+        hora: ev.hora || 'horário comercial',
+        end: end,
+        obs: ev.desc || ''
+      })
+    : `Olá ${nome}! 😊\n\nConfirmando o seu agendamento de *${tipoLabel}* (${ev.titulo || 'Móveis Planejados'}) para o dia *${dataFmt}* às *${ev.hora || 'horário comercial'}* pela *SD Móveis Projetados*.${end ? '\n📍 Local: *' + end + '*' : ''}${ev.desc ? '\n📝 Detalhes: ' + ev.desc : ''}\n\n👉 *Opções para seu atendimento:*\nResponda diretamente nesta mensagem com uma das opções abaixo:\n\n✅ *CONFIRMAR* - Para confirmar seu agendamento\n🔄 *REAGENDAR* - Para solicitar nova data ou horário\n⭐ *AVALIAR* - Para enviar sua avaliação do atendimento\n\n_Ao responder qualquer uma das opções, nossa equipe é notificada na hora!_\n\nAgradecemos a preferência!\n*SD Móveis Projetados* 🏠`;
 
   const prefix = telClean.startsWith('55') ? '' : '55';
   window.open(`https://wa.me/${prefix}${telClean}?text=${encodeURIComponent(zapTexto)}`, '_blank', 'noopener');

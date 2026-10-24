@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Confirmar Atendimento – SD Móveis Projetados</title>
+  <link rel="icon" type="image/jpeg" href="logo_moveis.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif; }
+    body {
+      background: #090a10;
+      color: #f1f5f9;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px 14px 40px;
+    }
+    .container {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .header-card {
+      background: linear-gradient(135deg, rgba(20,20,32,0.95), rgba(12,12,20,0.98));
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+      padding: 20px 16px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .header-logo {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #c9a84c;
+      box-shadow: 0 4px 16px rgba(201,168,76,0.35);
+      margin-bottom: 10px;
+    }
+    .header-title {
+      font-size: 20px;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: -0.02em;
+    }
+    .header-sub {
+      font-size: 12px;
+      color: #c9a84c;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-top: 2px;
+    }
+    .card-info {
+      background: #11121d;
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .info-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 13.5px;
+    }
+    .info-icon {
+      font-size: 16px;
+      width: 24px;
+      flex-shrink: 0;
+      text-align: center;
+    }
+    .info-content {
+      flex: 1;
+    }
+    .info-label {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .info-val {
+      font-size: 14.5px;
+      font-weight: 800;
+      color: #fff;
+      margin-top: 1px;
+    }
+    .section-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: #e2e8f0;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin: 4px 0 2px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-opcao {
+      width: 100%;
+      border: none;
+      border-radius: 14px;
+      padding: 15px 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-align: left;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    }
+    .btn-opcao:active {
+      transform: scale(0.98);
+    }
+    .btn-confirmar {
+      background: linear-gradient(135deg, #059669, #10b981);
+      color: #fff;
+      border: 1.5px solid rgba(52,211,153,0.5);
+    }
+    .btn-reagendar {
+      background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+      color: #fff;
+      border: 1.5px solid rgba(96,165,250,0.5);
+    }
+    .btn-avaliar {
+      background: linear-gradient(135deg, #b45309, #f59e0b);
+      color: #fff;
+      border: 1.5px solid rgba(251,191,36,0.5);
+    }
+    .opcao-icon-box {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      background: rgba(0,0,0,0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+    .opcao-text-box {
+      flex: 1;
+    }
+    .opcao-titulo {
+      font-size: 15px;
+      font-weight: 900;
+      letter-spacing: -0.01em;
+    }
+    .opcao-desc {
+      font-size: 11.5px;
+      opacity: 0.9;
+      margin-top: 2px;
+      font-weight: 600;
+    }
+    .box-subform {
+      display: none;
+      background: #11121d;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 16px;
+      margin-top: -6px;
+      animation: fadeIn 0.25s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .field-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 5px;
+      display: block;
+    }
+    .field-input {
+      width: 100%;
+      padding: 10px 12px;
+      background: #090a10;
+      border: 1px solid rgba(255,255,255,0.14);
+      color: #fff;
+      border-radius: 8px;
+      font-size: 13.5px;
+      outline: none;
+      margin-bottom: 10px;
+    }
+    .field-input:focus {
+      border-color: #c9a84c;
+    }
+    .btn-subform-action {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      font-size: 13.5px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .stars-container {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin: 10px 0 14px;
+    }
+    .star-btn {
+      background: transparent;
+      border: none;
+      font-size: 32px;
+      cursor: pointer;
+      color: #475569;
+      transition: transform 0.15s;
+    }
+    .star-btn.active {
+      color: #facc15;
+      transform: scale(1.1);
+    }
+    .success-card {
+      display: none;
+      background: linear-gradient(135deg, rgba(6,78,59,0.95), rgba(4,47,46,0.98));
+      border: 1.5px solid #10b981;
+      border-radius: 18px;
+      padding: 24px 18px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(16,185,129,0.25);
+      animation: fadeIn 0.3s ease;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header -->
+    <div class="header-card">
+      <img src="logo_moveis.jpg" alt="Logo" class="header-logo" id="emp-logo" onerror="this.src='logo.jpg'">
+      <h1 class="header-title" id="emp-nome">SD Móveis Projetados</h1>
+      <div class="header-sub" id="emp-sub">Móveis Planejados & Marcenaria</div>
+    </div>
+
+    <!-- Card de Confirmação Concluída -->
+    <div id="card-sucesso" class="success-card">
+      <div style="font-size:44px; margin-bottom:8px;">🎉</div>
+      <h2 style="font-size:20px; font-weight:900; color:#fff;" id="sucesso-titulo">Resposta Enviada com Sucesso!</h2>
+      <p style="font-size:13.5px; color:#d1fae5; margin:8px 0 16px; line-height:1.4;" id="sucesso-msg">
+        Obrigado por responder! Nossa equipe foi notificada instantaneamente e já registrou sua confirmação.
+      </p>
+      <div style="display:inline-flex; align-items:center; gap:6px; background:rgba(0,0,0,0.3); padding:8px 14px; border-radius:999px; font-size:12px; font-weight:700; color:#6ee7b7;">
+        <span>✓</span> <span id="sucesso-badge">Agendamento Confirmado</span>
+      </div>
+      <div style="margin-top:16px;">
+        <button type="button" onclick="notificarEmpresaWhatsAppNovamente()" style="background:#25D366; color:#fff; border:none; padding:10px 18px; border-radius:10px; font-weight:800; font-size:13px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+          💬 Abrir WhatsApp da Empresa
+        </button>
+      </div>
+    </div>
+
+    <!-- Card com Detalhes do Agendamento -->
+    <div id="card-detalhes" class="card-info">
+      <div class="info-row">
+        <div class="info-icon">👤</div>
+        <div class="info-content">
+          <div class="info-label">Cliente</div>
+          <div class="info-val" id="val-cliente">Carregando...</div>
+        </div>
+      </div>
+      <div class="info-row">
+        <div class="info-icon">🛠️</div>
+        <div class="info-content">
+          <div class="info-label">Serviço / Compromisso</div>
+          <div class="info-val" id="val-tipo">Medição Técnica</div>
+        </div>
+      </div>
+      <div class="info-row">
+        <div class="info-icon">📅</div>
+        <div class="info-content">
+          <div class="info-label">Data e Horário</div>
+          <div class="info-val" id="val-data-hora">--/--/---- às --:--</div>
+        </div>
+      </div>
+      <div class="info-row" id="row-local">
+        <div class="info-icon">📍</div>
+        <div class="info-content">
+          <div class="info-label">Local</div>
+          <div class="info-val" id="val-local">Itaitinga</div>
+        </div>
+      </div>
+      <div class="info-row" id="row-obs" style="display:none;">
+        <div class="info-icon">📝</div>
+        <div class="info-content">
+          <div class="info-label">Observações</div>
+          <div class="info-val" id="val-obs" style="font-weight:600; font-size:13px; color:#cbd5e1;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Título de Opções -->
+    <div id="sec-opcoes-titulo" class="section-title">
+      <span>👉</span> Escolha sua resposta abaixo:
+    </div>
+
+    <!-- OPÇÃO 1: CONFIRMAR AGENDAMENTO -->
+    <button type="button" class="btn-opcao btn-confirmar" id="btn-acao-confirmar" onclick="executarConfirmacao()">
+      <div class="opcao-icon-box">✅</div>
+      <div class="opcao-text-box">
+        <div class="opcao-titulo">Confirmar Agendamento</div>
+        <div class="opcao-desc">Confirma sua presença para este dia e horário</div>
+      </div>
+      <div style="font-size:18px;">➔</div>
+    </button>
+
+    <!-- OPÇÃO 2: REAGENDAR -->
+    <button type="button" class="btn-opcao btn-reagendar" id="btn-acao-reagendar" onclick="toggleFormReagendar()">
+      <div class="opcao-icon-box">🔄</div>
+      <div class="opcao-text-box">
+        <div class="opcao-titulo">Solicitar Reagendamento</div>
+        <div class="opcao-desc">Escolha uma nova data ou período de sua preferência</div>
+      </div>
+      <div style="font-size:18px;" id="reagendar-seta">▼</div>
+    </button>
+
+    <!-- Subform Reagendar -->
+    <div id="box-reagendar" class="box-subform">
+      <label class="field-label">Nova Data Sugerida</label>
+      <input type="date" id="reagendar-data" class="field-input">
+      
+      <label class="field-label">Melhor Período ou Horário</label>
+      <select id="reagendar-periodo" class="field-input">
+        <option value="Manhã (08h às 12h)">Manhã (08h às 12h)</option>
+        <option value="Tarde (13h às 17h)">Tarde (13h às 17h)</option>
+        <option value="Qualquer Horário">Qualquer Horário Comercial</option>
+      </select>
+
+      <label class="field-label">Motivo ou Observação (Opcional)</label>
+      <input type="text" id="reagendar-obs" class="field-input" placeholder="Ex: Estarei no trabalho na data anterior...">
+
+      <button type="button" class="btn-subform-action" style="background:#2563eb; color:#fff;" onclick="enviarReagendamento()">
+        <span>📤</span> Enviar Solicitação para a Empresa
+      </button>
+    </div>
+
+    <!-- OPÇÃO 3: AVALIAR ATENDIMENTO -->
+    <button type="button" class="btn-opcao btn-avaliar" id="btn-acao-avaliar" onclick="toggleFormAvaliar()">
+      <div class="opcao-icon-box">⭐</div>
+      <div class="opcao-text-box">
+        <div class="opcao-titulo">Avaliar Atendimento</div>
+        <div class="opcao-desc">Deixe sua nota e comentário sobre o serviço</div>
+      </div>
+      <div style="font-size:18px;" id="avaliar-seta">▼</div>
+    </button>
+
+    <!-- Subform Avaliar -->
+    <div id="box-avaliar" class="box-subform">
+      <label class="field-label" style="text-align:center;">Toque para dar sua nota:</label>
+      <div class="stars-container">
+        <button type="button" class="star-btn" onclick="selecionarNota(1)">★</button>
+        <button type="button" class="star-btn" onclick="selecionarNota(2)">★</button>
+        <button type="button" class="star-btn" onclick="selecionarNota(3)">★</button>
+        <button type="button" class="star-btn" onclick="selecionarNota(4)">★</button>
+        <button type="button" class="star-btn active" onclick="selecionarNota(5)">★</button>
+      </div>
+
+      <label class="field-label">Comentário ou Elogio</label>
+      <textarea id="avaliar-comentario" class="field-input" style="height:70px; resize:none;" placeholder="Conte o que achou do atendimento..."></textarea>
+
+      <button type="button" class="btn-subform-action" style="background:#d97706; color:#fff;" onclick="enviarAvaliacao()">
+        <span>⭐</span> Enviar Avaliação para a Empresa
+      </button>
+    </div>
+
+    <!-- Rodapé -->
+    <div style="text-align:center; margin-top:10px; font-size:11px; color:#64748b; line-height:1.4;">
+      Ao escolher qualquer opção, nossa equipe é notificada na hora!<br>
+      <strong>SD Móveis Projetados</strong> &bull; Atendimento Oficial
+    </div>
+  </div>
+
+  <script>
+    // Parâmetros da URL
+    const params = new URLSearchParams(window.location.search);
+    const agId = params.get('id') || params.get('agId') || '';
+    const clienteNome = params.get('cliente') || params.get('nome') || 'Cliente';
+    const tipoServico = params.get('tipo') || 'Medição Técnica';
+    const dataAgendamento = params.get('data') || '';
+    const horaAgendamento = params.get('hora') || '';
+    const localAgendamento = params.get('end') || params.get('local') || '';
+    const obsAgendamento = params.get('obs') || '';
+    const telEmpresaParam = params.get('zap') || params.get('tel') || '85996119824';
+    const numEmpresaLimpo = telEmpresaParam.replace(/\D/g, '') || '85996119824';
+
+    let notaSelecionada = 5;
+    let ultimaMensagemZap = '';
+
+    // Preenche dados na tela
+    document.getElementById('val-cliente').textContent = clienteNome;
+    document.getElementById('val-tipo').textContent = tipoServico;
+    
+    let dataFmt = dataAgendamento;
+    if (dataAgendamento.includes('-')) {
+      dataFmt = dataAgendamento.split('-').reverse().join('/');
+    }
+    document.getElementById('val-data-hora').textContent = `${dataFmt || 'Data a definir'}${horaAgendamento ? ' às ' + horaAgendamento : ''}`;
+
+    if (localAgendamento) {
+      document.getElementById('val-local').textContent = localAgendamento;
+    } else {
+      document.getElementById('row-local').style.display = 'none';
+    }
+
+    if (obsAgendamento) {
+      document.getElementById('val-obs').textContent = obsAgendamento;
+      document.getElementById('row-obs').style.display = 'flex';
+    }
+
+    // Define data mínima para reagendamento como hoje
+    try {
+      const hojeIso = new Date().toISOString().split('T')[0];
+      document.getElementById('reagendar-data').min = hojeIso;
+      document.getElementById('reagendar-data').value = hojeIso;
+    } catch(_) {}
+
+    function toggleFormReagendar() {
+      const box = document.getElementById('box-reagendar');
+      const seta = document.getElementById('reagendar-seta');
+      const boxAv = document.getElementById('box-avaliar');
+      if (boxAv) boxAv.style.display = 'none';
+      if (box.style.display === 'block') {
+        box.style.display = 'none';
+        seta.textContent = '▼';
+      } else {
+        box.style.display = 'block';
+        seta.textContent = '▲';
+      }
+    }
+
+    function toggleFormAvaliar() {
+      const box = document.getElementById('box-avaliar');
+      const seta = document.getElementById('avaliar-seta');
+      const boxRe = document.getElementById('box-reagendar');
+      if (boxRe) boxRe.style.display = 'none';
+      if (box.style.display === 'block') {
+        box.style.display = 'none';
+        seta.textContent = '▼';
+      } else {
+        box.style.display = 'block';
+        seta.textContent = '▲';
+      }
+    }
+
+    function selecionarNota(n) {
+      notaSelecionada = n;
+      const stars = document.querySelectorAll('.star-btn');
+      stars.forEach((btn, idx) => {
+        if (idx < n) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+    }
+
+    function registrarConfirmacaoLocal(acao, extra) {
+      try {
+        const registros = JSON.parse(localStorage.getItem('sdv_confirmacoes_agenda') || '{}');
+        registros[agId || clienteNome] = {
+          acao: acao,
+          cliente: clienteNome,
+          tipo: tipoServico,
+          data: dataFmt,
+          hora: horaAgendamento,
+          extra: extra || {},
+          respondidoEm: new Date().toISOString()
+        };
+        localStorage.setItem('sdv_confirmacoes_agenda', JSON.stringify(registros));
+      } catch(e) {
+        console.warn(e);
+      }
+    }
+
+    function exibirSucesso(titulo, msg, badge) {
+      document.getElementById('card-sucesso').style.display = 'block';
+      document.getElementById('sucesso-titulo').textContent = titulo;
+      document.getElementById('sucesso-msg').textContent = msg;
+      document.getElementById('sucesso-badge').textContent = badge;
+
+      // Oculta opções
+      document.getElementById('btn-acao-confirmar').style.display = 'none';
+      document.getElementById('btn-acao-reagendar').style.display = 'none';
+      document.getElementById('btn-acao-avaliar').style.display = 'none';
+      document.getElementById('box-reagendar').style.display = 'none';
+      document.getElementById('box-avaliar').style.display = 'none';
+      document.getElementById('sec-opcoes-titulo').style.display = 'none';
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // 1. AÇÃO: CONFIRMAR AGENDAMENTO
+    function executarConfirmacao() {
+      const msgEmpresa = `✅ *AGENDAMENTO CONFIRMADO PELO CLIENTE!* 🔔\n\n` +
+        `👤 *Cliente:* ${clienteNome}\n` +
+        `🛠️ *Serviço:* ${tipoServico}\n` +
+        `📅 *Data:* ${dataFmt} às ${horaAgendamento}\n` +
+        `${localAgendamento ? '📍 *Local:* ' + localAgendamento + '\n' : ''}` +
+        `\nO cliente confirmou a presença pelo link de confirmação! ✨`;
+
+      ultimaMensagemZap = msgEmpresa;
+      registrarConfirmacaoLocal('confirmado', { dataFmt, horaAgendamento });
+
+      exibirSucesso(
+        'Agendamento Confirmado! 🎉',
+        'Muito obrigado! Sua presença foi confirmada e nossa equipe já foi avisada.',
+        'Presença Confirmada com Sucesso'
+      );
+
+      // Dispara WhatsApp para notificar a empresa
+      const url = `https://wa.me/55${numEmpresaLimpo}?text=${encodeURIComponent(msgEmpresa)}`;
+      setTimeout(() => {
+        window.open(url, '_blank');
+      }, 700);
+    }
+
+    // 2. AÇÃO: REAGENDAR
+    function enviarReagendamento() {
+      const novaData = document.getElementById('reagendar-data').value;
+      const periodo = document.getElementById('reagendar-periodo').value;
+      const obs = document.getElementById('reagendar-obs').value.trim();
+
+      const novaDataFmt = novaData ? novaData.split('-').reverse().join('/') : 'A combinar';
+
+      const msgEmpresa = `🔄 *SOLICITAÇÃO DE REAGENDAMENTO* 🔔\n\n` +
+        `👤 *Cliente:* ${clienteNome}\n` +
+        `🛠️ *Serviço:* ${tipoServico}\n` +
+        `📅 *Data Atual:* ${dataFmt} às ${horaAgendamento}\n` +
+        `📆 *Nova Data Sugerida:* ${novaDataFmt}\n` +
+        `⏰ *Período Preferido:* ${periodo}\n` +
+        `${obs ? '📝 *Motivo:* ' + obs + '\n' : ''}` +
+        `\nO cliente solicita nova data para este atendimento!`;
+
+      ultimaMensagemZap = msgEmpresa;
+      registrarConfirmacaoLocal('reagendamento', { novaDataFmt, periodo, obs });
+
+      exibirSucesso(
+        'Solicitação de Reagendamento Enviada!',
+        'Nossa equipe recebeu sua solicitação de reagendamento e entrará em contato para alinhar a nova data.',
+        'Reagendamento Solicitado'
+      );
+
+      const url = `https://wa.me/55${numEmpresaLimpo}?text=${encodeURIComponent(msgEmpresa)}`;
+      setTimeout(() => {
+        window.open(url, '_blank');
+      }, 700);
+    }
+
+    // 3. AÇÃO: AVALIAR
+    function enviarAvaliacao() {
+      const coment = document.getElementById('avaliar-comentario').value.trim();
+      const estrelasTxt = '⭐'.repeat(notaSelecionada);
+
+      const msgEmpresa = `⭐ *NOVA AVALIAÇÃO DE CLIENTE* 🔔\n\n` +
+        `👤 *Cliente:* ${clienteNome}\n` +
+        `🛠️ *Serviço:* ${tipoServico}\n` +
+        `🌟 *Nota:* ${notaSelecionada}/5 (${estrelasTxt})\n` +
+        `${coment ? '💬 *Comentário:* "' + coment + '"\n' : ''}` +
+        `\nAvaliação enviada pelo cliente via portal!`;
+
+      ultimaMensagemZap = msgEmpresa;
+      registrarConfirmacaoLocal('avaliacao', { nota: notaSelecionada, comentario: coment });
+
+      exibirSucesso(
+        'Avaliação Enviada! ⭐',
+        'Muito obrigado por sua avaliação! Sua opinião é fundamental para aprimorarmos nosso trabalho.',
+        `Avaliado com ${notaSelecionada} estrelas`
+      );
+
+      const url = `https://wa.me/55${numEmpresaLimpo}?text=${encodeURIComponent(msgEmpresa)}`;
+      setTimeout(() => {
+        window.open(url, '_blank');
+      }, 700);
+    }
+
+    function notificarEmpresaWhatsAppNovamente() {
+      if (!ultimaMensagemZap) return;
+      const url = `https://wa.me/55${numEmpresaLimpo}?text=${encodeURIComponent(ultimaMensagemZap)}`;
+      window.open(url, '_blank');
+    }
+  </script>
+</body>
+</html>
