@@ -2028,6 +2028,9 @@
         <button type="button" class="btn btn-sm" id="btn-galeria-orc-linha" onclick="abrirGaleriaAgenda()" style="background:rgba(6,182,212,0.15);border:1.5px solid #06b6d4;color:#22d3ee;font-weight:800;display:inline-flex;align-items:center;gap:6px;cursor:pointer;" title="Galeria de fotos anexadas a esta O.S.">
           <span>🖼️</span> <span id="label-galeria-orc-linha">Galeria (0)</span>
         </button>
+        <button type="button" class="btn btn-sm btn-dir-os" id="btn-direcionamento-orc-linha" onclick="abrirModalDirecionamentoDoOrcamento()" style="background:linear-gradient(135deg, rgba(139,92,246,0.22), rgba(99,102,241,0.22));border:1.5px solid #8b5cf6;color:#c4b5fd;font-weight:800;border-radius:8px;padding:6px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;" title="Fazer distribuição / rateio do valor deste orçamento / O.S.">
+          <span>🎯</span> <span id="label-direcionamento-orc-linha" class="btn-dir-label-dinamico">Direcionamento</span>
+        </button>
       </div>
 
       <!-- Resumo Financeiro Completo: Produtos, Serviço, Taxa de Acréscimo, Frete, Desconto e Total -->
@@ -8405,7 +8408,8 @@ function salvarOrdem() {
           status: novoStatus,
           empresaId: licAtiva.id || 'sdvidros',
           empresaNome: licAtiva.nome || 'SD Vidros',
-          versoes_pdf: ordAntiga.versoes_pdf
+          versoes_pdf: ordAntiga.versoes_pdf,
+          direcionamento: dirOrcamentoTemp || ordAntiga.direcionamento || null
         };
 
         if (novoStatus === 'reajustar') {
@@ -8436,6 +8440,7 @@ function salvarOrdem() {
           status: novoStatus,
           empresaId: licAtiva.id,
           empresaNome: licAtiva.nome,
+          direcionamento: dirOrcamentoTemp || null,
           versoes_pdf: [{
             versao: 1,
             titulo: 'v1 (Atualizado)',
@@ -8450,6 +8455,8 @@ function salvarOrdem() {
       }
 
       save(K.orders, historico);
+      dirOrcamentoTemp = null;
+      if (typeof atualizarBadgeBotaoDirecionamentoOrc === 'function') atualizarBadgeBotaoDirecionamentoOrc();
 
       // 4. Atualiza o contrato digital correspondente com os dados revisados
       try {
@@ -8582,6 +8589,8 @@ function cancelarEdicaoOs() {
     if (countCam) countCam.textContent = '0';
     if (typeof _renderGaleriaGrid === 'function') _renderGaleriaGrid();
     atualizarBadgeGaleriaOrcamento();
+    dirOrcamentoTemp = null;
+    if (typeof atualizarBadgeBotaoDirecionamentoOrc === 'function') atualizarBadgeBotaoDirecionamentoOrc();
   } catch(_) {}
 }
 
@@ -9770,6 +9779,12 @@ function editarOs(id) {
       if (typeof _renderGaleriaGrid === 'function') _renderGaleriaGrid();
     }
     atualizarBadgeGaleriaOrcamento();
+    if (o.direcionamento) {
+      dirOrcamentoTemp = JSON.parse(JSON.stringify(o.direcionamento));
+    } else {
+      dirOrcamentoTemp = null;
+    }
+    if (typeof atualizarBadgeBotaoDirecionamentoOrc === 'function') atualizarBadgeBotaoDirecionamentoOrc();
   } catch(_) {}
 
   goTab('orcamento');
@@ -10971,7 +10986,30 @@ function atualizarLabelsBotaoDirecionamento() {
   document.querySelectorAll('.btn-dir-label-dinamico').forEach(el => {
     el.textContent = nome;
   });
+  atualizarBadgeBotaoDirecionamentoOrc();
 }
+
+function atualizarBadgeBotaoDirecionamentoOrc() {
+  const el = document.getElementById('label-direcionamento-orc-linha');
+  if (!el) return;
+  const nome = obterNomeBotaoDirecionamento();
+  let temDir = false;
+  if (dirOrcamentoTemp && Array.isArray(dirOrcamentoTemp.categorias) && dirOrcamentoTemp.categorias.length) {
+    temDir = true;
+  } else if (editandoOsId) {
+    const o = (historico || []).find(x => String(x.id) === String(editandoOsId) || String(x.numero) === String(editandoOsId));
+    if (o && o.direcionamento && Array.isArray(o.direcionamento.categorias) && o.direcionamento.categorias.length) {
+      temDir = true;
+    }
+  }
+  el.textContent = nome + (temDir ? ' ✓' : '');
+}
+
+setTimeout(() => {
+  try {
+    if (typeof atualizarLabelsBotaoDirecionamento === 'function') atualizarLabelsBotaoDirecionamento();
+  } catch(_) {}
+}, 200);
 
 const CATEGORIAS_DIR_PADRAO = [
   { id: 'cat_mat', nome: 'Material', cor: '#3b82f6', porcentagem: 0, valor: 0 },
@@ -10989,6 +11027,71 @@ const CORES_PALETA_DIR = [
 let dirOsAtiva = null;
 let dirValorTotalNum = 0;
 let dirCategoriasEdicao = [];
+let dirOrcamentoTemp = null;
+
+function abrirModalDirecionamentoDoOrcamento() {
+  const numDisplay = (document.getElementById('orc-numero-display') ? document.getElementById('orc-numero-display').textContent.trim() : '#0000');
+  const nomeCliente = (document.getElementById('o-nome') ? document.getElementById('o-nome').value.trim() : '') ||
+                      (document.getElementById('c-nome') ? document.getElementById('c-nome').value.trim() : '') ||
+                      'Cliente em elaboração';
+  const totalDisplay = (document.getElementById('total') ? document.getElementById('total').textContent.trim() : 'R$ 0,00');
+
+  // Se já está editando uma OS existente no histórico
+  if (editandoOsId) {
+    const oExistente = (historico || []).find(x => String(x.id) === String(editandoOsId) || String(x.numero) === String(editandoOsId));
+    if (oExistente) {
+      if (dirOrcamentoTemp) {
+        oExistente.direcionamento = JSON.parse(JSON.stringify(dirOrcamentoTemp));
+      }
+      const valAtualForm = parseNum(totalDisplay);
+      if (valAtualForm > 0) {
+        if (!oExistente.direcionamento) oExistente.direcionamento = {};
+        oExistente.direcionamento.valorTotal = valAtualForm;
+      }
+      abrirModalDirecionamentoOs(editandoOsId);
+      return;
+    }
+  }
+
+  // Novo orçamento em elaboração
+  const tempOs = {
+    id: 'temp_orc',
+    numero: numDisplay,
+    nome: nomeCliente,
+    total: totalDisplay,
+    direcionamento: dirOrcamentoTemp || null
+  };
+
+  dirOsAtiva = tempOs;
+  dirValorTotalNum = parseNum(totalDisplay);
+
+  if (tempOs.direcionamento && Array.isArray(tempOs.direcionamento.categorias) && tempOs.direcionamento.categorias.length > 0) {
+    dirCategoriasEdicao = JSON.parse(JSON.stringify(tempOs.direcionamento.categorias));
+    if (typeof tempOs.direcionamento.valorTotal === 'number' && tempOs.direcionamento.valorTotal > 0) {
+      dirValorTotalNum = tempOs.direcionamento.valorTotal;
+    }
+  } else {
+    dirCategoriasEdicao = JSON.parse(JSON.stringify(CATEGORIAS_DIR_PADRAO));
+  }
+
+  atualizarLabelsBotaoDirecionamento();
+  const elBadgeOs = document.getElementById('modal-dir-badge-os');
+  if (elBadgeOs) elBadgeOs.textContent = esc(numDisplay);
+
+  const elCli = document.getElementById('dir-cliente-nome');
+  if (elCli) elCli.textContent = esc(nomeCliente);
+
+  const elInputTotal = document.getElementById('dir-input-valor-total');
+  if (elInputTotal) {
+    elInputTotal.value = dirValorTotalNum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  renderizarTabelaCategoriasDir();
+  recalcularBalancoDir();
+
+  const modal = document.getElementById('modal-direcionamento-os');
+  if (modal) modal.style.display = 'flex';
+}
 
 function abrirModalDirecionamentoOs(id) {
   const o = (historico || []).find(x => String(x.id) === String(id) || String(x.numero) === String(id));
@@ -11290,23 +11393,54 @@ function recalcularBalancoDir() {
 function salvarDirecionamentoOs() {
   if (!dirOsAtiva) return;
 
-  const idx = (historico || []).findIndex(x => String(x.id) === String(dirOsAtiva.id) || String(x.numero) === String(dirOsAtiva.numero));
-  if (idx === -1) {
-    alert('Erro ao localizar a O.S. no histórico.');
+  const nomeBtn = obterNomeBotaoDirecionamento();
+
+  // Caso seja o orçamento em elaboração no painel
+  if (dirOsAtiva.id === 'temp_orc' || (!editandoOsId && (!dirOsAtiva.numero || !historico.some(x => String(x.id) === String(dirOsAtiva.id) || String(x.numero) === String(dirOsAtiva.numero))))) {
+    dirOrcamentoTemp = {
+      valorTotal: dirValorTotalNum,
+      categorias: JSON.parse(JSON.stringify(dirCategoriasEdicao)),
+      salvoEm: new Date().toISOString()
+    };
+    atualizarBadgeBotaoDirecionamentoOrc();
+    if (typeof mostrarToastAprovacao === 'function') {
+      mostrarToastAprovacao(`✅ ${nomeBtn} configurado para este orçamento!`);
+    } else {
+      alert(`${nomeBtn} configurado para este orçamento!`);
+    }
+    fecharModalDirecionamentoOs();
     return;
   }
 
-  // Grava dados de direcionamento
+  const idx = (historico || []).findIndex(x => String(x.id) === String(dirOsAtiva.id) || String(x.numero) === String(dirOsAtiva.numero));
+  if (idx === -1) {
+    dirOrcamentoTemp = {
+      valorTotal: dirValorTotalNum,
+      categorias: JSON.parse(JSON.stringify(dirCategoriasEdicao)),
+      salvoEm: new Date().toISOString()
+    };
+    atualizarBadgeBotaoDirecionamentoOrc();
+    if (typeof mostrarToastAprovacao === 'function') {
+      mostrarToastAprovacao(`✅ ${nomeBtn} configurado para este orçamento!`);
+    } else {
+      alert(`${nomeBtn} configurado para este orçamento!`);
+    }
+    fecharModalDirecionamentoOs();
+    return;
+  }
+
+  // Grava dados de direcionamento no registro da OS
   historico[idx].direcionamento = {
     valorTotal: dirValorTotalNum,
     categorias: JSON.parse(JSON.stringify(dirCategoriasEdicao)),
     salvoEm: new Date().toISOString()
   };
+  dirOrcamentoTemp = JSON.parse(JSON.stringify(historico[idx].direcionamento));
 
   save(K.orders, historico);
   renderHist();
+  atualizarBadgeBotaoDirecionamentoOrc();
 
-  const nomeBtn = obterNomeBotaoDirecionamento();
   if (typeof mostrarToastAprovacao === 'function') {
     mostrarToastAprovacao(`✅ ${nomeBtn} da O.S. #${historico[idx].numero} salvo com sucesso!`);
   } else {
