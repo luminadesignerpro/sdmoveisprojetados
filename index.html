@@ -1783,9 +1783,32 @@
       from { transform: translateY(100%); opacity: 0; }
       to   { transform: translateY(0);    opacity: 1; }
     }
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to   { opacity: 1; }
+    /* ════ ESTILOS: MODAL DIRECIONAMENTO / RATEIO DE O.S. ════ */
+    .dir-item-row {
+      display: grid;
+      grid-template-columns: 1fr 110px 145px 36px;
+      gap: 8px;
+      align-items: center;
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 8px 10px;
+      border-radius: 10px;
+      transition: all 0.2s ease;
+    }
+    .dir-item-row:hover {
+      background: rgba(255,255,255,0.045);
+      border-color: rgba(139,92,246,0.35);
+    }
+    @media (max-width: 520px) {
+      .dir-item-row {
+        grid-template-columns: 1fr 85px 115px 32px !important;
+        gap: 5px !important;
+        padding: 6px 8px !important;
+      }
+      .dir-item-row input[type="text"],
+      .dir-item-row input[type="number"] {
+        font-size: 12px !important;
+      }
     }
 </style>
   <script src="pdf-lib.min.js"></script>
@@ -4633,6 +4656,145 @@
       </div>
     </div>
     <div id="sync-msg" style="margin-top:10px;"></div>
+  </div>
+</div>
+
+<!-- ══ MODAL DIRECIONAMENTO / RATEIO DE VALORES DA O.S. ══ -->
+<div id="modal-direcionamento-os" class="modal-overlay" style="display:none; z-index:1000200;" onclick="fecharModalDirecionamentoOs(event)">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:680px; width:95%; max-height:92vh; display:flex; flex-direction:column; overflow:hidden; padding:0; border-radius:18px; border:1px solid rgba(139,92,246,0.35); box-shadow:0 25px 60px rgba(0,0,0,0.85); background:linear-gradient(180deg, #13131f 0%, #0d0d16 100%);">
+    
+    <!-- HEADER -->
+    <div style="padding:16px 20px; background:linear-gradient(135deg, rgba(139,92,246,0.18), rgba(99,102,241,0.08)); border-bottom:1px solid rgba(139,92,246,0.25); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="font-size:24px;">🎯</span>
+        <div>
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <h3 id="modal-dir-titulo-nome" style="margin:0; font-size:17px; font-weight:900; color:#e0e7ff; letter-spacing:-0.02em;">
+              Direcionamento de Valores
+            </h3>
+            <span id="modal-dir-badge-os" style="background:rgba(139,92,246,0.25); border:1px solid #8b5cf6; color:#c4b5fd; font-size:12px; font-weight:800; padding:2px 8px; border-radius:8px;">
+              #0000
+            </span>
+          </div>
+          <div id="modal-dir-subtitulo" style="font-size:12px; color:#94a3b8; margin-top:2px;">
+            Distribua o valor total da O.S. entre custos e categorias (% ou R$)
+          </div>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <button type="button" class="btn btn-sm" onclick="renomearBotaoDirecionamento()" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#cbd5e1; font-size:11px; padding:5px 10px; border-radius:8px; display:inline-flex; align-items:center; gap:5px;" title="Renomear o botão 'Direcionamento'">
+          ✏️ Renomear Botão
+        </button>
+        <button type="button" class="modal-close" onclick="fecharModalDirecionamentoOs()" style="font-size:18px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.08); border:none; border-radius:50%; color:#fff; cursor:pointer;">✕</button>
+      </div>
+    </div>
+
+    <!-- BODY (SCROLLABLE) -->
+    <div style="padding:18px 20px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:16px;">
+
+      <!-- CARD VALOR TOTAL DA O.S. -->
+      <div style="background:linear-gradient(135deg, rgba(201,168,76,0.12), rgba(20,20,32,0.8)); border:1.5px solid rgba(201,168,76,0.4); border-radius:14px; padding:14px 18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <div>
+          <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.06em; color:var(--gold-light);">
+            💰 Valor Total da Ordem de Serviço
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
+            <span style="font-size:15px; font-weight:800; color:#94a3b8;">R$</span>
+            <input type="text" id="dir-input-valor-total" inputmode="decimal" onchange="alterarValorTotalDirecionamento(this.value)" onblur="alterarValorTotalDirecionamento(this.value)" style="font-size:22px; font-weight:900; color:#fff; background:transparent; border:none; border-bottom:2px dashed rgba(201,168,76,0.6); padding:2px 4px; width:160px; outline:none;" placeholder="0,00" />
+            <span id="dir-total-original-tag" style="font-size:11px; color:#64748b;">(Base O.S.)</span>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:11px; color:#94a3b8;">Cliente</div>
+          <div id="dir-cliente-nome" style="font-size:13px; font-weight:700; color:#fff; margin-top:2px;">-</div>
+        </div>
+      </div>
+
+      <!-- BARRA VISUAL DE DISTRIBUIÇÃO GRÁFICA -->
+      <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:12px;">
+          <span style="color:#cbd5e1; font-weight:700;">📊 Rateio Proporcional Visual</span>
+          <span id="dir-badge-status-soma" style="font-size:11px; font-weight:800; padding:2px 8px; border-radius:6px; background:rgba(16,185,129,0.2); color:#34d399;">100% Total</span>
+        </div>
+        <!-- Progress bar container -->
+        <div id="dir-progress-bar-container" style="height:14px; width:100%; background:rgba(255,255,255,0.06); border-radius:8px; display:flex; overflow:hidden; position:relative;">
+          <!-- Segmentos gerados via JS -->
+        </div>
+        <!-- Legenda -->
+        <div id="dir-progress-legenda" style="display:flex; flex-wrap:wrap; gap:8px 14px; margin-top:10px; font-size:11px;">
+          <!-- Legendas geradas via JS -->
+        </div>
+      </div>
+
+      <!-- LISTA DE CATEGORIAS -->
+      <div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+          <div style="font-size:13px; font-weight:800; color:#e2e8f0; display:flex; align-items:center; gap:6px;">
+            <span>📋 Categorias de Distribuição</span>
+            <span style="font-size:11px; color:#94a3b8; font-weight:normal;">(Preencha em % ou R$)</span>
+          </div>
+          <button type="button" class="btn btn-sm" onclick="adicionarCategoriaDirecionamento()" style="background:linear-gradient(135deg, rgba(16,185,129,0.2), rgba(5,150,105,0.2)); border:1.5px solid #10b981; color:#34d399; font-weight:800; font-size:12px; padding:6px 12px; border-radius:8px; display:inline-flex; align-items:center; gap:6px;">
+            ➕ Adicionar Categoria
+          </button>
+        </div>
+
+        <!-- Cabeçalho da Tabela / Lista -->
+        <div style="display:grid; grid-template-columns:1fr 105px 145px 36px; gap:8px; padding:6px 10px; background:rgba(255,255,255,0.04); border-radius:8px; font-size:11px; font-weight:800; color:#94a3b8; text-transform:uppercase; letter-spacing:0.04em;">
+          <div>Item / Destino</div>
+          <div style="text-align:right;">Porcentagem (%)</div>
+          <div style="text-align:right;">Valor (R$)</div>
+          <div></div>
+        </div>
+
+        <!-- Container das linhas de categorias -->
+        <div id="dir-lista-categorias" style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
+          <!-- Renderizado via JS -->
+        </div>
+      </div>
+
+      <!-- PAINEL DE BALANÇO & RESUMO TOTAL -->
+      <div style="background:linear-gradient(135deg, rgba(15,23,42,0.9), rgba(30,41,59,0.6)); border:1.5px solid rgba(148,163,184,0.2); border-radius:14px; padding:14px 18px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <!-- Total Distribuído -->
+          <div style="padding:10px 14px; background:rgba(0,0,0,0.3); border-radius:10px; border-left:3px solid #8b5cf6;">
+            <div style="font-size:11px; color:#94a3b8; font-weight:700;">TOTAL ALOCADO / DISTRIBUÍDO</div>
+            <div id="dir-resumo-total-distribuido" style="font-size:18px; font-weight:900; color:#fff; margin-top:2px;">R$ 0,00</div>
+            <div id="dir-resumo-pct-distribuido" style="font-size:11px; color:#a78bfa; font-weight:700;">0.00% do total</div>
+          </div>
+          <!-- Sobra / Lucro -->
+          <div id="dir-box-sobra" style="padding:10px 14px; background:rgba(0,0,0,0.3); border-radius:10px; border-left:3px solid #10b981;">
+            <div id="dir-resumo-sobra-label" style="font-size:11px; color:#94a3b8; font-weight:700;">SOBRA / MARGEM RESTANTE</div>
+            <div id="dir-resumo-sobra-valor" style="font-size:18px; font-weight:900; color:#34d399; margin-top:2px;">R$ 0,00</div>
+            <div id="dir-resumo-sobra-pct" style="font-size:11px; color:#34d399; font-weight:700;">0.00% restante</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- FOOTER ACTIONS -->
+    <div style="padding:14px 20px; background:rgba(10,10,16,0.95); border-top:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+      <div style="display:flex; gap:6px; flex-wrap:wrap;">
+        <button type="button" class="btn btn-sec btn-sm" onclick="copiarResumoDirecionamento()" title="Copiar resumo textual para colar onde quiser">
+          📋 Copiar Resumo
+        </button>
+        <button type="button" class="btn btn-whats btn-sm" onclick="enviarWhatsDirecionamento()" title="Enviar distribuição detalhada pelo WhatsApp">
+          📱 WhatsApp
+        </button>
+        <button type="button" class="btn btn-sec btn-sm" onclick="redefinirPadraoDirecionamento()" title="Restaurar as categorias padrão (Material, Funcionário, Escritório, Almoço, Frete)">
+          🔄 Restaurar Padrão
+        </button>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button type="button" class="btn btn-sec btn-sm" onclick="fecharModalDirecionamentoOs()">
+          Cancelar
+        </button>
+        <button type="button" class="btn btn-primary btn-sm" onclick="salvarDirecionamentoOs()" style="background:linear-gradient(135deg, #7c3aed, #6366f1); border:none; box-shadow:0 4px 15px rgba(124,58,237,0.4); font-weight:800; padding:8px 18px;">
+          💾 Salvar Distribuição
+        </button>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -10749,6 +10911,9 @@ function renderHist() {
           ${btnAcaoAprovacao}
           ${btnVerAssinatura}
           ${btnPdf}
+          <button type="button" class="btn btn-sm btn-dir-os" onclick="abrirModalDirecionamentoOs('${o.id}')" style="background:linear-gradient(135deg, rgba(139,92,246,0.22), rgba(99,102,241,0.22));border:1.5px solid #8b5cf6;color:#c4b5fd;font-weight:800;border-radius:8px;padding:6px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;" title="Fazer distribuição / rateio do valor da O.S. (Material, Funcionário, Escritório, Almoço, Frete...)">
+            🎯 <span class="btn-dir-label-dinamico">${esc(obterNomeBotaoDirecionamento())}</span>${o.direcionamento && o.direcionamento.categorias && o.direcionamento.categorias.length ? ' ✓' : ''}
+          </button>
           <button class="btn btn-whats btn-sm" onclick="enviarWhatsOs('${o.id}')" title="Enviar WhatsApp com links de aprovação">📱 WhatsApp</button>
           <button class="btn btn-sm" onclick="abrirPortalClienteComOs('${o.id}', '${esc(o.numero)}', '${esc(o.nome)}')" style="background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.5);color:var(--gold-light);font-weight:800;" title="Abrir Portal do Cliente com esta OS">🚀 Portal</button>
           <button class="btn btn-sec btn-sm" onclick="editarOs('${o.id}')">✏️ Editar</button>
@@ -10780,6 +10945,444 @@ function aprovarOsDireto(id) {
       total: historico[idx].total
     })
   }).catch(() => {});
+}
+
+// ══════════════════════════════════════════════
+//  MÓDULO: DIRECIONAMENTO / RATEIO DE VALORES DA O.S.
+// ══════════════════════════════════════════════
+const CHAVE_NOME_BOTAO_DIR = 'sd_btn_direcionamento_nome';
+
+function obterNomeBotaoDirecionamento() {
+  try {
+    return localStorage.getItem(CHAVE_NOME_BOTAO_DIR) || 'Direcionamento';
+  } catch(_) {
+    return 'Direcionamento';
+  }
+}
+
+function renomearBotaoDirecionamento() {
+  const atual = obterNomeBotaoDirecionamento();
+  const novo = prompt('Digite o novo nome para o botão de distribuição de valores da O.S.:', atual);
+  if (novo === null) return;
+  const nomeLimpo = novo.trim() || 'Direcionamento';
+  try {
+    localStorage.setItem(CHAVE_NOME_BOTAO_DIR, nomeLimpo);
+  } catch(e) {
+    console.warn(e);
+  }
+  atualizarLabelsBotaoDirecionamento();
+  renderHist();
+  if (typeof mostrarToastAprovacao === 'function') {
+    mostrarToastAprovacao(`✅ Botão renomeado para "${nomeLimpo}"!`);
+  } else {
+    alert(`Botão renomeado para "${nomeLimpo}" com sucesso!`);
+  }
+}
+
+function atualizarLabelsBotaoDirecionamento() {
+  const nome = obterNomeBotaoDirecionamento();
+  const elTitulo = document.getElementById('modal-dir-titulo-nome');
+  if (elTitulo) elTitulo.textContent = `${nome} de Valores`;
+  document.querySelectorAll('.btn-dir-label-dinamico').forEach(el => {
+    el.textContent = nome;
+  });
+}
+
+const CATEGORIAS_DIR_PADRAO = [
+  { id: 'cat_mat', nome: 'Material', cor: '#3b82f6', porcentagem: 0, valor: 0 },
+  { id: 'cat_func', nome: 'Funcionário', cor: '#10b981', porcentagem: 0, valor: 0 },
+  { id: 'cat_esc', nome: 'Escritório', cor: '#8b5cf6', porcentagem: 0, valor: 0 },
+  { id: 'cat_alm', nome: 'Almoço', cor: '#f59e0b', porcentagem: 0, valor: 0 },
+  { id: 'cat_fre', nome: 'Frete', cor: '#06b6d4', porcentagem: 0, valor: 0 }
+];
+
+const CORES_PALETA_DIR = [
+  '#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#06b6d4',
+  '#ec4899', '#f97316', '#14b8a6', '#6366f1', '#eab308'
+];
+
+let dirOsAtiva = null;
+let dirValorTotalNum = 0;
+let dirCategoriasEdicao = [];
+
+function abrirModalDirecionamentoOs(id) {
+  const o = (historico || []).find(x => String(x.id) === String(id) || String(x.numero) === String(id));
+  if (!o) {
+    alert('Ordem de serviço não encontrada.');
+    return;
+  }
+  dirOsAtiva = o;
+  
+  // Extrai valor total da OS
+  const totalRaw = o.total || (o.dados && o.dados.total) || 0;
+  dirValorTotalNum = parseNum(totalRaw);
+
+  // Inicializa categorias: se já tiver salvo na OS, carrega; senão carrega as 5 categorias padrão
+  if (o.direcionamento && Array.isArray(o.direcionamento.categorias) && o.direcionamento.categorias.length > 0) {
+    dirCategoriasEdicao = JSON.parse(JSON.stringify(o.direcionamento.categorias));
+    if (typeof o.direcionamento.valorTotal === 'number' && o.direcionamento.valorTotal > 0) {
+      dirValorTotalNum = o.direcionamento.valorTotal;
+    }
+  } else {
+    dirCategoriasEdicao = JSON.parse(JSON.stringify(CATEGORIAS_DIR_PADRAO));
+  }
+
+  // Preenche dados do modal
+  atualizarLabelsBotaoDirecionamento();
+  const elBadgeOs = document.getElementById('modal-dir-badge-os');
+  if (elBadgeOs) elBadgeOs.textContent = esc(o.numero || `#${o.id}`);
+
+  const elCli = document.getElementById('dir-cliente-nome');
+  if (elCli) elCli.textContent = esc(o.nome || (o.dados && o.dados.nome) || 'Cliente não identificado');
+
+  const elInputTotal = document.getElementById('dir-input-valor-total');
+  if (elInputTotal) {
+    elInputTotal.value = dirValorTotalNum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  renderizarTabelaCategoriasDir();
+  recalcularBalancoDir();
+
+  const modal = document.getElementById('modal-direcionamento-os');
+  if (modal) modal.style.display = 'flex';
+}
+
+function fecharModalDirecionamentoOs(e) {
+  if (!e || e.target === document.getElementById('modal-direcionamento-os')) {
+    const modal = document.getElementById('modal-direcionamento-os');
+    if (modal) modal.style.display = 'none';
+    dirOsAtiva = null;
+  }
+}
+
+function alterarValorTotalDirecionamento(valStr) {
+  const novoTotal = parseNum(valStr);
+  dirValorTotalNum = novoTotal;
+  const elInputTotal = document.getElementById('dir-input-valor-total');
+  if (elInputTotal) {
+    elInputTotal.value = novoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  // Atualiza os valores R$ baseando-se nas porcentagens já existentes
+  dirCategoriasEdicao.forEach(c => {
+    if (c.porcentagem > 0) {
+      c.valor = dirValorTotalNum * (c.porcentagem / 100);
+    }
+  });
+
+  renderizarTabelaCategoriasDir();
+  recalcularBalancoDir();
+}
+
+function renderizarTabelaCategoriasDir() {
+  const container = document.getElementById('dir-lista-categorias');
+  if (!container) return;
+
+  if (!dirCategoriasEdicao.length) {
+    container.innerHTML = `
+      <div style="text-align:center; padding:24px; color:#94a3b8; font-size:12px; background:rgba(255,255,255,0.02); border-radius:10px;">
+        Nenhuma categoria adicionada. Toque em <strong>"+ Adicionar Categoria"</strong> acima para criar.
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = dirCategoriasEdicao.map((c, idx) => {
+    const pctStr = c.porcentagem ? (Math.round(c.porcentagem * 100) / 100).toString() : '';
+    const valStr = c.valor ? (Number(c.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })) : '';
+
+    return `
+      <div class="dir-item-row">
+        <!-- Nome Categoria -->
+        <div style="display:flex; align-items:center; gap:8px;">
+          <input type="color" value="${c.cor || '#3b82f6'}" onchange="atualizarCorCategoriaDir(${idx}, this.value)" style="width:20px; height:20px; padding:0; border:none; border-radius:4px; cursor:pointer; background:transparent;" title="Mudar cor do gráfico" />
+          <input type="text" value="${esc(c.nome)}" onchange="atualizarNomeCategoriaDir(${idx}, this.value)" onblur="atualizarNomeCategoriaDir(${idx}, this.value)" style="background:transparent; border:1px solid transparent; color:#fff; font-size:13px; font-weight:700; width:100%; padding:5px 6px; border-radius:6px; outline:none;" onfocus="this.style.borderColor='rgba(139,92,246,0.5)'; this.style.background='rgba(0,0,0,0.4)';" onblur="this.style.borderColor='transparent'; this.style.background='transparent';" placeholder="Nome da Categoria" />
+        </div>
+        <!-- Porcentagem (%) -->
+        <div style="position:relative; display:flex; align-items:center;">
+          <input type="number" step="0.01" min="0" max="1000" inputmode="decimal" id="dir-input-pct-${idx}" value="${pctStr}" oninput="onInputPctDir(${idx}, this.value)" style="width:100%; text-align:right; padding:6px 22px 6px 6px; font-size:13px; font-weight:700; color:#c4b5fd; background:#0b0b14; border:1px solid rgba(139,92,246,0.35); border-radius:8px; outline:none;" placeholder="0" />
+          <span style="position:absolute; right:8px; font-size:11px; font-weight:800; color:#8b5cf6; pointer-events:none;">%</span>
+        </div>
+        <!-- Valor (R$) -->
+        <div style="position:relative; display:flex; align-items:center;">
+          <span style="position:absolute; left:8px; font-size:11px; font-weight:800; color:#10b981; pointer-events:none;">R$</span>
+          <input type="text" inputmode="decimal" id="dir-input-val-${idx}" value="${valStr}" oninput="onInputValorDir(${idx}, this.value)" style="width:100%; text-align:right; padding:6px 8px 6px 28px; font-size:13px; font-weight:700; color:#34d399; background:#0b0b14; border:1px solid rgba(16,185,129,0.35); border-radius:8px; outline:none;" placeholder="0,00" />
+        </div>
+        <!-- Botão Remover -->
+        <div>
+          <button type="button" onclick="removerCategoriaDirecionamento(${idx})" style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.35); color:#f87171; width:34px; height:34px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:13px; transition:all 0.2s;" title="Remover item">✕</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function onInputPctDir(idx, rawVal) {
+  const pct = parseFloat(rawVal) || 0;
+  dirCategoriasEdicao[idx].porcentagem = pct;
+  const val = dirValorTotalNum > 0 ? (dirValorTotalNum * (pct / 100)) : 0;
+  dirCategoriasEdicao[idx].valor = val;
+
+  const valEl = document.getElementById(`dir-input-val-${idx}`);
+  if (valEl) {
+    valEl.value = val > 0 ? val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '';
+  }
+  recalcularBalancoDir();
+}
+
+function onInputValorDir(idx, rawVal) {
+  const val = parseNum(rawVal) || 0;
+  dirCategoriasEdicao[idx].valor = val;
+  const pct = dirValorTotalNum > 0 ? ((val / dirValorTotalNum) * 100) : 0;
+  dirCategoriasEdicao[idx].porcentagem = pct;
+
+  const pctEl = document.getElementById(`dir-input-pct-${idx}`);
+  if (pctEl) {
+    pctEl.value = pct > 0 ? (Math.round(pct * 100) / 100) : '';
+  }
+  recalcularBalancoDir();
+}
+
+function atualizarNomeCategoriaDir(idx, novoNome) {
+  if (dirCategoriasEdicao[idx]) {
+    dirCategoriasEdicao[idx].nome = novoNome.trim() || 'Sem Nome';
+    recalcularBalancoDir();
+  }
+}
+
+function atualizarCorCategoriaDir(idx, novaCor) {
+  if (dirCategoriasEdicao[idx]) {
+    dirCategoriasEdicao[idx].cor = novaCor;
+    recalcularBalancoDir();
+  }
+}
+
+function adicionarCategoriaDirecionamento() {
+  const cor = CORES_PALETA_DIR[dirCategoriasEdicao.length % CORES_PALETA_DIR.length];
+  dirCategoriasEdicao.push({
+    id: 'cat_' + Date.now(),
+    nome: 'Nova Categoria',
+    cor: cor,
+    porcentagem: 0,
+    valor: 0
+  });
+  renderizarTabelaCategoriasDir();
+  recalcularBalancoDir();
+}
+
+function removerCategoriaDirecionamento(idx) {
+  if (!confirm(`Remover "${dirCategoriasEdicao[idx].nome || 'esta categoria'}" da distribuição?`)) return;
+  dirCategoriasEdicao.splice(idx, 1);
+  renderizarTabelaCategoriasDir();
+  recalcularBalancoDir();
+}
+
+function redefinirPadraoDirecionamento() {
+  if (!confirm('Deseja restaurar as 5 categorias padrão (Material, Funcionário, Escritório, Almoço, Frete)?')) return;
+  dirCategoriasEdicao = JSON.parse(JSON.stringify(CATEGORIAS_DIR_PADRAO));
+  renderizarTabelaCategoriasDir();
+  recalcularBalancoDir();
+}
+
+function recalcularBalancoDir() {
+  let somaVal = 0;
+  let somaPct = 0;
+
+  dirCategoriasEdicao.forEach(c => {
+    somaVal += (Number(c.valor) || 0);
+    somaPct += (Number(c.porcentagem) || 0);
+  });
+
+  const sobraVal = dirValorTotalNum - somaVal;
+  const sobraPct = 100 - somaPct;
+
+  // Atualiza painel Total Distribuído
+  const elTotDist = document.getElementById('dir-resumo-total-distribuido');
+  if (elTotDist) elTotDist.textContent = fmtMoedaFin(somaVal);
+
+  const elPctDist = document.getElementById('dir-resumo-pct-distribuido');
+  if (elPctDist) elPctDist.textContent = `${(Math.round(somaPct * 100) / 100).toFixed(2)}% do total`;
+
+  // Atualiza painel Sobra / Margem
+  const boxSobra = document.getElementById('dir-box-sobra');
+  const lblSobra = document.getElementById('dir-resumo-sobra-label');
+  const valSobra = document.getElementById('dir-resumo-sobra-valor');
+  const pctSobra = document.getElementById('dir-resumo-sobra-pct');
+
+  if (sobraVal >= -0.01) {
+    if (boxSobra) boxSobra.style.borderLeftColor = '#10b981';
+    if (lblSobra) lblSobra.textContent = 'SOBRA / MARGEM RESTANTE';
+    if (valSobra) {
+      valSobra.textContent = fmtMoedaFin(Math.max(0, sobraVal));
+      valSobra.style.color = '#34d399';
+    }
+    if (pctSobra) {
+      pctSobra.textContent = `${Math.max(0, (Math.round(sobraPct * 100) / 100)).toFixed(2)}% livre`;
+      pctSobra.style.color = '#34d399';
+    }
+  } else {
+    // Ultrapassou
+    if (boxSobra) boxSobra.style.borderLeftColor = '#ef4444';
+    if (lblSobra) lblSobra.textContent = '⚠️ ULTRAPASSOU O TOTAL';
+    if (valSobra) {
+      valSobra.textContent = '-' + fmtMoedaFin(Math.abs(sobraVal));
+      valSobra.style.color = '#f87171';
+    }
+    if (pctSobra) {
+      pctSobra.textContent = `${(Math.round(sobraPct * 100) / 100).toFixed(2)}% (excesso)`;
+      pctSobra.style.color = '#f87171';
+    }
+  }
+
+  // Barra de progresso gráfica
+  const barContainer = document.getElementById('dir-progress-bar-container');
+  const barLegenda = document.getElementById('dir-progress-legenda');
+  const badgeStatus = document.getElementById('dir-badge-status-soma');
+
+  if (badgeStatus) {
+    if (somaPct > 100.01) {
+      badgeStatus.textContent = `⚠️ ${(Math.round(somaPct * 100) / 100).toFixed(1)}% (Excedeu)`;
+      badgeStatus.style.background = 'rgba(239,68,68,0.2)';
+      badgeStatus.style.color = '#f87171';
+    } else {
+      badgeStatus.textContent = `${(Math.round(somaPct * 100) / 100).toFixed(1)}% Alocado`;
+      badgeStatus.style.background = 'rgba(16,185,129,0.2)';
+      badgeStatus.style.color = '#34d399';
+    }
+  }
+
+  if (barContainer) {
+    let segHtml = '';
+    const divisor = Math.max(100, somaPct);
+
+    dirCategoriasEdicao.forEach(c => {
+      const p = Number(c.porcentagem) || 0;
+      if (p > 0) {
+        const w = (p / divisor) * 100;
+        segHtml += `<div style="width:${w}%; background:${c.cor || '#8b5cf6'}; height:100%; transition:width 0.3s;" title="${esc(c.nome)}: ${p.toFixed(2)}% (${fmtMoedaFin(c.valor)})"></div>`;
+      }
+    });
+
+    if (sobraVal > 0 && sobraPct > 0) {
+      const w = (sobraPct / divisor) * 100;
+      segHtml += `<div style="width:${w}%; background:rgba(16,185,129,0.28); height:100%; border-left:1px dashed #10b981; transition:width 0.3s;" title="Sobra / Lucro: ${sobraPct.toFixed(2)}% (${fmtMoedaFin(sobraVal)})"></div>`;
+    }
+    barContainer.innerHTML = segHtml;
+  }
+
+  if (barLegenda) {
+    let legHtml = dirCategoriasEdicao.filter(c => (Number(c.porcentagem) > 0 || Number(c.valor) > 0)).map(c => {
+      return `
+        <div style="display:inline-flex; align-items:center; gap:5px; color:#cbd5e1;">
+          <span style="width:9px; height:9px; border-radius:50%; background:${c.cor || '#8b5cf6'};"></span>
+          <span>${esc(c.nome)}:</span>
+          <strong style="color:#fff;">${fmtMoedaFin(c.valor)}</strong>
+          <span style="color:#94a3b8; font-size:10px;">(${(Number(c.porcentagem) || 0).toFixed(1)}%)</span>
+        </div>`;
+    }).join('');
+
+    if (sobraVal > 0) {
+      legHtml += `
+        <div style="display:inline-flex; align-items:center; gap:5px; color:#34d399;">
+          <span style="width:9px; height:9px; border-radius:50%; background:#10b981;"></span>
+          <span>Sobra:</span>
+          <strong style="color:#34d399;">${fmtMoedaFin(sobraVal)}</strong>
+          <span style="font-size:10px;">(${sobraPct.toFixed(1)}%)</span>
+        </div>`;
+    }
+    barLegenda.innerHTML = legHtml || '<span style="color:#64748b;">Nenhum valor preenchido ainda.</span>';
+  }
+}
+
+function salvarDirecionamentoOs() {
+  if (!dirOsAtiva) return;
+
+  const idx = (historico || []).findIndex(x => String(x.id) === String(dirOsAtiva.id) || String(x.numero) === String(dirOsAtiva.numero));
+  if (idx === -1) {
+    alert('Erro ao localizar a O.S. no histórico.');
+    return;
+  }
+
+  // Grava dados de direcionamento
+  historico[idx].direcionamento = {
+    valorTotal: dirValorTotalNum,
+    categorias: JSON.parse(JSON.stringify(dirCategoriasEdicao)),
+    salvoEm: new Date().toISOString()
+  };
+
+  save(K.orders, historico);
+  renderHist();
+
+  const nomeBtn = obterNomeBotaoDirecionamento();
+  if (typeof mostrarToastAprovacao === 'function') {
+    mostrarToastAprovacao(`✅ ${nomeBtn} da O.S. #${historico[idx].numero} salvo com sucesso!`);
+  } else {
+    alert(`${nomeBtn} da O.S. #${historico[idx].numero} salvo com sucesso!`);
+  }
+
+  fecharModalDirecionamentoOs();
+}
+
+function gerarTextoResumoDirecionamento() {
+  if (!dirOsAtiva) return '';
+  const nomeBtn = obterNomeBotaoDirecionamento();
+  const num = dirOsAtiva.numero || `#${dirOsAtiva.id}`;
+  const cliente = dirOsAtiva.nome || (dirOsAtiva.dados && dirOsAtiva.dados.nome) || 'Cliente';
+
+  let somaVal = 0;
+  let somaPct = 0;
+  dirCategoriasEdicao.forEach(c => {
+    somaVal += (Number(c.valor) || 0);
+    somaPct += (Number(c.porcentagem) || 0);
+  });
+  const sobraVal = dirValorTotalNum - somaVal;
+  const sobraPct = 100 - somaPct;
+
+  let txt = `🎯 *${nomeBtn.toUpperCase()} DE VALORES - O.S. ${num}*\n`;
+  txt += `👤 Cliente: ${cliente}\n`;
+  txt += `💰 Valor Total: ${fmtMoedaFin(dirValorTotalNum)}\n`;
+  txt += `━━━━━━━━━━━━━━━━━━━━\n`;
+
+  dirCategoriasEdicao.forEach(c => {
+    const val = Number(c.valor) || 0;
+    const pct = Number(c.porcentagem) || 0;
+    txt += `• *${c.nome}*: ${fmtMoedaFin(val)} (${pct.toFixed(2)}%)\n`;
+  });
+
+  txt += `━━━━━━━━━━━━━━━━━━━━\n`;
+  txt += `📊 *Total Distribuído*: ${fmtMoedaFin(somaVal)} (${somaPct.toFixed(2)}%)\n`;
+  if (sobraVal >= 0) {
+    txt += `✅ *Sobra / Margem Líquida*: ${fmtMoedaFin(sobraVal)} (${sobraPct.toFixed(2)}%)\n`;
+  } else {
+    txt += `⚠️ *Atenção (Excesso)*: -${fmtMoedaFin(Math.abs(sobraVal))} (${sobraPct.toFixed(2)}%)\n`;
+  }
+
+  return txt;
+}
+
+function copiarResumoDirecionamento() {
+  const txt = gerarTextoResumoDirecionamento();
+  if (!txt) return;
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(() => {
+      if (typeof mostrarToastAprovacao === 'function') {
+        mostrarToastAprovacao('📋 Resumo da distribuição copiado para a área de transferência!');
+      } else {
+        alert('Resumo copiado com sucesso!');
+      }
+    }).catch(() => {
+      prompt('Copie o resumo abaixo:', txt);
+    });
+  } else {
+    prompt('Copie o resumo abaixo:', txt);
+  }
+}
+
+function enviarWhatsDirecionamento() {
+  const txt = gerarTextoResumoDirecionamento();
+  if (!txt) return;
+  const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(txt)}`;
+  window.open(url, '_blank');
 }
 
 // ══════════════════════════════════════════════
