@@ -2487,16 +2487,6 @@
       <div style="padding:16px 20px;overflow-y:auto;flex:1;">
         <input type="hidden" id="pessoal-edit-id" value="">
 
-        <!-- 🔍 BOTÕES CONTATOS PESSOAIS E BUSCAR CLIENTE -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
-          <button type="button" class="btn btn-sm btn-full" onclick="abrirModalContatosPessoais()" id="pessoal-btn-contatos-modal" style="padding:11px 12px;font-size:13px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:10px;background:rgba(56,189,248,0.14);border:1.5px solid #38bdf8;color:#7dd3fc;box-shadow:0 3px 12px rgba(56,189,248,0.2);cursor:pointer;">
-            👥 Contatos Pessoal
-          </button>
-          <button type="button" class="btn btn-gold btn-full" onclick="abrirPickerClienteAgendamento('pessoal-novo-titulo','pessoal-novo-tel','pessoal-novo-local')" id="pessoal-btn-buscar-cli" style="padding:11px 12px;font-size:13px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:10px;background:rgba(201,168,76,0.14);border:1.5px solid #d4af37;color:#fef08a;box-shadow:0 3px 12px rgba(212,175,55,0.25);cursor:pointer;">
-            🔍 Buscar Cliente
-          </button>
-        </div>
-
         <!-- 🔍 BUSCA RÁPIDA (COMO IMAGEM 2) -->
         <div style="margin-bottom:12px;position:relative;">
           <div style="display:flex;gap:6px;align-items:center;">
@@ -2510,23 +2500,25 @@
         <div class="field" style="margin-bottom:12px;">
           <label style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
             <span>Nome / Compromisso</span>
-            <div style="display:flex;gap:6px;">
-              <button type="button" onclick="abrirModalContatosPessoais()" style="padding:4px 9px;background:rgba(56,189,248,0.16);border:1px solid #38bdf8;border-radius:7px;color:#7dd3fc;font-size:11px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:4px;" title="Abrir Contatos Pessoais">👥 Contatos ▾</button>
-              <button type="button" onclick="abrirPickerClienteAgendamento('pessoal-novo-titulo','pessoal-novo-tel','pessoal-novo-local')" style="padding:4px 9px;background:linear-gradient(135deg,#d4af4c,#a0782a);border:none;border-radius:7px;color:#fff;font-size:11px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:4px;box-shadow:0 2px 8px rgba(212,175,76,0.4);" title="Abrir Clientes Salvos">📋 Clientes ▾</button>
-            </div>
+            <button type="button" onclick="abrirModalContatosPessoais()" style="padding:4px 10px;background:rgba(56,189,248,0.18);border:1px solid #38bdf8;border-radius:7px;color:#7dd3fc;font-size:11px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:4px;" title="Abrir Contatos Pessoais">👥 Contatos ▾</button>
           </label>
           <input id="pessoal-novo-titulo" placeholder="Ex: Família, Médico, Reunião com Pedro, Aniversário..." style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.12);color:#fff;font-family:var(--font);" />
         </div>
 
-        <!-- TELEFONE / WHATSAPP E TIPO DE ATENDIMENTO (COMO IMAGEM 2) -->
+        <!-- TELEFONE / WHATSAPP E CATEGORIA DO COMPROMISSO -->
         <div class="field-row" style="margin-bottom:12px;">
           <div class="field">
             <label style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:4px;">Telefone / WhatsApp</label>
             <input id="pessoal-novo-tel" placeholder="(85) 99999-9999" oninput="atualizarBtnWhatsAppPessoal()" style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.12);color:#fff;font-family:var(--font);" />
           </div>
           <div class="field">
-            <label style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:4px;">Categoria do Compromisso</label>
-            <select id="pessoal-novo-tipo" style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.12);color:#fff;font-family:var(--font);">
+            <label style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+              <span>Categoria do Compromisso</span>
+              <button type="button" onclick="abrirGerenciadorCategoriasModal()" style="padding:3px 8px;background:rgba(201,168,76,0.18);border:1px solid rgba(201,168,76,0.4);border-radius:6px;color:var(--gold-light);font-size:11px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:3px;" title="Ver todas com opção de editar e excluir">
+                ⚙️ Gerenciar ✏️ ✕
+              </button>
+            </label>
+            <select id="pessoal-novo-tipo" onchange="aoMudarCategoriaSelectModal()" style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.12);color:#fff;font-family:var(--font);">
               <option value="Compromisso Pessoal">📅 Compromisso Pessoal</option>
               <option value="Reunião">👥 Reunião</option>
               <option value="Lembrete / Tarefa">⏰ Lembrete / Tarefa</option>
@@ -2534,13 +2526,21 @@
               <option value="Banco / Finanças">💰 Banco / Finanças</option>
               <option value="Outro Compromisso">📌 Outro Compromisso</option>
             </select>
+            <div style="display:flex;gap:6px;align-items:center;margin-top:6px;">
+              <button type="button" onclick="editarCategoriaAtualDoModal()" title="Editar nome desta categoria" style="flex:1;padding:6px 8px;background:rgba(245,158,11,0.14);border:1px solid rgba(245,158,11,0.35);border-radius:7px;color:#fbbf24;font-size:11px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:3px;">
+                ✏️ Editar
+              </button>
+              <button type="button" onclick="excluirCategoriaAtualDoModal()" title="Excluir esta categoria" style="flex:1;padding:6px 8px;background:rgba(239,68,68,0.14);border:1px solid rgba(239,68,68,0.35);border-radius:7px;color:#f87171;font-size:11px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:3px;">
+                ✕ Excluir
+              </button>
+            </div>
           </div>
         </div>
 
-        <!-- ENDEREÇO / LOCAL DA OBRA (COMO IMAGEM 2) -->
+        <!-- ENDEREÇO / LOCAL (COMO IMAGEM 2) -->
         <div class="field" style="margin-bottom:12px;">
           <label style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-            <span>📍 Endereço / Local da Obra</span>
+            <span>📍 Endereço / Local</span>
             <a id="pessoal-maps-link" href="#" target="_blank" rel="noopener" style="display:none;font-size:11px;font-weight:800;color:#4ade80;text-decoration:none;padding:3px 8px;border-radius:6px;background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.3);">🗺️ Abrir no Maps</a>
           </label>
           <input id="pessoal-novo-local" placeholder="Rua, número, bairro, cidade..." oninput="atualizarBotaoMapsPessoal()" style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.12);color:#fff;font-family:var(--font);" />
@@ -2612,6 +2612,40 @@
         </div>
       </div>
 
+    </div>
+  </div>
+
+  <!-- MODAL: GERENCIADOR DE CATEGORIAS DA AGENDA PESSOAL (EDITAR E EXCLUIR COMO IMAGEM 4) -->
+  <div id="modal-gerenciar-categorias-pessoais" class="modal-overlay" style="display:none;z-index:1000005;" onclick="fecharGerenciadorCategoriasModal(event)">
+    <div class="modal-box" onclick="event.stopPropagation()" style="max-width:440px;width:92%;max-height:88vh;display:flex;flex-direction:column;padding:0;background:#0d0e19;border:1.5px solid var(--gold);box-shadow:0 12px 40px rgba(0,0,0,0.9);border-radius:18px;overflow:hidden;">
+      <!-- HEADER -->
+      <div style="padding:14px 18px;background:linear-gradient(135deg,rgba(201,168,76,0.18),rgba(20,20,30,0.95));border-bottom:1.5px solid var(--gold);display:flex;align-items:center;justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:20px;">📅</span>
+          <div>
+            <h3 style="font-size:15px;font-weight:900;color:var(--gold-light);margin:0;">Categorias de Compromissos</h3>
+            <div style="font-size:11px;color:var(--muted);">Selecione, edite o nome ou exclua categorias</div>
+          </div>
+        </div>
+        <button class="modal-close" onclick="fecharGerenciadorCategoriasModal()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);color:#cbd5e1;cursor:pointer;border-radius:8px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:14px;">✕</button>
+      </div>
+
+      <!-- BOTÃO ADICIONAR NOVA CATEGORIA NO TOPO -->
+      <div style="padding:12px 16px 6px 16px;">
+        <button type="button" class="btn btn-gold btn-full btn-sm" onclick="adicionarNovaCategoriaPeloGerenciador()" style="padding:10px 14px;font-size:12.5px;font-weight:900;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 3px 12px rgba(212,175,76,0.3);">
+          ➕ Adicionar Nova Categoria
+        </button>
+      </div>
+
+      <!-- LISTA DE CATEGORIAS COM BOTÕES EDITAR E EXCLUIR (COMO IMAGEM 4) -->
+      <div id="gerenciador-categorias-lista" style="padding:10px 16px 16px 16px;overflow-y:auto;flex:1;">
+        <!-- Injetado dinamicamente via JS -->
+      </div>
+
+      <!-- RODAPÉ -->
+      <div style="padding:12px 16px;background:#080910;border-top:1px solid rgba(255,255,255,0.08);display:flex;justify-content:flex-end;">
+        <button type="button" class="btn btn-sec btn-sm" onclick="fecharGerenciadorCategoriasModal()" style="padding:8px 18px;">Fechar</button>
+      </div>
     </div>
   </div>
 
@@ -27804,27 +27838,33 @@ function renderContatosPessoais(filtro = '') {
     const loc = [c.bairro, c.cidade].filter(Boolean).join(' · ');
 
     return `
-      <div style="background:#12131e;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 3px 10px rgba(0,0,0,0.3);transition:border-color 0.2s;" onmouseover="this.style.borderColor='rgba(56,189,248,0.4)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:14.5px;font-weight:900;color:#fef08a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(c.nome || 'Sem nome')}</div>
-          <div style="font-size:12px;color:#94a3b8;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-            ${esc(c.whatsapp || c.tel || '(sem tel)')} ${loc ? ' · ' + esc(loc) : ''}
-          </div>
-          ${c.obs ? `<div style="font-size:11px;color:#7dd3fc;margin-top:2px;font-weight:700;">📌 ${esc(c.obs)}</div>` : ''}
+      <div style="background:#12131e;border:1.5px solid rgba(255,255,255,0.08);border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 4px 14px rgba(0,0,0,0.4);transition:border-color 0.2s;" onmouseover="this.style.borderColor='rgba(56,189,248,0.4)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
+        <!-- NOME COMPLETO VISÍVEL SEM CORTES (ATENDE EXIGÊNCIA 1) -->
+        <div style="font-size:16px;font-weight:900;color:#fef08a;word-break:break-word;line-height:1.35;margin-bottom:6px;">
+          👤 ${esc(c.nome || 'Sem nome')}
         </div>
-        <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
+        
+        <!-- DETALHES DO CONTATO: TELEFONE E LOCAL -->
+        <div style="font-size:12.5px;color:#94a3b8;margin-bottom:10px;line-height:1.45;">
+          ${c.whatsapp || c.tel ? `<span style="color:#e2e8f0;font-weight:700;">📞 ${esc(c.whatsapp || c.tel)}</span>` : '<span style="color:#64748b;">(sem telefone)</span>'}
+          ${loc ? ` · <span style="color:#cbd5e1;">📍 ${esc(loc)}</span>` : ''}
+          ${c.obs ? `<div style="font-size:11.5px;color:#7dd3fc;margin-top:4px;font-weight:700;">📌 ${esc(c.obs)}</div>` : ''}
+        </div>
+
+        <!-- BARRA DE AÇÕES ORGANIZADA E ESPAÇOSA -->
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,0.06);padding-top:10px;">
           ${zapLink ? `
-            <a href="${zapLink}" target="_blank" style="padding:6px 10px;background:linear-gradient(135deg,#25D366,#1cb85a);border:none;border-radius:8px;color:#fff;font-size:11px;font-weight:800;text-decoration:none;display:inline-flex;align-items:center;gap:3px;" title="Conversar no WhatsApp">
-              💬
+            <a href="${zapLink}" target="_blank" style="padding:7px 12px;background:linear-gradient(135deg,#25D366,#1cb85a);border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:800;text-decoration:none;display:inline-flex;align-items:center;gap:4px;" title="Conversar no WhatsApp">
+              💬 WhatsApp
             </a>
           ` : ''}
-          <button type="button" onclick="usarContatoPessoalNaAgenda('${c.id}')" style="padding:7px 12px;background:linear-gradient(135deg,#d4af4c,#a0782a);border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:900;cursor:pointer;display:inline-flex;align-items:center;gap:4px;box-shadow:0 2px 8px rgba(212,175,76,0.35);white-space:nowrap;" title="Usar este contato na Agenda Pessoal">
-            📋 Usar
+          <button type="button" onclick="usarContatoPessoalNaAgenda('${c.id}')" style="flex:1;min-width:110px;padding:8px 12px;background:linear-gradient(135deg,#d4af4c,#a0782a);border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:900;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:5px;box-shadow:0 2px 8px rgba(212,175,76,0.35);white-space:nowrap;" title="Usar este contato na Agenda Pessoal">
+            📋 Usar no Compromisso
           </button>
-          <button type="button" onclick="editarContatoPessoal('${c.id}')" title="Editar contato" style="padding:7px 10px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#cbd5e1;cursor:pointer;font-size:12px;">
-            ✏️
+          <button type="button" onclick="editarContatoPessoal('${c.id}')" title="Editar contato" style="padding:8px 12px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);border-radius:8px;color:#cbd5e1;cursor:pointer;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:4px;">
+            ✏️ Editar
           </button>
-          <button type="button" onclick="excluirContatoPessoal('${c.id}')" title="Excluir contato" style="padding:7px 10px;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);border-radius:8px;color:#f87171;cursor:pointer;font-size:12px;">
+          <button type="button" onclick="excluirContatoPessoal('${c.id}')" title="Excluir contato" style="padding:8px 12px;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);border-radius:8px;color:#f87171;cursor:pointer;font-size:12px;font-weight:700;">
             ✕
           </button>
         </div>
@@ -27833,37 +27873,281 @@ function renderContatosPessoais(filtro = '') {
   }).join('');
 }
 
+// ── GERENCIAMENTO DE CATEGORIAS DA AGENDA PESSOAL (EDITAR E EXCLUIR) ──
+function obterListaCompletaCategoriasPessoal() {
+  const padroes = [
+    { nome: 'Compromisso Pessoal', icone: '📅' },
+    { nome: 'Reunião', icone: '👥' },
+    { nome: 'Lembrete / Tarefa', icone: '⏰' },
+    { nome: 'Médico / Saúde', icone: '🩺' },
+    { nome: 'Banco / Finanças', icone: '💰' },
+    { nome: 'Outro Compromisso', icone: '📌' }
+  ];
+
+  const botoes = obterBotoesAgendaPessoalCustom();
+  let unificadas = [];
+
+  // Categorias criadas pelo usuário
+  botoes.forEach(b => {
+    if (b && b.nome && b.nome.trim()) {
+      unificadas.push({
+        id: b.id,
+        nome: b.nome.trim(),
+        icone: '📅',
+        isCustom: true
+      });
+    }
+  });
+
+  // Categorias padrão que não estejam duplicadas
+  padroes.forEach(p => {
+    const jaExiste = unificadas.some(u => u.nome.toLowerCase() === p.nome.toLowerCase());
+    if (!jaExiste) {
+      unificadas.push({
+        id: 'cat_padrao_' + p.nome.replace(/\W/g, '_').toLowerCase(),
+        nome: p.nome,
+        icone: p.icone,
+        isCustom: false
+      });
+    }
+  });
+
+  return unificadas;
+}
+
 function popularCategoriasModalPessoal() {
   const selTipo = document.getElementById('pessoal-novo-tipo');
   if (!selTipo) return;
 
-  // Opções proibidas da vidraçaria/obra (terceira imagem) que devem ser purgadas
-  const proibidas = [
-    'medição técnica', 'medicao tecnica',
-    'instalação de box', 'instalacao de box',
-    'instalação de vidro / janela', 'instalacao vidro/janela', 'instalação vidro/janela',
-    'entrega de espelho', 'manutenção / regulagem', 'manutencao / regulagem',
-    'vistoria técnica', 'vistoria tecnica'
-  ];
+  const valorAtual = selTipo.value;
+  selTipo.innerHTML = '';
 
-  // Remove qualquer opção proibida caso ainda exista
-  Array.from(selTipo.options).forEach(opt => {
-    if (proibidas.some(p => opt.value.toLowerCase().includes(p))) {
-      opt.remove();
-    }
+  const categorias = obterListaCompletaCategoriasPessoal();
+  categorias.forEach(cat => {
+    const opt = document.createElement('option');
+    opt.value = cat.nome;
+    opt.textContent = `${cat.icone || '📅'} ${cat.nome}`;
+    selTipo.appendChild(opt);
   });
 
-  // Insere as categorias dos botões criados dinamicamente no início
+  if (valorAtual) {
+    const optExiste = Array.from(selTipo.options).some(o => o.value.toLowerCase() === valorAtual.toLowerCase());
+    if (optExiste) selTipo.value = valorAtual;
+  }
+}
+
+function aoMudarCategoriaSelectModal() {
+  const sel = document.getElementById('pessoal-novo-tipo');
+  if (!sel) return;
+  const val = sel.value;
+  const titEl = document.getElementById('modal-pessoal-titulo');
+  if (titEl && !document.getElementById('pessoal-edit-id')?.value) {
+    titEl.textContent = `Novo Compromisso (${val})`;
+  }
+}
+
+function editarCategoriaAtualDoModal() {
+  const sel = document.getElementById('pessoal-novo-tipo');
+  if (!sel || !sel.value) return;
+  renomearCategoriaPessoal(sel.value);
+}
+
+function excluirCategoriaAtualDoModal() {
+  const sel = document.getElementById('pessoal-novo-tipo');
+  if (!sel || !sel.value) return;
+  excluirCategoriaPessoal(sel.value);
+}
+
+function abrirGerenciadorCategoriasModal() {
+  const m = document.getElementById('modal-gerenciar-categorias-pessoais');
+  if (m) {
+    m.style.display = 'flex';
+    m.classList.add('active');
+    m.style.zIndex = '1000005';
+  }
+  renderGerenciadorCategoriasModal();
+}
+
+function fecharGerenciadorCategoriasModal(e) {
+  if (e && e.target !== e.currentTarget) return;
+  const m = document.getElementById('modal-gerenciar-categorias-pessoais');
+  if (m) {
+    m.style.display = 'none';
+    m.classList.remove('active');
+  }
+}
+
+function renderGerenciadorCategoriasModal() {
+  const cont = document.getElementById('gerenciador-categorias-lista');
+  if (!cont) return;
+
+  const categorias = obterListaCompletaCategoriasPessoal();
+  const catSelecionada = document.getElementById('pessoal-novo-tipo')?.value || _categoriaAgendaPessoalAtiva || '';
+
+  if (!categorias.length) {
+    cont.innerHTML = '<div class="empty" style="padding:20px;text-align:center;">Nenhuma categoria encontrada.</div>';
+    return;
+  }
+
+  cont.innerHTML = categorias.map(cat => {
+    const isAtiva = catSelecionada && catSelecionada.toLowerCase() === cat.nome.toLowerCase();
+
+    return `
+      <div style="background:#12131e;border:1.5px solid ${isAtiva ? 'var(--gold)' : 'rgba(255,255,255,0.08)'};border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;box-shadow:${isAtiva ? '0 0 14px rgba(201,168,76,0.35)' : '0 3px 10px rgba(0,0,0,0.3)'};">
+        <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer;" onclick="selecionarCategoriaDoGerenciador('${esc(cat.nome)}')">
+          <span style="font-size:18px;">${cat.icone || '📅'}</span>
+          <div style="font-size:14.5px;font-weight:900;color:${isAtiva ? '#fef08a' : '#fff'};word-break:break-word;">
+            ${esc(cat.nome)}
+          </div>
+          ${isAtiva ? '<span style="font-size:10px;padding:2px 7px;background:rgba(201,168,76,0.25);border:1px solid var(--gold);color:var(--gold-light);border-radius:999px;font-weight:900;">ATIVA</span>' : ''}
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
+          <button type="button" onclick="selecionarCategoriaDoGerenciador('${esc(cat.nome)}')" style="padding:6px 12px;background:linear-gradient(135deg,#d4af4c,#a0782a);border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:900;cursor:pointer;" title="Usar esta categoria">
+            Usar
+          </button>
+          <button type="button" onclick="editarCategoriaPeloGerenciador('${esc(cat.nome)}')" style="padding:6px 9px;background:rgba(245,158,11,0.18);border:1px solid rgba(245,158,11,0.4);border-radius:8px;color:#fbbf24;cursor:pointer;font-size:12px;" title="Editar nome da categoria">
+            ✏️
+          </button>
+          <button type="button" onclick="excluirCategoriaPeloGerenciador('${esc(cat.nome)}')" style="padding:6px 9px;background:rgba(239,68,68,0.18);border:1px solid rgba(239,68,68,0.4);border-radius:8px;color:#f87171;cursor:pointer;font-size:12px;" title="Excluir categoria">
+            ✕
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function selecionarCategoriaDoGerenciador(nome) {
+  const sel = document.getElementById('pessoal-novo-tipo');
+  if (sel) {
+    let opt = Array.from(sel.options).find(o => o.value.toLowerCase() === nome.toLowerCase());
+    if (!opt) {
+      opt = document.createElement('option');
+      opt.value = nome;
+      opt.textContent = '📅 ' + nome;
+      sel.appendChild(opt);
+    }
+    sel.value = opt.value;
+  }
+  _categoriaAgendaPessoalAtiva = nome;
+  const titEl = document.getElementById('modal-pessoal-titulo');
+  if (titEl && !document.getElementById('pessoal-edit-id')?.value) {
+    titEl.textContent = `Novo Compromisso (${nome})`;
+  }
+  fecharGerenciadorCategoriasModal();
+  if (typeof mostrarToastAprovacao === 'function') {
+    mostrarToastAprovacao('📁 Categoria "' + nome + '" selecionada.');
+  }
+}
+
+function adicionarNovaCategoriaPeloGerenciador() {
+  const nome = prompt('Digite o nome da nova Categoria de Compromissos:', '');
+  if (!nome || !nome.trim()) return;
+
   const botoes = obterBotoesAgendaPessoalCustom();
-  botoes.forEach(b => {
-    const existe = Array.from(selTipo.options).some(opt => opt.value.toLowerCase() === b.nome.toLowerCase());
-    if (!existe) {
-      const opt = document.createElement('option');
-      opt.value = b.nome;
-      opt.textContent = '📅 ' + b.nome;
-      selTipo.prepend(opt);
+  const novoBtn = {
+    id: 'btn_comp_' + Date.now(),
+    nome: nome.trim()
+  };
+  botoes.push(novoBtn);
+  salvarBotoesAgendaPessoalCustom(botoes);
+
+  popularCategoriasModalPessoal();
+  selecionarCategoriaDoGerenciador(novoBtn.nome);
+  renderAgendaPessoal();
+  if (typeof mostrarToastAprovacao === 'function') {
+    mostrarToastAprovacao('✅ Categoria "' + nome.trim() + '" criada com sucesso!');
+  }
+}
+
+function editarCategoriaPeloGerenciador(nomeAntigo) {
+  renomearCategoriaPessoal(nomeAntigo);
+}
+
+function excluirCategoriaPeloGerenciador(nome) {
+  excluirCategoriaPessoal(nome);
+}
+
+function renomearCategoriaPessoal(nomeAntigo) {
+  if (!nomeAntigo) return;
+  const novoNome = prompt('Editar nome da categoria:', nomeAntigo);
+  if (!novoNome || !novoNome.trim() || novoNome.trim() === nomeAntigo) return;
+
+  const nomeLimpo = novoNome.trim();
+
+  // 1. Atualiza nos botões customizados
+  let botoes = obterBotoesAgendaPessoalCustom();
+  const btn = botoes.find(b => b.nome.toLowerCase() === nomeAntigo.toLowerCase());
+  if (btn) {
+    btn.nome = nomeLimpo;
+    salvarBotoesAgendaPessoalCustom(botoes);
+  } else {
+    // Se era categoria padrão, salva como customizada renomeada
+    botoes.push({ id: 'btn_comp_' + Date.now(), nome: nomeLimpo });
+    salvarBotoesAgendaPessoalCustom(botoes);
+  }
+
+  // 2. Atualiza compromissos que usavam a categoria antiga
+  let eventos = obterEventosAgendaPessoal();
+  let alterou = false;
+  eventos.forEach(ev => {
+    if (ev.tipo && ev.tipo.toLowerCase() === nomeAntigo.toLowerCase()) {
+      ev.tipo = nomeLimpo;
+      alterou = true;
     }
   });
+  if (alterou) salvarEventosAgendaPessoal(eventos);
+
+  // 3. Atualiza categoria ativa se for a mesma
+  if (_categoriaAgendaPessoalAtiva && _categoriaAgendaPessoalAtiva.toLowerCase() === nomeAntigo.toLowerCase()) {
+    _categoriaAgendaPessoalAtiva = nomeLimpo;
+  }
+
+  // 4. Atualiza dropdown e interfaces
+  popularCategoriasModalPessoal();
+  const sel = document.getElementById('pessoal-novo-tipo');
+  if (sel) sel.value = nomeLimpo;
+
+  const titEl = document.getElementById('modal-pessoal-titulo');
+  if (titEl && !document.getElementById('pessoal-edit-id')?.value) {
+    titEl.textContent = `Novo Compromisso (${nomeLimpo})`;
+  }
+
+  renderAgendaPessoal();
+  renderGerenciadorCategoriasModal();
+
+  if (typeof mostrarToastAprovacao === 'function') {
+    mostrarToastAprovacao(`✅ Categoria renomeada para "${nomeLimpo}".`);
+  }
+}
+
+function excluirCategoriaPessoal(nome) {
+  if (!nome) return;
+  if (!confirm(`Deseja realmente excluir a categoria "${nome}"?`)) return;
+
+  // 1. Remove dos botões customizados
+  let botoes = obterBotoesAgendaPessoalCustom();
+  botoes = botoes.filter(b => b.nome.toLowerCase() !== nome.toLowerCase());
+  salvarBotoesAgendaPessoalCustom(botoes);
+
+  // 2. Se a categoria ativa era essa, volta para 'Novo Compromisso Pessoal'
+  if (_categoriaAgendaPessoalAtiva && _categoriaAgendaPessoalAtiva.toLowerCase() === nome.toLowerCase()) {
+    _categoriaAgendaPessoalAtiva = 'Novo Compromisso Pessoal';
+  }
+
+  // 3. Atualiza select
+  popularCategoriasModalPessoal();
+  const sel = document.getElementById('pessoal-novo-tipo');
+  if (sel && sel.options.length) {
+    sel.selectedIndex = 0;
+  }
+
+  renderAgendaPessoal();
+  renderGerenciadorCategoriasModal();
+
+  if (typeof mostrarToastAprovacao === 'function') {
+    mostrarToastAprovacao(`🗑️ Categoria "${nome}" excluída.`);
+  }
 }
 
 function renderAgendaPessoal() {
