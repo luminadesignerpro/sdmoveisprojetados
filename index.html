@@ -2056,6 +2056,19 @@
         </button>
       </div>
 
+      <!-- MINIATURAS VISUAIS DE FOTOS E ARQUIVOS ANEXADOS AO ORÇAMENTO -->
+      <div id="galeria-orc-preview-container" style="display:none;margin-top:10px;padding:10px 12px;background:rgba(6,182,212,0.06);border:1px dashed rgba(6,182,212,0.35);border-radius:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span style="font-size:11.5px;font-weight:700;color:#22d3ee;display:flex;align-items:center;gap:6px;">
+            <span>🖼️</span> Imagens Anexadas (aparecerão no PDF desta O.S.)
+          </span>
+          <button type="button" class="btn btn-sm" onclick="limparArquivosOrcamento()" style="font-size:10px;padding:2px 8px;background:rgba(239,68,68,0.15);border:1px solid #ef4444;color:#fca5a5;cursor:pointer;border-radius:6px;">
+            🗑️ Limpar
+          </button>
+        </div>
+        <div id="galeria-orc-preview-itens" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin;"></div>
+      </div>
+
       <!-- Resumo Financeiro Completo: Produtos, Serviço, Taxa de Acréscimo, Frete, Desconto e Total -->
       <div class="resumo-financeiro-container" style="margin-top:14px;background:rgba(255,255,255,0.02);border:1.5px solid var(--border);border-radius:var(--r-md);padding:14px;">
         <div style="font-size:12px;font-weight:800;color:var(--gold-light);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
@@ -7996,6 +8009,7 @@ function goTab(t) {
     const tab = document.getElementById('tab-'+p);
     if (tab) tab.classList.toggle('active', p===t);
   });
+  if (t==='orcamento')  { if (typeof atualizarBadgeGaleriaOrcamento === 'function') atualizarBadgeGaleriaOrcamento(); }
   if (t==='estoque')    { renderEstoqueView(); }
   if (t==='detector')   { initDetectorDanosView(); }
   if (t==='historico')  { renderHist(); sincronizarStatusContratos(); }
@@ -8590,6 +8604,7 @@ function getOrc() {
     taxaDesconto: taxaDesconto,
     tipoDesconto: tipoDesconto,
     itens:  getItens(),
+    fotos:  (typeof obterFotosOrcamentoParaPdf === 'function' ? obterFotosOrcamentoParaPdf(document.getElementById('orc-numero-display') ? document.getElementById('orc-numero-display').textContent : '') : []),
     data:   new Date().toLocaleDateString('pt-BR')
   };
 }
@@ -9034,6 +9049,8 @@ function cancelarEdicaoOs() {
   // Limpa a galeria para que ao começar uma nova O.S. a galeria esteja limpa
   try {
     localStorage.removeItem('sdm_cam_capturas');
+    localStorage.removeItem('sdm_orc_fotos_temp');
+    localStorage.removeItem('sdm_orc_pdfs');
     if (typeof _capturas !== 'undefined') _capturas = [];
     const boxCam = document.getElementById('agenda-preview-fotos-capturadas');
     if (boxCam) boxCam.style.display = 'none';
@@ -10204,6 +10221,7 @@ function editarOs(id) {
     const fotosOs = o.fotos || JSON.parse(localStorage.getItem(getGaleriaKey(o.numero)) || '[]');
     if (Array.isArray(fotosOs) && fotosOs.length > 0) {
       localStorage.setItem('sdm_cam_capturas', JSON.stringify(fotosOs));
+      localStorage.setItem('sdm_orc_fotos_temp', JSON.stringify(fotosOs));
       if (typeof _capturas !== 'undefined') _capturas = [...fotosOs];
       const boxCam = document.getElementById('agenda-preview-fotos-capturadas');
       const thumbsCam = document.getElementById('agenda-fotos-thumbs');
@@ -10248,11 +10266,11 @@ function editarOs(id) {
 function atualizarBadgeGaleriaOrcamento() {
   try {
     let count = 0;
-    const s = localStorage.getItem('sdm_cam_capturas');
-    if (s) {
-      const arr = JSON.parse(s);
-      if (Array.isArray(arr)) count += arr.length;
-    }
+    const numEl = document.getElementById('orc-numero-display');
+    const osNum = numEl ? numEl.textContent.trim() : '';
+    const fotos = (typeof obterFotosOrcamentoParaPdf === 'function') ? obterFotosOrcamentoParaPdf(osNum) : [];
+    count += fotos.length;
+
     const p = localStorage.getItem('sdm_orc_pdfs');
     if (p) {
       const arr2 = JSON.parse(p);
@@ -10260,6 +10278,9 @@ function atualizarBadgeGaleriaOrcamento() {
     }
     const lbl = document.getElementById('label-galeria-orc-linha');
     if (lbl) lbl.textContent = `Galeria (${count})`;
+    if (typeof renderMiniaturasGaleriaOrcamento === 'function') {
+      renderMiniaturasGaleriaOrcamento();
+    }
   } catch(_) {}
 }
 
@@ -19822,9 +19843,11 @@ function aoAnexarArquivoOrcamento(event, tipo) {
   // Zera o input para permitir re-seleção do mesmo arquivo
   event.target.value = '';
 
+  const numEl = document.getElementById('orc-numero-display');
+  const osNum = numEl ? numEl.textContent.trim() : '';
+
   Array.from(files).forEach(file => {
     if (tipo === 'pdf') {
-      // Armazena PDF como referência no localStorage
       try {
         const reader = new FileReader();
         reader.onload = function(ev) {
@@ -19879,12 +19902,29 @@ function aoAnexarArquivoOrcamento(event, tipo) {
           };
 
           try {
+            // Salva em sdm_orc_fotos_temp (específico do orçamento atual)
+            let tempFotos = JSON.parse(localStorage.getItem('sdm_orc_fotos_temp') || '[]');
+            if (!Array.isArray(tempFotos)) tempFotos = [];
+            tempFotos.unshift(novaCaptura);
+            if (tempFotos.length > 30) tempFotos = tempFotos.slice(0, 30);
+            localStorage.setItem('sdm_orc_fotos_temp', JSON.stringify(tempFotos));
+
+            // Salva também em sdm_cam_capturas geral
             let fotos = JSON.parse(localStorage.getItem('sdm_cam_capturas') || '[]');
             if (!Array.isArray(fotos)) fotos = [];
             fotos.unshift(novaCaptura);
             if (fotos.length > 40) fotos = fotos.slice(0, 40);
             localStorage.setItem('sdm_cam_capturas', JSON.stringify(fotos));
             if (typeof _capturas !== 'undefined') _capturas.unshift(novaCaptura);
+
+            // Se estiver editando uma O.S. já existente com número
+            if (osNum && typeof getGaleriaKey === 'function') {
+              let fotosKey = JSON.parse(localStorage.getItem(getGaleriaKey(osNum)) || '[]');
+              if (!Array.isArray(fotosKey)) fotosKey = [];
+              fotosKey.unshift(novaCaptura);
+              localStorage.setItem(getGaleriaKey(osNum), JSON.stringify(fotosKey));
+            }
+
             if (typeof _renderGaleriaGrid === 'function') _renderGaleriaGrid();
           } catch(err) { console.warn('Erro ao salvar foto:', err); }
 
@@ -19899,6 +19939,157 @@ function aoAnexarArquivoOrcamento(event, tipo) {
     }
   });
 }
+
+function renderMiniaturasGaleriaOrcamento() {
+  const container = document.getElementById('galeria-orc-preview-container');
+  const itensBox = document.getElementById('galeria-orc-preview-itens');
+  if (!container || !itensBox) return;
+
+  const numEl = document.getElementById('orc-numero-display');
+  const osNum = numEl ? numEl.textContent.trim() : '';
+  const fotos = (typeof obterFotosOrcamentoParaPdf === 'function') ? obterFotosOrcamentoParaPdf(osNum) : [];
+  let pdfs = [];
+  try {
+    pdfs = JSON.parse(localStorage.getItem('sdm_orc_pdfs') || '[]');
+    if (!Array.isArray(pdfs)) pdfs = [];
+  } catch(_) {}
+
+  if (fotos.length === 0 && pdfs.length === 0) {
+    container.style.display = 'none';
+    itensBox.innerHTML = '';
+    return;
+  }
+
+  container.style.display = 'block';
+  itensBox.innerHTML = '';
+
+  // Renderiza fotos
+  fotos.forEach((f, idx) => {
+    const src = f.dataUrl || f.url || (typeof f === 'string' ? f : '');
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'position:relative;flex-shrink:0;width:56px;height:56px;border-radius:8px;overflow:hidden;border:1.5px solid #06b6d4;background:#1e293b;';
+    
+    const img = document.createElement('img');
+    img.src = src;
+    img.style.cssText = 'width:100%;height:100%;object-fit:cover;cursor:pointer;display:block;';
+    img.title = 'Foto ' + (idx + 1) + ' da O.S.';
+    img.onclick = () => {
+      window.open(src, '_blank');
+    };
+
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.innerHTML = '×';
+    delBtn.style.cssText = 'position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:rgba(239,68,68,0.9);color:#fff;border:none;font-size:12px;font-weight:bold;display:flex;align-items:center;justify-content:center;cursor:pointer;line-height:1;padding:0;';
+    delBtn.title = 'Remover foto';
+    delBtn.onclick = (e) => {
+      e.stopPropagation();
+      removerItemGaleriaOrcamento(idx, 'foto');
+    };
+
+    wrap.appendChild(img);
+    wrap.appendChild(delBtn);
+    itensBox.appendChild(wrap);
+  });
+
+  // Renderiza PDFs
+  pdfs.forEach((p, idx) => {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'position:relative;flex-shrink:0;width:70px;height:56px;border-radius:8px;border:1.5px solid #f59e0b;background:rgba(245,158,11,0.1);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px;cursor:pointer;';
+    
+    wrap.onclick = () => {
+      if (p.dataUrl) {
+        const w = window.open('');
+        if (w) {
+          w.document.write('<iframe src="' + p.dataUrl + '" frameborder="0" style="border:0; top:0; left:0; bottom:0; right:0; width:100%; height:100%;" allowfullscreen></iframe>');
+        }
+      }
+    };
+
+    const icon = document.createElement('span');
+    icon.style.cssText = 'font-size:18px;line-height:1;';
+    icon.textContent = '📄';
+
+    const name = document.createElement('span');
+    name.style.cssText = 'font-size:9px;color:#fbbf24;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60px;margin-top:2px;';
+    name.textContent = p.nome || 'PDF';
+
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.innerHTML = '×';
+    delBtn.style.cssText = 'position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:rgba(239,68,68,0.9);color:#fff;border:none;font-size:12px;font-weight:bold;display:flex;align-items:center;justify-content:center;cursor:pointer;line-height:1;padding:0;';
+    delBtn.title = 'Remover PDF';
+    delBtn.onclick = (e) => {
+      e.stopPropagation();
+      removerItemGaleriaOrcamento(idx, 'pdf');
+    };
+
+    wrap.appendChild(icon);
+    wrap.appendChild(name);
+    wrap.appendChild(delBtn);
+    itensBox.appendChild(wrap);
+  });
+}
+
+function removerItemGaleriaOrcamento(index, tipo) {
+  const numEl = document.getElementById('orc-numero-display');
+  const osNum = numEl ? numEl.textContent.trim() : '';
+
+  if (tipo === 'pdf') {
+    try {
+      let pdfs = JSON.parse(localStorage.getItem('sdm_orc_pdfs') || '[]');
+      if (Array.isArray(pdfs)) {
+        pdfs.splice(index, 1);
+        localStorage.setItem('sdm_orc_pdfs', JSON.stringify(pdfs));
+      }
+    } catch(_) {}
+  } else {
+    // Foto
+    try {
+      let tempFotos = JSON.parse(localStorage.getItem('sdm_orc_fotos_temp') || '[]');
+      if (Array.isArray(tempFotos) && tempFotos.length > 0) {
+        tempFotos.splice(index, 1);
+        localStorage.setItem('sdm_orc_fotos_temp', JSON.stringify(tempFotos));
+      } else {
+        let fotos = JSON.parse(localStorage.getItem('sdm_cam_capturas') || '[]');
+        if (Array.isArray(fotos)) {
+          fotos.splice(index, 1);
+          localStorage.setItem('sdm_cam_capturas', JSON.stringify(fotos));
+          if (typeof _capturas !== 'undefined') _capturas = fotos;
+        }
+      }
+
+      if (osNum && typeof getGaleriaKey === 'function') {
+        let fotosKey = JSON.parse(localStorage.getItem(getGaleriaKey(osNum)) || '[]');
+        if (Array.isArray(fotosKey) && fotosKey.length > index) {
+          fotosKey.splice(index, 1);
+          localStorage.setItem(getGaleriaKey(osNum), JSON.stringify(fotosKey));
+        }
+      }
+    } catch(_) {}
+  }
+
+  atualizarBadgeGaleriaOrcamento();
+}
+
+function limparArquivosOrcamento() {
+  if (!confirm('Deseja remover todas as fotos e PDFs anexados a esta O.S.?')) return;
+  const numEl = document.getElementById('orc-numero-display');
+  const osNum = numEl ? numEl.textContent.trim() : '';
+
+  try {
+    localStorage.removeItem('sdm_orc_fotos_temp');
+    localStorage.removeItem('sdm_orc_pdfs');
+    localStorage.removeItem('sdm_cam_capturas');
+    if (typeof _capturas !== 'undefined') _capturas = [];
+    if (osNum && typeof getGaleriaKey === 'function') {
+      localStorage.removeItem(getGaleriaKey(osNum));
+    }
+  } catch(_) {}
+
+  atualizarBadgeGaleriaOrcamento();
+}
+
 
 
 function abrirSeletorGaleriaFotosAgenda() {
