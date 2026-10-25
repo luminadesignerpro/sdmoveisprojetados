@@ -2417,6 +2417,9 @@
         <button type="button" class="btn btn-sec btn-sm" onclick="adicionarNovoBotaoAgendaPessoal()" style="font-size:12px;padding:9px 13px;font-weight:800;border:1.5px dashed rgba(201,168,76,0.6);background:rgba(201,168,76,0.08);color:var(--gold-light);cursor:pointer;display:inline-flex;align-items:center;gap:5px;" title="Adicionar um novo botão personalizado para compromissos">
           ➕ Adicionar Botão
         </button>
+        <button type="button" class="btn btn-sm" onclick="abrirModalContatosPessoais()" id="btn-contatos-pessoais-topo" style="font-size:12px;padding:9px 14px;font-weight:900;border:1.5px solid #38bdf8;background:linear-gradient(135deg, rgba(56,189,248,0.22), rgba(20,20,30,0.85));color:#7dd3fc;cursor:pointer;display:inline-flex;align-items:center;gap:6px;border-radius:var(--r-sm);box-shadow:0 3px 12px rgba(56,189,248,0.25);" title="Gerenciar Contatos Pessoais (Família, Amigos, etc.)">
+          <span>👥</span> <span>Contatos Pessoal</span>
+        </button>
       </div>
     </div>
 
@@ -2484,13 +2487,13 @@
       <div style="padding:16px 20px;overflow-y:auto;flex:1;">
         <input type="hidden" id="pessoal-edit-id" value="">
 
-        <!-- 🔍 BOTÕES BUSCAR CLIENTE E SALVAR CLIENTE (COMO NA IMAGEM 4) -->
+        <!-- 🔍 BOTÕES CONTATOS PESSOAIS E BUSCAR CLIENTE -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+          <button type="button" class="btn btn-sm btn-full" onclick="abrirModalContatosPessoais()" id="pessoal-btn-contatos-modal" style="padding:11px 12px;font-size:13px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:10px;background:rgba(56,189,248,0.14);border:1.5px solid #38bdf8;color:#7dd3fc;box-shadow:0 3px 12px rgba(56,189,248,0.2);cursor:pointer;">
+            👥 Contatos Pessoal
+          </button>
           <button type="button" class="btn btn-gold btn-full" onclick="abrirPickerClienteAgendamento('pessoal-novo-titulo','pessoal-novo-tel','pessoal-novo-local')" id="pessoal-btn-buscar-cli" style="padding:11px 12px;font-size:13px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:10px;background:rgba(201,168,76,0.14);border:1.5px solid #d4af37;color:#fef08a;box-shadow:0 3px 12px rgba(212,175,55,0.25);cursor:pointer;">
             🔍 Buscar Cliente
-          </button>
-          <button type="button" class="btn btn-primary btn-full" onclick="salvarClienteDoPessoalModal()" id="pessoal-btn-salvar-cli" style="background:linear-gradient(135deg,#059669,#10b981);border:none;box-shadow:0 3px 12px rgba(16,185,129,0.35);font-size:13px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:10px;color:#fff;cursor:pointer;">
-            💾 Salvar Cliente
           </button>
         </div>
 
@@ -2506,10 +2509,13 @@
         <!-- NOME DO CLIENTE / TÍTULO (COMO IMAGEM 2) -->
         <div class="field" style="margin-bottom:12px;">
           <label style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-            <span>Nome do Cliente</span>
-            <button type="button" onclick="abrirPickerClienteAgendamento('pessoal-novo-titulo','pessoal-novo-tel','pessoal-novo-local')" style="padding:4px 10px;background:linear-gradient(135deg,#d4af4c,#a0782a);border:none;border-radius:7px;color:#fff;font-size:11px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:5px;box-shadow:0 2px 8px rgba(212,175,76,0.4);transition:all 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">📋 Clientes salvos ▾</button>
+            <span>Nome / Compromisso</span>
+            <div style="display:flex;gap:6px;">
+              <button type="button" onclick="abrirModalContatosPessoais()" style="padding:4px 9px;background:rgba(56,189,248,0.16);border:1px solid #38bdf8;border-radius:7px;color:#7dd3fc;font-size:11px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:4px;" title="Abrir Contatos Pessoais">👥 Contatos ▾</button>
+              <button type="button" onclick="abrirPickerClienteAgendamento('pessoal-novo-titulo','pessoal-novo-tel','pessoal-novo-local')" style="padding:4px 9px;background:linear-gradient(135deg,#d4af4c,#a0782a);border:none;border-radius:7px;color:#fff;font-size:11px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:4px;box-shadow:0 2px 8px rgba(212,175,76,0.4);" title="Abrir Clientes Salvos">📋 Clientes ▾</button>
+            </div>
           </label>
-          <input id="pessoal-novo-titulo" placeholder="Ex: Claudia ou selecione o cliente..." style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.12);color:#fff;font-family:var(--font);" />
+          <input id="pessoal-novo-titulo" placeholder="Ex: Família, Médico, Reunião com Pedro, Aniversário..." style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.12);color:#fff;font-family:var(--font);" />
         </div>
 
         <!-- TELEFONE / WHATSAPP E TIPO DE ATENDIMENTO (COMO IMAGEM 2) -->
@@ -2519,18 +2525,14 @@
             <input id="pessoal-novo-tel" placeholder="(85) 99999-9999" oninput="atualizarBtnWhatsAppPessoal()" style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.12);color:#fff;font-family:var(--font);" />
           </div>
           <div class="field">
-            <label style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:4px;">Tipo de Atendimento</label>
+            <label style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:4px;">Categoria do Compromisso</label>
             <select id="pessoal-novo-tipo" style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.12);color:#fff;font-family:var(--font);">
-              <option value="Medição Técnica">📐 Medição Técnica</option>
               <option value="Compromisso Pessoal">📅 Compromisso Pessoal</option>
               <option value="Reunião">👥 Reunião</option>
-              <option value="Instalação de Box">🚿 Instalação de Box</option>
-              <option value="Instalação de Vidro / Janela">🪟 Instalação Vidro/Janela</option>
-              <option value="Entrega de Espelho">🪞 Entrega de Espelho</option>
-              <option value="Manutenção / Regulagem">🔧 Manutenção / Regulagem</option>
-              <option value="Vistoria Técnica">📋 Vistoria Técnica</option>
+              <option value="Lembrete / Tarefa">⏰ Lembrete / Tarefa</option>
+              <option value="Médico / Saúde">🩺 Médico / Saúde</option>
               <option value="Banco / Finanças">💰 Banco / Finanças</option>
-              <option value="Outro Atendimento">📍 Outro Atendimento</option>
+              <option value="Outro Compromisso">📌 Outro Compromisso</option>
             </select>
           </div>
         </div>
@@ -2610,6 +2612,85 @@
         </div>
       </div>
 
+    </div>
+  </div>
+
+  <!-- MODAL: CONTATOS PESSOAIS (IDÊNTICO À SEGUNDA IMAGEM) -->
+  <div id="modal-contatos-pessoais" class="modal-overlay" style="display:none;z-index:999999;" onclick="fecharModalContatosPessoais(event)">
+    <div class="modal-card" style="max-width:580px;width:95%;max-height:92vh;display:flex;flex-direction:column;padding:0;background:#0d0e19;border:1.5px solid var(--gold);box-shadow:0 12px 40px rgba(0,0,0,0.85);border-radius:18px;overflow:hidden;" onclick="event.stopPropagation()">
+      <!-- HEADER DO MODAL -->
+      <div style="padding:14px 18px;background:linear-gradient(135deg,rgba(201,168,76,0.18),rgba(20,20,30,0.95));border-bottom:1.5px solid var(--gold);display:flex;align-items:center;justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:20px;">👥</span>
+          <div>
+            <h3 style="font-size:16px;font-weight:900;color:var(--gold-light);margin:0;">Contatos Pessoais</h3>
+            <div style="font-size:11px;color:var(--muted);">Agenda de contatos particulares, família e amigos</div>
+          </div>
+        </div>
+        <button class="modal-close" onclick="fecharModalContatosPessoais()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);color:#cbd5e1;cursor:pointer;border-radius:8px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:14px;">✕</button>
+      </div>
+
+      <!-- CORPO COM SCROLL -->
+      <div style="padding:16px;overflow-y:auto;flex:1;">
+        <!-- CARD 1: CADASTRAR / EDITAR CONTATO PESSOAL (EXATAMENTE COMO SEGUNDA IMAGEM) -->
+        <div class="card" style="background:#11121d;border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:16px;margin-bottom:16px;">
+          <input type="hidden" id="cp-edit-id" value="" />
+          <div class="card-title" id="cp-form-titulo" style="font-size:14px;font-weight:900;color:var(--gold-light);margin-bottom:14px;display:flex;align-items:center;gap:6px;">
+            <span>➕</span> <span>Cadastrar / Editar Contato Pessoal</span>
+          </div>
+          <div class="field-row" style="margin-bottom:10px;">
+            <div class="field">
+              <label style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:4px;display:block;">Nome</label>
+              <input id="cp-nome" placeholder="Nome completo" style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.12);color:#fff;font-family:var(--font);" />
+            </div>
+            <div class="field">
+              <label style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:4px;display:block;">WhatsApp</label>
+              <input id="cp-tel" placeholder="(85) 99999-9999" style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.12);color:#fff;font-family:var(--font);" />
+            </div>
+          </div>
+          <div class="field-row" style="margin-bottom:10px;">
+            <div class="field">
+              <label style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:4px;display:block;">Bairro</label>
+              <input id="cp-bairro" placeholder="Bairro" style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.12);color:#fff;font-family:var(--font);" />
+            </div>
+            <div class="field">
+              <label style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:4px;display:block;">Cidade</label>
+              <input id="cp-cidade" placeholder="Itaitinga" style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.12);color:#fff;font-family:var(--font);" />
+            </div>
+          </div>
+          <div class="field-row" style="margin-bottom:14px;">
+            <div class="field">
+              <label style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:4px;display:block;">Vínculo / Observação (Opcional)</label>
+              <input id="cp-obs" placeholder="Ex: Família, Amigo, Médico, Escola, Trabalho..." style="width:100%;padding:10px;border-radius:8px;background:#080811;border:1px solid rgba(255,255,255,0.12);color:#fff;font-family:var(--font);" />
+            </div>
+          </div>
+          <div class="actions" style="display:flex;gap:10px;align-items:center;">
+            <button type="button" class="btn btn-primary" id="btn-salvar-cp" onclick="salvarContatoPessoal()" style="font-size:13px;font-weight:900;padding:10px 18px;">
+              💾 Salvar contato
+            </button>
+            <button type="button" class="btn btn-sec" onclick="limparCp()" style="font-size:13px;padding:10px 16px;">
+              Limpar
+            </button>
+          </div>
+          <div id="cp-msg" style="margin-top:10px;"></div>
+        </div>
+
+        <!-- CARD 2: CONTATOS SALVOS (EXATAMENTE COMO SEGUNDA IMAGEM) -->
+        <div class="card" style="background:#11121d;border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:16px;margin-bottom:0;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+            <div class="card-title" style="margin-bottom:0;display:flex;align-items:center;gap:8px;">
+              <span>📋 Contatos salvos</span>
+              <span class="num-badge" id="cp-count" style="background:rgba(201,168,76,0.18);border:1px solid var(--gold);color:var(--gold-light);font-weight:800;padding:2px 8px;border-radius:999px;font-size:12px;">0</span>
+            </div>
+          </div>
+          <div style="margin-bottom:12px;">
+            <input type="text" id="cp-busca-inp" oninput="renderContatosPessoais(this.value)" placeholder="🔍 Buscar contato por nome ou WhatsApp..." style="width:100%;padding:10px 12px;border-radius:10px;background:#05060d;border:1px solid rgba(201,168,76,0.35);color:#fff;font-size:13px;" />
+          </div>
+          <div id="cp-lista">
+            <div class="empty">Nenhum contato pessoal cadastrado ainda.</div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -27150,7 +27231,7 @@ function abrirModalNovoCompromissoPessoal(id, isReagendar = false, categoriaCust
   if (editIdEl) editIdEl.value = '';
   if (inpTit) inpTit.value = '';
   if (inpTel) inpTel.value = '';
-  if (selTipo) selTipo.value = 'Medição Técnica';
+  if (selTipo) selTipo.value = _categoriaAgendaPessoalAtiva || 'Compromisso Pessoal';
   if (inpData) inpData.value = new Date().toISOString().split('T')[0];
   if (inpHora) inpHora.value = '09:00';
   if (inpLocal) inpLocal.value = '';
@@ -27159,7 +27240,7 @@ function abrirModalNovoCompromissoPessoal(id, isReagendar = false, categoriaCust
 
   if (iconeEl) iconeEl.textContent = '📅';
   const catAlvo = categoriaCustom || _categoriaAgendaPessoalAtiva;
-  if (titEl) titEl.textContent = catAlvo ? `Novo Compromisso (${catAlvo})` : 'Novo Agendamento / Visita';
+  if (titEl) titEl.textContent = catAlvo ? `Novo Compromisso (${catAlvo})` : 'Novo Compromisso Particular';
 
   try { popularCategoriasModalPessoal(); } catch(_) {}
 
@@ -27170,7 +27251,7 @@ function abrirModalNovoCompromissoPessoal(id, isReagendar = false, categoriaCust
         const newOpt = document.createElement('option');
         newOpt.value = catAlvo;
         newOpt.textContent = '📅 ' + catAlvo;
-        selTipo.appendChild(newOpt);
+        selTipo.prepend(newOpt);
         optExiste = newOpt;
       }
       selTipo.value = optExiste.value;
@@ -27188,11 +27269,11 @@ function abrirModalNovoCompromissoPessoal(id, isReagendar = false, categoriaCust
         if (titEl) titEl.textContent = 'Reagendar Compromisso (Novo)';
       } else {
         if (editIdEl) editIdEl.value = ev.id;
-        if (titEl) titEl.textContent = 'Editar Agendamento';
+        if (titEl) titEl.textContent = 'Editar Compromisso';
       }
       if (inpTit) inpTit.value = ev.titulo || '';
       if (inpTel) inpTel.value = ev.tel || '';
-      if (selTipo) selTipo.value = ev.tipo || 'Medição Técnica';
+      if (selTipo) selTipo.value = ev.tipo || _categoriaAgendaPessoalAtiva || 'Compromisso Pessoal';
       if (inpData) inpData.value = ev.data || '';
       if (inpHora) inpHora.value = ev.hora || '';
       if (inpLocal) inpLocal.value = ev.local || '';
@@ -27217,95 +27298,117 @@ function fecharModalNovoCompromissoPessoal(e) {
   }
 }
 
-function salvarCompromissoPessoal(forcarConflito = false, enviarWhatsApp = false) {
-  const editId = document.getElementById('pessoal-edit-id').value;
-  const titulo = (document.getElementById('pessoal-novo-titulo').value || '').trim();
-  const tel = (document.getElementById('pessoal-novo-tel') ? document.getElementById('pessoal-novo-tel').value : '').trim();
-  const tipo = (document.getElementById('pessoal-novo-tipo') ? document.getElementById('pessoal-novo-tipo').value : 'Medição Técnica');
-  const data = document.getElementById('pessoal-novo-data').value;
-  const hora = document.getElementById('pessoal-novo-hora').value;
-  const local = (document.getElementById('pessoal-novo-local').value || '').trim();
-  const obs = (document.getElementById('pessoal-novo-obs').value || '').trim();
+function salvarCompromissoPessoal(forcarConflito = true, enviarWhatsApp = false) {
+  try {
+    const editIdEl = document.getElementById('pessoal-edit-id');
+    const editId = editIdEl ? editIdEl.value : '';
 
-  const notifEl = document.getElementById('pessoal-novo-notificacao');
-  let notificar_minutos = 30;
-  if (notifEl) {
-    if (notifEl.value === 'custom') {
-      const inp = document.getElementById('pessoal-novo-minutos-custom');
-      const val = inp ? parseInt(inp.value, 10) : 30;
-      notificar_minutos = (!isNaN(val) && val > 0) ? val : 30;
-    } else {
-      const val = parseInt(notifEl.value, 10);
-      notificar_minutos = isNaN(val) ? 30 : val;
+    const titEl = document.getElementById('pessoal-novo-titulo');
+    let titulo = titEl ? titEl.value.trim() : '';
+
+    const telEl = document.getElementById('pessoal-novo-tel');
+    const tel = telEl ? telEl.value.trim() : '';
+
+    const tipoEl = document.getElementById('pessoal-novo-tipo');
+    let tipo = tipoEl ? tipoEl.value.trim() : '';
+    if (!tipo) tipo = _categoriaAgendaPessoalAtiva || 'Compromisso Pessoal';
+
+    const dataEl = document.getElementById('pessoal-novo-data');
+    let data = dataEl ? dataEl.value.trim() : '';
+
+    const horaEl = document.getElementById('pessoal-novo-hora');
+    let hora = (horaEl ? horaEl.value.trim() : '') || '09:00';
+
+    const localEl = document.getElementById('pessoal-novo-local');
+    const local = localEl ? localEl.value.trim() : '';
+
+    const obsEl = document.getElementById('pessoal-novo-obs');
+    const obs = obsEl ? obsEl.value.trim() : '';
+
+    // Normaliza formato de data DD/MM/AAAA para AAAA-MM-DD
+    if (data && data.includes('/')) {
+      const pts = data.split('/');
+      if (pts.length === 3) {
+        data = `${pts[2]}-${pts[1].padStart(2, '0')}-${pts[0].padStart(2, '0')}`;
+      }
     }
-  }
+    if (!data) {
+      data = new Date().toISOString().split('T')[0];
+    }
 
-  if (!titulo || !data) {
-    alert('Preencha o nome do cliente / título e a data do compromisso.');
-    return;
-  }
-
-  const lista = obterEventosAgendaPessoal();
-
-  // ── DETECÇÃO DE CONFLITO: MESMA DATA E HORÁRIO IGUAL OU PRÓXIMO ──
-  if (!forcarConflito && data && hora) {
-    const conflitoPessoal = lista.find(e => !e.concluido && String(e.id) !== String(editId) && e.data === data && e.hora && calcularDiferencaMinutosHoras(e.hora, hora) <= 45);
-    const eventosGerais = (typeof obterAgendaEventos === 'function') ? obterAgendaEventos() : [];
-    const conflitoGeral = eventosGerais.find(e => !e.concluido && e.data === data && e.hora && calcularDiferencaMinutosHoras(e.hora, hora) <= 45);
-
-    const conflito = conflitoPessoal || conflitoGeral;
-    if (conflito) {
-      const diff = calcularDiferencaMinutosHoras(conflito.hora, hora);
-      _pendenteSalvarCallback = () => salvarCompromissoPessoal(true, enviarWhatsApp);
-      mostrarModalAlertaConflito({
-        cliente: conflito.titulo || conflito.cliente || 'Compromisso agendado',
-        tipo: conflito.tipo || 'Agenda Pessoal',
-        data: conflito.data,
-        hora: conflito.hora,
-        end: conflito.local || conflito.end,
-        diff,
-        origem: 'pessoal-novo-hora'
-      });
+    if (!titulo) {
+      alert('Por favor, informe o Nome ou Título do compromisso.');
+      if (titEl) titEl.focus();
       return;
     }
-  }
 
-  const obj = {
-    id: editId || ('pess_' + Date.now()),
-    titulo,
-    tel,
-    tipo,
-    data,
-    hora,
-    local,
-    notificar_minutos,
-    obs,
-    concluido: false,
-    criadoEm: new Date().toISOString()
-  };
-
-  if (editId) {
-    const idx = lista.findIndex(x => String(x.id) === String(editId));
-    if (idx !== -1) lista[idx] = { ...lista[idx], ...obj };
-    else lista.push(obj);
-  } else {
-    lista.push(obj);
-  }
-
-  salvarEventosAgendaPessoal(lista);
-  fecharModalNovoCompromissoPessoal();
-  renderAgendaPessoal();
-
-  if (enviarWhatsApp && tel) {
-    const zapClean = tel.replace(/\D/g, '');
-    if (zapClean.length >= 8) {
-      const dataFmt = data.split('-').reverse().join('/');
-      const msg = encodeURIComponent(`Olá ${titulo}, confirmando seu compromisso de *${tipo}* para o dia *${dataFmt}* às *${hora}*.\n\nSD Móveis Projetados 🏠`);
-      window.open(`https://wa.me/55${zapClean}?text=${msg}`, '_blank');
+    const notifEl = document.getElementById('pessoal-novo-notificacao');
+    let notificar_minutos = 30;
+    if (notifEl) {
+      if (notifEl.value === 'custom') {
+        const inp = document.getElementById('pessoal-novo-minutos-custom');
+        const val = inp ? parseInt(inp.value, 10) : 30;
+        notificar_minutos = (!isNaN(val) && val > 0) ? val : 30;
+      } else {
+        const val = parseInt(notifEl.value, 10);
+        notificar_minutos = isNaN(val) ? 30 : val;
+      }
     }
-  }
 
-  mostrarToastAprovacao('✅ Agendamento salvo com sucesso!');
+    let lista = obterEventosAgendaPessoal();
+
+    const obj = {
+      id: editId || ('pess_' + Date.now()),
+      titulo,
+      tel,
+      tipo,
+      data,
+      hora,
+      local,
+      notificar_minutos,
+      obs,
+      concluido: false,
+      criadoEm: new Date().toISOString()
+    };
+
+    if (editId) {
+      const idx = lista.findIndex(x => String(x.id) === String(editId));
+      if (idx !== -1) lista[idx] = { ...lista[idx], ...obj };
+      else lista.unshift(obj);
+    } else {
+      lista.unshift(obj);
+    }
+
+    salvarEventosAgendaPessoal(lista);
+
+    // Sincroniza a categoria ativa para que o item apareça imediatamente na tela
+    _categoriaAgendaPessoalAtiva = tipo;
+
+    fecharModalNovoCompromissoPessoal();
+    renderAgendaPessoal();
+
+    if (enviarWhatsApp && tel) {
+      const zapClean = tel.replace(/\D/g, '');
+      if (zapClean.length >= 8) {
+        const dataFmt = data.split('-').reverse().join('/');
+        const msg = encodeURIComponent(`Olá ${titulo}, confirmando seu compromisso de *${tipo}* para o dia *${dataFmt}* às *${hora}*.\n\nSD Móveis Projetados 🏠`);
+        window.open(`https://wa.me/55${zapClean}?text=${msg}`, '_blank');
+      }
+    }
+
+    if (typeof mostrarToastAprovacao === 'function') {
+      mostrarToastAprovacao(`✅ Compromisso "${titulo}" salvo com sucesso!`);
+    }
+
+    setTimeout(() => {
+      const el = document.getElementById('card-meus-compromissos-pessoais');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 120);
+
+  } catch(err) {
+    console.error('Erro ao salvar compromisso pessoal:', err);
+    alert('Erro ao salvar: ' + (err.message || err));
+  }
 }
 
 function reagendarCompromissoPessoal(id) {
@@ -27503,18 +27606,262 @@ function removerBotaoAgendaPessoal(id) {
   if (typeof mostrarToastAprovacao === 'function') mostrarToastAprovacao('🗑️ Botão excluído com sucesso.');
 }
 
+// ══════════════════════════════════════════════════════════════════
+// MÓDULO: CONTATOS PESSOAIS (IDÊNTICO AO CADASTRO DE CLIENTES)
+// ══════════════════════════════════════════════════════════════════
+const STORAGE_KEY_CONTATOS_PESSOAIS = 'sdv_contatos_pessoais';
+let editandoCpId = null;
+
+function obterContatosPessoais() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_CONTATOS_PESSOAIS);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch(_) {}
+  return [];
+}
+
+function salvarContatosPessoaisStorage(lista) {
+  try {
+    localStorage.setItem(STORAGE_KEY_CONTATOS_PESSOAIS, JSON.stringify(lista || []));
+  } catch(_) {}
+}
+
+function abrirModalContatosPessoais() {
+  const m = document.getElementById('modal-contatos-pessoais');
+  if (!m) return;
+  m.style.zIndex = '999999';
+  m.style.display = 'flex';
+  m.classList.add('active');
+  limparCp();
+  renderContatosPessoais();
+  setTimeout(() => {
+    const inp = document.getElementById('cp-nome');
+    if (inp) inp.focus();
+  }, 100);
+}
+
+function fecharModalContatosPessoais(e) {
+  if (e && e.target !== e.currentTarget) return;
+  const m = document.getElementById('modal-contatos-pessoais');
+  if (m) {
+    m.style.display = 'none';
+    m.classList.remove('active');
+  }
+}
+
+function limparCp() {
+  editandoCpId = null;
+  const editIdEl = document.getElementById('cp-edit-id');
+  if (editIdEl) editIdEl.value = '';
+  ['cp-nome', 'cp-tel', 'cp-bairro', 'cp-cidade', 'cp-obs'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = id === 'cp-cidade' ? 'Itaitinga' : '';
+  });
+  const btnSalvar = document.getElementById('btn-salvar-cp');
+  if (btnSalvar) btnSalvar.innerHTML = '💾 Salvar contato';
+  const titForm = document.getElementById('cp-form-titulo');
+  if (titForm) titForm.innerHTML = '<span>➕</span> <span>Cadastrar / Editar Contato Pessoal</span>';
+  const msgEl = document.getElementById('cp-msg');
+  if (msgEl) msgEl.innerHTML = '';
+}
+
+function salvarContatoPessoal() {
+  const nomeEl = document.getElementById('cp-nome');
+  const nome = nomeEl ? nomeEl.value.trim() : '';
+  const msgEl = document.getElementById('cp-msg');
+
+  if (!nome) {
+    if (msgEl) msgEl.innerHTML = '<div style="color:#ef4444;font-size:12px;font-weight:800;padding:6px 10px;background:rgba(239,68,68,0.1);border-radius:6px;">⚠️ Por favor, informe o nome do contato pessoal.</div>';
+    return;
+  }
+
+  const tel = (document.getElementById('cp-tel')?.value || '').trim();
+  const bairro = (document.getElementById('cp-bairro')?.value || '').trim();
+  const cidade = (document.getElementById('cp-cidade')?.value || '').trim() || 'Itaitinga';
+  const obs = (document.getElementById('cp-obs')?.value || '').trim();
+
+  let lista = obterContatosPessoais();
+
+  if (editandoCpId) {
+    const idx = lista.findIndex(x => String(x.id) === String(editandoCpId));
+    if (idx !== -1) {
+      lista[idx] = { ...lista[idx], nome, whatsapp: tel, tel, bairro, cidade, obs, atualizadoEm: new Date().toISOString() };
+    }
+    if (msgEl) msgEl.innerHTML = '<div style="color:#10b981;font-size:12px;font-weight:800;padding:6px 10px;background:rgba(16,185,129,0.1);border-radius:6px;">✅ Contato pessoal atualizado com sucesso!</div>';
+  } else {
+    const novo = {
+      id: 'cp_' + Date.now(),
+      nome,
+      whatsapp: tel,
+      tel,
+      bairro,
+      cidade,
+      obs,
+      criadoEm: new Date().toISOString()
+    };
+    lista.unshift(novo);
+    if (msgEl) msgEl.innerHTML = '<div style="color:#10b981;font-size:12px;font-weight:800;padding:6px 10px;background:rgba(16,185,129,0.1);border-radius:6px;">✅ Contato pessoal cadastrado com sucesso!</div>';
+  }
+
+  salvarContatosPessoaisStorage(lista);
+  renderContatosPessoais();
+  limparCp();
+  if (typeof mostrarToastAprovacao === 'function') mostrarToastAprovacao('💾 Contato pessoal salvo!');
+}
+
+function editarContatoPessoal(id) {
+  const lista = obterContatosPessoais();
+  const c = lista.find(x => String(x.id) === String(id));
+  if (!c) return;
+
+  editandoCpId = id;
+  const editIdEl = document.getElementById('cp-edit-id');
+  if (editIdEl) editIdEl.value = id;
+
+  if (document.getElementById('cp-nome')) document.getElementById('cp-nome').value = c.nome || '';
+  if (document.getElementById('cp-tel')) document.getElementById('cp-tel').value = c.whatsapp || c.tel || '';
+  if (document.getElementById('cp-bairro')) document.getElementById('cp-bairro').value = c.bairro || '';
+  if (document.getElementById('cp-cidade')) document.getElementById('cp-cidade').value = c.cidade || 'Itaitinga';
+  if (document.getElementById('cp-obs')) document.getElementById('cp-obs').value = c.obs || '';
+
+  const btnSalvar = document.getElementById('btn-salvar-cp');
+  if (btnSalvar) btnSalvar.innerHTML = '💾 Atualizar contato';
+  const titForm = document.getElementById('cp-form-titulo');
+  if (titForm) titForm.innerHTML = '<span>✏️</span> <span>Editar Contato Pessoal</span>';
+
+  const modalCorpo = document.querySelector('#modal-contatos-pessoais .modal-card > div:nth-child(2)');
+  if (modalCorpo) modalCorpo.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function excluirContatoPessoal(id) {
+  if (!confirm('Deseja realmente excluir este contato pessoal?')) return;
+  let lista = obterContatosPessoais().filter(x => String(x.id) !== String(id));
+  salvarContatosPessoaisStorage(lista);
+  renderContatosPessoais();
+  if (typeof mostrarToastAprovacao === 'function') mostrarToastAprovacao('🗑️ Contato pessoal removido.');
+}
+
+function usarContatoPessoalNaAgenda(id) {
+  const lista = obterContatosPessoais();
+  const c = lista.find(x => String(x.id) === String(id));
+  if (!c) return;
+
+  fecharModalContatosPessoais();
+  abrirModalNovoCompromissoPessoal();
+
+  setTimeout(() => {
+    const tit = document.getElementById('pessoal-novo-titulo');
+    const tel = document.getElementById('pessoal-novo-tel');
+    const loc = document.getElementById('pessoal-novo-local');
+
+    if (tit) tit.value = c.nome || '';
+    if (tel) {
+      tel.value = c.whatsapp || c.tel || '';
+      try { atualizarBtnWhatsAppPessoal(); } catch(_) {}
+    }
+    if (loc) {
+      const endFmt = [c.bairro, c.cidade].filter(Boolean).join(', ') || '';
+      if (endFmt) loc.value = endFmt;
+      try { atualizarBotaoMapsPessoal(); } catch(_) {}
+    }
+  }, 100);
+}
+
+function renderContatosPessoais(filtro = '') {
+  const cont = document.getElementById('cp-lista');
+  const countEl = document.getElementById('cp-count');
+  const lista = obterContatosPessoais();
+
+  if (countEl) countEl.textContent = lista.length;
+  if (!cont) return;
+
+  const termo = (filtro || '').toLowerCase().trim();
+  let filtrados = lista;
+  if (termo) {
+    filtrados = lista.filter(c => 
+      (c.nome && c.nome.toLowerCase().includes(termo)) ||
+      (c.whatsapp && c.whatsapp.includes(termo)) ||
+      (c.bairro && c.bairro.toLowerCase().includes(termo)) ||
+      (c.obs && c.obs.toLowerCase().includes(termo))
+    );
+  }
+
+  if (!filtrados.length) {
+    cont.innerHTML = `
+      <div class="empty" style="padding:22px 12px;text-align:center;">
+        ${termo ? 'Nenhum contato encontrado para "' + esc(termo) + '".' : 'Nenhum contato pessoal cadastrado ainda.'}
+      </div>
+    `;
+    return;
+  }
+
+  cont.innerHTML = filtrados.map(c => {
+    const telLimpo = String(c.whatsapp || c.tel || '').replace(/\D/g, '');
+    const zapLink = telLimpo.length >= 8 ? `https://wa.me/55${telLimpo}` : '';
+    const loc = [c.bairro, c.cidade].filter(Boolean).join(' · ');
+
+    return `
+      <div style="background:#12131e;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 3px 10px rgba(0,0,0,0.3);transition:border-color 0.2s;" onmouseover="this.style.borderColor='rgba(56,189,248,0.4)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:14.5px;font-weight:900;color:#fef08a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(c.nome || 'Sem nome')}</div>
+          <div style="font-size:12px;color:#94a3b8;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+            ${esc(c.whatsapp || c.tel || '(sem tel)')} ${loc ? ' · ' + esc(loc) : ''}
+          </div>
+          ${c.obs ? `<div style="font-size:11px;color:#7dd3fc;margin-top:2px;font-weight:700;">📌 ${esc(c.obs)}</div>` : ''}
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
+          ${zapLink ? `
+            <a href="${zapLink}" target="_blank" style="padding:6px 10px;background:linear-gradient(135deg,#25D366,#1cb85a);border:none;border-radius:8px;color:#fff;font-size:11px;font-weight:800;text-decoration:none;display:inline-flex;align-items:center;gap:3px;" title="Conversar no WhatsApp">
+              💬
+            </a>
+          ` : ''}
+          <button type="button" onclick="usarContatoPessoalNaAgenda('${c.id}')" style="padding:7px 12px;background:linear-gradient(135deg,#d4af4c,#a0782a);border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:900;cursor:pointer;display:inline-flex;align-items:center;gap:4px;box-shadow:0 2px 8px rgba(212,175,76,0.35);white-space:nowrap;" title="Usar este contato na Agenda Pessoal">
+            📋 Usar
+          </button>
+          <button type="button" onclick="editarContatoPessoal('${c.id}')" title="Editar contato" style="padding:7px 10px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#cbd5e1;cursor:pointer;font-size:12px;">
+            ✏️
+          </button>
+          <button type="button" onclick="excluirContatoPessoal('${c.id}')" title="Excluir contato" style="padding:7px 10px;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);border-radius:8px;color:#f87171;cursor:pointer;font-size:12px;">
+            ✕
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
 function popularCategoriasModalPessoal() {
   const selTipo = document.getElementById('pessoal-novo-tipo');
   if (!selTipo) return;
-  const botoes = obterBotoesAgendaPessoalCustom();
 
+  // Opções proibidas da vidraçaria/obra (terceira imagem) que devem ser purgadas
+  const proibidas = [
+    'medição técnica', 'medicao tecnica',
+    'instalação de box', 'instalacao de box',
+    'instalação de vidro / janela', 'instalacao vidro/janela', 'instalação vidro/janela',
+    'entrega de espelho', 'manutenção / regulagem', 'manutencao / regulagem',
+    'vistoria técnica', 'vistoria tecnica'
+  ];
+
+  // Remove qualquer opção proibida caso ainda exista
+  Array.from(selTipo.options).forEach(opt => {
+    if (proibidas.some(p => opt.value.toLowerCase().includes(p))) {
+      opt.remove();
+    }
+  });
+
+  // Insere as categorias dos botões criados dinamicamente no início
+  const botoes = obterBotoesAgendaPessoalCustom();
   botoes.forEach(b => {
     const existe = Array.from(selTipo.options).some(opt => opt.value.toLowerCase() === b.nome.toLowerCase());
     if (!existe) {
       const opt = document.createElement('option');
       opt.value = b.nome;
       opt.textContent = '📅 ' + b.nome;
-      selTipo.appendChild(opt);
+      selTipo.prepend(opt);
     }
   });
 }
@@ -27540,18 +27887,19 @@ function renderAgendaPessoal() {
     if (btnLimpar) btnLimpar.style.display = 'none';
   }
 
-  // Filtragem por Categoria
+  // Filtragem por Categoria Normalizada (Imune a emojis e divergência de espaços)
   let lista = [...listaOriginal];
   if (_categoriaAgendaPessoalAtiva) {
-    const catLower = _categoriaAgendaPessoalAtiva.trim().toLowerCase();
+    const limpa = s => (s || '').replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim().toLowerCase();
+    const catLower = limpa(_categoriaAgendaPessoalAtiva);
     const isCompromissoPessoal = catLower.includes('compromisso pessoal') || catLower === 'novo compromisso pessoal';
 
     lista = lista.filter(ev => {
-      const tipoLower = (ev.tipo || '').trim().toLowerCase();
+      const tipoLower = limpa(ev.tipo);
       if (isCompromissoPessoal) {
-        return !tipoLower || tipoLower === 'compromisso pessoal' || tipoLower === 'novo compromisso pessoal' || tipoLower === 'medição técnica';
+        return !tipoLower || tipoLower.includes('compromisso pessoal') || tipoLower === 'medição técnica';
       }
-      return tipoLower === catLower;
+      return tipoLower === catLower || tipoLower.includes(catLower) || catLower.includes(tipoLower);
     });
   }
 
