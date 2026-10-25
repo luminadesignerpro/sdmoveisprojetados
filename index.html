@@ -2024,11 +2024,33 @@
         </table>
       </div>
 
+      <!-- Inputs ocultos para câmera, galeria e PDF do orçamento -->
+      <input type="file" id="orc-input-camera" accept="image/*" capture="environment" style="display:none;" onchange="aoAnexarArquivoOrcamento(event,'camera')">
+      <input type="file" id="orc-input-galeria" accept="image/*,video/*" style="display:none;" multiple onchange="aoAnexarArquivoOrcamento(event,'galeria')">
+      <input type="file" id="orc-input-pdf" accept="application/pdf,.pdf" style="display:none;" multiple onchange="aoAnexarArquivoOrcamento(event,'pdf')">
+
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;">
         <button type="button" class="btn btn-sec btn-sm" onclick="addItem()">+ Adicionar linha</button>
-        <button type="button" class="btn btn-sm" id="btn-galeria-orc-linha" onclick="abrirGaleriaAgenda()" style="background:rgba(6,182,212,0.15);border:1.5px solid #06b6d4;color:#22d3ee;font-weight:800;display:inline-flex;align-items:center;gap:6px;cursor:pointer;" title="Galeria de fotos anexadas a esta O.S.">
-          <span>🖼️</span> <span id="label-galeria-orc-linha">Galeria (0)</span>
-        </button>
+
+        <!-- BOTÃO GALERIA com dropdown de 3 opções -->
+        <div id="galeria-orc-menu-container" style="position:relative;display:inline-block;">
+          <button type="button" class="btn btn-sm" id="btn-galeria-orc-linha" onclick="toggleMenuGaleriaOrc(event)" style="background:rgba(6,182,212,0.15);border:1.5px solid #06b6d4;color:#22d3ee;font-weight:800;display:inline-flex;align-items:center;gap:6px;cursor:pointer;" title="Anexar fotos ou PDF a esta O.S.">
+            <span>🖼️</span> <span id="label-galeria-orc-linha">Galeria (0)</span> <span style="font-size:10px;opacity:0.8;">▼</span>
+          </button>
+          <!-- DROPDOWN MENU -->
+          <div id="galeria-orc-submenu" style="display:none;position:absolute;bottom:calc(100% + 6px);left:0;background:#0e1020;border:1.5px solid #06b6d4;border-radius:10px;min-width:200px;overflow:hidden;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,0.7);">
+            <button type="button" onclick="toggleMenuGaleriaOrc(event); document.getElementById('orc-input-camera').click();" style="width:100%;padding:11px 14px;background:none;border:none;border-bottom:1px solid rgba(6,182,212,0.18);color:#22d3ee;font-size:12.5px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:9px;transition:background 0.15s;" onmouseover="this.style.background='rgba(6,182,212,0.12)'" onmouseout="this.style.background='none'">
+              📷 Abrir Câmera do Celular
+            </button>
+            <button type="button" onclick="toggleMenuGaleriaOrc(event); document.getElementById('orc-input-galeria').click();" style="width:100%;padding:11px 14px;background:none;border:none;border-bottom:1px solid rgba(6,182,212,0.18);color:#34d399;font-size:12.5px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:9px;transition:background 0.15s;" onmouseover="this.style.background='rgba(52,211,153,0.1)'" onmouseout="this.style.background='none'">
+              🖼️ Buscar na Galeria
+            </button>
+            <button type="button" onclick="toggleMenuGaleriaOrc(event); document.getElementById('orc-input-pdf').click();" style="width:100%;padding:11px 14px;background:none;border:none;color:#f59e0b;font-size:12.5px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:9px;transition:background 0.15s;" onmouseover="this.style.background='rgba(245,158,11,0.1)'" onmouseout="this.style.background='none'">
+              📄 Buscar PDF
+            </button>
+          </div>
+        </div>
+
         <button type="button" class="btn btn-sm btn-dir-os" id="btn-direcionamento-orc-linha" onclick="abrirModalDirecionamentoDoOrcamento()" style="background:linear-gradient(135deg, rgba(139,92,246,0.22), rgba(99,102,241,0.22));border:1.5px solid #8b5cf6;color:#c4b5fd;font-weight:800;border-radius:8px;padding:6px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;" title="Fazer distribuição / rateio do valor deste orçamento / O.S.">
           <span>🎯</span> <span id="label-direcionamento-orc-linha" class="btn-dir-label-dinamico">Direcionamento</span>
         </button>
@@ -10229,7 +10251,12 @@ function atualizarBadgeGaleriaOrcamento() {
     const s = localStorage.getItem('sdm_cam_capturas');
     if (s) {
       const arr = JSON.parse(s);
-      if (Array.isArray(arr)) count = arr.length;
+      if (Array.isArray(arr)) count += arr.length;
+    }
+    const p = localStorage.getItem('sdm_orc_pdfs');
+    if (p) {
+      const arr2 = JSON.parse(p);
+      if (Array.isArray(arr2)) count += arr2.length;
     }
     const lbl = document.getElementById('label-galeria-orc-linha');
     if (lbl) lbl.textContent = `Galeria (${count})`;
@@ -19764,6 +19791,113 @@ function toggleMenuGaleriaAgenda() {
       document.addEventListener('click', closeHandler);
     }, 50);
   }
+}
+
+// ── MENU DROPDOWN DA GALERIA DO ORÇAMENTO ────────────────────────────────────
+function toggleMenuGaleriaOrc(e) {
+  if (e) e.stopPropagation();
+  const menu = document.getElementById('galeria-orc-submenu');
+  if (!menu) return;
+  const isVisible = menu.style.display !== 'none';
+  menu.style.display = isVisible ? 'none' : 'block';
+  if (!isVisible) {
+    setTimeout(() => {
+      const closeHandler = (ev) => {
+        const container = document.getElementById('galeria-orc-menu-container');
+        if (container && !container.contains(ev.target)) {
+          menu.style.display = 'none';
+          document.removeEventListener('click', closeHandler);
+        }
+      };
+      document.addEventListener('click', closeHandler);
+    }, 50);
+  }
+}
+
+// ── PROCESSAMENTO DE ARQUIVO ANEXADO NO ORÇAMENTO ────────────────────────────
+function aoAnexarArquivoOrcamento(event, tipo) {
+  const files = event.target.files;
+  if (!files || !files.length) return;
+
+  // Zera o input para permitir re-seleção do mesmo arquivo
+  event.target.value = '';
+
+  Array.from(files).forEach(file => {
+    if (tipo === 'pdf') {
+      // Armazena PDF como referência no localStorage
+      try {
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+          try {
+            let pdfs = JSON.parse(localStorage.getItem('sdm_orc_pdfs') || '[]');
+            if (!Array.isArray(pdfs)) pdfs = [];
+            pdfs.unshift({
+              nome: file.name,
+              dataUrl: ev.target.result,
+              tamanho: file.size,
+              adicionadoEm: new Date().toISOString()
+            });
+            if (pdfs.length > 20) pdfs = pdfs.slice(0, 20);
+            localStorage.setItem('sdm_orc_pdfs', JSON.stringify(pdfs));
+            atualizarBadgeGaleriaOrcamento();
+            if (typeof mostrarToastAprovacao === 'function') {
+              mostrarToastAprovacao('📄 PDF "' + file.name + '" anexado com sucesso!');
+            }
+          } catch(err) {
+            console.warn('Erro ao salvar PDF:', err);
+          }
+        };
+        reader.readAsDataURL(file);
+      } catch(err) {
+        console.warn('Erro ao ler PDF:', err);
+      }
+    } else {
+      // Foto: câmera ou galeria
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        const rawDataUrl = ev.target.result;
+        const img = new Image();
+        img.onload = function() {
+          const maxDim = 1280;
+          let w = img.width, h = img.height;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) { h = Math.round(h * (maxDim / w)); w = maxDim; }
+            else { w = Math.round(w * (maxDim / h)); h = maxDim; }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+          const novaCaptura = {
+            dataUrl,
+            data: new Date().toISOString(),
+            zoom: 1.0,
+            filtro: 'Normal',
+            favorito: false,
+            origem: tipo === 'camera' ? 'Câmera O.S.' : 'Galeria O.S.'
+          };
+
+          try {
+            let fotos = JSON.parse(localStorage.getItem('sdm_cam_capturas') || '[]');
+            if (!Array.isArray(fotos)) fotos = [];
+            fotos.unshift(novaCaptura);
+            if (fotos.length > 40) fotos = fotos.slice(0, 40);
+            localStorage.setItem('sdm_cam_capturas', JSON.stringify(fotos));
+            if (typeof _capturas !== 'undefined') _capturas.unshift(novaCaptura);
+            if (typeof _renderGaleriaGrid === 'function') _renderGaleriaGrid();
+          } catch(err) { console.warn('Erro ao salvar foto:', err); }
+
+          atualizarBadgeGaleriaOrcamento();
+          if (typeof mostrarToastAprovacao === 'function') {
+            mostrarToastAprovacao('📷 Foto anexada com sucesso à O.S.!');
+          }
+        };
+        img.src = rawDataUrl;
+      };
+      reader.readAsDataURL(file);
+    }
+  });
 }
 
 
