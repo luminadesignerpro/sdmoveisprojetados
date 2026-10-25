@@ -21980,7 +21980,7 @@ if (typeof setInterval !== 'undefined') {
 <!-- ══════════════════════════════════════════════════════════════════ -->
 <!--  MODAL: NOVO ITEM DE PEDIDO DE MATERIAL                           -->
 <!-- ══════════════════════════════════════════════════════════════════ -->
-<div id="modal-novo-pedido-material" class="modal-overlay" style="display:none" onclick="if(event.target===this)fecharModalNovoPedidoMaterial()">
+<div id="modal-novo-pedido-material" class="modal-overlay" style="display:none;z-index:999999;" onclick="if(event.target===this)fecharModalNovoPedidoMaterial()">
   <div class="modal-box" onclick="event.stopPropagation()" style="max-width:480px;padding:24px 20px;">
     <div class="modal-title" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
       <div style="font-size:15px;font-weight:900;color:#fff;display:flex;align-items:center;gap:8px;"><span>📦</span> <span id="pedido-material-titulo">Novo Item de Material</span></div>
@@ -22048,7 +22048,7 @@ if (typeof setInterval !== 'undefined') {
 <!-- ══════════════════════════════════════════════════════════════════ -->
 <!--  MODAL: NOVO EVENTO DO CRONOGRAMA                                 -->
 <!-- ══════════════════════════════════════════════════════════════════ -->
-<div id="modal-novo-evento-cronograma" class="modal-overlay" style="display:none" onclick="if(event.target===this)fecharModalNovoEventoCronograma()">
+<div id="modal-novo-evento-cronograma" class="modal-overlay" style="display:none;z-index:999999;" onclick="if(event.target===this)fecharModalNovoEventoCronograma()">
   <div class="modal-box" onclick="event.stopPropagation()" style="max-width:460px;padding:24px 20px;">
     <div class="modal-title" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
       <div style="font-size:15px;font-weight:900;color:#fff;display:flex;align-items:center;gap:8px;"><span>📅</span> <span id="evento-cronograma-titulo">Novo Evento / Prazo</span></div>
@@ -22121,7 +22121,7 @@ if (typeof setInterval !== 'undefined') {
 <!-- ══════════════════════════════════════════════════════════════════ -->
 <!--  MODAL: CONFIGURAÇÃO WHATSAPP PARA PEDIDO DE MATERIAL             -->
 <!-- ══════════════════════════════════════════════════════════════════ -->
-<div id="modal-config-whatsapp-material" class="modal-overlay" style="display:none" onclick="if(event.target===this)fecharModalConfigWhatsappMaterial()">
+<div id="modal-config-whatsapp-material" class="modal-overlay" style="display:none;z-index:999999;" onclick="if(event.target===this)fecharModalConfigWhatsappMaterial()">
   <div class="modal-box" onclick="event.stopPropagation()" style="max-width:420px;padding:22px 20px;">
     <div class="modal-title" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
       <div style="font-size:15px;font-weight:900;color:#fff;display:flex;align-items:center;gap:8px;"><span>⚙️</span> Config. WhatsApp - Pedido de Material</div>
@@ -22824,7 +22824,12 @@ function abrirModalNovoEventoCronograma(id) {
     if (formHora) formHora.value = '';
 
     const formTipo = document.getElementById('evento-form-tipo');
-    if (formTipo) formTipo.value = 'entrega';
+    if (formTipo) {
+      formTipo.value = 'entrega';
+      if (typeof alternarCampoCustomTipoEvento === 'function') {
+        alternarCampoCustomTipoEvento('entrega');
+      }
+    }
 
     const formResp = document.getElementById('evento-form-responsavel');
     if (formResp) formResp.value = '';
@@ -22841,26 +22846,68 @@ function abrirModalNovoEventoCronograma(id) {
     const formDesc = document.getElementById('evento-form-desc');
     if (formDesc) formDesc.value = '';
 
-    if (id && typeof carregarEventosCrono === 'function') {
-      const ev = carregarEventosCrono().find(e => String(e.id) === String(id));
+    // Se passou ID (Edição de Evento)
+    if (id) {
+      let ev = null;
+      if (typeof carregarEventosCrono === 'function') {
+        ev = carregarEventosCrono().find(e => String(e.id) === String(id));
+      }
+      if (!ev && typeof obterAgendaEventos === 'function') {
+        const ag = obterAgendaEventos().find(e => String(e.id) === String(id));
+        if (ag) {
+          ev = {
+            id: ag.id,
+            titulo: ag.cliente || ag.titulo || 'Atendimento',
+            data: ag.data,
+            hora: ag.hora,
+            tipo: ag.tipo || 'entrega',
+            clienteNome: ag.cliente || ag.nome,
+            clienteTel: ag.tel,
+            clienteEndereco: ag.end,
+            desc: ag.obs
+          };
+        }
+      }
+      if (!ev && typeof obterEventosAgendaPessoal === 'function') {
+        const pes = obterEventosAgendaPessoal().find(e => String(e.id) === String(id));
+        if (pes) {
+          ev = {
+            id: pes.id,
+            titulo: pes.titulo,
+            data: pes.data,
+            hora: pes.hora,
+            tipo: 'outro',
+            clienteNome: pes.titulo,
+            clienteTel: pes.tel,
+            clienteEndereco: pes.local,
+            desc: pes.obs
+          };
+        }
+      }
+
       if (ev) {
         if (editIdEl) editIdEl.value = ev.id;
         if (titEl) titEl.textContent = 'Editar Evento';
         if (formTit) formTit.value = ev.titulo || '';
         if (formData) formData.value = ev.data || '';
         if (formHora) formHora.value = ev.hora || '';
-        if (formTipo) formTipo.value = ev.tipo || 'outro';
+        if (formTipo) {
+          formTipo.value = ev.tipo || 'outro';
+          if (typeof alternarCampoCustomTipoEvento === 'function') {
+            alternarCampoCustomTipoEvento(ev.tipo || 'outro');
+          }
+        }
         if (formResp) formResp.value = ev.responsavel || '';
-        if (formCliNome) formCliNome.value = ev.clienteNome || '';
+        if (formCliNome) formCliNome.value = ev.clienteNome || ev.cliente || '';
         if (telInp) telInp.value = ev.clienteTel || ev.tel || '';
-        if (formCliEnd) formCliEnd.value = ev.clienteEndereco || '';
-        if (formDesc) formDesc.value = ev.desc || '';
+        if (formCliEnd) formCliEnd.value = ev.clienteEndereco || ev.end || '';
+        if (formDesc) formDesc.value = ev.desc || ev.obs || '';
       }
     }
 
     m.style.setProperty('display', 'flex', 'important');
     m.classList.add('active');
-    m.style.zIndex = '99999';
+    m.style.zIndex = '999999';
 
     if (formTit) {
       setTimeout(() => { formTit.focus(); }, 120);
@@ -22869,8 +22916,9 @@ function abrirModalNovoEventoCronograma(id) {
     console.error('Erro ao abrir modal do cronograma:', err);
     const m = document.getElementById('modal-novo-evento-cronograma');
     if (m) {
-      m.style.display = 'flex';
+      m.style.setProperty('display', 'flex', 'important');
       m.classList.add('active');
+      m.style.zIndex = '999999';
     }
   }
 }
@@ -22882,6 +22930,17 @@ function fecharModalNovoEventoCronograma() {
     m.style.setProperty('display', 'none', 'important');
   }
 }
+
+function editarEventoCronograma(id) {
+  try {
+    abrirModalNovoEventoCronograma(id);
+  } catch(err) {
+    console.error('Erro ao editar evento cronograma:', err);
+  }
+}
+window.editarEventoCronograma = editarEventoCronograma;
+window.abrirModalNovoEventoCronograma = abrirModalNovoEventoCronograma;
+window.fecharModalNovoEventoCronograma = fecharModalNovoEventoCronograma;
 
 window.abrirModalNovoEventoCronograma = abrirModalNovoEventoCronograma;
 window.fecharModalNovoEventoCronograma = fecharModalNovoEventoCronograma;
@@ -23144,25 +23203,64 @@ function excluirPedidoMaterial(id) {
 }
 
 function abrirModalNovoPedidoMaterial(it) {
-  const m = document.getElementById('modal-novo-pedido-material');
-  if (!m) return;
-  document.getElementById('pedido-material-edit-id').value = it ? it.id : '';
-  document.getElementById('pedido-material-titulo').textContent = it ? 'Editar Item' : 'Novo Item de Material';
-  document.getElementById('pedido-form-nome').value = it ? (it.nome||'') : '';
-  document.getElementById('pedido-form-qtd').value = it ? (it.qtd||'') : '';
-  document.getElementById('pedido-form-unidade').value = it ? (it.unidade||'un') : 'un';
-  document.getElementById('pedido-form-valor').value = it ? (it.valor||'') : '';
-  document.getElementById('pedido-form-urgencia').value = it ? (it.urgencia||'normal') : 'normal';
-  document.getElementById('pedido-form-fornecedor').value = it ? (it.fornecedor||'') : '';
-  document.getElementById('pedido-form-status').value = it ? (it.status||'a_comprar') : 'a_comprar';
-  document.getElementById('pedido-form-obs').value = it ? (it.obs||'') : '';
-  m.style.display = 'flex';
+  try {
+    const m = document.getElementById('modal-novo-pedido-material');
+    if (!m) return;
+    const editIdEl = document.getElementById('pedido-material-edit-id');
+    if (editIdEl) editIdEl.value = it ? it.id : '';
+
+    const titEl = document.getElementById('pedido-material-titulo');
+    if (titEl) titEl.textContent = it ? 'Editar Item' : 'Novo Item de Material';
+
+    const nomeEl = document.getElementById('pedido-form-nome');
+    if (nomeEl) nomeEl.value = it ? (it.nome||'') : '';
+
+    const qtdEl = document.getElementById('pedido-form-qtd');
+    if (qtdEl) qtdEl.value = it ? (it.qtd||'') : '';
+
+    const uniEl = document.getElementById('pedido-form-unidade');
+    if (uniEl) uniEl.value = it ? (it.unidade||'un') : 'un';
+
+    const valEl = document.getElementById('pedido-form-valor');
+    if (valEl) valEl.value = it ? (it.valor||'') : '';
+
+    const urgEl = document.getElementById('pedido-form-urgencia');
+    if (urgEl) urgEl.value = it ? (it.urgencia||'normal') : 'normal';
+
+    const fornEl = document.getElementById('pedido-form-fornecedor');
+    if (fornEl) fornEl.value = it ? (it.fornecedor||'') : '';
+
+    const stEl = document.getElementById('pedido-form-status');
+    if (stEl) stEl.value = it ? (it.status||'a_comprar') : 'a_comprar';
+
+    const obsEl = document.getElementById('pedido-form-obs');
+    if (obsEl) obsEl.value = it ? (it.obs||'') : '';
+
+    m.style.setProperty('display', 'flex', 'important');
+    m.classList.add('active');
+    m.style.zIndex = '999999';
+
+    if (nomeEl) setTimeout(() => nomeEl.focus(), 100);
+  } catch(err) {
+    console.error('Erro ao abrir modal de pedido de material:', err);
+    const m = document.getElementById('modal-novo-pedido-material');
+    if (m) {
+      m.style.setProperty('display', 'flex', 'important');
+      m.classList.add('active');
+      m.style.zIndex = '999999';
+    }
+  }
 }
 
 function fecharModalNovoPedidoMaterial() {
   const m = document.getElementById('modal-novo-pedido-material');
-  if (m) m.style.display = 'none';
+  if (m) {
+    m.classList.remove('active');
+    m.style.setProperty('display', 'none', 'important');
+  }
 }
+window.abrirModalNovoPedidoMaterial = abrirModalNovoPedidoMaterial;
+window.fecharModalNovoPedidoMaterial = fecharModalNovoPedidoMaterial;
 
 function salvarPedidoMaterial() {
   const nome = (document.getElementById('pedido-form-nome').value || '').trim();
@@ -23206,13 +23304,20 @@ function abrirModalConfigWhatsappMaterial() {
     document.getElementById('config-whatsapp-numero').value = cfg.numero || '';
     document.getElementById('config-whatsapp-nome').value = cfg.nome || '';
   } catch(_) {}
-  m.style.display = 'flex';
+  m.style.setProperty('display', 'flex', 'important');
+  m.classList.add('active');
+  m.style.zIndex = '999999';
 }
 
 function fecharModalConfigWhatsappMaterial() {
   const m = document.getElementById('modal-config-whatsapp-material');
-  if (m) m.style.display = 'none';
+  if (m) {
+    m.classList.remove('active');
+    m.style.setProperty('display', 'none', 'important');
+  }
 }
+window.abrirModalConfigWhatsappMaterial = abrirModalConfigWhatsappMaterial;
+window.fecharModalConfigWhatsappMaterial = fecharModalConfigWhatsappMaterial;
 
 function salvarConfigWhatsappMaterial() {
   const numero = (document.getElementById('config-whatsapp-numero').value || '').trim();

@@ -13871,45 +13871,99 @@ function fecharModalVisualizarEventoCronograma() {
 }
 
 function abrirModalNovoEventoCronograma(id) {
-  const m = document.getElementById('modal-novo-evento-cronograma');
-  if (!m) return;
-  document.getElementById('evento-cronograma-edit-id').value = '';
-  document.getElementById('evento-cronograma-titulo').textContent = 'Novo Evento / Prazo';
-  document.getElementById('evento-form-titulo').value = '';
-  const evCliente = document.getElementById('evento-form-cliente');
-  if (evCliente) evCliente.value = '';
-  const buscaInp = document.getElementById('crono-busca-rapida-inp');
-  if (buscaInp) { buscaInp.value = ''; }
-  const buscaBox = document.getElementById('crono-busca-resultados-box');
-  if (buscaBox) buscaBox.style.display = 'none';
-  document.getElementById('evento-form-data').value = _cronoDiaSelecionado || isoHoje();
-  document.getElementById('evento-form-hora').value = '';
-  document.getElementById('evento-form-tipo').value = 'entrega';
-  document.getElementById('evento-form-responsavel').value = (clienteSessao && clienteSessao.nome) || '';
-  document.getElementById('evento-form-desc').value = '';
+  try {
+    const m = document.getElementById('modal-novo-evento-cronograma');
+    if (!m) return;
+    const editIdEl = document.getElementById('evento-cronograma-edit-id');
+    if (editIdEl) editIdEl.value = '';
 
-  if (id) {
-    const ev = carregarEventosCrono().find(e => e.id === id);
-    if (ev) {
-      document.getElementById('evento-cronograma-edit-id').value = ev.id;
-      document.getElementById('evento-cronograma-titulo').textContent = 'Editar Evento';
-      document.getElementById('evento-form-titulo').value = ev.titulo || '';
-      const evCliente = document.getElementById('evento-form-cliente');
-      if (evCliente) evCliente.value = ev.cliente || '';
-      document.getElementById('evento-form-data').value = ev.data || '';
-      document.getElementById('evento-form-hora').value = ev.hora || '';
-      document.getElementById('evento-form-tipo').value = ev.tipo || 'outro';
-      document.getElementById('evento-form-responsavel').value = ev.responsavel || '';
-      document.getElementById('evento-form-desc').value = ev.desc || '';
+    const titEl = document.getElementById('evento-cronograma-titulo');
+    if (titEl) titEl.textContent = 'Novo Evento / Prazo';
+
+    const formTit = document.getElementById('evento-form-titulo');
+    if (formTit) formTit.value = '';
+
+    const evCliente = document.getElementById('evento-form-cliente');
+    if (evCliente) evCliente.value = '';
+
+    const buscaInp = document.getElementById('crono-busca-rapida-inp');
+    if (buscaInp) buscaInp.value = '';
+
+    const buscaBox = document.getElementById('crono-busca-resultados-box');
+    if (buscaBox) buscaBox.style.display = 'none';
+
+    const formData = document.getElementById('evento-form-data');
+    if (formData) {
+      let dataPadrao = (typeof _cronoDiaSelecionado !== 'undefined' && _cronoDiaSelecionado) ? _cronoDiaSelecionado : '';
+      if (!dataPadrao && typeof isoHoje === 'function') dataPadrao = isoHoje();
+      if (!dataPadrao) dataPadrao = new Date().toISOString().split('T')[0];
+      formData.value = dataPadrao;
+    }
+
+    const formHora = document.getElementById('evento-form-hora');
+    if (formHora) formHora.value = '';
+
+    const formTipo = document.getElementById('evento-form-tipo');
+    if (formTipo) formTipo.value = 'entrega';
+
+    const formResp = document.getElementById('evento-form-responsavel');
+    if (formResp) formResp.value = (typeof clienteSessao !== 'undefined' && clienteSessao && clienteSessao.nome) || '';
+
+    const formDesc = document.getElementById('evento-form-desc');
+    if (formDesc) formDesc.value = '';
+
+    if (id) {
+      let ev = null;
+      if (typeof carregarEventosCrono === 'function') {
+        ev = carregarEventosCrono().find(e => String(e.id) === String(id));
+      }
+      if (ev) {
+        if (editIdEl) editIdEl.value = ev.id;
+        if (titEl) titEl.textContent = 'Editar Evento';
+        if (formTit) formTit.value = ev.titulo || '';
+        if (evCliente) evCliente.value = ev.cliente || ev.clienteNome || '';
+        if (formData) formData.value = ev.data || '';
+        if (formHora) formHora.value = ev.hora || '';
+        if (formTipo) formTipo.value = ev.tipo || 'outro';
+        if (formResp) formResp.value = ev.responsavel || '';
+        if (formDesc) formDesc.value = ev.desc || '';
+      }
+    }
+
+    m.style.setProperty('display', 'flex', 'important');
+    m.classList.add('active');
+    m.style.zIndex = '999999';
+
+    if (formTit) setTimeout(() => formTit.focus(), 100);
+  } catch(err) {
+    console.error('Erro ao abrir modal do cronograma:', err);
+    const m = document.getElementById('modal-novo-evento-cronograma');
+    if (m) {
+      m.style.setProperty('display', 'flex', 'important');
+      m.classList.add('active');
+      m.style.zIndex = '999999';
     }
   }
-  m.style.display = 'flex';
 }
 
 function fecharModalNovoEventoCronograma() {
   const m = document.getElementById('modal-novo-evento-cronograma');
-  if (m) m.style.display = 'none';
+  if (m) {
+    m.classList.remove('active');
+    m.style.setProperty('display', 'none', 'important');
+  }
 }
+
+function editarEventoCronograma(id) {
+  try {
+    abrirModalNovoEventoCronograma(id);
+  } catch(err) {
+    console.error('Erro ao editar evento cronograma:', err);
+  }
+}
+window.editarEventoCronograma = editarEventoCronograma;
+window.abrirModalNovoEventoCronograma = abrirModalNovoEventoCronograma;
+window.fecharModalNovoEventoCronograma = fecharModalNovoEventoCronograma;
 
 function salvarEventoCronograma() {
   const titulo = (document.getElementById('evento-form-titulo').value || '').trim();
@@ -14218,25 +14272,64 @@ function excluirPedidoMaterial(id) {
 }
 
 function abrirModalNovoPedidoMaterial(it) {
-  const m = document.getElementById('modal-novo-pedido-material');
-  if (!m) return;
-  document.getElementById('pedido-material-edit-id').value = it ? it.id : '';
-  document.getElementById('pedido-material-titulo').textContent = it ? 'Editar Item' : 'Novo Item de Material';
-  document.getElementById('pedido-form-nome').value = it ? (it.nome||'') : '';
-  document.getElementById('pedido-form-qtd').value = it ? (it.qtd||'') : '';
-  document.getElementById('pedido-form-unidade').value = it ? (it.unidade||'un') : 'un';
-  document.getElementById('pedido-form-valor').value = it ? (it.valor||'') : '';
-  document.getElementById('pedido-form-urgencia').value = it ? (it.urgencia||'normal') : 'normal';
-  document.getElementById('pedido-form-fornecedor').value = it ? (it.fornecedor||'') : '';
-  document.getElementById('pedido-form-status').value = it ? (it.status||'a_comprar') : 'a_comprar';
-  document.getElementById('pedido-form-obs').value = it ? (it.obs||'') : '';
-  m.style.display = 'flex';
+  try {
+    const m = document.getElementById('modal-novo-pedido-material');
+    if (!m) return;
+    const editIdEl = document.getElementById('pedido-material-edit-id');
+    if (editIdEl) editIdEl.value = it ? it.id : '';
+
+    const titEl = document.getElementById('pedido-material-titulo');
+    if (titEl) titEl.textContent = it ? 'Editar Item' : 'Novo Item de Material';
+
+    const nomeEl = document.getElementById('pedido-form-nome');
+    if (nomeEl) nomeEl.value = it ? (it.nome||'') : '';
+
+    const qtdEl = document.getElementById('pedido-form-qtd');
+    if (qtdEl) qtdEl.value = it ? (it.qtd||'') : '';
+
+    const uniEl = document.getElementById('pedido-form-unidade');
+    if (uniEl) uniEl.value = it ? (it.unidade||'un') : 'un';
+
+    const valEl = document.getElementById('pedido-form-valor');
+    if (valEl) valEl.value = it ? (it.valor||'') : '';
+
+    const urgEl = document.getElementById('pedido-form-urgencia');
+    if (urgEl) urgEl.value = it ? (it.urgencia||'normal') : 'normal';
+
+    const fornEl = document.getElementById('pedido-form-fornecedor');
+    if (fornEl) fornEl.value = it ? (it.fornecedor||'') : '';
+
+    const stEl = document.getElementById('pedido-form-status');
+    if (stEl) stEl.value = it ? (it.status||'a_comprar') : 'a_comprar';
+
+    const obsEl = document.getElementById('pedido-form-obs');
+    if (obsEl) obsEl.value = it ? (it.obs||'') : '';
+
+    m.style.setProperty('display', 'flex', 'important');
+    m.classList.add('active');
+    m.style.zIndex = '999999';
+
+    if (nomeEl) setTimeout(() => nomeEl.focus(), 100);
+  } catch(err) {
+    console.error('Erro ao abrir modal de pedido de material:', err);
+    const m = document.getElementById('modal-novo-pedido-material');
+    if (m) {
+      m.style.setProperty('display', 'flex', 'important');
+      m.classList.add('active');
+      m.style.zIndex = '999999';
+    }
+  }
 }
 
 function fecharModalNovoPedidoMaterial() {
   const m = document.getElementById('modal-novo-pedido-material');
-  if (m) m.style.display = 'none';
+  if (m) {
+    m.classList.remove('active');
+    m.style.setProperty('display', 'none', 'important');
+  }
 }
+window.abrirModalNovoPedidoMaterial = abrirModalNovoPedidoMaterial;
+window.fecharModalNovoPedidoMaterial = fecharModalNovoPedidoMaterial;
 
 function salvarPedidoMaterial() {
   const nome = (document.getElementById('pedido-form-nome').value || '').trim();
@@ -14336,7 +14429,7 @@ function enviarPedidoMaterialWhatsApp() {
 <!-- ══════════════════════════════════════════════════════════════════ -->
 <!--  MODAL: NOVO PEDIDO DE MATERIAL                                   -->
 <!-- ══════════════════════════════════════════════════════════════════ -->
-<div id="modal-novo-pedido-material" class="modal-overlay" style="display:none" onclick="if(event.target===this)fecharModalNovoPedidoMaterial()">
+<div id="modal-novo-pedido-material" class="modal-overlay" style="display:none;z-index:999999;" onclick="if(event.target===this)fecharModalNovoPedidoMaterial()">
   <div class="modal-box" onclick="event.stopPropagation()" style="max-width:480px;padding:24px 20px;">
     <div class="modal-title" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
       <div style="font-size:15px;font-weight:900;color:#fff;display:flex;align-items:center;gap:8px;"><span>📦</span> <span id="pedido-material-titulo">Novo Item de Material</span></div>
@@ -14476,7 +14569,7 @@ function enviarPedidoMaterialWhatsApp() {
 <!-- ══════════════════════════════════════════════════════════════════ -->
 <!--  MODAL: NOVO EVENTO DO CRONOGRAMA                                 -->
 <!-- ══════════════════════════════════════════════════════════════════ -->
-<div id="modal-novo-evento-cronograma" class="modal-overlay" style="display:none" onclick="if(event.target===this)fecharModalNovoEventoCronograma()">
+<div id="modal-novo-evento-cronograma" class="modal-overlay" style="display:none;z-index:999999;" onclick="if(event.target===this)fecharModalNovoEventoCronograma()">
   <div class="modal-box" onclick="event.stopPropagation()" style="max-width:460px;padding:24px 20px;">
     <div class="modal-title" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
       <div style="font-size:15px;font-weight:900;color:#fff;display:flex;align-items:center;gap:8px;"><span>📅</span> <span id="evento-cronograma-titulo">Novo Evento / Prazo</span></div>
