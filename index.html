@@ -5700,6 +5700,54 @@
       </div>
     </div>
   </div>
+<!-- ══ MODAL MUDAR STATUS DO AGENDAMENTO (ADMIN) ══ -->
+<div id="modal-status-agenda" class="modal-overlay" style="display:none;z-index:999999;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:380px;text-align:center;border:1.5px solid rgba(201,168,76,0.4);border-radius:18px;padding:22px 18px;background:#0d0e16;box-shadow:0 12px 40px rgba(0,0,0,0.7);">
+    <input type="hidden" id="modal-status-ag-id" value="">
+    <div style="font-size:36px;margin-bottom:8px;">📅</div>
+    <div style="font-size:12px;font-weight:900;color:var(--gold);text-transform:uppercase;letter-spacing:1px;">Alterar Status do Agendamento</div>
+    <h3 id="modal-status-ag-cliente" style="font-size:17px;font-weight:900;color:#fff;margin:6px 0 16px 0;">Cliente</h3>
+    
+    <div style="display:flex;flex-direction:column;gap:8px;text-align:left;">
+      <button type="button" onclick="alterarStatusAgendaManual('confirmado')" style="background:rgba(16,185,129,0.15);border:1.5px solid #10b981;color:#34d399;padding:12px 14px;border-radius:10px;font-size:13px;font-weight:900;cursor:pointer;display:flex;align-items:center;gap:10px;transition:0.2s;">
+        <span style="font-size:18px;">🟢</span>
+        <div>
+          <div>Confirmado pelo Cliente</div>
+          <div style="font-size:10.5px;color:#a7f3d0;font-weight:600;">Cliente confirmou pelo WhatsApp ou link</div>
+        </div>
+      </button>
+
+      <button type="button" onclick="alterarStatusAgendaManual('pendente')" style="background:rgba(234,179,8,0.12);border:1.5px solid rgba(234,179,8,0.4);color:#facc15;padding:12px 14px;border-radius:10px;font-size:13px;font-weight:900;cursor:pointer;display:flex;align-items:center;gap:10px;transition:0.2s;">
+        <span style="font-size:18px;">🟡</span>
+        <div>
+          <div>Aguardando Confirmação</div>
+          <div style="font-size:10.5px;color:#fde68a;font-weight:600;">Status inicial aguardando resposta</div>
+        </div>
+      </button>
+
+      <button type="button" onclick="alterarStatusAgendaManual('reagendamento')" style="background:rgba(249,115,22,0.12);border:1.5px solid rgba(249,115,22,0.4);color:#fb923c;padding:12px 14px;border-radius:10px;font-size:13px;font-weight:900;cursor:pointer;display:flex;align-items:center;gap:10px;transition:0.2s;">
+        <span style="font-size:18px;">🟠</span>
+        <div>
+          <div>Reagendamento Solicitado</div>
+          <div style="font-size:10.5px;color:#fdba74;font-weight:600;">Cliente pediu nova data/horário</div>
+        </div>
+      </button>
+
+      <button type="button" onclick="alterarStatusAgendaManual('concluido')" style="background:rgba(100,116,139,0.15);border:1.5px solid rgba(100,116,139,0.4);color:#cbd5e1;padding:12px 14px;border-radius:10px;font-size:13px;font-weight:900;cursor:pointer;display:flex;align-items:center;gap:10px;transition:0.2s;">
+        <span style="font-size:18px;">⚫</span>
+        <div>
+          <div>Concluído</div>
+          <div style="font-size:10.5px;color:#94a3b8;font-weight:600;">Atendimento e visita já realizados</div>
+        </div>
+      </button>
+    </div>
+
+    <div style="margin-top:16px;">
+      <button type="button" class="btn btn-sec" onclick="fecharModalStatusAgenda()" style="width:100%;padding:10px;font-size:12.5px;">
+        Cancelar
+      </button>
+    </div>
+  </div>
 </div>
 
 <!-- ══ MODAL DE AVALIAÇÃO DE ATENDIMENTO (AGENDA) ══ -->
@@ -14539,6 +14587,25 @@ async function verificarClipboardWhatsApp() {
     if (texto && texto !== ultimoTextoClipboard) {
       ultimoTextoClipboard = texto;
       const textoLower = texto.toLowerCase();
+
+      // 1. Detecção automática de confirmação de agendamento copiada do WhatsApp
+      const ehConfirmaAgenda = textoLower.includes('confirmar meu agendamento') ||
+                              textoLower.includes('agendamento confirmado') ||
+                              (textoLower.includes('gostaria de confirmar') && (textoLower.includes('medição') || textoLower.includes('instalação') || textoLower.includes('agendamento')));
+      const ehReagendaAgenda = textoLower.includes('reagendamento da minha visita') || textoLower.includes('reagendar');
+
+      if (ehConfirmaAgenda || ehReagendaAgenda) {
+        const matchCli = texto.match(/\(Cliente:\s*([^)]+)\)/i) || texto.match(/Cliente:\s*([^\n\r]+)/i);
+        const clienteNome = matchCli ? matchCli[1].trim() : '';
+        if (clienteNome) {
+          aplicarRespostaAgenda({
+            cliente: clienteNome,
+            acao: ehConfirmaAgenda ? 'confirmado' : 'reagendamento'
+          }, true);
+        }
+      }
+
+      // 2. Detecção automática de aprovação de O.S. (Orçamento)
       const temPalavraAprov = textoLower.includes('aprovo') || textoLower.includes('aprovado') || textoLower.includes('produção') || textoLower.includes('iniciar') || textoLower.includes('confirmado');
       const match = texto.match(/#(\d{1,5})/);
       if (match && (temPalavraAprov || textoLower.includes('sd vidros') || textoLower.includes('orçamento'))) {
@@ -15725,6 +15792,8 @@ window.addEventListener('DOMContentLoaded', function() {
 
   sincronizarStatusContratos();
   conectarRealtimeAprovacoes();
+  conectarRealtimeAgenda();
+  iniciarPollingAgenda();
   verificarAtualizacoesAprovacoesPendentes();
   setInterval(sincronizarStatusContratos, 4000);
   window.addEventListener('focus', () => {
@@ -16712,9 +16781,10 @@ function gerarMensagemWhatsAppAgendamento(ev) {
   const msgReagenda = encodeURIComponent(`🔄 Olá! Gostaria de solicitar o REAGENDAMENTO da minha visita de *${tipo}*. Poderiam me informar novas opções de horário? (Cliente: ${cliente})`);
   const msgAvalia = encodeURIComponent(`⭐ Olá! Gostaria de AVALIAR o atendimento da *${nomeEmpresa}*. (Cliente: ${cliente})`);
 
-  const linkZapConfirma = `https://wa.me/55${zapEmpresa}?text=${msgConfirma}`;
-  const linkZapReagenda = `https://wa.me/55${zapEmpresa}?text=${msgReagenda}`;
-  const linkZapAvalia = `https://wa.me/55${zapEmpresa}?text=${msgAvalia}`;
+  // Links inteligentes: registram a resposta do cliente na nuvem (ntfy) e abrem o WhatsApp
+  const linkZapConfirma = `${linkPortalConfirmacao}&acao=confirmar`;
+  const linkZapReagenda = `${linkPortalConfirmacao}&acao=reagendar`;
+  const linkZapAvalia = `${linkPortalConfirmacao}&acao=avaliar`;
 
   return `Olá ${cliente}! 😊\n\nConfirmando o seu agendamento de *${tipo}* para o dia *${dataFmt}* às *${hora}* pela *${nomeEmpresa}*.${end ? '\n📍 Local: *' + end + '*' : ''}${obs ? '\n📝 Obs: ' + obs : ''}\n\n👉 *Escolha uma opção tocando no link:*:\n\n✅ *1. CONFIRMAR AGENDAMENTO:*\n👉 ${linkZapConfirma}\n\n🔄 *2. SOLICITAR REAGENDAMENTO:*\n👉 ${linkZapReagenda}\n\n⭐ *3. AVALIAR ATENDIMENTO:*\n👉 ${linkZapAvalia}\n\n📲 *Ou escolha pela página oficial:*\n👉 ${linkPortalConfirmacao}\n\n_Ao tocar em qualquer opção, nossa equipe é notificada na hora!_\n\nAgradecemos a preferência!\n*${nomeEmpresa}* 🏠`;
 }
@@ -16878,6 +16948,205 @@ function dispararNotificacaoCompromisso(ev, diffMinutos) {
       });
     } catch(_) {}
   }
+}
+
+// ── SINCRONIZAÇÃO EM TEMPO REAL DA AGENDA (NTFY PUSH & SSE) ──
+const NTFY_AGENDA_TOPIC = 'sdmoveis_agenda_85996119824';
+let sseAgendaConn = null;
+
+function conectarRealtimeAgenda() {
+  if (typeof EventSource === 'undefined') return;
+  try {
+    if (sseAgendaConn) { try { sseAgendaConn.close(); } catch(_) {} }
+    // Sincroniza respostas das últimas 24h imediatamente
+    sseAgendaConn = new EventSource(`https://ntfy.sh/${NTFY_AGENDA_TOPIC}/sse?since=24h`);
+    sseAgendaConn.onmessage = function(e) {
+      try {
+        const item = JSON.parse(e.data);
+        if (item.event === 'message' && item.message) {
+          const dados = JSON.parse(item.message);
+          aplicarRespostaAgenda(dados, true);
+        }
+      } catch (_) {}
+    };
+    sseAgendaConn.onerror = function() {
+      if (sseAgendaConn) { try { sseAgendaConn.close(); } catch(_) {} }
+      setTimeout(conectarRealtimeAgenda, 6000);
+    };
+  } catch (err) {
+    console.warn('Realtime Agenda SSE:', err);
+  }
+}
+
+function iniciarPollingAgenda() {
+  const poll = () => {
+    fetch(`https://ntfy.sh/${NTFY_AGENDA_TOPIC}/json?poll=1&since=24h`, { cache: 'no-store' })
+      .then(r => r.text())
+      .then(txt => {
+        if (!txt) return;
+        const linhas = txt.trim().split('\n');
+        for (const l of linhas) {
+          try {
+            const item = JSON.parse(l);
+            if (item.event === 'message' && item.message) {
+              const dados = JSON.parse(item.message);
+              aplicarRespostaAgenda(dados, false);
+            }
+          } catch (_) {}
+        }
+      })
+      .catch(() => {});
+  };
+  poll();
+  setInterval(poll, 12000);
+}
+
+function aplicarRespostaAgenda(dados, tocarSom = true) {
+  if (!dados) return;
+  const clienteAlvo = String(dados.cliente || '').trim();
+  const clienteAlvoNorm = clienteAlvo.toLowerCase();
+  const idAlvo = String(dados.id || '').trim();
+  const acao = String(dados.acao || 'confirmado').toLowerCase();
+
+  // 1. Salvar no mapa de confirmações persistente
+  let confirmacoes = {};
+  try { confirmacoes = JSON.parse(localStorage.getItem('sdv_confirmacoes_agenda') || '{}'); } catch(_) {}
+  const chave = idAlvo || clienteAlvo;
+  if (chave) {
+    confirmacoes[chave] = {
+      acao: acao,
+      cliente: clienteAlvo,
+      tipo: dados.tipo,
+      data: dados.data,
+      hora: dados.hora,
+      extra: dados.extra || {},
+      respondidoEm: dados.respondidoEm || new Date().toISOString()
+    };
+    if (clienteAlvo) {
+      confirmacoes[clienteAlvo] = confirmacoes[chave];
+    }
+    localStorage.setItem('sdv_confirmacoes_agenda', JSON.stringify(confirmacoes));
+  }
+
+  // 2. Localizar compromisso correspondente e atualizar
+  const eventos = obterAgendaEventos();
+  let alterou = false;
+
+  for (let ev of eventos) {
+    const nomeEv = String(ev.cliente || '').trim().toLowerCase();
+    const matchId = idAlvo && (String(ev.id) === idAlvo);
+    const matchNome = clienteAlvoNorm && (nomeEv.includes(clienteAlvoNorm) || clienteAlvoNorm.includes(nomeEv));
+
+    if (matchId || matchNome) {
+      if (acao === 'confirmado' && !ev.confirmado) {
+        ev.confirmado = true;
+        alterou = true;
+      } else if (acao === 'reagendamento') {
+        ev.reagendado_solicitado = true;
+        if (dados.extra && dados.extra.novaDataFmt) ev.reagendamento_data = dados.extra.novaDataFmt;
+        alterou = true;
+      } else if (acao === 'avaliacao') {
+        ev.avaliacao = {
+          nota: (dados.extra && dados.extra.nota) || 5,
+          comentario: (dados.extra && dados.extra.comentario) || '',
+          data: new Date().toISOString()
+        };
+        alterou = true;
+      }
+    }
+  }
+
+  if (alterou) {
+    salvarAgendaEventos(eventos);
+    renderAgenda();
+    if (tocarSom) {
+      try { tocarChimeSucessoAgenda(); } catch(_) {}
+      mostrarToastAgenda(`🔔 O cliente <strong>${esc(clienteAlvo)}</strong> ${acao === 'confirmado' ? 'CONFIRMOU o agendamento' : (acao === 'reagendamento' ? 'solicitou REAGENDAMENTO' : 'enviou uma AVALIAÇÃO')}!`);
+    }
+  }
+}
+
+function tocarChimeSucessoAgenda() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const agora = ctx.currentTime;
+    [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, agora + i * 0.1);
+      gain.gain.setValueAtTime(0.3, agora + i * 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.001, agora + i * 0.1 + 0.35);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(agora + i * 0.1);
+      osc.stop(agora + i * 0.1 + 0.4);
+    });
+  } catch(_) {}
+}
+
+function abrirMenuStatusAgenda(id) {
+  const eventos = obterAgendaEventos();
+  const ev = eventos.find(x => x.id === id);
+  if (!ev) return;
+  const clienteNome = ev.cliente || 'Cliente';
+
+  const modal = document.getElementById('modal-status-agenda');
+  if (modal) {
+    const elCli = document.getElementById('modal-status-ag-cliente');
+    const elId = document.getElementById('modal-status-ag-id');
+    if (elCli) elCli.textContent = clienteNome;
+    if (elId) elId.value = id;
+    modal.style.display = 'flex';
+    return;
+  }
+
+  // Fallback rápido
+  alternarConfirmadoAgenda(id);
+}
+
+function alterarStatusAgendaManual(acao) {
+  const elId = document.getElementById('modal-status-ag-id');
+  const id = elId ? elId.value : '';
+  fecharModalStatusAgenda();
+  if (!id) return;
+
+  const eventos = obterAgendaEventos();
+  const ev = eventos.find(x => x.id === id);
+  if (!ev) return;
+  const clienteNome = ev.cliente || 'Cliente';
+
+  try {
+    const confirmacoes = JSON.parse(localStorage.getItem('sdv_confirmacoes_agenda') || '{}');
+    if (acao === 'confirmado') {
+      ev.confirmado = true;
+      ev.concluido = false;
+      confirmacoes[ev.id] = { acao: 'confirmado', cliente: clienteNome, respondidoEm: new Date().toISOString() };
+      confirmacoes[clienteNome] = confirmacoes[ev.id];
+    } else if (acao === 'reagendamento') {
+      ev.confirmado = false;
+      ev.concluido = false;
+      confirmacoes[ev.id] = { acao: 'reagendamento', cliente: clienteNome, respondidoEm: new Date().toISOString() };
+      confirmacoes[clienteNome] = confirmacoes[ev.id];
+    } else if (acao === 'concluido') {
+      ev.concluido = true;
+    } else if (acao === 'pendente') {
+      ev.confirmado = false;
+      ev.concluido = false;
+      delete confirmacoes[ev.id];
+      delete confirmacoes[clienteNome];
+    }
+    localStorage.setItem('sdv_confirmacoes_agenda', JSON.stringify(confirmacoes));
+  } catch(_) {}
+
+  salvarAgendaEventos(eventos);
+  renderAgenda();
+  mostrarToastAgenda(`Status do agendamento de <strong>${esc(clienteNome)}</strong> atualizado!`);
+}
+
+function fecharModalStatusAgenda() {
+  const modal = document.getElementById('modal-status-agenda');
+  if (modal) modal.style.display = 'none';
 }
 
 // ── FUNÇÕES DE CONFIRMAÇÃO E AVALIAÇÃO DA AGENDA ──
@@ -17352,7 +17621,7 @@ function renderAgenda() {
         <div class="hist-top" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
             <span class="hist-num">${numAg}</span>
-            <span class="status-pill ${statusAgClass} status-bloqueada" style="cursor:default;opacity:0.95;user-select:none;" title="🔒 Status travado: atualizado automaticamente quando o cliente escolher a opção desejada">${statusAgLabel}</span>
+            <span class="status-pill ${statusAgClass}" onclick="abrirMenuStatusAgenda('${ev.id}')" title="Toque para alterar ou confirmar status do agendamento" style="cursor:pointer;user-select:none;transition:transform 0.15s;">${statusAgLabel} ▾</span>
             ${isHoje ? '<span style="font-size:10px;padding:2px 8px;border-radius:999px;background:#ef4444;color:#fff;font-weight:900;">HOJE</span>' : ''}
           </div>
           <span class="hist-date">${dataFmt}</span>

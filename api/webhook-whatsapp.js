@@ -25,8 +25,51 @@ module.exports = async (req, res) => {
       return res.status(200).json({ ok: false, msg: 'Nenhum texto de mensagem detectado no payload.' });
     }
 
-    // Verifica se a mensagem contém indicação de aprovação
+    // 1. Verifica se é mensagem de confirmação de agendamento (Agenda)
     const textoMinusculo = texto.toLowerCase();
+    const ehConfirmaAgenda = textoMinusculo.includes('confirmar meu agendamento') ||
+                            textoMinusculo.includes('confirmando o seu agendamento') ||
+                            textoMinusculo.includes('agendamento confirmado pelo cliente') ||
+                            textoMinusculo.includes('gostaria de confirmar meu agendamento');
+    const ehReagendaAgenda = textoMinusculo.includes('reagendamento da minha visita') ||
+                            textoMinusculo.includes('reagendamento') ||
+                            textoMinusculo.includes('novas opções de horário');
+    const ehAvaliaAgenda = textoMinusculo.includes('avaliar o atendimento') ||
+                          textoMinusculo.includes('deixei uma avaliação');
+
+    if (ehConfirmaAgenda || ehReagendaAgenda || ehAvaliaAgenda) {
+      const matchCli = texto.match(/\(Cliente:\s*([^)]+)\)/i) || texto.match(/Cliente:\s*([^\n\r]+)/i);
+      const clienteNome = matchCli ? matchCli[1].trim() : 'Cliente';
+      const acao = ehConfirmaAgenda ? 'confirmado' : (ehReagendaAgenda ? 'reagendamento' : 'avaliacao');
+      const NTFY_AGENDA_TOPIC = 'sdmoveis_agenda_85996119824';
+
+      try {
+        await fetch(`https://ntfy.sh/${NTFY_AGENDA_TOPIC}`, {
+          method: 'POST',
+          headers: {
+            'Title': `Agenda: ${clienteNome} - ${acao.toUpperCase()}`,
+            'Tags': acao === 'confirmado' ? 'white_check_mark' : (acao === 'reagendamento' ? 'arrows_counterclockwise' : 'star')
+          },
+          body: JSON.stringify({
+            tipo_evento: 'agenda_resposta_cliente',
+            cliente: clienteNome,
+            acao: acao,
+            texto_origem: texto,
+            respondidoEm: new Date().toISOString()
+          })
+        });
+      } catch (_) {}
+
+      return res.status(200).json({
+        ok: true,
+        tipo: 'agenda',
+        cliente: clienteNome,
+        acao: acao,
+        msg: 'Confirmação de agendamento processada com sucesso!'
+      });
+    }
+
+    // 2. Verifica se a mensagem contém indicação de aprovação de Orçamento (OS)
     const ehAprovacao = textoMinusculo.includes('aprovo') ||
                         textoMinusculo.includes('aprovado') ||
                         textoMinusculo.includes('pode iniciar a produção') ||
@@ -34,7 +77,7 @@ module.exports = async (req, res) => {
                         textoMinusculo.includes('autorizo');
 
     if (!ehAprovacao) {
-      return res.status(200).json({ ok: false, msg: 'Mensagem recebida, mas não é uma confirmação de aprovação.' });
+      return res.status(200).json({ ok: false, msg: 'Mensagem recebida, mas não é uma confirmação de orçamento nem de agendamento.' });
     }
 
     // Extrai o número da OS (ex: "#0006" ou "0006")

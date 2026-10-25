@@ -1,5 +1,5 @@
-// Service Worker PWA – SD Móveis Projetados v8.3 (Alarme Ponto Segundo Plano + Notificações)
-const CACHE_NAME = 'sdmoveisprojetados-v8.3';
+// Service Worker PWA – SD Móveis Projetados v8.4 (Alarme Ponto Segundo Plano + Notificações)
+const CACHE_NAME = 'sdmoveisprojetados-v8.4';
 const ASSETS = [
   '/',
   '/index.html',

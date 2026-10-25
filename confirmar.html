@@ -492,6 +492,32 @@
       }
     }
 
+    async function broadcastConfirmacaoNtfy(acao, extra) {
+      try {
+        const payload = {
+          tipo_evento: 'agenda_resposta_cliente',
+          id: agId,
+          cliente: clienteNome,
+          acao: acao,
+          tipo: tipoServico,
+          data: dataFmt,
+          hora: horaAgendamento,
+          extra: extra || {},
+          respondidoEm: new Date().toISOString()
+        };
+        await fetch('https://ntfy.sh/sdmoveis_agenda_85996119824', {
+          method: 'POST',
+          headers: {
+            'Title': `Agenda: ${clienteNome} - ${acao.toUpperCase()}`,
+            'Tags': acao === 'confirmado' ? 'white_check_mark' : (acao === 'reagendamento' ? 'arrows_counterclockwise' : 'star')
+          },
+          body: JSON.stringify(payload)
+        });
+      } catch (e) {
+        console.warn('ntfy erro:', e);
+      }
+    }
+
     function exibirSucesso(titulo, msg, badge) {
       document.getElementById('card-sucesso').style.display = 'block';
       document.getElementById('sucesso-titulo').textContent = titulo;
@@ -520,6 +546,7 @@
 
       ultimaMensagemZap = msgEmpresa;
       registrarConfirmacaoLocal('confirmado', { dataFmt, horaAgendamento });
+      broadcastConfirmacaoNtfy('confirmado', { dataFmt, horaAgendamento });
 
       exibirSucesso(
         'Agendamento Confirmado! 🎉',
@@ -553,6 +580,7 @@
 
       ultimaMensagemZap = msgEmpresa;
       registrarConfirmacaoLocal('reagendamento', { novaDataFmt, periodo, obs });
+      broadcastConfirmacaoNtfy('reagendamento', { novaDataFmt, periodo, obs });
 
       exibirSucesso(
         'Solicitação de Reagendamento Enviada!',
@@ -580,6 +608,7 @@
 
       ultimaMensagemZap = msgEmpresa;
       registrarConfirmacaoLocal('avaliacao', { nota: notaSelecionada, comentario: coment });
+      broadcastConfirmacaoNtfy('avaliacao', { nota: notaSelecionada, comentario: coment });
 
       exibirSucesso(
         'Avaliação Enviada! ⭐',
@@ -598,6 +627,18 @@
       const url = `https://wa.me/55${numEmpresaLimpo}?text=${encodeURIComponent(ultimaMensagemZap)}`;
       window.open(url, '_blank');
     }
+
+    // Auto-execução de ação via link
+    try {
+      const acaoAuto = params.get('acao');
+      if (acaoAuto === 'confirmar') {
+        setTimeout(executarConfirmacao, 400);
+      } else if (acaoAuto === 'reagendar') {
+        setTimeout(mostrarBoxReagendar, 200);
+      } else if (acaoAuto === 'avaliar') {
+        setTimeout(mostrarBoxAvaliar, 200);
+      }
+    } catch (_) {}
   </script>
 </body>
 </html>
