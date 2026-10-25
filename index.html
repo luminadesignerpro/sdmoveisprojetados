@@ -17348,17 +17348,17 @@ function renderAgenda() {
     return `
       <div style="background:#10111a;border:1.5px solid ${isConfirmadoCli ? '#10b981' : (isHoje ? 'rgba(56,189,248,0.35)' : 'rgba(255,255,255,0.08)')};border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 6px 20px rgba(0,0,0,0.5);position:relative;">
 
-        <!-- TOPO: #ID + Status Pill + Data (Exatamente como na primeira imagem) -->
+        <!-- TOPO: #ID + Status Pill Travado + Data -->
         <div class="hist-top" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
             <span class="hist-num">${numAg}</span>
-            <span class="status-pill ${statusAgClass}" onclick="alternarConfirmadoAgenda('${ev.id}')" title="Toque para alternar confirmação" style="cursor:pointer;user-select:none;">${statusAgLabel}</span>
+            <span class="status-pill ${statusAgClass} status-bloqueada" style="cursor:default;opacity:0.95;user-select:none;" title="🔒 Status travado: atualizado automaticamente quando o cliente escolher a opção desejada">${statusAgLabel}</span>
             ${isHoje ? '<span style="font-size:10px;padding:2px 8px;border-radius:999px;background:#ef4444;color:#fff;font-weight:900;">HOJE</span>' : ''}
           </div>
           <span class="hist-date">${dataFmt}</span>
         </div>
 
-        <!-- LINHA AÇÕES: Checkbox + Botões -->
+        <!-- LINHA AÇÕES: Checkbox + WhatsApp + Avaliar Travado + Editar + Excluir -->
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
             <button onclick="alternarConcluidoAgenda('${ev.id}')" title="${ev.concluido ? 'Reabrir compromisso' : 'Marcar como concluído'}" style="background:${ev.concluido ? '#10b981' : 'transparent'};border:1.5px solid ${ev.concluido ? '#10b981' : 'rgba(255,255,255,0.25)'};color:#fff;width:26px;height:26px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">
@@ -17367,14 +17367,10 @@ function renderAgenda() {
             ${zapLink ? `<a href="${zapLink}" target="_blank" style="padding:6px 11px;font-size:12px;font-weight:800;border-radius:8px;text-decoration:none;background:linear-gradient(135deg,#25D366,#1cb85a);color:#fff;display:inline-flex;align-items:center;gap:5px;box-shadow:0 3px 10px rgba(37,211,102,0.3);">💬 WhatsApp</a>` : ''}
           </div>
 
-          <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
-            <button onclick="alternarConfirmadoAgenda('${ev.id}')" title="Alternar status de confirmação" style="background:${isConfirmado ? 'rgba(16,185,129,0.25)' : 'rgba(16,185,129,0.12)'};border:1px solid ${isConfirmado ? '#10b981' : 'rgba(16,185,129,0.35)'};color:${isConfirmado ? '#34d399' : '#a7f3d0'};padding:6px 10px;border-radius:8px;cursor:pointer;font-size:11.5px;font-weight:800;display:inline-flex;align-items:center;gap:4px;">
-              ${isConfirmado ? '✅ Confirmado' : '✅ Confirmar'}
-            </button>
-            <button onclick="reagendarCompromissoAgenda('${ev.id}')" style="background:rgba(59,130,246,0.18);border:1px solid rgba(59,130,246,0.4);color:#93c5fd;padding:6px 10px;border-radius:8px;cursor:pointer;font-size:11.5px;font-weight:800;display:inline-flex;align-items:center;gap:4px;">🔄 Reagendar</button>
-            <button onclick="abrirModalAvaliarAgenda('${ev.id}')" title="Avaliar atendimento" style="background:${temAvaliacao ? 'rgba(234,179,8,0.25)' : 'rgba(234,179,8,0.12)'};border:1px solid rgba(234,179,8,0.4);color:#facc15;padding:6px 10px;border-radius:8px;cursor:pointer;font-size:11.5px;font-weight:800;display:inline-flex;align-items:center;gap:4px;">
-              ⭐ ${temAvaliacao ? 'Avaliado' : 'Avaliar'}
-            </button>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <span style="background:${temAvaliacao ? 'rgba(234,179,8,0.22)' : 'rgba(255,255,255,0.05)'};border:1px solid ${temAvaliacao ? 'rgba(234,179,8,0.45)' : 'rgba(255,255,255,0.12)'};color:${temAvaliacao ? '#facc15' : 'var(--muted)'};padding:6px 11px;border-radius:8px;font-size:11.5px;font-weight:800;display:inline-flex;align-items:center;gap:4px;cursor:default;user-select:none;" title="${temAvaliacao ? '🔒 Avaliação registrada pelo cliente' : '🔒 Botão travado: aguardando avaliação do cliente'}">
+              ⭐ ${temAvaliacao ? 'Avaliado' : 'Aguardando Avaliação'}
+            </span>
             <button onclick="abrirModalNovoCompromissoAgenda('${ev.id}')" style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.35);color:#fbbf24;width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:12px;display:inline-flex;align-items:center;justify-content:center;" title="Editar">✏️</button>
             <button class="item-del" onclick="excluirCompromissoAgenda('${ev.id}')" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.35);color:#f87171;width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:12px;display:inline-flex;align-items:center;justify-content:center;" title="Excluir">✕</button>
           </div>
@@ -26519,7 +26515,7 @@ function renderAgendaPessoal() {
         <div class="hist-top" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
             <span class="hist-num">${numAg}</span>
-            <span class="status-pill ${statusAgClass}" onclick="alternarConcluidoPessoal('${ev.id}')" title="Toque para alternar status" style="cursor:pointer;user-select:none;">${statusAgLabel}</span>
+            <span class="status-pill ${statusAgClass} status-bloqueada" style="cursor:default;opacity:0.95;user-select:none;" title="🔒 Status gerenciado pelo sistema">${statusAgLabel}</span>
             ${isHoje ? '<span style="font-size:10px;padding:2px 8px;border-radius:999px;background:#ef4444;color:#fff;font-weight:900;">HOJE</span>' : ''}
           </div>
           <span class="hist-date">${dataFmt}</span>
