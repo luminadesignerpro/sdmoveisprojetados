@@ -2413,9 +2413,6 @@
         <div style="font-size:12px;color:var(--muted);margin-top:2px;">Compromissos particulares, reuniões, lembretes e tarefas</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-        <button class="btn btn-primary btn-sm" onclick="abrirModalNovoCompromissoPessoal()" style="font-size:12px;padding:9px 15px;font-weight:800;">
-          ➕ Novo Compromisso Pessoal
-        </button>
         <div id="agenda-pessoal-botoes-custom" style="display:inline-flex;gap:8px;align-items:center;flex-wrap:wrap;"></div>
         <button type="button" class="btn btn-sec btn-sm" onclick="adicionarNovoBotaoAgendaPessoal()" style="font-size:12px;padding:9px 13px;font-weight:800;border:1.5px dashed rgba(201,168,76,0.6);background:rgba(201,168,76,0.08);color:var(--gold-light);cursor:pointer;display:inline-flex;align-items:center;gap:5px;" title="Adicionar um novo botão personalizado para compromissos">
           ➕ Adicionar Botão
@@ -2439,15 +2436,24 @@
       </div>
     </div>
 
-    <!-- Lista de Compromissos Pessoais -->
-    <div class="card">
+    <!-- Lista de Compromissos Pessoais (Segunda Imagem) -->
+    <div class="card" id="card-meus-compromissos-pessoais">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
-        <div class="card-title" style="margin-bottom:0;">📝 Meus Compromissos Pessoais</div>
-        <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none;">
-          <button type="button" class="btn-filter-agenda active" id="btn-pessoal-filtro-pendentes" onclick="filtrarAgendaPessoal('pendentes')" style="white-space:nowrap;">Pendentes</button>
-          <button type="button" class="btn-filter-agenda" id="btn-pessoal-filtro-todos" onclick="filtrarAgendaPessoal('todos')" style="white-space:nowrap;">Todos</button>
-          <button type="button" class="btn-filter-agenda" id="btn-pessoal-filtro-concluidos" onclick="filtrarAgendaPessoal('concluidos')" style="white-space:nowrap;">Concluídos</button>
-          <button type="button" class="btn-filter-agenda" id="btn-pessoal-filtro-historico" onclick="filtrarAgendaPessoal('historico')" style="white-space:nowrap;">Histórico</button>
+        <div class="card-title" style="margin-bottom:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span>📝 Meus Compromissos Pessoais</span>
+          <span id="agenda-pessoal-badge-categoria" style="font-size:11px;padding:3px 10px;border-radius:999px;background:rgba(201,168,76,0.18);border:1px solid var(--gold);color:var(--gold-light);font-weight:800;display:none;"></span>
+          <button type="button" id="agenda-pessoal-btn-limpar-categoria" onclick="limparFiltroCategoriaAgendaPessoal()" style="display:none;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.18);color:#cbd5e1;padding:2px 8px;border-radius:6px;font-size:10px;cursor:pointer;font-weight:700;">Ver Todas</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none;">
+            <button type="button" class="btn-filter-agenda active" id="btn-pessoal-filtro-pendentes" onclick="filtrarAgendaPessoal('pendentes')" style="white-space:nowrap;">Pendentes</button>
+            <button type="button" class="btn-filter-agenda" id="btn-pessoal-filtro-todos" onclick="filtrarAgendaPessoal('todos')" style="white-space:nowrap;">Todos</button>
+            <button type="button" class="btn-filter-agenda" id="btn-pessoal-filtro-concluidos" onclick="filtrarAgendaPessoal('concluidos')" style="white-space:nowrap;">Concluídos</button>
+            <button type="button" class="btn-filter-agenda" id="btn-pessoal-filtro-historico" onclick="filtrarAgendaPessoal('historico')" style="white-space:nowrap;">Histórico</button>
+          </div>
+          <button type="button" class="btn btn-primary btn-sm" onclick="abrirModalNovoCompromissoPessoal(null, false, _categoriaAgendaPessoalAtiva)" style="font-size:12px;padding:7px 12px;font-weight:900;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;" title="Adicionar novo compromisso nesta categoria">
+            <span>➕ Novo Compromisso</span>
+          </button>
         </div>
       </div>
       <div id="agenda-pessoal-lista">
@@ -27152,7 +27158,26 @@ function abrirModalNovoCompromissoPessoal(id, isReagendar = false, categoriaCust
   if (inpObs) inpObs.value = '';
 
   if (iconeEl) iconeEl.textContent = '📅';
-  if (titEl) titEl.textContent = categoriaCustom ? `Novo Agendamento (${categoriaCustom})` : 'Novo Agendamento / Visita';
+  const catAlvo = categoriaCustom || _categoriaAgendaPessoalAtiva;
+  if (titEl) titEl.textContent = catAlvo ? `Novo Compromisso (${catAlvo})` : 'Novo Agendamento / Visita';
+
+  try { popularCategoriasModalPessoal(); } catch(_) {}
+
+  if (!id && selTipo) {
+    if (catAlvo) {
+      let optExiste = Array.from(selTipo.options).find(o => o.value.toLowerCase() === catAlvo.toLowerCase());
+      if (!optExiste) {
+        const newOpt = document.createElement('option');
+        newOpt.value = catAlvo;
+        newOpt.textContent = '📅 ' + catAlvo;
+        selTipo.appendChild(newOpt);
+        optExiste = newOpt;
+      }
+      selTipo.value = optExiste.value;
+    } else {
+      selTipo.value = 'Compromisso Pessoal';
+    }
+  }
 
   if (id) {
     const ev = obterEventosAgendaPessoal().find(x => String(x.id) === String(id));
@@ -27308,21 +27333,40 @@ function excluirCompromissoPessoal(id) {
   renderAgendaPessoal();
 }
 
-// ── BOTÕES DINÂMICOS CUSTOMIZADOS DA AGENDA PESSOAL ──
+// ── BOTÕES DINÂMICOS & CATEGORIAS DA AGENDA PESSOAL ──
 const STORAGE_KEY_BOTOES_AGENDA_PESSOAL = 'sdv_botoes_agenda_pessoal_custom';
+let _categoriaAgendaPessoalAtiva = 'Novo Compromisso Pessoal';
 
 function obterBotoesAgendaPessoalCustom() {
+  let botoes = [];
   try {
     const raw = localStorage.getItem(STORAGE_KEY_BOTOES_AGENDA_PESSOAL);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length) return parsed;
+      if (Array.isArray(parsed)) botoes = parsed;
     }
   } catch(_) {}
-  // Botão padrão inicial solicitado pelo usuário: '+compromisso'
-  const padrao = [{ id: 'btn_comp_default', nome: '+compromisso' }];
-  salvarBotoesAgendaPessoalCustom(padrao);
-  return padrao;
+
+  // Filtra botões inválidos
+  botoes = botoes.filter(b => b && b.nome && b.nome.trim() !== '');
+
+  // Converte antigo '+compromisso' para 'Novo Compromisso Pessoal'
+  botoes.forEach(b => {
+    if (b.nome === '+compromisso') b.nome = 'Novo Compromisso Pessoal';
+  });
+
+  // Garante que o botão 'Novo Compromisso Pessoal' exista com ✏️ e ✕ se ainda não existir
+  const temCompromisso = botoes.some(b => 
+    b.nome.toLowerCase().includes('compromisso pessoal') || 
+    b.nome.toLowerCase() === 'novo compromisso pessoal'
+  );
+
+  if (!temCompromisso) {
+    botoes.unshift({ id: 'btn_comp_pessoal', nome: 'Novo Compromisso Pessoal' });
+    salvarBotoesAgendaPessoalCustom(botoes);
+  }
+
+  return botoes;
 }
 
 function salvarBotoesAgendaPessoalCustom(lista) {
@@ -27331,74 +27375,185 @@ function salvarBotoesAgendaPessoalCustom(lista) {
   } catch(_) {}
 }
 
+function selecionarCategoriaAgendaPessoal(id, nome) {
+  _categoriaAgendaPessoalAtiva = nome;
+  renderizarBotoesAgendaPessoalCustom();
+  renderAgendaPessoal();
+
+  // Rola a tela suavemente até a seção de Meus Compromissos Pessoais (Segunda Imagem)
+  setTimeout(() => {
+    const el = document.getElementById('card-meus-compromissos-pessoais');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, 60);
+}
+
+function limparFiltroCategoriaAgendaPessoal() {
+  _categoriaAgendaPessoalAtiva = null;
+  renderizarBotoesAgendaPessoalCustom();
+  renderAgendaPessoal();
+}
+
+function filtrarAgendaPessoal(filtro) {
+  _filtroAgendaPessoal = filtro;
+  ['pendentes', 'todos', 'concluidos', 'historico'].forEach(f => {
+    const b = document.getElementById('btn-pessoal-filtro-' + f);
+    if (b) b.classList.toggle('active', f === filtro);
+  });
+  renderAgendaPessoal();
+}
+
 function renderizarBotoesAgendaPessoalCustom() {
   const container = document.getElementById('agenda-pessoal-botoes-custom');
   if (!container) return;
   const botoes = obterBotoesAgendaPessoalCustom();
 
-  container.innerHTML = botoes.map(btn => `
-    <div style="display:inline-flex;align-items:center;background:linear-gradient(135deg, rgba(201,168,76,0.22), rgba(20,20,30,0.85));border:1.5px solid var(--gold);border-radius:var(--r-sm);padding:2px 4px 2px 8px;gap:4px;box-shadow:0 3px 12px rgba(201,168,76,0.18);">
-      <button type="button" onclick="executarAcaoBotaoCustomPessoal('${btn.id}')" style="background:transparent;border:none;color:var(--gold-light);font-weight:900;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;padding:6px 4px;font-family:inherit;" title="Criar compromisso com ${typeof esc === 'function' ? esc(btn.nome) : btn.nome}">
-        <span>📅</span> <span>${typeof esc === 'function' ? esc(btn.nome) : btn.nome}</span>
-      </button>
-      <button type="button" onclick="editarNomeBotaoAgendaPessoal('${btn.id}')" title="Editar nome deste botão" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#cbd5e1;cursor:pointer;border-radius:6px;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;transition:all 0.15s;">
-        ✏️
-      </button>
-      ${botoes.length > 1 ? `
-        <button type="button" onclick="removerBotaoAgendaPessoal('${btn.id}')" title="Remover este botão" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;cursor:pointer;border-radius:6px;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;transition:all 0.15s;">
+  if (!_categoriaAgendaPessoalAtiva && botoes.length) {
+    _categoriaAgendaPessoalAtiva = botoes[0].nome;
+  }
+
+  container.innerHTML = botoes.map(btn => {
+    const isAtivo = _categoriaAgendaPessoalAtiva && _categoriaAgendaPessoalAtiva.toLowerCase() === btn.nome.toLowerCase();
+    const bg = isAtivo 
+      ? 'linear-gradient(135deg, rgba(201,168,76,0.5), rgba(201,168,76,0.22))' 
+      : 'linear-gradient(135deg, rgba(201,168,76,0.18), rgba(20,20,30,0.85))';
+    const border = isAtivo ? '2px solid var(--gold)' : '1.5px solid rgba(201,168,76,0.4)';
+    const shadow = isAtivo ? '0 0 16px rgba(201,168,76,0.45)' : '0 3px 10px rgba(0,0,0,0.4)';
+
+    return `
+      <div style="display:inline-flex;align-items:center;background:${bg};border:${border};border-radius:var(--r-sm);padding:2px 4px 2px 8px;gap:5px;box-shadow:${shadow};transition:all 0.2s;">
+        <button type="button" onclick="selecionarCategoriaAgendaPessoal('${btn.id}', '${typeof esc === 'function' ? esc(btn.nome) : btn.nome}')" style="background:transparent;border:none;color:${isAtivo ? '#fff' : 'var(--gold-light)'};font-weight:${isAtivo ? '900' : '800'};font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:6px 4px;font-family:inherit;" title="Abrir compromissos de: ${typeof esc === 'function' ? esc(btn.nome) : btn.nome}">
+          <span>📅</span> <span>${typeof esc === 'function' ? esc(btn.nome) : btn.nome}</span>
+        </button>
+        <button type="button" onclick="editarNomeBotaoAgendaPessoal('${btn.id}')" title="Editar nome deste botão" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.16);color:#cbd5e1;cursor:pointer;border-radius:6px;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;transition:all 0.15s;">
+          ✏️
+        </button>
+        <button type="button" onclick="removerBotaoAgendaPessoal('${btn.id}')" title="Excluir este botão" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;cursor:pointer;border-radius:6px;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;transition:all 0.15s;">
           ✕
         </button>
-      ` : ''}
-    </div>
-  `).join('');
+      </div>
+    `;
+  }).join('');
 }
 
 function adicionarNovoBotaoAgendaPessoal() {
-  const nome = prompt('Digite o nome do novo botão para a Agenda Pessoal:', '+compromisso');
+  const nome = prompt('Digite o nome do novo botão / categoria para a Agenda Pessoal:', '');
   if (!nome || !nome.trim()) return;
   const botoes = obterBotoesAgendaPessoalCustom();
-  botoes.push({
+  const novoBtn = {
     id: 'btn_comp_' + Date.now(),
     nome: nome.trim()
-  });
+  };
+  botoes.push(novoBtn);
   salvarBotoesAgendaPessoalCustom(botoes);
-  renderizarBotoesAgendaPessoalCustom();
-  if (typeof mostrarToastAprovacao === 'function') mostrarToastAprovacao('✅ Botão "' + nome.trim() + '" adicionado!');
+  selecionarCategoriaAgendaPessoal(novoBtn.id, novoBtn.nome);
+  if (typeof mostrarToastAprovacao === 'function') mostrarToastAprovacao('✅ Categoria "' + nome.trim() + '" criada com sucesso!');
 }
 
 function editarNomeBotaoAgendaPessoal(id) {
   const botoes = obterBotoesAgendaPessoalCustom();
   const btn = botoes.find(b => b.id === id);
   if (!btn) return;
+  const nomeAntigo = btn.nome;
   const novoNome = prompt('Editar nome do botão:', btn.nome);
   if (!novoNome || !novoNome.trim()) return;
   btn.nome = novoNome.trim();
+
+  // Atualiza também os compromissos que pertenciam à categoria antiga
+  let eventos = obterEventosAgendaPessoal();
+  let alterouEventos = false;
+  eventos.forEach(ev => {
+    if (ev.tipo && ev.tipo.toLowerCase() === nomeAntigo.toLowerCase()) {
+      ev.tipo = btn.nome;
+      alterouEventos = true;
+    }
+  });
+  if (alterouEventos) salvarEventosAgendaPessoal(eventos);
+
+  if (_categoriaAgendaPessoalAtiva === nomeAntigo) {
+    _categoriaAgendaPessoalAtiva = btn.nome;
+  }
+
   salvarBotoesAgendaPessoalCustom(botoes);
   renderizarBotoesAgendaPessoalCustom();
+  renderAgendaPessoal();
   if (typeof mostrarToastAprovacao === 'function') mostrarToastAprovacao('✏️ Botão renomeado para "' + btn.nome + '"!');
 }
 
 function removerBotaoAgendaPessoal(id) {
-  if (!confirm('Deseja realmente remover este botão?')) return;
-  let botoes = obterBotoesAgendaPessoalCustom().filter(b => b.id !== id);
-  if (!botoes.length) {
-    botoes = [{ id: 'btn_comp_default', nome: '+compromisso' }];
-  }
-  salvarBotoesAgendaPessoalCustom(botoes);
-  renderizarBotoesAgendaPessoalCustom();
-}
-
-function executarAcaoBotaoCustomPessoal(id) {
   const botoes = obterBotoesAgendaPessoalCustom();
   const btn = botoes.find(b => b.id === id);
-  const rotulo = btn ? btn.nome : '+compromisso';
-  abrirModalNovoCompromissoPessoal(null, false, rotulo);
+  if (!btn) return;
+
+  if (!confirm(`Deseja realmente excluir o botão "${btn.nome}"?`)) return;
+
+  let novaLista = botoes.filter(b => b.id !== id);
+  if (!novaLista.length) {
+    novaLista = [{ id: 'btn_comp_pessoal', nome: 'Novo Compromisso Pessoal' }];
+  }
+  salvarBotoesAgendaPessoalCustom(novaLista);
+
+  if (_categoriaAgendaPessoalAtiva === btn.nome) {
+    _categoriaAgendaPessoalAtiva = novaLista[0].nome;
+  }
+
+  renderizarBotoesAgendaPessoalCustom();
+  renderAgendaPessoal();
+  if (typeof mostrarToastAprovacao === 'function') mostrarToastAprovacao('🗑️ Botão excluído com sucesso.');
+}
+
+function popularCategoriasModalPessoal() {
+  const selTipo = document.getElementById('pessoal-novo-tipo');
+  if (!selTipo) return;
+  const botoes = obterBotoesAgendaPessoalCustom();
+
+  botoes.forEach(b => {
+    const existe = Array.from(selTipo.options).some(opt => opt.value.toLowerCase() === b.nome.toLowerCase());
+    if (!existe) {
+      const opt = document.createElement('option');
+      opt.value = b.nome;
+      opt.textContent = '📅 ' + b.nome;
+      selTipo.appendChild(opt);
+    }
+  });
 }
 
 function renderAgendaPessoal() {
   try { renderizarBotoesAgendaPessoalCustom(); } catch(_) {}
-  const lista = obterEventosAgendaPessoal();
+  try { popularCategoriasModalPessoal(); } catch(_) {}
+
+  const listaOriginal = obterEventosAgendaPessoal();
   const hojeStr = new Date().toISOString().split('T')[0];
+
+  // Elementos do Cabeçalho do Card de Compromissos
+  const badgeCat = document.getElementById('agenda-pessoal-badge-categoria');
+  const btnLimpar = document.getElementById('agenda-pessoal-btn-limpar-categoria');
+  if (_categoriaAgendaPessoalAtiva) {
+    if (badgeCat) {
+      badgeCat.textContent = '📁 ' + _categoriaAgendaPessoalAtiva;
+      badgeCat.style.display = 'inline-block';
+    }
+    if (btnLimpar) btnLimpar.style.display = 'inline-block';
+  } else {
+    if (badgeCat) badgeCat.style.display = 'none';
+    if (btnLimpar) btnLimpar.style.display = 'none';
+  }
+
+  // Filtragem por Categoria
+  let lista = [...listaOriginal];
+  if (_categoriaAgendaPessoalAtiva) {
+    const catLower = _categoriaAgendaPessoalAtiva.trim().toLowerCase();
+    const isCompromissoPessoal = catLower.includes('compromisso pessoal') || catLower === 'novo compromisso pessoal';
+
+    lista = lista.filter(ev => {
+      const tipoLower = (ev.tipo || '').trim().toLowerCase();
+      if (isCompromissoPessoal) {
+        return !tipoLower || tipoLower === 'compromisso pessoal' || tipoLower === 'novo compromisso pessoal' || tipoLower === 'medição técnica';
+      }
+      return tipoLower === catLower;
+    });
+  }
 
   let totalHoje = 0;
   let totalPendentes = 0;
@@ -27425,7 +27580,12 @@ function renderAgendaPessoal() {
   // ── ABA HISTÓRICO DA AGENDA PESSOAL ──
   if (_filtroAgendaPessoal === 'historico') {
     if (!lista.length) {
-      cont.innerHTML = '<div class="empty">Nenhum histórico de compromisso pessoal registrado ainda.</div>';
+      cont.innerHTML = `
+        <div class="empty" style="padding:26px 14px;text-align:center;">
+          <div style="font-size:26px;margin-bottom:6px;">📂</div>
+          <div style="font-weight:700;color:#cbd5e1;">Nenhum histórico registrado ${_categoriaAgendaPessoalAtiva ? 'em "' + esc(_categoriaAgendaPessoalAtiva) + '"' : 'ainda'}.</div>
+        </div>
+      `;
       return;
     }
 
@@ -27438,14 +27598,14 @@ function renderAgendaPessoal() {
 
     cont.innerHTML = histList.map(ev => {
       const dataFmt = ev.data ? ev.data.split('-').reverse().join('/') : 'Sem data';
-      const isPast = ev.data && ev.data < hojeStr;
       const zapClean = (ev.tel || '').replace(/\D/g, '');
       const zapLink = zapClean.length >= 8 ? `https://wa.me/55${zapClean}` : '';
       const notifPill = formatarTempoNotificacao(ev.notificar_minutos || 30);
+      const catExibida = ev.tipo || _categoriaAgendaPessoalAtiva || 'Compromisso Pessoal';
 
       return `
         <div style="background:#10111a;border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 6px 20px rgba(0,0,0,0.5);">
-          <!-- LINHA SUPERIOR COM BOTÕES PADRONIZADOS (COMO IMAGEM 3) -->
+          <!-- LINHA SUPERIOR COM BOTÕES PADRONIZADOS (COMO SEGUNDA IMAGEM) -->
           <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
             <div style="display:flex;align-items:center;gap:8px;">
               <button onclick="alternarConcluidoPessoal('${ev.id}')" title="${ev.concluido ? 'Reabrir' : 'Concluir'}" style="background:${ev.concluido ? '#10b981' : 'transparent'};border:1.5px solid ${ev.concluido ? '#10b981' : 'rgba(255,255,255,0.25)'};color:#fff;width:26px;height:26px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">
@@ -27464,8 +27624,8 @@ function renderAgendaPessoal() {
               ${esc(ev.titulo)}
             </div>
             <div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;">
-              <span style="font-size:11px;padding:3px 10px;border-radius:999px;background:rgba(201,168,76,0.18);color:var(--gold-light);font-weight:700;display:inline-block;">
-                ${esc(ev.tipo || 'Medição Técnica')}
+              <span style="font-size:11px;padding:3px 10px;border-radius:999px;background:rgba(201,168,76,0.18);border:1px solid rgba(201,168,76,0.35);color:var(--gold-light);font-weight:700;display:inline-block;">
+                ${esc(catExibida)}
               </span>
               <span style="font-size:10.5px;padding:3px 10px;border-radius:999px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:#93c5fd;font-weight:700;display:inline-block;">
                 ⏰ ${notifPill}
@@ -27500,7 +27660,20 @@ function renderAgendaPessoal() {
   });
 
   if (!filtrados.length) {
-    cont.innerHTML = '<div class="empty">Nenhum agendamento ' + (_filtroAgendaPessoal === 'pendentes' ? 'pendente' : (_filtroAgendaPessoal === 'concluidos' ? 'concluído' : '')) + ' no momento.</div>';
+    if (_categoriaAgendaPessoalAtiva) {
+      cont.innerHTML = `
+        <div class="empty" style="padding:28px 16px;text-align:center;background:rgba(255,255,255,0.02);border:1.5px dashed rgba(201,168,76,0.35);border-radius:12px;margin:8px 0;">
+          <div style="font-size:32px;margin-bottom:8px;">📅</div>
+          <div style="font-size:15px;font-weight:900;color:#fff;margin-bottom:4px;">Nenhum compromisso em "${esc(_categoriaAgendaPessoalAtiva)}"</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:14px;">Você ainda não tem nenhum compromisso cadastrado nesta categoria.</div>
+          <button type="button" class="btn btn-primary btn-sm" onclick="abrirModalNovoCompromissoPessoal(null, false, '${esc(_categoriaAgendaPessoalAtiva)}')" style="font-size:12px;padding:9px 18px;font-weight:900;border-radius:8px;">
+            ➕ Criar Compromisso em "${esc(_categoriaAgendaPessoalAtiva)}"
+          </button>
+        </div>
+      `;
+    } else {
+      cont.innerHTML = '<div class="empty">Nenhum agendamento ' + (_filtroAgendaPessoal === 'pendentes' ? 'pendente' : (_filtroAgendaPessoal === 'concluidos' ? 'concluído' : '')) + ' no momento.</div>';
+    }
     return;
   }
 
@@ -27510,6 +27683,7 @@ function renderAgendaPessoal() {
     const zapClean = (ev.tel || '').replace(/\D/g, '');
     const zapLink = zapClean.length >= 8 ? `https://wa.me/55${zapClean}` : '';
     const notifPill = formatarTempoNotificacao(ev.notificar_minutos || 30);
+    const catExibida = ev.tipo || _categoriaAgendaPessoalAtiva || 'Compromisso Pessoal';
 
     const numAg = ev.numero ? esc(ev.numero) : ('#' + String(idx + 1).padStart(4, '0'));
     const statusAgLabel = ev.concluido ? '⚫ Concluído' : '🟡 Aguardando';
@@ -27517,7 +27691,7 @@ function renderAgendaPessoal() {
 
     return `
       <div style="background:#10111a;border:1px solid ${isHoje ? 'rgba(56,189,248,0.35)' : 'rgba(255,255,255,0.08)'};border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 6px 20px rgba(0,0,0,0.5);">
-        <!-- TOPO: #ID + Status Pill + Data (Exatamente como na primeira imagem) -->
+        <!-- TOPO: #ID + Status Pill + Data (Exatamente como na Segunda Imagem) -->
         <div class="hist-top" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
             <span class="hist-num">${numAg}</span>
@@ -27543,15 +27717,15 @@ function renderAgendaPessoal() {
           </div>
         </div>
 
-        <!-- CONTEÚDO DO CARD: Nome/Título e chips em fluxo vertical organizado (como Imagem 3) -->
+        <!-- CONTEÚDO DO CARD: Nome/Título e chips em fluxo vertical organizado (Exatamente como Segunda Imagem) -->
         <div>
           <div style="font-weight:900;font-size:16px;color:#fff;margin-bottom:8px;word-break:break-word;text-decoration:${ev.concluido ? 'line-through' : 'none'};opacity:${ev.concluido ? '0.65' : '1'};">
             ${esc(ev.titulo)}
           </div>
 
           <div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;">
-            <span style="font-size:11px;padding:3px 10px;border-radius:999px;background:rgba(201,168,76,0.18);color:var(--gold-light);font-weight:700;display:inline-block;">
-              ${esc(ev.tipo || 'Medição Técnica')}
+            <span style="font-size:11px;padding:3px 10px;border-radius:999px;background:rgba(201,168,76,0.18);border:1px solid rgba(201,168,76,0.35);color:var(--gold-light);font-weight:700;display:inline-block;">
+              ${esc(catExibida)}
             </span>
 
             <span style="font-size:10.5px;padding:3px 10px;border-radius:999px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:#93c5fd;font-weight:700;display:inline-block;">
