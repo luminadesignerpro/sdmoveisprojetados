@@ -1554,6 +1554,49 @@
         <label for="cfg-rec-cidade">Cidade / UF</label>
         <input type="text" id="cfg-rec-cidade" placeholder="Ex: Itaitinga - CE">
 
+        <!-- IMAGEM QR CODE PIX PERSONALIZADA DA EMPRESA -->
+        <label style="display:flex;align-items:center;gap:6px;margin-top:12px;font-weight:700;color:#f3c760;">
+          <span>📸</span> <span>Imagem do QR Code Pix da Empresa</span>
+        </label>
+        <div style="background:#0b1019;border:1.5px dashed rgba(201,160,56,0.45);border-radius:12px;padding:12px;margin-bottom:12px;text-align:center;">
+          <div id="cfg-qr-preview-wrap" style="display:none;margin-bottom:10px;">
+            <img id="cfg-qr-preview-img" src="" alt="Preview QR Code" style="max-height:130px;max-width:130px;border-radius:8px;border:1px solid #c9a038;background:#fff;padding:4px;display:inline-block;object-fit:contain;" />
+            <div style="margin-top:6px;">
+              <button type="button" class="btn btn-outline btn-xs" onclick="removerQrCustomEmpresa()" style="font-size:11px;color:#f87171;border-color:rgba(239,68,68,0.4);padding:4px 10px;">🗑️ Remover Imagem (Usar gerador automático)</button>
+            </div>
+          </div>
+          <div id="cfg-qr-upload-btn-wrap">
+            <input type="file" id="cfg-rec-qr-file" accept="image/*" style="display:none;" onchange="aoSelecionarQrEmpresa(this)" />
+            <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('cfg-rec-qr-file').click()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;font-weight:700;">
+              <span>📁</span> <span>Escolher Imagem / Print do QR Code Pix</span>
+            </button>
+            <div style="font-size:11px;color:#94a3b8;margin-top:5px;">Foto ou print do QR Code gerado pelo seu banco</div>
+          </div>
+        </div>
+
+        <!-- OPÇÕES DE FORMAS DE PAGAMENTO VISÍVEIS -->
+        <label style="display:flex;align-items:center;gap:6px;margin-top:8px;font-weight:700;color:#f3c760;">
+          <span>💳</span> <span>Formas de Pagamento Visíveis para o Cliente:</span>
+        </label>
+        <div style="background:#0b1019;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px;margin-bottom:14px;display:flex;flex-direction:column;gap:10px;">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:#fff;margin:0;">
+            <input type="checkbox" id="cfg-mostrar-credito" checked style="width:18px;height:18px;accent-color:#c9a038;cursor:pointer;" />
+            <span>💳 Mostrar Cartão de Crédito</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:#fff;margin:0;">
+            <input type="checkbox" id="cfg-mostrar-debito" checked style="width:18px;height:18px;accent-color:#c9a038;cursor:pointer;" />
+            <span>🏧 Mostrar Cartão de Débito</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:#fff;margin:0;">
+            <input type="checkbox" id="cfg-mostrar-pix-copia" checked style="width:18px;height:18px;accent-color:#c9a038;cursor:pointer;" />
+            <span>📋 Mostrar Pix Copiar/Colar</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:#fff;margin:0;">
+            <input type="checkbox" id="cfg-mostrar-pix-qr" checked style="width:18px;height:18px;accent-color:#c9a038;cursor:pointer;" />
+            <span>📲 Mostrar Pix QR Code</span>
+          </label>
+        </div>
+
         <div style="display:flex;gap:10px;margin-top:14px;">
           <button type="button" class="btn btn-gold" onclick="salvarDadosRecebedor()" style="flex:1;">💾 Salvar Dados</button>
           <button type="button" class="btn btn-outline" onclick="fecharModalRecebedor()" style="width:auto;">Cancelar</button>
@@ -1578,44 +1621,6 @@
 
     <!-- MODAL SENHA DE ACESSO -->
     <div id="modal-pin-senha" class="pin-modal-overlay hidden">
-      <div class="pin-modal-card">
-        <span class="pin-icon">🔐</span>
-        <div class="pin-title">Acesso Restrito</div>
-        <div class="pin-subtitle">Digite sua senha para acessar as configurações</div>
-
-        <div style="position:relative;margin:18px 0 10px 0;">
-          <input 
-            type="password" 
-            id="input-senha-cfg" 
-            placeholder="Digite a senha (letras e números)" 
-            autocomplete="current-password"
-            onkeydown="if(event.key==='Enter') verificarSenhaAcesso()"
-            style="width:100%;padding:14px 44px 14px 16px;border-radius:12px;border:1.5px solid rgba(201,160,56,0.45);background:#0b1019;color:#fff;font-size:16px;text-align:center;box-sizing:border-box;margin-bottom:0;"
-          >
-          <button 
-            type="button" 
-            onclick="toggleVerSenhaCfg()" 
-            id="btn-ver-senha-cfg"
-            style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:#94a3b8;font-size:18px;cursor:pointer;padding:4px;line-height:1;"
-            title="Mostrar ou ocultar senha"
-          >👁️</button>
-        </div>
-
-        <div id="pin-error" class="pin-error"></div>
-
-        <div style="display:flex;gap:10px;margin-top:10px;">
-          <button type="button" class="btn btn-gold" onclick="verificarSenhaAcesso()" style="flex:1;padding:12px;font-size:14px;font-weight:700;">
-            🔓 Entrar
-          </button>
-          <button type="button" class="btn btn-outline" onclick="fecharModalPin()" style="width:auto;padding:12px 16px;">
-            ✕ Cancelar
-          </button>
-        </div>
-      </div>
-    </div>
-
-    
-<div id="modal-pin-senha" class="pin-modal-overlay hidden">
       <div class="pin-modal-card">
         <span class="pin-icon">🔐</span>
         <div class="pin-title">Acesso Restrito</div>
@@ -2002,6 +2007,8 @@
     } catch (_) {}
   };
 
+  let tempQrCustomEmpresa = '';
+
   function obterDadosRecebedor() {
     const lic = (typeof obterLicencaAtiva === 'function') ? obterLicencaAtiva() : { nome: 'SD Móveis Projetados', pix: '85996119824', cidade: 'Itaitinga - CE' };
     let saved = {};
@@ -2011,8 +2018,63 @@
       cnpj: saved.cnpj || lic.cnpj || '38.358.941/0001-80',
       banco: saved.banco || 'Nu Pagamentos S.A.',
       pix: saved.pix || lic.pix || '85996119824',
-      cidade: saved.cidade || lic.cidade || 'Itaitinga - CE'
+      cidade: saved.cidade || lic.cidade || 'Itaitinga - CE',
+      qrCustomImg: saved.qrCustomImg || '',
+      mostrarCredito: saved.mostrarCredito !== undefined ? Boolean(saved.mostrarCredito) : true,
+      mostrarDebito: saved.mostrarDebito !== undefined ? Boolean(saved.mostrarDebito) : true,
+      mostrarPixCopia: saved.mostrarPixCopia !== undefined ? Boolean(saved.mostrarPixCopia) : true,
+      mostrarPixQr: saved.mostrarPixQr !== undefined ? Boolean(saved.mostrarPixQr) : true
     };
+  }
+
+  function aplicarVisibilidadeMetodosPagamento(rec) {
+    const btnCredito = document.getElementById('pay-btn-credito');
+    const btnDebito = document.getElementById('pay-btn-debito');
+    const btnPixCopia = document.getElementById('pay-btn-pix-copia');
+    const btnPixQr = document.getElementById('pay-btn-pix-qr');
+    const methodsGrid = document.querySelector('.pay-methods-grid');
+    const pixRow = document.querySelector('.pay-pix-row');
+
+    const mCred = rec.mostrarCredito !== false;
+    const mDeb = rec.mostrarDebito !== false;
+    const mCopia = rec.mostrarPixCopia !== false;
+    const mQr = rec.mostrarPixQr !== false;
+
+    if (btnCredito) btnCredito.style.display = mCred ? '' : 'none';
+    if (btnDebito) btnDebito.style.display = mDeb ? '' : 'none';
+    if (methodsGrid) {
+      if (!mCred && !mDeb) {
+        methodsGrid.style.display = 'none';
+      } else {
+        methodsGrid.style.display = 'grid';
+        methodsGrid.style.gridTemplateColumns = (!mCred || !mDeb) ? '1fr' : '1fr 1fr';
+      }
+    }
+
+    if (btnPixCopia) btnPixCopia.style.display = mCopia ? '' : 'none';
+    if (btnPixQr) btnPixQr.style.display = mQr ? '' : 'none';
+    if (pixRow) {
+      if (!mCopia && !mQr) {
+        pixRow.style.display = 'none';
+      } else {
+        pixRow.style.display = 'grid';
+        pixRow.style.gridTemplateColumns = (!mCopia || !mQr) ? '1fr' : '1fr 1fr';
+      }
+    }
+
+    // Se a opção selecionada no momento foi desabilitada, seleciona a primeira visível
+    const atual = formaPagamentoEscolhida || 'pix-qr';
+    if (
+      (atual === 'credito' && !mCred) ||
+      (atual === 'debito' && !mDeb) ||
+      (atual === 'pix-copia' && !mCopia) ||
+      (atual === 'pix-qr' && !mQr)
+    ) {
+      if (mQr) selecionarPagamento('pix-qr');
+      else if (mCopia) selecionarPagamento('pix-copia');
+      else if (mCred) selecionarPagamento('credito');
+      else if (mDeb) selecionarPagamento('debito');
+    }
   }
 
   function renderizarDadosRecebedor() {
@@ -2032,9 +2094,40 @@
     if (elCidade) elCidade.textContent = rec.cidade;
     if (pixChaveVal) pixChaveVal.textContent = rec.pix;
     if (qrImg) {
-      qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=170x170&data=' + encodeURIComponent(rec.pix);
+      if (rec.qrCustomImg) {
+        qrImg.src = rec.qrCustomImg;
+      } else {
+        qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=170x170&data=' + encodeURIComponent(rec.pix);
+      }
     }
+
+    aplicarVisibilidadeMetodosPagamento(rec);
   }
+
+  // Upload e manipulação da imagem do QR Code Pix da empresa
+  window.aoSelecionarQrEmpresa = function(input) {
+    if (!input || !input.files || !input.files[0]) return;
+    const file = input.files[0];
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      tempQrCustomEmpresa = e.target.result;
+      const wrap = document.getElementById('cfg-qr-preview-wrap');
+      const img = document.getElementById('cfg-qr-preview-img');
+      if (img) img.src = tempQrCustomEmpresa;
+      if (wrap) wrap.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  };
+
+  window.removerQrCustomEmpresa = function() {
+    tempQrCustomEmpresa = '';
+    const fileInp = document.getElementById('cfg-rec-qr-file');
+    if (fileInp) fileInp.value = '';
+    const wrap = document.getElementById('cfg-qr-preview-wrap');
+    const img = document.getElementById('cfg-qr-preview-img');
+    if (img) img.src = '';
+    if (wrap) wrap.style.display = 'none';
+  };
 
   // ===== SISTEMA DE SENHA / PIN =====
   // ===== SISTEMA DE SENHA / ACESSO ALFANUMÉRICO =====
@@ -2122,6 +2215,25 @@
     if (document.getElementById('cfg-rec-banco')) document.getElementById('cfg-rec-banco').value = rec.banco;
     if (document.getElementById('cfg-rec-pix')) document.getElementById('cfg-rec-pix').value = rec.pix;
     if (document.getElementById('cfg-rec-cidade')) document.getElementById('cfg-rec-cidade').value = rec.cidade;
+
+    // Configuração de visibilidade das opções de pagamento
+    if (document.getElementById('cfg-mostrar-credito')) document.getElementById('cfg-mostrar-credito').checked = rec.mostrarCredito !== false;
+    if (document.getElementById('cfg-mostrar-debito')) document.getElementById('cfg-mostrar-debito').checked = rec.mostrarDebito !== false;
+    if (document.getElementById('cfg-mostrar-pix-copia')) document.getElementById('cfg-mostrar-pix-copia').checked = rec.mostrarPixCopia !== false;
+    if (document.getElementById('cfg-mostrar-pix-qr')) document.getElementById('cfg-mostrar-pix-qr').checked = rec.mostrarPixQr !== false;
+
+    // QR Code customizado
+    tempQrCustomEmpresa = rec.qrCustomImg || '';
+    const wrap = document.getElementById('cfg-qr-preview-wrap');
+    const img = document.getElementById('cfg-qr-preview-img');
+    if (tempQrCustomEmpresa) {
+      if (img) img.src = tempQrCustomEmpresa;
+      if (wrap) wrap.style.display = 'block';
+    } else {
+      if (img) img.src = '';
+      if (wrap) wrap.style.display = 'none';
+    }
+
     // Limpa form alterar senha
     var fa = document.getElementById('form-alterar-senha');
     if (fa) fa.classList.remove('visible');
@@ -2173,7 +2285,12 @@
       cnpj: (document.getElementById('cfg-rec-cnpj').value || '').trim() || '38.358.941/0001-80',
       banco: (document.getElementById('cfg-rec-banco').value || '').trim() || 'Nu Pagamentos S.A.',
       pix: (document.getElementById('cfg-rec-pix').value || '').trim() || '85996119824',
-      cidade: (document.getElementById('cfg-rec-cidade').value || '').trim() || 'Itaitinga - CE'
+      cidade: (document.getElementById('cfg-rec-cidade').value || '').trim() || 'Itaitinga - CE',
+      qrCustomImg: tempQrCustomEmpresa || '',
+      mostrarCredito: document.getElementById('cfg-mostrar-credito') ? document.getElementById('cfg-mostrar-credito').checked : true,
+      mostrarDebito: document.getElementById('cfg-mostrar-debito') ? document.getElementById('cfg-mostrar-debito').checked : true,
+      mostrarPixCopia: document.getElementById('cfg-mostrar-pix-copia') ? document.getElementById('cfg-mostrar-pix-copia').checked : true,
+      mostrarPixQr: document.getElementById('cfg-mostrar-pix-qr') ? document.getElementById('cfg-mostrar-pix-qr').checked : true
     };
     try {
       localStorage.setItem('sdv_dados_recebedor', JSON.stringify(rec));
