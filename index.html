@@ -2412,9 +2412,13 @@
         </h2>
         <div style="font-size:12px;color:var(--muted);margin-top:2px;">Compromissos particulares, reuniões, lembretes e tarefas</div>
       </div>
-      <div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
         <button class="btn btn-primary btn-sm" onclick="abrirModalNovoCompromissoPessoal()" style="font-size:12px;padding:9px 15px;font-weight:800;">
           ➕ Novo Compromisso Pessoal
+        </button>
+        <div id="agenda-pessoal-botoes-custom" style="display:inline-flex;gap:8px;align-items:center;flex-wrap:wrap;"></div>
+        <button type="button" class="btn btn-sec btn-sm" onclick="adicionarNovoBotaoAgendaPessoal()" style="font-size:12px;padding:9px 13px;font-weight:800;border:1.5px dashed rgba(201,168,76,0.6);background:rgba(201,168,76,0.08);color:var(--gold-light);cursor:pointer;display:inline-flex;align-items:center;gap:5px;" title="Adicionar um novo botão personalizado para compromissos">
+          ➕ Adicionar Botão
         </button>
       </div>
     </div>
@@ -5558,7 +5562,7 @@
 </div>
 
 <!-- ══ MODAL NOVO AGENDAMENTO ══ -->
-<div id="modal-agenda-novo" class="modal-overlay" style="display:none" onclick="fecharModalNovoCompromissoAgenda(event)">
+<div id="modal-agenda-novo" class="modal-overlay" style="display:none;z-index:999999;" onclick="fecharModalNovoCompromissoAgenda(event)">
   <div class="modal-box" onclick="event.stopPropagation()" style="max-width:480px;max-height:92vh;display:flex;flex-direction:column;padding:0;">
     
     <!-- CABEÇALHO COM BOTÃO SALVAR RÁPIDO NO TOPO -->
@@ -18284,79 +18288,97 @@ function excluirCompromissoAgenda(id) {
 }
 
 function abrirModalNovoCompromissoAgenda(id = null) {
-  editandoAgendaId = id;
-  const iconeEl = document.getElementById('agenda-modal-icone');
-  const tituloEl = document.getElementById('agenda-modal-titulo');
-  const btnSalvar = document.getElementById('agenda-modal-btn-salvar');
-  const notifEl = document.getElementById('agenda-novo-notificacao');
-  const boxCustom = document.getElementById('agenda-tempo-custom-box');
-  const inpCustom = document.getElementById('agenda-novo-minutos-custom');
-  if (boxCustom) boxCustom.style.display = 'none';
+  try {
+    editandoAgendaId = id;
+    const iconeEl = document.getElementById('agenda-modal-icone');
+    const tituloEl = document.getElementById('agenda-modal-titulo');
+    const btnSalvar = document.getElementById('agenda-modal-btn-salvar');
+    const notifEl = document.getElementById('agenda-novo-notificacao');
+    const boxCustom = document.getElementById('agenda-tempo-custom-box');
+    const inpCustom = document.getElementById('agenda-novo-minutos-custom');
+    if (boxCustom) boxCustom.style.display = 'none';
 
-  const dl = document.getElementById('agenda-lista-sugestoes-clientes');
-  if (dl && typeof clientes !== 'undefined' && clientes && clientes.length) {
-    dl.innerHTML = clientes.map(c => `<option value="${esc(c.nome)}">${esc(c.tel || '')}</option>`).join('');
-  }
+    const dl = document.getElementById('agenda-lista-sugestoes-clientes');
+    if (dl && typeof clientes !== 'undefined' && Array.isArray(clientes) && clientes.length) {
+      dl.innerHTML = clientes.map(c => `<option value="${typeof esc === 'function' ? esc(c.nome) : (c.nome || '')}">${typeof esc === 'function' ? esc(c.tel || '') : (c.tel || '')}</option>`).join('');
+    }
 
-  if (id) {
-    const eventos = obterAgendaEventos();
-    const ev = eventos.find(x => x.id === id);
-    if (ev) {
-      if (iconeEl) iconeEl.textContent = '✏️';
-      if (tituloEl) tituloEl.textContent = 'Editar Agendamento';
-      if (btnSalvar) btnSalvar.textContent = '📅 Salvar + Enviar WhatsApp';
-      const btnSalvarSimples = document.getElementById('agenda-modal-btn-salvar-simples');
-      if (btnSalvarSimples) btnSalvarSimples.textContent = '💾 Salvar sem enviar';
+    if (id) {
+      const eventos = obterAgendaEventos();
+      const ev = eventos.find(x => String(x.id) === String(id));
+      if (ev) {
+        if (iconeEl) iconeEl.textContent = '✏️';
+        if (tituloEl) tituloEl.textContent = 'Editar Agendamento';
+        if (btnSalvar) btnSalvar.textContent = '📅 Salvar + Enviar WhatsApp';
+        const btnSalvarSimples = document.getElementById('agenda-modal-btn-salvar-simples');
+        if (btnSalvarSimples) btnSalvarSimples.textContent = '💾 Salvar sem enviar';
 
-      document.getElementById('agenda-novo-cliente').value = ev.cliente || '';
-      document.getElementById('agenda-novo-tel').value = ev.tel || '';
-      document.getElementById('agenda-novo-end').value = ev.end || '';
-      document.getElementById('agenda-novo-tipo').value = ev.tipo || 'Medição Técnica';
-      document.getElementById('agenda-novo-data').value = ev.data || '';
-      document.getElementById('agenda-novo-hora').value = ev.hora || '09:00';
-      document.getElementById('agenda-novo-obs').value = ev.obs || '';
-      
-      const minutos = (ev.notificar_minutos !== undefined && ev.notificar_minutos !== null) ? Number(ev.notificar_minutos) : 30;
-      const opcoesPadrao = [0, 5, 10, 15, 30, 45, 60, 120, 180, 1440, -1];
-      if (notifEl) {
-        if (opcoesPadrao.includes(minutos)) {
-          notifEl.value = String(minutos);
-        } else {
-          notifEl.value = 'custom';
-          if (boxCustom) boxCustom.style.display = 'block';
-          if (inpCustom) inpCustom.value = minutos;
+        if (document.getElementById('agenda-novo-cliente')) document.getElementById('agenda-novo-cliente').value = ev.cliente || '';
+        if (document.getElementById('agenda-novo-tel')) document.getElementById('agenda-novo-tel').value = ev.tel || '';
+        if (document.getElementById('agenda-novo-end')) document.getElementById('agenda-novo-end').value = ev.end || '';
+        if (document.getElementById('agenda-novo-tipo')) document.getElementById('agenda-novo-tipo').value = ev.tipo || 'Medição Técnica';
+        if (document.getElementById('agenda-novo-data')) document.getElementById('agenda-novo-data').value = ev.data || '';
+        if (document.getElementById('agenda-novo-hora')) document.getElementById('agenda-novo-hora').value = ev.hora || '09:00';
+        if (document.getElementById('agenda-novo-obs')) document.getElementById('agenda-novo-obs').value = ev.obs || '';
+        
+        const minutos = (ev.notificar_minutos !== undefined && ev.notificar_minutos !== null) ? Number(ev.notificar_minutos) : 30;
+        const opcoesPadrao = [0, 5, 10, 15, 30, 45, 60, 120, 180, 1440, -1];
+        if (notifEl) {
+          if (opcoesPadrao.includes(minutos)) {
+            notifEl.value = String(minutos);
+          } else {
+            notifEl.value = 'custom';
+            if (boxCustom) boxCustom.style.display = 'block';
+            if (inpCustom) inpCustom.value = minutos;
+          }
         }
-      }
 
-      const m = document.getElementById('modal-agenda-novo');
-      if (m) m.style.display = 'flex';
-      setTimeout(atualizarBotaoMapsAgenda, 50);
-      setTimeout(atualizarBtnWhatsAppAgenda, 50);
-      return;
+        const m = document.getElementById('modal-agenda-novo');
+        if (m) {
+          m.style.zIndex = '999999';
+          m.style.display = 'flex';
+          m.classList.add('active');
+        }
+        try { if (typeof atualizarBotaoMapsAgenda === 'function') atualizarBotaoMapsAgenda(); } catch(_) {}
+        try { if (typeof atualizarBtnWhatsAppAgenda === 'function') atualizarBtnWhatsAppAgenda(); } catch(_) {}
+        return;
+      }
+    }
+
+    // Novo compromisso
+    if (iconeEl) iconeEl.textContent = '📅';
+    if (tituloEl) tituloEl.textContent = 'Novo Agendamento / Visita';
+    if (btnSalvar) btnSalvar.textContent = '📅 Salvar + Enviar WhatsApp';
+    const btnSalvarSimples = document.getElementById('agenda-modal-btn-salvar-simples');
+    if (btnSalvarSimples) btnSalvarSimples.textContent = '💾 Salvar sem enviar';
+
+    if (document.getElementById('agenda-novo-cliente')) document.getElementById('agenda-novo-cliente').value = '';
+    if (document.getElementById('agenda-novo-tel')) document.getElementById('agenda-novo-tel').value = '';
+    if (document.getElementById('agenda-novo-end')) document.getElementById('agenda-novo-end').value = '';
+    if (document.getElementById('agenda-novo-tipo')) document.getElementById('agenda-novo-tipo').value = 'Medição Técnica';
+    if (document.getElementById('agenda-novo-data')) document.getElementById('agenda-novo-data').value = new Date().toISOString().split('T')[0];
+    if (document.getElementById('agenda-novo-hora')) document.getElementById('agenda-novo-hora').value = '09:00';
+    if (document.getElementById('agenda-novo-obs')) document.getElementById('agenda-novo-obs').value = '';
+    if (notifEl) notifEl.value = '30';
+    if (inpCustom) inpCustom.value = '30';
+
+    const m = document.getElementById('modal-agenda-novo');
+    if (m) {
+      m.style.zIndex = '999999';
+      m.style.display = 'flex';
+      m.classList.add('active');
+    }
+    try { if (typeof atualizarBotaoMapsAgenda === 'function') atualizarBotaoMapsAgenda(); } catch(_) {}
+    try { if (typeof atualizarBtnWhatsAppAgenda === 'function') atualizarBtnWhatsAppAgenda(); } catch(_) {}
+  } catch (err) {
+    console.error('Erro ao abrir modal novo agendamento:', err);
+    const m = document.getElementById('modal-agenda-novo');
+    if (m) {
+      m.style.zIndex = '999999';
+      m.style.display = 'flex';
+      m.classList.add('active');
     }
   }
-
-  // Novo compromisso
-  if (iconeEl) iconeEl.textContent = '📅';
-  if (tituloEl) tituloEl.textContent = 'Novo Agendamento / Visita';
-  if (btnSalvar) btnSalvar.textContent = '📅 Salvar + Enviar WhatsApp';
-  const btnSalvarSimples = document.getElementById('agenda-modal-btn-salvar-simples');
-  if (btnSalvarSimples) btnSalvarSimples.textContent = '💾 Salvar sem enviar';
-
-  document.getElementById('agenda-novo-cliente').value = '';
-  document.getElementById('agenda-novo-tel').value = '';
-  document.getElementById('agenda-novo-end').value = '';
-  setTimeout(atualizarBotaoMapsAgenda, 50);
-  setTimeout(atualizarBtnWhatsAppAgenda, 50);
-  document.getElementById('agenda-novo-tipo').value = 'Medição Técnica';
-  document.getElementById('agenda-novo-data').value = new Date().toISOString().split('T')[0];
-  document.getElementById('agenda-novo-hora').value = '09:00';
-  document.getElementById('agenda-novo-obs').value = '';
-  if (notifEl) notifEl.value = '30';
-  if (inpCustom) inpCustom.value = '30';
-
-  const m = document.getElementById('modal-agenda-novo');
-  if (m) m.style.display = 'flex';
 }
 
 
@@ -18470,7 +18492,10 @@ function fecharModalNovoCompromissoAgenda(e) {
   if (e && e.target !== e.currentTarget) return;
   editandoAgendaId = null;
   const m = document.getElementById('modal-agenda-novo');
-  if (m) m.style.display = 'none';
+  if (m) {
+    m.style.display = 'none';
+    m.classList.remove('active');
+  }
 }
 
 
@@ -27095,9 +27120,13 @@ function limparBuscaPessoal() {
   if (box) box.style.display = 'none';
 }
 
-function abrirModalNovoCompromissoPessoal(id, isReagendar = false) {
+function abrirModalNovoCompromissoPessoal(id, isReagendar = false, categoriaCustom = null) {
   const m = document.getElementById('modal-novo-compromisso-pessoal');
   if (!m) return;
+  m.style.zIndex = '999999';
+  m.style.display = 'flex';
+  m.classList.add('active');
+
   const titEl = document.getElementById('modal-pessoal-titulo');
   const iconeEl = document.getElementById('pessoal-modal-icone');
   const editIdEl = document.getElementById('pessoal-edit-id');
@@ -27112,53 +27141,55 @@ function abrirModalNovoCompromissoPessoal(id, isReagendar = false) {
 
   limparBuscaPessoal();
 
-  editIdEl.value = '';
-  inpTit.value = '';
+  if (editIdEl) editIdEl.value = '';
+  if (inpTit) inpTit.value = '';
   if (inpTel) inpTel.value = '';
   if (selTipo) selTipo.value = 'Medição Técnica';
-  inpData.value = new Date().toISOString().split('T')[0];
-  inpHora.value = '09:00';
-  inpLocal.value = '';
+  if (inpData) inpData.value = new Date().toISOString().split('T')[0];
+  if (inpHora) inpHora.value = '09:00';
+  if (inpLocal) inpLocal.value = '';
   if (selNotif) selNotif.value = '30';
-  inpObs.value = '';
+  if (inpObs) inpObs.value = '';
 
   if (iconeEl) iconeEl.textContent = '📅';
-  if (titEl) titEl.textContent = 'Novo Agendamento / Visita';
+  if (titEl) titEl.textContent = categoriaCustom ? `Novo Agendamento (${categoriaCustom})` : 'Novo Agendamento / Visita';
 
   if (id) {
     const ev = obterEventosAgendaPessoal().find(x => String(x.id) === String(id));
     if (ev) {
       if (isReagendar) {
-        editIdEl.value = '';
+        if (editIdEl) editIdEl.value = '';
         if (iconeEl) iconeEl.textContent = '🔄';
         if (titEl) titEl.textContent = 'Reagendar Compromisso (Novo)';
       } else {
-        editIdEl.value = ev.id;
+        if (editIdEl) editIdEl.value = ev.id;
         if (titEl) titEl.textContent = 'Editar Agendamento';
       }
-      inpTit.value = ev.titulo || '';
+      if (inpTit) inpTit.value = ev.titulo || '';
       if (inpTel) inpTel.value = ev.tel || '';
       if (selTipo) selTipo.value = ev.tipo || 'Medição Técnica';
-      inpData.value = ev.data || '';
-      inpHora.value = ev.hora || '';
-      inpLocal.value = ev.local || '';
+      if (inpData) inpData.value = ev.data || '';
+      if (inpHora) inpHora.value = ev.hora || '';
+      if (inpLocal) inpLocal.value = ev.local || '';
       if (selNotif) selNotif.value = ev.notificar_minutos !== undefined ? String(ev.notificar_minutos) : '30';
-      inpObs.value = ev.obs || '';
+      if (inpObs) inpObs.value = ev.obs || '';
     }
   }
 
-  atualizarBtnWhatsAppPessoal();
-  atualizarBotaoMapsPessoal();
-  aoMudarOpcaoAlarmePessoal();
+  try { atualizarBtnWhatsAppPessoal(); } catch(_) {}
+  try { atualizarBotaoMapsPessoal(); } catch(_) {}
+  try { aoMudarOpcaoAlarmePessoal(); } catch(_) {}
 
-  m.style.display = 'flex';
   setTimeout(() => inpTit && inpTit.focus(), 100);
 }
 
 function fecharModalNovoCompromissoPessoal(e) {
   if (e && e.target !== e.currentTarget) return;
   const m = document.getElementById('modal-novo-compromisso-pessoal');
-  if (m) m.style.display = 'none';
+  if (m) {
+    m.style.display = 'none';
+    m.classList.remove('active');
+  }
 }
 
 function salvarCompromissoPessoal(forcarConflito = false, enviarWhatsApp = false) {
@@ -27277,7 +27308,95 @@ function excluirCompromissoPessoal(id) {
   renderAgendaPessoal();
 }
 
+// ── BOTÕES DINÂMICOS CUSTOMIZADOS DA AGENDA PESSOAL ──
+const STORAGE_KEY_BOTOES_AGENDA_PESSOAL = 'sdv_botoes_agenda_pessoal_custom';
+
+function obterBotoesAgendaPessoalCustom() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_BOTOES_AGENDA_PESSOAL);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length) return parsed;
+    }
+  } catch(_) {}
+  // Botão padrão inicial solicitado pelo usuário: '+compromisso'
+  const padrao = [{ id: 'btn_comp_default', nome: '+compromisso' }];
+  salvarBotoesAgendaPessoalCustom(padrao);
+  return padrao;
+}
+
+function salvarBotoesAgendaPessoalCustom(lista) {
+  try {
+    localStorage.setItem(STORAGE_KEY_BOTOES_AGENDA_PESSOAL, JSON.stringify(lista || []));
+  } catch(_) {}
+}
+
+function renderizarBotoesAgendaPessoalCustom() {
+  const container = document.getElementById('agenda-pessoal-botoes-custom');
+  if (!container) return;
+  const botoes = obterBotoesAgendaPessoalCustom();
+
+  container.innerHTML = botoes.map(btn => `
+    <div style="display:inline-flex;align-items:center;background:linear-gradient(135deg, rgba(201,168,76,0.22), rgba(20,20,30,0.85));border:1.5px solid var(--gold);border-radius:var(--r-sm);padding:2px 4px 2px 8px;gap:4px;box-shadow:0 3px 12px rgba(201,168,76,0.18);">
+      <button type="button" onclick="executarAcaoBotaoCustomPessoal('${btn.id}')" style="background:transparent;border:none;color:var(--gold-light);font-weight:900;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;padding:6px 4px;font-family:inherit;" title="Criar compromisso com ${typeof esc === 'function' ? esc(btn.nome) : btn.nome}">
+        <span>📅</span> <span>${typeof esc === 'function' ? esc(btn.nome) : btn.nome}</span>
+      </button>
+      <button type="button" onclick="editarNomeBotaoAgendaPessoal('${btn.id}')" title="Editar nome deste botão" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#cbd5e1;cursor:pointer;border-radius:6px;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;transition:all 0.15s;">
+        ✏️
+      </button>
+      ${botoes.length > 1 ? `
+        <button type="button" onclick="removerBotaoAgendaPessoal('${btn.id}')" title="Remover este botão" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;cursor:pointer;border-radius:6px;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;transition:all 0.15s;">
+          ✕
+        </button>
+      ` : ''}
+    </div>
+  `).join('');
+}
+
+function adicionarNovoBotaoAgendaPessoal() {
+  const nome = prompt('Digite o nome do novo botão para a Agenda Pessoal:', '+compromisso');
+  if (!nome || !nome.trim()) return;
+  const botoes = obterBotoesAgendaPessoalCustom();
+  botoes.push({
+    id: 'btn_comp_' + Date.now(),
+    nome: nome.trim()
+  });
+  salvarBotoesAgendaPessoalCustom(botoes);
+  renderizarBotoesAgendaPessoalCustom();
+  if (typeof mostrarToastAprovacao === 'function') mostrarToastAprovacao('✅ Botão "' + nome.trim() + '" adicionado!');
+}
+
+function editarNomeBotaoAgendaPessoal(id) {
+  const botoes = obterBotoesAgendaPessoalCustom();
+  const btn = botoes.find(b => b.id === id);
+  if (!btn) return;
+  const novoNome = prompt('Editar nome do botão:', btn.nome);
+  if (!novoNome || !novoNome.trim()) return;
+  btn.nome = novoNome.trim();
+  salvarBotoesAgendaPessoalCustom(botoes);
+  renderizarBotoesAgendaPessoalCustom();
+  if (typeof mostrarToastAprovacao === 'function') mostrarToastAprovacao('✏️ Botão renomeado para "' + btn.nome + '"!');
+}
+
+function removerBotaoAgendaPessoal(id) {
+  if (!confirm('Deseja realmente remover este botão?')) return;
+  let botoes = obterBotoesAgendaPessoalCustom().filter(b => b.id !== id);
+  if (!botoes.length) {
+    botoes = [{ id: 'btn_comp_default', nome: '+compromisso' }];
+  }
+  salvarBotoesAgendaPessoalCustom(botoes);
+  renderizarBotoesAgendaPessoalCustom();
+}
+
+function executarAcaoBotaoCustomPessoal(id) {
+  const botoes = obterBotoesAgendaPessoalCustom();
+  const btn = botoes.find(b => b.id === id);
+  const rotulo = btn ? btn.nome : '+compromisso';
+  abrirModalNovoCompromissoPessoal(null, false, rotulo);
+}
+
 function renderAgendaPessoal() {
+  try { renderizarBotoesAgendaPessoalCustom(); } catch(_) {}
   const lista = obterEventosAgendaPessoal();
   const hojeStr = new Date().toISOString().split('T')[0];
 

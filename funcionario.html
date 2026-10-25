@@ -5791,6 +5791,16 @@ function mudarAba(tab) {
         if (btn) btn.classList.toggle('active', t === tab);
       });
 
+      // Rola a tela suavemente até a aba selecionada para que o usuário veja o conteúdo no celular
+      try {
+        const activePane = document.getElementById(tab === 'ponto' ? 'pane-financeiro' : ('pane-' + tab));
+        if (activePane) {
+          setTimeout(() => {
+            activePane.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 80);
+        }
+      } catch(_) {}
+
       try {
         if (tab === 'status') {
           if (typeof renderizarSeletorOSEquipe === 'function') renderizarSeletorOSEquipe();
@@ -13753,6 +13763,8 @@ function renderCronoAno() {
     `;
   }
   grid.innerHTML = html;
+}
+
 function abrirModalVisualizarEventoCronograma(id) {
   const eventos = carregarEventosCrono();
   const ev = eventos.find(e => e.id === id);
