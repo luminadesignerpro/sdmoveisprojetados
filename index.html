@@ -20137,6 +20137,7 @@ function aoAnexarArquivoOrcamento(event, tipo) {
             if (pdfs.length > 20) pdfs = pdfs.slice(0, 20);
             localStorage.setItem('sdm_orc_pdfs', JSON.stringify(pdfs));
             atualizarBadgeGaleriaOrcamento();
+            if (typeof renderMiniaturasGaleriaOrcamento === 'function') renderMiniaturasGaleriaOrcamento();
             if (typeof mostrarToastAprovacao === 'function') {
               mostrarToastAprovacao('📄 PDF "' + file.name + '" anexado com sucesso!');
             }
@@ -20152,19 +20153,8 @@ function aoAnexarArquivoOrcamento(event, tipo) {
       // Foto: câmera ou galeria
       const reader = new FileReader();
       reader.onload = function(ev) {
-        const rawDataUrl = ev.target.result;
-        const img = new Image();
-        img.onload = function() {
-          const maxDim = 1280;
-          let w = img.width, h = img.height;
-          if (w > maxDim || h > maxDim) {
-            if (w > h) { h = Math.round(h * (maxDim / w)); w = maxDim; }
-            else { w = Math.round(w * (maxDim / h)); h = maxDim; }
-          }
-          const canvas = document.createElement('canvas');
-          canvas.width = w; canvas.height = h;
-          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        try {
+          const dataUrl = ev.target.result;
 
           const novaCaptura = {
             dataUrl,
@@ -20175,39 +20165,46 @@ function aoAnexarArquivoOrcamento(event, tipo) {
             origem: tipo === 'camera' ? 'Câmera O.S.' : 'Galeria O.S.'
           };
 
-          try {
-            // Salva em sdm_orc_fotos_temp (específico do orçamento atual)
-            let tempFotos = JSON.parse(localStorage.getItem('sdm_orc_fotos_temp') || '[]');
-            if (!Array.isArray(tempFotos)) tempFotos = [];
-            tempFotos.unshift(novaCaptura);
-            if (tempFotos.length > 30) tempFotos = tempFotos.slice(0, 30);
-            localStorage.setItem('sdm_orc_fotos_temp', JSON.stringify(tempFotos));
+          // 1. Salva em sdm_orc_fotos_temp (específico do orçamento atual)
+          let tempFotos = [];
+          try { tempFotos = JSON.parse(localStorage.getItem('sdm_orc_fotos_temp') || '[]'); } catch(_) {}
+          if (!Array.isArray(tempFotos)) tempFotos = [];
+          tempFotos.unshift(novaCaptura);
+          if (tempFotos.length > 30) tempFotos = tempFotos.slice(0, 30);
+          localStorage.setItem('sdm_orc_fotos_temp', JSON.stringify(tempFotos));
 
-            // Salva também em sdm_cam_capturas geral
-            let fotos = JSON.parse(localStorage.getItem('sdm_cam_capturas') || '[]');
-            if (!Array.isArray(fotos)) fotos = [];
-            fotos.unshift(novaCaptura);
-            if (fotos.length > 40) fotos = fotos.slice(0, 40);
-            localStorage.setItem('sdm_cam_capturas', JSON.stringify(fotos));
-            if (typeof _capturas !== 'undefined') _capturas.unshift(novaCaptura);
+          // 2. Salva também em sdm_cam_capturas (geral / câmera)
+          let fotos = [];
+          try { fotos = JSON.parse(localStorage.getItem('sdm_cam_capturas') || '[]'); } catch(_) {}
+          if (!Array.isArray(fotos)) fotos = [];
+          fotos.unshift(novaCaptura);
+          if (fotos.length > 40) fotos = fotos.slice(0, 40);
+          localStorage.setItem('sdm_cam_capturas', JSON.stringify(fotos));
+          if (typeof _capturas !== 'undefined') _capturas.unshift(novaCaptura);
 
-            // Se estiver editando uma O.S. já existente com número
-            if (osNum && typeof getGaleriaKey === 'function') {
-              let fotosKey = JSON.parse(localStorage.getItem(getGaleriaKey(osNum)) || '[]');
-              if (!Array.isArray(fotosKey)) fotosKey = [];
-              fotosKey.unshift(novaCaptura);
-              localStorage.setItem(getGaleriaKey(osNum), JSON.stringify(fotosKey));
-            }
+          // 3. Se há número de O.S. já gerado, salva na chave específica da OS
+          if (osNum && typeof getGaleriaKey === 'function') {
+            let fotosKey = [];
+            try { fotosKey = JSON.parse(localStorage.getItem(getGaleriaKey(osNum)) || '[]'); } catch(_) {}
+            if (!Array.isArray(fotosKey)) fotosKey = [];
+            fotosKey.unshift(novaCaptura);
+            localStorage.setItem(getGaleriaKey(osNum), JSON.stringify(fotosKey));
+          }
 
-            if (typeof _renderGaleriaGrid === 'function') _renderGaleriaGrid();
-          } catch(err) { console.warn('Erro ao salvar foto:', err); }
+          if (typeof _renderGaleriaGrid === 'function') _renderGaleriaGrid();
+          if (typeof renderMiniaturasGaleriaOrcamento === 'function') renderMiniaturasGaleriaOrcamento();
 
           atualizarBadgeGaleriaOrcamento();
           if (typeof mostrarToastAprovacao === 'function') {
-            mostrarToastAprovacao('📷 Foto anexada com sucesso à O.S.!');
+            mostrarToastAprovacao('📷 Foto ' + tempFotos.length + ' anexada à O.S.!');
           }
-        };
-        img.src = rawDataUrl;
+        } catch(err) {
+          console.warn('Erro ao salvar foto:', err);
+          alert('Erro ao salvar foto: ' + err.message);
+        }
+      };
+      reader.onerror = function() {
+        alert('Erro ao ler o arquivo de imagem. Tente novamente.');
       };
       reader.readAsDataURL(file);
     }
