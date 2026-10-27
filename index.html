@@ -2299,6 +2299,7 @@
           <button class="btn btn-whats btn-sm" onclick="abrirModalConfirmacaoZap()" title="Confirmar aprovação recebida pelo WhatsApp">⚡ Confirmar WhatsApp</button>
           <button class="btn btn-gold btn-sm" onclick="abrirModalSync()">🔄 Backup / Sincronizar</button>
           <button class="btn btn-sec btn-sm" onclick="imprimirListaOs()" title="Imprimir lista de O.S." style="background:rgba(99,102,241,0.2);border-color:#6366f1;color:#818cf8;">🖨️ Imprimir</button>
+          <button type="button" class="btn btn-sm" onclick="abrirModalPedidoCompleto()" title="Gerar Pedido Completo consolidando O.S." style="background:rgba(234,179,8,0.22);border:1.5px solid #eab308;color:#facc15;font-weight:800;border-radius:8px;padding:6px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 10px rgba(234,179,8,0.25);">📦 Pedido Completo</button>
         </div>
       </div>
       <!-- Filtros de status -->
@@ -4741,6 +4742,137 @@
   </div>
 </div>
 
+
+
+<!-- ══ MODAL PEDIDO COMPLETO CONSOLIDADO ══ -->
+<div id="modal-pedido-completo" class="modal-overlay" style="display:none; z-index:99999;" onclick="if(event.target===this)fecharModalPedidoCompleto()">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:840px;width:100%;background:#090a14;border:1.5px solid rgba(234,179,8,0.45);box-shadow:0 25px 70px rgba(0,0,0,0.98),0 0 35px rgba(234,179,8,0.2);border-radius:18px;padding:22px 20px;max-height:94vh;display:flex;flex-direction:column;">
+    <!-- Cabeçalho -->
+    <div class="modal-title" style="margin-bottom:12px;flex-shrink:0;display:flex;justify-content:space-between;align-items:center;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:22px;">📦</span>
+        <div>
+          <div style="font-size:15px;font-weight:900;color:var(--gold-light);">Gerador de Pedido Completo Consolidado</div>
+          <div style="font-size:11px;color:var(--muted);font-weight:600;">Selecione as Ordens de Serviço para consolidar todos os produtos, serviços, frete, descontos e total</div>
+        </div>
+      </div>
+      <button class="modal-close" onclick="fecharModalPedidoCompleto()" style="background:transparent;border:none;color:#fff;font-size:18px;cursor:pointer;">✕</button>
+    </div>
+
+    <!-- Conteúdo com Rolagem -->
+    <div style="flex:1;overflow-y:auto;padding-right:4px;display:flex;flex-direction:column;gap:14px;">
+      
+      <!-- Filtros e Seleção Rápida de O.S. -->
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px 14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
+          <div style="font-size:11.5px;color:var(--gold-light);font-weight:800;text-transform:uppercase;letter-spacing:0.5px;">📋 1. Escolha as Ordens de Serviço (O.S.)</div>
+          <div style="display:flex;gap:6px;">
+            <button type="button" class="btn btn-sm" onclick="marcarTodasOsPedido(true)" style="padding:2px 8px;font-size:10.5px;background:rgba(234,179,8,0.18);color:#facc15;border:1px solid #eab308;">✓ Marcar Todas</button>
+            <button type="button" class="btn btn-sm" onclick="marcarTodasOsPedido(false)" style="padding:2px 8px;font-size:10.5px;background:rgba(255,255,255,0.08);color:#fff;border:1px solid rgba(255,255,255,0.2);">✕ Desmarcar</button>
+          </div>
+        </div>
+
+        <div class="field-row" style="margin-bottom:8px;">
+          <div class="field" style="flex:1;">
+            <label style="font-size:11px;">Filtrar por Cliente:</label>
+            <select id="ped-filtro-cliente" onchange="filtrarOsPedidoCompleto()" style="font-size:12px;padding:6px 10px;background:#131525;color:#fff;border:1px solid rgba(255,255,255,0.15);border-radius:8px;width:100%;">
+              <option value="">👤 Todos os Clientes</option>
+            </select>
+          </div>
+          <div class="field" style="flex:1;">
+            <label style="font-size:11px;">Buscar O.S. ou Nome:</label>
+            <input id="ped-busca-os" type="text" placeholder="🔍 Digite nº da O.S. ou nome..." oninput="filtrarOsPedidoCompleto()" style="font-size:12px;padding:6px 10px;" />
+          </div>
+        </div>
+
+        <!-- Lista de O.S. com Checkboxes -->
+        <div id="ped-lista-os-container" style="max-height:180px;overflow-y:auto;background:#06070e;border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:6px;">
+          <!-- Itens injetados via JS -->
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px;display:flex;justify-content:space-between;">
+          <span id="ped-os-selecionadas-info">0 O.S. selecionadas</span>
+          <span style="color:#fbbf24;">Toque nas caixas para somar ou remover</span>
+        </div>
+      </div>
+
+      <!-- Quadro Consolidado de Valores -->
+      <div style="background:rgba(234,179,8,0.06);border:1.5px solid rgba(234,179,8,0.3);border-radius:14px;padding:14px;">
+        <div style="font-size:12px;color:var(--gold-light);font-weight:900;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">💰 2. Valores Consolidados do Pedido</div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:10px;margin-bottom:12px;">
+          <!-- Card Produtos -->
+          <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px;">
+            <div style="font-size:10.5px;color:var(--muted);font-weight:700;">📦 VALOR PRODUTOS</div>
+            <div id="ped-val-produtos" style="font-size:15px;font-weight:900;color:#fff;margin-top:4px;">R$ 0,00</div>
+          </div>
+          <!-- Card Serviços -->
+          <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px;">
+            <div style="font-size:10.5px;color:var(--muted);font-weight:700;">🛠️ VALOR SERVIÇOS</div>
+            <div id="ped-val-servicos" style="font-size:15px;font-weight:900;color:#38bdf8;margin-top:4px;">R$ 0,00</div>
+          </div>
+          <!-- Card Frete (Editável) -->
+          <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px;">
+            <div style="font-size:10.5px;color:var(--muted);font-weight:700;">🚚 FRETE (R$)</div>
+            <input id="ped-val-frete" type="number" step="0.01" min="0" value="0.00" oninput="recalcularTotaisPedidoCompleto()" style="font-size:14px;font-weight:900;color:#facc15;background:transparent;border:none;border-bottom:1.5px solid rgba(250,204,21,0.5);width:100%;outline:none;margin-top:2px;" />
+          </div>
+          <!-- Card Desconto (Editável) -->
+          <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px;">
+            <div style="font-size:10.5px;color:var(--muted);font-weight:700;">🏷️ DESCONTO (R$)</div>
+            <input id="ped-val-desconto" type="number" step="0.01" min="0" value="0.00" oninput="recalcularTotaisPedidoCompleto()" style="font-size:14px;font-weight:900;color:#f87171;background:transparent;border:none;border-bottom:1.5px solid rgba(248,113,113,0.5);width:100%;outline:none;margin-top:2px;" />
+          </div>
+        </div>
+
+        <!-- Banner Destaque Total Consolidado -->
+        <div style="background:linear-gradient(135deg, rgba(201,168,76,0.25) 0%, rgba(234,179,8,0.15) 100%);border:1.5px solid #eab308;border-radius:12px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <div>
+            <div style="font-size:11px;font-weight:800;color:var(--gold-light);text-transform:uppercase;letter-spacing:0.5px;">💎 VALOR TOTAL DO PEDIDO CONSOLIDADO</div>
+            <div style="font-size:11px;color:var(--muted);" id="ped-total-detalhe-sub">Produtos + Serviços + Frete - Desconto</div>
+          </div>
+          <div id="ped-val-total" style="font-size:24px;font-weight:900;color:#facc15;letter-spacing:0.5px;">R$ 0,00</div>
+        </div>
+      </div>
+
+      <!-- Detalhamento dos Itens Inclusos -->
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px 14px;">
+        <div style="font-size:11.5px;color:var(--gold-light);font-weight:800;margin-bottom:8px;text-transform:uppercase;">📝 3. Itens Inclusos no Pedido (<span id="ped-qtd-itens-total">0</span>)</div>
+        <div id="ped-tabela-itens-container" style="max-height:160px;overflow-y:auto;background:#06070e;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px;">
+          <div style="font-size:11.5px;color:var(--muted);text-align:center;padding:12px;">Selecione as O.S. acima para carregar a lista unificada de itens.</div>
+        </div>
+      </div>
+
+      <!-- Informações Complementares -->
+      <div class="field-row">
+        <div class="field" style="flex:1;">
+          <label style="font-size:11px;">Forma de Pagamento do Pedido:</label>
+          <input id="ped-forma-pagamento" placeholder="ex: 50% de sinal + 50% na instalação" value="À vista / A combinar" style="font-size:12px;" />
+        </div>
+        <div class="field" style="flex:1;">
+          <label style="font-size:11px;">Prazo de Entrega do Pedido:</label>
+          <input id="ped-prazo-entrega" placeholder="ex: 15 a 20 dias úteis" value="15 a 20 dias úteis" style="font-size:12px;" />
+        </div>
+      </div>
+      <div class="field">
+        <label style="font-size:11px;">Observações Gerais do Pedido:</label>
+        <input id="ped-observacoes" placeholder="Observações especiais de entrega, acabamentos ou montagem..." style="font-size:12px;" />
+      </div>
+
+    </div>
+
+    <!-- Rodapé com Botões de Ação: Enviar WhatsApp & Imprimir -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);flex-wrap:wrap;gap:8px;">
+      <button type="button" class="btn btn-sec btn-sm" onclick="fecharModalPedidoCompleto()">✕ Fechar</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button type="button" class="btn btn-sec btn-sm" onclick="copiarResumoPedidoCompleto()" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2);">📋 Copiar Resumo</button>
+        <button type="button" class="btn btn-whats btn-sm" onclick="enviarPedidoCompletoWhatsApp()" style="font-weight:800;display:inline-flex;align-items:center;gap:6px;">
+          <span>💬</span> <span>Enviar WhatsApp</span>
+        </button>
+        <button type="button" class="btn btn-gold btn-sm" onclick="imprimirPedidoCompleto()" style="font-weight:800;display:inline-flex;align-items:center;gap:6px;">
+          <span>🖨️</span> <span>Imprimir Pedido</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- ══ MODAL CONFIGURAR / EDITAR MODELO DE CONTRATO ══ -->
 <div id="modal-config-modelo-contrato" class="modal-overlay" style="display:none; z-index:99999;" onclick="if(event.target===this)fecharModalConfigContrato()">
