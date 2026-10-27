@@ -1800,6 +1800,24 @@
       border-color: rgba(139,92,246,0.4);
       box-shadow: 0 4px 18px rgba(0,0,0,0.35);
     }
+
+  .hist-filtro-btn {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.18);
+    color: var(--muted);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .hist-filtro-btn.hist-filtro-ativo {
+    background: rgba(201,168,76,0.18);
+    border-color: var(--gold);
+    color: var(--gold-light);
+  }
+
 </style>
   <script src="pdf-lib.min.js"></script>
   <script src="pdf.min.js"></script>
@@ -1930,7 +1948,7 @@
     <button id="tab-agenda" class="tab" data-tab="agenda" onclick="goTab('agenda')"><span>📅</span><span>Agenda</span></button>
     <button id="tab-agenda-pessoal" class="tab" data-tab="agenda-pessoal" onclick="goTab('agenda-pessoal')"><span>📅</span><span>Agenda Pessoal</span></button>
     <button id="tab-produtos" class="tab" data-tab="produtos" onclick="goTab('produtos')"><span>📦</span><span>Produtos/Serviços</span></button>
-    <button id="tab-empresa" class="tab" data-tab="empresa" onclick="goTab('empresa')"><span>🏢</span><span>Dados Empresa</span></button>
+    <button id="tab-empresa" class="tab" data-tab="empresa" onclick="solicitarAcessoDadosEmpresa()"><span>🏢</span><span>Dados Empresa</span></button>
     <button id="tab-clientes" class="tab" data-tab="clientes" onclick="goTab('clientes')"><span>👤</span><span>Clientes</span></button>
     <button id="tab-ponto" class="tab" data-tab="ponto" onclick="goTab('ponto')"><span>👷</span><span>Equipe & Ponto</span></button>
     <button id="tab-camera" class="tab" data-tab="camera" onclick="goTab('camera')"><span>📷</span><span>Câmera</span></button>
@@ -2280,7 +2298,19 @@
         <div style="display:flex;gap:6px;flex-wrap:wrap;">
           <button class="btn btn-whats btn-sm" onclick="abrirModalConfirmacaoZap()" title="Confirmar aprovação recebida pelo WhatsApp">⚡ Confirmar WhatsApp</button>
           <button class="btn btn-gold btn-sm" onclick="abrirModalSync()">🔄 Backup / Sincronizar</button>
+          <button class="btn btn-sec btn-sm" onclick="imprimirListaOs()" title="Imprimir lista de O.S." style="background:rgba(99,102,241,0.2);border-color:#6366f1;color:#818cf8;">🖨️ Imprimir</button>
         </div>
+      </div>
+      <!-- Filtros de status -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center;">
+        <button id="hist-btn-todos" class="btn btn-sm hist-filtro-btn hist-filtro-ativo" onclick="filtrarHistStatus('todos')">📋 Todos</button>
+        <button id="hist-btn-pendente" class="btn btn-sm hist-filtro-btn" onclick="filtrarHistStatus('pendente')" style="border-color:#eab308;color:#fbbf24;">🟡 Pendentes</button>
+        <button id="hist-btn-aprovado" class="btn btn-sm hist-filtro-btn" onclick="filtrarHistStatus('aprovado')" style="border-color:#10b981;color:#34d399;">🟢 Aprovados</button>
+        <button id="hist-btn-recusado" class="btn btn-sm hist-filtro-btn" onclick="filtrarHistStatus('recusado')" style="border-color:#ef4444;color:#f87171;">🔴 Histórico</button>
+      </div>
+      <!-- Barra de busca -->
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <input id="hist-busca-input" type="text" placeholder="🔍 Buscar por nome, nº O.S. ou nº do cliente..." oninput="renderHistFiltrado()" style="flex:1;padding:8px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:12.5px;outline:none;" />
       </div>
       <div id="hist-lista"><div class="empty">Nenhum orçamento salvo ainda.</div></div>
     </div>
@@ -2392,7 +2422,7 @@
         <button type="button" id="btn-agenda-notificacoes-status" class="btn btn-sec btn-sm" onclick="solicitarPermissaoNotificacaoAgenda()" style="font-size:12px;padding:8px 12px;display:inline-flex;align-items:center;gap:6px;" title="Ativar ou testar alertas sonoros e no navegador">
           🔔 Alertas Ativos
         </button>
-        <button class="btn btn-primary btn-sm" onclick="abrirModalNovoCompromissoAgenda()" style="font-size:12px;padding:8px 14px;font-weight:900;">
+        <button type="button" id="btn-agenda-novo-agendamento" class="btn btn-primary btn-sm" onclick="abrirModalNovoCompromissoAgenda()" style="font-size:12px;padding:8px 14px;font-weight:900;">
           ➕ Novo Agendamento
         </button>
         <button type="button" class="btn btn-sm" id="btn-agenda-orcamentos-fazer" onclick="filtrarAgenda('orcamentos')" style="font-size:12px;padding:8px 14px;font-weight:900;background:linear-gradient(135deg, #f59e0b, #d97706);color:#000;border:none;border-radius:var(--r-sm);cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 4px 14px rgba(245,158,11,0.35);transition:transform 0.15s, box-shadow 0.15s;" title="Compromissos concluídos para fazer orçamento">
@@ -2819,13 +2849,19 @@
             <p style="font-size:12px;color:#94a3b8;margin:3px 0 0 0;">Configure a identidade da sua marcenaria para orçamentos, contratos, assinaturas digitais e recibos</p>
           </div>
         </div>
-        <div style="display:flex;align-items:center;gap:10px;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
           <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.4);color:#34d399;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:800;">
             <span style="width:8px;height:8px;border-radius:50%;background:#34d399;box-shadow:0 0 8px #34d399;"></span>
             Empresa Ativa
           </span>
           <button type="button" class="btn btn-gold btn-sm" onclick="salvarDadosEmpresaConfig()" style="font-weight:900;padding:8px 18px;border-radius:10px;box-shadow:0 4px 14px rgba(201,168,76,0.35);">
             💾 Salvar Alterações
+          </button>
+          <button type="button" class="btn btn-sec btn-sm" onclick="abrirModalAlterarSenhaEmpresa()" style="font-weight:800;padding:8px 12px;border:1.5px solid rgba(201,168,76,0.5);background:rgba(201,168,76,0.1);color:var(--gold-light);border-radius:10px;display:inline-flex;align-items:center;gap:5px;" title="Alterar senha de proteção dos Dados da Empresa">
+            🔒 Senha de Acesso
+          </button>
+          <button type="button" class="btn btn-sec btn-sm" onclick="bloquearDadosEmpresa()" style="font-weight:700;padding:8px 10px;border:1px solid rgba(255,255,255,0.15);color:#cbd5e1;background:rgba(255,255,255,0.06);border-radius:10px;display:inline-flex;align-items:center;gap:4px;" title="Bloquear tela com senha novamente">
+            🔐 Bloquear
           </button>
         </div>
       </div>
@@ -3119,6 +3155,7 @@
         <div class="field"><label>Cidade</label><input id="c-cidade" placeholder="Itaitinga" /></div>
       </div>
       <div class="field-row">
+        <div class="field"><label>CPF / Número do Cliente (Opcional)</label><input id="c-cpf" placeholder="CPF, RG ou código do cliente" /></div>
         <div class="field"><label>Senha de Acesso do Cliente ao Portal (Opcional)</label><input id="c-senha" placeholder="Deixe vazio para usar os 4 últimos dígitos do WhatsApp (ou defina aqui)" /></div>
       </div>
       <div class="actions">
@@ -3305,7 +3342,12 @@
   <!-- ══════════════════════════════════════════ -->
   <div id="panel-contratos" class="panel">
     <div class="card">
-      <div class="card-title">📄 Gerador de Contrato</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+        <div class="card-title" style="margin-bottom:0;">📄 Gerador de Contrato</div>
+        <button type="button" class="btn btn-sm" onclick="abrirConfiguracaoContratoComSenha()" style="background:rgba(201,168,76,0.14);border:1.5px solid var(--gold);color:var(--gold-light);font-size:12px;font-weight:800;padding:8px 14px;border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 3px 12px rgba(201,168,76,0.25);">
+          <span>⚙️</span> <span>Configurar / Editar Modelo de Contrato</span>
+        </button>
+      </div>
       <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6;">
         Selecione uma Ordem de Serviço salva para gerar o contrato completo de prestação de serviços, pronto para impressão e assinatura.
       </p>
@@ -5044,7 +5086,7 @@
         </button>
       </div>
     </div>
-
+  </div>
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════════ -->
@@ -6023,6 +6065,225 @@
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!--  MODAIS: SENHA DADOS DA EMPRESA E CONFIGURAÇÃO DE CONTRATO         -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+
+<!-- 1. MODAL DE SENHA PARA DADOS DA EMPRESA -->
+<div id="modal-auth-empresa" class="modal-overlay" style="display:none;z-index:1000300;" onclick="fecharModalAuthEmpresa(event)">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:430px;padding:24px;border:1.5px solid var(--gold);box-shadow:0 18px 50px rgba(0,0,0,0.85);background:linear-gradient(135deg,#131422,#0b0c14);border-radius:18px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:24px;">🏢🔒</span>
+        <div>
+          <div style="font-size:15px;font-weight:900;color:var(--gold-light);">Dados da Empresa</div>
+          <div style="font-size:11px;color:var(--muted);">Acesso Protegido por Senha</div>
+        </div>
+      </div>
+      <button type="button" class="modal-close" onclick="fecharModalAuthEmpresa()" style="font-size:16px;">✕</button>
+    </div>
+    <p style="font-size:12.5px;color:#cbd5e1;line-height:1.5;margin-bottom:14px;">
+      Esta área contém informações fiscais, chaves Pix, logomarcas e dados da licença. Digite sua senha para entrar:
+    </p>
+    <div style="margin-bottom:12px;">
+      <div style="position:relative;display:flex;align-items:center;">
+        <input type="password" id="auth-empresa-senha" placeholder="Digite a senha..." style="width:100%;padding:12px 42px 12px 14px;font-size:16px;background:#06070d;border:1.5px solid var(--gold);border-radius:10px;color:#fff;outline:none;letter-spacing:2px;" onkeydown="if(event.key==='Enter') confirmarSenhaDadosEmpresa()" />
+        <button type="button" onclick="toggleVisibilidadeSenhaGeral('auth-empresa-senha', this)" style="position:absolute;right:10px;background:none;border:none;color:#94a3b8;font-size:16px;cursor:pointer;padding:4px;">👁️</button>
+      </div>
+      <div id="auth-empresa-erro" style="display:none;color:#f87171;font-size:11.5px;font-weight:700;margin-top:6px;"></div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px;">
+        💡 Senha inicial padrão: <strong style="color:var(--gold-light);">1234</strong>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;flex-wrap:wrap;gap:8px;">
+      <button type="button" class="btn btn-sec btn-sm" onclick="abrirModalAlterarSenhaEmpresa()" style="font-size:11.5px;padding:8px 12px;border:1px solid rgba(255,255,255,0.18);color:#cbd5e1;">
+        ⚙️ Alterar Senha
+      </button>
+      <div style="display:flex;gap:8px;">
+        <button type="button" class="btn btn-sec btn-sm" onclick="fecharModalAuthEmpresa()" style="padding:8px 14px;">Cancelar</button>
+        <button type="button" class="btn btn-gold btn-sm" onclick="confirmarSenhaDadosEmpresa()" style="font-weight:900;padding:8px 18px;">
+          🔓 Acessar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 2. MODAL PARA ALTERAR SENHA DE DADOS DA EMPRESA -->
+<div id="modal-alterar-senha-empresa" class="modal-overlay" style="display:none;z-index:1000350;" onclick="fecharModalAlterarSenhaEmpresa(event)">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:400px;padding:22px;border:1.5px solid var(--gold);box-shadow:0 18px 50px rgba(0,0,0,0.85);background:linear-gradient(135deg,#131422,#0b0c14);border-radius:18px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:22px;">🔑</span>
+        <div style="font-size:15px;font-weight:900;color:var(--gold-light);">Alterar Senha da Empresa</div>
+      </div>
+      <button type="button" class="modal-close" onclick="fecharModalAlterarSenhaEmpresa()" style="font-size:16px;">✕</button>
+    </div>
+    <div class="field" style="margin-bottom:10px;">
+      <label style="font-size:11.5px;color:var(--muted);font-weight:700;">Senha Atual (padrão: 1234)</label>
+      <input type="password" id="alt-emp-senha-atual" placeholder="Digite a senha atual..." style="width:100%;padding:10px;background:#06070d;border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;" />
+    </div>
+    <div class="field" style="margin-bottom:10px;">
+      <label style="font-size:11.5px;color:var(--muted);font-weight:700;">Nova Senha</label>
+      <input type="password" id="alt-emp-senha-nova" placeholder="Digite a nova senha..." style="width:100%;padding:10px;background:#06070d;border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;" />
+    </div>
+    <div class="field" style="margin-bottom:12px;">
+      <label style="font-size:11.5px;color:var(--muted);font-weight:700;">Confirmar Nova Senha</label>
+      <input type="password" id="alt-emp-senha-conf" placeholder="Repita a nova senha..." style="width:100%;padding:10px;background:#06070d;border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;" />
+    </div>
+    <div id="alt-emp-erro" style="display:none;color:#f87171;font-size:11.5px;font-weight:700;margin-bottom:10px;"></div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;">
+      <button type="button" class="btn btn-sec btn-sm" onclick="fecharModalAlterarSenhaEmpresa()">Cancelar</button>
+      <button type="button" class="btn btn-gold btn-sm" onclick="salvarNovaSenhaDadosEmpresa()" style="font-weight:900;">💾 Salvar Senha</button>
+    </div>
+  </div>
+</div>
+
+<!-- 3. MODAL DE SENHA PARA CONFIGURAR/EDITAR CONTRATO -->
+<div id="modal-auth-contrato" class="modal-overlay" style="display:none;z-index:1000300;" onclick="fecharModalAuthContrato(event)">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:430px;padding:24px;border:1.5px solid var(--gold);box-shadow:0 18px 50px rgba(0,0,0,0.85);background:linear-gradient(135deg,#131422,#0b0c14);border-radius:18px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:24px;">📄🔒</span>
+        <div>
+          <div style="font-size:15px;font-weight:900;color:var(--gold-light);">Modelo de Contrato</div>
+          <div style="font-size:11px;color:var(--muted);">Acesso Protegido por Senha</div>
+        </div>
+      </div>
+      <button type="button" class="modal-close" onclick="fecharModalAuthContrato()" style="font-size:16px;">✕</button>
+    </div>
+    <p style="font-size:12.5px;color:#cbd5e1;line-height:1.5;margin-bottom:14px;">
+      Digite a senha de administrador para configurar cláusulas, condições e o modelo oficial de contrato:
+    </p>
+    <div style="margin-bottom:12px;">
+      <div style="position:relative;display:flex;align-items:center;">
+        <input type="password" id="auth-contrato-senha" placeholder="Digite a senha..." style="width:100%;padding:12px 42px 12px 14px;font-size:16px;background:#06070d;border:1.5px solid var(--gold);border-radius:10px;color:#fff;outline:none;letter-spacing:2px;" onkeydown="if(event.key==='Enter') confirmarSenhaContrato()" />
+        <button type="button" onclick="toggleVisibilidadeSenhaGeral('auth-contrato-senha', this)" style="position:absolute;right:10px;background:none;border:none;color:#94a3b8;font-size:16px;cursor:pointer;padding:4px;">👁️</button>
+      </div>
+      <div id="auth-contrato-erro" style="display:none;color:#f87171;font-size:11.5px;font-weight:700;margin-top:6px;"></div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px;">
+        💡 Senha inicial padrão: <strong style="color:var(--gold-light);">1234</strong>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;flex-wrap:wrap;gap:8px;">
+      <button type="button" class="btn btn-sec btn-sm" onclick="abrirModalAlterarSenhaContrato()" style="font-size:11.5px;padding:8px 12px;border:1px solid rgba(255,255,255,0.18);color:#cbd5e1;">
+        ⚙️ Alterar Senha
+      </button>
+      <div style="display:flex;gap:8px;">
+        <button type="button" class="btn btn-sec btn-sm" onclick="fecharModalAuthContrato()" style="padding:8px 14px;">Cancelar</button>
+        <button type="button" class="btn btn-gold btn-sm" onclick="confirmarSenhaContrato()" style="font-weight:900;padding:8px 18px;">
+          🔓 Configurar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 4. MODAL PARA ALTERAR SENHA DO CONTRATO -->
+<div id="modal-alterar-senha-contrato" class="modal-overlay" style="display:none;z-index:1000350;" onclick="fecharModalAlterarSenhaContrato(event)">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:400px;padding:22px;border:1.5px solid var(--gold);box-shadow:0 18px 50px rgba(0,0,0,0.85);background:linear-gradient(135deg,#131422,#0b0c14);border-radius:18px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:22px;">🔑</span>
+        <div style="font-size:15px;font-weight:900;color:var(--gold-light);">Alterar Senha do Contrato</div>
+      </div>
+      <button type="button" class="modal-close" onclick="fecharModalAlterarSenhaContrato()" style="font-size:16px;">✕</button>
+    </div>
+    <div class="field" style="margin-bottom:10px;">
+      <label style="font-size:11.5px;color:var(--muted);font-weight:700;">Senha Atual (padrão: 1234)</label>
+      <input type="password" id="alt-cont-senha-atual" placeholder="Digite a senha atual..." style="width:100%;padding:10px;background:#06070d;border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;" />
+    </div>
+    <div class="field" style="margin-bottom:10px;">
+      <label style="font-size:11.5px;color:var(--muted);font-weight:700;">Nova Senha</label>
+      <input type="password" id="alt-cont-senha-nova" placeholder="Digite a nova senha..." style="width:100%;padding:10px;background:#06070d;border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;" />
+    </div>
+    <div class="field" style="margin-bottom:12px;">
+      <label style="font-size:11.5px;color:var(--muted);font-weight:700;">Confirmar Nova Senha</label>
+      <input type="password" id="alt-cont-senha-conf" placeholder="Repita a nova senha..." style="width:100%;padding:10px;background:#06070d;border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;" />
+    </div>
+    <div id="alt-cont-erro" style="display:none;color:#f87171;font-size:11.5px;font-weight:700;margin-bottom:10px;"></div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;">
+      <button type="button" class="btn btn-sec btn-sm" onclick="fecharModalAlterarSenhaContrato()">Cancelar</button>
+      <button type="button" class="btn btn-gold btn-sm" onclick="salvarNovaSenhaContrato()" style="font-weight:900;">💾 Salvar Senha</button>
+    </div>
+  </div>
+</div>
+
+<!-- 5. MODAL EDITOR DE MODELO DE CONTRATO -->
+<div id="modal-editor-modelo-contrato" class="modal-overlay" style="display:none;z-index:1000300;" onclick="fecharModalEditorContrato(event)">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:860px;width:95%;max-height:94vh;display:flex;flex-direction:column;padding:0;background:#0c0d16;border:1.5px solid var(--gold);border-radius:18px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.9);">
+    <!-- Header -->
+    <div style="padding:16px 20px;background:linear-gradient(135deg,rgba(201,168,76,0.2),rgba(20,20,30,0.95));border-bottom:1.5px solid var(--gold);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:24px;">📑⚙️</span>
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <h3 style="margin:0;font-size:17px;font-weight:900;color:var(--gold-light);">Configurar Modelo de Contrato</h3>
+            <span style="background:rgba(34,197,94,0.2);border:1px solid #22c55e;color:#86efac;font-size:11px;font-weight:800;padding:2px 8px;border-radius:6px;">Personalizável</span>
+          </div>
+          <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">Edite as cláusulas, garantias e condições que serão geradas para as Ordens de Serviço</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button type="button" class="btn btn-sec btn-sm" onclick="abrirModalAlterarSenhaContrato()" style="font-size:11px;padding:5px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);color:#cbd5e1;">🔑 Senha</button>
+        <button type="button" class="modal-close" onclick="fecharModalEditorContrato()" style="font-size:18px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.08);border:none;border-radius:50%;color:#fff;cursor:pointer;">✕</button>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div style="padding:16px 20px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:12px;">
+      <!-- Guia de tags / variáveis -->
+      <div style="background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.3);border-radius:12px;padding:12px;">
+        <div style="font-size:11.5px;font-weight:800;color:var(--gold-light);margin-bottom:6px;display:flex;align-items:center;gap:5px;">
+          <span>🏷️</span> <span>Clique nas variáveis abaixo para inserir no texto:</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          <button type="button" onclick="inserirTagContrato('{NUMERO_OS}')" class="btn btn-sm" style="font-size:11px;padding:3px 8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);color:#fef08a;cursor:pointer;border-radius:6px;">{NUMERO_OS}</button>
+          <button type="button" onclick="inserirTagContrato('{DATA_EXTENSO}')" class="btn btn-sm" style="font-size:11px;padding:3px 8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);color:#fef08a;cursor:pointer;border-radius:6px;">{DATA_EXTENSO}</button>
+          <button type="button" onclick="inserirTagContrato('{EMPRESA_NOME}')" class="btn btn-sm" style="font-size:11px;padding:3px 8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);color:#93c5fd;cursor:pointer;border-radius:6px;">{EMPRESA_NOME}</button>
+          <button type="button" onclick="inserirTagContrato('{EMPRESA_SEGMENTO}')" class="btn btn-sm" style="font-size:11px;padding:3px 8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);color:#93c5fd;cursor:pointer;border-radius:6px;">{EMPRESA_SEGMENTO}</button>
+          <button type="button" onclick="inserirTagContrato('{EMPRESA_WHATSAPP}')" class="btn btn-sm" style="font-size:11px;padding:3px 8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);color:#93c5fd;cursor:pointer;border-radius:6px;">{EMPRESA_WHATSAPP}</button>
+          <button type="button" onclick="inserirTagContrato('{EMPRESA_CIDADE}')" class="btn btn-sm" style="font-size:11px;padding:3px 8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);color:#93c5fd;cursor:pointer;border-radius:6px;">{EMPRESA_CIDADE}</button>
+          <button type="button" onclick="inserirTagContrato('{EMPRESA_CNPJ}')" class="btn btn-sm" style="font-size:11px;padding:3px 8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);color:#93c5fd;cursor:pointer;border-radius:6px;">{EMPRESA_CNPJ}</button>
+          <button type="button" onclick="inserirTagContrato('{CHAVE_LICENCA}')" class="btn btn-sm" style="font-size:11px;padding:3px 8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);color:#93c5fd;cursor:pointer;border-radius:6px;">{CHAVE_LICENCA}</button>
+          <button type="button" onclick="inserirTagContrato('{CLIENTE_NOME}')" class="btn btn-sm" style="font-size:11px;padding:3px 8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);color:#86efac;cursor:pointer;border-radius:6px;">{CLIENTE_NOME}</button>
+          <button type="button" onclick="inserirTagContrato('{CLIENTE_DOC}')" class="btn btn-sm" style="font-size:11px;padding:3px 8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);color:#86efac;cursor:pointer;border-radius:6px;">{CLIENTE_DOC}</button>
+          <button type="button" onclick="inserirTagContrato('{CLIENTE_WHATSAPP}')" class="btn btn-sm" style="font-size:11px;padding:3px 8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);color:#86efac;cursor:pointer;border-radius:6px;">{CLIENTE_WHATSAPP}</button>
+          <button type="button" onclick="inserirTagContrato('{CLIENTE_ENDERECO}')" class="btn btn-sm" style="font-size:11px;padding:3px 8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);color:#86efac;cursor:pointer;border-radius:6px;">{CLIENTE_ENDERECO}</button>
+          <button type="button" onclick="inserirTagContrato('{ITENS_SERVICO}')" class="btn btn-sm" style="font-size:11px;padding:3px 8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);color:#f472b6;cursor:pointer;border-radius:6px;">{ITENS_SERVICO}</button>
+          <button type="button" onclick="inserirTagContrato('{VALOR_TOTAL}')" class="btn btn-sm" style="font-size:11px;padding:3px 8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);color:#fcd34d;cursor:pointer;border-radius:6px;">{VALOR_TOTAL}</button>
+          <button type="button" onclick="inserirTagContrato('{FORMA_PAGAMENTO}')" class="btn btn-sm" style="font-size:11px;padding:3px 8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);color:#fcd34d;cursor:pointer;border-radius:6px;">{FORMA_PAGAMENTO}</button>
+          <button type="button" onclick="inserirTagContrato('{PRAZO_ENTREGA}')" class="btn btn-sm" style="font-size:11px;padding:3px 8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);color:#c084fc;cursor:pointer;border-radius:6px;">{PRAZO_ENTREGA}</button>
+          <button type="button" onclick="inserirTagContrato('{GARANTIA}')" class="btn btn-sm" style="font-size:11px;padding:3px 8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);color:#c084fc;cursor:pointer;border-radius:6px;">{GARANTIA}</button>
+          <button type="button" onclick="inserirTagContrato('{CHAVE_PIX}')" class="btn btn-sm" style="font-size:11px;padding:3px 8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);color:#34d399;cursor:pointer;border-radius:6px;">{CHAVE_PIX}</button>
+          <button type="button" onclick="inserirTagContrato('{OBSERVACOES}')" class="btn btn-sm" style="font-size:11px;padding:3px 8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);color:#cbd5e1;cursor:pointer;border-radius:6px;">{OBSERVACOES}</button>
+        </div>
+      </div>
+
+      <!-- Área de edição do texto -->
+      <div style="flex:1;display:flex;flex-direction:column;">
+        <label style="font-size:11.5px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:6px;">
+          Texto do Contrato & Cláusulas:
+        </label>
+        <textarea id="editor-contrato-conteudo" style="width:100%;height:380px;font-family:monospace;font-size:12.5px;line-height:1.5;background:#05060d;border:1.5px solid rgba(201,168,76,0.6);border-radius:10px;padding:12px;color:#fff;resize:vertical;outline:none;box-shadow:inset 0 2px 8px rgba(0,0,0,0.6);"></textarea>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="padding:14px 20px;background:#080911;border-top:1px solid rgba(255,255,255,0.1);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+      <button type="button" class="btn btn-sec btn-sm" onclick="restaurarModeloContratoPadrao()" style="color:#f87171;border-color:rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);">
+        🔄 Restaurar Modelo Padrão
+      </button>
+      <div style="display:flex;gap:8px;">
+        <button type="button" class="btn btn-sec btn-sm" onclick="fecharModalEditorContrato()">Cancelar</button>
+        <button type="button" class="btn btn-gold btn-sm" onclick="salvarModeloContratoPersonalizado()" style="font-weight:900;padding:9px 20px;box-shadow:0 3px 12px rgba(201,168,76,0.4);">
+          💾 Salvar Modelo
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -8048,7 +8309,11 @@ function getUser() {
 // ══════════════════════════════════════════════
 //  TABS
 // ══════════════════════════════════════════════
-function goTab(t) {
+function goTab(t, bypassAuth = false) {
+  if (t === 'empresa' && !bypassAuth && !window._empresaAutenticada) {
+    solicitarAcessoDadosEmpresa();
+    return;
+  }
   ['orcamento','historico','financeiro','estoque','detector','agenda','agenda-pessoal','produtos','empresa','clientes','ponto','contratos','usuarios','licenca','camera','relatorio','cronograma','ferramentas'].forEach(p => {
     const pan = document.getElementById('panel-'+p);
     if (pan) pan.classList.toggle('active', p===t);
@@ -11420,7 +11685,162 @@ function enviarWhatsOs(id) {
 // ══════════════════════════════════════════════
 //  RENDER HISTORY (TERCEIRA IMAGEM)
 // ══════════════════════════════════════════════
+
+// ════════════════════════════════════════════════════════════
+// FILTROS DO HISTÓRICO DE O.S.
+// ════════════════════════════════════════════════════════════
+let _histFiltroStatus = 'todos';
+
+function filtrarHistStatus(status) {
+  if (status !== undefined) {
+    _histFiltroStatus = status;
+    // Atualizar botões ativos
+    ['todos','pendente','aprovado','recusado'].forEach(s => {
+      const btn = document.getElementById('hist-btn-' + s);
+      if (btn) btn.classList.toggle('hist-filtro-ativo', s === status);
+    });
+  }
+  renderHistFiltrado();
+}
+
+function renderHistFiltrado() {
+  const el = document.getElementById('hist-lista');
+  const badge = document.getElementById('hist-count');
+  if (!el) return;
+
+  const busca = (document.getElementById('hist-busca-input') || {}).value || '';
+  const buscaLower = busca.toLowerCase().trim();
+
+  let lista = historico.slice().reverse();
+
+  // Filtro por status
+  if (_histFiltroStatus && _histFiltroStatus !== 'todos') {
+    if (_histFiltroStatus === 'aprovado') {
+      lista = lista.filter(o => o.status === 'aprovado' || o.status === 'modificacao_aprovada');
+    } else {
+      lista = lista.filter(o => (o.status || 'pendente') === _histFiltroStatus);
+    }
+  }
+
+  // Filtro por busca (nome, número O.S., número cliente/cpf)
+  if (buscaLower) {
+    lista = lista.filter(o => {
+      const nome = (o.nome || '').toLowerCase();
+      const num = String(o.numero || '').toLowerCase();
+      const tel = String((o.dados && o.dados.tel) || '').replace(/\D/g,'');
+      const cpf = String((o.dados && o.dados.cpf) || '').replace(/\D/g,'');
+      const buscaDigitos = buscaLower.replace(/\D/g,'');
+      return nome.includes(buscaLower) ||
+             num.includes(buscaLower) ||
+             (buscaDigitos && tel.includes(buscaDigitos)) ||
+             (buscaDigitos && cpf.includes(buscaDigitos));
+    });
+  }
+
+  if (badge) badge.textContent = lista.length;
+
+  if (!lista.length) {
+    el.innerHTML = '<div class="empty">Nenhuma O.S. encontrada com esse filtro.</div>';
+    return;
+  }
+
+  // Reusar renderHist mas com lista filtrada
+  const statusLabels = {
+    pendente: '🟡 Aguardando Resposta',
+    aprovado: '🟢 Aprovado',
+    reajustar: '🟠 Reajustar Detalhes',
+    modificacao_aprovada: '🟢 Modificação Aprovada',
+    recusado: '🔴 Não Aprovado'
+  };
+
+  el.innerHTML = lista.map(o => {
+    const st = o.status || 'pendente';
+    const numLimpo = String(o.numero || '').replace(/\D/g,'');
+    const temAssinatura = !!(o.assinado_por || o.assinatura_digital || localStorage.getItem('sdv_assinatura_' + numLimpo));
+    let assinadoBadge = '';
+    if ((st === 'aprovado' || st === 'modificacao_aprovada') && o.assinado_por) {
+      assinadoBadge = `<div onclick="abrirModalAssinaturaOs('${o.id}')" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;background:rgba(74,222,128,0.12);border:1.5px solid rgba(74,222,128,0.35);padding:5px 12px;border-radius:10px;font-size:12px;color:#4ade80;margin-top:6px;font-weight:700;">✍️ Autorizado por: ${esc(o.assinado_por)}</div>`;
+    } else if (st === 'reajustar') {
+      assinadoBadge = `<div style="font-size:11.5px;color:#fbbf24;margin-top:4px;font-weight:700;">🔄 Detalhes em Reajuste</div>`;
+    }
+    const numVersoes = (o.versoes_pdf && o.versoes_pdf.length) || 1;
+    const btnPdf = numVersoes > 1
+      ? `<button class="btn btn-gold btn-sm" onclick="abrirModalVersoesPdf('${o.id}')">📑 PDFs (${numVersoes})</button>`
+      : `<button class="btn btn-gold btn-sm" onclick="visualizarPdfOs('${o.id}')">👁️ Visualizar PDF</button>`;
+    let btnAcaoAprovacao = '';
+    if (st === 'reajustar') {
+      btnAcaoAprovacao = `<button class="btn btn-sm" onclick="aprovarModificacaoDireto('${o.id}')" style="background:rgba(16,185,129,0.18);border:1.5px solid #10b981;color:#34d399;font-weight:800;">✓ Aprovar Modificação</button>`;
+    }
+    let btnVerAssinatura = (st === 'aprovado' || temAssinatura || o.assinado_por)
+      ? `<button class="btn btn-sm" onclick="abrirModalAssinaturaOs('${o.id}')" style="background:rgba(52,211,153,0.2);border:1.5px solid #10b981;color:#34d399;font-weight:800;">✍️ Ver Assinatura</button>`
+      : `<button class="btn btn-sec btn-sm" onclick="abrirModalAssinaturaOs('${o.id}')">✍️ Assinatura</button>`;
+    const foiEnviadoAssinatura = !!(o.enviado_assinatura || o.enviado_assinatura_em);
+    const dataHoraEnvioStr = o.enviado_assinatura_em ? new Date(o.enviado_assinatura_em).toLocaleDateString('pt-BR') : '';
+    const btnStatusEnvio = foiEnviadoAssinatura
+      ? `<button type="button" class="btn btn-sm" onclick="abrirModalStatusEnvio('${o.id}')" style="background:rgba(6,182,212,0.16);border:1.5px solid #06b6d4;color:#22d3ee;font-weight:800;border-radius:10px;padding:6px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">📤 Enviado p/ Assinatura ${dataHoraEnvioStr ? '('+dataHoraEnvioStr+')' : ''}</button>`
+      : `<button type="button" class="btn btn-sm" onclick="abrirModalStatusEnvio('${o.id}')" style="background:rgba(234,179,8,0.12);border:1.5px solid rgba(234,179,8,0.6);color:#fbbf24;font-weight:800;border-radius:10px;padding:6px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">⏳ Não Enviado p/ Assinatura</button>`;
+    return `
+    <div class="hist-card">
+      <div class="hist-top">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <span class="hist-num">${esc(o.numero)}</span>
+          <span class="status-pill ${st} status-bloqueada" style="cursor:default;opacity:0.95;user-select:none;">${statusLabels[st] || '🟡 Aguardando'}</span>
+        </div>
+        <span class="hist-date">${esc(o.data_orc || '')}</span>
+      </div>
+      <div class="hist-client">${esc(o.nome || 'Cliente não identificado')}</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px;">${esc((o.dados && o.dados.tel) || '')}</div>
+      ${assinadoBadge}
+      <div class="hist-btns" style="margin-top:10px;">
+        <button class="btn btn-primary btn-sm" onclick="editarOs('${o.id}')">✏️ Editar</button>
+        ${btnPdf}
+        ${btnVerAssinatura}
+        ${btnStatusEnvio}
+        ${btnAcaoAprovacao}
+        <button class="btn btn-danger btn-sm" onclick="deletarOs('${o.id}')">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function imprimirListaOs() {
+  const busca = (document.getElementById('hist-busca-input') || {}).value || '';
+  const buscaLower = busca.toLowerCase().trim();
+  let lista = historico.slice().reverse();
+  if (_histFiltroStatus && _histFiltroStatus !== 'todos') {
+    if (_histFiltroStatus === 'aprovado') {
+      lista = lista.filter(o => o.status === 'aprovado' || o.status === 'modificacao_aprovada');
+    } else {
+      lista = lista.filter(o => (o.status || 'pendente') === _histFiltroStatus);
+    }
+  }
+  if (buscaLower) {
+    lista = lista.filter(o => {
+      const nome = (o.nome || '').toLowerCase();
+      const num = String(o.numero || '').toLowerCase();
+      return nome.includes(buscaLower) || num.includes(buscaLower);
+    });
+  }
+  const statusLabel = { pendente:'Aguardando', aprovado:'Aprovado', recusado:'Não Aprovado', modificacao_aprovada:'Mod. Aprovada', reajustar:'Reajustar' };
+  const linhas = lista.map(o => `<tr>
+    <td>${esc(o.numero||'-')}</td>
+    <td>${esc(o.nome||'-')}</td>
+    <td>${esc((o.dados&&o.dados.tel)||'-')}</td>
+    <td>${esc(o.total||'-')}</td>
+    <td>${statusLabel[o.status||'pendente']||'-'}</td>
+    <td>${esc(o.data_orc||'-')}</td>
+  </tr>`).join('');
+  const win = window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Lista de O.S.</title>
+  <style>body{font-family:Arial,sans-serif;padding:20px}h2{margin-bottom:12px}table{width:100%;border-collapse:collapse;font-size:13px}th,td{border:1px solid #ccc;padding:6px 10px;text-align:left}th{background:#f5f5f5;font-weight:700}tr:nth-child(even){background:#fafafa}@media print{body{padding:0}}</style>
+  </head><body><h2>🗂️ Lista de Ordens de Serviço (${lista.length})</h2>
+  <table><thead><tr><th>Nº O.S.</th><th>Cliente</th><th>WhatsApp</th><th>Valor Total</th><th>Status</th><th>Data</th></tr></thead><tbody>${linhas}</tbody></table>
+  <script>window.onload=()=>{window.print();}<\/script></body></html>`);
+  win.document.close();
+}
+
 function renderHist() {
+  if (typeof renderHistFiltrado === 'function') { renderHistFiltrado(); return; }
   const el = document.getElementById('hist-lista');
   const badge = document.getElementById('hist-count');
   if (badge) badge.textContent = historico.length;
@@ -13020,7 +13440,8 @@ function salvarCliente() {
   const nome = document.getElementById('c-nome').value.trim();
   if (!nome) { showMsg('cli-msg','Informe o nome do cliente.',false); return; }
   const senhaInput = document.getElementById('c-senha');
-  const novo = { nome, whatsapp:document.getElementById('c-tel').value.trim(), bairro:document.getElementById('c-bairro').value.trim(), cidade:document.getElementById('c-cidade').value.trim()||'Itaitinga', senha: (senhaInput && senhaInput.value.trim()) || '' };
+  const cpf = (document.getElementById('c-cpf') || {}).value || '';
+  const novo = { nome, whatsapp:document.getElementById('c-tel').value.trim(), bairro:document.getElementById('c-bairro').value.trim(), cidade:document.getElementById('c-cidade').value.trim()||'Itaitinga', senha: (senhaInput && senhaInput.value.trim()) || '' , cpf };
   if (editandoCliId) {
     const idx = clientes.findIndex(x=>x.id===editandoCliId);
     if (idx!==-1) clientes[idx]={...clientes[idx],...novo};
@@ -13035,6 +13456,7 @@ function salvarCliente() {
 function limparCli() {
   editandoCliId = null;
   ['c-nome','c-tel','c-bairro','c-cidade','c-senha'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  if (document.getElementById('c-cpf')) document.getElementById('c-cpf').value = '';
   document.getElementById('btn-salvar-cli').innerHTML = '💾 Salvar cliente';
 }
 
@@ -13359,6 +13781,7 @@ function renderCli(container='cli-lista', modoModal=false) {
         <div class="cli-name">${c.nome}</div>
         <div class="cli-det">${c.whatsapp||(c.bairro?'':'(sem tel)')}${c.bairro?' · '+c.bairro:''} ${c.cidade?'· '+c.cidade:''}</div>
         <div style="font-size:10.5px;color:var(--gold-light);margin-top:3px;font-weight:700;">🔑 Senha Portal: ${esc(senhaExibir)}</div>
+        ${c.cpf ? `<div style="font-size:10.5px;color:#38bdf8;margin-top:2px;font-weight:700;">🪪 Nº Cliente: ${esc(c.cpf)}</div>` : ''}
       </div>
       <div class="cli-btns">
         ${modoModal
@@ -22873,7 +23296,7 @@ function moverAbaPosicao(tabId, direcao) {
     }
 
     function handlePointerDown(e) {
-      if (modoOrganizarAbasAtivo) return; // No modo tocar-para-mover, não inicia drag acidental
+      if (!modoOrganizarAbasAtivo) return; // Drag bloqueado - só no modo Organizar Abas // No modo tocar-para-mover, não inicia drag acidental
 
       const tab = e.target.closest('.tab');
       if (!tab) return;
@@ -22889,7 +23312,7 @@ function moverAbaPosicao(tabId, direcao) {
     }
 
     function handlePointerMove(e) {
-      if (modoOrganizarAbasAtivo) return;
+      if (!modoOrganizarAbasAtivo) return; // Move bloqueado - só no modo Organizar Abas
 
       const touch = e.touches ? e.touches[0] : e;
       const dx = touch.clientX - startX;

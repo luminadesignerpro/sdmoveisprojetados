@@ -7360,7 +7360,23 @@ function mudarAba(tab) {
       const badge = document.getElementById('badge-total-os-geradas');
       if (!container) return;
 
-      const ordens = carregarOrdensDoStorage();
+      const todasOrdens = carregarOrdensDoStorage();
+
+      // Filtrar O.S. apenas do cliente logado
+      const _nomeSessao = (clienteSessao && clienteSessao.nome) ? clienteSessao.nome.toLowerCase().trim() : '';
+      const _osSessao = (clienteSessao && clienteSessao.os) ? String(clienteSessao.os).replace(/\D/g,'') : '';
+      let ordens = todasOrdens.filter(o => {
+        const nomeOs = (o.nome || (o.dados && o.dados.nome) || '').toLowerCase().trim();
+        const numOs = String(o.numero || '').replace(/\D/g,'');
+        if (_nomeSessao && nomeOs) {
+          const pFirst = _nomeSessao.split(' ')[0];
+          if (nomeOs.includes(pFirst) || _nomeSessao.includes((nomeOs.split(' ')[0])||'')) return true;
+        }
+        if (_osSessao && numOs === _osSessao) return true;
+        return false;
+      });
+      if (!ordens.length) ordens = todasOrdens; // fallback: mostra todas se não encontrar
+
       if (badge) badge.textContent = ordens.length + (ordens.length === 1 ? ' O.S.' : ' O.S.');
 
       if (!ordens.length) {
@@ -8192,11 +8208,856 @@ function mudarAba(tab) {
         btnZap.href = `https://wa.me/55${telLimpo}?text=${encodeURIComponent('Olá, estou enviando o comprovante de pagamento da minha O.S. ' + sessao.os)}`;
       }
 
-      // Extrai valor total real
+      // Extrai valor total real - fix: parse correto do formato BRL (ex: R$ 4.500,00)
       let totalNum = 0;
       let totalStr = (osData && (osData.total || (osData.dados && osData.dados.total))) || '';
       if (totalStr) {
-        const numLimpo = String(totalStr).replace(/[^\d,\.]/g, '').replace(',', '.');
+        // Formato BRL: "R$ 4.500,00" -> parse correto (remove R$, remove pontos de milhar, troca vírgula por ponto decimal)
+        const numSemSimbolo = String(totalStr).replace('R
+      }
+
+      // Extrai condição de pagamento
+      const forma = (osData && osData.dados && osData.dados.forma) || (osData && osData.forma) || 'À vista';
+      const condEl = document.getElementById('fin-condicao-pagamento');
+      if (condEl) condEl.textContent = forma;
+
+      // Extrai valor pago e saldo restante (SEM dados fake)
+      let valorPagoNum = 0;
+      if (osData && osData.valor_pago !== undefined && osData.valor_pago !== '') {
+        const vLimp = String(osData.valor_pago).replace(/[^\d,\.]/g, '').replace(',', '.');
+        valorPagoNum = parseFloat(vLimp) || 0;
+      } else if (osData && osData.status === 'pago') {
+        valorPagoNum = totalNum;
+      } else {
+        valorPagoNum = 0;
+      }
+
+      let saldoNum = Math.max(0, totalNum - valorPagoNum);
+      const formatBRL = (val) => 'R$ ' + Number(val).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+      const valTotalEl = document.getElementById('fin-val-total');
+      if (valTotalEl) valTotalEl.textContent = formatBRL(totalNum);
+
+      const valPagoEl = document.getElementById('fin-val-pago');
+      if (valPagoEl) valPagoEl.textContent = formatBRL(valorPagoNum);
+
+      const valSaldoEl = document.getElementById('fin-val-saldo');
+      if (valSaldoEl) valSaldoEl.textContent = (saldoNum === 0 && totalNum > 0) ? 'Quitado ✅' : formatBRL(saldoNum);
+
+      // Itens inclusos
+      const itens = (osData && osData.dados && Array.isArray(osData.dados.itens)) ? osData.dados.itens : [];
+      const qtdEl = document.getElementById('fin-qtd-itens');
+      if (qtdEl) {
+        if (itens.length > 0) {
+          qtdEl.textContent = itens.length + (itens.length === 1 ? ' item sob medida' : ' itens sob medida');
+        } else {
+          qtdEl.textContent = 'Serviço Sob Medida';
+        }
+      }
+
+      // Progresso e Badge precisos
+      const pct = totalNum > 0 ? Math.min(100, Math.round((valorPagoNum / totalNum) * 100)) : 0;
+      const progressFill = document.getElementById('fin-progress-fill');
+      const progressTxt = document.getElementById('fin-progresso-pct');
+      const badge = document.getElementById('fin-status-badge');
+      const pagoSub = document.getElementById('fin-pago-sub');
+      const saldoSub = document.getElementById('fin-saldo-sub');
+
+      if (progressFill) progressFill.style.width = pct + '%';
+      if (progressTxt) progressTxt.textContent = pct + '% Pago';
+
+      if (totalNum === 0) {
+        if (badge) {
+          badge.textContent = '⚪ Orçamento Aprovado';
+          badge.style.borderColor = 'rgba(255,255,255,0.2)';
+          badge.style.color = 'var(--text2)';
+          badge.style.background = 'rgba(255,255,255,0.05)';
+        }
+        if (pagoSub) pagoSub.textContent = 'Aguardando valores';
+        if (saldoSub) saldoSub.textContent = 'Em processamento';
+      } else if (pct >= 100) {
+        if (badge) {
+          badge.textContent = '🟢 Totalmente Quitado';
+          badge.style.borderColor = '#25D366';
+          badge.style.color = '#4ade80';
+          badge.style.background = 'rgba(37,211,102,0.15)';
+        }
+        if (pagoSub) pagoSub.textContent = '✓ 100% Confirmado';
+        if (saldoSub) saldoSub.textContent = 'Nenhum saldo pendente';
+      } else if (pct > 0) {
+        if (badge) {
+          badge.textContent = `🟡 Entrada Paga (${pct}%)`;
+          badge.style.borderColor = 'var(--gold)';
+          badge.style.color = 'var(--gold-light)';
+          badge.style.background = 'rgba(201,168,76,0.15)';
+        }
+        if (pagoSub) pagoSub.textContent = '✓ Entrada confirmada';
+        if (saldoSub) saldoSub.textContent = 'Restante na entrega';
+      } else {
+        if (badge) {
+          badge.textContent = '🟡 Aguardando Pagamento';
+          badge.style.borderColor = 'rgba(201,168,76,0.3)';
+          badge.style.color = 'var(--gold-light)';
+          badge.style.background = 'rgba(201,168,76,0.08)';
+        }
+        if (pagoSub) pagoSub.textContent = 'Pendente';
+        if (saldoSub) saldoSub.textContent = 'Pendente de pagamento';
+      }
+
+      // Cronograma (apenas se for parcelado)
+      const cronoWrapper = document.getElementById('fin-box-cronograma-wrapper');
+      const cronogramaEl = document.getElementById('fin-cronograma-parcelas');
+      if (cronoWrapper && cronogramaEl) {
+        const formaLower = forma.toLowerCase();
+        if (formaLower.includes('vez') || formaLower.includes('parc') || formaLower.includes('x') || formaLower.includes('entrada +')) {
+          cronoWrapper.style.display = 'block';
+          cronogramaEl.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(255,255,255,0.02);border-radius:8px;border:1px solid rgba(255,255,255,0.06);margin-bottom:8px;">
+              <div>
+                <strong style="color:#fff;font-size:13px;">1ª Parcela (Entrada)</strong>
+                <div style="font-size:11px;color:var(--muted);margin-top:2px;">Aprovação do Pedido</div>
+              </div>
+              <div style="text-align:right;">
+                <div style="color:var(--gold-light);font-weight:800;font-size:13px;">${formatBRL(valorPagoNum > 0 ? valorPagoNum : totalNum * 0.5)}</div>
+                <span style="font-size:10.5px;color:${pct > 0 ? '#4ade80' : 'var(--muted)'};font-weight:700;">${pct > 0 ? '✓ Paga' : 'Pendente'}</span>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(255,255,255,0.02);border-radius:8px;border:1px solid rgba(255,255,255,0.06);">
+              <div>
+                <strong style="color:#fff;font-size:13px;">2ª Parcela (Saldo Final)</strong>
+                <div style="font-size:11px;color:var(--muted);margin-top:2px;">Entrega e Montagem</div>
+              </div>
+              <div style="text-align:right;">
+                <div style="color:var(--gold-light);font-weight:800;font-size:13px;">${formatBRL(saldoNum)}</div>
+                <span style="font-size:10.5px;color:${pct >= 100 ? '#4ade80' : 'var(--gold-light)'};font-weight:700;">${pct >= 100 ? '✓ Quitado' : 'Na Entrega'}</span>
+              </div>
+            </div>
+          `;
+        } else {
+          cronoWrapper.style.display = 'none';
+        }
+      }
+    }
+
+    function abrirModalLancamentoPontoCliente(pontoId) {
+      const modal = document.getElementById('modal-cliente-lancamento-ponto');
+      const inpId = document.getElementById('cl-ponto-id');
+      const inpData = document.getElementById('cl-ponto-data');
+      const inpEnt1 = document.getElementById('cl-ponto-ent1');
+      const inpAlmSai = document.getElementById('cl-ponto-almsai');
+      const inpAlmVol = document.getElementById('cl-ponto-almvol');
+      const inpSai2 = document.getElementById('cl-ponto-sai2');
+      const inpHe = document.getElementById('cl-ponto-he');
+      const inpStatus = document.getElementById('cl-ponto-status');
+      const inpObs = document.getElementById('cl-ponto-obs');
+
+      if (pontoId) {
+        const todosPontos = JSON.parse(localStorage.getItem('sdv_pontos') || '[]');
+        const p = todosPontos.find(function(x) { return x.id === pontoId; });
+        if (p) {
+          if (inpId) inpId.value = p.id;
+          if (inpData) inpData.value = p.data || '';
+          if (inpEnt1) inpEnt1.value = p.entrada1 || '';
+          if (inpAlmSai) inpAlmSai.value = p.saidaAlmoco || '';
+          if (inpAlmVol) inpAlmVol.value = p.voltaAlmoco || '';
+          if (inpSai2) inpSai2.value = p.saidaFinal || '';
+          if (inpHe) inpHe.value = p.horasExtras || '';
+          if (inpStatus) inpStatus.value = p.status || 'Presente';
+          if (inpObs) inpObs.value = p.obs || '';
+        }
+      } else {
+        if (inpId) inpId.value = '';
+        if (inpData) inpData.value = new Date().toISOString().split('T')[0];
+        if (inpEnt1) inpEnt1.value = '08:00';
+        if (inpAlmSai) inpAlmSai.value = '12:00';
+        if (inpAlmVol) inpAlmVol.value = '13:00';
+        if (inpSai2) inpSai2.value = '17:00';
+        if (inpHe) inpHe.value = '00:00';
+        if (inpStatus) inpStatus.value = 'Presente';
+        if (inpObs) inpObs.value = '';
+      }
+
+      if (modal) modal.style.display = 'flex';
+    }
+
+    function fecharModalLancamentoPontoCliente() {
+      const modal = document.getElementById('modal-cliente-lancamento-ponto');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function salvarLancamentoPontoCliente() {
+      const id = document.getElementById('cl-ponto-id').value;
+      const data = document.getElementById('cl-ponto-data').value;
+      const ent1 = document.getElementById('cl-ponto-ent1').value;
+      const almsai = document.getElementById('cl-ponto-almsai').value;
+      const almvol = document.getElementById('cl-ponto-almvol').value;
+      const sai2 = document.getElementById('cl-ponto-sai2').value;
+      const he = document.getElementById('cl-ponto-he').value || '00:00';
+      const status = document.getElementById('cl-ponto-status').value;
+      const obs = document.getElementById('cl-ponto-obs').value;
+
+      if (!data) {
+        alert('Selecione a data do registro.');
+        return;
+      }
+
+      let todosPontos = JSON.parse(localStorage.getItem('sdv_pontos') || '[]');
+      const nomeColab = obterNomeColaboradorPonto();
+
+      if (id) {
+        const idx = todosPontos.findIndex(function(x) { return String(x.id) === String(id); });
+        if (idx !== -1) {
+          todosPontos[idx].data = data;
+          todosPontos[idx].entrada1 = ent1;
+          todosPontos[idx].saidaAlmoco = almsai;
+          todosPontos[idx].voltaAlmoco = almvol;
+          todosPontos[idx].saidaFinal = sai2;
+          todosPontos[idx].horasExtras = he;
+          todosPontos[idx].status = status;
+          todosPontos[idx].obs = obs;
+        }
+      } else {
+        todosPontos.unshift({
+          id: Date.now(),
+          colaboradorNome: nomeColab,
+          data: data,
+          entrada1: ent1,
+          saidaAlmoco: almsai,
+          voltaAlmoco: almvol,
+          saidaFinal: sai2,
+          horasTrabalhadas: '08:00',
+          horasExtras: he,
+          status: status,
+          obs: obs
+        });
+      }
+
+      localStorage.setItem('sdv_pontos', JSON.stringify(todosPontos));
+      fecharModalLancamentoPontoCliente();
+      renderizarResumoPontoCliente();
+      renderizarEspelhoPontoCliente();
+      alert('✅ Registro de ponto salvo com sucesso!');
+    }
+
+    function imprimirFolhaPontoCliente() {
+      const nomeColab = obterNomeColaboradorPonto();
+      const todosPontos = JSON.parse(localStorage.getItem('sdv_pontos') || '[]');
+      const nLower = nomeColab.toLowerCase();
+      const pontos = todosPontos.filter(function(p) {
+        const pn = (p.colaboradorNome || '').toLowerCase();
+        return pn === nLower || pn.includes(nLower) || nLower.includes(pn);
+      });
+
+      const win = window.open('', '_blank');
+      let linhasHtml = pontos.map(function(p) {
+        return '<tr>' +
+          '<td style="padding:8px;border-bottom:1px solid #ddd;">' + (p.data || '') + '</td>' +
+          '<td style="padding:8px;border-bottom:1px solid #ddd;">' + (p.entrada1 || '--:--') + '</td>' +
+          '<td style="padding:8px;border-bottom:1px solid #ddd;">' + (p.saidaAlmoco || '--:--') + '</td>' +
+          '<td style="padding:8px;border-bottom:1px solid #ddd;">' + (p.voltaAlmoco || '--:--') + '</td>' +
+          '<td style="padding:8px;border-bottom:1px solid #ddd;">' + (p.saidaFinal || '--:--') + '</td>' +
+          '<td style="padding:8px;border-bottom:1px solid #ddd;">' + (p.horasExtras || '00:00') + '</td>' +
+          '<td style="padding:8px;border-bottom:1px solid #ddd;">' + (p.horasTrabalhadas || '08:00') + '</td>' +
+          '<td style="padding:8px;border-bottom:1px solid #ddd;">' + (p.status || 'Presente') + '</td>' +
+        '</tr>';
+      }).join('');
+
+      win.document.write('<!DOCTYPE html><html><head><title>Folha de Ponto - ' + nomeColab + '</title>' +
+        '<style>body{font-family:Arial,sans-serif;margin:20px;} table{width:100%;border-collapse:collapse;} th{background:#f3f4f6;padding:8px;text-align:left;border-bottom:2px solid #333;}</style>' +
+        '</head><body>' +
+        '<h2>SD VIDROS · ESPELHO DE PONTO ELETRÔNICO</h2>' +
+        '<p><strong>Colaborador:</strong> ' + nomeColab + ' | <strong>Emissão:</strong> ' + new Date().toLocaleString('pt-BR') + '</p>' +
+        '<table><thead><tr><th>Data</th><th>1ª Entrada</th><th>Saída Almoço</th><th>Volta Almoço</th><th>Saída Final</th><th>H. Extras</th><th>Total Horas</th><th>Status</th></tr></thead><tbody>' +
+        linhasHtml +
+        '</tbody></table>' +
+        '<br><br><div style="margin-top:40px;display:flex;justify-content:space-between;">' +
+        '<div>________________________________<br>Assinatura do Colaborador</div>' +
+        '<div>________________________________<br>Responsável da Empresa</div>' +
+        '</div>' +
+        '<scr' + 'ipt>window.print();<\/scr' + 'ipt></body></html>');
+      win.document.close();
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    //  MÓDULO: GESTÃO E EXCLUSÃO DE JOGOS
+    // ══════════════════════════════════════════════════════════════════════════════
+    function obterJogosExcluidos() {
+      try { return JSON.parse(localStorage.getItem('sdv_jogos_excluidos') || '[]'); } catch(_) { return []; }
+    }
+
+    function salvarJogosExcluidos(lista) {
+      localStorage.setItem('sdv_jogos_excluidos', JSON.stringify(lista));
+    }
+
+    function excluirJogoDaLista(jogoId, event) {
+      if (event) { event.stopPropagation(); event.preventDefault(); }
+      const nomes = {
+        corrida: 'Corrida', damas: 'Damas', xadrez: 'Xadrez', tiro: 'Tiro',
+        gta: 'GTA', pes: 'Futebol PES 2018', nfs: 'Need for Speed (PS3)'
+      };
+      const nomeJogo = nomes[jogoId] || jogoId;
+      if (!confirm('Deseja excluir/ocultar o jogo "' + nomeJogo + '" da sua central de jogos?')) return;
+
+      let excluidos = obterJogosExcluidos();
+      if (!excluidos.includes(jogoId)) {
+        excluidos.push(jogoId);
+        salvarJogosExcluidos(excluidos);
+      }
+
+      atualizarMenuJogosVisiveis();
+      const todosJogos = ['corrida', 'damas', 'xadrez', 'tiro', 'gta', 'pes', 'nfs'];
+      const ativo = todosJogos.find(function(j) { return !excluidos.includes(j); }) || 'sugestao';
+      selecionarJogo(ativo);
+    }
+
+    function restaurarTodosJogosExcluidos() {
+      localStorage.removeItem('sdv_jogos_excluidos');
+      atualizarMenuJogosVisiveis();
+      alert('✅ Todos os jogos excluídos foram restaurados com sucesso!');
+    }
+
+    function atualizarMenuJogosVisiveis() {
+      const excluidos = obterJogosExcluidos();
+      const todosJogos = ['corrida', 'damas', 'xadrez', 'tiro', 'gta', 'pes', 'nfs'];
+
+      todosJogos.forEach(function(j) {
+        const btn = document.getElementById('btn-jogo-' + j);
+        if (btn) {
+          btn.style.display = excluidos.includes(j) ? 'none' : 'flex';
+        }
+      });
+
+      const barRestaurar = document.getElementById('bar-restaurar-jogos');
+      const countEl = document.getElementById('count-jogos-excluidos');
+      if (barRestaurar) {
+        if (excluidos.length > 0) {
+          barRestaurar.style.display = 'block';
+          if (countEl) countEl.textContent = excluidos.length;
+        } else {
+          barRestaurar.style.display = 'none';
+        }
+      }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    //  MÓDULO: MOTORES DOS NOVOS JOGOS (GTA, PES 2018, NEED FOR SPEED)
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    // ── JOGO 5: GTA VICE CITY / OPEN WORLD ARCADE ──
+    let gtaLoop = null;
+    let gtaPlayer = { x: 180, y: 300, vx: 0, vy: 0, ang: 0, inCar: false, cash: 500, wanted: 0 };
+    let gtaCars = [];
+    let gtaPolice = { x: 50, y: 50, active: false };
+    let gtaKeys = {};
+
+    function setGtaKey(k, val) { gtaKeys[k] = val; }
+
+    function iniciarJogoGTA() {
+      const canvas = document.getElementById('canvas-gta');
+      const overlay = document.getElementById('gta-overlay-busted');
+      if (overlay) overlay.style.display = 'none';
+      if (!canvas) return;
+
+      const ctx = canvas.getContext('2d');
+      gtaPlayer = { x: 180, y: 300, vx: 0, vy: 0, ang: -Math.PI / 2, inCar: false, cash: 500, wanted: 0 };
+      gtaCars = [
+        { x: 120, y: 150, color: '#ef4444', speed: 2, dir: 1, type: 'sedan' },
+        { x: 240, y: 280, color: '#3b82f6', speed: 2.5, dir: -1, type: 'esportivo' },
+        { x: 180, y: 80, color: '#eab308', speed: 1.8, dir: 1, type: 'taxi' }
+      ];
+      gtaPolice = { x: 40, y: 40, active: false, speed: 2.8 };
+
+      if (gtaLoop) cancelAnimationFrame(gtaLoop);
+
+      function updateGTA() {
+        const speed = gtaPlayer.inCar ? 4.5 : 2.2;
+        if (gtaKeys['ArrowUp'] || gtaKeys['w']) {
+          gtaPlayer.x += Math.cos(gtaPlayer.ang) * speed;
+          gtaPlayer.y += Math.sin(gtaPlayer.ang) * speed;
+        }
+        if (gtaKeys['ArrowDown'] || gtaKeys['s']) {
+          gtaPlayer.x -= Math.cos(gtaPlayer.ang) * (speed * 0.6);
+          gtaPlayer.y -= Math.sin(gtaPlayer.ang) * (speed * 0.6);
+        }
+        if (gtaKeys['ArrowLeft'] || gtaKeys['a']) {
+          gtaPlayer.ang -= 0.08;
+        }
+        if (gtaKeys['ArrowRight'] || gtaKeys['d']) {
+          gtaPlayer.ang += 0.08;
+        }
+
+        gtaPlayer.x = Math.max(15, Math.min(345, gtaPlayer.x));
+        gtaPlayer.y = Math.max(15, Math.min(405, gtaPlayer.y));
+
+        gtaCars.forEach(function(car) {
+          car.y += car.speed * car.dir;
+          if (car.y > 440) car.y = -20;
+          if (car.y < -20) car.y = 440;
+
+          const dist = Math.hypot(gtaPlayer.x - car.x, gtaPlayer.y - car.y);
+          if (dist < 26) {
+            if (!gtaPlayer.inCar) {
+              gtaPlayer.wanted = Math.min(5, gtaPlayer.wanted + 1);
+            }
+          }
+        });
+
+        if (gtaPlayer.wanted > 0) {
+          gtaPolice.active = true;
+          const pAng = Math.atan2(gtaPlayer.y - gtaPolice.y, gtaPlayer.x - gtaPolice.x);
+          gtaPolice.x += Math.cos(pAng) * gtaPolice.speed;
+          gtaPolice.y += Math.sin(pAng) * gtaPolice.speed;
+
+          const distPol = Math.hypot(gtaPlayer.x - gtaPolice.x, gtaPlayer.y - gtaPolice.y);
+          if (distPol < 22) {
+            if (overlay) overlay.style.display = 'flex';
+            return;
+          }
+        }
+
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(0, 0, 360, 420);
+
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(90, 0, 80, 420);
+        ctx.fillRect(210, 0, 80, 420);
+        ctx.fillRect(0, 160, 360, 90);
+
+        ctx.strokeStyle = '#eab308';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([12, 10]);
+        ctx.beginPath();
+        ctx.moveTo(130, 0); ctx.lineTo(130, 420);
+        ctx.moveTo(250, 0); ctx.lineTo(250, 420);
+        ctx.moveTo(0, 205); ctx.lineTo(360, 205);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        gtaCars.forEach(function(car) {
+          ctx.save();
+          ctx.translate(car.x, car.y);
+          ctx.fillStyle = car.color;
+          ctx.fillRect(-12, -22, 24, 44);
+          ctx.fillStyle = '#0284c7';
+          ctx.fillRect(-10, -10, 20, 16);
+          ctx.restore();
+        });
+
+        if (gtaPolice.active) {
+          ctx.save();
+          ctx.translate(gtaPolice.x, gtaPolice.y);
+          ctx.fillStyle = '#000';
+          ctx.fillRect(-12, -22, 24, 44);
+          ctx.fillStyle = '#fff';
+          ctx.fillRect(-10, -14, 20, 28);
+          ctx.fillStyle = (Date.now() % 300 < 150) ? '#ef4444' : '#3b82f6';
+          ctx.beginPath();
+          ctx.arc(0, 0, 5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+
+        ctx.save();
+        ctx.translate(gtaPlayer.x, gtaPlayer.y);
+        ctx.rotate(gtaPlayer.ang);
+
+        if (gtaPlayer.inCar) {
+          ctx.fillStyle = '#10b981';
+          ctx.fillRect(-14, -26, 28, 52);
+          ctx.fillStyle = '#111827';
+          ctx.fillRect(-11, -12, 22, 24);
+          ctx.fillStyle = '#fef08a';
+          ctx.fillRect(10, -25, 4, 3);
+          ctx.fillRect(-14, -25, 4, 3);
+        } else {
+          ctx.fillStyle = '#06b6d4';
+          ctx.beginPath();
+          ctx.arc(0, 0, 9, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#fde047';
+          ctx.beginPath();
+          ctx.arc(0, -3, 5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+
+        const elCash = document.getElementById('gta-cash');
+        const elWanted = document.getElementById('gta-wanted');
+        const elMode = document.getElementById('gta-mode-txt');
+        if (elCash) elCash.textContent = '$ ' + gtaPlayer.cash;
+        if (elWanted) {
+          let st = '';
+          for (let i = 0; i < 5; i++) st += i < gtaPlayer.wanted ? '★' : '☆';
+          elWanted.textContent = st;
+        }
+        if (elMode) elMode.textContent = gtaPlayer.inCar ? '🚗 No Veículo' : '🚶 A Pé';
+
+        gtaLoop = requestAnimationFrame(updateGTA);
+      }
+
+      gtaLoop = requestAnimationFrame(updateGTA);
+    }
+
+    function alternarEntrarSairVeiculoGTA() {
+      if (gtaPlayer.inCar) {
+        gtaPlayer.inCar = false;
+      } else {
+        gtaPlayer.inCar = true;
+        gtaPlayer.cash += 50;
+      }
+    }
+
+    function buzinarCarroGTA() {
+      gtaPlayer.wanted = Math.min(5, gtaPlayer.wanted + 1);
+      gtaPlayer.cash += 20;
+    }
+
+    // ── JOGO 6: FUTEBOL PES 2018 PRO ──
+    let pesGols = 0;
+    let pesDefesas = 0;
+    let pesChutes = 5;
+    let pesCurva = 0;
+    let pesBola = { x: 180, y: 380, vx: 0, vy: 0, emMovimento: false };
+    let pesGoleiro = { x: 180, y: 110, vx: 2 };
+    let pesLoop = null;
+
+    function selecionarTimePES(timeId, btn) {
+      document.querySelectorAll('#view-jogo-pes .modo-jogo-pill').forEach(function(b) { b.classList.remove('active'); });
+      if (btn) btn.classList.add('active');
+    }
+
+    function ajustarCurvaBolaPES(dir) {
+      pesCurva += dir * 1.5;
+    }
+
+    function iniciarJogoPES() {
+      const canvas = document.getElementById('canvas-pes');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      pesBola = { x: 180, y: 380, vx: 0, vy: 0, emMovimento: false };
+      pesGoleiro = { x: 180, y: 110, vx: 2.2 };
+
+      if (pesLoop) cancelAnimationFrame(pesLoop);
+
+      function updatePES() {
+        if (!pesBola.emMovimento) {
+          pesGoleiro.x += pesGoleiro.vx;
+          if (pesGoleiro.x > 260 || pesGoleiro.x < 100) pesGoleiro.vx *= -1;
+        } else {
+          const destinoX = pesBola.x;
+          if (pesGoleiro.x < destinoX - 5) pesGoleiro.x += 3.2;
+          else if (pesGoleiro.x > destinoX + 5) pesGoleiro.x -= 3.2;
+
+          pesBola.x += pesBola.vx + (pesCurva * 0.3);
+          pesBola.y += pesBola.vy;
+          pesBola.vy += 0.15;
+
+          if (pesBola.y <= 110) {
+            pesBola.emMovimento = false;
+            if (pesBola.x >= 70 && pesBola.x <= 290) {
+              const defendeu = Math.abs(pesBola.x - pesGoleiro.x) < 32;
+              if (defendeu) {
+                pesDefesas++;
+                const elDef = document.getElementById('pes-score-defesas');
+                if (elDef) elDef.textContent = pesDefesas;
+              } else {
+                pesGols++;
+                const elGols = document.getElementById('pes-score-gols');
+                if (elGols) elGols.textContent = pesGols;
+                const banner = document.getElementById('pes-banner-gol');
+                if (banner) {
+                  banner.style.display = 'block';
+                  setTimeout(function() { banner.style.display = 'none'; }, 1500);
+                }
+              }
+            }
+            setTimeout(function() {
+              pesBola = { x: 180, y: 380, vx: 0, vy: 0, emMovimento: false };
+              pesCurva = 0;
+            }, 1200);
+          }
+        }
+
+        ctx.fillStyle = '#15803d';
+        ctx.fillRect(0, 0, 360, 440);
+
+        for (let i = 0; i < 440; i += 40) {
+          ctx.fillStyle = (i / 40) % 2 === 0 ? '#166534' : '#15803d';
+          ctx.fillRect(0, i, 360, 40);
+        }
+
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2.5;
+        ctx.strokeRect(50, 40, 260, 120);
+        ctx.strokeRect(90, 40, 180, 50);
+
+        ctx.fillStyle = 'rgba(255,255,255,0.15)';
+        ctx.fillRect(70, 45, 220, 65);
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.strokeRect(70, 45, 220, 65);
+
+        ctx.fillStyle = '#f59e0b';
+        ctx.beginPath();
+        ctx.arc(pesGoleiro.x, pesGoleiro.y, 14, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(pesGoleiro.x - 12, pesGoleiro.y + 4, 24, 18);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(pesBola.x, pesBola.y, 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#0f172a';
+        ctx.beginPath();
+        ctx.arc(pesBola.x, pesBola.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        pesLoop = requestAnimationFrame(updatePES);
+      }
+
+      pesLoop = requestAnimationFrame(updatePES);
+    }
+
+    function dispararChutePES() {
+      if (pesBola.emMovimento) return;
+      pesBola.emMovimento = true;
+      const miraX = 180 + (Math.random() * 120 - 60) + (pesCurva * 10);
+      pesBola.vx = (miraX - pesBola.x) / 22;
+      pesBola.vy = -12.5;
+    }
+
+    // ── JOGO 7: NEED FOR SPEED (PS3 RACING PRO) ──
+    let nfsSpeed = 160;
+    let nfsCarX = 180;
+    let nfsNitro = 100;
+    let nfsNitroAtivo = false;
+    let nfsTraffic = [];
+    let nfsLoop = null;
+    let nfsTurnDir = 0;
+
+    function setNfsTurn(dir) { nfsTurnDir = dir; }
+    function ativarNitroNFS(val) { nfsNitroAtivo = val; }
+
+    function iniciarJogoNFS() {
+      const canvas = document.getElementById('canvas-nfs');
+      const overlay = document.getElementById('nfs-overlay-crash');
+      if (overlay) overlay.style.display = 'none';
+      if (!canvas) return;
+
+      const ctx = canvas.getContext('2d');
+      nfsCarX = 180;
+      nfsSpeed = 160;
+      nfsNitro = 100;
+      nfsTraffic = [
+        { x: 120, y: 50, speed: 4, color: '#94a3b8' },
+        { x: 220, y: 220, speed: 3.5, color: '#f59e0b' }
+      ];
+
+      if (nfsLoop) cancelAnimationFrame(nfsLoop);
+
+      function updateNFS() {
+        if (nfsNitroAtivo && nfsNitro > 0) {
+          nfsSpeed = Math.min(320, nfsSpeed + 3);
+          nfsNitro = Math.max(0, nfsNitro - 0.8);
+        } else {
+          nfsSpeed = Math.max(140, nfsSpeed - 1);
+          nfsNitro = Math.min(100, nfsNitro + 0.2);
+        }
+
+        nfsCarX += nfsTurnDir * (nfsSpeed / 40);
+        nfsCarX = Math.max(60, Math.min(300, nfsCarX));
+
+        nfsTraffic.forEach(function(t) {
+          t.y += (nfsSpeed / 30);
+          if (t.y > 500) {
+            t.y = -60;
+            t.x = 80 + Math.random() * 200;
+          }
+
+          if (Math.abs(nfsCarX - t.x) < 26 && Math.abs(380 - t.y) < 42) {
+            if (overlay) {
+              const maxSpd = document.getElementById('nfs-max-speed-score');
+              if (maxSpd) maxSpd.textContent = Math.round(nfsSpeed) + ' km/h';
+              overlay.style.display = 'flex';
+            }
+            return;
+          }
+        });
+
+        ctx.fillStyle = '#030712';
+        ctx.fillRect(0, 0, 360, 480);
+
+        ctx.fillStyle = '#0f172a';
+        ctx.beginPath();
+        ctx.moveTo(120, 0); ctx.lineTo(240, 0);
+        ctx.lineTo(340, 480); ctx.lineTo(20, 480);
+        ctx.fill();
+
+        ctx.strokeStyle = nfsNitroAtivo ? '#38bdf8' : '#eab308';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([20, 15]);
+        const offset = (Date.now() / 4) % 35;
+        ctx.lineDashOffset = -offset;
+        ctx.beginPath();
+        ctx.moveTo(180, 0); ctx.lineTo(180, 480);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        nfsTraffic.forEach(function(t) {
+          ctx.fillStyle = t.color;
+          ctx.fillRect(t.x - 14, t.y - 25, 28, 50);
+          ctx.fillStyle = '#ef4444';
+          ctx.fillRect(t.x - 12, t.y + 22, 6, 3);
+          ctx.fillRect(t.x + 6, t.y + 22, 6, 3);
+        });
+
+        ctx.save();
+        ctx.translate(nfsCarX, 380);
+        ctx.fillStyle = '#e2e8f0';
+        ctx.fillRect(-16, -28, 32, 56);
+        ctx.fillStyle = '#0284c7';
+        ctx.fillRect(-6, -28, 12, 56);
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(-12, -12, 24, 20);
+
+        if (nfsNitroAtivo && nfsNitro > 0) {
+          ctx.fillStyle = '#38bdf8';
+          ctx.beginPath();
+          ctx.moveTo(-10, 28); ctx.lineTo(0, 45 + Math.random() * 10); ctx.lineTo(10, 28);
+          ctx.fill();
+        }
+        ctx.restore();
+
+        const elSpd = document.getElementById('nfs-speed-val');
+        const elBar = document.getElementById('nfs-nitro-bar');
+        if (elSpd) elSpd.textContent = Math.round(nfsSpeed) + ' km/h';
+        if (elBar) elBar.style.width = nfsNitro + '%';
+
+        nfsLoop = requestAnimationFrame(updateNFS);
+      }
+
+      nfsLoop = requestAnimationFrame(updateNFS);
+    }
+
+
+  
+
+// ==========================================
+// REGISTRO DE SERVICE WORKER E ALARMES DE PONTO
+// ==========================================
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
+
+function ativarAlarmePontoCelularSegundoPlano() {
+  if (!('Notification' in window)) {
+    alert('Seu navegador não possui suporte à Notificação do Ponto.');
+    return;
+  }
+  Notification.requestPermission().then(permission => {
+    if (permission === 'granted') {
+      const turnos = [
+        { hora: '08:00', label: 'Entrada' },
+        { hora: '12:00', label: 'Saída para Almoço' },
+        { hora: '13:00', label: 'Retorno do Almoço' },
+        { hora: '17:00', label: 'Saída Final' }
+      ];
+      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          action: 'configurarAlarmesPonto',
+          alarmes: turnos,
+          nome: (typeof clienteSessao !== 'undefined' && clienteSessao ? clienteSessao.nome : 'Colaborador'),
+          testar: true
+        });
+      }
+      alert('🔔 Alarme de Ponto ativado no celular com sucesso! Você receberá aviso 5 minutos antes de cada turno mesmo com o app fechado.');
+    } else {
+      alert('Por favor, permita as notificações no navegador para receber os alarmes de ponto no celular.');
+    }
+  });
+}
+
+function baixarSincronizacaoAlarmeCalendario() {
+  const icsContent = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//SD Vidros e Moveis//Alarme Ponto//PT-BR',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'BEGIN:VEVENT',
+    'SUMMARY:⏰ Bater Ponto - Entrada (08:00)',
+    'DESCRIPTION:Alarme oficial de ponto eletrônico SD Vidros / SD Móveis Projetados.',
+    'DTSTART;TZID=America/Fortaleza:20260101T080000',
+    'RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR',
+    'BEGIN:VALARM',
+    'ACTION:DISPLAY',
+    'DESCRIPTION:⏰ Faltam 5 minutos para a Entrada do Ponto!',
+    'TRIGGER:-PT5M',
+    'END:VALARM',
+    'END:VEVENT',
+    'BEGIN:VEVENT',
+    'SUMMARY:⏰ Bater Ponto - Almoço (12:00)',
+    'DESCRIPTION:Alarme oficial de ponto - Almoço.',
+    'DTSTART;TZID=America/Fortaleza:20260101T120000',
+    'RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR',
+    'BEGIN:VALARM',
+    'ACTION:DISPLAY',
+    'DESCRIPTION:⏰ Faltam 5 minutos para o Almoço!',
+    'TRIGGER:-PT5M',
+    'END:VALARM',
+    'END:VEVENT',
+    'BEGIN:VEVENT',
+    'SUMMARY:⏰ Bater Ponto - Retorno Almoço (13:00)',
+    'DESCRIPTION:Alarme oficial de ponto - Retorno do Almoço.',
+    'DTSTART;TZID=America/Fortaleza:20260101T130000',
+    'RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR',
+    'BEGIN:VALARM',
+    'ACTION:DISPLAY',
+    'DESCRIPTION:⏰ Faltam 5 minutos para o Retorno do Almoço!',
+    'TRIGGER:-PT5M',
+    'END:VALARM',
+    'END:VEVENT',
+    'BEGIN:VEVENT',
+    'SUMMARY:⏰ Bater Ponto - Saída (17:00)',
+    'DESCRIPTION:Alarme oficial de ponto - Saída Final.',
+    'DTSTART;TZID=America/Fortaleza:20260101T170000',
+    'RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR',
+    'BEGIN:VALARM',
+    'ACTION:DISPLAY',
+    'DESCRIPTION:⏰ Faltam 5 minutos para o Fim do Expediente!',
+    'TRIGGER:-PT5M',
+    'END:VALARM',
+    'END:VEVENT',
+    'END:VCALENDAR'
+  ].join('\r\n');
+
+  const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'alarmes-ponto-sdvidros.ics';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  alert('📅 Arquivo de calendário baixado! Toque nele para importar os alarmes no despertador do celular.');
+}
+
+</script>
+</body>
+</html>
+,'').trim();
+        let numLimpo;
+        if (numSemSimbolo.includes(',')) {
+          // Formato BRL: 4.500,00 -> remove pontos (milhar) -> 4500,00 -> troca vírgula -> 4500.00
+          numLimpo = numSemSimbolo.replace(/\.(?=\d{3})/g,'').replace(',','.');
+        } else {
+          // Já pode estar em formato numérico com ponto decimal
+          numLimpo = numSemSimbolo.replace(/[^\d.]/g,'');
+        }
         totalNum = parseFloat(numLimpo) || 0;
       }
 
