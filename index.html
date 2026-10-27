@@ -1864,9 +1864,31 @@
 
   <!-- BARRA DE CONTROLE SUPERIOR (EMPRESA ATIVA, USUÁRIO SAMUEL E SAIR) -->
   <div class="top-nav-bar" style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px;padding:4px 2px;flex-wrap:wrap;">
-    <div class="empresa-pill" onclick="abrirModalEmpresas()" style="display:flex;align-items:center;gap:8px;background:#101018;border:1px solid rgba(201,168,76,0.4);padding:6px 14px;border-radius:20px;cursor:pointer;transition:all 0.2s;">
+    <div id="btn-comando-voz-top" class="empresa-pill" onclick="alternarComandoDeVoz()" title="Toque para falar por voz: 'sd acessar a o.s 010' ou abrir qualquer botão" style="display:flex;align-items:center;gap:8px;background:#101018;border:1.5px solid rgba(201,168,76,0.55);padding:6px 14px;border-radius:20px;cursor:pointer;transition:all 0.25s ease;user-select:none;position:relative;">
       <img id="empresa-logo-top" src="logo_moveis.jpg" alt="Logo" style="width:22px;height:22px;border-radius:50%;object-fit:cover;border:1px solid var(--gold);background:#07070b;">
       <span id="empresa-nome-top" style="font-size:12.5px;font-weight:800;color:var(--gold-light);">SD Móveis Projetados</span>
+      <span id="voz-mic-icon" style="font-size:13px;display:inline-block;transition:all 0.2s;" title="Comando de Voz Ativo">🎙️</span>
+    </div>
+    <!-- Floating Voice Assistant Overlay -->
+    <div id="sd-voice-overlay" style="display:none;position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:999999;background:rgba(10,12,24,0.96);border:2px solid #eab308;box-shadow:0 14px 45px rgba(0,0,0,0.9),0 0 30px rgba(234,179,8,0.3);border-radius:18px;padding:16px 20px;max-width:92vw;width:440px;backdrop-filter:blur(12px);text-align:center;color:#fff;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:20px;">🎙️</span>
+          <strong style="color:var(--gold-light);font-size:14px;letter-spacing:0.5px;">Assistente de Voz SD</strong>
+        </div>
+        <button type="button" onclick="pararComandoDeVoz()" style="background:transparent;border:none;color:#94a3b8;font-size:18px;cursor:pointer;padding:4px 8px;">✕</button>
+      </div>
+      <div id="sd-voice-status" style="font-size:12.5px;color:#cbd5e1;margin-bottom:8px;font-weight:600;">Ouvindo... Pode falar seu comando.</div>
+      <div id="sd-voice-transcript" style="font-size:13.5px;color:#facc15;font-weight:800;min-height:24px;background:rgba(0,0,0,0.35);padding:6px 10px;border-radius:8px;border:1px dashed rgba(234,179,8,0.4);margin-bottom:10px;">«Aguardando sua voz...»</div>
+      <div style="font-size:10.5px;color:#94a3b8;margin-bottom:6px;">Exemplos de comandos por voz:</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center;">
+        <span onclick="processarComandoVozTexto('sd acessar a o.s 010')" style="cursor:pointer;background:rgba(234,179,8,0.15);border:1px solid rgba(234,179,8,0.35);color:#fde047;font-size:10.5px;padding:3px 8px;border-radius:12px;">sd acessar a o.s 010</span>
+        <span onclick="processarComandoVozTexto('sd orçamento')" style="cursor:pointer;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#e2e8f0;font-size:10.5px;padding:3px 8px;border-radius:12px;">sd orçamento</span>
+        <span onclick="processarComandoVozTexto('sd histórico')" style="cursor:pointer;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#e2e8f0;font-size:10.5px;padding:3px 8px;border-radius:12px;">sd histórico</span>
+        <span onclick="processarComandoVozTexto('sd pedido completo')" style="cursor:pointer;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#e2e8f0;font-size:10.5px;padding:3px 8px;border-radius:12px;">sd pedido completo</span>
+        <span onclick="processarComandoVozTexto('sd clientes')" style="cursor:pointer;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#e2e8f0;font-size:10.5px;padding:3px 8px;border-radius:12px;">sd clientes</span>
+        <span onclick="processarComandoVozTexto('sd contratos')" style="cursor:pointer;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#e2e8f0;font-size:10.5px;padding:3px 8px;border-radius:12px;">sd contratos</span>
+      </div>
     </div>
     <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
       <div class="user-pill" style="display:flex;align-items:center;gap:6px;background:#101018;border:1px solid rgba(255,255,255,0.12);padding:6px 12px;border-radius:20px;">
@@ -4862,12 +4884,18 @@
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);flex-wrap:wrap;gap:8px;">
       <button type="button" class="btn btn-sec btn-sm" onclick="fecharModalPedidoCompleto()">✕ Fechar</button>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button type="button" class="btn btn-sec btn-sm" onclick="copiarResumoPedidoCompleto()" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2);">📋 Copiar Resumo</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="copiarResumoPedidoCompleto()" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2);">📋 Copiar Resumo</button>
         <button type="button" class="btn btn-whats btn-sm" onclick="enviarPedidoCompletoWhatsApp()" style="font-weight:800;display:inline-flex;align-items:center;gap:6px;">
           <span>💬</span> <span>Enviar WhatsApp</span>
         </button>
         <button type="button" class="btn btn-gold btn-sm" onclick="imprimirPedidoCompleto()" style="font-weight:800;display:inline-flex;align-items:center;gap:6px;">
           <span>🖨️</span> <span>Imprimir Pedido</span>
+        </button>
+        <button type="button" class="btn btn-sm" onclick="gerarContratoPedidoCompleto()" style="font-weight:800;display:inline-flex;align-items:center;gap:6px;background:rgba(201,168,76,0.18);color:var(--gold-light);border:1px solid var(--gold);">
+          <span>📄</span> <span>Gerar Contrato</span>
+        </button>
+        <button type="button" class="btn btn-sm" onclick="enviarAssinaturaDigitalPedidoCompleto()" style="font-weight:800;display:inline-flex;align-items:center;gap:6px;background:#15803d;color:#fff;border:1px solid #22c55e;">
+          <span>✍️</span> <span>Enviar p/ Assinatura Digital</span>
         </button>
       </div>
     </div>
@@ -16700,17 +16728,36 @@ function imprimirPedidoCompleto() {
   const d = obterDadosPedidoConsolidado();
   if (!d) return;
 
+  // Garantir que nenhum item saia com R$ 0,00 caso a OS tenha valor
+  const totalGeral = d.totalGeral || 0;
+  const numItens = d.itens.length || 1;
+  const valorUnitarioMedio = totalGeral > 0 ? (totalGeral / numItens) : 0;
+
   const itensHtml = d.itens.map((it, idx) => {
-    let dim = '';
-    if (it.alt && it.larg) dim = '<br><span style="color:#666;font-size:11px;">Dimensões: ' + it.alt + 'm x ' + it.larg + 'm' + (it.m2 ? ' (' + it.m2 + 'm²)' : '') + '</span>';
+    let itemTotal = it.total;
+    if ((!itemTotal || itemTotal === 0) && totalGeral > 0) {
+      itemTotal = valorUnitarioMedio;
+    }
+    const vlUnit = it.qtd && it.qtd > 0 ? (itemTotal / it.qtd) : itemTotal;
+
+    const medidasStr = (it.alt && it.larg) ? (it.alt + ' x ' + it.larg) : '-';
+    const areaStr = it.m2 ? (it.m2 + ' m²') : '0,00 m²';
+    const qtdStr = (it.qtd || 1) + ' UND';
+
     return '<tr>' +
-      '<td style="text-align:center;">' + (idx + 1) + '</td>' +
-      '<td style="text-align:center;font-weight:700;color:#854d0e;">' + esc(it.osNumero) + '</td>' +
-      '<td><strong>' + esc(it.desc) + '</strong>' + dim + '</td>' +
-      '<td style="text-align:center;">' + it.qtd + '</td>' +
-      '<td style="text-align:right;">' + formatarMoedaBRL(it.total) + '</td>' +
+      '<td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;font-weight:700;color:#0f172a;">' + esc(it.desc || 'MÓVEIS') + '</td>' +
+      '<td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;text-align:center;color:#334155;">' + esc(medidasStr) + '</td>' +
+      '<td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;text-align:center;color:#334155;">' + esc(areaStr) + '</td>' +
+      '<td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;text-align:center;color:#334155;font-weight:600;">' + esc(qtdStr) + '</td>' +
+      '<td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;text-align:right;color:#0f172a;">' + formatarMoedaBRL(vlUnit).replace('R$', '').trim() + '</td>' +
+      '<td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;text-align:right;font-weight:800;color:#0f172a;">' + formatarMoedaBRL(itemTotal).replace('R$', '').trim() + '</td>' +
     '</tr>';
-  }).join('') || '<tr><td colspan="5" style="text-align:center;padding:12px;">Conforme Ordens de Serviço especificadas.</td></tr>';
+  }).join('') || '<tr><td colspan="6" style="text-align:center;padding:16px;color:#64748b;">Móveis planejados sob medida conforme projeto aprovado.</td></tr>';
+
+  const numOsPrincipal = (d.numerosOs && d.numerosOs.length > 0) ? d.numerosOs[0] : '#000010';
+  const osNumFormatado = 'Nº ' + String(numOsPrincipal).replace('#', '').padStart(6, '0');
+  const osListaStr = (d.numerosOs && d.numerosOs.length > 0) ? d.numerosOs.join(', ') : numOsPrincipal;
+  const agoraStr = new Date().toLocaleDateString('pt-BR') + ' às ' + new Date().toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
 
   const scriptImpressao = '<' + 'script>' +
     'window.onload = function() { setTimeout(function() { window.print(); }, 400); };' +
@@ -16721,82 +16768,151 @@ function imprimirPedidoCompleto() {
 '<html lang="pt-BR">' +
 '<head>' +
   '<meta charset="UTF-8">' +
-  '<title>Pedido Completo - ' + esc(d.cliente) + '</title>' +
+  '<title>Proposta Comercial - Pedido Completo - ' + esc(d.cliente) + '</title>' +
   '<style>' +
-    '* { box-sizing: border-box; margin:0; padding:0; }' +
-    'body { font-family: Arial, sans-serif; color: #111; padding: 25px; line-height: 1.4; font-size: 13px; }' +
-    '.header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2.5px solid #d97706; padding-bottom: 15px; margin-bottom: 20px; }' +
-    '.empresa-title { font-size: 20px; font-weight: 900; color: #b45309; text-transform: uppercase; }' +
-    '.empresa-sub { font-size: 11.5px; color: #555; margin-top: 3px; }' +
-    '.pedido-badge { background: #fef3c7; border: 1.5px solid #f59e0b; color: #92400e; padding: 8px 14px; border-radius: 8px; font-weight: 900; font-size: 14px; text-align: right; }' +
-    '.card-info { background: #fcfcfc; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; margin-bottom: 18px; }' +
-    '.info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }' +
-    'table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12.5px; }' +
-    'th { background: #f3f4f6; color: #374151; font-weight: 800; padding: 8px 10px; border: 1px solid #d1d5db; text-align: left; }' +
-    'td { padding: 8px 10px; border: 1px solid #e5e7eb; vertical-align: middle; }' +
-    'tr:nth-child(even) { background: #fafafa; }' +
-    '.financeiro-box { margin-left: auto; width: 340px; background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 8px; padding: 14px; margin-bottom: 25px; }' +
-    '.fin-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; }' +
-    '.fin-row.total { border-top: 2px solid #d97706; padding-top: 8px; margin-top: 6px; font-size: 16px; font-weight: 900; color: #b45309; }' +
-    '.signatures { display: flex; justify-content: space-between; margin-top: 50px; gap: 40px; page-break-inside: avoid; }' +
-    '.sig-line { flex: 1; border-top: 1px solid #4b5563; text-align: center; padding-top: 6px; font-size: 11.5px; color: #374151; }' +
+    '* { box-sizing: border-box; margin: 0; padding: 0; }' +
+    'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; color: #0f172a; padding: 24px 30px; line-height: 1.4; font-size: 12px; background: #fff; }' +
+    '.top-gold-bar { height: 4px; background: #c9a84c; margin-bottom: 20px; width: 100%; border-radius: 2px; }' +
+    '.header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; gap: 20px; }' +
+    '.brand-box { display: flex; align-items: center; gap: 14px; }' +
+    '.logo-badge { width: 56px; height: 56px; border-radius: 8px; border: 1.5px solid #c9a84c; display: flex; align-items: center; justify-content: center; background: #07070b; }' +
+    '.logo-badge img { width: 50px; height: 50px; border-radius: 6px; object-fit: cover; }' +
+    '.empresa-title { font-size: 19px; font-weight: 900; color: #0d1527; letter-spacing: 0.5px; }' +
+    '.empresa-sub { font-size: 10px; color: #b45309; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; margin-top: 1px; }' +
+    '.empresa-meta { font-size: 10px; color: #64748b; margin-top: 3px; font-weight: 500; }' +
+    '.proposta-badge { background: #0d1527; color: #fff; padding: 10px 18px; border-radius: 4px; border-top: 3px solid #c9a84c; min-width: 190px; text-align: left; }' +
+    '.proposta-badge-tag { font-size: 9px; font-weight: 800; color: #fbbf24; text-transform: uppercase; letter-spacing: 0.8px; }' +
+    '.proposta-badge-num { font-size: 16px; font-weight: 900; color: #fff; margin: 2px 0; }' +
+    '.proposta-badge-date { font-size: 9.5px; color: #94a3b8; }' +
+    '.section-box { border: 1px solid #cbd5e1; border-radius: 4px; margin-bottom: 18px; overflow: hidden; }' +
+    '.section-header { background: #eef2f6; padding: 6px 12px; font-size: 10.5px; font-weight: 800; color: #334155; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #cbd5e1; }' +
+    '.client-grid { display: grid; grid-template-columns: 1.2fr 1fr; padding: 10px 12px; gap: 6px 16px; font-size: 11px; }' +
+    '.client-row { display: flex; justify-content: space-between; }' +
+    '.client-lbl { font-size: 9.5px; font-weight: 700; color: #64748b; text-transform: uppercase; }' +
+    '.client-val { font-size: 11px; font-weight: 800; color: #0f172a; }' +
+    'table { width: 100%; border-collapse: collapse; margin-bottom: 18px; font-size: 11px; }' +
+    'th { background: #0d1527; color: #fff; font-weight: 800; font-size: 9.5px; letter-spacing: 0.6px; text-transform: uppercase; padding: 8px 10px; border: 1px solid #0d1527; }' +
+    'td { padding: 9px 10px; border: 1px solid #e2e8f0; }' +
+    '.bottom-grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 14px; margin-bottom: 20px; page-break-inside: avoid; }' +
+    '.conditions-box { border: 1px solid #cbd5e1; border-radius: 4px; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; }' +
+    '.conditions-body { padding: 10px 12px; font-size: 10.5px; color: #334155; line-height: 1.5; }' +
+    '.conditions-body p { margin-bottom: 4px; }' +
+    '.pix-box { margin: 8px 12px 12px 12px; background: #ecfdf5; border: 1.2px solid #10b981; border-radius: 4px; padding: 8px 10px; font-size: 10px; color: #065f46; }' +
+    '.pix-title { font-weight: 800; font-size: 9.5px; text-transform: uppercase; margin-bottom: 3px; color: #047857; }' +
+    '.finance-box { border: 1px solid #cbd5e1; border-radius: 4px; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; }' +
+    '.finance-body { padding: 10px 12px; font-size: 11px; }' +
+    '.fin-line { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed #f1f5f9; color: #475569; }' +
+    '.fin-line span.val { font-weight: 700; color: #0f172a; }' +
+    '.total-card { background: #0d1527; color: #fff; padding: 12px 14px; text-align: left; border-top: 3px solid #c9a84c; }' +
+    '.total-card-lbl { font-size: 9.5px; font-weight: 800; color: #fbbf24; text-transform: uppercase; letter-spacing: 0.5px; }' +
+    '.total-card-val { font-size: 20px; font-weight: 900; color: #fff; margin-top: 2px; }' +
+    '.auth-box { border: 1px solid #cbd5e1; border-radius: 4px; padding: 12px 14px; page-break-inside: avoid; font-size: 10.5px; }' +
+    '.auth-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }' +
+    '.auth-options { display: flex; gap: 16px; font-weight: 800; font-size: 10px; color: #0f172a; }' +
+    '.sig-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 30px; margin-bottom: 10px; }' +
+    '.sig-line-client { border-top: 1px solid #475569; padding-top: 4px; font-size: 10.5px; color: #334155; }' +
+    '.sig-meta { display: flex; justify-content: space-between; font-size: 9.5px; color: #64748b; margin-top: 6px; }' +
     '@media print { body { padding: 0; } }' +
   '</style>' +
 '</head>' +
 '<body>' +
+  '<div class="top-gold-bar"></div>' +
   '<div class="header">' +
-    '<div>' +
-      '<div class="empresa-title">' + esc(d.empresa.nome || 'SD Móveis Projetados') + '</div>' +
-      '<div class="empresa-sub">' + esc(d.empresa.segmento || 'Móveis Planejados & Marcenaria de Luxo') + '</div>' +
-      '<div class="empresa-sub">' + esc(d.empresa.cidade || 'Itaitinga - CE') + ' · WhatsApp: ' + esc(d.empresa.telefone || '(85) 99611-9824') + '</div>' +
-      (d.empresa.cnpj ? '<div class="empresa-sub">CNPJ: ' + esc(d.empresa.cnpj) + '</div>' : '') +
+    '<div class="brand-box">' +
+      '<div class="logo-badge"><img src="logo_moveis.jpg" onerror="this.style.display=\'none\'" alt="SD"></div>' +
+      '<div>' +
+        '<div class="empresa-title">' + esc(d.empresa.nome || 'SD MÓVEIS PROJETADOS') + '</div>' +
+        '<div class="empresa-sub">' + esc(d.empresa.segmento || 'Móveis Planejados & Marcenaria de Luxo') + '</div>' +
+        '<div class="empresa-meta">' + esc(d.empresa.cidade || 'Itaitinga - CE') + ' • CNPJ: ' + esc(d.empresa.cnpj || '85997602237') + '</div>' +
+        '<div class="empresa-meta">WhatsApp: ' + esc(d.empresa.telefone || '85985749686') + ' | contato@sdmoveisprojetados.com.br</div>' +
+      '</div>' +
     '</div>' +
-    '<div class="pedido-badge">' +
-      'PEDIDO COMPLETO' +
-      '<div style="font-size:11px;font-weight:600;color:#78350f;margin-top:2px;">Data: ' + esc(d.data) + '</div>' +
+    '<div class="proposta-badge">' +
+      '<div class="proposta-badge-tag">PEDIDO COMPLETO CONSOLIDADO</div>' +
+      '<div class="proposta-badge-num">' + esc(osNumFormatado) + '</div>' +
+      '<div class="proposta-badge-date">Emissão: ' + esc(agoraStr) + '</div>' +
     '</div>' +
   '</div>' +
-  '<div class="card-info">' +
-    '<div class="info-grid">' +
-      '<div><strong>Cliente:</strong> ' + esc(d.cliente) + '</div>' +
-      '<div><strong>Telefone/WhatsApp:</strong> ' + esc(d.telefone || 'Não informado') + '</div>' +
-      '<div><strong>O.S. Consolidadas:</strong> ' + esc(d.numerosOs.join(', ')) + '</div>' +
-      '<div><strong>Forma de Pagamento:</strong> ' + esc(d.formaPagamento) + '</div>' +
-      '<div><strong>Prazo de Entrega:</strong> ' + esc(d.prazoEntrega) + '</div>' +
-      '<div><strong>Chave Pix:</strong> ' + esc(d.empresa.pix || d.empresa.telefone || '(85) 99611-9824') + '</div>' +
+
+  '<div class="section-box">' +
+    '<div class="section-header">Identificação do Cliente & Local da Instalação</div>' +
+    '<div class="client-grid">' +
+      '<div>' +
+        '<div style="margin-bottom:4px;"><span class="client-lbl">CLIENTE: </span><span class="client-val">' + esc(d.cliente || 'SAMUEL PEREIRA') + '</span></div>' +
+        '<div style="margin-bottom:4px;"><span class="client-lbl">ENDEREÇO: </span><span class="client-val">' + esc(d.endereco || 'Não informado') + '</span></div>' +
+        '<div><span class="client-lbl">CPF / CNPJ: </span><span class="client-val">' + esc(d.cpf || 'Não informado') + '</span></div>' +
+      '</div>' +
+      '<div>' +
+        '<div style="margin-bottom:4px;"><span class="client-lbl">WHATSAPP / TEL: </span><span class="client-val">' + esc(d.telefone || '85997602237') + '</span></div>' +
+        '<div style="margin-bottom:4px;"><span class="client-lbl">BAIRRO / CID: </span><span class="client-val">' + esc(d.bairro || 'ITAITINGA, CE') + '</span></div>' +
+        '<div><span class="client-lbl">O.S. INCLUSAS: </span><span class="client-val" style="color:#b45309;">' + esc(osListaStr) + '</span></div>' +
+      '</div>' +
     '</div>' +
-    (d.observacoes ? '<div style="margin-top:8px;padding-top:6px;border-top:1px dashed #e5e7eb;"><strong>Observações:</strong> ' + esc(d.observacoes) + '</div>' : '') +
   '</div>' +
-  '<h3 style="font-size:14px;color:#374151;margin-bottom:8px;text-transform:uppercase;">📝 Detalhamento de Itens das O.S.</h3>' +
+
   '<table>' +
     '<thead>' +
       '<tr>' +
-        '<th style="width:40px;text-align:center;">#</th>' +
-        '<th style="width:70px;text-align:center;">O.S.</th>' +
-        '<th>Descrição do Produto / Serviço</th>' +
-        '<th style="width:60px;text-align:center;">Qtd</th>' +
-        '<th style="width:110px;text-align:right;">Subtotal</th>' +
+        '<th style="text-align:left;">Descrição do Produto / Serviço</th>' +
+        '<th style="width:110px;text-align:center;">Medidas (L x A)</th>' +
+        '<th style="width:85px;text-align:center;">Área (m²)</th>' +
+        '<th style="width:75px;text-align:center;">Qtd</th>' +
+        '<th style="width:105px;text-align:right;">Vl. Unit (R$)</th>' +
+        '<th style="width:105px;text-align:right;">Total (R$)</th>' +
       '</tr>' +
     '</thead>' +
     '<tbody>' +
       itensHtml +
     '</tbody>' +
   '</table>' +
-  '<div class="financeiro-box">' +
-    '<div class="fin-row"><span>📦 Valor dos Produtos:</span> <strong>' + formatarMoedaBRL(d.valProdutos) + '</strong></div>' +
-    '<div class="fin-row"><span>🛠️ Valor dos Serviços:</span> <strong>' + formatarMoedaBRL(d.valServicos) + '</strong></div>' +
-    '<div class="fin-row"><span>🚚 Frete:</span> <strong>' + formatarMoedaBRL(d.frete) + '</strong></div>' +
-    '<div class="fin-row"><span>🏷️ Desconto:</span> <strong style="color:#dc2626;">-' + formatarMoedaBRL(d.desconto) + '</strong></div>' +
-    '<div class="fin-row total"><span>VALOR TOTAL:</span> <span>' + formatarMoedaBRL(d.valorTotal) + '</span></div>' +
-  '</div>' +
-  '<div class="signatures">' +
-    '<div class="sig-line">' +
-      '<strong>' + esc(d.empresa.nome || 'SD Móveis Projetados') + '</strong><br>' +
-      'Assinatura da Contratada' +
+
+  '<div class="bottom-grid">' +
+    '<div class="conditions-box">' +
+      '<div class="section-header">Condições Comerciais & Formas de Pagamento</div>' +
+      '<div class="conditions-body">' +
+        '<p>• <strong>Forma Escolhida:</strong> ' + esc(d.formaPagamento || 'À VISTA') + '</p>' +
+        '<p>• <strong>Opções:</strong> 50% na entrada + 50% na entrega | Até 10x s/ juros no cartão</p>' +
+        '<p>• <strong>Prazo de Execução:</strong> ' + esc(d.prazoEntrega || '15 a 20 dias úteis após confirmação') + '</p>' +
+        '<p>• <strong>Garantia:</strong> 1 Ano de garantia legal e de instalação</p>' +
+      '</div>' +
+      '<div class="pix-box">' +
+        '<div class="pix-title">Dados para Pagamento via Pix:</div>' +
+        '<div><strong>Chave PIX:</strong> ' + esc(d.empresa.pix || '85997602237') + ' (SD Móveis Projetados)</div>' +
+        '<div><strong>WhatsApp / Contato:</strong> ' + esc(d.empresa.telefone || '85985749686') + '</div>' +
+      '</div>' +
     '</div>' +
-    '<div class="sig-line">' +
-      '<strong>' + esc(d.cliente) + '</strong><br>' +
-      'Assinatura do Cliente / Contratante' +
+
+    '<div class="finance-box">' +
+      '<div class="section-header">Resumo Financeiro</div>' +
+      '<div class="finance-body">' +
+        '<div class="fin-line"><span>Valor dos Produtos / Materiais:</span> <span class="val">' + formatarMoedaBRL(d.valProdutos || totalGeral) + '</span></div>' +
+        '<div class="fin-line"><span>Mão de Obra e Instalação:</span> <span class="val">' + formatarMoedaBRL(d.valServicos || 0) + '</span></div>' +
+        '<div class="fin-line"><span>Frete e Deslocamento:</span> <span class="val">' + formatarMoedaBRL(d.frete || 0) + '</span></div>' +
+        '<div class="fin-line"><span>Desconto Concedido:</span> <span class="val" style="color:#dc2626;">-' + formatarMoedaBRL(d.desconto || 0) + '</span></div>' +
+      '</div>' +
+      '<div class="total-card">' +
+        '<div class="total-card-lbl">Total do Pedido Consolidado</div>' +
+        '<div class="total-card-val">' + formatarMoedaBRL(d.valorTotal || totalGeral) + '</div>' +
+      '</div>' +
+    '</div>' +
+  '</div>' +
+
+  '<div class="auth-box">' +
+    '<div class="auth-top">' +
+      '<div>Autorizo a execução dos serviços conforme as especificações e valores discriminados nesta proposta.</div>' +
+      '<div class="auth-options"><span>[ ] APROVADO</span> <span>[ ] AJUSTAR DETALHES</span></div>' +
+    '</div>' +
+    '<div class="sig-grid">' +
+      '<div class="sig-line-client">' +
+        '<strong>Assinatura do Cliente:</strong> ____________________________________________' +
+      '</div>' +
+      '<div class="sig-line-client">' +
+        '<strong>Data:</strong> ______ / ______ / ____________' +
+      '</div>' +
+    '</div>' +
+    '<div class="sig-meta">' +
+      '<span>Responsável: SAMUEL DAVID • Situação: Aprovado</span>' +
+      '<span>Confirmação rápida WhatsApp: ' + esc(d.empresa.telefone || '85985749686') + '</span>' +
     '</div>' +
   '</div>' +
   scriptImpressao +
@@ -16805,6 +16921,559 @@ function imprimirPedidoCompleto() {
   win.document.close();
 }
 
+// ══ GERAR CONTRATO A PARTIR DO PEDIDO COMPLETO ══
+function gerarContratoPedidoCompleto() {
+  const d = obterDadosPedidoConsolidado();
+  if (!d) return;
+
+  const lic = (typeof obterLicencaAtiva === 'function' && obterLicencaAtiva()) || {};
+  const hoje = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+  const osListaStr = (d.numerosOs && d.numerosOs.length > 0) ? d.numerosOs.join(', ') : 'Consolidada';
+  const totalFormatado = formatarMoedaBRL(d.valorTotal || d.totalGeral);
+
+  const itensTexto = d.itens.map((it, i) => {
+    let dim = (it.alt && it.larg) ? (' [Medidas: ' + it.alt + 'm x ' + it.larg + 'm' + (it.m2 ? ' = ' + it.m2 + 'm²' : '') + ']') : '';
+    let vl = it.total ? (' - Valor: ' + formatarMoedaBRL(it.total)) : '';
+    return '  ' + (i + 1) + '. ' + (it.desc || 'Móvel planejado') + dim + vl;
+  }).join('\n');
+
+  const modeloSalvo = localStorage.getItem('sdv_modelo_contrato_personalizado');
+  let textoFinal = '';
+
+  if (modeloSalvo && modeloSalvo.trim()) {
+    textoFinal = modeloSalvo
+      .replace(/{NOME_CLIENTE}/g, d.cliente || 'CLIENTE')
+      .replace(/{TELEFONE_CLIENTE}/g, d.telefone || '')
+      .replace(/{ENDERECO_CLIENTE}/g, d.endereco || 'Não informado')
+      .replace(/{CPF_CLIENTE}/g, d.cpf || '')
+      .replace(/{NUMERO_OS}/g, osListaStr)
+      .replace(/{DATA_HOJE}/g, hoje)
+      .replace(/{NOME_EMPRESA}/g, lic.empresa || 'SD MÓVEIS PROJETADOS')
+      .replace(/{CNPJ_EMPRESA}/g, lic.cnpj || '85997602237')
+      .replace(/{CIDADE_EMPRESA}/g, lic.cidade || 'Itaitinga - CE')
+      .replace(/{ITENS_SERVICO}/g, itensTexto)
+      .replace(/{VALOR_TOTAL}/g, totalFormatado)
+      .replace(/{FORMA_PAGAMENTO}/g, d.formaPagamento || 'À Vista / Conforme Acordo')
+      .replace(/{PRAZO_ENTREGA}/g, d.prazoEntrega || '15 a 20 dias úteis');
+  } else {
+    textoFinal = 'CONTRATO DE PRESTAÇÃO DE SERVIÇOS E FORNECIMENTO DE MÓVEIS PLANEJADOS\n\n' +
+      'CONTRATADA: ' + (lic.empresa || 'SD MÓVEIS PROJETADOS') + ', CNPJ: ' + (lic.cnpj || '85997602237') + ', Itaitinga - CE.\n' +
+      'CONTRATANTE: ' + (d.cliente || 'CLIENTE') + ', Tel: ' + (d.telefone || '') + '\n' +
+      'ORDENS DE SERVIÇO CONSOLIDADAS: ' + osListaStr + '\n\n' +
+      'CLÁUSULA 1ª - DO OBJETO:\n' +
+      'O presente contrato tem por objeto o fornecimento e instalação dos seguintes móveis sob medida:\n' +
+      itensTexto + '\n\n' +
+      'CLÁUSULA 2ª - DO VALOR E FORMA DE PAGAMENTO:\n' +
+      'O valor total dos serviços e móveis contratados é de ' + totalFormatado + ', a ser pago na condição: ' + (d.formaPagamento || 'À Vista / Parcelado') + '.\n\n' +
+      'CLÁUSULA 3ª - DO PRAZO E GARANTIA:\n' +
+      'O prazo de entrega e montagem é de ' + (d.prazoEntrega || '15 a 20 dias úteis') + ' após confirmação.\n' +
+      'Garantia de 1 (um) ano sobre a montagem e estrutura dos móveis.\n\n' +
+      'Itaitinga - CE, ' + hoje + '.\n\n' +
+      '__________________________________________\n' +
+      (lic.empresa || 'SD MÓVEIS PROJETADOS') + '\n\n' +
+      '__________________________________________\n' +
+      (d.cliente || 'CLIENTE') + ' (Contratante)';
+  }
+
+  // Preenche na aba de contratos
+  goTab('contratos');
+  const txtArea = document.getElementById('contrato-texto');
+  if (txtArea) txtArea.textContent = textoFinal;
+  const resArea = document.getElementById('contrato-resultado-area');
+  if (resArea) resArea.style.display = 'block';
+
+  fecharModalPedidoCompleto();
+  if (typeof toastAlerta === 'function') toastAlerta('📄 Contrato consolidado gerado com sucesso!');
+  else alert('📄 Contrato consolidado gerado com sucesso na aba Contratos!');
+}
+
+// ══ ENVIAR PEDIDO COMPLETO P/ ASSINATURA DIGITAL ══
+function enviarAssinaturaDigitalPedidoCompleto() {
+  const d = obterDadosPedidoConsolidado();
+  if (!d) return;
+
+  const telCli = String(d.telefone || '').replace(/\D/g, '');
+  if (!telCli || telCli.length < 8) {
+    const telManual = prompt('Informe o WhatsApp do cliente com DDD (apenas números):', '');
+    if (!telManual) return;
+    d.telefone = telManual;
+  }
+
+  const lic = (typeof obterLicencaAtiva === 'function' && obterLicencaAtiva()) || {};
+  const osListaStr = (d.numerosOs && d.numerosOs.length > 0) ? d.numerosOs.join(', ') : 'Consolidada';
+  const hoje = new Date().toLocaleDateString('pt-BR');
+  const totalFormatado = formatarMoedaBRL(d.valorTotal || d.totalGeral);
+
+  const itensTexto = d.itens.map((it, i) => {
+    let dim = (it.alt && it.larg) ? (' (' + it.alt + 'm x ' + it.larg + 'm)') : '';
+    return '  ' + (i + 1) + '. ' + (it.desc || 'Móvel') + dim + (it.total ? ' - ' + formatarMoedaBRL(it.total) : '');
+  }).join('\n');
+
+  const contratoTexto = 'CONTRATO E PROPOSTA COMERCIAL CONSOLIDADA\n' +
+    'EMPRESA: SD MÓVEIS PROJETADOS\n' +
+    'CLIENTE: ' + d.cliente + '\n' +
+    'O.S.: ' + osListaStr + ' - Data: ' + hoje + '\n\n' +
+    'ITENS DO PEDIDO:\n' + itensTexto + '\n\n' +
+    'VALOR TOTAL: ' + totalFormatado + '\n' +
+    'FORMA DE PAGAMENTO: ' + (d.formaPagamento || 'À Vista') + '\n' +
+    'PRAZO: ' + (d.prazoEntrega || '15 a 20 dias úteis') + '\n\n' +
+    'Ao assinar digitalmente abaixo, você autoriza a produção e concorda com todos os termos acordados.';
+
+  const payload = {
+    n: osListaStr,
+    c: d.cliente || 'Cliente',
+    t: d.telefone || '',
+    x: contratoTexto,
+    total: d.valorTotal || d.totalGeral
+  };
+
+  const jsonStr = unescape(encodeURIComponent(JSON.stringify(payload)));
+  const linkDireto = window.location.origin + '/assinar.html?d=' + encodeURIComponent(btoa(jsonStr));
+
+  // Salva no registro local de contratos
+  try {
+    const contratosLocais = JSON.parse(localStorage.getItem('sdv_contratos_locais') || '[]');
+    const novoContrato = {
+      id: 'ped_' + Date.now(),
+      numero_os: osListaStr,
+      cliente_nome: d.cliente || 'Cliente',
+      cliente_tel: d.telefone || '',
+      status: 'pendente_assinatura',
+      criado_em: new Date().toISOString(),
+      valor: d.valorTotal || d.totalGeral,
+      link: linkDireto
+    };
+    contratosLocais.unshift(novoContrato);
+    localStorage.setItem('sdv_contratos_locais', JSON.stringify(contratosLocais));
+
+    if (typeof listaContratosCache !== 'undefined' && Array.isArray(listaContratosCache)) {
+      listaContratosCache.unshift(novoContrato);
+      const badge = document.getElementById('contratos-count');
+      if (badge) badge.textContent = listaContratosCache.length;
+      if (typeof renderListaContratos === 'function') renderListaContratos();
+    }
+  } catch(e) { console.warn('Erro ao salvar contrato local:', e); }
+
+  const msg = '*SD MÓVEIS PROJETADOS — ASSINATURA DIGITAL DO PEDIDO COMPLETO* ✍️\n\n'
+    + 'Olá, ' + (d.cliente || '') + '!\n'
+    + 'Segue o link do seu contrato e pedido consolidado (O.S. ' + osListaStr + '):\n\n'
+    + linkDireto + '\n\n'
+    + '💰 *Valor Total:* ' + totalFormatado + '\n\n'
+    + 'É bem simples: clique no link para revisar os detalhes e assinar com o dedo na tela do seu celular!';
+
+  abrirWhats(d.telefone, msg);
+  fecharModalPedidoCompleto();
+  if (typeof toastAlerta === 'function') toastAlerta('✍️ Link de assinatura digital gerado e aberto no WhatsApp!');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 🎙️ COMANDOS DE VOZ INTELIGENTES - SD MÓVEIS PROJETADOS
+// ═══════════════════════════════════════════════════════════════════════════════
+let _sdVoiceRecognition = null;
+let _sdVoiceListening = false;
+
+function alternarComandoDeVoz() {
+  if (_sdVoiceListening) {
+    pararComandoDeVoz();
+  } else {
+    iniciarComandoDeVoz();
+  }
+}
+
+function iniciarComandoDeVoz() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    alert('Reconhecimento de voz não suportado neste navegador.\nPor favor, utilize o Google Chrome ou Microsoft Edge no computador ou celular.');
+    return;
+  }
+
+  try {
+    if (_sdVoiceRecognition) {
+      try { _sdVoiceRecognition.abort(); } catch(e){}
+    }
+
+    _sdVoiceRecognition = new SpeechRecognition();
+    _sdVoiceRecognition.lang = 'pt-BR';
+    _sdVoiceRecognition.continuous = false;
+    _sdVoiceRecognition.interimResults = true;
+    _sdVoiceRecognition.maxAlternatives = 3;
+
+    const overlay = document.getElementById('sd-voice-overlay');
+    const statusEl = document.getElementById('sd-voice-status');
+    const transEl = document.getElementById('sd-voice-transcript');
+    const pillBtn = document.getElementById('btn-comando-voz-top');
+
+    if (overlay) overlay.style.display = 'block';
+    if (statusEl) statusEl.textContent = '🎙️ Ouvindo... Fale agora seu comando';
+    if (transEl) transEl.textContent = '«Fale por exemplo: sd acessar a o.s 010»';
+
+    if (pillBtn) {
+      pillBtn.style.boxShadow = '0 0 18px rgba(234, 179, 8, 0.85)';
+      pillBtn.style.borderColor = '#facc15';
+      pillBtn.style.background = '#1a180a';
+      const micIcon = document.getElementById('voz-mic-icon');
+      if (micIcon) micIcon.style.transform = 'scale(1.35)';
+    }
+
+    _sdVoiceListening = true;
+
+    _sdVoiceRecognition.onstart = function() {
+      _sdVoiceListening = true;
+      if (statusEl) statusEl.textContent = '🎙️ Ouvindo... Pode falar: "sd acessar a o.s 010"';
+    };
+
+    _sdVoiceRecognition.onresult = function(event) {
+      let finalTrans = '';
+      let interimTrans = '';
+
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTrans += event.results[i][0].transcript;
+        } else {
+          interimTrans += event.results[i][0].transcript;
+        }
+      }
+
+      const txt = (finalTrans || interimTrans).trim();
+      if (transEl && txt) transEl.textContent = '«' + txt + '»';
+
+      if (finalTrans) {
+        processarComandoVozTexto(finalTrans);
+      }
+    };
+
+    _sdVoiceRecognition.onerror = function(event) {
+      console.warn('Erro de reconhecimento de voz:', event.error);
+      if (statusEl) {
+        if (event.error === 'not-allowed') {
+          statusEl.textContent = '⚠️ Permissão do microfone negada no navegador.';
+        } else if (event.error === 'no-speech') {
+          statusEl.textContent = 'Nenhuma fala detectada. Toque para tentar de novo.';
+        } else {
+          statusEl.textContent = 'Erro ao ouvir: ' + event.error;
+        }
+      }
+      setTimeout(pararComandoDeVoz, 3000);
+    };
+
+    _sdVoiceRecognition.onend = function() {
+      _sdVoiceListening = false;
+      setTimeout(() => {
+        if (!_sdVoiceListening) pararComandoDeVoz();
+      }, 1500);
+    };
+
+    _sdVoiceRecognition.start();
+
+  } catch(err) {
+    console.error('Falha ao iniciar reconhecimento:', err);
+    alert('Erro ao iniciar o microfone: ' + err.message);
+    pararComandoDeVoz();
+  }
+}
+
+function pararComandoDeVoz() {
+  _sdVoiceListening = false;
+  if (_sdVoiceRecognition) {
+    try { _sdVoiceRecognition.stop(); } catch(e){}
+    _sdVoiceRecognition = null;
+  }
+  const overlay = document.getElementById('sd-voice-overlay');
+  if (overlay) overlay.style.display = 'none';
+
+  const pillBtn = document.getElementById('btn-comando-voz-top');
+  if (pillBtn) {
+    pillBtn.style.boxShadow = '';
+    pillBtn.style.borderColor = 'rgba(201,168,76,0.55)';
+    pillBtn.style.background = '#101018';
+    const micIcon = document.getElementById('voz-mic-icon');
+    if (micIcon) micIcon.style.transform = 'scale(1)';
+  }
+}
+
+function falarTextoSD(texto) {
+  if (!window.speechSynthesis) return;
+  try {
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(texto);
+    u.lang = 'pt-BR';
+    u.rate = 1.05;
+    window.speechSynthesis.speak(u);
+  } catch(e) { console.warn('Erro na síntese de voz:', e); }
+}
+
+function processarComandoVozTexto(fraseOriginal) {
+  if (!fraseOriginal) return;
+
+  const transEl = document.getElementById('sd-voice-transcript');
+  const statusEl = document.getElementById('sd-voice-status');
+  if (transEl) transEl.textContent = '«' + fraseOriginal + '»';
+
+  let raw = fraseOriginal.toLowerCase().trim();
+
+  // Mapeia números falados por extenso comuns
+  const numerosExtenso = {
+    'zero': '0', 'um': '1', 'uma': '1', 'dois': '2', 'duas': '2', 'três': '3', 'tres': '3',
+    'quatro': '4', 'cinco': '5', 'seis': '6', 'sete': '7', 'oito': '8', 'nove': '9', 'dez': '10',
+    'onze': '11', 'doze': '12', 'treze': '13', 'quatorze': '14', 'catorze': '14', 'quinze': '15',
+    'dezesseis': '16', 'dezessete': '17', 'dezoito': '18', 'dezenove': '19', 'vinte': '20'
+  };
+
+  let tokens = raw.split(/\s+/);
+  for (let i = 0; i < tokens.length; i++) {
+    if (numerosExtenso[tokens[i]]) {
+      tokens[i] = numerosExtenso[tokens[i]];
+    }
+  }
+  let frase = tokens.join(' ');
+
+  // 1. COMANDO: ACESSAR A O.S. XXX (ex: "sd acessar a o.s 010", "acessar os 010", "abrir os 10", "os 010")
+  const regexOs = /(?:sd\s+)?(?:acessar|abrir|ver|consultar|ir\s+para)?\s*(?:a\s+)?(?:o\.?s\.?|ordem\s+de\s+servi[çc]o|ordem)\s*([0-9a-zA-Z]+)/i;
+  const matchOs = frase.match(regexOs);
+
+  if (matchOs && matchOs[1]) {
+    const numBuscado = matchOs[1].trim();
+    const numLimpo = numBuscado.replace(/\D/g, '');
+
+    if (statusEl) statusEl.textContent = '✅ Acessando O.S. #' + numBuscado + '...';
+    falarTextoSD('Acessando Ordem de Serviço ' + numBuscado);
+
+    goTab('historico');
+
+    setTimeout(() => {
+      // Ajusta modo de busca para O.S.
+      if (typeof setHistModoBusca === 'function') {
+        setHistModoBusca('os');
+      }
+
+      const inp = document.getElementById('hist-busca-input');
+      if (inp) {
+        inp.value = numBuscado;
+        inp.dispatchEvent(new Event('input'));
+      }
+
+      if (typeof renderHistFiltrado === 'function') {
+        renderHistFiltrado();
+      }
+
+      // Procura a OS correspondente no array historico
+      const osEncontrada = (Array.isArray(historico) ? historico : []).find(o => {
+        const oNum = String(o.numero || '').replace(/\D/g, '');
+        return oNum === numLimpo || String(o.numero || '').toLowerCase().includes(numBuscado.toLowerCase());
+      });
+
+      if (osEncontrada) {
+        if (typeof toastAlerta === 'function') toastAlerta('✅ O.S. #' + (osEncontrada.numero || numBuscado) + ' encontrada!');
+        // Rola até o card ou abre visualização
+        setTimeout(() => {
+          const card = document.querySelector('[data-os-id="' + osEncontrada.id + '"]') || document.querySelector('.hist-card');
+          if (card) {
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            card.style.outline = '3px solid #facc15';
+            card.style.boxShadow = '0 0 25px rgba(250,204,21,0.6)';
+            setTimeout(() => { card.style.outline = ''; card.style.boxShadow = ''; }, 3500);
+          }
+        }, 300);
+      } else {
+        if (typeof toastAlerta === 'function') toastAlerta('🔍 O.S. #' + numBuscado + ' filtrada no Histórico.');
+      }
+
+      pararComandoDeVoz();
+    }, 200);
+
+    return;
+  }
+
+  // 2. COMANDOS DE NAVEGAÇÃO PARA TODOS OS BOTÕES DO SISTEMA
+  // Orçamento
+  if (frase.includes('orçamento') || frase.includes('orcamento') || frase.includes('novo orçamento')) {
+    falarTextoSD('Abrindo Orçamento');
+    goTab('orcamento');
+    pararComandoDeVoz();
+    return;
+  }
+
+  // Histórico
+  if (frase.includes('histórico') || frase.includes('historico') || frase.includes('ordens de serviço')) {
+    falarTextoSD('Abrindo Histórico');
+    goTab('historico');
+    pararComandoDeVoz();
+    return;
+  }
+
+  // Pedido Completo
+  if (frase.includes('pedido completo') || frase.includes('consolidar pedido') || frase.includes('gerar pedido')) {
+    falarTextoSD('Abrindo Pedido Completo Consolidado');
+    abrirModalPedidoCompleto();
+    pararComandoDeVoz();
+    return;
+  }
+
+  // Contratos
+  if (frase.includes('contrato') || frase.includes('contratos') || frase.includes('assinatura')) {
+    falarTextoSD('Abrindo Contratos');
+    goTab('contratos');
+    pararComandoDeVoz();
+    return;
+  }
+
+  // Clientes
+  if (frase.includes('cliente') || frase.includes('clientes') || frase.includes('cadastros')) {
+    falarTextoSD('Abrindo Clientes');
+    goTab('clientes');
+    pararComandoDeVoz();
+    return;
+  }
+
+  // Financeiro
+  if (frase.includes('financeiro') || frase.includes('caixa') || frase.includes('receitas') || frase.includes('despesas')) {
+    falarTextoSD('Abrindo Financeiro');
+    goTab('financeiro');
+    pararComandoDeVoz();
+    return;
+  }
+
+  // Estoque
+  if (frase.includes('estoque') || frase.includes('materiais') || frase.includes('insumos')) {
+    falarTextoSD('Abrindo Estoque');
+    goTab('estoque');
+    pararComandoDeVoz();
+    return;
+  }
+
+  // Agenda
+  if (frase.includes('agenda pessoal')) {
+    falarTextoSD('Abrindo Agenda Pessoal');
+    goTab('agenda-pessoal');
+    pararComandoDeVoz();
+    return;
+  }
+  if (frase.includes('agenda') || frase.includes('compromissos')) {
+    falarTextoSD('Abrindo Agenda');
+    goTab('agenda');
+    pararComandoDeVoz();
+    return;
+  }
+
+  // Cronograma
+  if (frase.includes('cronograma') || frase.includes('etapas') || frase.includes('planejamento')) {
+    falarTextoSD('Abrindo Cronograma');
+    goTab('cronograma');
+    pararComandoDeVoz();
+    return;
+  }
+
+  // Detector de Danos
+  if (frase.includes('detector') || frase.includes('danos') || frase.includes('laudo')) {
+    falarTextoSD('Abrindo Detector de Danos');
+    goTab('detector');
+    pararComandoDeVoz();
+    return;
+  }
+
+  // Equipe & Ponto
+  if (frase.includes('equipe') || frase.includes('ponto') || frase.includes('funcionários') || frase.includes('funcionarios')) {
+    falarTextoSD('Abrindo Equipe e Ponto');
+    goTab('ponto');
+    pararComandoDeVoz();
+    return;
+  }
+
+  // Produtos/Serviços
+  if (frase.includes('produto') || frase.includes('serviço') || frase.includes('produtos') || frase.includes('servicos') || frase.includes('catálogo')) {
+    falarTextoSD('Abrindo Produtos e Serviços');
+    goTab('produtos');
+    pararComandoDeVoz();
+    return;
+  }
+
+  // Ferramentas
+  if (frase.includes('ferramenta') || frase.includes('ferramentas')) {
+    falarTextoSD('Abrindo Ferramentas');
+    goTab('ferramentas');
+    pararComandoDeVoz();
+    return;
+  }
+
+  // Câmera
+  if (frase.includes('câmera') || frase.includes('camera') || frase.includes('foto') || frase.includes('fotos')) {
+    falarTextoSD('Abrindo Câmera');
+    goTab('camera');
+    pararComandoDeVoz();
+    return;
+  }
+
+  // Portal Cliente
+  if (frase.includes('portal cliente') || frase.includes('portal do cliente') || frase.includes('área do cliente')) {
+    falarTextoSD('Abrindo Portal do Cliente');
+    if (typeof abrirPortalCliente === 'function') abrirPortalCliente();
+    else window.open('cliente.html', '_blank');
+    pararComandoDeVoz();
+    return;
+  }
+
+  // Portal Equipe
+  if (frase.includes('portal equipe') || frase.includes('portal funcionário') || frase.includes('portal do funcionário')) {
+    falarTextoSD('Abrindo Portal da Equipe');
+    if (typeof abrirPortalFuncionario === 'function') abrirPortalFuncionario();
+    else if (typeof abrirPortalEquipe === 'function') abrirPortalEquipe();
+    pararComandoDeVoz();
+    return;
+  }
+
+  // Mensagens
+  if (frase.includes('mensagem') || frase.includes('mensagens') || frase.includes('notificações') || frase.includes('chat')) {
+    falarTextoSD('Abrindo Mensagens');
+    if (typeof abrirModalHistoricoNotificacoes === 'function') abrirModalHistoricoNotificacoes();
+    pararComandoDeVoz();
+    return;
+  }
+
+  // Dados Empresa
+  if (frase.includes('dados empresa') || frase.includes('dados da empresa') || frase.includes('minha empresa') || frase.includes('empresa')) {
+    falarTextoSD('Abrindo Dados da Empresa');
+    goTab('empresa');
+    pararComandoDeVoz();
+    return;
+  }
+
+  // Relatório
+  if (frase.includes('relatório') || frase.includes('relatorio') || frase.includes('relatórios')) {
+    falarTextoSD('Abrindo Relatórios');
+    goTab('relatorio');
+    pararComandoDeVoz();
+    return;
+  }
+
+  // Usuários
+  if (frase.includes('usuário') || frase.includes('usuario') || frase.includes('usuários')) {
+    falarTextoSD('Abrindo Usuários');
+    goTab('usuarios');
+    pararComandoDeVoz();
+    return;
+  }
+
+  // Organizar Abas
+  if (frase.includes('organizar abas') || frase.includes('organizar') || frase.includes('abas')) {
+    falarTextoSD('Abrindo Organizador de Abas');
+    if (typeof abrirModalOrganizarAbas === 'function') abrirModalOrganizarAbas();
+    else if (typeof toggleModoOrganizarAbas === 'function') toggleModoOrganizarAbas();
+    pararComandoDeVoz();
+    return;
+  }
+
+  // Sair / Logout
+  if (frase.includes('sair') || frase.includes('logout') || frase.includes('desconectar') || frase.includes('fechar sessão')) {
+    falarTextoSD('Encerrando sessão');
+    if (typeof fazerLogout === 'function') fazerLogout();
+    pararComandoDeVoz();
+    return;
+  }
+
+  // Comando não reconhecido de imediato
+  if (statusEl) statusEl.textContent = 'Comando: "' + fraseOriginal + '" não identificado. Tente: "sd acessar a o.s 010"';
+  falarTextoSD('Comando não compreendido. Tente falar: sd acessar a o.s 010, ou sd orçamento.');
+}
 
 function montarTextoContrato(d) {
   const lic = obterLicencaAtiva();
