@@ -4241,7 +4241,7 @@
         if (fb) {
           fb.style.display = 'block';
           fb.style.color = '#ef4444';
-          fb.textContent = 'Preencha o telefone/CPF e a senha de acesso.';
+          fb.textContent = 'Preencha o telefone/CPF/Nº Único e a senha de acesso.';
         }
         return;
       }
@@ -4256,20 +4256,60 @@
       const ordens = carregarOrdensDoStorage();
       const clientes = carregarClientesDoStorage();
       const idenLimpo = iden.replace(/\D/g, '');
+      const idenSemHash = iden.replace('#', '');
 
-      // Procura ordem correspondente
+      // Procura ordem correspondente (por número O.S., telefone, CPF ou número único)
       let ordemEncontrada = ordens.find(o => {
         const numOs = String(o.numero || '').toLowerCase();
-        const oTel = String((o.dados && o.dados.tel) || '').replace(/\D/g, '');
-        const oCpf = String((o.dados && o.dados.cnpj) || '').replace(/\D/g, '');
-        return numOs.includes(iden) || (idenLimpo && (oTel.includes(idenLimpo) || oCpf.includes(idenLimpo)));
+        const numOsLimpo = numOs.replace(/\D/g, '');
+        const oTel = String((o.dados && (o.dados.tel || o.dados.telefone)) || o.tel || o.telefone || '').replace(/\D/g, '');
+        const oCpf = String((o.dados && (o.dados.cnpj || o.dados.cpf)) || o.cnpj || o.cpf || '').replace(/\D/g, '');
+        const oNumCli = String(o.cliente_numero_unico || (o.dados && o.dados.cliente_numero_unico) || '').toLowerCase().replace(/\D/g, '');
+        const oNome = (o.nome || (o.dados && o.dados.nome) || '').toLowerCase();
+
+        return numOs.includes(idenSemHash) ||
+               (numOsLimpo && idenLimpo && numOsLimpo === idenLimpo) ||
+               (idenLimpo && (oTel.includes(idenLimpo) || idenLimpo.includes(oTel) || oCpf.includes(idenLimpo) || (oNumCli && oNumCli === idenLimpo))) ||
+               (iden.length >= 3 && oNome.includes(iden));
       });
 
-      // Procura cliente correspondente
+      // Procura cliente correspondente (por telefone, CPF, número único ou nome)
       let clienteEncontrado = clientes.find(c => {
-        const cTel = String(c.whatsapp || '').replace(/\D/g, '');
-        return idenLimpo && cTel.includes(idenLimpo);
+        const cTel = String(c.whatsapp || c.tel || '').replace(/\D/g, '');
+        const cCpf = String(c.cpf || c.cnpj || '').replace(/\D/g, '');
+        const cNumUnico = String(c.numero_unico || c.codigo_unico || '').toLowerCase().replace(/\D/g, '');
+        const cNome = (c.nome || '').toLowerCase().trim();
+
+        return (idenLimpo && ((cTel && (cTel.includes(idenLimpo) || idenLimpo.includes(cTel))) || (cCpf && cCpf.includes(idenLimpo)) || (cNumUnico && cNumUnico === idenLimpo))) ||
+               (iden.length >= 3 && cNome.includes(iden));
       });
+
+      // Se encontrou cliente mas não ordem diretamente, busca ordem do cliente
+      if (!ordemEncontrada && clienteEncontrado) {
+        const cTel = String(clienteEncontrado.whatsapp || '').replace(/\D/g, '');
+        const cNome = (clienteEncontrado.nome || '').toLowerCase().trim();
+        const cNumUnico = String(clienteEncontrado.numero_unico || '').replace(/\D/g, '');
+        ordemEncontrada = ordens.find(o => {
+          const oTel = String((o.dados && (o.dados.tel || o.dados.telefone)) || o.tel || '').replace(/\D/g, '');
+          const oNome = (o.nome || (o.dados && o.dados.nome) || '').toLowerCase().trim();
+          const oNumCli = String(o.cliente_numero_unico || (o.dados && o.dados.cliente_numero_unico) || '').replace(/\D/g, '');
+          return (cTel && oTel && (oTel.includes(cTel) || cTel.includes(oTel))) ||
+                 (cNumUnico && oNumCli && cNumUnico === oNumCli) ||
+                 (cNome && oNome && (oNome === cNome || oNome.includes(cNome) || cNome.includes(oNome)));
+        });
+      }
+
+      // Se encontrou ordem mas não cliente, busca cliente vinculado
+      if (!clienteEncontrado && ordemEncontrada) {
+        const oTel = String((ordemEncontrada.dados && (ordemEncontrada.dados.tel || ordemEncontrada.dados.telefone)) || ordemEncontrada.tel || '').replace(/\D/g, '');
+        const oNome = (ordemEncontrada.nome || (ordemEncontrada.dados && ordemEncontrada.dados.nome) || '').toLowerCase().trim();
+        clienteEncontrado = clientes.find(c => {
+          const cTel = String(c.whatsapp || '').replace(/\D/g, '');
+          const cNome = (c.nome || '').toLowerCase().trim();
+          return (oTel && cTel && (cTel.includes(oTel) || oTel.includes(cTel))) ||
+                 (oNome && cNome && oNome === cNome);
+        });
+      }
 
       // 2. Se não encontrou no storage local, consulta API de contrato/orçamento
       if (!ordemEncontrada) {
@@ -4294,7 +4334,10 @@
 
       // 3. Validação de senha:
       let senhaValida = false;
-      const ultimos4 = idenLimpo.length >= 4 ? idenLimpo.slice(-4) : '';
+      const cTel = clienteEncontrado ? String(clienteEncontrado.whatsapp || '').replace(/\D/g, '') : '';
+      const oTel = ordemEncontrada ? String((ordemEncontrada.dados && (ordemEncontrada.dados.tel || ordemEncontrada.dados.telefone)) || ordemEncontrada.tel || '').replace(/\D/g, '') : '';
+      const telParaUltimos4 = idenLimpo.length >= 4 ? idenLimpo : (cTel.length >= 4 ? cTel : oTel);
+      const ultimos4 = telParaUltimos4.length >= 4 ? telParaUltimos4.slice(-4) : '';
 
       if (clienteEncontrado && clienteEncontrado.senha && String(clienteEncontrado.senha).trim() === senha) {
         senhaValida = true;
@@ -4324,13 +4367,14 @@
       const urlNome = urlParams.get('nome');
       const urlOs = urlParams.get('os');
       const numOsFinal = (ordemEncontrada && ordemEncontrada.numero) || (urlOs ? (urlOs.startsWith('#') ? urlOs : '#' + urlOs) : '#0001');
-      const nomeFinal = (ordemEncontrada && ordemEncontrada.nome) || (clienteEncontrado && clienteEncontrado.nome) || urlNome || (idenLimpo ? ('Cliente (' + iden + ')') : 'Cliente');
-      const telFinal = (ordemEncontrada && ordemEncontrada.dados && ordemEncontrada.dados.tel) || (clienteEncontrado && clienteEncontrado.whatsapp) || iden;
+      const nomeFinal = (ordemEncontrada && (ordemEncontrada.nome || (ordemEncontrada.dados && ordemEncontrada.dados.nome))) || (clienteEncontrado && clienteEncontrado.nome) || urlNome || (idenLimpo ? ('Cliente (' + iden + ')') : 'Cliente');
+      const telFinal = (ordemEncontrada && ordemEncontrada.dados && (ordemEncontrada.dados.tel || ordemEncontrada.dados.telefone)) || (ordemEncontrada && ordemEncontrada.tel) || (clienteEncontrado && clienteEncontrado.whatsapp) || iden;
 
       const sessao = {
         nome: nomeFinal,
         telefone: telFinal,
         os: numOsFinal,
+        cliente_numero_unico: (clienteEncontrado && clienteEncontrado.numero_unico) || (ordemEncontrada && (ordemEncontrada.cliente_numero_unico || (ordemEncontrada.dados && ordemEncontrada.dados.cliente_numero_unico))) || '',
         ordem: ordemEncontrada || {
           numero: numOsFinal,
           nome: nomeFinal,
@@ -8208,12 +8252,18 @@ function mudarAba(tab) {
         btnZap.href = `https://wa.me/55${telLimpo}?text=${encodeURIComponent('Olá, estou enviando o comprovante de pagamento da minha O.S. ' + sessao.os)}`;
       }
 
-      // Extrai valor total real - fix: parse correto do formato BRL (ex: R$ 4.500,00)
+            // Extrai valor total real - fix: parse correto do formato BRL (ex: R$ 4.500,00)
       let totalNum = 0;
       let totalStr = (osData && (osData.total || (osData.dados && osData.dados.total))) || '';
       if (totalStr) {
-        // Formato BRL: "R$ 4.500,00" -> parse correto (remove R$, remove pontos de milhar, troca vírgula por ponto decimal)
-        const numSemSimbolo = String(totalStr).replace('R
+        const numSemSimbolo = String(totalStr).replace(/R\$\s*/gi, '').trim();
+        let numLimpo;
+        if (numSemSimbolo.includes(',')) {
+          numLimpo = numSemSimbolo.replace(/\.(?=\d{3})/g, '').replace(',', '.');
+        } else {
+          numLimpo = numSemSimbolo.replace(/[^\d.]/g, '');
+        }
+        totalNum = parseFloat(numLimpo) || 0;
       }
 
       // Extrai condição de pagamento

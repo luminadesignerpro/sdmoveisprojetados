@@ -2308,9 +2308,17 @@
         <button id="hist-btn-aprovado" class="btn btn-sm hist-filtro-btn" onclick="filtrarHistStatus('aprovado')" style="border-color:#10b981;color:#34d399;">🟢 Aprovados</button>
         <button id="hist-btn-recusado" class="btn btn-sm hist-filtro-btn" onclick="filtrarHistStatus('recusado')" style="border-color:#ef4444;color:#f87171;">🔴 Histórico</button>
       </div>
+      <!-- Opções de Busca: Nº Cliente, Nº Único, Nº O.S., Todos -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;align-items:center;">
+        <span style="font-size:11.5px;color:var(--muted);font-weight:700;">Buscar por:</span>
+        <button type="button" id="hist-busca-modo-tudo" class="btn btn-sm hist-modo-busca-btn" onclick="selecionarModoBuscaHist('tudo')" style="padding:4px 10px;font-size:11.5px;font-weight:800;border-radius:6px;background:#eab308;color:#000;border:1px solid #eab308;">🔍 Todos</button>
+        <button type="button" id="hist-busca-modo-tel" class="btn btn-sm hist-modo-busca-btn" onclick="selecionarModoBuscaHist('tel')" style="padding:4px 10px;font-size:11.5px;font-weight:800;border-radius:6px;background:rgba(255,255,255,0.06);color:#fff;border:1px solid rgba(255,255,255,0.2);">📱 Nº Cliente (WhatsApp/Tel)</button>
+        <button type="button" id="hist-busca-modo-unico" class="btn btn-sm hist-modo-busca-btn" onclick="selecionarModoBuscaHist('unico')" style="padding:4px 10px;font-size:11.5px;font-weight:800;border-radius:6px;background:rgba(255,255,255,0.06);color:#fff;border:1px solid rgba(255,255,255,0.2);">🆔 Nº Único do Cliente</button>
+        <button type="button" id="hist-busca-modo-os" class="btn btn-sm hist-modo-busca-btn" onclick="selecionarModoBuscaHist('os')" style="padding:4px 10px;font-size:11.5px;font-weight:800;border-radius:6px;background:rgba(255,255,255,0.06);color:#fff;border:1px solid rgba(255,255,255,0.2);">📋 Nº da O.S.</button>
+      </div>
       <!-- Barra de busca -->
       <div style="display:flex;gap:8px;margin-bottom:12px;">
-        <input id="hist-busca-input" type="text" placeholder="🔍 Buscar por nome, nº O.S. ou nº do cliente..." oninput="renderHistFiltrado()" style="flex:1;padding:8px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:12.5px;outline:none;" />
+        <input id="hist-busca-input" type="text" placeholder="🔍 Buscar por nome, nº O.S., nº único ou telefone..." oninput="renderHistFiltrado()" style="flex:1;padding:8px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:12.5px;outline:none;" />
       </div>
       <div id="hist-lista"><div class="empty">Nenhum orçamento salvo ainda.</div></div>
     </div>
@@ -3155,8 +3163,11 @@
         <div class="field"><label>Cidade</label><input id="c-cidade" placeholder="Itaitinga" /></div>
       </div>
       <div class="field-row">
-        <div class="field"><label>CPF / Número do Cliente (Opcional)</label><input id="c-cpf" placeholder="CPF, RG ou código do cliente" /></div>
-        <div class="field"><label>Senha de Acesso do Cliente ao Portal (Opcional)</label><input id="c-senha" placeholder="Deixe vazio para usar os 4 últimos dígitos do WhatsApp (ou defina aqui)" /></div>
+        <div class="field"><label>🆔 Número Único do Cliente (Automático)</label><input id="c-numero-unico" placeholder="Gerado automaticamente (ex: 001)" readonly style="background:rgba(234,179,8,0.1);color:#facc15;font-weight:800;border:1px solid #eab308;cursor:not-allowed;" /></div>
+        <div class="field"><label>CPF / Documento do Cliente (Opcional)</label><input id="c-cpf" placeholder="CPF ou documento do cliente" /></div>
+      </div>
+      <div class="field-row">
+        <div class="field" style="width:100%"><label>Senha de Acesso do Cliente ao Portal (Opcional)</label><input id="c-senha" placeholder="Deixe vazio para usar os 4 últimos dígitos do WhatsApp (ou defina aqui)" /></div>
       </div>
       <div class="actions">
         <button class="btn btn-primary" id="btn-salvar-cli" onclick="salvarCliente()">💾 Salvar cliente</button>
@@ -7810,6 +7821,7 @@ function recarregarDadosEmpresaAtiva() {
 
   // 2. Clientes da empresa
   clientes = load(K.clients, []);
+  if (typeof garantirNumerosUnicosClientes === 'function') garantirNumerosUnicosClientes();
 
   // 3. Orçamentos e Ordens de Serviço da empresa (Isolamento total por empresa)
   historico = load(K.orders, []);
@@ -9121,9 +9133,14 @@ function salvarOrdem() {
         if (o.end) cli.endereco = o.end;
         if (o.num) cli.numero = o.num;
         if (o.apto) cli.complemento = o.apto;
+        if (!cli.numero_unico && typeof obterProximoNumeroUnicoCliente === 'function') {
+          cli.numero_unico = obterProximoNumeroUnicoCliente();
+        }
       } else {
-        clientes.push({
+        const nextNum = (typeof obterProximoNumeroUnicoCliente === 'function') ? obterProximoNumeroUnicoCliente() : '001';
+        cli = {
           id: Date.now(),
+          numero_unico: nextNum,
           nome: o.nome,
           whatsapp: o.tel || '',
           cnpj: o.cnpj || '',
@@ -9132,7 +9149,8 @@ function salvarOrdem() {
           numero: o.num || '',
           complemento: o.apto || '',
           data_cadastro: new Date().toLocaleDateString('pt-BR')
-        });
+        };
+        clientes.push(cli);
       }
       save(K.clients, clientes);
       renderCli();
@@ -11708,6 +11726,8 @@ function renderHistFiltrado() {
   const badge = document.getElementById('hist-count');
   if (!el) return;
 
+  if (typeof garantirNumerosUnicosClientes === 'function') garantirNumerosUnicosClientes();
+
   const busca = (document.getElementById('hist-busca-input') || {}).value || '';
   const buscaLower = busca.toLowerCase().trim();
 
@@ -11722,17 +11742,45 @@ function renderHistFiltrado() {
     }
   }
 
-  // Filtro por busca (nome, número O.S., número cliente/cpf)
+  // Filtro por busca (Nº do Cliente/Tel, Nº Único do Cliente, Nº da O.S., ou Tudo)
   if (buscaLower) {
+    const buscaDigitos = buscaLower.replace(/\D/g, '');
     lista = lista.filter(o => {
-      const nome = (o.nome || '').toLowerCase();
-      const num = String(o.numero || '').toLowerCase();
-      const tel = String((o.dados && o.dados.tel) || '').replace(/\D/g,'');
-      const cpf = String((o.dados && o.dados.cpf) || '').replace(/\D/g,'');
-      const buscaDigitos = buscaLower.replace(/\D/g,'');
+      const nome = (o.nome || (o.dados && o.dados.nome) || '').toLowerCase();
+      const numOs = String(o.numero || '').toLowerCase();
+      const numOsDigitos = numOs.replace(/\D/g, '');
+      const tel = String((o.dados && (o.dados.tel || o.dados.telefone)) || o.tel || o.telefone || '').replace(/\D/g, '');
+      const cpf = String((o.dados && (o.dados.cpf || o.dados.cnpj)) || o.cpf || o.cnpj || '').replace(/\D/g, '');
+
+      // Procura número único na O.S. ou nos clientes salvos
+      let numCliUnico = String(o.cliente_numero_unico || (o.dados && o.dados.cliente_numero_unico) || '').replace(/\D/g, '');
+      if (!numCliUnico) {
+        const cliAssoc = clientes.find(c => {
+          const cTel = String(c.whatsapp || '').replace(/\D/g, '');
+          const cNome = (c.nome || '').toLowerCase().trim();
+          return (tel && cTel && (tel === cTel || cTel.includes(tel))) || (cNome && nome && cNome === nome);
+        });
+        if (cliAssoc && cliAssoc.numero_unico) numCliUnico = String(cliAssoc.numero_unico).replace(/\D/g, '');
+      }
+
+      if (_histModoBusca === 'tel') {
+        return buscaDigitos ? tel.includes(buscaDigitos) : tel.includes(buscaLower);
+      }
+      if (_histModoBusca === 'unico') {
+        const buscaUnicoPad = buscaDigitos.padStart(3, '0');
+        return (buscaDigitos && (numCliUnico === buscaDigitos || numCliUnico === buscaUnicoPad || numCliUnico.includes(buscaDigitos))) ||
+               numCliUnico.includes(buscaLower);
+      }
+      if (_histModoBusca === 'os') {
+        return numOs.includes(buscaLower) || (buscaDigitos && (numOsDigitos === buscaDigitos || numOsDigitos.includes(buscaDigitos)));
+      }
+
+      // Modo 'tudo'
       return nome.includes(buscaLower) ||
-             num.includes(buscaLower) ||
+             numOs.includes(buscaLower) ||
+             (buscaDigitos && (numOsDigitos === buscaDigitos || numOsDigitos.includes(buscaDigitos))) ||
              (buscaDigitos && tel.includes(buscaDigitos)) ||
+             (buscaDigitos && (numCliUnico === buscaDigitos || numCliUnico === buscaDigitos.padStart(3, '0') || numCliUnico.includes(buscaDigitos))) ||
              (buscaDigitos && cpf.includes(buscaDigitos));
     });
   }
@@ -11744,7 +11792,6 @@ function renderHistFiltrado() {
     return;
   }
 
-  // Reusar renderHist mas com lista filtrada
   const statusLabels = {
     pendente: '🟡 Aguardando Resposta',
     aprovado: '🟢 Aprovado',
@@ -11779,6 +11826,25 @@ function renderHistFiltrado() {
     const btnStatusEnvio = foiEnviadoAssinatura
       ? `<button type="button" class="btn btn-sm" onclick="abrirModalStatusEnvio('${o.id}')" style="background:rgba(6,182,212,0.16);border:1.5px solid #06b6d4;color:#22d3ee;font-weight:800;border-radius:10px;padding:6px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">📤 Enviado p/ Assinatura ${dataHoraEnvioStr ? '('+dataHoraEnvioStr+')' : ''}</button>`
       : `<button type="button" class="btn btn-sm" onclick="abrirModalStatusEnvio('${o.id}')" style="background:rgba(234,179,8,0.12);border:1.5px solid rgba(234,179,8,0.6);color:#fbbf24;font-weight:800;border-radius:10px;padding:6px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">⏳ Não Enviado p/ Assinatura</button>`;
+
+    // Localiza Número Único do Cliente
+    let numUnicoExibir = o.cliente_numero_unico || (o.dados && o.dados.cliente_numero_unico) || '';
+    if (!numUnicoExibir) {
+      const oTelLimp = String((o.dados && (o.dados.tel || o.dados.telefone)) || o.tel || '').replace(/\D/g, '');
+      const oNomeLimp = (o.nome || (o.dados && o.dados.nome) || '').toLowerCase().trim();
+      const cliEncontrado = clientes.find(c => {
+        const cTelLimp = String(c.whatsapp || '').replace(/\D/g, '');
+        const cNomeLimp = (c.nome || '').toLowerCase().trim();
+        return (oTelLimp && cTelLimp && (oTelLimp === cTelLimp || cTelLimp.includes(oTelLimp))) ||
+               (oNomeLimp && cNomeLimp && oNomeLimp === cNomeLimp);
+      });
+      if (cliEncontrado && cliEncontrado.numero_unico) {
+        numUnicoExibir = cliEncontrado.numero_unico;
+      }
+    }
+
+    const telExibir = (o.dados && (o.dados.tel || o.dados.telefone)) || o.tel || '';
+
     return `
     <div class="hist-card">
       <div class="hist-top">
@@ -11788,8 +11854,11 @@ function renderHistFiltrado() {
         </div>
         <span class="hist-date">${esc(o.data_orc || '')}</span>
       </div>
-      <div class="hist-client">${esc(o.nome || 'Cliente não identificado')}</div>
-      <div style="font-size:12px;color:var(--muted);margin-top:2px;">${esc((o.dados && o.dados.tel) || '')}</div>
+      <div class="hist-client" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span>${esc(o.nome || 'Cliente não identificado')}</span>
+        ${numUnicoExibir ? `<span style="display:inline-block;padding:2px 7px;background:rgba(234,179,8,0.18);border:1px solid #eab308;color:#facc15;border-radius:6px;font-size:11px;font-weight:800;">🆔 Nº Único: ${esc(numUnicoExibir)}</span>` : ''}
+      </div>
+      ${telExibir ? `<div style="font-size:12px;color:var(--muted);margin-top:2px;">📱 ${esc(telExibir)}</div>` : ''}
       ${assinadoBadge}
       <div class="hist-btns" style="margin-top:10px;">
         <button class="btn btn-primary btn-sm" onclick="editarOs('${o.id}')">✏️ Editar</button>
@@ -13441,22 +13510,47 @@ function salvarCliente() {
   if (!nome) { showMsg('cli-msg','Informe o nome do cliente.',false); return; }
   const senhaInput = document.getElementById('c-senha');
   const cpf = (document.getElementById('c-cpf') || {}).value || '';
-  const novo = { nome, whatsapp:document.getElementById('c-tel').value.trim(), bairro:document.getElementById('c-bairro').value.trim(), cidade:document.getElementById('c-cidade').value.trim()||'Itaitinga', senha: (senhaInput && senhaInput.value.trim()) || '' , cpf };
+  const numUnicoInput = document.getElementById('c-numero-unico');
+  let numero_unico = (numUnicoInput && numUnicoInput.value.trim()) || '';
+  if (!numero_unico || numero_unico.includes('Auto')) {
+    numero_unico = (typeof obterProximoNumeroUnicoCliente === 'function') ? obterProximoNumeroUnicoCliente() : '001';
+  }
+  const novo = {
+    nome,
+    whatsapp: document.getElementById('c-tel').value.trim(),
+    bairro: document.getElementById('c-bairro').value.trim(),
+    cidade: document.getElementById('c-cidade').value.trim() || 'Itaitinga',
+    senha: (senhaInput && senhaInput.value.trim()) || '',
+    cpf,
+    numero_unico
+  };
   if (editandoCliId) {
     const idx = clientes.findIndex(x=>x.id===editandoCliId);
-    if (idx!==-1) clientes[idx]={...clientes[idx],...novo};
+    if (idx!==-1) {
+      if (!novo.numero_unico && clientes[idx].numero_unico) novo.numero_unico = clientes[idx].numero_unico;
+      clientes[idx]={...clientes[idx],...novo};
+    }
     showMsg('cli-msg','✅ Cliente atualizado com sucesso!',true);
   } else {
-    novo.id = Date.now(); clientes.push(novo);
+    novo.id = Date.now();
+    clientes.push(novo);
     showMsg('cli-msg','✅ Cliente salvo com sucesso!',true);
   }
-  save(K.clients, clientes); renderCli(); limparCli();
+  save(K.clients, clientes);
+  try {
+    const lic = (typeof obterLicencaAtiva === 'function' && obterLicencaAtiva()) ? obterLicencaAtiva() : { id: 'sdmoveis' };
+    localStorage.setItem('sdv_clientes_' + (lic.id || 'sdmoveis'), JSON.stringify(clientes));
+  } catch (_) {}
+  renderCli();
+  limparCli();
 }
 
 function limparCli() {
   editandoCliId = null;
   ['c-nome','c-tel','c-bairro','c-cidade','c-senha'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   if (document.getElementById('c-cpf')) document.getElementById('c-cpf').value = '';
+  const elNum = document.getElementById('c-numero-unico');
+  if (elNum) elNum.value = (typeof obterProximoNumeroUnicoCliente === 'function') ? obterProximoNumeroUnicoCliente() : '001';
   document.getElementById('btn-salvar-cli').innerHTML = '💾 Salvar cliente';
 }
 
@@ -13468,6 +13562,10 @@ function editarCli(id) {
   document.getElementById('c-tel').value = c.whatsapp||'';
   document.getElementById('c-bairro').value = c.bairro||'';
   document.getElementById('c-cidade').value = c.cidade||'';
+  const elNum = document.getElementById('c-numero-unico');
+  if (elNum) elNum.value = c.numero_unico || '';
+  const cpfEl = document.getElementById('c-cpf');
+  if (cpfEl) cpfEl.value = c.cpf || '';
   const senhaEl = document.getElementById('c-senha');
   if (senhaEl) senhaEl.value = c.senha||'';
   document.getElementById('btn-salvar-cli').innerHTML = '💾 Atualizar cliente';
@@ -13766,22 +13864,98 @@ function salvarClienteDoOrcamento() {
   if (typeof renderCli === 'function') renderCli();
 }
 
+
+// ── GESTÃO DE NÚMERO ÚNICO DE CLIENTE ──
+function obterProximoNumeroUnicoCliente() {
+  if (!Array.isArray(clientes) || !clientes.length) return '001';
+  let max = 0;
+  clientes.forEach(c => {
+    if (c.numero_unico) {
+      const num = parseInt(String(c.numero_unico).replace(/\D/g, ''), 10);
+      if (!isNaN(num) && num > max) max = num;
+    }
+  });
+  return String(max + 1).padStart(3, '0');
+}
+
+function garantirNumerosUnicosClientes() {
+  if (!Array.isArray(clientes)) return;
+  let alterou = false;
+  let max = 0;
+  clientes.forEach(c => {
+    if (c.numero_unico) {
+      const n = parseInt(String(c.numero_unico).replace(/\D/g, ''), 10);
+      if (!isNaN(n) && n > max) max = n;
+    }
+  });
+  clientes.forEach(c => {
+    if (!c.numero_unico) {
+      max++;
+      c.numero_unico = String(max).padStart(3, '0');
+      alterou = true;
+    }
+  });
+  if (alterou) {
+    save(K.clients, clientes);
+    try {
+      const lic = (typeof obterLicencaAtiva === 'function' && obterLicencaAtiva()) ? obterLicencaAtiva() : { id: 'sdmoveis' };
+      localStorage.setItem('sdv_clientes_' + (lic.id || 'sdmoveis'), JSON.stringify(clientes));
+    } catch (_) {}
+  }
+}
+
+let _histModoBusca = 'tudo'; // 'tudo' | 'tel' | 'unico' | 'os'
+
+function selecionarModoBuscaHist(modo) {
+  _histModoBusca = modo;
+  const botoes = ['tudo', 'tel', 'unico', 'os'];
+  botoes.forEach(b => {
+    const el = document.getElementById('hist-busca-modo-' + b);
+    if (el) {
+      if (b === modo) {
+        el.style.background = '#eab308';
+        el.style.color = '#000';
+        el.style.border = '1px solid #eab308';
+      } else {
+        el.style.background = 'rgba(255,255,255,0.06)';
+        el.style.color = '#fff';
+        el.style.border = '1px solid rgba(255,255,255,0.2)';
+      }
+    }
+  });
+
+  const input = document.getElementById('hist-busca-input');
+  if (input) {
+    if (modo === 'tel') input.placeholder = '📱 Digite o telefone ou WhatsApp do cliente (ex: 85997602237)...';
+    else if (modo === 'unico') input.placeholder = '🆔 Digite o Nº Único do cliente (ex: 001, 002)...';
+    else if (modo === 'os') input.placeholder = '📋 Digite o Nº da O.S. (ex: 0010, #0010, 10)...';
+    else input.placeholder = '🔍 Buscar por nome, nº O.S., nº único ou telefone...';
+    input.focus();
+  }
+  renderHistFiltrado();
+}
+
 function renderCli(container='cli-lista', modoModal=false) {
   const el = document.getElementById(container);
   if (!el) return;
+  if (typeof garantirNumerosUnicosClientes === 'function') garantirNumerosUnicosClientes();
   const badge = document.getElementById('cli-count');
   if (badge && !modoModal) badge.textContent = clientes.length;
   if (!clientes.length) { el.innerHTML = '<div class="empty">Nenhum cliente cadastrado.</div>'; return; }
   el.innerHTML = clientes.slice().reverse().map(c => {
     const telLimpo = String(c.whatsapp||'').replace(/\D/g,'');
     const senhaExibir = c.senha ? c.senha : (telLimpo.length>=4 ? telLimpo.slice(-4) : '****');
+    const numUnico = c.numero_unico || String(c.id).slice(-3);
     return `
     <div class="cli-card">
       <div>
-        <div class="cli-name">${c.nome}</div>
+        <div class="cli-name" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span>${esc(c.nome)}</span>
+          <span style="display:inline-block;padding:2px 7px;background:rgba(234,179,8,0.18);border:1px solid #eab308;color:#facc15;border-radius:6px;font-size:11px;font-weight:800;letter-spacing:0.5px;">🆔 Nº ÚNICO: ${esc(numUnico)}</span>
+        </div>
         <div class="cli-det">${c.whatsapp||(c.bairro?'':'(sem tel)')}${c.bairro?' · '+c.bairro:''} ${c.cidade?'· '+c.cidade:''}</div>
         <div style="font-size:10.5px;color:var(--gold-light);margin-top:3px;font-weight:700;">🔑 Senha Portal: ${esc(senhaExibir)}</div>
-        ${c.cpf ? `<div style="font-size:10.5px;color:#38bdf8;margin-top:2px;font-weight:700;">🪪 Nº Cliente: ${esc(c.cpf)}</div>` : ''}
+        ${c.cpf ? `<div style="font-size:10.5px;color:#38bdf8;margin-top:2px;font-weight:700;">🪪 CPF/Doc: ${esc(c.cpf)}</div>` : ''}
       </div>
       <div class="cli-btns">
         ${modoModal
