@@ -4741,6 +4741,81 @@
   </div>
 </div>
 
+
+<!-- ══ MODAL CONFIGURAR / EDITAR MODELO DE CONTRATO ══ -->
+<div id="modal-config-modelo-contrato" class="modal-overlay" style="display:none; z-index:99999;" onclick="if(event.target===this)fecharModalConfigContrato()">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:760px;width:100%;background:#0b0c16;border:1.5px solid rgba(201,168,76,0.4);box-shadow:0 20px 60px rgba(0,0,0,0.95),0 0 30px rgba(201,168,76,0.2);border-radius:18px;padding:22px 20px;max-height:92vh;display:flex;flex-direction:column;">
+    <div class="modal-title" style="margin-bottom:12px;flex-shrink:0;display:flex;justify-content:space-between;align-items:center;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:18px;">⚙️</span>
+        <div>
+          <div style="font-size:14px;font-weight:900;color:var(--gold-light);">Configurar / Editar Modelo de Contrato</div>
+          <div style="font-size:11px;color:var(--muted);font-weight:600;">Personalize o modelo oficial usado para gerar os contratos de prestação de serviços</div>
+        </div>
+      </div>
+      <button class="modal-close" onclick="fecharModalConfigContrato()" style="background:transparent;border:none;color:#fff;font-size:18px;cursor:pointer;">✕</button>
+    </div>
+
+    <div style="flex:1;overflow-y:auto;padding-right:4px;display:flex;flex-direction:column;gap:12px;">
+      <!-- Configurações Rápidas -->
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px 14px;">
+        <div style="font-size:11.5px;color:var(--gold-light);font-weight:800;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">⚡ Configurações Rápidas de Cláusulas</div>
+        <div class="field-row" style="margin-bottom:8px;">
+          <div class="field" style="flex:1;">
+            <label style="font-size:11px;">Prazo de Entrega Padrão</label>
+            <input id="cfg-contrato-prazo" placeholder="ex: 15 a 20 dias úteis" style="font-size:12px;" />
+          </div>
+          <div class="field" style="flex:1;">
+            <label style="font-size:11px;">Garantia Padrão</label>
+            <input id="cfg-contrato-garantia" placeholder="ex: 1 (um) ano contra defeitos de fabricação e montagem" style="font-size:12px;" />
+          </div>
+        </div>
+        <div class="field">
+          <label style="font-size:11px;">Chave Pix Oficial para Pagamento</label>
+          <input id="cfg-contrato-pix" placeholder="ex: (85) 99611-9824" style="font-size:12px;" />
+        </div>
+      </div>
+
+      <!-- Tags Dinâmicas Disponíveis -->
+      <div style="background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.2);border-radius:12px;padding:10px 12px;">
+        <div style="font-size:11px;color:var(--gold-light);font-weight:800;margin-bottom:6px;">📌 Tags Dinâmicas (toque para inserir no texto):</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button type="button" class="btn btn-sm" onclick="inserirTagModeloContrato('{NUMERO_OS}')" style="padding:2px 7px;font-size:10px;background:rgba(255,255,255,0.08);color:#facc15;border:1px solid rgba(250,204,21,0.3);">{NUMERO_OS}</button>
+          <button type="button" class="btn btn-sm" onclick="inserirTagModeloContrato('{DATA_CONTRATO}')" style="padding:2px 7px;font-size:10px;background:rgba(255,255,255,0.08);color:#facc15;border:1px solid rgba(250,204,21,0.3);">{DATA_CONTRATO}</button>
+          <button type="button" class="btn btn-sm" onclick="inserirTagModeloContrato('{NOME_CLIENTE}')" style="padding:2px 7px;font-size:10px;background:rgba(255,255,255,0.08);color:#facc15;border:1px solid rgba(250,204,21,0.3);">{NOME_CLIENTE}</button>
+          <button type="button" class="btn btn-sm" onclick="inserirTagModeloContrato('{CPF_CLIENTE}')" style="padding:2px 7px;font-size:10px;background:rgba(255,255,255,0.08);color:#facc15;border:1px solid rgba(250,204,21,0.3);">{CPF_CLIENTE}</button>
+          <button type="button" class="btn btn-sm" onclick="inserirTagModeloContrato('{TEL_CLIENTE}')" style="padding:2px 7px;font-size:10px;background:rgba(255,255,255,0.08);color:#facc15;border:1px solid rgba(250,204,21,0.3);">{TEL_CLIENTE}</button>
+          <button type="button" class="btn btn-sm" onclick="inserirTagModeloContrato('{ENDERECO_CLIENTE}')" style="padding:2px 7px;font-size:10px;background:rgba(255,255,255,0.08);color:#facc15;border:1px solid rgba(250,204,21,0.3);">{ENDERECO_CLIENTE}</button>
+          <button type="button" class="btn btn-sm" onclick="inserirTagModeloContrato('{ITENS}')" style="padding:2px 7px;font-size:10px;background:rgba(255,255,255,0.08);color:#facc15;border:1px solid rgba(250,204,21,0.3);">{ITENS}</button>
+          <button type="button" class="btn btn-sm" onclick="inserirTagModeloContrato('{VALOR_TOTAL}')" style="padding:2px 7px;font-size:10px;background:rgba(255,255,255,0.08);color:#facc15;border:1px solid rgba(250,204,21,0.3);">{VALOR_TOTAL}</button>
+          <button type="button" class="btn btn-sm" onclick="inserirTagModeloContrato('{FORMA_PAGAMENTO}')" style="padding:2px 7px;font-size:10px;background:rgba(255,255,255,0.08);color:#facc15;border:1px solid rgba(250,204,21,0.3);">{FORMA_PAGAMENTO}</button>
+          <button type="button" class="btn btn-sm" onclick="inserirTagModeloContrato('{PRAZO_ENTREGA}')" style="padding:2px 7px;font-size:10px;background:rgba(255,255,255,0.08);color:#facc15;border:1px solid rgba(250,204,21,0.3);">{PRAZO_ENTREGA}</button>
+          <button type="button" class="btn btn-sm" onclick="inserirTagModeloContrato('{GARANTIA}')" style="padding:2px 7px;font-size:10px;background:rgba(255,255,255,0.08);color:#facc15;border:1px solid rgba(250,204,21,0.3);">{GARANTIA}</button>
+          <button type="button" class="btn btn-sm" onclick="inserirTagModeloContrato('{NOME_EMPRESA}')" style="padding:2px 7px;font-size:10px;background:rgba(255,255,255,0.08);color:#facc15;border:1px solid rgba(250,204,21,0.3);">{NOME_EMPRESA}</button>
+          <button type="button" class="btn btn-sm" onclick="inserirTagModeloContrato('{TEL_EMPRESA}')" style="padding:2px 7px;font-size:10px;background:rgba(255,255,255,0.08);color:#facc15;border:1px solid rgba(250,204,21,0.3);">{TEL_EMPRESA}</button>
+          <button type="button" class="btn btn-sm" onclick="inserirTagModeloContrato('{PIX_EMPRESA}')" style="padding:2px 7px;font-size:10px;background:rgba(255,255,255,0.08);color:#facc15;border:1px solid rgba(250,204,21,0.3);">{PIX_EMPRESA}</button>
+        </div>
+      </div>
+
+      <!-- Editor de Texto do Modelo -->
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <label style="font-size:11.5px;color:var(--text);font-weight:700;">📝 Texto Completo do Modelo de Contrato (Cláusulas e Assinaturas):</label>
+        <textarea id="cfg-contrato-texto" rows="14" style="width:100%;font-family:'Courier New',monospace;font-size:11.5px;line-height:1.6;background:#06070e;color:#e2e8f0;border:1px solid rgba(201,168,76,0.3);border-radius:10px;padding:12px;outline:none;resize:vertical;"></textarea>
+      </div>
+      <div id="cfg-contrato-msg" style="display:none;font-size:12px;font-weight:700;padding:6px 12px;border-radius:8px;"></div>
+    </div>
+
+    <!-- Rodapé de Ações -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);flex-wrap:wrap;gap:8px;">
+      <button type="button" class="btn btn-sec btn-sm" onclick="restaurarModeloContratoPadrao()" style="background:rgba(239,68,68,0.12);border-color:#ef4444;color:#f87171;">🔄 Restaurar Padrão Oficial</button>
+      <div style="display:flex;gap:8px;">
+        <button type="button" class="btn btn-sec btn-sm" onclick="fecharModalConfigContrato()">✕ Cancelar</button>
+        <button type="button" class="btn btn-gold btn-sm" onclick="salvarModeloContrato()">💾 Salvar Modelo de Contrato</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ══ MODAL VISUALIZAR / EDITAR CONTRATO ══ -->
 <div id="modal-contrato-editor" class="modal-overlay" style="display:none; z-index:99999;" onclick="if(event.target===this)fecharModalContratoEditor()">
   <div class="modal-box" onclick="event.stopPropagation()" style="max-width:700px;width:100%;background:#0f0f1a;border:1.5px solid rgba(201,168,76,0.35);box-shadow:0 20px 60px rgba(0,0,0,0.95),0 0 30px rgba(201,168,76,0.15);border-radius:18px;padding:22px 20px;max-height:90vh;display:flex;flex-direction:column;">
@@ -15916,6 +15991,188 @@ function renderSelectContratos() {
     historico.slice().reverse().map(o=>`<option value="${o.id}">${o.numero} – ${o.nome||'Cliente sem nome'} (${o.total})</option>`).join('');
 }
 
+
+// ══════════════════════════════════════════════
+//  CONFIGURAÇÃO E EDIÇÃO DO MODELO DE CONTRATO
+// ══════════════════════════════════════════════
+function abrirConfiguracaoContratoComSenha() {
+  abrirModalConfigContrato();
+}
+
+function obterTextoModeloContratoPadrao(lic) {
+  lic = lic || (typeof obterLicencaAtiva === 'function' ? obterLicencaAtiva() : { nome: 'SD Vidros', cidade: 'Itaitinga - CE' });
+  const ehMoveis = (lic.tipoContrato === 'moveis' || (lic.segmento && lic.segmento.toLowerCase().includes('móveis')));
+  const ramoDesc = ehMoveis ? 'marcenaria sob medida e móveis planejados' : 'vidraçaria, esquadrias e vidros temperados';
+
+  return `CONTRATO DE PRESTAÇÃO DE SERVIÇOS
+N° {NUMERO_OS}
+{CIDADE_EMPRESA}, {DATA_CONTRATO}
+
+══════════════════════════════════════════════════════════════
+
+CONTRATADA:
+Razão Social.....: {NOME_EMPRESA}
+Segmento.........: ${lic.segmento || 'Móveis Planejados & Marcenaria'}
+WhatsApp.........: {TEL_EMPRESA}
+Cidade...........: {CIDADE_EMPRESA}
+{CNPJ_EMPRESA}Chave Licença....: ${lic.chaveLicenca || 'OFICIAL-VIP'}
+
+CONTRATANTE (CLIENTE):
+Nome.............: {NOME_CLIENTE}
+{CPF_CLIENTE}WhatsApp/Tel.....: {TEL_CLIENTE}
+Endereço.........: {ENDERECO_CLIENTE}
+
+══════════════════════════════════════════════════════════════
+
+CLÁUSULA 1ª – DO OBJETO
+
+A CONTRATADA obriga-se a fornecer, produzir e instalar ao CONTRATANTE os seguintes
+serviços de ${ramoDesc}:
+
+{ITENS}
+
+══════════════════════════════════════════════════════════════
+
+CLÁUSULA 2ª – DO VALOR E FORMA DE PAGAMENTO
+
+Valor Total: {VALOR_TOTAL}
+Forma de Pagamento: {FORMA_PAGAMENTO}
+
+A CONTRATANTE efetuará o pagamento conforme a forma descrita acima.
+Chave Pix oficial para pagamento: {PIX_EMPRESA}
+
+══════════════════════════════════════════════════════════════
+
+CLÁUSULA 3ª – DO PRAZO DE ENTREGA E EXECUÇÃO
+
+O prazo para execução e entrega dos serviços é de {PRAZO_ENTREGA},
+contados a partir da confirmação do pagamento/sinal e da aprovação de
+todos os detalhes técnicos do projeto.
+
+══════════════════════════════════════════════════════════════
+
+CLÁUSULA 4ª – DA GARANTIA
+
+A CONTRATADA oferece garantia de {GARANTIA} contra defeitos de
+fabricação e montagem, excluindo danos causados por mau uso, vandalismo,
+acidentes ou fenômenos naturais.
+
+══════════════════════════════════════════════════════════════
+
+CLÁUSULA 5ª – DAS OBRIGAÇÕES DAS PARTES
+
+5.1 – A CONTRATADA executará os serviços com materiais de alta qualidade e mão de obra especializada;
+5.2 – A CONTRATANTE garantirá o acesso ao local nos dias combinados e efetuará o pagamento acordado.
+
+══════════════════════════════════════════════════════════════
+
+{CIDADE_EMPRESA}, {DATA_CONTRATO}
+
+
+_________________________________________________
+CONTRATADA: {NOME_EMPRESA}
+WhatsApp: {TEL_EMPRESA}
+
+
+_________________________________________________
+CONTRATANTE: {NOME_CLIENTE}
+WhatsApp: {TEL_CLIENTE}`;
+}
+
+function abrirModalConfigContrato() {
+  const lic = (typeof obterLicencaAtiva === 'function' ? obterLicencaAtiva() : { id: 'sdmoveis' });
+  const empId = lic.id || 'sdmoveis';
+
+  let config = null;
+  try {
+    const raw = localStorage.getItem('sdv_modelo_contrato_' + empId) || localStorage.getItem('sdv_modelo_contrato');
+    if (raw) config = JSON.parse(raw);
+  } catch (_) {}
+
+  const elPrazo = document.getElementById('cfg-contrato-prazo');
+  const elGarantia = document.getElementById('cfg-contrato-garantia');
+  const elPix = document.getElementById('cfg-contrato-pix');
+  const elTexto = document.getElementById('cfg-contrato-texto');
+  const elMsg = document.getElementById('cfg-contrato-msg');
+
+  if (elMsg) { elMsg.style.display = 'none'; elMsg.textContent = ''; }
+
+  if (elPrazo) elPrazo.value = (config && config.prazo) || '15 a 20 dias úteis';
+  if (elGarantia) elGarantia.value = (config && config.garantia) || '1 (um) ano contra defeitos de fabricação e montagem';
+  if (elPix) elPix.value = (config && config.pix) || lic.pix || lic.telefone || '(85) 99611-9824';
+  if (elTexto) elTexto.value = (config && config.texto) || obterTextoModeloContratoPadrao(lic);
+
+  const modal = document.getElementById('modal-config-modelo-contrato');
+  if (modal) modal.style.display = 'flex';
+}
+
+function fecharModalConfigContrato() {
+  const modal = document.getElementById('modal-config-modelo-contrato');
+  if (modal) modal.style.display = 'none';
+}
+
+function inserirTagModeloContrato(tag) {
+  const el = document.getElementById('cfg-contrato-texto');
+  if (!el) return;
+  const start = el.selectionStart || 0;
+  const end = el.selectionEnd || 0;
+  const val = el.value;
+  el.value = val.substring(0, start) + tag + val.substring(end);
+  el.focus();
+  el.selectionStart = el.selectionEnd = start + tag.length;
+}
+
+function restaurarModeloContratoPadrao() {
+  if (!confirm('Deseja realmente restaurar o modelo oficial padrão de contrato?')) return;
+  const lic = (typeof obterLicencaAtiva === 'function' ? obterLicencaAtiva() : { id: 'sdmoveis' });
+  const elPrazo = document.getElementById('cfg-contrato-prazo');
+  const elGarantia = document.getElementById('cfg-contrato-garantia');
+  const elPix = document.getElementById('cfg-contrato-pix');
+  const elTexto = document.getElementById('cfg-contrato-texto');
+
+  if (elPrazo) elPrazo.value = '15 a 20 dias úteis';
+  if (elGarantia) elGarantia.value = '1 (um) ano contra defeitos de fabricação e montagem';
+  if (elPix) elPix.value = lic.pix || lic.telefone || '(85) 99611-9824';
+  if (elTexto) elTexto.value = obterTextoModeloContratoPadrao(lic);
+
+  const elMsg = document.getElementById('cfg-contrato-msg');
+  if (elMsg) {
+    elMsg.style.display = 'block';
+    elMsg.style.background = 'rgba(234,179,8,0.15)';
+    elMsg.style.color = '#fbbf24';
+    elMsg.textContent = '🔄 Modelo padrão restaurado na tela. Clique em "Salvar" para confirmar.';
+  }
+}
+
+function salvarModeloContrato() {
+  const lic = (typeof obterLicencaAtiva === 'function' ? obterLicencaAtiva() : { id: 'sdmoveis' });
+  const empId = lic.id || 'sdmoveis';
+
+  const prazo = (document.getElementById('cfg-contrato-prazo') || {}).value || '15 a 20 dias úteis';
+  const garantia = (document.getElementById('cfg-contrato-garantia') || {}).value || '1 (um) ano';
+  const pix = (document.getElementById('cfg-contrato-pix') || {}).value || lic.pix || '';
+  const texto = (document.getElementById('cfg-contrato-texto') || {}).value || '';
+
+  const config = { prazo, garantia, pix, texto, atualizadoEm: new Date().toISOString() };
+
+  try {
+    localStorage.setItem('sdv_modelo_contrato_' + empId, JSON.stringify(config));
+    localStorage.setItem('sdv_modelo_contrato', JSON.stringify(config));
+  } catch (_) {}
+
+  const elMsg = document.getElementById('cfg-contrato-msg');
+  if (elMsg) {
+    elMsg.style.display = 'block';
+    elMsg.style.background = 'rgba(16,185,129,0.15)';
+    elMsg.style.color = '#34d399';
+    elMsg.textContent = '✅ Modelo de Contrato salvo com sucesso!';
+  }
+
+  setTimeout(() => {
+    fecharModalConfigContrato();
+  }, 900);
+}
+
 function montarTextoContrato(d) {
   const lic = obterLicencaAtiva();
   const hoje = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
@@ -15927,6 +16184,38 @@ function montarTextoContrato(d) {
     if (it.bizt) detalhe += ` [Lapidação/Bizotê: ${it.bizt}]`;
     return `  ${i + 1}. ${it.desc}${detalhe} - Qtd: ${it.qtd} - Total: ${it.total}`;
   }).join('\n') || '  (itens não especificados)';
+
+  // Carrega configurações customizadas se existirem
+  let config = null;
+  try {
+    const raw = localStorage.getItem('sdv_modelo_contrato_' + (lic.id || 'sdmoveis')) || localStorage.getItem('sdv_modelo_contrato');
+    if (raw) config = JSON.parse(raw);
+  } catch(_) {}
+
+  const prazoFinal = d.prazo || (config && config.prazo) || '15 a 20 dias úteis';
+  const garantiaFinal = d.garantia || (config && config.garantia) || '1 (um) ano contra defeitos de fabricação e montagem';
+  const pixFinal = (config && config.pix) || lic.pix || lic.telefone || '(85) 99611-9824';
+
+  if (config && config.texto && config.texto.includes('{NUMERO_OS}')) {
+    let t = config.texto;
+    t = t.replace(/{NUMERO_OS}/g, d.numero || '#0001');
+    t = t.replace(/{DATA_CONTRATO}/g, hoje);
+    t = t.replace(/{NOME_CLIENTE}/g, d.nome || 'Não informado');
+    t = t.replace(/{CPF_CLIENTE}/g, d.cnpj ? 'CPF/CNPJ.........: ' + d.cnpj + '\n' : '');
+    t = t.replace(/{TEL_CLIENTE}/g, d.tel || 'Não informado');
+    t = t.replace(/{ENDERECO_CLIENTE}/g, endCliente || 'Não informado');
+    t = t.replace(/{ITENS}/g, itensStr);
+    t = t.replace(/{VALOR_TOTAL}/g, d.total || 'R$ 0,00');
+    t = t.replace(/{FORMA_PAGAMENTO}/g, (d.forma || 'À vista') + (d.obs ? ' | Obs: ' + d.obs : ''));
+    t = t.replace(/{PRAZO_ENTREGA}/g, prazoFinal);
+    t = t.replace(/{GARANTIA}/g, garantiaFinal);
+    t = t.replace(/{NOME_EMPRESA}/g, lic.nome || 'SD Móveis Projetados');
+    t = t.replace(/{CNPJ_EMPRESA}/g, lic.cnpj ? 'CNPJ.............: ' + lic.cnpj + '\n' : '');
+    t = t.replace(/{TEL_EMPRESA}/g, lic.telefone || '(85) 99611-9824');
+    t = t.replace(/{CIDADE_EMPRESA}/g, lic.cidade || 'Itaitinga - CE');
+    t = t.replace(/{PIX_EMPRESA}/g, pixFinal);
+    return t;
+  }
 
   const ehMoveis = (lic.tipoContrato === 'moveis' || (lic.segmento && lic.segmento.toLowerCase().includes('móveis')));
   const ramoDesc = ehMoveis ? 'marcenaria sob medida e móveis planejados' : 'vidraçaria, esquadrias e vidros temperados';
@@ -15968,13 +16257,13 @@ Forma de Pagamento: ${d.forma || 'À vista'}
 ${d.obs ? '\nObservações: ' + d.obs : ''}
 
 A CONTRATANTE efetuará o pagamento conforme a forma descrita acima.
-Chave Pix para pagamento: ${lic.pix || '(85) 99611-9824'}
+Chave Pix para pagamento: ${pixFinal}
 
 ══════════════════════════════════════════════════════════════
 
 CLÁUSULA 3ª – DO PRAZO DE ENTREGA E EXECUÇÃO
 
-O prazo para execução e entrega dos serviços é de ${d.prazo || 'a combinar'},
+O prazo para execução e entrega dos serviços é de ${prazoFinal},
 contados a partir da confirmação do pagamento/sinal e da aprovação de
 todos os detalhes técnicos do projeto.
 
@@ -15982,8 +16271,7 @@ todos os detalhes técnicos do projeto.
 
 CLÁUSULA 4ª – DA GARANTIA
 
-A CONTRATADA oferece garantia de ${d.garantia || '1 (um) ano'} contra defeitos de
-fabricação e montagem, excluindo danos causados por mau uso, vandalismo,
+A CONTRATADA oferece garantia de ${garantiaFinal}, excluindo danos causados por mau uso, vandalismo,
 acidentes ou fenômenos naturais.
 
 ══════════════════════════════════════════════════════════════
