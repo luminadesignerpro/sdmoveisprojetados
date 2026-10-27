@@ -32,6 +32,12 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=Caveat:wght@700&display=swap" rel="stylesheet">
   <style>
+@keyframes pulseRadar {
+  0% { transform: scale(0.9); opacity: 0.6; box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+  70% { transform: scale(1.25); opacity: 1; box-shadow: 0 0 0 7px rgba(34, 197, 94, 0); }
+  100% { transform: scale(0.9); opacity: 0.6; box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
     :root {
       --gold: #C9A84C;
       --gold-light: #E8D27A;
@@ -1864,10 +1870,21 @@
 
   <!-- BARRA DE CONTROLE SUPERIOR (EMPRESA ATIVA, USUÁRIO SAMUEL E SAIR) -->
   <div class="top-nav-bar" style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px;padding:4px 2px;flex-wrap:wrap;">
-    <div id="btn-comando-voz-top" class="empresa-pill" onclick="alternarComandoDeVoz()" title="Toque para falar por voz: 'sd acessar a o.s 010' ou abrir qualquer botão" style="display:flex;align-items:center;gap:8px;background:#101018;border:1.5px solid rgba(201,168,76,0.55);padding:6px 14px;border-radius:20px;cursor:pointer;transition:all 0.25s ease;user-select:none;position:relative;">
+    <div id="btn-comando-voz-top" class="empresa-pill" onclick="alternarComandoDeVoz()" title="Fale 'SD [comando]' a qualquer momento sem tocar na tela! Toque para pausar/ativar" style="display:flex;align-items:center;gap:8px;background:#101018;border:1.5px solid rgba(34,197,94,0.6);padding:6px 14px;border-radius:20px;cursor:pointer;transition:all 0.25s ease;user-select:none;position:relative;">
       <img id="empresa-logo-top" src="logo_moveis.jpg" alt="Logo" style="width:22px;height:22px;border-radius:50%;object-fit:cover;border:1px solid var(--gold);background:#07070b;">
       <span id="empresa-nome-top" style="font-size:12.5px;font-weight:800;color:var(--gold-light);">SD Móveis Projetados</span>
-      <span id="voz-mic-icon" style="font-size:13px;display:inline-block;transition:all 0.2s;" title="Comando de Voz Ativo">🎙️</span>
+      <span id="voz-mic-badge" style="display:inline-flex;align-items:center;gap:4px;background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.4);border-radius:12px;padding:2px 7px;font-size:10px;font-weight:700;color:#4ade80;">
+        <span id="voz-radar-dot" style="width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block;animation:pulseRadar 1.4s infinite;"></span>
+        <span id="voz-status-badge-txt">Fale "SD..."</span>
+      </span>
+    </div>
+    <!-- Floating Notification Toast when Voice Command is Detected -->
+    <div id="sd-voice-toast" style="display:none;position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:999999;background:rgba(10,14,28,0.96);border:2px solid #22c55e;box-shadow:0 12px 40px rgba(0,0,0,0.9),0 0 25px rgba(34,197,94,0.4);border-radius:16px;padding:12px 22px;max-width:92vw;width:400px;backdrop-filter:blur(10px);text-align:center;color:#fff;pointer-events:none;transition:all 0.25s ease;">
+      <div style="display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;font-weight:800;color:#4ade80;">
+        <span style="font-size:18px;">🎙️</span>
+        <span id="sd-voice-toast-title">Comando Reconhecido!</span>
+      </div>
+      <div id="sd-voice-toast-msg" style="font-size:14px;color:#facc15;font-weight:900;margin-top:4px;"></div>
     </div>
     <!-- Floating Voice Assistant Overlay -->
     <div id="sd-voice-overlay" style="display:none;position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:999999;background:rgba(10,12,24,0.96);border:2px solid #eab308;box-shadow:0 14px 45px rgba(0,0,0,0.9),0 0 30px rgba(234,179,8,0.3);border-radius:18px;padding:16px 20px;max-width:92vw;width:440px;backdrop-filter:blur(12px);text-align:center;color:#fff;">
@@ -17069,22 +17086,102 @@ function enviarAssinaturaDigitalPedidoCompleto() {
 // ═══════════════════════════════════════════════════════════════════════════════
 // 🎙️ COMANDOS DE VOZ INTELIGENTES - SD MÓVEIS PROJETADOS
 // ═══════════════════════════════════════════════════════════════════════════════
+// 🎙️ COMANDOS DE VOZ INTELIGENTES 100% HANDS-FREE - SD MÓVEIS PROJETADOS
+// Escuta contínua sem precisar tocar no botão: apenas fale "SD [comando]"
+// ═══════════════════════════════════════════════════════════════════════════════
 let _sdVoiceRecognition = null;
 let _sdVoiceListening = false;
+let _sdModoSempreAtivo = true; // Sempre ativo em segundo plano
+let _sdRestartTimer = null;
+let _sdWakeWordDetected = false;
+let _sdWakeWordTimer = null;
+let _sdUltimoComandoExecutado = '';
+let _sdUltimoComandoTimestamp = 0;
 
 function alternarComandoDeVoz() {
-  if (_sdVoiceListening) {
+  _sdModoSempreAtivo = !_sdModoSempreAtivo;
+  if (!_sdModoSempreAtivo) {
     pararComandoDeVoz();
+    atualizarUiVoz('desativado');
+    if (typeof toastAlerta === 'function') toastAlerta('⏸️ Comando de voz pausado. Toque para reativar.');
   } else {
-    iniciarComandoDeVoz();
+    atualizarUiVoz('ouvindo');
+    iniciarComandoDeVoz(false);
+    if (typeof toastAlerta === 'function') toastAlerta('🎙️ Comando de voz ativo! Apenas fale "SD [comando]".');
   }
 }
 
-function iniciarComandoDeVoz() {
+function atualizarUiVoz(estado, msg) {
+  const badgeTxt = document.getElementById('voz-status-badge-txt');
+  const radarDot = document.getElementById('voz-radar-dot');
+  const pillBtn = document.getElementById('btn-comando-voz-top');
+
+  if (!badgeTxt || !radarDot || !pillBtn) return;
+
+  if (estado === 'ouvindo') {
+    badgeTxt.textContent = 'Fale "SD..."';
+    badgeTxt.style.color = '#4ade80';
+    radarDot.style.background = '#22c55e';
+    radarDot.style.animation = 'pulseRadar 1.4s infinite';
+    pillBtn.style.borderColor = 'rgba(34,197,94,0.6)';
+    pillBtn.style.boxShadow = '0 0 14px rgba(34,197,94,0.3)';
+  } else if (estado === 'reconhecido') {
+    badgeTxt.textContent = msg || 'Ouvido!';
+    badgeTxt.style.color = '#facc15';
+    radarDot.style.background = '#eab308';
+    radarDot.style.animation = 'pulseRadar 0.6s infinite';
+    pillBtn.style.borderColor = '#facc15';
+    pillBtn.style.boxShadow = '0 0 20px rgba(250,204,21,0.8)';
+  } else if (estado === 'bloqueado') {
+    badgeTxt.textContent = 'Permitir Mic';
+    badgeTxt.style.color = '#f87171';
+    radarDot.style.background = '#ef4444';
+    radarDot.style.animation = 'none';
+    pillBtn.style.borderColor = 'rgba(239,68,68,0.5)';
+    pillBtn.style.boxShadow = '';
+  } else {
+    badgeTxt.textContent = 'Mic Pausado';
+    badgeTxt.style.color = '#94a3b8';
+    radarDot.style.background = '#64748b';
+    radarDot.style.animation = 'none';
+    pillBtn.style.borderColor = 'rgba(255,255,255,0.15)';
+    pillBtn.style.boxShadow = '';
+  }
+}
+
+function exibirToastVoz(titulo, comando) {
+  const toast = document.getElementById('sd-voice-toast');
+  const titleEl = document.getElementById('sd-voice-toast-title');
+  const msgEl = document.getElementById('sd-voice-toast-msg');
+  if (!toast) return;
+
+  if (titleEl) titleEl.textContent = titulo;
+  if (msgEl) msgEl.textContent = comando;
+
+  toast.style.display = 'block';
+  toast.style.opacity = '1';
+  toast.style.transform = 'translateX(-50%) translateY(0)';
+
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(-50%) translateY(-10px)';
+    setTimeout(() => { toast.style.display = 'none'; }, 250);
+  }, 2600);
+}
+
+function iniciarComandoDeVoz(silencioso = true) {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) {
-    alert('Reconhecimento de voz não suportado neste navegador.\nPor favor, utilize o Google Chrome ou Microsoft Edge no computador ou celular.');
+    if (!silencioso) {
+      alert('Reconhecimento de voz não suportado neste navegador.\nPor favor, utilize o Google Chrome ou Microsoft Edge.');
+    }
+    atualizarUiVoz('desativado');
     return;
+  }
+
+  if (_sdVoiceListening && _sdVoiceRecognition) {
+    return; // Já está rodando ativamente
   }
 
   try {
@@ -17094,32 +17191,13 @@ function iniciarComandoDeVoz() {
 
     _sdVoiceRecognition = new SpeechRecognition();
     _sdVoiceRecognition.lang = 'pt-BR';
-    _sdVoiceRecognition.continuous = false;
+    _sdVoiceRecognition.continuous = true; // Escuta contínua!
     _sdVoiceRecognition.interimResults = true;
     _sdVoiceRecognition.maxAlternatives = 3;
 
-    const overlay = document.getElementById('sd-voice-overlay');
-    const statusEl = document.getElementById('sd-voice-status');
-    const transEl = document.getElementById('sd-voice-transcript');
-    const pillBtn = document.getElementById('btn-comando-voz-top');
-
-    if (overlay) overlay.style.display = 'block';
-    if (statusEl) statusEl.textContent = '🎙️ Ouvindo... Fale agora seu comando';
-    if (transEl) transEl.textContent = '«Fale por exemplo: sd acessar a o.s 010»';
-
-    if (pillBtn) {
-      pillBtn.style.boxShadow = '0 0 18px rgba(234, 179, 8, 0.85)';
-      pillBtn.style.borderColor = '#facc15';
-      pillBtn.style.background = '#1a180a';
-      const micIcon = document.getElementById('voz-mic-icon');
-      if (micIcon) micIcon.style.transform = 'scale(1.35)';
-    }
-
-    _sdVoiceListening = true;
-
     _sdVoiceRecognition.onstart = function() {
       _sdVoiceListening = true;
-      if (statusEl) statusEl.textContent = '🎙️ Ouvindo... Pode falar: "sd acessar a o.s 010"';
+      atualizarUiVoz('ouvindo');
     };
 
     _sdVoiceRecognition.onresult = function(event) {
@@ -17135,60 +17213,69 @@ function iniciarComandoDeVoz() {
       }
 
       const txt = (finalTrans || interimTrans).trim();
-      if (transEl && txt) transEl.textContent = '«' + txt + '»';
+      if (!txt) return;
 
-      if (finalTrans) {
-        processarComandoVozTexto(finalTrans);
-      }
+      // Processa a fala em tempo real
+      processarComandoVozHandsFree(txt);
     };
 
     _sdVoiceRecognition.onerror = function(event) {
-      console.warn('Erro de reconhecimento de voz:', event.error);
-      if (statusEl) {
-        if (event.error === 'not-allowed') {
-          statusEl.textContent = '⚠️ Permissão do microfone negada no navegador.';
-        } else if (event.error === 'no-speech') {
-          statusEl.textContent = 'Nenhuma fala detectada. Toque para tentar de novo.';
-        } else {
-          statusEl.textContent = 'Erro ao ouvir: ' + event.error;
-        }
+      if (event.error === 'no-speech') {
+        // Silêncio temporário normal, continua ouvindo
+        return;
       }
-      setTimeout(pararComandoDeVoz, 3000);
+      if (event.error === 'not-allowed') {
+        console.warn('Permissão do microfone negada ou aguardando interação.');
+        atualizarUiVoz('bloqueado');
+        _sdVoiceListening = false;
+        return;
+      }
+      // Outros erros temporários: reinicia suavemente
+      if (_sdModoSempreAtivo) {
+        clearTimeout(_sdRestartTimer);
+        _sdRestartTimer = setTimeout(() => {
+          if (_sdModoSempreAtivo) iniciarComandoDeVoz(true);
+        }, 400);
+      }
     };
 
     _sdVoiceRecognition.onend = function() {
       _sdVoiceListening = false;
-      setTimeout(() => {
-        if (!_sdVoiceListening) pararComandoDeVoz();
-      }, 1500);
+      // Loop contínuo: reativa imediatamente se o modo sempre ativo estiver ligado
+      if (_sdModoSempreAtivo) {
+        clearTimeout(_sdRestartTimer);
+        _sdRestartTimer = setTimeout(() => {
+          if (_sdModoSempreAtivo) iniciarComandoDeVoz(true);
+        }, 200);
+      } else {
+        atualizarUiVoz('desativado');
+      }
     };
 
     _sdVoiceRecognition.start();
+    _sdVoiceListening = true;
+    atualizarUiVoz('ouvindo');
 
   } catch(err) {
-    console.error('Falha ao iniciar reconhecimento:', err);
-    alert('Erro ao iniciar o microfone: ' + err.message);
-    pararComandoDeVoz();
+    _sdVoiceListening = false;
+    if (_sdModoSempreAtivo) {
+      clearTimeout(_sdRestartTimer);
+      _sdRestartTimer = setTimeout(() => {
+        if (_sdModoSempreAtivo) iniciarComandoDeVoz(true);
+      }, 800);
+    }
   }
 }
 
 function pararComandoDeVoz() {
+  _sdModoSempreAtivo = false;
   _sdVoiceListening = false;
+  if (_sdRestartTimer) clearTimeout(_sdRestartTimer);
   if (_sdVoiceRecognition) {
     try { _sdVoiceRecognition.stop(); } catch(e){}
     _sdVoiceRecognition = null;
   }
-  const overlay = document.getElementById('sd-voice-overlay');
-  if (overlay) overlay.style.display = 'none';
-
-  const pillBtn = document.getElementById('btn-comando-voz-top');
-  if (pillBtn) {
-    pillBtn.style.boxShadow = '';
-    pillBtn.style.borderColor = 'rgba(201,168,76,0.55)';
-    pillBtn.style.background = '#101018';
-    const micIcon = document.getElementById('voz-mic-icon');
-    if (micIcon) micIcon.style.transform = 'scale(1)';
-  }
+  atualizarUiVoz('desativado');
 }
 
 function falarTextoSD(texto) {
@@ -17197,21 +17284,17 @@ function falarTextoSD(texto) {
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(texto);
     u.lang = 'pt-BR';
-    u.rate = 1.05;
+    u.rate = 1.08;
     window.speechSynthesis.speak(u);
   } catch(e) { console.warn('Erro na síntese de voz:', e); }
 }
 
-function processarComandoVozTexto(fraseOriginal) {
+function processarComandoVozHandsFree(fraseOriginal) {
   if (!fraseOriginal) return;
 
-  const transEl = document.getElementById('sd-voice-transcript');
-  const statusEl = document.getElementById('sd-voice-status');
-  if (transEl) transEl.textContent = '«' + fraseOriginal + '»';
+  const raw = fraseOriginal.toLowerCase().trim();
 
-  let raw = fraseOriginal.toLowerCase().trim();
-
-  // Mapeia números falados por extenso comuns
+  // Mapeia números falados por extenso
   const numerosExtenso = {
     'zero': '0', 'um': '1', 'uma': '1', 'dois': '2', 'duas': '2', 'três': '3', 'tres': '3',
     'quatro': '4', 'cinco': '5', 'seis': '6', 'sete': '7', 'oito': '8', 'nove': '9', 'dez': '10',
@@ -17225,23 +17308,54 @@ function processarComandoVozTexto(fraseOriginal) {
       tokens[i] = numerosExtenso[tokens[i]];
     }
   }
-  let frase = tokens.join(' ');
+  const frase = tokens.join(' ');
 
-  // 1. COMANDO: ACESSAR A O.S. XXX (ex: "sd acessar a o.s 010", "acessar os 010", "abrir os 10", "os 010")
-  const regexOs = /(?:sd\s+)?(?:acessar|abrir|ver|consultar|ir\s+para)?\s*(?:a\s+)?(?:o\.?s\.?|ordem\s+de\s+servi[çc]o|ordem)\s*([0-9a-zA-Z]+)/i;
+  // Verifica presença da palavra-chave "SD" (ou "s d", "esse d", "ssd", "esd", "sdvidros", "sd móveis")
+  const temWakeWord = /(?:^|\s)(?:sd|s\s*d|esse\s*d|esd|ssd|sdvidros|sd\s*m[oó]veis)(?:\s+|$)/i.test(frase);
+
+  // Se a wake-word foi dita isolada (ex: "SD" ou "SD Móveis")
+  if (temWakeWord && (frase === 'sd' || frase === 's d' || frase === 'esse d' || frase === 'sd móveis' || frase === 'sd moveis')) {
+    _sdWakeWordDetected = true;
+    clearTimeout(_sdWakeWordTimer);
+    _sdWakeWordTimer = setTimeout(() => { _sdWakeWordDetected = false; atualizarUiVoz('ouvindo'); }, 7000);
+    atualizarUiVoz('reconhecido', 'Pode falar o comando...');
+    falarTextoSD('Pois não! Diga o botão ou o número da O.S.');
+    return;
+  }
+
+  // Se não tem wake-word e não estava aguardando pós-wake-word,
+  // permite apenas se for comando explícito e inconfundível de O.S. (ex: "acessar a o.s 010")
+  const comandoExplicitoOs = /(?:acessar|abrir|ver)\s*(?:a\s+)?(?:o\.?s\.?|ordem\s+de\s+servi[çc]o)\s*([0-9a-zA-Z]+)/i.test(frase);
+
+  if (!temWakeWord && !_sdWakeWordDetected && !comandoExplicitoOs) {
+    return; // Ignora conversas casuais de fundo
+  }
+
+  // Previne disparo repetido em menos de 1.8 segundos do mesmo comando
+  const agora = Date.now();
+  if (agora - _sdUltimoComandoTimestamp < 1800 && _sdUltimoComandoExecutado === frase) {
+    return;
+  }
+
+  // 1. COMANDO: ACESSAR A O.S. XXX (ex: "sd acessar a o.s 010", "sd abrir os 010", "sd 010", "sd os 010", "sd ordem 10")
+  const regexOs = /(?:sd\s+)?(?:acessar|abrir|ver|consultar|ir\s+para)?\s*(?:a\s+)?(?:o\.?s\.?|ordem\s+de\s+servi[çc]o|ordem)?\s*([0-9]{1,6})/i;
   const matchOs = frase.match(regexOs);
 
-  if (matchOs && matchOs[1]) {
+  if (matchOs && matchOs[1] && (temWakeWord || _sdWakeWordDetected || comandoExplicitoOs)) {
     const numBuscado = matchOs[1].trim();
     const numLimpo = numBuscado.replace(/\D/g, '');
 
-    if (statusEl) statusEl.textContent = '✅ Acessando O.S. #' + numBuscado + '...';
+    _sdUltimoComandoTimestamp = agora;
+    _sdUltimoComandoExecutado = frase;
+    _sdWakeWordDetected = false;
+
+    atualizarUiVoz('reconhecido', 'O.S. #' + numBuscado);
+    exibirToastVoz('🎙️ Acessando O.S. #' + numBuscado, 'SD ' + fraseOriginal);
     falarTextoSD('Acessando Ordem de Serviço ' + numBuscado);
 
     goTab('historico');
 
     setTimeout(() => {
-      // Ajusta modo de busca para O.S.
       if (typeof setHistModoBusca === 'function') {
         setHistModoBusca('os');
       }
@@ -17256,224 +17370,231 @@ function processarComandoVozTexto(fraseOriginal) {
         renderHistFiltrado();
       }
 
-      // Procura a OS correspondente no array historico
       const osEncontrada = (Array.isArray(historico) ? historico : []).find(o => {
         const oNum = String(o.numero || '').replace(/\D/g, '');
         return oNum === numLimpo || String(o.numero || '').toLowerCase().includes(numBuscado.toLowerCase());
       });
 
       if (osEncontrada) {
-        if (typeof toastAlerta === 'function') toastAlerta('✅ O.S. #' + (osEncontrada.numero || numBuscado) + ' encontrada!');
-        // Rola até o card ou abre visualização
         setTimeout(() => {
           const card = document.querySelector('[data-os-id="' + osEncontrada.id + '"]') || document.querySelector('.hist-card');
           if (card) {
             card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            card.style.outline = '3px solid #facc15';
-            card.style.boxShadow = '0 0 25px rgba(250,204,21,0.6)';
+            card.style.outline = '3px solid #22c55e';
+            card.style.boxShadow = '0 0 25px rgba(34,197,94,0.7)';
             setTimeout(() => { card.style.outline = ''; card.style.boxShadow = ''; }, 3500);
           }
         }, 300);
-      } else {
-        if (typeof toastAlerta === 'function') toastAlerta('🔍 O.S. #' + numBuscado + ' filtrada no Histórico.');
       }
 
-      pararComandoDeVoz();
+      setTimeout(() => { atualizarUiVoz('ouvindo'); }, 2000);
     }, 200);
 
     return;
   }
 
-  // 2. COMANDOS DE NAVEGAÇÃO PARA TODOS OS BOTÕES DO SISTEMA
+  // 2. COMANDOS PARA TODOS OS BOTÕES DO SISTEMA
+  function dispararBotao(nomeAba, tituloFala, funcExec) {
+    _sdUltimoComandoTimestamp = agora;
+    _sdUltimoComandoExecutado = frase;
+    _sdWakeWordDetected = false;
+
+    atualizarUiVoz('reconhecido', tituloFala);
+    exibirToastVoz('🎙️ ' + tituloFala, 'SD ' + fraseOriginal);
+    falarTextoSD(tituloFala);
+
+    if (funcExec) {
+      funcExec();
+    } else if (nomeAba) {
+      goTab(nomeAba);
+    }
+
+    setTimeout(() => { atualizarUiVoz('ouvindo'); }, 2200);
+  }
+
   // Orçamento
   if (frase.includes('orçamento') || frase.includes('orcamento') || frase.includes('novo orçamento')) {
-    falarTextoSD('Abrindo Orçamento');
-    goTab('orcamento');
-    pararComandoDeVoz();
+    dispararBotao('orcamento', 'Abrindo Orçamento');
     return;
   }
 
   // Histórico
   if (frase.includes('histórico') || frase.includes('historico') || frase.includes('ordens de serviço')) {
-    falarTextoSD('Abrindo Histórico');
-    goTab('historico');
-    pararComandoDeVoz();
-    return;
-  }
-
-  // Pedido Completo
-  if (frase.includes('pedido completo') || frase.includes('consolidar pedido') || frase.includes('gerar pedido')) {
-    falarTextoSD('Abrindo Pedido Completo Consolidado');
-    abrirModalPedidoCompleto();
-    pararComandoDeVoz();
-    return;
-  }
-
-  // Contratos
-  if (frase.includes('contrato') || frase.includes('contratos') || frase.includes('assinatura')) {
-    falarTextoSD('Abrindo Contratos');
-    goTab('contratos');
-    pararComandoDeVoz();
-    return;
-  }
-
-  // Clientes
-  if (frase.includes('cliente') || frase.includes('clientes') || frase.includes('cadastros')) {
-    falarTextoSD('Abrindo Clientes');
-    goTab('clientes');
-    pararComandoDeVoz();
-    return;
-  }
-
-  // Financeiro
-  if (frase.includes('financeiro') || frase.includes('caixa') || frase.includes('receitas') || frase.includes('despesas')) {
-    falarTextoSD('Abrindo Financeiro');
-    goTab('financeiro');
-    pararComandoDeVoz();
-    return;
-  }
-
-  // Estoque
-  if (frase.includes('estoque') || frase.includes('materiais') || frase.includes('insumos')) {
-    falarTextoSD('Abrindo Estoque');
-    goTab('estoque');
-    pararComandoDeVoz();
-    return;
-  }
-
-  // Agenda
-  if (frase.includes('agenda pessoal')) {
-    falarTextoSD('Abrindo Agenda Pessoal');
-    goTab('agenda-pessoal');
-    pararComandoDeVoz();
-    return;
-  }
-  if (frase.includes('agenda') || frase.includes('compromissos')) {
-    falarTextoSD('Abrindo Agenda');
-    goTab('agenda');
-    pararComandoDeVoz();
+    dispararBotao('historico', 'Abrindo Histórico');
     return;
   }
 
   // Cronograma
   if (frase.includes('cronograma') || frase.includes('etapas') || frase.includes('planejamento')) {
-    falarTextoSD('Abrindo Cronograma');
-    goTab('cronograma');
-    pararComandoDeVoz();
+    dispararBotao('cronograma', 'Abrindo Cronograma');
     return;
   }
 
-  // Detector de Danos
-  if (frase.includes('detector') || frase.includes('danos') || frase.includes('laudo')) {
-    falarTextoSD('Abrindo Detector de Danos');
-    goTab('detector');
-    pararComandoDeVoz();
+  // Agenda
+  if (frase.includes('agenda pessoal')) {
+    dispararBotao('agenda-pessoal', 'Abrindo Agenda Pessoal');
+    return;
+  }
+  if (frase.includes('agenda') || frase.includes('compromissos')) {
+    dispararBotao('agenda', 'Abrindo Agenda');
     return;
   }
 
-  // Equipe & Ponto
-  if (frase.includes('equipe') || frase.includes('ponto') || frase.includes('funcionários') || frase.includes('funcionarios')) {
-    falarTextoSD('Abrindo Equipe e Ponto');
-    goTab('ponto');
-    pararComandoDeVoz();
+  // Contratos
+  if (frase.includes('contrato') || frase.includes('contratos') || frase.includes('assinatura digital')) {
+    dispararBotao('contratos', 'Abrindo Contratos');
     return;
   }
 
-  // Produtos/Serviços
-  if (frase.includes('produto') || frase.includes('serviço') || frase.includes('produtos') || frase.includes('servicos') || frase.includes('catálogo')) {
-    falarTextoSD('Abrindo Produtos e Serviços');
-    goTab('produtos');
-    pararComandoDeVoz();
+  // Clientes
+  if (frase.includes('cliente') || frase.includes('clientes') || frase.includes('cadastros')) {
+    dispararBotao('clientes', 'Abrindo Clientes');
     return;
   }
 
-  // Ferramentas
-  if (frase.includes('ferramenta') || frase.includes('ferramentas')) {
-    falarTextoSD('Abrindo Ferramentas');
-    goTab('ferramentas');
-    pararComandoDeVoz();
+  // Financeiro
+  if (frase.includes('financeiro') || frase.includes('caixa') || frase.includes('receitas') || frase.includes('despesas')) {
+    dispararBotao('financeiro', 'Abrindo Financeiro');
+    return;
+  }
+
+  // Estoque
+  if (frase.includes('estoque') || frase.includes('materiais') || frase.includes('insumos')) {
+    dispararBotao('estoque', 'Abrindo Estoque');
+    return;
+  }
+
+  // Pedido Completo
+  if (frase.includes('pedido completo') || frase.includes('consolidar pedido') || frase.includes('gerar pedido')) {
+    dispararBotao(null, 'Abrindo Pedido Completo Consolidado', () => { abrirModalPedidoCompleto(); });
     return;
   }
 
   // Câmera
   if (frase.includes('câmera') || frase.includes('camera') || frase.includes('foto') || frase.includes('fotos')) {
-    falarTextoSD('Abrindo Câmera');
-    goTab('camera');
-    pararComandoDeVoz();
-    return;
-  }
-
-  // Portal Cliente
-  if (frase.includes('portal cliente') || frase.includes('portal do cliente') || frase.includes('área do cliente')) {
-    falarTextoSD('Abrindo Portal do Cliente');
-    if (typeof abrirPortalCliente === 'function') abrirPortalCliente();
-    else window.open('cliente.html', '_blank');
-    pararComandoDeVoz();
-    return;
-  }
-
-  // Portal Equipe
-  if (frase.includes('portal equipe') || frase.includes('portal funcionário') || frase.includes('portal do funcionário')) {
-    falarTextoSD('Abrindo Portal da Equipe');
-    if (typeof abrirPortalFuncionario === 'function') abrirPortalFuncionario();
-    else if (typeof abrirPortalEquipe === 'function') abrirPortalEquipe();
-    pararComandoDeVoz();
-    return;
-  }
-
-  // Mensagens
-  if (frase.includes('mensagem') || frase.includes('mensagens') || frase.includes('notificações') || frase.includes('chat')) {
-    falarTextoSD('Abrindo Mensagens');
-    if (typeof abrirModalHistoricoNotificacoes === 'function') abrirModalHistoricoNotificacoes();
-    pararComandoDeVoz();
-    return;
-  }
-
-  // Dados Empresa
-  if (frase.includes('dados empresa') || frase.includes('dados da empresa') || frase.includes('minha empresa') || frase.includes('empresa')) {
-    falarTextoSD('Abrindo Dados da Empresa');
-    goTab('empresa');
-    pararComandoDeVoz();
+    dispararBotao('camera', 'Abrindo Câmera');
     return;
   }
 
   // Relatório
   if (frase.includes('relatório') || frase.includes('relatorio') || frase.includes('relatórios')) {
-    falarTextoSD('Abrindo Relatórios');
-    goTab('relatorio');
-    pararComandoDeVoz();
+    dispararBotao('relatorio', 'Abrindo Relatório');
+    return;
+  }
+
+  // Dados Empresa
+  if (frase.includes('dados empresa') || frase.includes('dados da empresa') || frase.includes('minha empresa') || frase.includes('empresa')) {
+    dispararBotao('empresa', 'Abrindo Dados da Empresa');
+    return;
+  }
+
+  // Produtos/Serviços
+  if (frase.includes('produto') || frase.includes('serviço') || frase.includes('produtos') || frase.includes('servicos') || frase.includes('catálogo')) {
+    dispararBotao('produtos', 'Abrindo Produtos e Serviços');
+    return;
+  }
+
+  // Ferramentas
+  if (frase.includes('ferramenta') || frase.includes('ferramentas')) {
+    dispararBotao('ferramentas', 'Abrindo Ferramentas');
+    return;
+  }
+
+  // Detector de Danos
+  if (frase.includes('detector') || frase.includes('danos') || frase.includes('laudo')) {
+    dispararBotao('detector', 'Abrindo Detector de Danos');
+    return;
+  }
+
+  // Equipe & Ponto
+  if (frase.includes('equipe') || frase.includes('ponto') || frase.includes('funcionários') || frase.includes('funcionarios')) {
+    dispararBotao('ponto', 'Abrindo Equipe e Ponto');
     return;
   }
 
   // Usuários
   if (frase.includes('usuário') || frase.includes('usuario') || frase.includes('usuários')) {
-    falarTextoSD('Abrindo Usuários');
-    goTab('usuarios');
-    pararComandoDeVoz();
+    dispararBotao('usuarios', 'Abrindo Usuários');
+    return;
+  }
+
+  // Portal Cliente
+  if (frase.includes('portal cliente') || frase.includes('portal do cliente') || frase.includes('área do cliente')) {
+    dispararBotao(null, 'Abrindo Portal do Cliente', () => {
+      if (typeof abrirPortalCliente === 'function') abrirPortalCliente();
+      else window.open('cliente.html', '_blank');
+    });
+    return;
+  }
+
+  // Portal Equipe
+  if (frase.includes('portal equipe') || frase.includes('portal funcionário') || frase.includes('portal do funcionário')) {
+    dispararBotao(null, 'Abrindo Portal da Equipe', () => {
+      if (typeof abrirPortalFuncionario === 'function') abrirPortalFuncionario();
+      else if (typeof abrirPortalEquipe === 'function') abrirPortalEquipe();
+    });
+    return;
+  }
+
+  // Mensagens
+  if (frase.includes('mensagem') || frase.includes('mensagens') || frase.includes('chat') || frase.includes('notificações')) {
+    dispararBotao(null, 'Abrindo Mensagens', () => {
+      if (typeof abrirModalHistoricoNotificacoes === 'function') abrirModalHistoricoNotificacoes();
+    });
     return;
   }
 
   // Organizar Abas
   if (frase.includes('organizar abas') || frase.includes('organizar') || frase.includes('abas')) {
-    falarTextoSD('Abrindo Organizador de Abas');
-    if (typeof abrirModalOrganizarAbas === 'function') abrirModalOrganizarAbas();
-    else if (typeof toggleModoOrganizarAbas === 'function') toggleModoOrganizarAbas();
-    pararComandoDeVoz();
+    dispararBotao(null, 'Abrindo Organizador de Abas', () => {
+      if (typeof abrirModalOrganizarAbas === 'function') abrirModalOrganizarAbas();
+      else if (typeof toggleModoOrganizarAbas === 'function') toggleModoOrganizarAbas();
+    });
+    return;
+  }
+
+  // Administrador
+  if (frase.includes('administrador') || frase.includes('admin') || frase.includes('perfil')) {
+    dispararBotao(null, 'Modo Administrador', () => {
+      if (typeof toastAlerta === 'function') toastAlerta('👤 Modo Administrador Ativo');
+    });
     return;
   }
 
   // Sair / Logout
   if (frase.includes('sair') || frase.includes('logout') || frase.includes('desconectar') || frase.includes('fechar sessão')) {
-    falarTextoSD('Encerrando sessão');
-    if (typeof fazerLogout === 'function') fazerLogout();
-    pararComandoDeVoz();
+    dispararBotao(null, 'Encerrando sessão', () => {
+      if (typeof fazerLogout === 'function') fazerLogout();
+    });
     return;
   }
-
-  // Comando não reconhecido de imediato
-  if (statusEl) statusEl.textContent = 'Comando: "' + fraseOriginal + '" não identificado. Tente: "sd acessar a o.s 010"';
-  falarTextoSD('Comando não compreendido. Tente falar: sd acessar a o.s 010, ou sd orçamento.');
 }
+
+// Inicialização automática para ouvir 100% sem precisar tocar
+function autoIniciarEscutaVozSD() {
+  if (_sdModoSempreAtivo && !_sdVoiceListening) {
+    iniciarComandoDeVoz(true);
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', autoIniciarEscutaVozSD);
+} else {
+  autoIniciarEscutaVozSD();
+}
+
+window.addEventListener('load', () => {
+  setTimeout(autoIniciarEscutaVozSD, 600);
+});
+
+// Desbloqueia microfone no primeiro toque em qualquer lugar caso o navegador exija gesto
+const desbloquearMicNoPrimeiroGesto = () => {
+  if (_sdModoSempreAtivo && !_sdVoiceListening) {
+    iniciarComandoDeVoz(true);
+  }
+};
+document.addEventListener('click', desbloquearMicNoPrimeiroGesto, { passive: true, once: true });
+document.addEventListener('touchstart', desbloquearMicNoPrimeiroGesto, { passive: true, once: true });
 
 function montarTextoContrato(d) {
   const lic = obterLicencaAtiva();
