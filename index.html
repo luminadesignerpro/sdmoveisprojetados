@@ -16305,6 +16305,507 @@ function salvarModeloContrato() {
   }, 900);
 }
 
+
+// ══════════════════════════════════════════════
+//  SISTEMA DE PEDIDO COMPLETO (CONSOLIDAÇÃO DE O.S.)
+// ══════════════════════════════════════════════
+let _pedidoOsSelecionadas = new Set();
+
+function formatarMoedaBRL(val) {
+  return 'R$ ' + (Number(val) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function abrirModalPedidoCompleto() {
+  _pedidoOsSelecionadas.clear();
+
+  // Preenche clientes no select de filtro
+  const selCli = document.getElementById('ped-filtro-cliente');
+  if (selCli) {
+    const clientesNomes = new Set();
+    if (Array.isArray(historico)) {
+      historico.forEach(o => {
+        const n = (o.nome || (o.dados && o.dados.nome) || '').trim();
+        if (n) clientesNomes.add(n);
+      });
+    }
+    selCli.innerHTML = '<option value="">👤 Todos os Clientes</option>' + 
+      Array.from(clientesNomes).sort().map(n => '<option value="' + esc(n) + '">' + esc(n) + '</option>').join('');
+  }
+
+  const buscaInp = document.getElementById('ped-busca-os');
+  if (buscaInp) buscaInp.value = '';
+
+  // Por padrão marca as ordens aprovadas mais recentes, ou todas se forem poucas
+  if (Array.isArray(historico)) {
+    const listaAprovadas = historico.filter(o => o.status === 'aprovado' || o.status === 'modificacao_aprovada');
+    if (listaAprovadas.length > 0 && listaAprovadas.length <= 10) {
+      listaAprovadas.forEach(o => _pedidoOsSelecionadas.add(String(o.id)));
+    } else if (historico.length > 0 && historico.length <= 6) {
+      historico.forEach(o => _pedidoOsSelecionadas.add(String(o.id)));
+    }
+  }
+
+  filtrarOsPedidoCompleto();
+  recalcularTotaisPedidoCompleto(true);
+
+  const modal = document.getElementById('modal-pedido-completo');
+  if (modal) modal.style.display = 'flex';
+}
+
+function fecharModalPedidoCompleto() {
+  const modal = document.getElementById('modal-pedido-completo');
+  if (modal) modal.style.display = 'none';
+}
+
+function filtrarOsPedidoCompleto() {
+  const container = document.getElementById('ped-lista-os-container');
+  if (!container) return;
+
+  const cliFiltro = (document.getElementById('ped-filtro-cliente') || {}).value || '';
+  const busca = ((document.getElementById('ped-busca-os') || {}).value || '').toLowerCase().trim();
+
+  let lista = (Array.isArray(historico) ? historico.slice().reverse() : []);
+
+  if (cliFiltro) {
+    lista = lista.filter(o => {
+      const n = (o.nome || (o.dados && o.dados.nome) || '').trim();
+      return n.toLowerCase() === cliFiltro.toLowerCase();
+    });
+  }
+
+  if (busca) {
+    lista = lista.filter(o => {
+      const n = (o.nome || (o.dados && o.dados.nome) || '').toLowerCase();
+      const num = String(o.numero || '').toLowerCase();
+      const tel = String((o.dados && o.dados.tel) || o.tel || '').replace(/\D/g, '');
+      const buscaDigitos = busca.replace(/\D/g, '');
+      return n.includes(busca) || num.includes(busca) || (buscaDigitos && tel.includes(buscaDigitos));
+    });
+  }
+
+  if (!lista.length) {
+    container.innerHTML = '<div style="font-size:12px;color:var(--muted);text-align:center;padding:12px;">Nenhuma Ordem de Serviço encontrada com este filtro.</div>';
+    return;
+  }
+
+  container.innerHTML = lista.map(o => {
+    const isMarcada = _pedidoOsSelecionadas.has(String(o.id));
+    const qtdItens = (o.dados && Array.isArray(o.dados.itens)) ? o.dados.itens.length : 0;
+    const tel = (o.dados && (o.dados.tel || o.dados.telefone)) || o.tel || '';
+    const stLabel = (o.status === 'aprovado' || o.status === 'modificacao_aprovada') ? '🟢 Aprovada' : (o.status === 'recusado' ? '🔴 Histórico' : '🟡 Aguardando');
+
+    return `
+    <label style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:${isMarcada ? 'rgba(234,179,8,0.14)' : 'rgba(255,255,255,0.03)'};border:1.5px solid ${isMarcada ? '#eab308' : 'rgba(255,255,255,0.08)'};border-radius:8px;cursor:pointer;gap:8px;">
+      <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+        <input type="checkbox" onchange="toggleSelecaoOsPedido('${o.id}', this.checked)" ${isMarcada ? 'checked' : ''} style="width:16px;height:16px;accent-color:#eab308;cursor:pointer;" />
+        <div style="min-width:0;">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <span style="font-size:12px;font-weight:900;color:var(--gold-light);">${esc(o.numero)}</span>
+            <span style="font-size:11.5px;font-weight:700;color:#fff;">${esc(o.nome || 'Cliente')}</span>
+            <span style="font-size:10px;color:var(--muted);">(${stLabel})</span>
+          </div>
+          <div style="font-size:10.5px;color:var(--muted);margin-top:2px;">
+            ${tel ? '📱 ' + esc(tel) + ' · ' : ''}${qtdItens} item(ns) · Data: ${esc(o.data_orc || '-')}
+          </div>
+        </div>
+      </div>
+      <div style="font-size:13px;font-weight:900;color:#facc15;white-space:nowrap;">
+        ${esc(o.total || 'R$ 0,00')}
+      </div>
+    </label>`;
+  }).join('');
+}
+
+function toggleSelecaoOsPedido(id, checked) {
+  if (checked) {
+    _pedidoOsSelecionadas.add(String(id));
+  } else {
+    _pedidoOsSelecionadas.delete(String(id));
+  }
+  filtrarOsPedidoCompleto();
+  recalcularTotaisPedidoCompleto(false);
+}
+
+function marcarTodasOsPedido(marcar) {
+  const cliFiltro = (document.getElementById('ped-filtro-cliente') || {}).value || '';
+  let lista = (Array.isArray(historico) ? historico.slice() : []);
+  if (cliFiltro) {
+    lista = lista.filter(o => ((o.nome || (o.dados && o.dados.nome) || '').trim().toLowerCase()) === cliFiltro.toLowerCase());
+  }
+  lista.forEach(o => {
+    if (marcar) _pedidoOsSelecionadas.add(String(o.id));
+    else _pedidoOsSelecionadas.delete(String(o.id));
+  });
+  filtrarOsPedidoCompleto();
+  recalcularTotaisPedidoCompleto(marcar);
+}
+
+function recalcularTotaisPedidoCompleto(resetarFreteDesc = false) {
+  const ordens = (Array.isArray(historico) ? historico.filter(o => _pedidoOsSelecionadas.has(String(o.id))) : []);
+
+  const infoEl = document.getElementById('ped-os-selecionadas-info');
+  if (infoEl) infoEl.textContent = ordens.length + ' O.S. selecionada(s)';
+
+  let totalProdutos = 0;
+  let totalServicos = 0;
+  let somaFrete = 0;
+  let somaDesconto = 0;
+  let todosItens = [];
+
+  ordens.forEach(o => {
+    const d = o.dados || {};
+    let vProd = parseNum(d.valProdutos);
+    let vServ = parseNum(d.valServico);
+    let vFrete = parseNum(d.valFrete);
+    let vDesc = parseNum(d.valDesconto);
+
+    if (vProd === 0 && Array.isArray(d.itens) && d.itens.length > 0) {
+      d.itens.forEach(it => {
+        const itemTot = parseNum(it.total) || (parseNum(it.v_unit) * (parseNum(it.qtd) || 1)) || 0;
+        vProd += itemTot;
+      });
+    }
+
+    if (vProd === 0 && vServ === 0) {
+      vProd = parseNum(o.total);
+    }
+
+    totalProdutos += vProd;
+    totalServicos += vServ;
+    somaFrete += vFrete;
+    somaDesconto += vDesc;
+
+    if (Array.isArray(d.itens)) {
+      d.itens.forEach(it => {
+        todosItens.push({
+          osNumero: o.numero,
+          clienteNome: o.nome,
+          desc: it.desc || 'Item',
+          alt: it.alt,
+          larg: it.larg,
+          m2: it.m2,
+          qtd: it.qtd || 1,
+          v_unit: it.v_unit,
+          v_m2: it.v_m2,
+          total: it.total || (parseNum(it.v_unit) * (parseNum(it.qtd) || 1))
+        });
+      });
+    }
+  });
+
+  const freteInp = document.getElementById('ped-val-frete');
+  const descInp = document.getElementById('ped-val-desconto');
+
+  if (resetarFreteDesc) {
+    if (freteInp) freteInp.value = somaFrete.toFixed(2);
+    if (descInp) descInp.value = somaDesconto.toFixed(2);
+  }
+
+  const freteFinal = parseNum(freteInp ? freteInp.value : somaFrete);
+  const descFinal = parseNum(descInp ? descInp.value : somaDesconto);
+
+  const valorTotalConsolidado = Math.max(0, totalProdutos + totalServicos + freteFinal - descFinal);
+
+  // Atualiza DOM
+  const elProd = document.getElementById('ped-val-produtos');
+  const elServ = document.getElementById('ped-val-servicos');
+  const elTot = document.getElementById('ped-val-total');
+  const elQtd = document.getElementById('ped-qtd-itens-total');
+
+  if (elProd) elProd.textContent = formatarMoedaBRL(totalProdutos);
+  if (elServ) elServ.textContent = formatarMoedaBRL(totalServicos);
+  if (elTot) elTot.textContent = formatarMoedaBRL(valorTotalConsolidado);
+  if (elQtd) elQtd.textContent = todosItens.length;
+
+  // Renderiza tabela unificada de itens
+  const containerItens = document.getElementById('ped-tabela-itens-container');
+  if (containerItens) {
+    if (!todosItens.length) {
+      containerItens.innerHTML = '<div style="font-size:11.5px;color:var(--muted);text-align:center;padding:12px;">Nenhum item discriminado nas O.S. selecionadas.</div>';
+    } else {
+      containerItens.innerHTML = todosItens.map((it, idx) => {
+        let dimStr = '';
+        if (it.alt && it.larg) dimStr = ` [Dimensões: ${it.alt}m x ${it.larg}m${it.m2 ? ' = ' + it.m2 + 'm²' : ''}]`;
+        return `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.06);font-size:11.5px;gap:8px;">
+          <div>
+            <span style="color:var(--gold);font-weight:700;">${idx + 1}. ${esc(it.desc)}</span>${dimStr}
+            <span style="color:var(--muted);font-size:10.5px;">(O.S. ${esc(it.osNumero)} · Qtd: ${it.qtd})</span>
+          </div>
+          <div style="font-weight:800;color:#fff;white-space:nowrap;">
+            ${typeof it.total === 'number' ? formatarMoedaBRL(it.total) : esc(it.total || 'R$ 0,00')}
+          </div>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // Preenche dados do cliente principal
+  if (ordens.length > 0) {
+    const primeiro = ordens[0];
+    const fpInp = document.getElementById('ped-forma-pagamento');
+    const pzInp = document.getElementById('ped-prazo-entrega');
+    if (fpInp && (!fpInp.value || fpInp.value === 'À vista / A combinar')) {
+      fpInp.value = (primeiro.dados && primeiro.dados.forma) || primeiro.forma || 'À vista / A combinar';
+    }
+    if (pzInp && (!pzInp.value || pzInp.value === '15 a 20 dias úteis')) {
+      pzInp.value = (primeiro.dados && primeiro.dados.prazo) || '15 a 20 dias úteis';
+    }
+  }
+}
+
+function obterDadosPedidoConsolidado() {
+  const ordens = (Array.isArray(historico) ? historico.filter(o => _pedidoOsSelecionadas.has(String(o.id))) : []);
+  if (!ordens.length) {
+    alert('Por favor, selecione ao menos uma Ordem de Serviço na lista.');
+    return null;
+  }
+
+  const lic = (typeof obterLicencaAtiva === 'function' ? obterLicencaAtiva() : { nome: 'SD Móveis Projetados', cidade: 'Itaitinga - CE', telefone: '(85) 99611-9824' });
+
+  let totalProdutos = 0;
+  let totalServicos = 0;
+  let todosItens = [];
+  const clientesNomes = new Set();
+  const clientesTels = new Set();
+  const numerosOs = [];
+
+  ordens.forEach(o => {
+    numerosOs.push(o.numero);
+    if (o.nome) clientesNomes.add(o.nome);
+    const tel = (o.dados && (o.dados.tel || o.dados.telefone)) || o.tel || '';
+    if (tel) clientesTels.add(tel);
+
+    const d = o.dados || {};
+    let vProd = parseNum(d.valProdutos);
+    let vServ = parseNum(d.valServico);
+
+    if (vProd === 0 && Array.isArray(d.itens) && d.itens.length > 0) {
+      d.itens.forEach(it => {
+        const itemTot = parseNum(it.total) || (parseNum(it.v_unit) * (parseNum(it.qtd) || 1)) || 0;
+        vProd += itemTot;
+      });
+    }
+    if (vProd === 0 && vServ === 0) vProd = parseNum(o.total);
+
+    totalProdutos += vProd;
+    totalServicos += vServ;
+
+    if (Array.isArray(d.itens)) {
+      d.itens.forEach(it => {
+        todosItens.push({
+          osNumero: o.numero,
+          desc: it.desc || 'Item',
+          alt: it.alt,
+          larg: it.larg,
+          m2: it.m2,
+          qtd: it.qtd || 1,
+          total: it.total || (parseNum(it.v_unit) * (parseNum(it.qtd) || 1))
+        });
+      });
+    }
+  });
+
+  const frete = parseNum((document.getElementById('ped-val-frete') || {}).value || 0);
+  const desconto = parseNum((document.getElementById('ped-val-desconto') || {}).value || 0);
+  const valorTotal = Math.max(0, totalProdutos + totalServicos + frete - desconto);
+  const formaPag = (document.getElementById('ped-forma-pagamento') || {}).value || 'À vista';
+  const prazo = (document.getElementById('ped-prazo-entrega') || {}).value || '15 a 20 dias úteis';
+  const obs = (document.getElementById('ped-observacoes') || {}).value || '';
+
+  const clientePrincipal = Array.from(clientesNomes).join(' / ') || 'Cliente';
+  const telPrincipal = Array.from(clientesTels)[0] || '';
+
+  return {
+    empresa: lic,
+    cliente: clientePrincipal,
+    telefone: telPrincipal,
+    ordens: ordens,
+    numerosOs: numerosOs,
+    itens: todosItens,
+    valProdutos: totalProdutos,
+    valServicos: totalServicos,
+    frete: frete,
+    desconto: desconto,
+    valorTotal: valorTotal,
+    formaPagamento: formaPag,
+    prazoEntrega: prazo,
+    observacoes: obs,
+    data: new Date().toLocaleDateString('pt-BR')
+  };
+}
+
+function gerarTextoMensagemPedidoCompleto(d) {
+  const itensFormatados = d.itens.map((it, idx) => {
+    let dim = '';
+    if (it.alt && it.larg) dim = ' (' + it.alt + 'm x ' + it.larg + 'm)';
+    return (idx + 1) + '. *' + it.desc + '*' + dim + ' - Qtd: ' + it.qtd + ' - ' + formatarMoedaBRL(it.total) + ' [O.S. ' + it.osNumero + ']';
+  }).join('\n') || 'Itens conforme Ordens de Serviço anexadas.';
+
+  return '📦 *PEDIDO COMPLETO CONSOLIDADO*\n' +
+    '🏢 *' + (d.empresa.nome || 'SD Móveis Projetados') + '*\n' +
+    '👤 *Cliente:* ' + d.cliente + '\n' +
+    '📱 *Contato:* ' + (d.telefone || 'Não informado') + '\n' +
+    '📑 *O.S. Vinculadas:* ' + d.numerosOs.join(', ') + '\n' +
+    '📅 *Data:* ' + d.data + '\n\n' +
+    '════════════════════════════\n' +
+    '📝 *ITENS DO PEDIDO:*\n' +
+    itensFormatados + '\n\n' +
+    '════════════════════════════\n' +
+    '💰 *RESUMO FINANCEIRO:*\n' +
+    '📦 *Valor dos Produtos:* ' + formatarMoedaBRL(d.valProdutos) + '\n' +
+    '🛠️ *Valor dos Serviços:* ' + formatarMoedaBRL(d.valServicos) + '\n' +
+    '🚚 *Frete:* ' + formatarMoedaBRL(d.frete) + '\n' +
+    '🏷️ *Desconto:* -' + formatarMoedaBRL(d.desconto) + '\n' +
+    '💎 *VALOR TOTAL DO PEDIDO: ' + formatarMoedaBRL(d.valorTotal) + '*\n\n' +
+    '💳 *Forma de Pagamento:* ' + d.formaPagamento + '\n' +
+    '⏳ *Prazo de Entrega:* ' + d.prazoEntrega + '\n' +
+    (d.observacoes ? '📌 *Observações:* ' + d.observacoes + '\n' : '') +
+    '🔑 *Chave Pix:* ' + (d.empresa.pix || d.empresa.telefone || '(85) 99611-9824') + '\n' +
+    '════════════════════════════\n' +
+    'Agradecemos a preferência e parceria!';
+}
+
+function enviarPedidoCompletoWhatsApp() {
+  const d = obterDadosPedidoConsolidado();
+  if (!d) return;
+
+  const texto = gerarTextoMensagemPedidoCompleto(d);
+  const telLimpo = String(d.telefone || '').replace(/\D/g, '');
+
+  if (telLimpo) {
+    window.open('https://wa.me/55' + telLimpo + '?text=' + encodeURIComponent(texto), '_blank');
+  } else {
+    window.open('https://wa.me/?text=' + encodeURIComponent(texto), '_blank');
+  }
+}
+
+function copiarResumoPedidoCompleto() {
+  const d = obterDadosPedidoConsolidado();
+  if (!d) return;
+
+  const texto = gerarTextoMensagemPedidoCompleto(d);
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(texto).then(() => {
+      alert('📋 Resumo do Pedido Completo copiado para a área de transferência com sucesso!');
+    }).catch(() => {
+      prompt('Copie o texto do pedido abaixo:', texto);
+    });
+  } else {
+    prompt('Copie o texto do pedido abaixo:', texto);
+  }
+}
+
+function imprimirPedidoCompleto() {
+  const d = obterDadosPedidoConsolidado();
+  if (!d) return;
+
+  const itensHtml = d.itens.map((it, idx) => {
+    let dim = '';
+    if (it.alt && it.larg) dim = '<br><span style="color:#666;font-size:11px;">Dimensões: ' + it.alt + 'm x ' + it.larg + 'm' + (it.m2 ? ' (' + it.m2 + 'm²)' : '') + '</span>';
+    return '<tr>' +
+      '<td style="text-align:center;">' + (idx + 1) + '</td>' +
+      '<td style="text-align:center;font-weight:700;color:#854d0e;">' + esc(it.osNumero) + '</td>' +
+      '<td><strong>' + esc(it.desc) + '</strong>' + dim + '</td>' +
+      '<td style="text-align:center;">' + it.qtd + '</td>' +
+      '<td style="text-align:right;">' + formatarMoedaBRL(it.total) + '</td>' +
+    '</tr>';
+  }).join('') || '<tr><td colspan="5" style="text-align:center;padding:12px;">Conforme Ordens de Serviço especificadas.</td></tr>';
+
+  const scriptImpressao = '<' + 'script>' +
+    'window.onload = function() { setTimeout(function() { window.print(); }, 400); };' +
+    '<' + '/script>';
+
+  const win = window.open('', '_blank');
+  win.document.write('<!DOCTYPE html>' +
+'<html lang="pt-BR">' +
+'<head>' +
+  '<meta charset="UTF-8">' +
+  '<title>Pedido Completo - ' + esc(d.cliente) + '</title>' +
+  '<style>' +
+    '* { box-sizing: border-box; margin:0; padding:0; }' +
+    'body { font-family: Arial, sans-serif; color: #111; padding: 25px; line-height: 1.4; font-size: 13px; }' +
+    '.header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2.5px solid #d97706; padding-bottom: 15px; margin-bottom: 20px; }' +
+    '.empresa-title { font-size: 20px; font-weight: 900; color: #b45309; text-transform: uppercase; }' +
+    '.empresa-sub { font-size: 11.5px; color: #555; margin-top: 3px; }' +
+    '.pedido-badge { background: #fef3c7; border: 1.5px solid #f59e0b; color: #92400e; padding: 8px 14px; border-radius: 8px; font-weight: 900; font-size: 14px; text-align: right; }' +
+    '.card-info { background: #fcfcfc; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; margin-bottom: 18px; }' +
+    '.info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }' +
+    'table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12.5px; }' +
+    'th { background: #f3f4f6; color: #374151; font-weight: 800; padding: 8px 10px; border: 1px solid #d1d5db; text-align: left; }' +
+    'td { padding: 8px 10px; border: 1px solid #e5e7eb; vertical-align: middle; }' +
+    'tr:nth-child(even) { background: #fafafa; }' +
+    '.financeiro-box { margin-left: auto; width: 340px; background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 8px; padding: 14px; margin-bottom: 25px; }' +
+    '.fin-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; }' +
+    '.fin-row.total { border-top: 2px solid #d97706; padding-top: 8px; margin-top: 6px; font-size: 16px; font-weight: 900; color: #b45309; }' +
+    '.signatures { display: flex; justify-content: space-between; margin-top: 50px; gap: 40px; page-break-inside: avoid; }' +
+    '.sig-line { flex: 1; border-top: 1px solid #4b5563; text-align: center; padding-top: 6px; font-size: 11.5px; color: #374151; }' +
+    '@media print { body { padding: 0; } }' +
+  '</style>' +
+'</head>' +
+'<body>' +
+  '<div class="header">' +
+    '<div>' +
+      '<div class="empresa-title">' + esc(d.empresa.nome || 'SD Móveis Projetados') + '</div>' +
+      '<div class="empresa-sub">' + esc(d.empresa.segmento || 'Móveis Planejados & Marcenaria de Luxo') + '</div>' +
+      '<div class="empresa-sub">' + esc(d.empresa.cidade || 'Itaitinga - CE') + ' · WhatsApp: ' + esc(d.empresa.telefone || '(85) 99611-9824') + '</div>' +
+      (d.empresa.cnpj ? '<div class="empresa-sub">CNPJ: ' + esc(d.empresa.cnpj) + '</div>' : '') +
+    '</div>' +
+    '<div class="pedido-badge">' +
+      'PEDIDO COMPLETO' +
+      '<div style="font-size:11px;font-weight:600;color:#78350f;margin-top:2px;">Data: ' + esc(d.data) + '</div>' +
+    '</div>' +
+  '</div>' +
+  '<div class="card-info">' +
+    '<div class="info-grid">' +
+      '<div><strong>Cliente:</strong> ' + esc(d.cliente) + '</div>' +
+      '<div><strong>Telefone/WhatsApp:</strong> ' + esc(d.telefone || 'Não informado') + '</div>' +
+      '<div><strong>O.S. Consolidadas:</strong> ' + esc(d.numerosOs.join(', ')) + '</div>' +
+      '<div><strong>Forma de Pagamento:</strong> ' + esc(d.formaPagamento) + '</div>' +
+      '<div><strong>Prazo de Entrega:</strong> ' + esc(d.prazoEntrega) + '</div>' +
+      '<div><strong>Chave Pix:</strong> ' + esc(d.empresa.pix || d.empresa.telefone || '(85) 99611-9824') + '</div>' +
+    '</div>' +
+    (d.observacoes ? '<div style="margin-top:8px;padding-top:6px;border-top:1px dashed #e5e7eb;"><strong>Observações:</strong> ' + esc(d.observacoes) + '</div>' : '') +
+  '</div>' +
+  '<h3 style="font-size:14px;color:#374151;margin-bottom:8px;text-transform:uppercase;">📝 Detalhamento de Itens das O.S.</h3>' +
+  '<table>' +
+    '<thead>' +
+      '<tr>' +
+        '<th style="width:40px;text-align:center;">#</th>' +
+        '<th style="width:70px;text-align:center;">O.S.</th>' +
+        '<th>Descrição do Produto / Serviço</th>' +
+        '<th style="width:60px;text-align:center;">Qtd</th>' +
+        '<th style="width:110px;text-align:right;">Subtotal</th>' +
+      '</tr>' +
+    '</thead>' +
+    '<tbody>' +
+      itensHtml +
+    '</tbody>' +
+  '</table>' +
+  '<div class="financeiro-box">' +
+    '<div class="fin-row"><span>📦 Valor dos Produtos:</span> <strong>' + formatarMoedaBRL(d.valProdutos) + '</strong></div>' +
+    '<div class="fin-row"><span>🛠️ Valor dos Serviços:</span> <strong>' + formatarMoedaBRL(d.valServicos) + '</strong></div>' +
+    '<div class="fin-row"><span>🚚 Frete:</span> <strong>' + formatarMoedaBRL(d.frete) + '</strong></div>' +
+    '<div class="fin-row"><span>🏷️ Desconto:</span> <strong style="color:#dc2626;">-' + formatarMoedaBRL(d.desconto) + '</strong></div>' +
+    '<div class="fin-row total"><span>VALOR TOTAL:</span> <span>' + formatarMoedaBRL(d.valorTotal) + '</span></div>' +
+  '</div>' +
+  '<div class="signatures">' +
+    '<div class="sig-line">' +
+      '<strong>' + esc(d.empresa.nome || 'SD Móveis Projetados') + '</strong><br>' +
+      'Assinatura da Contratada' +
+    '</div>' +
+    '<div class="sig-line">' +
+      '<strong>' + esc(d.cliente) + '</strong><br>' +
+      'Assinatura do Cliente / Contratante' +
+    '</div>' +
+  '</div>' +
+  scriptImpressao +
+'</body>' +
+'</html>');
+  win.document.close();
+}
+
+
 function montarTextoContrato(d) {
   const lic = obterLicencaAtiva();
   const hoje = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
