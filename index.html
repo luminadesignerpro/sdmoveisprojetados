@@ -2900,7 +2900,7 @@
 
         <!-- AÇÕES RÁPIDAS -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
-          <a id="agenda-link-abrir-agora" href="agenda.html" target="_blank" style="text-decoration:none;padding:12px;border-radius:10px;background:rgba(201,168,76,0.15);border:1.5px solid var(--gold);color:var(--gold-light);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;gap:6px;">
+          <a id="agenda-link-abrir-agora" href="agenda.html" target="_blank" onclick="this.href=gerarLinkAgendaPessoalComDados((document.getElementById('agenda-share-tel')||{}).value||'')" style="text-decoration:none;padding:12px;border-radius:10px;background:rgba(201,168,76,0.15);border:1.5px solid var(--gold);color:var(--gold-light);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;gap:6px;">
             <span>🌐</span> <span>Abrir Agora</span>
           </a>
           <button type="button" onclick="abrirTutorialInstalacaoAgenda()" style="padding:12px;border-radius:10px;background:rgba(56,189,248,0.15);border:1.5px solid #38bdf8;color:#7dd3fc;font-weight:800;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
@@ -32327,22 +32327,34 @@ function gerarLinkAgendaPessoalComDados(destinatarioTel = '') {
   const remetenteTel = (lic.tel || lic.telefone || '85996119824').replace(/\D/g, '');
   const remetenteNome = lic.empresa || lic.nome || 'SD MÓVEIS PROJETADOS';
 
-  // Lê diretamente do localStorage usando as mesmas chaves do agenda.html
+  // Obtém eventos da Agenda Pessoal
   let eventos = [];
-  let botoes = [];
-  try {
-    const evRaw = localStorage.getItem('sdv_agenda_pessoal_eventos');
-    if (evRaw) eventos = JSON.parse(evRaw);
-  } catch(_) {}
-  try {
-    const btnRaw = localStorage.getItem('sdv_botoes_agenda_pessoal_custom');
-    if (btnRaw) botoes = JSON.parse(btnRaw);
-  } catch(_) {}
+  if (typeof obterEventosAgendaPessoal === 'function') {
+    eventos = obterEventosAgendaPessoal();
+  }
+  if (!Array.isArray(eventos) || !eventos.length) {
+    try {
+      const evRaw = localStorage.getItem('sdv_agenda_pessoal_eventos');
+      if (evRaw) eventos = JSON.parse(evRaw);
+    } catch(_) {}
+  }
 
-  // Fallback: garante ao menos 3 botões padrão se estiver vazio
+  // Obtém botões/categorias customizados
+  let botoes = [];
+  if (typeof obterBotoesAgendaPessoalCustom === 'function') {
+    botoes = obterBotoesAgendaPessoalCustom();
+  }
+  if (!Array.isArray(botoes) || !botoes.length) {
+    try {
+      const btnRaw = localStorage.getItem('sdv_botoes_agenda_pessoal_custom');
+      if (btnRaw) botoes = JSON.parse(btnRaw);
+    } catch(_) {}
+  }
+
+  // Fallback: garante botões padrão se estiver vazio
   if (!Array.isArray(botoes) || !botoes.length) {
     botoes = [
-      { id: 'btn_comp_pessoal', nome: 'Novo Compromisso Pessoal' },
+      { id: 'btn_comp_pessoal', nome: 'Compromisso Pessoal' },
       { id: 'btn_eventos_familia', nome: 'Eventos da Família' },
       { id: 'btn_aniversarios', nome: 'Aniversários' }
     ];
@@ -32362,10 +32374,29 @@ function gerarLinkAgendaPessoalComDados(destinatarioTel = '') {
     const b64 = btoa(jsonStr);
     return window.location.origin + '/agenda.html?d=' + encodeURIComponent(b64);
   } catch (e) {
-    // Se falhar (payload muito grande), envia sem eventos mas com botões
     try {
-      const payloadMin = { empresa: remetenteNome, rem: remetenteTel, dest: destinatarioTel, envio: new Date().toISOString(), botoes: botoes, eventos: [] };
-      const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(payloadMin))));
+      // Se payload for muito longo, envia os primeiros 40 eventos com campos essenciais
+      const eventosEssenciais = (eventos || []).slice(0, 40).map(ev => ({
+        id: ev.id,
+        titulo: ev.titulo,
+        tipo: ev.tipo || 'Compromisso Pessoal',
+        data: ev.data,
+        hora: ev.hora || '',
+        local: ev.local || '',
+        tel: ev.tel || '',
+        obs: ev.obs || '',
+        concluido: !!ev.concluido
+      }));
+      const payloadCompacto = {
+        empresa: remetenteNome,
+        rem: remetenteTel,
+        dest: destinatarioTel,
+        envio: new Date().toISOString(),
+        botoes: botoes,
+        eventos: eventosEssenciais
+      };
+      const jsonStr = unescape(encodeURIComponent(JSON.stringify(payloadCompacto)));
+      const b64 = btoa(jsonStr);
       return window.location.origin + '/agenda.html?d=' + encodeURIComponent(b64);
     } catch(_) {
       return window.location.origin + '/agenda.html';

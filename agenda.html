@@ -966,81 +966,145 @@
       if (m) m.classList.remove('active');
     }
 
-    // PROCESSAMENTO DO LINK COMPARTILHADO COM DADOS (?d=...)
-    function decodificarBase64Utf8(b64) {
-      // Estratégia 1: TextDecoder (moderna, mais confiável)
+    // PROCESSAMENTO DO LINK COMPARTILHADO COM DADOS (?d=... ou #d=...)
+    function extrairParametroDados() {
+      // 1. Tenta da query string ?d=
       try {
-        const binary = atob(b64);
+        const p = new URLSearchParams(window.location.search);
+        const d = p.get('d');
+        if (d) return d;
+      } catch(_) {}
+
+      // 2. Tenta do hash #d=
+      try {
+        if (window.location.hash) {
+          const hash = window.location.hash.replace(/^#/, '');
+          const p = new URLSearchParams(hash);
+          const d = p.get('d');
+          if (d) return d;
+        }
+      } catch(_) {}
+
+      // 3. Fallback regex na URL completa
+      try {
+        const m = window.location.href.match(/[?&#]d=([^&#]+)/);
+        if (m && m[1]) return decodeURIComponent(m[1]);
+      } catch(_) {}
+
+      return null;
+    }
+
+    function decodificarBase64Utf8(b64) {
+      if (!b64) return null;
+      let clean = String(b64).trim().replace(/ /g, '+').replace(/-/g, '+').replace(/_/g, '/');
+      while (clean.length % 4 !== 0) clean += '=';
+
+      // Estratégia 1: TextDecoder + atob
+      try {
+        const binary = atob(clean);
         const bytes = new Uint8Array(binary.length);
         for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-        return new TextDecoder('utf-8').decode(bytes);
+        const txt = new TextDecoder('utf-8').decode(bytes);
+        if (txt && (txt.trim().startsWith('{') || txt.trim().startsWith('['))) return txt;
       } catch(_) {}
-      // Estratégia 2: escape/decodeURIComponent
+
+      // Estratégia 2: decodeURIComponent(escape(atob(clean)))
       try {
-        return decodeURIComponent(escape(atob(b64)));
+        const txt = decodeURIComponent(escape(atob(clean)));
+        if (txt && (txt.trim().startsWith('{') || txt.trim().startsWith('['))) return txt;
       } catch(_) {}
+
       // Estratégia 3: raw atob
-      try { return atob(b64); } catch(_) {}
+      try {
+        const txt = atob(clean);
+        if (txt && (txt.trim().startsWith('{') || txt.trim().startsWith('['))) return txt;
+      } catch(_) {}
+
       return null;
+    }
+
+    function categoriasSaoEquivalentes(cat1, cat2) {
+      if (!cat1 && !cat2) return true;
+      if (!cat1 || !cat2) return false;
+      const limpa = s => (s || '').replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim().toLowerCase();
+      const c1 = limpa(cat1);
+      const c2 = limpa(cat2);
+      if (c1 === c2) return true;
+      const isPess1 = c1.includes('compromisso pessoal') || c1 === 'novo compromisso pessoal';
+      const isPess2 = c2.includes('compromisso pessoal') || c2 === 'novo compromisso pessoal';
+      if (isPess1 && isPess2) return true;
+      return c1.includes(c2) || c2.includes(c1);
     }
 
     function processarLinkCompartilhado() {
       try {
-        const p = new URLSearchParams(window.location.search);
-        const d = p.get('d');
+        const d = extrairParametroDados();
         if (d) {
-          const jsonStr = decodificarBase64Utf8(decodeURIComponent(d));
-          if (!jsonStr) return;
-          const payload = JSON.parse(jsonStr);
+          let jsonStr = decodificarBase64Utf8(d);
+          if (!jsonStr) {
+            try { jsonStr = decodificarBase64Utf8(decodeURIComponent(d)); } catch(_) {}
+          }
+          if (jsonStr) {
+            const payload = JSON.parse(jsonStr);
 
-          if (payload) {
-            _dadosCompartilhados = payload;
-            try { localStorage.setItem(KEY_REMETENTE, JSON.stringify(payload)); } catch(_) {}
+            if (payload) {
+              _dadosCompartilhados = payload;
+              try { localStorage.setItem(KEY_REMETENTE, JSON.stringify(payload)); } catch(_) {}
 
-            // Importa botões/categorias recebidos
-            if (Array.isArray(payload.botoes) && payload.botoes.length) {
-              salvarBotoes(payload.botoes);
-            }
+              // Importa botões/categorias recebidos
+              if (Array.isArray(payload.botoes) && payload.botoes.length) {
+                salvarBotoes(payload.botoes);
+              }
 
-            // Importa compromissos recebidos
-            if (Array.isArray(payload.eventos) && payload.eventos.length) {
-              let locais = obterEventos();
-              // Mescla ou substitui garantindo IDs
-              const idsRecebidos = new Set(payload.eventos.map(x => x.id));
-              locais = locais.filter(x => !idsRecebidos.has(x.id));
-              const finalEventos = [...payload.eventos, ...locais];
-              salvarEventos(finalEventos);
-            }
+              // Importa compromissos recebidos
+              if (Array.isArray(payload.eventos) && payload.eventos.length) {
+                let locais = obterEventos();
+                const idsRecebidos = new Set(payload.eventos.map(x => String(x.id)));
+                locais = locais.filter(x => !idsRecebidos.has(String(x.id)));
+                const finalEventos = [...payload.eventos, ...locais];
+                salvarEventos(finalEventos);
+              }
 
-            // Exibe banner de boas-vindas
-            const banner = document.getElementById('banner-compartilhado-info');
-            if (banner) banner.style.display = 'flex';
+              // Exibe banner de boas-vindas
+              const banner = document.getElementById('banner-compartilhado-info');
+              if (banner) banner.style.display = 'flex';
 
-            const txtDest = document.getElementById('txt-dest-tel');
-            if (txtDest && payload.dest) {
-              txtDest.textContent = 'pelo número ' + payload.dest;
-            }
+              const txtDest = document.getElementById('txt-dest-tel');
+              if (txtDest && payload.dest) {
+                txtDest.textContent = 'pelo número ' + payload.dest;
+              }
 
-            const empTxt = document.getElementById('banner-compartilhado-empresa');
-            if (empTxt && payload.empresa) {
-              empTxt.textContent = 'Agenda Pessoal de ' + payload.empresa;
-            }
+              const empTxt = document.getElementById('banner-compartilhado-empresa');
+              if (empTxt && payload.empresa) {
+                empTxt.textContent = 'Agenda Pessoal de ' + payload.empresa;
+              }
 
-            const headerSub = document.getElementById('header-empresa-sub');
-            if (headerSub && payload.empresa) {
-              headerSub.textContent = payload.empresa;
+              const headerSub = document.getElementById('header-empresa-sub');
+              if (headerSub && payload.empresa) {
+                headerSub.textContent = payload.empresa;
+              }
             }
           }
         }
       } catch (err) {
-        console.warn('Erro ao ler dados compartilhados:', err);
+        console.warn('Erro ao processar dados compartilhados:', err);
       }
 
       // Se já tinha remetente salvo de sessão anterior
       if (!_dadosCompartilhados) {
         try {
           const salvo = localStorage.getItem(KEY_REMETENTE);
-          if (salvo) _dadosCompartilhados = JSON.parse(salvo);
+          if (salvo) {
+            _dadosCompartilhados = JSON.parse(salvo);
+            const banner = document.getElementById('banner-compartilhado-info');
+            if (banner) banner.style.display = 'flex';
+            if (_dadosCompartilhados.empresa) {
+              const empTxt = document.getElementById('banner-compartilhado-empresa');
+              if (empTxt) empTxt.textContent = 'Agenda Pessoal de ' + _dadosCompartilhados.empresa;
+              const headerSub = document.getElementById('header-empresa-sub');
+              if (headerSub) headerSub.textContent = _dadosCompartilhados.empresa;
+            }
+          }
         } catch(_) {}
       }
     }
@@ -1093,12 +1157,15 @@
       if (!c) return;
       const botoes = obterBotoes();
 
-      if (!_categoriaAtiva && botoes.length) {
-        _categoriaAtiva = botoes[0].nome;
-      }
+      const isTodas = !_categoriaAtiva;
+      let html = '<div class="cat-pill ' + (isTodas ? 'active' : '') + '">' +
+        '<button type="button" class="cat-pill-btn" onclick="selecionarCategoria(null)">' +
+          '<span>📁</span> <span>Todas</span>' +
+        '</button>' +
+      '</div>';
 
-      c.innerHTML = botoes.map(btn => {
-        const isAtivo = _categoriaAtiva && _categoriaAtiva.toLowerCase() === btn.nome.toLowerCase();
+      html += botoes.map(btn => {
+        const isAtivo = _categoriaAtiva && categoriasSaoEquivalentes(_categoriaAtiva, btn.nome);
         return '<div class="cat-pill ' + (isAtivo ? 'active' : '') + '">' +
           '<button type="button" class="cat-pill-btn" onclick="selecionarCategoria(\x27' + btn.nome + '\x27)">' +
             '<span>📅</span> <span>' + btn.nome + '</span>' +
@@ -1107,6 +1174,8 @@
           '<button type="button" class="cat-pill-action" onclick="removerCategoria(\x27' + btn.id + '\x27)" title="Excluir" style="color:#f87171;">✕</button>' +
         '</div>';
       }).join('');
+
+      c.innerHTML = html;
 
       // Preenche select do modal novo evento
       const sel = document.getElementById('form-evento-categoria');
@@ -1192,7 +1261,10 @@
       let lista = eventos.filter(e => {
         if (_filtroStatus === 'pendentes' && e.concluido) return false;
         if (_filtroStatus === 'concluidos' && !e.concluido) return false;
-        if (_categoriaAtiva && e.tipo && e.tipo.toLowerCase() !== _categoriaAtiva.toLowerCase()) return false;
+        if (_categoriaAtiva) {
+          const tipoEv = e.tipo || 'Compromisso Pessoal';
+          if (!categoriasSaoEquivalentes(tipoEv, _categoriaAtiva)) return false;
+        }
         if (termo) {
           const matchTitulo = (e.titulo || '').toLowerCase().includes(termo);
           const matchDesc = (e.obs || e.descricao || '').toLowerCase().includes(termo);
@@ -1568,11 +1640,17 @@
     }
 
     // INICIALIZAÇÃO
-    window.addEventListener('DOMContentLoaded', () => {
+    function inicializarAgendaCompleta() {
       processarLinkCompartilhado();
       renderCategorias();
       renderAgenda();
-    });
+    }
+
+    if (document.readyState === 'loading') {
+      window.addEventListener('DOMContentLoaded', inicializarAgendaCompleta);
+    } else {
+      inicializarAgendaCompleta();
+    }
   </script>
 </body>
 </html>
