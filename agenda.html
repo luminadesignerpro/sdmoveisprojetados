@@ -117,6 +117,50 @@
       padding: 16px;
     }
 
+    /* BANNER COMPARTILHADO */
+    .shared-banner {
+      background: linear-gradient(135deg, rgba(201,168,76,0.22), rgba(14,16,35,0.95));
+      border: 1.5px solid var(--gold);
+      border-radius: var(--r);
+      padding: 14px 16px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    }
+    .shared-banner-title {
+      font-size: 14px;
+      font-weight: 900;
+      color: var(--gold-light);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .shared-banner-sub {
+      font-size: 11.5px;
+      color: #cbd5e1;
+      margin-top: 3px;
+    }
+    .btn-responder-topo {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 9px 18px;
+      font-size: 12.5px;
+      font-weight: 900;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 16px rgba(34,197,94,0.4);
+      transition: transform 0.15s;
+    }
+    .btn-responder-topo:active { transform: scale(0.96); }
+
     /* BANNER DE INSTALAÇÃO PWA */
     .pwa-banner {
       background: linear-gradient(135deg, rgba(201,168,76,0.18), rgba(56,189,248,0.12));
@@ -402,6 +446,20 @@
       font-weight: 700;
       cursor: pointer;
     }
+    .btn-responder-card {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 11.5px;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      box-shadow: 0 3px 10px rgba(16,185,129,0.3);
+    }
 
     /* MODAL PADRÃO */
     .modal-overlay {
@@ -465,6 +523,25 @@
     .form-control:focus { border-color: var(--gold); }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
+    /* CHIPS DE RESPOSTA RÁPIDA */
+    .chip-resposta {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #cbd5e1;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .chip-resposta.selected {
+      background: rgba(34,197,94,0.25);
+      border-color: #22c55e;
+      color: #4ade80;
+      font-weight: 900;
+    }
+
     /* EMPTY STATE */
     .empty-box {
       text-align: center;
@@ -511,20 +588,38 @@
       <div class="brand-icon">📅</div>
       <div>
         <div class="brand-title">Agenda Pessoal</div>
-        <div class="brand-sub">SD Móveis Projetados</div>
+        <div class="brand-sub" id="header-empresa-sub">SD Móveis Projetados</div>
       </div>
     </div>
     <div class="top-actions">
-      <button class="btn-install" id="btn-pwa-install" onclick="acionarInstalacaoPwa()">
-        <span>📲</span> <span>Instalar App</span>
+      <button class="btn-responder-topo" style="padding:7px 14px;font-size:11.5px;" onclick="abrirModalResposta()">
+        <span>💬</span> <span>Responder</span>
       </button>
-      <button onclick="abrirModalCompartilharLink()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);color:#cbd5e1;padding:8px 10px;border-radius:999px;font-size:12px;cursor:pointer;">
+      <button class="btn-install" id="btn-pwa-install" onclick="acionarInstalacaoPwa()">
+        <span>📲</span> <span>Instalar</span>
+      </button>
+      <button onclick="abrirModalCompartilharLink()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);color:#cbd5e1;padding:8px 10px;border-radius:999px;font-size:12px;cursor:pointer;" title="Compartilhar Link">
         🔗
       </button>
     </div>
   </header>
 
   <div class="container">
+
+    <!-- BANNER DE AGENDA COMPARTILHADA (Visível quando aberta via link de compartilhamento) -->
+    <div class="shared-banner" id="banner-compartilhado-info" style="display:none;">
+      <div>
+        <div class="shared-banner-title">
+          <span>📅</span> <span id="banner-compartilhado-empresa">Agenda Pessoal de SD Móveis Projetados</span>
+        </div>
+        <div class="shared-banner-sub">
+          Compartilhada com você <strong style="color:#7dd3fc;" id="txt-dest-tel"></strong> • Veja todos os compromissos abaixo
+        </div>
+      </div>
+      <button class="btn-responder-topo" onclick="abrirModalResposta()">
+        <span>💬</span> <span>Responder Agenda</span>
+      </button>
+    </div>
 
     <!-- PWA PROMPT BANNER -->
     <div class="pwa-banner" id="pwa-install-banner">
@@ -558,10 +653,15 @@
       </div>
     </div>
 
-    <!-- BOTÃO NOVO COMPROMISSO -->
-    <button type="button" class="btn-new-event" onclick="abrirModalNovoCompromisso()">
-      <span>➕</span> <span>Novo Compromisso Pessoal</span>
-    </button>
+    <!-- BOTÕES PRINCIPAIS: NOVO COMPROMISSO & RESPONDER -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;">
+      <button type="button" class="btn-new-event" style="margin-bottom:0;padding:12px;" onclick="abrirModalNovoCompromisso()">
+        <span>➕</span> <span>Novo Compromisso</span>
+      </button>
+      <button type="button" class="btn-responder-topo" style="justify-content:center;padding:12px;" onclick="abrirModalResposta()">
+        <span>💬</span> <span>Responder Agenda</span>
+      </button>
+    </div>
 
     <!-- FILTROS & BUSCA -->
     <div class="filter-section">
@@ -586,19 +686,73 @@
       <span>📅</span>
       <span>Agenda</span>
     </button>
+    <button class="bottom-nav-item" onclick="abrirModalResposta()">
+      <span>💬</span>
+      <span>Responder</span>
+    </button>
     <button class="bottom-nav-item" onclick="abrirModalContatos()">
       <span>👥</span>
       <span>Contatos</span>
     </button>
     <button class="bottom-nav-item" onclick="abrirModalCompartilharLink()">
       <span>📤</span>
-      <span>Enviar Link</span>
+      <span>Enviar</span>
     </button>
     <button class="bottom-nav-item" onclick="acionarInstalacaoPwa()">
       <span>📲</span>
       <span>Instalar</span>
     </button>
   </nav>
+
+  <!-- MODAL: RESPONDER À AGENDA PESSOAL (REMETENTE: SD MÓVEIS) -->
+  <div class="modal-overlay" id="modal-responder-agenda" onclick="if(event.target===this)fecharModalResposta()">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">💬 Responder à Agenda Pessoal</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">Envie sua confirmação ou resposta direta para a SD Móveis no WhatsApp</div>
+        </div>
+        <button class="modal-close" onclick="fecharModalResposta()">✕</button>
+      </div>
+
+      <div style="background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.3);border-radius:var(--r-sm);padding:12px;margin-bottom:14px;">
+        <div style="font-size:11.5px;color:var(--gold-light);font-weight:700;">DESTINATÁRIO DA RESPOSTA:</div>
+        <div style="font-weight:900;font-size:14px;color:#fff;" id="resp-empresa-txt">SD Móveis Projetados</div>
+        <div style="font-size:11px;color:#94a3b8;" id="resp-tel-txt">WhatsApp: (85) 99611-9824</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Seu WhatsApp / Telefone</label>
+        <input type="tel" class="form-control" id="resp-remetente-tel" placeholder="Ex: (85) 98512-4363">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Compromisso Relacionado</label>
+        <select class="form-control" id="resp-compromisso-sel">
+          <option value="todos">Toda a Agenda / Compromissos Gerais</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Resposta Rápida</label>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button type="button" class="chip-resposta selected" onclick="selecionarChipResposta(this, '✅ Confirmado / Presença confirmada')">✅ Confirmado</button>
+          <button type="button" class="chip-resposta" onclick="selecionarChipResposta(this, '🔄 Solicito reagendamento para outro horário')">🔄 Reagendar</button>
+          <button type="button" class="chip-resposta" onclick="selecionarChipResposta(this, '📍 Confirmo o endereço e local informado')">📍 Confirmo Local</button>
+          <button type="button" class="chip-resposta" onclick="selecionarChipResposta(this, '❓ Tenho dúvidas sobre o compromisso')">❓ Tenho Dúvidas</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Mensagem / Observação Adicional</label>
+        <textarea class="form-control" id="resp-mensagem-txt" rows="3" placeholder="Digite aqui sua mensagem, horário de preferência ou comentário..."></textarea>
+      </div>
+
+      <button type="button" class="btn-new-event" style="background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;margin-top:14px;margin-bottom:0;" onclick="enviarRespostaWhatsApp()">
+        <span>💬</span> <span>Enviar Resposta no WhatsApp</span>
+      </button>
+    </div>
+  </div>
 
   <!-- MODAL: NOVO COMPROMISSO -->
   <div class="modal-overlay" id="modal-novo-evento" onclick="if(event.target===this)fecharModalNovoEvento()">
@@ -707,11 +861,11 @@
       </div>
 
       <p style="font-size:13px;color:#cbd5e1;line-height:1.5;margin-bottom:16px;">
-        Envie o link exclusivo para instalar ou abrir <strong>somente a Agenda Pessoal</strong> no celular, com acesso direto a compromissos, tarefas e contatos.
+        Envie o link exclusivo para instalar ou abrir <strong>somente a Agenda Pessoal</strong> no celular, com acesso direto a todos os compromissos, tarefas e opção de responder!
       </p>
 
       <div class="form-group">
-        <label class="form-label">Link Direto da Agenda</label>
+        <label class="form-label">Link Direto com Seus Compromissos</label>
         <div style="display:flex;gap:6px;">
           <input type="text" class="form-control" id="share-link-input" readonly style="font-size:11.5px;background:#181c36;">
           <button type="button" onclick="copiarLinkShare()" style="background:var(--gold);color:#000;border:none;border-radius:var(--r-sm);padding:0 14px;font-weight:900;cursor:pointer;">
@@ -770,10 +924,13 @@
     const KEY_EVENTOS = 'sdv_agenda_pessoal_eventos';
     const KEY_BOTOES = 'sdv_botoes_agenda_pessoal_custom';
     const KEY_CONTATOS = 'sdv_contatos_pessoais';
+    const KEY_REMETENTE = 'sdv_agenda_remetente_info';
 
     let _filtroStatus = 'pendentes';
     let _categoriaAtiva = null;
     let _deferredPrompt = null;
+    let _dadosCompartilhados = null;
+    let _chipRespostaSelecionado = '✅ Confirmado / Presença confirmada';
 
     // PWA INSTALL PROMPT
     window.addEventListener('beforeinstallprompt', (e) => {
@@ -807,6 +964,67 @@
     function fecharModalTutorial() {
       const m = document.getElementById('modal-tutorial-install');
       if (m) m.classList.remove('active');
+    }
+
+    // PROCESSAMENTO DO LINK COMPARTILHADO COM DADOS (?d=...)
+    function processarLinkCompartilhado() {
+      try {
+        const p = new URLSearchParams(window.location.search);
+        const d = p.get('d');
+        if (d) {
+          const jsonStr = decodeURIComponent(escape(atob(d)));
+          const payload = JSON.parse(jsonStr);
+
+          if (payload) {
+            _dadosCompartilhados = payload;
+            try { localStorage.setItem(KEY_REMETENTE, JSON.stringify(payload)); } catch(_) {}
+
+            // Importa botões/categorias recebidos
+            if (Array.isArray(payload.botoes) && payload.botoes.length) {
+              salvarBotoes(payload.botoes);
+            }
+
+            // Importa compromissos recebidos
+            if (Array.isArray(payload.eventos) && payload.eventos.length) {
+              let locais = obterEventos();
+              // Mescla ou substitui garantindo IDs
+              const idsRecebidos = new Set(payload.eventos.map(x => x.id));
+              locais = locais.filter(x => !idsRecebidos.has(x.id));
+              const finalEventos = [...payload.eventos, ...locais];
+              salvarEventos(finalEventos);
+            }
+
+            // Exibe banner de boas-vindas
+            const banner = document.getElementById('banner-compartilhado-info');
+            if (banner) banner.style.display = 'flex';
+
+            const txtDest = document.getElementById('txt-dest-tel');
+            if (txtDest && payload.dest) {
+              txtDest.textContent = 'pelo número ' + payload.dest;
+            }
+
+            const empTxt = document.getElementById('banner-compartilhado-empresa');
+            if (empTxt && payload.empresa) {
+              empTxt.textContent = 'Agenda Pessoal de ' + payload.empresa;
+            }
+
+            const headerSub = document.getElementById('header-empresa-sub');
+            if (headerSub && payload.empresa) {
+              headerSub.textContent = payload.empresa;
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Erro ao ler dados compartilhados:', err);
+      }
+
+      // Se já tinha remetente salvo de sessão anterior
+      if (!_dadosCompartilhados) {
+        try {
+          const salvo = localStorage.getItem(KEY_REMETENTE);
+          if (salvo) _dadosCompartilhados = JSON.parse(salvo);
+        } catch(_) {}
+      }
     }
 
     // OBTER E SALVAR
@@ -864,15 +1082,15 @@
       c.innerHTML = botoes.map(btn => {
         const isAtivo = _categoriaAtiva && _categoriaAtiva.toLowerCase() === btn.nome.toLowerCase();
         return '<div class="cat-pill ' + (isAtivo ? 'active' : '') + '">' +
-          '<button type="button" class="cat-pill-btn" onclick="selecionarCategoria(\'' + btn.nome + '\')">' +
+          '<button type="button" class="cat-pill-btn" onclick="selecionarCategoria('' + btn.nome + '')">' +
             '<span>📅</span> <span>' + btn.nome + '</span>' +
           '</button>' +
-          '<button type="button" class="cat-pill-action" onclick="editarCategoria(\'' + btn.id + '\')" title="Editar nome">✏️</button>' +
-          '<button type="button" class="cat-pill-action" onclick="removerCategoria(\'' + btn.id + '\')" title="Excluir" style="color:#f87171;">✕</button>' +
+          '<button type="button" class="cat-pill-action" onclick="editarCategoria('' + btn.id + '')" title="Editar nome">✏️</button>' +
+          '<button type="button" class="cat-pill-action" onclick="removerCategoria('' + btn.id + '')" title="Excluir" style="color:#f87171;">✕</button>' +
         '</div>';
       }).join('');
 
-      // Preenche select do modal
+      // Preenche select do modal novo evento
       const sel = document.getElementById('form-evento-categoria');
       if (sel) {
         sel.innerHTML = botoes.map(b => '<option value="' + b.nome + '">' + b.nome + '</option>').join('');
@@ -978,7 +1196,7 @@
         cont.innerHTML = '<div class="empty-box">' +
           '<div class="empty-icon">📅</div>' +
           '<div style="font-weight:700;font-size:14px;color:#fff;margin-bottom:4px;">Nenhum compromisso encontrado</div>' +
-          '<div style="font-size:12px;">Toque no botão acima para adicionar seu primeiro compromisso pessoal.</div>' +
+          '<div style="font-size:12px;">Todos os compromissos cadastrados na Agenda Pessoal aparecem aqui.</div>' +
         '</div>';
         return;
       }
@@ -993,13 +1211,16 @@
 
         const mapsBtn = e.local ? ('<a href="https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(e.local) + '" target="_blank" class="btn-action-small" style="color:#38bdf8;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">📍 Maps</a>') : '';
 
-        const cleanTel = String(e.tel || e.telefone || '').replace(/\D/g, '');
-        const whatsBtn = cleanTel ? ('<a href="https://wa.me/55' + cleanTel + '?text=' + encodeURIComponent('Olá! Lembrete sobre nosso compromisso: ' + (e.titulo || '')) + '" target="_blank" class="btn-action-small" style="color:#4ade80;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">💬 WhatsApp</a>') : '';
+        const cleanTel = String(e.tel || e.telefone || '').replace(/D/g, '');
+        const whatsBtn = cleanTel ? ('<a href="https://wa.me/55' + cleanTel + '?text=' + encodeURIComponent('Olá! Sobre o compromisso: ' + (e.titulo || '')) + '" target="_blank" class="btn-action-small" style="color:#4ade80;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">💬 WhatsApp</a>') : '';
 
         return '<div class="event-card ' + (isDone ? 'concluido' : '') + '">' +
           '<div class="event-card-header">' +
             '<span class="event-cat-tag">' + (e.tipo || 'Compromisso') + '</span>' +
-            '<button onclick="removerCompromisso(\'' + e.id + '\')" style="background:transparent;border:none;color:#f87171;font-size:14px;cursor:pointer;">✕</button>' +
+            '<div style="display:flex;gap:6px;align-items:center;">' +
+              '<button class="btn-responder-card" onclick="abrirModalResposta('' + e.id + '', '' + encodeURIComponent(e.titulo || '') + '')">💬 Responder</button>' +
+              '<button onclick="removerCompromisso('' + e.id + '')" style="background:transparent;border:none;color:#f87171;font-size:14px;cursor:pointer;">✕</button>' +
+            '</div>' +
           '</div>' +
 
           '<div class="event-title" style="' + (isDone ? 'text-decoration:line-through;color:#94a3b8;' : '') + '">' + (e.titulo || 'Sem título') + '</div>' +
@@ -1014,17 +1235,87 @@
           '</div>' +
 
           '<div class="event-actions-bar">' +
-            '<button class="btn-toggle-done" onclick="alternarStatusCompromisso(\'' + e.id + '\')">' +
+            '<button class="btn-toggle-done" onclick="alternarStatusCompromisso('' + e.id + '')">' +
               (isDone ? '↩️ Reabrir' : '✅ Marcar Concluído') +
             '</button>' +
             '<div style="display:flex;gap:6px;">' +
               mapsBtn +
               whatsBtn +
-              '<button class="btn-action-small" onclick="editarCompromisso(\'' + e.id + '\')">✏️ Editar</button>' +
+              '<button class="btn-action-small" onclick="editarCompromisso('' + e.id + '')">✏️ Editar</button>' +
             '</div>' +
           '</div>' +
         '</div>';
       }).join('');
+    }
+
+    // MODAL DE RESPOSTA
+    function abrirModalResposta(eventoId = null, eventoTitulo = '') {
+      const eventos = obterEventos();
+      const sel = document.getElementById('resp-compromisso-sel');
+      if (sel) {
+        sel.innerHTML = '<option value="todos">Toda a Agenda / Compromissos Gerais</option>' +
+          eventos.map(ev => {
+            const dataHora = (ev.data || '') + (ev.hora ? ' ' + ev.hora : '');
+            return '<option value="' + ev.id + '">' + (ev.titulo || 'Compromisso') + (dataHora ? ' (' + dataHora + ')' : '') + '</option>';
+          }).join('');
+
+        if (eventoId) {
+          sel.value = eventoId;
+        }
+      }
+
+      // Preenche destinatário (SD Móveis)
+      const empTxt = document.getElementById('resp-empresa-txt');
+      const telTxt = document.getElementById('resp-tel-txt');
+      const empNome = (_dadosCompartilhados && _dadosCompartilhados.empresa) || 'SD Móveis Projetados';
+      const empTel = (_dadosCompartilhados && _dadosCompartilhados.rem) || '85996119824';
+
+      if (empTxt) empTxt.textContent = empNome;
+      if (telTxt) telTxt.textContent = 'WhatsApp: ' + empTel;
+
+      // Preenche remetente (número do destinatário para o qual foi enviado)
+      const remInp = document.getElementById('resp-remetente-tel');
+      if (remInp && _dadosCompartilhados && _dadosCompartilhados.dest) {
+        remInp.value = _dadosCompartilhados.dest;
+      }
+
+      document.getElementById('modal-responder-agenda').classList.add('active');
+    }
+
+    function fecharModalResposta() {
+      document.getElementById('modal-responder-agenda').classList.remove('active');
+    }
+
+    function selecionarChipResposta(el, texto) {
+      document.querySelectorAll('.chip-resposta').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+      _chipRespostaSelecionado = texto;
+    }
+
+    function enviarRespostaWhatsApp() {
+      const selComp = document.getElementById('resp-compromisso-sel');
+      const compTexto = selComp && selComp.selectedIndex >= 0 ? selComp.options[selComp.selectedIndex].text : 'Agenda Completa';
+      const meuTel = (document.getElementById('resp-remetente-tel').value || '').trim();
+      const obs = (document.getElementById('resp-mensagem-txt').value || '').trim();
+
+      const empTel = (_dadosCompartilhados && _dadosCompartilhados.rem) || '85996119824';
+      const cleanEmpTel = empTel.replace(/\D/g, '');
+
+      const msg = '*RESPOSTA DA AGENDA PESSOAL* 📅\n\n'
+        + 'Olá, SD Móveis Projetados!\n\n'
+        + (meuTel ? ('👤 *Meu WhatsApp:* ' + meuTel + '\n') : '')
+        + '📌 *Compromisso:* ' + compTexto + '\n'
+        + '✅ *Status:* ' + _chipRespostaSelecionado + '\n'
+        + (obs ? ('📝 *Mensagem:* ' + obs + '\n\n') : '\n')
+        + 'Resposta enviada através do aplicativo da Agenda Pessoal.';
+
+      const zapUrl = cleanEmpTel 
+        ? ('https://wa.me/55' + cleanEmpTel + '?text=' + encodeURIComponent(msg))
+        : ('https://api.whatsapp.com/send?text=' + encodeURIComponent(msg));
+
+      window.open(zapUrl, '_blank');
+      fecharModalResposta();
+      alert('💬 Redirecionando para o WhatsApp da SD Móveis com sua resposta pronta!');
     }
 
     // ADICIONAR / EDITAR COMPROMISSO
@@ -1185,7 +1476,7 @@
           '<div style="display:flex;gap:6px;">' +
             (cleanTel ? '<a href="https://wa.me/55' + cleanTel + '" target="_blank" style="background:#15803d;color:#fff;text-decoration:none;padding:5px 8px;border-radius:6px;font-size:11px;">💬</a>' : '') +
             (cleanTel ? '<a href="tel:' + cleanTel + '" style="background:#0284c7;color:#fff;text-decoration:none;padding:5px 8px;border-radius:6px;font-size:11px;">📞</a>' : '') +
-            '<button onclick="removerContato(\'' + x.id + '\')" style="background:rgba(239,68,68,0.2);color:#f87171;border:none;padding:5px 8px;border-radius:6px;font-size:11px;cursor:pointer;">✕</button>' +
+            '<button onclick="removerContato('' + x.id + '')" style="background:rgba(239,68,68,0.2);color:#f87171;border:none;padding:5px 8px;border-radius:6px;font-size:11px;cursor:pointer;">✕</button>' +
           '</div>' +
         '</div>';
       }).join('');
@@ -1200,10 +1491,23 @@
 
     // COMPARTILHAR LINK
     function abrirModalCompartilharLink() {
-      const link = window.location.origin + '/agenda.html';
+      const eventos = obterEventos();
+      const botoes = obterBotoes();
+      const payload = {
+        empresa: 'SD Móveis Projetados',
+        rem: '85996119824',
+        dest: (document.getElementById('share-tel-input') || {}).value || '',
+        envio: new Date().toISOString(),
+        botoes: botoes,
+        eventos: eventos
+      };
+      const jsonStr = unescape(encodeURIComponent(JSON.stringify(payload)));
+      const link = window.location.origin + '/agenda.html?d=' + encodeURIComponent(btoa(jsonStr));
+
       document.getElementById('share-link-input').value = link;
       document.getElementById('modal-compartilhar').classList.add('active');
     }
+
     function fecharModalCompartilharLink() {
       document.getElementById('modal-compartilhar').classList.remove('active');
     }
@@ -1221,11 +1525,24 @@
 
     function enviarLinkViaWhatsApp() {
       const tel = (document.getElementById('share-tel-input').value || '').replace(/\D/g, '');
-      const link = window.location.origin + '/agenda.html';
+      const eventos = obterEventos();
+      const botoes = obterBotoes();
+      const payload = {
+        empresa: 'SD Móveis Projetados',
+        rem: '85996119824',
+        dest: tel,
+        envio: new Date().toISOString(),
+        botoes: botoes,
+        eventos: eventos
+      };
+      const jsonStr = unescape(encodeURIComponent(JSON.stringify(payload)));
+      const link = window.location.origin + '/agenda.html?d=' + encodeURIComponent(btoa(jsonStr));
+
       const msg = '*SD MÓVEIS — AGENDA PESSOAL* 📅\n\n'
-        + 'Olá! Segue o link para acessar e instalar somente a sua Agenda Pessoal no celular:\n\n'
+        + 'Olá! Segue o link com acesso completo à sua Agenda Pessoal:\n\n'
         + link + '\n\n'
-        + '📲 *Como instalar:* Toque no link e clique em "Instalar App" ou no menu do navegador escolha "Adicionar à tela inicial"!';
+        + '💬 *Você pode responder e confirmar compromissos direto pela página!*\n'
+        + '📲 *Como instalar:* Abra o link e toque em "Instalar App" ou no menu escolha "Adicionar à tela inicial"!';
 
       const url = tel ? ('https://wa.me/55' + tel + '?text=' + encodeURIComponent(msg)) : ('https://api.whatsapp.com/send?text=' + encodeURIComponent(msg));
       window.open(url, '_blank');
@@ -1234,6 +1551,7 @@
 
     // INICIALIZAÇÃO
     window.addEventListener('DOMContentLoaded', () => {
+      processarLinkCompartilhado();
       renderCategorias();
       renderAgenda();
     });

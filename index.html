@@ -2888,7 +2888,7 @@
             <span>💬</span> <span>Enviar Direto no WhatsApp</span>
           </div>
           <div style="display:flex;gap:8px;margin-bottom:10px;">
-            <input type="tel" id="agenda-share-tel" placeholder="WhatsApp com DDD (apenas números)" style="flex:1;padding:10px 12px;border-radius:10px;background:#06070e;border:1px solid rgba(255,255,255,0.14);color:#fff;font-size:12px;" />
+            <input type="tel" id="agenda-share-tel" oninput="atualizarLinkAgendaShare()" placeholder="WhatsApp com DDD (apenas números)" style="flex:1;padding:10px 12px;border-radius:10px;background:#06070e;border:1px solid rgba(255,255,255,0.14);color:#fff;font-size:12px;" />
             <button type="button" onclick="selecionarContatoParaAgendaShare()" style="background:rgba(56,189,248,0.18);border:1px solid #38bdf8;color:#7dd3fc;padding:0 12px;border-radius:10px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;">
               👥 Escolher Contato
             </button>
@@ -32320,18 +32320,50 @@ function renderAgendaPessoal() {
 }
 
 // ══════════════════════════════════════════════════════════════════
-// COMPARTILHAR / INSTALAR APENAS A AGENDA PESSOAL
+// COMPARTILHAR / INSTALAR APENAS A AGENDA PESSOAL COM DADOS E RESPOSTA
 // ══════════════════════════════════════════════════════════════════
+function gerarLinkAgendaPessoalComDados(destinatarioTel = '') {
+  const lic = (typeof obterLicencaAtiva === 'function' && obterLicencaAtiva()) || {};
+  const remetenteTel = (lic.tel || lic.telefone || '85996119824').replace(/\D/g, '');
+  const remetenteNome = lic.empresa || 'SD MÓVEIS PROJETADOS';
+  const eventos = (typeof obterEventosAgendaPessoal === 'function') ? obterEventosAgendaPessoal() : [];
+  const botoes = (typeof obterBotoesAgendaPessoalCustom === 'function') ? obterBotoesAgendaPessoalCustom() : [];
+
+  const payload = {
+    empresa: remetenteNome,
+    rem: remetenteTel,
+    dest: destinatarioTel,
+    envio: new Date().toISOString(),
+    botoes: botoes,
+    eventos: eventos
+  };
+
+  try {
+    const jsonStr = unescape(encodeURIComponent(JSON.stringify(payload)));
+    const b64 = btoa(jsonStr);
+    return window.location.origin + '/agenda.html?d=' + encodeURIComponent(b64);
+  } catch (e) {
+    return window.location.origin + '/agenda.html';
+  }
+}
+
+function atualizarLinkAgendaShare() {
+  const telInp = document.getElementById('agenda-share-tel');
+  const tel = (telInp ? telInp.value : '').replace(/\D/g, '');
+  const linkCompleto = gerarLinkAgendaPessoalComDados(tel);
+
+  const inp = document.getElementById('agenda-link-input');
+  if (inp) inp.value = linkCompleto;
+
+  const linkAbrir = document.getElementById('agenda-link-abrir-agora');
+  if (linkAbrir) linkAbrir.href = linkCompleto;
+}
+
 function abrirModalCompartilharAgendaPessoal() {
   const m = document.getElementById('modal-compartilhar-agenda-pessoal');
   if (!m) return;
 
-  const url = window.location.origin + '/agenda.html';
-  const inp = document.getElementById('agenda-link-input');
-  if (inp) inp.value = url;
-
-  const linkAbrir = document.getElementById('agenda-link-abrir-agora');
-  if (linkAbrir) linkAbrir.href = url;
+  atualizarLinkAgendaShare();
 
   m.style.display = 'flex';
   m.classList.add('active');
@@ -32347,12 +32379,17 @@ function fecharModalCompartilharAgendaPessoal(e) {
 }
 
 function copiarLinkAgendaPessoal() {
+  const telInp = document.getElementById('agenda-share-tel');
+  const tel = (telInp ? telInp.value : '').replace(/\D/g, '');
+  const linkCompleto = gerarLinkAgendaPessoalComDados(tel);
+
   const inp = document.getElementById('agenda-link-input');
-  if (!inp) return;
-  inp.select();
-  navigator.clipboard.writeText(inp.value).then(() => {
+  if (inp) inp.value = linkCompleto;
+
+  if (inp) inp.select();
+  navigator.clipboard.writeText(linkCompleto).then(() => {
     if (typeof toastAlerta === 'function') toastAlerta('📋 Link da Agenda Pessoal copiado!');
-    else alert('📋 Link copiado com sucesso!');
+    else alert('📋 Link copiado com sucesso! Ao abrir, o destinatário verá todos os compromissos.');
   }).catch(() => {
     document.execCommand('copy');
     alert('📋 Link copiado!');
@@ -32374,6 +32411,7 @@ function selecionarContatoParaAgendaShare() {
     const telInp = document.getElementById('agenda-share-tel');
     if (telInp) {
       telInp.value = (sel.whatsapp || sel.tel || '').replace(/\D/g, '');
+      atualizarLinkAgendaShare();
     }
   }
 }
@@ -32381,15 +32419,13 @@ function selecionarContatoParaAgendaShare() {
 function enviarLinkAgendaPessoalWhatsApp() {
   const telInp = document.getElementById('agenda-share-tel');
   const tel = (telInp ? telInp.value : '').replace(/\D/g, '');
-  const url = window.location.origin + '/agenda.html';
+  const urlComDados = gerarLinkAgendaPessoalComDados(tel);
 
   const msg = '*AGENDA PESSOAL — SD MÓVEIS PROJETADOS* 📅\n\n'
-    + 'Olá! Segue o link para instalar e acessar *somente a sua Agenda Pessoal* no celular:\n\n'
-    + url + '\n\n'
-    + '📲 *Como instalar como Aplicativo:*\n'
-    + '1. Toque no link acima.\n'
-    + '2. No menu do navegador (3 pontinhos ou Compartilhar 📤), toque em *"Adicionar à tela inicial"* ou *"Instalar aplicativo"*.\n'
-    + '3. Pronto! Ela abrirá direto na sua tela como um app particular!';
+    + 'Olá! Segue o link com acesso completo à sua *Agenda Pessoal*:\n\n'
+    + urlComDados + '\n\n'
+    + '💬 *Você pode visualizar todos os compromissos e responder ou confirmar diretamente pela página!*\n\n'
+    + '📲 *Como instalar:* Abra o link acima e toque em "Instalar App" ou no menu escolha "Adicionar à tela inicial" para ter ela no seu celular!';
 
   if (typeof abrirWhats === 'function') {
     abrirWhats(tel, msg);
