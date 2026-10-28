@@ -967,12 +967,30 @@
     }
 
     // PROCESSAMENTO DO LINK COMPARTILHADO COM DADOS (?d=...)
+    function decodificarBase64Utf8(b64) {
+      // Estratégia 1: TextDecoder (moderna, mais confiável)
+      try {
+        const binary = atob(b64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        return new TextDecoder('utf-8').decode(bytes);
+      } catch(_) {}
+      // Estratégia 2: escape/decodeURIComponent
+      try {
+        return decodeURIComponent(escape(atob(b64)));
+      } catch(_) {}
+      // Estratégia 3: raw atob
+      try { return atob(b64); } catch(_) {}
+      return null;
+    }
+
     function processarLinkCompartilhado() {
       try {
         const p = new URLSearchParams(window.location.search);
         const d = p.get('d');
         if (d) {
-          const jsonStr = decodeURIComponent(escape(atob(d)));
+          const jsonStr = decodificarBase64Utf8(decodeURIComponent(d));
+          if (!jsonStr) return;
           const payload = JSON.parse(jsonStr);
 
           if (payload) {
