@@ -1100,11 +1100,11 @@
       c.innerHTML = botoes.map(btn => {
         const isAtivo = _categoriaAtiva && _categoriaAtiva.toLowerCase() === btn.nome.toLowerCase();
         return '<div class="cat-pill ' + (isAtivo ? 'active' : '') + '">' +
-          '<button type="button" class="cat-pill-btn" onclick="selecionarCategoria('' + btn.nome + '')">' +
+          '<button type="button" class="cat-pill-btn" onclick="selecionarCategoria(\x27' + btn.nome + '\x27)">' +
             '<span>📅</span> <span>' + btn.nome + '</span>' +
           '</button>' +
-          '<button type="button" class="cat-pill-action" onclick="editarCategoria('' + btn.id + '')" title="Editar nome">✏️</button>' +
-          '<button type="button" class="cat-pill-action" onclick="removerCategoria('' + btn.id + '')" title="Excluir" style="color:#f87171;">✕</button>' +
+          '<button type="button" class="cat-pill-action" onclick="editarCategoria(\x27' + btn.id + '\x27)" title="Editar nome">✏️</button>' +
+          '<button type="button" class="cat-pill-action" onclick="removerCategoria(\x27' + btn.id + '\x27)" title="Excluir" style="color:#f87171;">✕</button>' +
         '</div>';
       }).join('');
 
@@ -1229,15 +1229,15 @@
 
         const mapsBtn = e.local ? ('<a href="https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(e.local) + '" target="_blank" class="btn-action-small" style="color:#38bdf8;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">📍 Maps</a>') : '';
 
-        const cleanTel = String(e.tel || e.telefone || '').replace(/D/g, '');
+        const cleanTel = String(e.tel || e.telefone || '').replace(/\D/g, '');
         const whatsBtn = cleanTel ? ('<a href="https://wa.me/55' + cleanTel + '?text=' + encodeURIComponent('Olá! Sobre o compromisso: ' + (e.titulo || '')) + '" target="_blank" class="btn-action-small" style="color:#4ade80;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">💬 WhatsApp</a>') : '';
 
         return '<div class="event-card ' + (isDone ? 'concluido' : '') + '">' +
           '<div class="event-card-header">' +
             '<span class="event-cat-tag">' + (e.tipo || 'Compromisso') + '</span>' +
             '<div style="display:flex;gap:6px;align-items:center;">' +
-              '<button class="btn-responder-card" onclick="abrirModalResposta('' + e.id + '', '' + encodeURIComponent(e.titulo || '') + '')">💬 Responder</button>' +
-              '<button onclick="removerCompromisso('' + e.id + '')" style="background:transparent;border:none;color:#f87171;font-size:14px;cursor:pointer;">✕</button>' +
+              '<button class="btn-responder-card" onclick="abrirModalResposta(\x27' + e.id + '\x27, \x27' + encodeURIComponent(e.titulo || '') + '\x27)">💬 Responder</button>' +
+              '<button onclick="removerCompromisso(\x27' + e.id + '\x27)" style="background:transparent;border:none;color:#f87171;font-size:14px;cursor:pointer;">✕</button>' +
             '</div>' +
           '</div>' +
 
@@ -1253,13 +1253,13 @@
           '</div>' +
 
           '<div class="event-actions-bar">' +
-            '<button class="btn-toggle-done" onclick="alternarStatusCompromisso('' + e.id + '')">' +
+            '<button class="btn-toggle-done" onclick="alternarStatusCompromisso(\x27' + e.id + '\x27)">' +
               (isDone ? '↩️ Reabrir' : '✅ Marcar Concluído') +
             '</button>' +
             '<div style="display:flex;gap:6px;">' +
               mapsBtn +
               whatsBtn +
-              '<button class="btn-action-small" onclick="editarCompromisso('' + e.id + '')">✏️ Editar</button>' +
+              '<button class="btn-action-small" onclick="editarCompromisso(\x27' + e.id + '\x27)">✏️ Editar</button>' +
             '</div>' +
           '</div>' +
         '</div>';
@@ -1494,7 +1494,7 @@
           '<div style="display:flex;gap:6px;">' +
             (cleanTel ? '<a href="https://wa.me/55' + cleanTel + '" target="_blank" style="background:#15803d;color:#fff;text-decoration:none;padding:5px 8px;border-radius:6px;font-size:11px;">💬</a>' : '') +
             (cleanTel ? '<a href="tel:' + cleanTel + '" style="background:#0284c7;color:#fff;text-decoration:none;padding:5px 8px;border-radius:6px;font-size:11px;">📞</a>' : '') +
-            '<button onclick="removerContato('' + x.id + '')" style="background:rgba(239,68,68,0.2);color:#f87171;border:none;padding:5px 8px;border-radius:6px;font-size:11px;cursor:pointer;">✕</button>' +
+            '<button onclick="removerContato(\x27' + x.id + '\x27)" style="background:rgba(239,68,68,0.2);color:#f87171;border:none;padding:5px 8px;border-radius:6px;font-size:11px;cursor:pointer;">✕</button>' +
           '</div>' +
         '</div>';
       }).join('');
