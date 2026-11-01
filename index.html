@@ -2126,6 +2126,10 @@
           <span>🎯</span> <span id="label-direcionamento-orc-linha" class="btn-dir-label-dinamico">Direcionamento</span>
         </button>
         <!-- BOTÃO FORNECEDORES com menu dropdown (Primeira Aba - Orçamento) -->
+        <!-- BOTÃO COMPARATIVO (SEGUNDA IMAGEM / COMPARATIVOS.VERCEL.APP) -->
+        <button type="button" class="btn btn-sm btn-comparativo-principal" id="btn-comparativo-principal" onclick="abrirComparativoPrincipal()" style="background:linear-gradient(135deg, rgba(16,185,129,0.25), rgba(5,150,105,0.22));border:1.5px solid #10b981;color:#34d399;font-weight:800;border-radius:8px;padding:6px 13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;box-shadow:0 2px 8px rgba(16,185,129,0.25);" title="Acessar o Comparativo de Preços dos Fornecedores (comparativos.vercel.app)">
+          <span style="font-size:14px;">📊</span> <span id="label-comparativo-orc-linha">Comparativo de Preços</span>
+        </button>
         <div id="fornecedores-orc-menu-container" style="position:relative;display:inline-block;">
           <button type="button" class="btn btn-sm btn-forn-os" id="btn-fornecedores-orc-linha" onclick="toggleMenuFornecedoresOrc(event)" style="background:linear-gradient(135deg, rgba(245,158,11,0.22), rgba(217,119,6,0.18));border:1.5px solid #f59e0b;color:#fbbf24;font-weight:800;border-radius:8px;padding:6px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;" title="Gerenciar e Adicionar Fornecedores">
             <span>🏭</span> <span id="label-fornecedores-orc-linha">Fornecedores</span> <span style="font-size:10px;opacity:0.8;">▼</span>
@@ -2137,6 +2141,9 @@
             </button>
             <button type="button" onclick="toggleMenuFornecedoresOrc(event); abrirModalGerenciarFornecedores('listar');" style="width:100%;padding:11px 14px;background:none;border:none;color:#fde68a;font-size:12.5px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:9px;transition:background 0.15s;" onmouseover="this.style.background='rgba(245,158,11,0.12)'" onmouseout="this.style.background='none'">
               <span style="font-size:14px;">📋</span> <span>Ver Cadastrados (<span id="menu-cont-fornecedores-cad">0</span>)</span>
+            </button>
+            <button type="button" onclick="toggleMenuFornecedoresOrc(event); abrirComparativoPrincipal();" style="width:100%;padding:11px 14px;background:none;border:none;border-top:1px solid rgba(245,158,11,0.18);color:#34d399;font-size:12.5px;font-weight:800;cursor:pointer;text-align:left;display:flex;align-items:center;gap:9px;transition:background 0.15s;" onmouseover="this.style.background='rgba(16,185,129,0.15)'" onmouseout="this.style.background='none'">
+              <span style="font-size:14px;">📊</span> <span>Abrir Comparativo de Preços</span>
             </button>
           </div>
         </div>
@@ -9066,7 +9073,7 @@ function aoMudarDescricaoItem(id) {
   const descVal = inDesc ? inDesc.value.trim() : '';
 
   // Auto-fill price if matched in catalog (formatado ex: 249,00)
-  const prod = produtos.find(p => p.nome.toLowerCase() === descVal.toLowerCase());
+  const prod = produtos.find(p => p.nome && p.nome.toLowerCase() === descVal.toLowerCase());
   if (prod) {
     if (prod.vm2 && inVm2 && (!inVm2.value || inVm2.value === '0,00'))   inVm2.value = formatarValorPtBr(prod.vm2);
     if (prod.vunit && inVunit && (!inVunit.value || inVunit.value === '0,00')) inVunit.value = formatarValorPtBr(prod.vunit);
@@ -9076,9 +9083,467 @@ function aoMudarDescricaoItem(id) {
     const mat = (materiais || []).find(m => m.nome && m.nome.toLowerCase() === descVal.toLowerCase());
     if (mat && mat.fornecedor) inForn.value = mat.fornecedor;
   }
+
+  // ── BUSCA AUTOMÁTICA NO COMPARATIVO DE PREÇOS (SEGUNDA IMAGEM) ─────────────
+  buscarMenorPrecoComparativo(id, descVal);
+
   calcItem(id);
   if (typeof agendarSalvarRascunhoOrcamento === 'function') agendarSalvarRascunhoOrcamento();
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  INTEGRAÇÃO COM COMPARATIVO DE PREÇOS (comparativos.vercel.app)
+// ══════════════════════════════════════════════════════════════════════════════
+const COMPARATIVO_APP_URL = 'https://comparativos.vercel.app';
+
+// Cotações padrão pré-carregadas para funcionar de imediato com principais MDFs e materiais
+const DADOS_INICIAIS_COMPARATIVO = [
+  {
+    id: 'comp_mdf_branco_tx_15',
+    productName: 'MDF Branco TX 15mm 2 Faces',
+    category: 'MDF/MDP',
+    quotes: [
+      { id: 'q1', supplierName: 'Leo Madeiras', brand: 'Guararapes', unitPrice: 189.90, pricePerM2: 37.98 },
+      { id: 'q2', supplierName: 'Gasômetro Madeiras', brand: 'Duratex', unitPrice: 179.50, pricePerM2: 35.90 },
+      { id: 'q3', supplierName: 'GMad', brand: 'Arauco', unitPrice: 184.00, pricePerM2: 36.80 },
+      { id: 'q4', supplierName: 'Madepar', brand: 'Berneck', unitPrice: 172.90, pricePerM2: 34.58 }
+    ]
+  },
+  {
+    id: 'comp_mdf_branco_tx_18',
+    productName: 'MDF Branco TX 18mm 2 Faces',
+    category: 'MDF/MDP',
+    quotes: [
+      { id: 'q5', supplierName: 'Leo Madeiras', brand: 'Guararapes', unitPrice: 229.00, pricePerM2: 45.80 },
+      { id: 'q6', supplierName: 'Gasômetro Madeiras', brand: 'Duratex', unitPrice: 218.00, pricePerM2: 43.60 },
+      { id: 'q7', supplierName: 'Madepar', brand: 'Berneck', unitPrice: 209.90, pricePerM2: 41.98 }
+    ]
+  },
+  {
+    id: 'comp_mdf_freijo',
+    productName: 'MDF Louro Freijó 15mm 2 Faces',
+    category: 'MDF/MDP',
+    quotes: [
+      { id: 'q8', supplierName: 'Leo Madeiras', brand: 'Guararapes', unitPrice: 349.00, pricePerM2: 69.80 },
+      { id: 'q9', supplierName: 'Gasômetro Madeiras', brand: 'Duratex', unitPrice: 329.90, pricePerM2: 65.98 },
+      { id: 'q10', supplierName: 'GMad', brand: 'Arauco', unitPrice: 335.00, pricePerM2: 67.00 }
+    ]
+  },
+  {
+    id: 'comp_mdf_grafite',
+    productName: 'MDF Grafite / Chumbo 15mm 2 Faces',
+    category: 'MDF/MDP',
+    quotes: [
+      { id: 'q11', supplierName: 'Gasômetro Madeiras', brand: 'Duratex', unitPrice: 289.00, pricePerM2: 57.80 },
+      { id: 'q12', supplierName: 'Leo Madeiras', brand: 'Arauco', unitPrice: 298.50, pricePerM2: 59.70 },
+      { id: 'q13', supplierName: 'Madepar', brand: 'Guararapes', unitPrice: 279.90, pricePerM2: 55.98 }
+    ]
+  },
+  {
+    id: 'comp_mdf_gianduia',
+    productName: 'MDF Gianduia / Fendi 15mm',
+    category: 'MDF/MDP',
+    quotes: [
+      { id: 'q14', supplierName: 'Gasômetro Madeiras', brand: 'Duratex', unitPrice: 295.00, pricePerM2: 59.00 },
+      { id: 'q15', supplierName: 'Leo Madeiras', brand: 'Duratex', unitPrice: 305.00, pricePerM2: 61.00 }
+    ]
+  },
+  {
+    id: 'comp_mdf_carvalho',
+    productName: 'MDF Carvalho Hanover 15mm',
+    category: 'MDF/MDP',
+    quotes: [
+      { id: 'q16', supplierName: 'Leo Madeiras', brand: 'Guararapes', unitPrice: 338.00, pricePerM2: 67.60 },
+      { id: 'q17', supplierName: 'GMad', brand: 'Arauco', unitPrice: 319.90, pricePerM2: 63.98 }
+    ]
+  },
+  {
+    id: 'comp_dobradica_amortecedor',
+    productName: 'Dobradiça com Amortecedor 35mm Click',
+    category: 'Ferragens',
+    quotes: [
+      { id: 'q18', supplierName: 'Gasômetro Madeiras', brand: 'FGV TN', unitPrice: 6.90, pricePerM2: 0 },
+      { id: 'q19', supplierName: 'Leo Madeiras', brand: 'Hettich', unitPrice: 8.50, pricePerM2: 0 },
+      { id: 'q20', supplierName: 'GMad', brand: 'Hafele', unitPrice: 7.20, pricePerM2: 0 },
+      { id: 'q21', supplierName: 'Cortbras', brand: 'Importada', unitPrice: 4.90, pricePerM2: 0 }
+    ]
+  },
+  {
+    id: 'comp_corredica_invisivel',
+    productName: 'Corrediça Oculta / Invisível com Amortecedor 450mm',
+    category: 'Ferragens',
+    quotes: [
+      { id: 'q22', supplierName: 'Gasômetro Madeiras', brand: 'FGV TN', unitPrice: 48.00, pricePerM2: 0 },
+      { id: 'q23', supplierName: 'Leo Madeiras', brand: 'Hafele', unitPrice: 59.00, pricePerM2: 0 },
+      { id: 'q24', supplierName: 'Madepar', brand: 'Hettich', unitPrice: 65.00, pricePerM2: 0 }
+    ]
+  }
+];
+
+function obterComparacoesArmazenadas() {
+  try {
+    const raw = localStorage.getItem('sd_supplier_comparisons_v3');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch(e) {}
+  // Salva os dados iniciais caso ainda não existam
+  try {
+    localStorage.setItem('sd_supplier_comparisons_v3', JSON.stringify(DADOS_INICIAIS_COMPARATIVO));
+  } catch(e) {}
+  return DADOS_INICIAIS_COMPARATIVO;
+}
+
+function buscarMenorPrecoComparativo(itemId, descricao) {
+  const badge = document.getElementById('badge-menor-preco-' + itemId);
+  const btnComp = document.getElementById('btn-comp-item-' + itemId);
+  const tr = document.getElementById('item-' + itemId);
+  const inForn = tr ? tr.querySelector('.item-fornecedor-input') : null;
+  const inVunit = tr ? tr.querySelector('.inp-item-vunit') : null;
+
+  if (!descricao || descricao.trim().length < 2) {
+    if (badge) badge.style.display = 'none';
+    if (btnComp) {
+      btnComp.innerHTML = '📊 Comparativo';
+      btnComp.style.background = 'linear-gradient(135deg,rgba(16,185,129,0.22),rgba(5,150,105,0.18))';
+      btnComp.style.borderColor = '#10b981';
+      btnComp.style.color = '#34d399';
+    }
+    return;
+  }
+
+  const descLower = descricao.toLowerCase().trim();
+  const descWords = descLower.split(/\s+/).filter(w => w.length > 2);
+  const comparisons = obterComparacoesArmazenadas();
+
+  let match = null;
+  let bestScore = 0;
+
+  for (const comp of comparisons) {
+    if (!comp.productName || !comp.quotes || !comp.quotes.length) continue;
+    const nameLower = comp.productName.toLowerCase();
+
+    // Match exato
+    if (nameLower === descLower) {
+      match = comp;
+      break;
+    }
+
+    // Match se contém tudo
+    if (nameLower.includes(descLower) || descLower.includes(nameLower)) {
+      match = comp;
+      break;
+    }
+
+    // Match por palavras-chave
+    let score = 0;
+    for (const w of descWords) {
+      if (nameLower.includes(w)) score++;
+    }
+    if (score > bestScore && score >= 2) {
+      bestScore = score;
+      match = comp;
+    }
+  }
+
+  if (!match || !match.quotes || !match.quotes.length) {
+    if (badge) badge.style.display = 'none';
+    if (btnComp) {
+      btnComp.innerHTML = '📊 Comparativo';
+      btnComp.title = 'Abrir comparativo de preços para ' + descricao;
+      btnComp.style.background = 'linear-gradient(135deg,rgba(16,185,129,0.22),rgba(5,150,105,0.18))';
+    }
+    return;
+  }
+
+  const cotacoesValidas = match.quotes.filter(q => (q.unitPrice || q.price || 0) > 0)
+    .sort((a, b) => (a.unitPrice || a.price || 0) - (b.unitPrice || b.price || 0));
+
+  if (!cotacoesValidas.length) {
+    if (badge) badge.style.display = 'none';
+    return;
+  }
+
+  const menor = cotacoesValidas[0];
+  const menorPreco = menor.unitPrice || menor.price || 0;
+  const menorForn = menor.supplierName || menor.brand || 'Fornecedor';
+  const qtdForn = cotacoesValidas.length;
+  const precoStr = 'R$ ' + menorPreco.toFixed(2).replace('.', ',');
+
+  // 1. ATUALIZA O CAMPO FORNECEDOR (USO INTERNO) AUTOMATICAMENTE
+  if (inForn) {
+    // Se estiver vazio ou contiver cotação anterior, preenche com o menor
+    if (!inForn.value || inForn.value.includes('(Menor') || inForn.value.includes('R$')) {
+      inForn.value = menorForn + ' · ' + precoStr + ' (Menor Preço)';
+      if (typeof atualizarDatalistFornecedores === 'function') atualizarDatalistFornecedores();
+    }
+  }
+
+  // 2. ATUALIZA O BADGE DE MENOR PREÇO DIRETO NO CAMPO
+  if (badge) {
+    badge.innerHTML = '🏆 ' + precoStr;
+    badge.title = 'Menor preço: ' + menorForn + ' (' + precoStr + ') · ' + qtdForn + ' cotações disponíveis. Clique para ver todas!';
+    badge.style.display = 'inline-block';
+  }
+
+  // 3. ATUALIZA O BOTÃO COMPARATIVO DO ITEM
+  if (btnComp) {
+    btnComp.innerHTML = '📊 ' + precoStr + ' <span style="font-size:9px;opacity:0.85;">(' + qtdForn + ')</span>';
+    btnComp.title = 'Menor: ' + precoStr + ' em ' + menorForn + ' (' + qtdForn + ' fornecedores cotados). Clique para comparar!';
+    btnComp.style.background = 'linear-gradient(135deg,rgba(16,185,129,0.38),rgba(5,150,105,0.32))';
+    btnComp.style.borderColor = '#34d399';
+    btnComp.style.color = '#ffffff';
+  }
+}
+
+function abrirComparativoParaItem(itemId) {
+  const tr = document.getElementById('item-' + itemId);
+  const inDesc = tr ? tr.querySelector('.inp-item-desc') : null;
+  const descVal = inDesc ? inDesc.value.trim() : '';
+
+  const comparisons = obterComparacoesArmazenadas();
+  let match = null;
+
+  if (descVal) {
+    const descLower = descVal.toLowerCase();
+    const descWords = descLower.split(/\s+/).filter(w => w.length > 2);
+    let bestScore = 0;
+
+    for (const comp of comparisons) {
+      if (!comp.productName || !comp.quotes || !comp.quotes.length) continue;
+      const nameLower = comp.productName.toLowerCase();
+      if (nameLower === descLower || nameLower.includes(descLower) || descLower.includes(nameLower)) {
+        match = comp;
+        break;
+      }
+      let score = 0;
+      for (const w of descWords) {
+        if (nameLower.includes(w)) score++;
+      }
+      if (score > bestScore && score >= 2) {
+        bestScore = score;
+        match = comp;
+      }
+    }
+  }
+
+  if (match && match.quotes && match.quotes.length >= 1) {
+    mostrarModalComparativoItem(itemId, match, descVal);
+  } else {
+    // Se não encontrou cotação específica, abre o comparativo completo ou pergunta
+    abrirModalComparativoGeral(descVal, itemId);
+  }
+}
+
+function mostrarModalComparativoItem(itemId, match, descVal) {
+  const existente = document.getElementById('modal-comparativo-item-view');
+  if (existente) existente.remove();
+
+  const cotacoes = (match.quotes || [])
+    .filter(q => (q.unitPrice || q.price || 0) > 0)
+    .sort((a, b) => (a.unitPrice || a.price || 0) - (b.unitPrice || b.price || 0));
+
+  const menorPreco = cotacoes.length ? (cotacoes[0].unitPrice || cotacoes[0].price || 0) : 0;
+
+  const cardsHtml = cotacoes.map((q, idx) => {
+    const preco = q.unitPrice || q.price || 0;
+    const diff = preco - menorPreco;
+    const isMenor = idx === 0;
+    const diffStr = diff > 0 ? '+R$ ' + diff.toFixed(2).replace('.', ',') : '🏆 MENOR PREÇO';
+    const fornNome = (q.supplierName || q.brand || 'Fornecedor').replace(/'/g, "\\'");
+    const marcaStr = q.brand ? (' · Marca: ' + q.brand) : '';
+
+    return `
+      <div style="background:${isMenor ? 'rgba(16,185,129,0.14)' : 'rgba(255,255,255,0.03)'};border:1.5px solid ${isMenor ? '#10b981' : 'rgba(255,255,255,0.1)'};border-radius:12px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;transition:all 0.15s;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="font-size:22px;">${isMenor ? '🏆' : '🏭'}</div>
+          <div>
+            <div style="font-size:14px;font-weight:900;color:${isMenor ? '#34d399' : '#f1f5f9'};">${q.supplierName || q.brand || 'Fornecedor'}</div>
+            <div style="font-size:11px;color:${isMenor ? '#10b981' : '#94a3b8'};margin-top:2px;">${diffStr}${marcaStr}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="text-align:right;">
+            <div style="font-size:18px;font-weight:900;color:${isMenor ? '#4ade80' : '#fbbf24'};">R$ ${preco.toFixed(2).replace('.', ',')}</div>
+            ${q.pricePerM2 ? '<div style="font-size:10px;color:#94a3b8;">m²: R$ ' + q.pricePerM2.toFixed(2).replace('.', ',') + '</div>' : ''}
+          </div>
+          <button type="button" onclick="aplicarFornecedorCotado(${itemId}, '${fornNome}', ${preco})" style="background:${isMenor ? 'linear-gradient(135deg,#10b981,#059669)' : 'rgba(245,158,11,0.2)'};border:1px solid ${isMenor ? '#10b981' : '#f59e0b'};color:${isMenor ? '#042f1a' : '#fbbf24'};font-size:11px;font-weight:900;padding:6px 12px;border-radius:7px;cursor:pointer;white-space:nowrap;">
+            ${isMenor ? '✓ Escolher Menor' : 'Escolher'}
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  const modal = document.createElement('div');
+  modal.id = 'modal-comparativo-item-view';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:1000300;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:16px;';
+  modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+
+  modal.innerHTML = `
+    <div style="background:linear-gradient(160deg,#0a0f1e,#0d1527);border:1.5px solid #10b981;border-radius:20px;width:100%;max-width:520px;max-height:90vh;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,0.9),0 0 40px rgba(16,185,129,0.15);display:flex;flex-direction:column;">
+      <div style="padding:16px 20px;border-bottom:1px solid rgba(16,185,129,0.2);background:rgba(16,185,129,0.08);display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:15px;font-weight:900;color:#34d399;display:flex;align-items:center;gap:7px;">
+            <span>📊</span> <span>Comparativo de Fornecedores</span>
+          </div>
+          <div style="font-size:12.5px;color:#f1f5f9;font-weight:700;margin-top:3px;">${match.productName || descVal}</div>
+          <div style="font-size:11px;color:#10b981;margin-top:2px;">${cotacoes.length} fornecedores cotados · Menor preço: R$ ${menorPreco.toFixed(2).replace('.', ',')}</div>
+        </div>
+        <button onclick="document.getElementById('modal-comparativo-item-view').remove()" style="background:rgba(255,255,255,0.08);border:none;color:#94a3b8;font-size:18px;width:34px;height:34px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+      </div>
+
+      <div style="padding:16px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:10px;">
+        ${cardsHtml}
+      </div>
+
+      <div style="padding:14px 18px;border-top:1px solid rgba(16,185,129,0.15);display:flex;gap:10px;background:rgba(0,0,0,0.3);">
+        <button type="button" onclick="window.open('${COMPARATIVO_APP_URL}?busca=' + encodeURIComponent('${descVal || match.productName}'), '_blank')" style="flex:1;background:rgba(16,185,129,0.15);border:1.5px solid #10b981;color:#34d399;font-size:12px;font-weight:800;border-radius:10px;padding:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+          <span>🌐</span> <span>Abrir no comparativos.vercel.app</span>
+        </button>
+        <button type="button" onclick="document.getElementById('modal-comparativo-item-view').remove()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#cbd5e1;font-size:12px;font-weight:700;border-radius:10px;padding:10px 18px;cursor:pointer;">
+          Fechar
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+}
+
+function aplicarFornecedorCotado(itemId, nomeForn, preco) {
+  const tr = document.getElementById('item-' + itemId);
+  if (!tr) return;
+  const inForn = tr.querySelector('.item-fornecedor-input');
+  const inVunit = tr.querySelector('.inp-item-vunit');
+  const badge = document.getElementById('badge-menor-preco-' + itemId);
+  const btnComp = document.getElementById('btn-comp-item-' + itemId);
+
+  const precoStr = 'R$ ' + preco.toFixed(2).replace('.', ',');
+
+  if (inForn) {
+    inForn.value = nomeForn + ' · ' + precoStr + ' (Menor Preço)';
+    inForn.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  if (inVunit && (!inVunit.value || inVunit.value === '0,00')) {
+    inVunit.value = formatarValorPtBr(preco);
+    inVunit.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  if (badge) {
+    badge.innerHTML = '🏆 ' + precoStr;
+    badge.style.display = 'inline-block';
+  }
+  if (btnComp) {
+    btnComp.innerHTML = '📊 ' + precoStr;
+    btnComp.style.background = 'linear-gradient(135deg,rgba(16,185,129,0.38),rgba(5,150,105,0.32))';
+  }
+
+  calcItem(itemId);
+  if (typeof agendarSalvarRascunhoOrcamento === 'function') agendarSalvarRascunhoOrcamento();
+
+  const modal = document.getElementById('modal-comparativo-item-view');
+  if (modal) modal.remove();
+
+  if (typeof mostrarToastAprovacao === 'function') {
+    mostrarToastAprovacao('✅ Fornecedor ' + nomeForn + ' (' + precoStr + ') selecionado!');
+  }
+}
+
+function abrirComparativoPrincipal() {
+  abrirModalComparativoGeral();
+}
+
+function abrirModalComparativoGeral(termoBusca='', itemIdParaVincular=null) {
+  const existente = document.getElementById('modal-comparativo-geral');
+  if (existente) existente.remove();
+
+  const comparisons = obterComparacoesArmazenadas();
+
+  const listaHtml = comparisons.map(c => {
+    const cotacoes = (c.quotes || []).filter(q => (q.unitPrice || q.price || 0) > 0)
+      .sort((a, b) => (a.unitPrice || a.price || 0) - (b.unitPrice || b.price || 0));
+    const menor = cotacoes[0];
+    const menorPreco = menor ? (menor.unitPrice || menor.price || 0) : 0;
+    const menorForn = menor ? (menor.supplierName || menor.brand || 'Fornecedor') : '';
+
+    return `
+      <div class="card-comp-geral" data-name="${(c.productName || '').toLowerCase()}" style="background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+        <div style="flex:1;">
+          <div style="font-size:13.5px;font-weight:900;color:#f8fafc;">${c.productName}</div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:2px;">${cotacoes.length} fornecedores cotados · Categoria: ${c.category || 'Geral'}</div>
+          ${menor ? '<div style="font-size:11.5px;color:#10b981;font-weight:700;margin-top:3px;">🏆 Menor: ' + menorForn + ' · R$ ' + menorPreco.toFixed(2).replace('.', ',') + '</div>' : ''}
+        </div>
+        <div style="display:flex;gap:6px;">
+          ${itemIdParaVincular && menor ? '<button type="button" onclick="aplicarFornecedorCotado(' + itemIdParaVincular + ', \'' + menorForn.replace(/'/g, "\\'") + '\', ' + menorPreco + '); document.getElementById(\'modal-comparativo-geral\').remove();" style="background:linear-gradient(135deg,#10b981,#059669);border:none;color:#042f1a;font-weight:900;font-size:11px;padding:7px 12px;border-radius:8px;cursor:pointer;">Usar Menor</button>' : ''}
+          <button type="button" onclick="window.open('${COMPARATIVO_APP_URL}?busca=' + encodeURIComponent('${c.productName}'), '_blank')" style="background:rgba(16,185,129,0.18);border:1px solid #10b981;color:#34d399;font-weight:800;font-size:11px;padding:7px 12px;border-radius:8px;cursor:pointer;">Ver Cotações ↗</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  const modal = document.createElement('div');
+  modal.id = 'modal-comparativo-geral';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:1000300;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:16px;';
+  modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+
+  modal.innerHTML = `
+    <div style="background:linear-gradient(160deg,#0a0f1e,#0d1527);border:1.5px solid #10b981;border-radius:20px;width:100%;max-width:640px;max-height:90vh;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,0.9),0 0 40px rgba(16,185,129,0.15);display:flex;flex-direction:column;">
+      <div style="padding:18px 22px;border-bottom:1px solid rgba(16,185,129,0.2);background:rgba(16,185,129,0.08);display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:16px;font-weight:900;color:#34d399;display:flex;align-items:center;gap:8px;">
+            <span>📊</span> <span>Comparativo de Preços dos Fornecedores</span>
+          </div>
+          <div style="font-size:12px;color:#94a3b8;margin-top:2px;">Segunda Ferramenta Integrada (comparativos.vercel.app)</div>
+        </div>
+        <button onclick="document.getElementById('modal-comparativo-geral').remove()" style="background:rgba(255,255,255,0.08);border:none;color:#94a3b8;font-size:18px;width:34px;height:34px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+      </div>
+
+      <div style="padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;gap:10px;">
+        <input type="text" id="filtro-comp-geral" placeholder="🔍 Buscar material ou MDF no comparativo..." value="${termoBusca}" oninput="filtrarComparativosLista(this.value)" style="flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:9px 14px;color:#fff;font-size:13px;outline:none;">
+        <button type="button" onclick="window.open('${COMPARATIVO_APP_URL}' + (document.getElementById('filtro-comp-geral').value ? '?busca=' + encodeURIComponent(document.getElementById('filtro-comp-geral').value) : ''), '_blank')" style="background:linear-gradient(135deg,#10b981,#059669);border:none;color:#042f1a;font-weight:900;font-size:12px;padding:9px 16px;border-radius:10px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:6px;">
+          <span>🌐</span> <span>Acessar App Completo</span>
+        </button>
+      </div>
+
+      <div id="lista-comp-geral-container" style="padding:16px 20px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:10px;">
+        ${listaHtml}
+      </div>
+
+      <div style="padding:12px 20px;border-top:1px solid rgba(16,185,129,0.15);display:flex;justify-content:space-between;align-items:center;background:rgba(0,0,0,0.3);">
+        <div style="font-size:11.5px;color:#94a3b8;">
+          💡 Digite o produto no orçamento para que o <b>menor preço</b> seja inserido automaticamente no campo <b>Fornecedor</b>.
+        </div>
+        <button type="button" onclick="document.getElementById('modal-comparativo-geral').remove()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#cbd5e1;font-size:12px;font-weight:700;border-radius:8px;padding:8px 16px;cursor:pointer;">
+          Fechar
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  if (termoBusca) {
+    filtrarComparativosLista(termoBusca);
+  }
+}
+
+function filtrarComparativosLista(termo) {
+  const container = document.getElementById('lista-comp-geral-container');
+  if (!container) return;
+  const cards = container.querySelectorAll('.card-comp-geral');
+  const t = termo.toLowerCase().trim();
+  cards.forEach(c => {
+    const nome = c.getAttribute('data-name') || '';
+    if (!t || nome.includes(t)) {
+      c.style.display = 'flex';
+    } else {
+      c.style.display = 'none';
+    }
+  });
+}
+
+
 
 function salvarItemNoCatalogo(id) {
   const tr = document.getElementById('item-' + id);
@@ -9131,14 +9596,20 @@ function addItem(desc='', qtd='1', cor='', alt='', larg='', v_m2='', v_unit='', 
         style="text-align:center" title="Clique para limpar e digitar a quantidade">
     </td>
     <td style="min-width:240px">
-      <div style="display:flex;gap:5px;align-items:center;">
-        <input list="lista-produtos-sugeridos" class="inp-item-desc" placeholder="Digite ou selecione..." value="${esc(desc)}" oninput="aoMudarDescricaoItem(${id})" change="aoMudarDescricaoItem(${id})" style="flex:1;min-width:130px;">
+      <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap;">
+        <input list="lista-produtos-sugeridos" class="inp-item-desc" placeholder="Digite ou selecione..." value="${esc(desc)}" oninput="aoMudarDescricaoItem(${id})" change="aoMudarDescricaoItem(${id})" style="flex:1;min-width:120px;">
         <button type="button" class="btn btn-gold btn-xs" onclick="irParaAbaProdutosParaItem(${id})" title="Ir para a aba Produtos & Serviços e escolher o produto cadastrado" style="padding:5px 8px;font-size:11px;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;flex-shrink:0;">
           📦 Catálogo
         </button>
+        <button type="button" class="btn btn-xs btn-comparativo-item" id="btn-comp-item-${id}" onclick="abrirComparativoParaItem(${id})" title="Ver comparativo de fornecedores para este produto" style="padding:5px 8px;font-size:10.5px;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;flex-shrink:0;background:linear-gradient(135deg,rgba(16,185,129,0.22),rgba(5,150,105,0.18));border:1.5px solid #10b981;color:#34d399;border-radius:6px;cursor:pointer;font-weight:800;transition:all 0.2s;">
+          📊 Comparativo
+        </button>
       </div>
       <div style="margin-top:4px;display:flex;gap:4px;align-items:center;">
-        <input list="lista-fornecedores-sugeridos" class="item-fornecedor-input inp-item-fornecedor" placeholder="🏭 Fornecedor (uso interno)" value="${esc(fornecedor)}" oninput="atualizarDatalistFornecedores(); if (typeof agendarSalvarRascunhoOrcamento==='function') agendarSalvarRascunhoOrcamento();" style="flex:1;font-size:10.5px;padding:3.5px 8px;background:rgba(245,158,11,0.08);border:1px dashed rgba(245,158,11,0.45);border-radius:6px;color:#fbbf24;outline:none;box-sizing:border-box;font-weight:600;" title="Informe o fornecedor deste item (uso interno — preenche automaticamente no direcionamento e NÃO aparece para o cliente)">
+        <div style="flex:1;position:relative;display:flex;align-items:center;">
+          <input list="lista-fornecedores-sugeridos" class="item-fornecedor-input inp-item-fornecedor" id="inp-forn-${id}" placeholder="🏭 Fornecedor (uso interno)" value="${esc(fornecedor)}" oninput="atualizarDatalistFornecedores(); if (typeof agendarSalvarRascunhoOrcamento==='function') agendarSalvarRascunhoOrcamento();" style="flex:1;width:100%;font-size:10.5px;padding:3.5px 8px;padding-right:95px;background:rgba(245,158,11,0.08);border:1px dashed rgba(245,158,11,0.45);border-radius:6px;color:#fbbf24;outline:none;box-sizing:border-box;font-weight:600;" title="Informe o fornecedor deste item (uso interno — preenche automaticamente no direcionamento e NÃO aparece para o cliente)">
+          <span id="badge-menor-preco-${id}" onclick="abrirComparativoParaItem(${id})" style="display:none;position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:9px;font-weight:900;color:#042f1a;background:linear-gradient(135deg,#34d399,#10b981);padding:2.5px 6px;border-radius:4px;white-space:nowrap;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,0.3);letter-spacing:0.2px;" title="Clique para ver todas as cotações deste produto"></span>
+        </div>
         <button type="button" onclick="abrirModalFornecedorItem(this)" title="Cadastrar ou escolher fornecedor" style="flex-shrink:0;background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.5);border-radius:6px;padding:3px 7px;cursor:pointer;font-size:11px;color:#fbbf24;font-weight:800;white-space:nowrap;">🏭+</button>
       </div>
     </td>
