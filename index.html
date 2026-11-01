@@ -18,7 +18,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js?v=8.9.1').then(r => { r.update(); })
+        navigator.serviceWorker.register('/sw.js?v=8.9.2').then(r => { r.update(); })
           .then(function(reg){ console.log('SW registrado com sucesso:', reg.scope); })
           .catch(function(err){ console.warn('Erro ao registrar SW:', err); });
       });
@@ -9348,13 +9348,45 @@ function abrirComparativoPrincipal(event) {
     params.set('pasta', nomeCliente);
   }
 
+  // Coleta todos os itens da tabela do orçamento para irem direto para a pasta do cliente no comparativo
+  const itensTabela = [];
+  document.querySelectorAll('#itens-lista tr').forEach(tr => {
+    const inDesc  = tr.querySelector('.inp-item-desc');
+    const inQtd   = tr.querySelector('.inp-item-qtd');
+    const inVm2   = tr.querySelector('.inp-item-vm2');
+    const inVunit = tr.querySelector('.inp-item-vunit');
+    const inForn  = tr.querySelector('.item-fornecedor-input');
+    const desc = inDesc ? inDesc.value.trim() : '';
+    const rawQtd = inQtd ? inQtd.value.trim() : '1';
+    const qtd = rawQtd === '' ? 1 : (parseNum(rawQtd) || 1);
+    const vm2 = inVm2 ? parseNum(inVm2.value) : 0;
+    const vunit = inVunit ? parseNum(inVunit.value) : 0;
+    const preco = vunit > 0 ? vunit : vm2;
+    if (desc || preco > 0) {
+      itensTabela.push({
+        nome: desc || 'Item do Orçamento',
+        qtd: qtd,
+        vunit: preco,
+        vm2: vm2,
+        fornecedor: inForn ? inForn.value.trim() : ''
+      });
+    }
+  });
+
+  if (itensTabela.length > 0) {
+    params.set('itens', JSON.stringify(itensTabela));
+    if (itensTabela[0].nome && !params.has('produto')) {
+      params.set('produto', itensTabela[0].nome);
+    }
+  }
+
   // Primeiro produto digitado para pré-filtro se houver
   const primeiroItem = document.querySelector('.inp-item-desc');
-  if (primeiroItem && primeiroItem.value.trim()) {
+  if (primeiroItem && primeiroItem.value.trim() && !params.has('produto')) {
     params.set('produto', primeiroItem.value.trim());
   }
 
-  params.set('retorno', window.location.href);
+  params.set('retorno', window.location.origin + window.location.pathname);
 
   const finalUrl = 'https://sdcomparativos.vercel.app/' + (params.toString() ? '?' + params.toString() : '');
 
@@ -9362,7 +9394,7 @@ function abrirComparativoPrincipal(event) {
   const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.innerWidth <= 768);
 
   if (isMobile) {
-    // No mobile/webview (Chrome Custom Tab), navegar no mesmo contexto garante que o botão X ou Voltar no canto superior retorne imediatamente ao Orçamento!
+    // No mobile/webview (Chrome Custom Tab), navegar no mesmo contexto garante que o botão X ou Voltar retorne imediatamente ao Orçamento!
     window.location.href = finalUrl;
   } else {
     // No computador, abre em nova aba
@@ -14730,23 +14762,24 @@ function renderProdutos(filtro = '') {
   const btnLabel = itemEmEdicaoId ? '✅ Usar este' : '📋 Usar';
   const btnClass = itemEmEdicaoId ? 'btn btn-primary btn-sm' : 'btn btn-gold btn-sm';
 
-  el.innerHTML = lista.map(p => `
-    <div class="prod-card" style="${itemEmEdicaoId ? 'border-color:rgba(201,168,76,0.35);' : ''}">
+  el.innerHTML = lista.map(p => {
+    const safeId = (p.id != null && p.id !== '') ? String(p.id) : (p.nome || '');
+    const safeNome = (p.nome || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    return `
+    <div class="prod-card" style="${itemEmEdicaoId ? 'border-color:rgba(201,168,76,0.55);box-shadow:0 0 12px rgba(201,168,76,0.15);' : ''}">
       <div>
         <div class="prod-name">${esc(p.nome)}</div>
-        <div class="prod-det">Categoria: <strong>${esc(p.cat||'Geral')}</strong> · ${p.vm2 ? 'R$ '+p.vm2+' /m²' : ''} ${p.vunit ? 'R$ '+p.vunit+' unit' : ''}</div>
+        <div class="prod-det">Categoria: <strong>${esc(p.cat||'Geral')}</strong> · ${p.vm2 ? 'R$ '+formatarValorPtBr(p.vm2)+' /m²' : ''} ${p.vunit ? 'R$ '+formatarValorPtBr(p.vunit)+' unit' : ''}</div>
       </div>
-      <div class="prod-btns">
-        <button class="${btnClass}" onclick="usarProdutoDoCatalogo(${p.id})" title="Usar este produto no orçamento">${btnLabel}</button>
-        <button class="btn btn-sec btn-sm" onclick="editarProd(${p.id})" title="Editar cadastro">✏️</button>
-        <button class="btn btn-danger btn-sm" onclick="deletarProd(${p.id})" title="Excluir">✕</button>
+      <div class="prod-btns" style="position:relative;z-index:2;display:flex;gap:6px;flex-shrink:0;">
+        <button type="button" class="${btnClass}" onclick="usarProdutoDoCatalogo('${esc(safeId)}', '${safeNome}')" title="Usar este produto no orçamento" style="cursor:pointer;pointer-events:auto;min-height:36px;font-weight:800;">${btnLabel}</button>
+        <button type="button" class="btn btn-sec btn-sm" onclick="editarProd('${esc(safeId)}', '${safeNome}')" title="Editar cadastro" style="cursor:pointer;pointer-events:auto;min-height:36px;">✏️</button>
+        <button type="button" class="btn btn-danger btn-sm" onclick="deletarProd('${esc(safeId)}', '${safeNome}')" title="Excluir" style="cursor:pointer;pointer-events:auto;min-height:36px;">✕</button>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
-// ══════════════════════════════════════════════
-//  CLIENTS
-// ══════════════════════════════════════════════
 function salvarCliente() {
   const nome = document.getElementById('c-nome').value.trim();
   if (!nome) { showMsg('cli-msg','Informe o nome do cliente.',false); return; }
