@@ -2127,7 +2127,7 @@
         </button>
         <!-- BOTÃO FORNECEDORES com menu dropdown (Primeira Aba - Orçamento) -->
         <!-- BOTÃO COMPARATIVO (SEGUNDA IMAGEM / COMPARATIVOS.VERCEL.APP) -->
-        <button type="button" class="btn btn-sm btn-comparativo-principal" id="btn-comparativo-principal" onclick="abrirComparativoPrincipal()" style="background:linear-gradient(135deg, rgba(16,185,129,0.25), rgba(5,150,105,0.22));border:1.5px solid #10b981;color:#34d399;font-weight:800;border-radius:8px;padding:6px 13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;box-shadow:0 2px 8px rgba(16,185,129,0.25);" title="Acessar o Comparativo de Preços dos Fornecedores (comparativos.vercel.app)">
+        <button type="button" class="btn btn-sm btn-comparativo-principal" id="btn-comparativo-principal" onclick="abrirComparativoPrincipal()" style="background:linear-gradient(135deg, rgba(16,185,129,0.25), rgba(5,150,105,0.22));border:1.5px solid #10b981;color:#34d399;font-weight:800;border-radius:8px;padding:6px 13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;box-shadow:0 2px 8px rgba(16,185,129,0.25);" title="Acessar o Comparativo de Preços dos Fornecedores (sdcomparativos.vercel.app)">
           <span style="font-size:14px;">📊</span> <span id="label-comparativo-orc-linha">Comparativo de Preços</span>
         </button>
         <div id="fornecedores-orc-menu-container" style="position:relative;display:inline-block;">
@@ -9092,9 +9092,9 @@ function aoMudarDescricaoItem(id) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-//  INTEGRAÇÃO COM COMPARATIVO DE PREÇOS (comparativos.vercel.app)
+//  INTEGRAÇÃO COM COMPARATIVO DE PREÇOS (sdcomparativos.vercel.app)
 // ══════════════════════════════════════════════════════════════════════════════
-const COMPARATIVO_APP_URL = 'https://comparativos.vercel.app';
+const COMPARATIVO_APP_URL = 'https://sdcomparativos.vercel.app';
 
 // Cotações padrão pré-carregadas para funcionar de imediato com principais MDFs e materiais
 const DADOS_INICIAIS_COMPARATIVO = [
@@ -9400,7 +9400,7 @@ function mostrarModalComparativoItem(itemId, match, descVal) {
 
       <div style="padding:14px 18px;border-top:1px solid rgba(16,185,129,0.15);display:flex;gap:10px;background:rgba(0,0,0,0.3);">
         <button type="button" onclick="window.open('${COMPARATIVO_APP_URL}?busca=' + encodeURIComponent('${descVal || match.productName}'), '_blank')" style="flex:1;background:rgba(16,185,129,0.15);border:1.5px solid #10b981;color:#34d399;font-size:12px;font-weight:800;border-radius:10px;padding:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
-          <span>🌐</span> <span>Abrir no comparativos.vercel.app</span>
+          <span>🌐</span> <span>Abrir no sdcomparativos.vercel.app</span>
         </button>
         <button type="button" onclick="document.getElementById('modal-comparativo-item-view').remove()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#cbd5e1;font-size:12px;font-weight:700;border-radius:10px;padding:10px 18px;cursor:pointer;">
           Fechar
@@ -9494,7 +9494,7 @@ function abrirModalComparativoGeral(termoBusca='', itemIdParaVincular=null) {
           <div style="font-size:16px;font-weight:900;color:#34d399;display:flex;align-items:center;gap:8px;">
             <span>📊</span> <span>Comparativo de Preços dos Fornecedores</span>
           </div>
-          <div style="font-size:12px;color:#94a3b8;margin-top:2px;">Segunda Ferramenta Integrada (comparativos.vercel.app)</div>
+          <div style="font-size:12px;color:#94a3b8;margin-top:2px;">Segunda Ferramenta Integrada (sdcomparativos.vercel.app)</div>
         </div>
         <button onclick="document.getElementById('modal-comparativo-geral').remove()" style="background:rgba(255,255,255,0.08);border:none;color:#94a3b8;font-size:18px;width:34px;height:34px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
       </div>
