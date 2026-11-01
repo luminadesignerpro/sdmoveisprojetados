@@ -18,7 +18,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js?v=8.7')
+        navigator.serviceWorker.register('/sw.js?v=8.8')
           .then(function(reg){ console.log('SW registrado com sucesso:', reg.scope); })
           .catch(function(err){ console.warn('Erro ao registrar SW:', err); });
       });
@@ -2127,7 +2127,7 @@
         </button>
         <!-- BOTÃO FORNECEDORES com menu dropdown (Primeira Aba - Orçamento) -->
         <!-- BOTÃO COMPARATIVO (SEGUNDA IMAGEM / COMPARATIVOS.VERCEL.APP) -->
-        <a href="https://sdcomparativos.vercel.app" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-comparativo-principal" id="btn-comparativo-principal" style="background:linear-gradient(135deg, rgba(16,185,129,0.25), rgba(5,150,105,0.22));border:1.5px solid #10b981;color:#34d399;font-weight:800;border-radius:8px;padding:6px 13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;box-shadow:0 2px 8px rgba(16,185,129,0.25);text-decoration:none;" title="Acessar o Comparativo de Preços (sdcomparativos.vercel.app)">
+        <a href="https://sdcomparativos.vercel.app" onclick="abrirComparativoPrincipal(event)" class="btn btn-sm btn-comparativo-principal" id="btn-comparativo-principal" style="background:linear-gradient(135deg, rgba(16,185,129,0.25), rgba(5,150,105,0.22));border:1.5px solid #10b981;color:#34d399;font-weight:800;border-radius:8px;padding:6px 13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;box-shadow:0 2px 8px rgba(16,185,129,0.25);text-decoration:none;" title="Acessar o Comparativo de Preços com o Cliente Selecionado">
           <span style="font-size:14px;">📊</span> <span id="label-comparativo-orc-linha">Comparativo de Preços</span>
         </a>
         
@@ -9313,8 +9313,44 @@ function abrirComparativoParaItem(itemId) {
   }
 }
 
-function abrirComparativoPrincipal() {
-  window.open('https://sdcomparativos.vercel.app', '_blank');
+function abrirComparativoPrincipal(event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  if (typeof salvarRascunhoOrcamento === 'function') {
+    salvarRascunhoOrcamento();
+  }
+
+  const inpNome = document.getElementById('o-nome');
+  const nomeCliente = (inpNome ? inpNome.value : '').trim();
+
+  const params = new URLSearchParams();
+  if (nomeCliente) {
+    params.set('cliente', nomeCliente);
+    params.set('pasta', nomeCliente);
+  }
+
+  // Primeiro produto digitado para pré-filtro se houver
+  const primeiroItem = document.querySelector('.inp-item-desc');
+  if (primeiroItem && primeiroItem.value.trim()) {
+    params.set('produto', primeiroItem.value.trim());
+  }
+
+  params.set('retorno', window.location.href);
+
+  const finalUrl = 'https://sdcomparativos.vercel.app/' + (params.toString() ? '?' + params.toString() : '');
+
+  // Detecta se é mobile / touch / PWA
+  const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.innerWidth <= 768);
+
+  if (isMobile) {
+    // No mobile/webview (Chrome Custom Tab), navegar no mesmo contexto garante que o botão X ou Voltar no canto superior retorne imediatamente ao Orçamento!
+    window.location.href = finalUrl;
+  } else {
+    // No computador, abre em nova aba
+    window.open(finalUrl, '_blank');
+  }
 }
 
 function abrirModalComparativoGeral(termoBusca='', itemIdParaVincular=null) {
