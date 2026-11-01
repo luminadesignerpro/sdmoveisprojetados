@@ -2125,6 +2125,21 @@
         <button type="button" class="btn btn-sm btn-dir-os" id="btn-direcionamento-orc-linha" onclick="abrirModalDirecionamentoDoOrcamento()" style="background:linear-gradient(135deg, rgba(139,92,246,0.22), rgba(99,102,241,0.22));border:1.5px solid #8b5cf6;color:#c4b5fd;font-weight:800;border-radius:8px;padding:6px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;" title="Fazer distribuição / rateio do valor deste orçamento / O.S.">
           <span>🎯</span> <span id="label-direcionamento-orc-linha" class="btn-dir-label-dinamico">Direcionamento</span>
         </button>
+        <!-- BOTÃO FORNECEDORES com menu dropdown (Primeira Aba - Orçamento) -->
+        <div id="fornecedores-orc-menu-container" style="position:relative;display:inline-block;">
+          <button type="button" class="btn btn-sm btn-forn-os" id="btn-fornecedores-orc-linha" onclick="toggleMenuFornecedoresOrc(event)" style="background:linear-gradient(135deg, rgba(245,158,11,0.22), rgba(217,119,6,0.18));border:1.5px solid #f59e0b;color:#fbbf24;font-weight:800;border-radius:8px;padding:6px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;" title="Gerenciar e Adicionar Fornecedores">
+            <span>🏭</span> <span id="label-fornecedores-orc-linha">Fornecedores</span> <span style="font-size:10px;opacity:0.8;">▼</span>
+          </button>
+          <!-- DROPDOWN MENU -->
+          <div id="fornecedores-orc-submenu" style="display:none;position:absolute;bottom:calc(100% + 6px);left:0;background:#0e1020;border:1.5px solid #f59e0b;border-radius:10px;min-width:245px;overflow:hidden;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,0.85);">
+            <button type="button" onclick="toggleMenuFornecedoresOrc(event); abrirModalGerenciarFornecedores('adicionar');" style="width:100%;padding:11px 14px;background:none;border:none;border-bottom:1px solid rgba(245,158,11,0.18);color:#fbbf24;font-size:12.5px;font-weight:800;cursor:pointer;text-align:left;display:flex;align-items:center;gap:9px;transition:background 0.15s;" onmouseover="this.style.background='rgba(245,158,11,0.15)'" onmouseout="this.style.background='none'">
+              <span style="font-size:14px;">➕</span> <span>Adicionar Fornecedor</span>
+            </button>
+            <button type="button" onclick="toggleMenuFornecedoresOrc(event); abrirModalGerenciarFornecedores('listar');" style="width:100%;padding:11px 14px;background:none;border:none;color:#fde68a;font-size:12.5px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:9px;transition:background 0.15s;" onmouseover="this.style.background='rgba(245,158,11,0.12)'" onmouseout="this.style.background='none'">
+              <span style="font-size:14px;">📋</span> <span>Ver Cadastrados (<span id="menu-cont-fornecedores-cad">0</span>)</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- MINIATURAS VISUAIS DE FOTOS E ARQUIVOS ANEXADOS AO ORÇAMENTO -->
@@ -34326,6 +34341,106 @@ function calcularSegurancaFuro() {
 <!-- ═══════════════════════════════════════════════════════════
      MODAL: CADASTRAR / ESCOLHER FORNECEDOR DO ITEM
      ═══════════════════════════════════════════════════════════ -->
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     MODAL COMPLETO: GERENCIAR E ADICIONAR FORNECEDORES (PRIMEIRA ABA)
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div id="modal-gerenciar-fornecedores" style="display:none;position:fixed;inset:0;z-index:1100000;background:rgba(0,0,0,0.85);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)fecharModalGerenciarFornecedores()">
+  <div style="background:linear-gradient(160deg,#0d0d1a 0%,#10101e 100%);border:1.5px solid rgba(245,158,11,0.4);border-radius:18px;width:100%;max-width:480px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,0.85);">
+    
+    <!-- Header -->
+    <div style="padding:16px 20px;border-bottom:1px solid rgba(245,158,11,0.2);display:flex;justify-content:space-between;align-items:center;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:24px;">🏭</span>
+        <div>
+          <div style="font-size:16px;font-weight:900;color:#fbbf24;letter-spacing:0.02em;">Fornecedores & Parceiros</div>
+          <div style="font-size:11px;color:#a8a29e;margin-top:2px;">Cadastrar e gerenciar fornecedores para O.S. e Direcionamento</div>
+        </div>
+      </div>
+      <button type="button" onclick="fecharModalGerenciarFornecedores()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#94a3b8;font-size:16px;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;" onmouseover="this.style.background='rgba(239,68,68,0.2)';this.style.color='#fca5a5'" onmouseout="this.style.background='rgba(255,255,255,0.07)';this.style.color='#94a3b8'">✕</button>
+    </div>
+
+    <!-- Navegação de Abas do Modal -->
+    <div style="display:flex;padding:10px 16px 0;background:rgba(0,0,0,0.25);gap:8px;border-bottom:1px solid rgba(255,255,255,0.06);">
+      <button type="button" id="tab-btn-forn-add" onclick="alternarAbaModalFornecedor('adicionar')" style="flex:1;padding:9px 12px;background:rgba(245,158,11,0.18);border:none;border-bottom:2px solid #f59e0b;color:#fbbf24;font-size:12.5px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.2s;">
+        <span>➕</span> <span>Adicionar Fornecedor</span>
+      </button>
+      <button type="button" id="tab-btn-forn-list" onclick="alternarAbaModalFornecedor('listar')" style="flex:1;padding:9px 12px;background:none;border:none;border-bottom:2px solid transparent;color:#a8a29e;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.2s;">
+        <span>📋</span> <span>Cadastrados (<span id="cont-aba-fornecedores">0</span>)</span>
+      </button>
+    </div>
+
+    <!-- Conteúdo do Modal -->
+    <div style="padding:16px 20px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:14px;">
+      
+      <!-- ABA 1: ADICIONAR FORNECEDOR -->
+      <div id="aba-forn-adicionar" style="display:flex;flex-direction:column;gap:12px;">
+        <div id="msg-sucesso-fornecedor" style="display:none;background:rgba(16,185,129,0.15);border:1px solid #10b981;color:#34d399;padding:10px 14px;border-radius:10px;font-size:12px;font-weight:700;align-items:center;gap:8px;">
+          <span>✅</span> <span id="msg-sucesso-fornecedor-txt">Fornecedor cadastrado com sucesso!</span>
+        </div>
+
+        <div>
+          <label style="font-size:11px;font-weight:800;color:#fbbf24;display:block;margin-bottom:5px;">Nome do Fornecedor / Empresa *</label>
+          <input id="cad-forn-nome" type="text" placeholder="Ex: GMAD, Leo Madeiras, FLG, Vidraçaria..." style="width:100%;padding:10px 12px;background:#0d0d15;border:1.5px solid rgba(245,158,11,0.35);border-radius:10px;color:#fbbf24;font-size:13px;font-weight:600;box-sizing:border-box;outline:none;" oninput="this.style.borderColor='rgba(245,158,11,0.6)'">
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <label style="font-size:11px;font-weight:700;color:#a8a29e;display:block;margin-bottom:5px;">WhatsApp / Telefone</label>
+            <input id="cad-forn-tel" type="text" placeholder="(85) 99999-9999" style="width:100%;padding:10px 12px;background:#0d0d15;border:1.5px solid rgba(255,255,255,0.1);border-radius:10px;color:#e2e8f0;font-size:12.5px;font-weight:600;box-sizing:border-box;outline:none;">
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:700;color:#a8a29e;display:block;margin-bottom:5px;">Chave PIX / Pagamento</label>
+            <input id="cad-forn-pix" type="text" placeholder="CPF/CNPJ/Email/Telefone" style="width:100%;padding:10px 12px;background:#0d0d15;border:1.5px solid rgba(255,255,255,0.1);border-radius:10px;color:#e2e8f0;font-size:12.5px;font-weight:600;box-sizing:border-box;outline:none;">
+          </div>
+        </div>
+
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#a8a29e;display:block;margin-bottom:5px;">Categoria / Tipo de Produto</label>
+          <input id="cad-forn-tipo" type="text" placeholder="Ex: MDF, Vidros, Ferragens, Fita de Borda..." style="width:100%;padding:9px 12px;background:#0d0d15;border:1.5px solid rgba(255,255,255,0.1);border-radius:10px;color:#e2e8f0;font-size:12.5px;font-weight:600;box-sizing:border-box;outline:none;margin-bottom:6px;">
+          <!-- Chips Rápidos -->
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button type="button" onclick="setCategoriaFornRapido('MDF')" style="font-size:10.5px;padding:3px 8px;border-radius:6px;border:1px solid rgba(245,158,11,0.3);background:rgba(245,158,11,0.08);color:#fbbf24;cursor:pointer;">MDF</button>
+            <button type="button" onclick="setCategoriaFornRapido('Vidros & Espelhos')" style="font-size:10.5px;padding:3px 8px;border-radius:6px;border:1px solid rgba(6,182,212,0.3);background:rgba(6,182,212,0.08);color:#22d3ee;cursor:pointer;">Vidros</button>
+            <button type="button" onclick="setCategoriaFornRapido('Ferragens & Acessórios')" style="font-size:10.5px;padding:3px 8px;border-radius:6px;border:1px solid rgba(139,92,246,0.3);background:rgba(139,92,246,0.08);color:#c4b5fd;cursor:pointer;">Ferragens</button>
+            <button type="button" onclick="setCategoriaFornRapido('Fita de Borda & Colas')" style="font-size:10.5px;padding:3px 8px;border-radius:6px;border:1px solid rgba(34,197,94,0.3);background:rgba(34,197,94,0.08);color:#4ade80;cursor:pointer;">Fitas/Colas</button>
+            <button type="button" onclick="setCategoriaFornRapido('Puxadores & Perfis')" style="font-size:10.5px;padding:3px 8px;border-radius:6px;border:1px solid rgba(244,63,94,0.3);background:rgba(244,63,94,0.08);color:#fb7185;cursor:pointer;">Puxadores</button>
+          </div>
+        </div>
+
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#a8a29e;display:block;margin-bottom:5px;">Endereço / Observações (Opcional)</label>
+          <input id="cad-forn-obs" type="text" placeholder="Endereço, prazos de entrega, contato do vendedor..." style="width:100%;padding:9px 12px;background:#0d0d15;border:1.5px solid rgba(255,255,255,0.1);border-radius:10px;color:#e2e8f0;font-size:12.5px;font-weight:600;box-sizing:border-box;outline:none;">
+        </div>
+
+        <button type="button" onclick="salvarNovoFornecedorDireto()" style="margin-top:6px;width:100%;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;color:#18181b;font-size:13.5px;font-weight:900;border-radius:10px;padding:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 16px rgba(245,158,11,0.35);transition:all 0.2s;" onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter='none'">
+          <span>💾</span> <span>Salvar Fornecedor</span>
+        </button>
+      </div>
+
+      <!-- ABA 2: LISTA DE CADASTRADOS -->
+      <div id="aba-forn-listar" style="display:none;flex-direction:column;gap:10px;">
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input id="busca-forn-cadastrado" type="text" placeholder="🔍 Buscar por nome, categoria ou tel..." oninput="renderizarListaFornecedoresCadastrados()" style="flex:1;padding:9px 12px;background:#0d0d15;border:1.5px solid rgba(245,158,11,0.3);border-radius:10px;color:#fbbf24;font-size:12px;font-weight:600;box-sizing:border-box;outline:none;">
+          <button type="button" onclick="alternarAbaModalFornecedor('adicionar')" style="background:rgba(245,158,11,0.15);border:1px solid #f59e0b;color:#fbbf24;font-size:12px;font-weight:800;border-radius:10px;padding:9px 12px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:4px;">
+            <span>➕</span> <span>Novo</span>
+          </button>
+        </div>
+        <div id="lista-fornecedores-cadastrados-container" style="max-height:360px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding-right:2px;"></div>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div style="padding:12px 20px;border-top:1px solid rgba(245,158,11,0.15);display:flex;justify-content:space-between;align-items:center;background:rgba(0,0,0,0.2);">
+      <span style="font-size:11px;color:#78716c;">Os fornecedores cadastrados aparecem no Direcionamento e no autocompletar da O.S.</span>
+      <button type="button" onclick="fecharModalGerenciarFornecedores()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#94a3b8;font-size:12px;font-weight:700;border-radius:8px;padding:7px 14px;cursor:pointer;">Fechar</button>
+    </div>
+
+  </div>
+</div>
+
+
 <div id="modal-fornecedor-item" style="display:none;position:fixed;inset:0;z-index:1100000;background:rgba(0,0,0,0.82);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)fecharModalFornecedorItem()">
   <div style="background:linear-gradient(160deg,#0d0d1a 0%,#10101e 100%);border:1.5px solid rgba(245,158,11,0.4);border-radius:18px;width:100%;max-width:420px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,0.8);">
     <!-- Header -->
@@ -34489,6 +34604,304 @@ function cadastrarNovoFornecedorItem() {
 
   selecionarFornecedorItem(nome);
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// GESTÃO DE FORNECEDORES (PRIMEIRA ABA / BOTÃO FORNECEDORES)
+// ══════════════════════════════════════════════════════════════════════════════
+
+function toggleMenuFornecedoresOrc(e) {
+  if (e) e.stopPropagation();
+  const menu = document.getElementById('fornecedores-orc-submenu');
+  if (!menu) return;
+  const isVisible = menu.style.display !== 'none';
+  menu.style.display = isVisible ? 'none' : 'block';
+
+  // Fecha o menu de galeria se estiver aberto
+  const galeriaMenu = document.getElementById('galeria-orc-submenu');
+  if (galeriaMenu) galeriaMenu.style.display = 'none';
+
+  if (!isVisible) {
+    atualizarContadoresFornecedores();
+    setTimeout(() => {
+      const closeHandler = (ev) => {
+        const container = document.getElementById('fornecedores-orc-menu-container');
+        if (container && !container.contains(ev.target)) {
+          menu.style.display = 'none';
+          document.removeEventListener('click', closeHandler);
+        }
+      };
+      document.addEventListener('click', closeHandler);
+    }, 50);
+  }
+}
+
+function abrirModalGerenciarFornecedores(modo = 'adicionar') {
+  const modal = document.getElementById('modal-gerenciar-fornecedores');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  alternarAbaModalFornecedor(modo);
+  atualizarContadoresFornecedores();
+}
+
+function fecharModalGerenciarFornecedores() {
+  const modal = document.getElementById('modal-gerenciar-fornecedores');
+  if (modal) modal.style.display = 'none';
+  const msg = document.getElementById('msg-sucesso-fornecedor');
+  if (msg) msg.style.display = 'none';
+}
+
+function alternarAbaModalFornecedor(aba) {
+  const divAdd = document.getElementById('aba-forn-adicionar');
+  const divList = document.getElementById('aba-forn-listar');
+  const btnAdd = document.getElementById('tab-btn-forn-add');
+  const btnList = document.getElementById('tab-btn-forn-list');
+
+  if (aba === 'adicionar') {
+    if (divAdd) divAdd.style.display = 'flex';
+    if (divList) divList.style.display = 'none';
+    if (btnAdd) {
+      btnAdd.style.background = 'rgba(245,158,11,0.18)';
+      btnAdd.style.borderBottom = '2px solid #f59e0b';
+      btnAdd.style.color = '#fbbf24';
+    }
+    if (btnList) {
+      btnList.style.background = 'none';
+      btnList.style.borderBottom = '2px solid transparent';
+      btnList.style.color = '#a8a29e';
+    }
+    setTimeout(() => {
+      const inputNome = document.getElementById('cad-forn-nome');
+      if (inputNome) inputNome.focus();
+    }, 100);
+  } else {
+    if (divAdd) divAdd.style.display = 'none';
+    if (divList) divList.style.display = 'flex';
+    if (btnAdd) {
+      btnAdd.style.background = 'none';
+      btnAdd.style.borderBottom = '2px solid transparent';
+      btnAdd.style.color = '#a8a29e';
+    }
+    if (btnList) {
+      btnList.style.background = 'rgba(245,158,11,0.18)';
+      btnList.style.borderBottom = '2px solid #f59e0b';
+      btnList.style.color = '#fbbf24';
+    }
+    renderizarListaFornecedoresCadastrados();
+  }
+}
+
+function setCategoriaFornRapido(cat) {
+  const el = document.getElementById('cad-forn-tipo');
+  if (el) {
+    el.value = cat;
+    el.focus();
+  }
+}
+
+function salvarNovoFornecedorDireto() {
+  const nomeEl = document.getElementById('cad-forn-nome');
+  const telEl = document.getElementById('cad-forn-tel');
+  const tipoEl = document.getElementById('cad-forn-tipo');
+  const pixEl = document.getElementById('cad-forn-pix');
+  const obsEl = document.getElementById('cad-forn-obs');
+
+  const nome = (nomeEl ? nomeEl.value : '').trim();
+  if (!nome) {
+    alert('Por favor, informe o Nome do Fornecedor / Empresa.');
+    if (nomeEl) {
+      nomeEl.focus();
+      nomeEl.style.borderColor = '#ef4444';
+    }
+    return;
+  }
+
+  const tel = (telEl ? telEl.value : '').trim();
+  const tipo = (tipoEl ? tipoEl.value : '').trim();
+  const pix = (pixEl ? pixEl.value : '').trim();
+  const obs = (obsEl ? obsEl.value : '').trim();
+
+  const salvos = obterFornecedoresSalvos();
+  
+  // Verifica se já existe para atualizar ou adicionar
+  const idx = salvos.findIndex(f => (typeof f === 'object' ? f.nome : f).toLowerCase() === nome.toLowerCase());
+  const novoObj = {
+    id: idx >= 0 && salvos[idx].id ? salvos[idx].id : ('forn_' + Date.now()),
+    nome,
+    tel,
+    tipo,
+    pix,
+    obs,
+    dataCriacao: new Date().toISOString()
+  };
+
+  if (idx >= 0) {
+    salvos[idx] = Object.assign({}, salvos[idx], novoObj);
+  } else {
+    salvos.push(novoObj);
+  }
+
+  salvarFornecedoresCadastrados(salvos);
+
+  // Atualiza Datalist global
+  if (typeof atualizarDatalistFornecedores === 'function') {
+    atualizarDatalistFornecedores();
+  }
+
+  // Atualiza contadores
+  atualizarContadoresFornecedores();
+
+  // Exibe mensagem de sucesso
+  const msg = document.getElementById('msg-sucesso-fornecedor');
+  const msgTxt = document.getElementById('msg-sucesso-fornecedor-txt');
+  if (msg && msgTxt) {
+    msgTxt.textContent = `Fornecedor "${nome}" cadastrado com sucesso!`;
+    msg.style.display = 'flex';
+    setTimeout(() => { if (msg) msg.style.display = 'none'; }, 4000);
+  }
+
+  // Limpa campos
+  if (nomeEl) { nomeEl.value = ''; nomeEl.style.borderColor = 'rgba(245,158,11,0.35)'; }
+  if (telEl) telEl.value = '';
+  if (tipoEl) tipoEl.value = '';
+  if (pixEl) pixEl.value = '';
+  if (obsEl) obsEl.value = '';
+
+  // Atualiza a lista caso o usuario mude de aba
+  renderizarListaFornecedoresCadastrados();
+}
+
+function renderizarListaFornecedoresCadastrados() {
+  const container = document.getElementById('lista-fornecedores-cadastrados-container');
+  if (!container) return;
+
+  const busca = (document.getElementById('busca-forn-cadastrado')?.value || '').toLowerCase().trim();
+  const salvos = obterFornecedoresSalvos();
+
+  // Normaliza formato caso haja strings antigas
+  const normalizados = salvos.map(item => {
+    if (typeof item === 'string') {
+      return { id: 'forn_' + encodeURIComponent(item), nome: item, tel: '', tipo: '', pix: '', obs: '' };
+    }
+    return item;
+  });
+
+  const filtrados = normalizados.filter(f => {
+    if (!busca) return true;
+    return (f.nome && f.nome.toLowerCase().includes(busca)) ||
+           (f.tipo && f.tipo.toLowerCase().includes(busca)) ||
+           (f.tel && f.tel.includes(busca)) ||
+           (f.pix && f.pix.toLowerCase().includes(busca));
+  });
+
+  atualizarContadoresFornecedores(normalizados.length);
+
+  if (filtrados.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:32px 16px;background:rgba(255,255,255,0.02);border:1px dashed rgba(255,255,255,0.1);border-radius:12px;">
+        <span style="font-size:32px;display:block;margin-bottom:8px;">🏭</span>
+        <div style="font-size:13px;font-weight:700;color:#fbbf24;">${busca ? 'Nenhum fornecedor encontrado para esta busca' : 'Nenhum fornecedor cadastrado ainda'}</div>
+        <div style="font-size:11.5px;color:#a8a29e;margin-top:4px;margin-bottom:12px;">Cadastre seus fornecedores de MDF, Vidro, Ferragens e mais.</div>
+        <button type="button" onclick="alternarAbaModalFornecedor('adicionar')" style="background:linear-gradient(135deg,#f59e0b,#d97706);border:none;color:#18181b;font-size:12px;font-weight:900;border-radius:8px;padding:8px 16px;cursor:pointer;">
+          ➕ Cadastrar Primeiro Fornecedor
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = filtrados.map(f => {
+    const telDigits = (f.tel || '').replace(/\D/g, '');
+    const waLink = telDigits ? `https://wa.me/55${telDigits}` : '';
+    
+    return `
+      <div style="background:rgba(245,158,11,0.06);border:1.5px solid rgba(245,158,11,0.22);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;transition:all 0.15s;" onmouseover="this.style.borderColor='rgba(245,158,11,0.45)';this.style.background='rgba(245,158,11,0.09)'" onmouseout="this.style.borderColor='rgba(245,158,11,0.22)';this.style.background='rgba(245,158,11,0.06)'">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+          <div>
+            <div style="font-size:14px;font-weight:900;color:#fbbf24;display:flex;align-items:center;gap:6px;">
+              <span>🏭</span> ${f.nome}
+            </div>
+            ${f.tipo ? `<span style="font-size:10px;font-weight:700;color:#fbbf24;background:rgba(245,158,11,0.18);padding:2px 7px;border-radius:4px;display:inline-block;margin-top:3px;">${f.tipo}</span>` : ''}
+          </div>
+          <button type="button" onclick="excluirFornecedorCadastrado('${f.nome.replace(/'/g, "\\'")}', '${f.id || ''}')" title="Excluir fornecedor" style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.35);color:#f87171;font-size:11px;border-radius:6px;padding:4px 8px;cursor:pointer;display:flex;align-items:center;gap:3px;" onmouseover="this.style.background='rgba(239,68,68,0.25)'" onmouseout="this.style.background='rgba(239,68,68,0.12)'">
+            <span>🗑️</span>
+          </button>
+        </div>
+
+        ${(f.tel || f.pix || f.obs) ? `
+          <div style="font-size:11.5px;color:#d6d3d1;display:flex;flex-direction:column;gap:4px;background:rgba(0,0,0,0.25);padding:8px 10px;border-radius:8px;">
+            ${f.tel ? `
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span>📞 <strong>Tel:</strong> ${f.tel}</span>
+                ${waLink ? `<a href="${waLink}" target="_blank" style="background:rgba(37,211,102,0.18);border:1px solid #25D366;color:#4ade80;font-size:10px;font-weight:800;padding:2px 8px;border-radius:6px;text-decoration:none;display:inline-flex;align-items:center;gap:3px;">💬 WhatsApp</a>` : ''}
+              </div>
+            ` : ''}
+            ${f.pix ? `
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
+                <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🔑 <strong>PIX:</strong> ${f.pix}</span>
+                <button type="button" onclick="copiarTextoPix('${f.pix.replace(/'/g, "\\'")}', this)" style="background:rgba(245,158,11,0.18);border:1px solid #f59e0b;color:#fbbf24;font-size:10px;font-weight:800;padding:2px 8px;border-radius:6px;cursor:pointer;white-space:nowrap;">📋 Copiar</button>
+              </div>
+            ` : ''}
+            ${f.obs ? `<div>📝 <strong>Obs:</strong> ${f.obs}</div>` : ''}
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function excluirFornecedorCadastrado(nome, id) {
+  if (!confirm(`Deseja realmente remover o fornecedor "${nome}"?\nEle não aparecerá mais nas sugestões automáticas.`)) {
+    return;
+  }
+  const salvos = obterFornecedoresSalvos();
+  const filtrados = salvos.filter(f => {
+    if (id && f.id) return f.id !== id;
+    const itemNome = typeof f === 'object' ? f.nome : f;
+    return itemNome.toLowerCase() !== nome.toLowerCase();
+  });
+  salvarFornecedoresCadastrados(filtrados);
+  if (typeof atualizarDatalistFornecedores === 'function') atualizarDatalistFornecedores();
+  atualizarContadoresFornecedores();
+  renderizarListaFornecedoresCadastrados();
+}
+
+function copiarTextoPix(txt, btn) {
+  navigator.clipboard.writeText(txt).then(() => {
+    if (btn) {
+      const orig = btn.textContent;
+      btn.textContent = '✓ Copiado!';
+      btn.style.background = 'rgba(16,185,129,0.3)';
+      btn.style.color = '#34d399';
+      setTimeout(() => {
+        btn.textContent = orig;
+        btn.style.background = 'rgba(245,158,11,0.18)';
+        btn.style.color = '#fbbf24';
+      }, 2000);
+    }
+  }).catch(() => {
+    alert('PIX: ' + txt);
+  });
+}
+
+function atualizarContadoresFornecedores(qtd) {
+  let total = qtd;
+  if (typeof total !== 'number') {
+    const salvos = obterFornecedoresSalvos();
+    total = salvos.length;
+  }
+  const b1 = document.getElementById('menu-cont-fornecedores-cad');
+  const b2 = document.getElementById('cont-aba-fornecedores');
+  if (b1) b1.textContent = total;
+  if (b2) b2.textContent = total;
+}
+
+// Inicializa contadores ao carregar
+if (typeof window !== 'undefined') {
+  window.addEventListener('load', () => {
+    setTimeout(atualizarContadoresFornecedores, 300);
+  });
+}
+
 </script>
 </body>
 </html>
