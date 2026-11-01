@@ -2127,9 +2127,9 @@
         </button>
         <!-- BOTÃO FORNECEDORES com menu dropdown (Primeira Aba - Orçamento) -->
         <!-- BOTÃO COMPARATIVO (SEGUNDA IMAGEM / COMPARATIVOS.VERCEL.APP) -->
-        <button type="button" class="btn btn-sm btn-comparativo-principal" id="btn-comparativo-principal" onclick="abrirComparativoPrincipal()" style="background:linear-gradient(135deg, rgba(16,185,129,0.25), rgba(5,150,105,0.22));border:1.5px solid #10b981;color:#34d399;font-weight:800;border-radius:8px;padding:6px 13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;box-shadow:0 2px 8px rgba(16,185,129,0.25);" title="Acessar o Comparativo de Preços dos Fornecedores (sdcomparativos.vercel.app)">
+        <a href="https://sdcomparativos.vercel.app" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-comparativo-principal" id="btn-comparativo-principal" style="background:linear-gradient(135deg, rgba(16,185,129,0.25), rgba(5,150,105,0.22));border:1.5px solid #10b981;color:#34d399;font-weight:800;border-radius:8px;padding:6px 13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;box-shadow:0 2px 8px rgba(16,185,129,0.25);text-decoration:none;" title="Acessar o Comparativo de Preços (sdcomparativos.vercel.app)">
           <span style="font-size:14px;">📊</span> <span id="label-comparativo-orc-linha">Comparativo de Preços</span>
-        </button>
+        </a>
         
       </div>
 
@@ -9314,30 +9314,7 @@ function abrirComparativoParaItem(itemId) {
 }
 
 function abrirComparativoPrincipal() {
-  // Pega o produto preenchido no primeiro item que tiver descrição
-  let termoPreenchido = '';
-  let idItemAtivo = null;
-  const inputsDesc = document.querySelectorAll('#itens-lista .inp-item-desc');
-  for (const inp of inputsDesc) {
-    if (inp.value && inp.value.trim().length >= 2) {
-      termoPreenchido = inp.value.trim();
-      const tr = inp.closest('tr');
-      if (tr && tr.id) idItemAtivo = tr.id.replace('item-', '');
-      break;
-    }
-  }
-
-  if (termoPreenchido) {
-    const comparisons = obterComparacoesArmazenadas();
-    const match = encontrarCorrespondenciaComparativo(termoPreenchido, comparisons);
-    if (match) {
-      // Abre a terceira imagem mostrando SOMENTE o produto correspondente (ex: Mdf 15 branco tx)
-      abrirModalComparativoGeral(match.productName, idItemAtivo);
-      return;
-    }
-  }
-
-  abrirModalComparativoGeral(termoPreenchido, idItemAtivo);
+  window.open('https://sdcomparativos.vercel.app', '_blank');
 }
 
 function abrirModalComparativoGeral(termoBusca='', itemIdParaVincular=null) {
@@ -9623,18 +9600,13 @@ function addItem(desc='', qtd='1', cor='', alt='', larg='', v_m2='', v_unit='', 
         style="text-align:center" title="Clique para limpar e digitar a quantidade">
     </td>
     <td style="min-width:240px">
-      <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap;">
-        <input list="lista-produtos-sugeridos" class="inp-item-desc" placeholder="Digite ou selecione..." value="${esc(desc)}" oninput="aoMudarDescricaoItem(${id})" change="aoMudarDescricaoItem(${id})" style="flex:1;min-width:120px;">
+      <div style="display:flex;gap:5px;align-items:center;">
+        <input list="lista-produtos-sugeridos" class="inp-item-desc" placeholder="Digite ou selecione..." value="${esc(desc)}" oninput="aoMudarDescricaoItem(${id})" change="aoMudarDescricaoItem(${id})" style="flex:1;min-width:130px;">
         <button type="button" class="btn btn-gold btn-xs" onclick="irParaAbaProdutosParaItem(${id})" title="Ir para a aba Produtos & Serviços e escolher o produto cadastrado" style="padding:5px 8px;font-size:11px;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;flex-shrink:0;">
           📦 Catálogo
         </button>
       </div>
-      <div style="margin-top:4px;display:flex;gap:4px;align-items:center;">
-        <div style="flex:1;position:relative;display:flex;align-items:center;">
-          <input list="lista-fornecedores-sugeridos" class="item-fornecedor-input inp-item-fornecedor" id="inp-forn-${id}" placeholder="🏭 Fornecedor (uso interno)" onclick="abrirComparativoParaItem(${id})" value="${esc(fornecedor)}" oninput="atualizarDatalistFornecedores(); if (typeof agendarSalvarRascunhoOrcamento==='function') agendarSalvarRascunhoOrcamento();" style="flex:1;width:100%;font-size:10.5px;padding:3.5px 8px;padding-right:95px;background:rgba(245,158,11,0.08);border:1px dashed rgba(245,158,11,0.45);border-radius:6px;color:#fbbf24;outline:none;box-sizing:border-box;font-weight:600;" title="Informe o fornecedor deste item (uso interno — preenche automaticamente no direcionamento e NÃO aparece para o cliente)">
-          <span id="badge-menor-preco-${id}" onclick="abrirComparativoParaItem(${id})" style="display:none;position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:9px;font-weight:900;color:#042f1a;background:linear-gradient(135deg,#34d399,#10b981);padding:2.5px 6px;border-radius:4px;white-space:nowrap;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,0.3);letter-spacing:0.2px;" title="Clique para ver todas as cotações deste produto"></span>
-        </div>
-      </div>
+      <input type="hidden" class="item-fornecedor-input inp-item-fornecedor" id="inp-forn-${id}" value="${esc(fornecedor)}">
     </td>
     <td>
       <input class="inp-item-cor" placeholder="Ex: Incolor" value="${esc(cor)}" oninput="if(typeof agendarSalvarRascunhoOrcamento==='function') agendarSalvarRascunhoOrcamento()">
