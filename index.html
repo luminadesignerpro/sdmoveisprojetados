@@ -18,7 +18,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js?v=8.9.2').then(r => { r.update(); })
+        navigator.serviceWorker.register('/sw.js?v=8.9.3').then(r => { r.update(); })
           .then(function(reg){ console.log('SW registrado com sucesso:', reg.scope); })
           .catch(function(err){ console.warn('Erro ao registrar SW:', err); });
       });
@@ -2979,7 +2979,45 @@
   </div>
 
   <!-- ══════════════════════════════════════════ -->
-  <!-- PANEL: CLIENTES -->
+  
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!--  MODAL: EDITAR PRODUTO DO CATÁLOGO                            -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<div id="modal-editar-prod-catalogo" class="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(6px);z-index:9999999;align-items:center;justify-content:center;padding:16px;">
+  <div style="background:#0f111a;border:1.5px solid #d4af37;border-radius:16px;max-width:440px;width:100%;padding:22px;box-shadow:0 12px 40px rgba(0,0,0,0.85);color:#f1f5f9;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:12px;">
+      <div style="font-size:16px;font-weight:900;color:#fcd34d;display:flex;align-items:center;gap:8px;">
+        <span>✏️</span> <span>Editar Produto / Serviço</span>
+      </div>
+      <button type="button" onclick="fecharModalEditarProdCatalogo()" style="background:transparent;border:none;color:#94a3b8;font-size:24px;cursor:pointer;line-height:1;padding:4px;">✕</button>
+    </div>
+    <input type="hidden" id="modal-ep-id" value="">
+    <div style="margin-bottom:12px;">
+      <label style="font-size:12px;font-weight:800;color:#94a3b8;display:block;margin-bottom:5px;">Nome do Produto ou Serviço *</label>
+      <input id="modal-ep-nome" style="width:100%;padding:10px 12px;background:#05070e;border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:14px;font-weight:700;">
+    </div>
+    <div style="margin-bottom:12px;">
+      <label style="font-size:12px;font-weight:800;color:#94a3b8;display:block;margin-bottom:5px;">Categoria</label>
+      <input id="modal-ep-cat" placeholder="Ex: Geral, Ferragens, MDF, Vidros..." style="width:100%;padding:10px 12px;background:#05070e;border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:14px;">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;">
+      <div>
+        <label style="font-size:12px;font-weight:800;color:#94a3b8;display:block;margin-bottom:5px;">Valor m² (R$)</label>
+        <input id="modal-ep-vm2" inputmode="decimal" placeholder="0,00" style="width:100%;padding:10px 12px;background:#05070e;border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#38bdf8;font-size:14px;font-weight:700;text-align:right;">
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:800;color:#94a3b8;display:block;margin-bottom:5px;">Valor Unitário (R$)</label>
+        <input id="modal-ep-vunit" inputmode="decimal" placeholder="0,00" style="width:100%;padding:10px 12px;background:#05070e;border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#34d399;font-size:14px;font-weight:700;text-align:right;">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button type="button" onclick="fecharModalEditarProdCatalogo()" class="btn btn-sec" style="flex:1;padding:12px;border-radius:8px;cursor:pointer;">Cancelar</button>
+      <button type="button" onclick="salvarModalEditarProdCatalogo()" class="btn btn-primary" style="flex:2;padding:12px;border-radius:8px;cursor:pointer;font-weight:800;background:linear-gradient(135deg,#c9a84c,#e5c76a);color:#08080f;">💾 Salvar Alterações</button>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL: CLIENTES -->
   
   
   <!-- ══════════════════════════════════════════ -->
@@ -8983,9 +9021,27 @@ function atualizarBannerSelecaoProduto() {
   }
 }
 
-function usarProdutoDoCatalogo(pId) {
-  const p = produtos.find(x => x.id === pId);
-  if (!p) return;
+function usarProdutoDoCatalogo(pId, nome) {
+  let p = null;
+  if (pId != null && pId !== '' && pId !== 'undefined') {
+    p = produtos.find(x => String(x.id) === String(pId));
+  }
+  if (!p && nome) {
+    p = produtos.find(x => x.nome && x.nome.toLowerCase() === String(nome).toLowerCase());
+  }
+  if (!p && typeof pId === 'string' && isNaN(Number(pId))) {
+    p = produtos.find(x => x.nome && x.nome.toLowerCase() === pId.toLowerCase());
+  }
+  if (!p) {
+    p = produtos.find(x => x.nome && (x.nome.includes(String(pId)) || (nome && x.nome.includes(String(nome)))));
+  }
+  if (!p) {
+    alert('Produto não localizado no catálogo.');
+    return;
+  }
+
+  const vm2Val = (p.vm2 !== '' && p.vm2 != null && Number(p.vm2) > 0) ? formatarValorPtBr(p.vm2) : '';
+  const vunitVal = (p.vunit !== '' && p.vunit != null && Number(p.vunit) > 0) ? formatarValorPtBr(p.vunit) : '';
 
   if (itemEmEdicaoId && itemEmEdicaoId !== 'novo') {
     const targetId = itemEmEdicaoId;
@@ -8997,13 +9053,17 @@ function usarProdutoDoCatalogo(pId) {
       const inForn  = tr.querySelector('.item-fornecedor-input');
 
       if (inDesc) inDesc.value = p.nome || '';
-      if (p.vm2 && inVm2)     inVm2.value = formatarValorPtBr(p.vm2);
-      if (p.vunit && inVunit) inVunit.value = formatarValorPtBr(p.vunit);
+      if (inVm2)   inVm2.value   = vm2Val;
+      if (inVunit) inVunit.value = vunitVal;
       if (inForn && !inForn.value) {
-        const mat = (materiais || []).find(m => m.nome && m.nome.toLowerCase() === (p.nome || '').toLowerCase());
+        const mat = (typeof materiais !== 'undefined' && Array.isArray(materiais))
+          ? materiais.find(m => m.nome && m.nome.toLowerCase() === (p.nome || '').toLowerCase())
+          : null;
         if (mat && mat.fornecedor) inForn.value = mat.fornecedor;
       }
       calcItem(targetId);
+      calcTotal();
+      if (typeof salvarRascunhoOrcamento === 'function') salvarRascunhoOrcamento();
 
       // Feedback visual na linha
       tr.style.transition = 'all 0.4s ease';
@@ -9024,13 +9084,17 @@ function usarProdutoDoCatalogo(pId) {
     }
   }
 
-  // Novo item formatado com 2 decimais
+  // Novo item adicionado ao orçamento quando o usuário navega pelo catálogo
   let fornSugerido = '';
-  if (p && p.nome) {
-    const mat = (materiais || []).find(m => m.nome && m.nome.toLowerCase() === p.nome.toLowerCase());
+  if (p && p.nome && typeof materiais !== 'undefined' && Array.isArray(materiais)) {
+    const mat = materiais.find(m => m.nome && m.nome.toLowerCase() === p.nome.toLowerCase());
     if (mat && mat.fornecedor) fornSugerido = mat.fornecedor;
   }
-  addItem(p.nome, '1', '', '', '', p.vm2 ? formatarValorPtBr(p.vm2) : '', p.vunit ? formatarValorPtBr(p.vunit) : '', '', fornSugerido);
+  addItem(p.nome, '1', '', '', '', vm2Val, vunitVal, '', fornSugerido);
+  calcTotal();
+  if (typeof salvarRascunhoOrcamento === 'function') {
+    salvarRascunhoOrcamento();
+  }
   itemEmEdicaoId = null;
   atualizarBannerSelecaoProduto();
   goTab('orcamento');
@@ -14721,21 +14785,96 @@ function limparProd() {
   document.getElementById('btn-salvar-prod').innerHTML = '💾 Salvar no Catálogo';
 }
 
-function editarProd(id) {
-  const p = produtos.find(x => x.id === id);
+function abrirModalEditarProdCatalogo(p) {
   if (!p) return;
-  editandoProdId = id;
-  document.getElementById('p-nome').value  = p.nome || '';
-  document.getElementById('p-cat').value   = p.cat || '';
-  document.getElementById('p-vm2').value   = p.vm2 ? String(p.vm2) : '';
-  document.getElementById('p-vunit').value = p.vunit ? String(p.vunit) : '';
-  document.getElementById('btn-salvar-prod').innerHTML = '💾 Atualizar Produto';
-  window.scrollTo({top:0,behavior:'smooth'});
+  const mod = document.getElementById('modal-editar-prod-catalogo');
+  if (!mod) return;
+  document.getElementById('modal-ep-id').value = String(p.id != null ? p.id : '');
+  document.getElementById('modal-ep-nome').value = p.nome || '';
+  document.getElementById('modal-ep-cat').value = p.cat || '';
+  document.getElementById('modal-ep-vm2').value = (p.vm2 != null && p.vm2 !== '') ? formatarValorPtBr(p.vm2) : '';
+  document.getElementById('modal-ep-vunit').value = (p.vunit != null && p.vunit !== '') ? formatarValorPtBr(p.vunit) : '';
+  mod.style.display = 'flex';
+  setTimeout(() => {
+    const inNome = document.getElementById('modal-ep-nome');
+    if (inNome) inNome.focus();
+  }, 100);
 }
 
-function deletarProd(id) {
+function fecharModalEditarProdCatalogo() {
+  const mod = document.getElementById('modal-editar-prod-catalogo');
+  if (mod) mod.style.display = 'none';
+}
+
+function salvarModalEditarProdCatalogo() {
+  const idStr = document.getElementById('modal-ep-id').value;
+  const nome = document.getElementById('modal-ep-nome').value.trim();
+  if (!nome) {
+    alert('Informe o nome do produto ou serviço.');
+    return;
+  }
+  const cat = document.getElementById('modal-ep-cat').value.trim() || 'Geral';
+  const vm2 = parseNum(document.getElementById('modal-ep-vm2').value);
+  const vunit = parseNum(document.getElementById('modal-ep-vunit').value);
+
+  const idx = produtos.findIndex(x => String(x.id) === idStr || (x.nome && x.nome.toLowerCase() === nome.toLowerCase()));
+  if (idx !== -1) {
+    produtos[idx].nome = nome;
+    produtos[idx].cat = cat;
+    produtos[idx].vm2 = vm2;
+    produtos[idx].vunit = vunit;
+  } else {
+    produtos.push({
+      id: Date.now(),
+      nome,
+      cat,
+      vm2,
+      vunit
+    });
+  }
+
+  save(K.products, produtos);
+  updateDatalistProdutos();
+  renderProdutos();
+  fecharModalEditarProdCatalogo();
+  if (typeof mostrarToastAprovacao === 'function') {
+    mostrarToastAprovacao('✅ Produto atualizado com sucesso no catálogo!');
+  } else {
+    alert('✅ Produto atualizado com sucesso no catálogo!');
+  }
+}
+
+function editarProd(id, nome) {
+  let p = null;
+  if (id != null && id !== '' && id !== 'undefined') {
+    p = produtos.find(x => String(x.id) === String(id));
+  }
+  if (!p && nome) {
+    p = produtos.find(x => x.nome && x.nome.toLowerCase() === String(nome).toLowerCase());
+  }
+  if (!p) {
+    p = produtos.find(x => x.nome && (x.nome.includes(String(id)) || (nome && x.nome.includes(String(nome)))));
+  }
+  if (!p) {
+    alert('Produto não localizado para edição.');
+    return;
+  }
+
+  editandoProdId = p.id;
+  document.getElementById('p-nome').value  = p.nome || '';
+  document.getElementById('p-cat').value   = p.cat || '';
+  document.getElementById('p-vm2').value   = (p.vm2 != null && p.vm2 !== '') ? formatarValorPtBr(p.vm2) : '';
+  document.getElementById('p-vunit').value = (p.vunit != null && p.vunit !== '') ? formatarValorPtBr(p.vunit) : '';
+  const btn = document.getElementById('btn-salvar-prod');
+  if (btn) btn.innerHTML = '💾 Atualizar Produto';
+
+  // Abre o modal de edição direto na tela do usuário!
+  abrirModalEditarProdCatalogo(p);
+}
+
+function deletarProd(id, nome) {
   if (!confirm('Tem certeza que deseja excluir este produto do catálogo?')) return;
-  produtos = produtos.filter(x => x.id !== id);
+  produtos = produtos.filter(x => String(x.id) !== String(id) && (!nome || x.nome !== nome));
   save(K.products, produtos);
   updateDatalistProdutos();
   renderProdutos();
