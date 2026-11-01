@@ -2008,13 +2008,13 @@
   <!-- ══════════════════════════════════════════ -->
   <div id="panel-orcamento" class="panel active">
 
-    <div class="os-bar" style="display:flex;justify-content:space-between;align-items:center;padding:12px 18px;gap:8px;flex-wrap:wrap;">
+    <div class="os-bar" style="display:flex;justify-content:space-between;align-items:center;padding:12px 18px;gap:8px;flex-wrap:wrap;row-gap:8px;">
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
         <span class="lbl">Orçamento / O.S. Nº</span>
         <span class="val" id="orc-numero-display">#0003</span>
         <button class="btn btn-sec btn-sm" onclick="alterarProximoNumero()" title="Alterar número da O.S." style="padding:4px 9px;font-size:11px;">✏️ Alterar Nº</button>
       </div>
-      <button class="btn btn-gold btn-sm" onclick="abrirModalSync()" style="font-size:12px;padding:6px 13px;">
+      <button class="btn btn-gold btn-sm" onclick="abrirModalSync()" style="font-size:12px;padding:6px 13px;flex-shrink:0;">
         🔄 Backup / Sincronizar
       </button>
     </div>
@@ -2953,6 +2953,15 @@
   <!-- PANEL: PRODUTOS E SERVIÇOS (CATÁLOGO DA SEGUNDA IMAGEM) -->
   <!-- ══════════════════════════════════════════ -->
   <div id="panel-produtos" class="panel">
+    <!-- BARRA FIXA DE RETORNO AO ORÇAMENTO -->
+    <div id="catalogo-top-bar" style="position:sticky;top:8px;z-index:999;display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;padding:12px 16px;background:rgba(15,17,26,0.96);backdrop-filter:blur(10px);border:1.5px solid rgba(201,168,76,0.5);border-radius:14px;box-shadow:0 6px 20px rgba(0,0,0,0.65);">
+      <button type="button" class="btn btn-gold" onclick="cancelarSelecaoProduto()" style="display:inline-flex;align-items:center;gap:8px;font-weight:900;font-size:14px;padding:10px 18px;border-radius:10px;box-shadow:0 4px 15px rgba(201,168,76,0.35);cursor:pointer;">
+        ⬅ Voltar ao Orçamento
+      </button>
+      <div id="aviso-selecao-produto-txt" style="font-size:13px;font-weight:700;color:#fcd34d;text-align:right;">
+        Toque em "Usar" para escolher o produto
+      </div>
+    </div>
     <div class="card">
       <div class="card-title">➕ Cadastrar / Editar Produto ou Serviço</div>
       <div class="field-row">
@@ -2975,6 +2984,11 @@
         <input id="busca-prod-filtro" placeholder="🔍 Filtrar produtos..." oninput="renderProdutos(this.value)" style="max-width:240px;padding:6px 12px;font-size:12px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:#08080f;color:var(--text);">
       </div>
       <div id="prod-lista"><div class="empty">Nenhum produto cadastrado.</div></div>
+      <div style="margin-top:16px;text-align:center;">
+        <button type="button" class="btn btn-gold" onclick="cancelarSelecaoProduto()" style="display:inline-flex;align-items:center;gap:8px;font-weight:900;font-size:14px;padding:12px 22px;border-radius:10px;box-shadow:0 4px 15px rgba(201,168,76,0.35);cursor:pointer;">
+          ⬅ Voltar ao Orçamento
+        </button>
+      </div>
     </div>
   </div>
 
@@ -8830,8 +8844,7 @@ function isDescricaoServico(desc) {
 
 function updateDatalistProdutos() {
   const dl = document.getElementById('lista-produtos-sugeridos');
-  if (!dl) return;
-  dl.innerHTML = produtos.map(p => `<option value="${esc(p.nome)}">${p.cat ? p.cat + ' - ' : ''}R$ ${p.vm2 ? p.vm2 + '/m²' : p.vunit + ' un'}</option>`).join('');
+  if (dl) dl.innerHTML = '';
 }
 
 // ── FORNECEDORES SUGERIDOS ──────────────────────────────────────────
@@ -8986,17 +8999,17 @@ let itemEmEdicaoId = null;
 function irParaAbaProdutosParaItem(id) {
   itemEmEdicaoId = id;
   goTab('produtos');
+  if (typeof renderProdutos === 'function') renderProdutos();
   atualizarBannerSelecaoProduto();
-  const aviso = document.getElementById('aviso-selecao-produto');
-  if (aviso) aviso.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function irParaAbaProdutosParaNovoItem() {
   itemEmEdicaoId = 'novo';
   goTab('produtos');
+  if (typeof renderProdutos === 'function') renderProdutos();
   atualizarBannerSelecaoProduto();
-  const aviso = document.getElementById('aviso-selecao-produto');
-  if (aviso) aviso.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function cancelarSelecaoProduto() {
@@ -9006,18 +9019,26 @@ function cancelarSelecaoProduto() {
 }
 
 function atualizarBannerSelecaoProduto() {
-  const aviso = document.getElementById('aviso-selecao-produto');
+  const topBar = document.getElementById('catalogo-top-bar');
   const txt = document.getElementById('aviso-selecao-produto-txt');
-  if (!aviso) return;
   if (itemEmEdicaoId) {
-    aviso.style.display = 'flex';
-    if (itemEmEdicaoId === 'novo') {
-      if (txt) txt.innerHTML = '<strong>📦 Modo de Seleção Ativo:</strong> Escolha um produto abaixo para adicionar como novo item no Orçamento, ou cadastre um novo produto acima.';
-    } else {
-      if (txt) txt.innerHTML = '<strong>📦 Modo de Seleção Ativo:</strong> Escolha um produto abaixo para preencher a linha do Orçamento, ou cadastre um novo produto acima.';
+    if (topBar) {
+      topBar.style.borderColor = '#d4af37';
+      topBar.style.background = 'linear-gradient(135deg, rgba(201,168,76,0.25), rgba(15,17,26,0.98))';
+    }
+    if (txt) {
+      txt.innerHTML = itemEmEdicaoId === 'novo'
+        ? '📦 <strong>Modo Seleção:</strong> Escolha um produto para novo item'
+        : '📦 <strong>Modo Seleção:</strong> Escolha um produto para a linha do orçamento';
     }
   } else {
-    aviso.style.display = 'none';
+    if (topBar) {
+      topBar.style.borderColor = 'rgba(201,168,76,0.4)';
+      topBar.style.background = 'rgba(15,17,26,0.96)';
+    }
+    if (txt) {
+      txt.innerHTML = 'Toque em "Usar" para escolher o produto';
+    }
   }
 }
 
@@ -9076,6 +9097,9 @@ function usarProdutoDoCatalogo(pId, nome) {
       itemEmEdicaoId = null;
       atualizarBannerSelecaoProduto();
       goTab('orcamento');
+      if (typeof mostrarToastAprovacao === 'function') {
+        mostrarToastAprovacao('✅ Produto "' + (p.nome || '') + '" inserido no orçamento!');
+      }
       setTimeout(() => {
         const trTarget = document.getElementById('item-' + targetId);
         if (trTarget) trTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -9098,6 +9122,9 @@ function usarProdutoDoCatalogo(pId, nome) {
   itemEmEdicaoId = null;
   atualizarBannerSelecaoProduto();
   goTab('orcamento');
+  if (typeof mostrarToastAprovacao === 'function') {
+    mostrarToastAprovacao('✅ Produto "' + (p.nome || '') + '" adicionado ao orçamento!');
+  }
   setTimeout(() => {
     const list = document.getElementById('itens-lista');
     if (list && list.lastElementChild) {
@@ -9750,7 +9777,7 @@ function addItem(desc='', qtd='1', cor='', alt='', larg='', v_m2='', v_unit='', 
     </td>
     <td style="min-width:240px">
       <div style="display:flex;gap:5px;align-items:center;">
-        <input list="lista-produtos-sugeridos" class="inp-item-desc" placeholder="Digite ou selecione..." value="${esc(desc)}" oninput="aoMudarDescricaoItem(${id})" onchange="aoMudarDescricaoItem(${id})" onblur="aoMudarDescricaoItem(${id})" style="flex:1;min-width:130px;">
+        <input type="text" autocomplete="off" class="inp-item-desc" placeholder="Descrição do produto ou serviço..." value="${esc(desc)}" oninput="aoMudarDescricaoItem(${id})" onchange="aoMudarDescricaoItem(${id})" onblur="aoMudarDescricaoItem(${id})" style="flex:1;min-width:130px;">
         <button type="button" class="btn btn-gold btn-xs" onclick="irParaAbaProdutosParaItem(${id})" title="Ir para a aba Produtos & Serviços e escolher o produto cadastrado" style="padding:5px 8px;font-size:11px;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;flex-shrink:0;">
           📦 Catálogo
         </button>
@@ -20763,6 +20790,12 @@ window.addEventListener('DOMContentLoaded', function() {
   document.getElementById('itens-lista').innerHTML = '';
   itemId = 0; addItem();
   atualizarNumeroDisplay();
+  // Restaura rascunho ao abrir a página (inclui retorno do comparativo)
+  setTimeout(function() {
+    if (typeof restaurarRascunhoOrcamento === 'function') {
+      restaurarRascunhoOrcamento();
+    }
+  }, 80);
 
   iniciarRelogioPonto();
   atualizarSelectColaboradoresPonto();
