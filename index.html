@@ -9156,8 +9156,59 @@ const DADOS_INICIAIS_COMPARATIVO = [
   }
 ];
 
+function normalizarTextoParaBusca(str) {
+  return (str || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]/g, ' ')
+    .trim();
+}
+
+function extrairTokensBusca(str) {
+  return normalizarTextoParaBusca(str).split(/\s+/).filter(w => w.length > 0);
+}
+
+function encontrarCorrespondenciaComparativo(descricao, listaComparacoes) {
+  const inTokens = extrairTokensBusca(descricao);
+  if (!inTokens.length) return null;
+
+  const inNumbers = inTokens.filter(t => /^\d+$/.test(t)).map(n => parseInt(n, 10));
+
+  let best = null;
+  let bestScore = -1;
+
+  for (const comp of listaComparacoes) {
+    if (!comp.productName || !comp.quotes || !comp.quotes.length) continue;
+    const pTokens = extrairTokensBusca(comp.productName);
+    const pNumbers = pTokens.filter(t => /^\d+$/.test(t)).map(n => parseInt(n, 10));
+
+    // Se o usuário especificou um número (ex: 15), mas o produto tem outro (ex: 06 ou 18), descarta!
+    let numberMismatch = false;
+    for (const num of inNumbers) {
+      if (pNumbers.length && !pNumbers.includes(num)) {
+        numberMismatch = true;
+        break;
+      }
+    }
+    if (numberMismatch) continue;
+
+    let matched = 0;
+    for (const t of inTokens) {
+      if (pTokens.some(pt => pt === t || pt.includes(t) || t.includes(pt))) {
+        matched++;
+      }
+    }
+
+    if (matched > bestScore) {
+      bestScore = matched;
+      best = comp;
+    }
+  }
+
+  return (bestScore >= 1) ? best : null;
+}
+
 function obterComparacoesArmazenadas() {
-  // 1. Tenta carregar do localStorage do comparativo real (sd_comparativo_products)
   try {
     const rawProd = localStorage.getItem('sd_comparativo_products');
     if (rawProd) {
@@ -9182,7 +9233,6 @@ function obterComparacoesArmazenadas() {
     }
   } catch(e) {}
 
-  // 2. Tenta carregar de sd_supplier_comparisons_v3 (se for a lista real atualizada com ITAIPU/RIO BRANCO)
   try {
     const raw = localStorage.getItem('sd_supplier_comparisons_v3');
     if (raw) {
@@ -9194,22 +9244,8 @@ function obterComparacoesArmazenadas() {
     }
   } catch(e) {}
 
-  // 3. Atualiza localStorage com a base oficial de fornecedores reais (ITAIPU, RIO BRANCO, GMAD, FLG)
   try {
     localStorage.setItem('sd_supplier_comparisons_v3', JSON.stringify(DADOS_INICIAIS_COMPARATIVO));
-    localStorage.setItem('sd_comparativo_products', JSON.stringify(DADOS_INICIAIS_COMPARATIVO.map(c => ({
-      id: c.id,
-      name: c.productName,
-      category: c.category,
-      specs: c.specs,
-      active: true,
-      quotes: c.quotes.map(q => ({
-        supplierId: q.id,
-        supplierName: q.supplierName,
-        price: q.unitPrice,
-        phone: q.phone
-      }))
-    }))));
   } catch(e) {}
 
   return DADOS_INICIAIS_COMPARATIVO;
@@ -9217,63 +9253,19 @@ function obterComparacoesArmazenadas() {
 
 function buscarMenorPrecoComparativo(itemId, descricao) {
   const badge = document.getElementById('badge-menor-preco-' + itemId);
-  const btnComp = document.getElementById('btn-comp-item-' + itemId);
   const tr = document.getElementById('item-' + itemId);
   const inForn = tr ? tr.querySelector('.item-fornecedor-input') : null;
-  const inVunit = tr ? tr.querySelector('.inp-item-vunit') : null;
 
   if (!descricao || descricao.trim().length < 2) {
     if (badge) badge.style.display = 'none';
-    if (btnComp) {
-      btnComp.innerHTML = '📊 Comparativo';
-      btnComp.style.background = 'linear-gradient(135deg,rgba(16,185,129,0.22),rgba(5,150,105,0.18))';
-      btnComp.style.borderColor = '#10b981';
-      btnComp.style.color = '#34d399';
-    }
     return;
   }
 
-  const descLower = descricao.toLowerCase().trim();
-  const descWords = descLower.split(/\s+/).filter(w => w.length > 2);
   const comparisons = obterComparacoesArmazenadas();
-
-  let match = null;
-  let bestScore = 0;
-
-  for (const comp of comparisons) {
-    if (!comp.productName || !comp.quotes || !comp.quotes.length) continue;
-    const nameLower = comp.productName.toLowerCase();
-
-    // Match exato
-    if (nameLower === descLower) {
-      match = comp;
-      break;
-    }
-
-    // Match se contém tudo
-    if (nameLower.includes(descLower) || descLower.includes(nameLower)) {
-      match = comp;
-      break;
-    }
-
-    // Match por palavras-chave
-    let score = 0;
-    for (const w of descWords) {
-      if (nameLower.includes(w)) score++;
-    }
-    if (score > bestScore && score >= 2) {
-      bestScore = score;
-      match = comp;
-    }
-  }
+  const match = encontrarCorrespondenciaComparativo(descricao, comparisons);
 
   if (!match || !match.quotes || !match.quotes.length) {
     if (badge) badge.style.display = 'none';
-    if (btnComp) {
-      btnComp.innerHTML = '📊 Comparativo';
-      btnComp.title = 'Abrir comparativo de preços para ' + descricao;
-      btnComp.style.background = 'linear-gradient(135deg,rgba(16,185,129,0.22),rgba(5,150,105,0.18))';
-    }
     return;
   }
 
@@ -9291,29 +9283,17 @@ function buscarMenorPrecoComparativo(itemId, descricao) {
   const qtdForn = cotacoesValidas.length;
   const precoStr = 'R$ ' + menorPreco.toFixed(2).replace('.', ',');
 
-  // 1. ATUALIZA O CAMPO FORNECEDOR (USO INTERNO) AUTOMATICAMENTE
+  // Atualiza campo Fornecedor (uso interno) automaticamente
   if (inForn) {
-    // Se estiver vazio ou contiver cotação anterior, preenche com o menor
-    if (!inForn.value || inForn.value.includes('(Menor') || inForn.value.includes('R$')) {
-      inForn.value = menorForn + ' · ' + precoStr + ' (Menor Preço)';
-      if (typeof atualizarDatalistFornecedores === 'function') atualizarDatalistFornecedores();
-    }
+    inForn.value = menorForn + ' · ' + precoStr + ' (Menor Preço)';
+    if (typeof atualizarDatalistFornecedores === 'function') atualizarDatalistFornecedores();
   }
 
-  // 2. ATUALIZA O BADGE DE MENOR PREÇO DIRETO NO CAMPO
+  // Atualiza badge de menor preço dentro do campo
   if (badge) {
-    badge.innerHTML = '🏆 ' + precoStr;
-    badge.title = 'Menor preço: ' + menorForn + ' (' + precoStr + ') · ' + qtdForn + ' cotações disponíveis. Clique para ver todas!';
+    badge.innerHTML = '🏆 ' + menorForn + ' ' + precoStr;
+    badge.title = 'Menor preço: ' + menorForn + ' (' + precoStr + ') · ' + qtdForn + ' fornecedores cotados. Clique para ver!';
     badge.style.display = 'inline-block';
-  }
-
-  // 3. ATUALIZA O BOTÃO COMPARATIVO DO ITEM
-  if (btnComp) {
-    btnComp.innerHTML = '📊 ' + precoStr + ' <span style="font-size:9px;opacity:0.85;">(' + qtdForn + ')</span>';
-    btnComp.title = 'Menor: ' + precoStr + ' em ' + menorForn + ' (' + qtdForn + ' fornecedores cotados). Clique para comparar!';
-    btnComp.style.background = 'linear-gradient(135deg,rgba(16,185,129,0.38),rgba(5,150,105,0.32))';
-    btnComp.style.borderColor = '#34d399';
-    btnComp.style.color = '#ffffff';
   }
 }
 
@@ -9323,42 +9303,167 @@ function abrirComparativoParaItem(itemId) {
   const descVal = inDesc ? inDesc.value.trim() : '';
 
   const comparisons = obterComparacoesArmazenadas();
-  let match = null;
+  const match = descVal ? encontrarCorrespondenciaComparativo(descVal, comparisons) : null;
 
-  if (descVal) {
-    const descLower = descVal.toLowerCase();
-    const descWords = descLower.split(/\s+/).filter(w => w.length > 2);
-    let bestScore = 0;
+  if (match) {
+    // Abre a terceira imagem (modal) filtrando SOMENTE este produto correspondente
+    abrirModalComparativoGeral(match.productName, itemId);
+  } else {
+    abrirModalComparativoGeral(descVal, itemId);
+  }
+}
 
-    for (const comp of comparisons) {
-      if (!comp.productName || !comp.quotes || !comp.quotes.length) continue;
-      const nameLower = comp.productName.toLowerCase();
-      if (nameLower === descLower || nameLower.includes(descLower) || descLower.includes(nameLower)) {
-        match = comp;
-        break;
-      }
-      let score = 0;
-      for (const w of descWords) {
-        if (nameLower.includes(w)) score++;
-      }
-      if (score > bestScore && score >= 2) {
-        bestScore = score;
-        match = comp;
-      }
+function abrirComparativoPrincipal() {
+  // Pega o produto preenchido no primeiro item que tiver descrição
+  let termoPreenchido = '';
+  let idItemAtivo = null;
+  const inputsDesc = document.querySelectorAll('#itens-lista .inp-item-desc');
+  for (const inp of inputsDesc) {
+    if (inp.value && inp.value.trim().length >= 2) {
+      termoPreenchido = inp.value.trim();
+      const tr = inp.closest('tr');
+      if (tr && tr.id) idItemAtivo = tr.id.replace('item-', '');
+      break;
     }
   }
 
-  if (match && match.quotes && match.quotes.length >= 1) {
-    mostrarModalComparativoItem(itemId, match, descVal);
-  } else {
-    // Se não encontrou cotação específica, abre o comparativo completo ou pergunta
-    abrirModalComparativoGeral(descVal, itemId);
+  if (termoPreenchido) {
+    const comparisons = obterComparacoesArmazenadas();
+    const match = encontrarCorrespondenciaComparativo(termoPreenchido, comparisons);
+    if (match) {
+      // Abre a terceira imagem mostrando SOMENTE o produto correspondente (ex: Mdf 15 branco tx)
+      abrirModalComparativoGeral(match.productName, idItemAtivo);
+      return;
+    }
   }
+
+  abrirModalComparativoGeral(termoPreenchido, idItemAtivo);
+}
+
+function abrirModalComparativoGeral(termoBusca='', itemIdParaVincular=null) {
+  const existente = document.getElementById('modal-comparativo-geral');
+  if (existente) existente.remove();
+
+  const comparisons = obterComparacoesArmazenadas();
+
+  // Se houver termo de busca, encontra o match exato
+  let matchFiltro = null;
+  if (termoBusca) {
+    matchFiltro = encontrarCorrespondenciaComparativo(termoBusca, comparisons);
+  }
+
+  const nomeFiltroExibicao = matchFiltro ? matchFiltro.productName : termoBusca;
+
+  const listaHtml = comparisons.map(c => {
+    const cotacoes = (c.quotes || []).filter(q => (q.unitPrice || q.price || 0) > 0)
+      .sort((a, b) => (a.unitPrice || a.price || 0) - (b.unitPrice || b.price || 0));
+    const menor = cotacoes[0];
+    const menorPreco = menor ? (menor.unitPrice || menor.price || 0) : 0;
+    const menorForn = menor ? (menor.supplierName || menor.brand || 'Fornecedor') : '';
+
+    const isMatch = matchFiltro ? (c.id === matchFiltro.id) : true;
+
+    // Se estiver filtrado, só exibe o item correspondente inicialmente
+    const displayStyle = (termoBusca && !isMatch) ? 'none' : 'flex';
+
+    return `
+      <div class="card-comp-geral" data-name="${(c.productName || '').toLowerCase()}" data-id="${c.id}" style="background:rgba(255,255,255,0.035);border:1.5px solid ${isMatch && termoBusca ? '#10b981' : 'rgba(255,255,255,0.08)'};border-radius:14px;padding:14px 16px;display:${displayStyle};align-items:center;justify-content:space-between;gap:12px;box-shadow:${isMatch && termoBusca ? '0 4px 20px rgba(16,185,129,0.2)' : 'none'};">
+        <div style="flex:1;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:15px;font-weight:900;color:#f8fafc;">${c.productName}</span>
+            ${isMatch && termoBusca ? '<span style="background:#10b981;color:#042f1a;font-size:9.5px;font-weight:900;padding:2px 7px;border-radius:4px;letter-spacing:0.3px;">ITEM DO ORÇAMENTO</span>' : ''}
+          </div>
+          <div style="font-size:11.5px;color:#94a3b8;margin-top:3px;">${cotacoes.length} fornecedores cotados · Categoria: ${c.category || 'Geral'}</div>
+          ${menor ? '<div style="font-size:13px;color:#10b981;font-weight:800;margin-top:4px;">🏆 Menor: ' + menorForn + ' · R$ ' + menorPreco.toFixed(2).replace('.', ',') + '</div>' : ''}
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          ${itemIdParaVincular && menor ? '<button type="button" onclick="aplicarFornecedorCotado(' + itemIdParaVincular + ', \'' + menorForn.replace(/'/g, "\\'") + '\', ' + menorPreco + '); document.getElementById(\'modal-comparativo-geral\').remove();" style="background:linear-gradient(135deg,#10b981,#059669);border:none;color:#042f1a;font-weight:900;font-size:11.5px;padding:8px 14px;border-radius:8px;cursor:pointer;">✓ Usar Menor</button>' : ''}
+          <button type="button" onclick="mostrarModalComparativoItem(${itemIdParaVincular || 1}, obterComparacaoPorId('${c.id}'), '${c.productName.replace(/'/g, "\\'")}')" style="background:rgba(16,185,129,0.18);border:1px solid #10b981;color:#34d399;font-weight:800;font-size:11.5px;padding:8px 13px;border-radius:8px;cursor:pointer;">Ver Cotações ↗</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  const modal = document.createElement('div');
+  modal.id = 'modal-comparativo-geral';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:1000300;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:16px;';
+  modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+
+  modal.innerHTML = `
+    <div style="background:linear-gradient(160deg,#0a0f1e,#0d1527);border:1.5px solid #10b981;border-radius:20px;width:100%;max-width:640px;max-height:90vh;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,0.9),0 0 40px rgba(16,185,129,0.15);display:flex;flex-direction:column;">
+      <div style="padding:18px 22px;border-bottom:1px solid rgba(16,185,129,0.2);background:rgba(16,185,129,0.08);display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:16px;font-weight:900;color:#34d399;display:flex;align-items:center;gap:8px;">
+            <span>📊</span> <span>Comparativo de Preços dos Fornecedores</span>
+          </div>
+          <div style="font-size:12px;color:#94a3b8;margin-top:2px;">Segunda Ferramenta Integrada (sdcomparativos.vercel.app)</div>
+        </div>
+        <button onclick="document.getElementById('modal-comparativo-geral').remove()" style="background:rgba(255,255,255,0.08);border:none;color:#94a3b8;font-size:18px;width:34px;height:34px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+      </div>
+
+      <div style="padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;gap:10px;">
+        <input type="text" id="filtro-comp-geral" placeholder="🔍 Buscar material ou MDF no comparativo..." value="${nomeFiltroExibicao}" oninput="filtrarComparativosLista(this.value)" style="flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:9px 14px;color:#fff;font-size:13px;outline:none;">
+        ${nomeFiltroExibicao ? '<button type="button" onclick="document.getElementById(\'filtro-comp-geral\').value=\'\'; filtrarComparativosLista(\'\'); this.style.display=\'none\';" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#cbd5e1;font-size:11px;padding:9px 12px;border-radius:10px;cursor:pointer;white-space:nowrap;">Ver Todos</button>' : ''}
+        <button type="button" onclick="window.open('${COMPARATIVO_APP_URL}' + (document.getElementById('filtro-comp-geral').value ? '?busca=' + encodeURIComponent(document.getElementById('filtro-comp-geral').value) : ''), '_blank')" style="background:linear-gradient(135deg,#10b981,#059669);border:none;color:#042f1a;font-weight:900;font-size:12px;padding:9px 16px;border-radius:10px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:6px;">
+          <span>🌐</span> <span>Acessar App Completo</span>
+        </button>
+      </div>
+
+      <div id="lista-comp-geral-container" style="padding:16px 20px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:10px;">
+        ${listaHtml}
+      </div>
+
+      <div style="padding:12px 20px;border-top:1px solid rgba(16,185,129,0.15);display:flex;justify-content:space-between;align-items:center;background:rgba(0,0,0,0.3);">
+        <div style="font-size:11.5px;color:#94a3b8;">
+          💡 Digite o produto no orçamento para que o <b>menor preço</b> seja inserido automaticamente no campo <b>Fornecedor</b>.
+        </div>
+        <button type="button" onclick="document.getElementById('modal-comparativo-geral').remove()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#cbd5e1;font-size:12px;font-weight:700;border-radius:8px;padding:8px 16px;cursor:pointer;">
+          Fechar
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  if (nomeFiltroExibicao) {
+    filtrarComparativosLista(nomeFiltroExibicao);
+  }
+}
+
+function obterComparacaoPorId(id) {
+  const comparisons = obterComparacoesArmazenadas();
+  return comparisons.find(c => c.id === id) || null;
+}
+
+function filtrarComparativosLista(termo) {
+  const container = document.getElementById('lista-comp-geral-container');
+  if (!container) return;
+  const cards = container.querySelectorAll('.card-comp-geral');
+  const t = normalizarTextoParaBusca(termo);
+  const tTokens = extrairTokensBusca(termo);
+
+  cards.forEach(c => {
+    const nome = normalizarTextoParaBusca(c.getAttribute('data-name') || '');
+    if (!t) {
+      c.style.display = 'flex';
+      return;
+    }
+    // Match exato ou contém todos os tokens
+    const matchTodos = tTokens.every(tok => nome.includes(tok));
+    if (matchTodos || nome.includes(t) || t.includes(nome)) {
+      c.style.display = 'flex';
+    } else {
+      c.style.display = 'none';
+    }
+  });
 }
 
 function mostrarModalComparativoItem(itemId, match, descVal) {
   const existente = document.getElementById('modal-comparativo-item-view');
   if (existente) existente.remove();
+
+  if (!match) return;
 
   const cotacoes = (match.quotes || [])
     .filter(q => (q.unitPrice || q.price || 0) > 0)
@@ -9398,7 +9503,7 @@ function mostrarModalComparativoItem(itemId, match, descVal) {
 
   const modal = document.createElement('div');
   modal.id = 'modal-comparativo-item-view';
-  modal.style.cssText = 'position:fixed;inset:0;z-index:1000300;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:16px;';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:1000310;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:16px;';
   modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
 
   modal.innerHTML = `
@@ -9406,7 +9511,7 @@ function mostrarModalComparativoItem(itemId, match, descVal) {
       <div style="padding:16px 20px;border-bottom:1px solid rgba(16,185,129,0.2);background:rgba(16,185,129,0.08);display:flex;justify-content:space-between;align-items:center;">
         <div>
           <div style="font-size:15px;font-weight:900;color:#34d399;display:flex;align-items:center;gap:7px;">
-            <span>📊</span> <span>Comparativo de Fornecedores</span>
+            <span>📊</span> <span>Cotações dos Fornecedores</span>
           </div>
           <div style="font-size:12.5px;color:#f1f5f9;font-weight:700;margin-top:3px;">${match.productName || descVal}</div>
           <div style="font-size:11px;color:#10b981;margin-top:2px;">${cotacoes.length} fornecedores cotados · Menor preço: R$ ${menorPreco.toFixed(2).replace('.', ',')}</div>
@@ -9438,7 +9543,6 @@ function aplicarFornecedorCotado(itemId, nomeForn, preco) {
   const inForn = tr.querySelector('.item-fornecedor-input');
   const inVunit = tr.querySelector('.inp-item-vunit');
   const badge = document.getElementById('badge-menor-preco-' + itemId);
-  const btnComp = document.getElementById('btn-comp-item-' + itemId);
 
   const precoStr = 'R$ ' + preco.toFixed(2).replace('.', ',');
 
@@ -9451,116 +9555,19 @@ function aplicarFornecedorCotado(itemId, nomeForn, preco) {
     inVunit.dispatchEvent(new Event('input', { bubbles: true }));
   }
   if (badge) {
-    badge.innerHTML = '🏆 ' + precoStr;
+    badge.innerHTML = '🏆 ' + nomeForn + ' ' + precoStr;
     badge.style.display = 'inline-block';
-  }
-  if (btnComp) {
-    btnComp.innerHTML = '📊 ' + precoStr;
-    btnComp.style.background = 'linear-gradient(135deg,rgba(16,185,129,0.38),rgba(5,150,105,0.32))';
   }
 
   calcItem(itemId);
   if (typeof agendarSalvarRascunhoOrcamento === 'function') agendarSalvarRascunhoOrcamento();
 
-  const modal = document.getElementById('modal-comparativo-item-view');
-  if (modal) modal.remove();
+  const modalItem = document.getElementById('modal-comparativo-item-view');
+  if (modalItem) modalItem.remove();
 
   if (typeof mostrarToastAprovacao === 'function') {
     mostrarToastAprovacao('✅ Fornecedor ' + nomeForn + ' (' + precoStr + ') selecionado!');
   }
-}
-
-function abrirComparativoPrincipal() {
-  abrirModalComparativoGeral();
-}
-
-function abrirModalComparativoGeral(termoBusca='', itemIdParaVincular=null) {
-  const existente = document.getElementById('modal-comparativo-geral');
-  if (existente) existente.remove();
-
-  const comparisons = obterComparacoesArmazenadas();
-
-  const listaHtml = comparisons.map(c => {
-    const cotacoes = (c.quotes || []).filter(q => (q.unitPrice || q.price || 0) > 0)
-      .sort((a, b) => (a.unitPrice || a.price || 0) - (b.unitPrice || b.price || 0));
-    const menor = cotacoes[0];
-    const menorPreco = menor ? (menor.unitPrice || menor.price || 0) : 0;
-    const menorForn = menor ? (menor.supplierName || menor.brand || 'Fornecedor') : '';
-
-    return `
-      <div class="card-comp-geral" data-name="${(c.productName || '').toLowerCase()}" style="background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
-        <div style="flex:1;">
-          <div style="font-size:13.5px;font-weight:900;color:#f8fafc;">${c.productName}</div>
-          <div style="font-size:11px;color:#94a3b8;margin-top:2px;">${cotacoes.length} fornecedores cotados · Categoria: ${c.category || 'Geral'}</div>
-          ${menor ? '<div style="font-size:11.5px;color:#10b981;font-weight:700;margin-top:3px;">🏆 Menor: ' + menorForn + ' · R$ ' + menorPreco.toFixed(2).replace('.', ',') + '</div>' : ''}
-        </div>
-        <div style="display:flex;gap:6px;">
-          ${itemIdParaVincular && menor ? '<button type="button" onclick="aplicarFornecedorCotado(' + itemIdParaVincular + ', \'' + menorForn.replace(/'/g, "\\'") + '\', ' + menorPreco + '); document.getElementById(\'modal-comparativo-geral\').remove();" style="background:linear-gradient(135deg,#10b981,#059669);border:none;color:#042f1a;font-weight:900;font-size:11px;padding:7px 12px;border-radius:8px;cursor:pointer;">Usar Menor</button>' : ''}
-          <button type="button" onclick="window.open('${COMPARATIVO_APP_URL}?busca=' + encodeURIComponent('${c.productName}'), '_blank')" style="background:rgba(16,185,129,0.18);border:1px solid #10b981;color:#34d399;font-weight:800;font-size:11px;padding:7px 12px;border-radius:8px;cursor:pointer;">Ver Cotações ↗</button>
-        </div>
-      </div>
-    `;
-  }).join('');
-
-  const modal = document.createElement('div');
-  modal.id = 'modal-comparativo-geral';
-  modal.style.cssText = 'position:fixed;inset:0;z-index:1000300;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:16px;';
-  modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
-
-  modal.innerHTML = `
-    <div style="background:linear-gradient(160deg,#0a0f1e,#0d1527);border:1.5px solid #10b981;border-radius:20px;width:100%;max-width:640px;max-height:90vh;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,0.9),0 0 40px rgba(16,185,129,0.15);display:flex;flex-direction:column;">
-      <div style="padding:18px 22px;border-bottom:1px solid rgba(16,185,129,0.2);background:rgba(16,185,129,0.08);display:flex;justify-content:space-between;align-items:center;">
-        <div>
-          <div style="font-size:16px;font-weight:900;color:#34d399;display:flex;align-items:center;gap:8px;">
-            <span>📊</span> <span>Comparativo de Preços dos Fornecedores</span>
-          </div>
-          <div style="font-size:12px;color:#94a3b8;margin-top:2px;">Segunda Ferramenta Integrada (sdcomparativos.vercel.app)</div>
-        </div>
-        <button onclick="document.getElementById('modal-comparativo-geral').remove()" style="background:rgba(255,255,255,0.08);border:none;color:#94a3b8;font-size:18px;width:34px;height:34px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
-      </div>
-
-      <div style="padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;gap:10px;">
-        <input type="text" id="filtro-comp-geral" placeholder="🔍 Buscar material ou MDF no comparativo..." value="${termoBusca}" oninput="filtrarComparativosLista(this.value)" style="flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:9px 14px;color:#fff;font-size:13px;outline:none;">
-        <button type="button" onclick="window.open('${COMPARATIVO_APP_URL}' + (document.getElementById('filtro-comp-geral').value ? '?busca=' + encodeURIComponent(document.getElementById('filtro-comp-geral').value) : ''), '_blank')" style="background:linear-gradient(135deg,#10b981,#059669);border:none;color:#042f1a;font-weight:900;font-size:12px;padding:9px 16px;border-radius:10px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:6px;">
-          <span>🌐</span> <span>Acessar App Completo</span>
-        </button>
-      </div>
-
-      <div id="lista-comp-geral-container" style="padding:16px 20px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:10px;">
-        ${listaHtml}
-      </div>
-
-      <div style="padding:12px 20px;border-top:1px solid rgba(16,185,129,0.15);display:flex;justify-content:space-between;align-items:center;background:rgba(0,0,0,0.3);">
-        <div style="font-size:11.5px;color:#94a3b8;">
-          💡 Digite o produto no orçamento para que o <b>menor preço</b> seja inserido automaticamente no campo <b>Fornecedor</b>.
-        </div>
-        <button type="button" onclick="document.getElementById('modal-comparativo-geral').remove()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#cbd5e1;font-size:12px;font-weight:700;border-radius:8px;padding:8px 16px;cursor:pointer;">
-          Fechar
-        </button>
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(modal);
-
-  if (termoBusca) {
-    filtrarComparativosLista(termoBusca);
-  }
-}
-
-function filtrarComparativosLista(termo) {
-  const container = document.getElementById('lista-comp-geral-container');
-  if (!container) return;
-  const cards = container.querySelectorAll('.card-comp-geral');
-  const t = termo.toLowerCase().trim();
-  cards.forEach(c => {
-    const nome = c.getAttribute('data-name') || '';
-    if (!t || nome.includes(t)) {
-      c.style.display = 'flex';
-    } else {
-      c.style.display = 'none';
-    }
-  });
 }
 
 
@@ -9621,13 +9628,10 @@ function addItem(desc='', qtd='1', cor='', alt='', larg='', v_m2='', v_unit='', 
         <button type="button" class="btn btn-gold btn-xs" onclick="irParaAbaProdutosParaItem(${id})" title="Ir para a aba Produtos & Serviços e escolher o produto cadastrado" style="padding:5px 8px;font-size:11px;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;flex-shrink:0;">
           📦 Catálogo
         </button>
-        <button type="button" class="btn btn-xs btn-comparativo-item" id="btn-comp-item-${id}" onclick="abrirComparativoParaItem(${id})" title="Ver comparativo de fornecedores para este produto" style="padding:5px 8px;font-size:10.5px;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;flex-shrink:0;background:linear-gradient(135deg,rgba(16,185,129,0.22),rgba(5,150,105,0.18));border:1.5px solid #10b981;color:#34d399;border-radius:6px;cursor:pointer;font-weight:800;transition:all 0.2s;">
-          📊 Comparativo
-        </button>
       </div>
       <div style="margin-top:4px;display:flex;gap:4px;align-items:center;">
         <div style="flex:1;position:relative;display:flex;align-items:center;">
-          <input list="lista-fornecedores-sugeridos" class="item-fornecedor-input inp-item-fornecedor" id="inp-forn-${id}" placeholder="🏭 Fornecedor (uso interno)" value="${esc(fornecedor)}" oninput="atualizarDatalistFornecedores(); if (typeof agendarSalvarRascunhoOrcamento==='function') agendarSalvarRascunhoOrcamento();" style="flex:1;width:100%;font-size:10.5px;padding:3.5px 8px;padding-right:95px;background:rgba(245,158,11,0.08);border:1px dashed rgba(245,158,11,0.45);border-radius:6px;color:#fbbf24;outline:none;box-sizing:border-box;font-weight:600;" title="Informe o fornecedor deste item (uso interno — preenche automaticamente no direcionamento e NÃO aparece para o cliente)">
+          <input list="lista-fornecedores-sugeridos" class="item-fornecedor-input inp-item-fornecedor" id="inp-forn-${id}" placeholder="🏭 Fornecedor (uso interno)" onclick="abrirComparativoParaItem(${id})" value="${esc(fornecedor)}" oninput="atualizarDatalistFornecedores(); if (typeof agendarSalvarRascunhoOrcamento==='function') agendarSalvarRascunhoOrcamento();" style="flex:1;width:100%;font-size:10.5px;padding:3.5px 8px;padding-right:95px;background:rgba(245,158,11,0.08);border:1px dashed rgba(245,158,11,0.45);border-radius:6px;color:#fbbf24;outline:none;box-sizing:border-box;font-weight:600;" title="Informe o fornecedor deste item (uso interno — preenche automaticamente no direcionamento e NÃO aparece para o cliente)">
           <span id="badge-menor-preco-${id}" onclick="abrirComparativoParaItem(${id})" style="display:none;position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:9px;font-weight:900;color:#042f1a;background:linear-gradient(135deg,#34d399,#10b981);padding:2.5px 6px;border-radius:4px;white-space:nowrap;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,0.3);letter-spacing:0.2px;" title="Clique para ver todas as cotações deste produto"></span>
         </div>
       </div>
