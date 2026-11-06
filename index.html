@@ -2954,6 +2954,42 @@
   <!-- PANEL: PRODUTOS E SERVIÇOS (CATÁLOGO DA SEGUNDA IMAGEM) -->
   <!-- ══════════════════════════════════════════ -->
   <div id="panel-produtos" class="panel">
+    <!-- BANNER DINÂMICO DE SELEÇÃO DE PRODUTOS PARA O ORÇAMENTO -->
+    <div id="aviso-selecao-produto" style="display:none;background:linear-gradient(135deg,rgba(201,168,76,0.18),rgba(15,17,26,0.96));border:1.5px solid #c9a84c;border-radius:14px;padding:12px 16px;margin-bottom:16px;box-shadow:0 8px 24px rgba(0,0,0,0.5);justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:24px;">📦</span>
+        <div>
+          <div id="aviso-selecao-produto-txt" style="font-weight:900;color:#fcd34d;font-size:13px;">Modo de Seleção Ativo: Escolha produtos do catálogo para o orçamento.</div>
+          <div style="font-size:11.5px;color:#94a3b8;margin-top:2px;">Você pode escolher um ou vários produtos clicando em <strong>"✅ Usar este"</strong>.</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <button type="button" onclick="concluirSelecaoCatalogo()" class="btn btn-primary btn-sm" style="background:linear-gradient(135deg,#c9a84c,#e5c76a);color:#08080f;font-weight:900;padding:8px 16px;border-radius:8px;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+          <span>📋</span> Voltar ao Orçamento (<span id="count-selecao-prod-orc">0</span>)
+        </button>
+        <button type="button" onclick="cancelarSelecaoProduto()" class="btn btn-sec btn-sm" style="font-size:12px;padding:8px 12px;border-radius:8px;cursor:pointer;">Fechar</button>
+      </div>
+    </div>
+
+    <!-- TOAST / MODAL DE ESCOLHER MAIS UM PRODUTO OU CONCLUIR -->
+    <div id="toast-produto-adicionado" style="display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#0f111a;border:2px solid #c9a84c;border-radius:16px;padding:14px 18px;box-shadow:0 12px 36px rgba(0,0,0,0.9);z-index:9999999;max-width:94vw;width:440px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <span style="font-size:22px;">✅</span>
+        <div style="flex:1;min-width:0;">
+          <div id="toast-prod-nome" style="font-weight:900;color:#fcd34d;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Produto adicionado!</div>
+          <div style="font-size:11.5px;color:#cbd5e1;margin-top:2px;">Item inserido no orçamento com sucesso.</div>
+        </div>
+        <button type="button" onclick="fecharToastProdutoAdicionado()" style="background:transparent;border:none;color:#94a3b8;font-size:20px;cursor:pointer;padding:2px 6px;">✕</button>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button type="button" onclick="fecharToastProdutoAdicionado()" class="btn btn-sec btn-sm" style="flex:1;padding:9px;font-size:11.5px;font-weight:800;border-radius:8px;cursor:pointer;background:rgba(255,255,255,0.08);color:#f1f5f9;border:1px solid rgba(255,255,255,0.2);display:inline-flex;align-items:center;justify-content:center;gap:4px;">
+          <span>➕</span> Escolher Mais Produto
+        </button>
+        <button type="button" onclick="concluirSelecaoCatalogo()" class="btn btn-primary btn-sm" style="flex:1.2;padding:9px;font-size:11.5px;font-weight:900;border-radius:8px;cursor:pointer;background:linear-gradient(135deg,#c9a84c,#e5c76a);color:#08080f;border:none;display:inline-flex;align-items:center;justify-content:center;gap:4px;">
+          <span>📋</span> Voltar ao Orçamento
+        </button>
+      </div>
+    </div>
     <div class="card">
       <div class="card-title">➕ Cadastrar / Editar Produto ou Serviço</div>
       <div class="field-row">
@@ -8974,6 +9010,9 @@ function restaurarRascunhoOrcamento() {
     const clienteParam = (urlParams.get('cliente') || urlParams.get('pasta') || '').trim();
     const itensParam = urlParams.get('itens');
 
+    // SÓ restaura se vier do comparativo (URL tem parâmetros de retorno)
+    if (!clienteParam && !itensParam) return false;
+
     const raw = localStorage.getItem(RASCUNHO_KEY);
     const d = raw ? JSON.parse(raw) : {};
 
@@ -9070,27 +9109,52 @@ function limparRascunhoOrcamento() {
 
 
 let itemEmEdicaoId = null;
+let itensSelecionadosCatalogoSessao = 0;
 
 function irParaAbaProdutosParaItem(id) {
   itemEmEdicaoId = id;
+  itensSelecionadosCatalogoSessao = 0;
   goTab('produtos');
   atualizarBannerSelecaoProduto();
-  const aviso = document.getElementById('aviso-selecao-produto');
-  if (aviso) aviso.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function irParaAbaProdutosParaNovoItem() {
   itemEmEdicaoId = 'novo';
+  itensSelecionadosCatalogoSessao = 0;
   goTab('produtos');
   atualizarBannerSelecaoProduto();
-  const aviso = document.getElementById('aviso-selecao-produto');
-  if (aviso) aviso.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function cancelarSelecaoProduto() {
   itemEmEdicaoId = null;
+  itensSelecionadosCatalogoSessao = 0;
   atualizarBannerSelecaoProduto();
+  fecharToastProdutoAdicionado();
   goTab('orcamento');
+}
+
+function concluirSelecaoCatalogo() {
+  itemEmEdicaoId = null;
+  itensSelecionadosCatalogoSessao = 0;
+  atualizarBannerSelecaoProduto();
+  fecharToastProdutoAdicionado();
+  goTab('orcamento');
+}
+
+function fecharToastProdutoAdicionado() {
+  const t = document.getElementById('toast-produto-adicionado');
+  if (t) t.style.display = 'none';
+}
+
+function exibirToastProdutoAdicionado(nomeProd) {
+  const t = document.getElementById('toast-produto-adicionado');
+  const nomeEl = document.getElementById('toast-prod-nome');
+  if (nomeEl) nomeEl.textContent = '✅ "' + (nomeProd || 'Produto') + '" adicionado!';
+  if (t) {
+    t.style.display = 'block';
+  }
 }
 
 function toggleStatusEnvioItem(id) {
@@ -9112,13 +9176,19 @@ function toggleStatusEnvioItem(id) {
 function atualizarBannerSelecaoProduto() {
   const aviso = document.getElementById('aviso-selecao-produto');
   const txt = document.getElementById('aviso-selecao-produto-txt');
+  const countEl = document.getElementById('count-selecao-prod-orc');
+  if (countEl) countEl.textContent = String(itensSelecionadosCatalogoSessao);
   if (!aviso) return;
-  if (itemEmEdicaoId) {
+  if (itemEmEdicaoId || itensSelecionadosCatalogoSessao > 0) {
     aviso.style.display = 'flex';
-    if (itemEmEdicaoId === 'novo') {
-      if (txt) txt.innerHTML = '<strong>📦 Modo de Seleção Ativo:</strong> Escolha um produto abaixo para adicionar como novo item no Orçamento, ou cadastre um novo produto acima.';
-    } else {
-      if (txt) txt.innerHTML = '<strong>📦 Modo de Seleção Ativo:</strong> Escolha um produto abaixo para preencher a linha do Orçamento, ou cadastre um novo produto acima.';
+    if (txt) {
+      if (itensSelecionadosCatalogoSessao > 0) {
+        txt.innerHTML = '<strong>📦 ' + itensSelecionadosCatalogoSessao + ' produto(s) adicionado(s):</strong> Continue escolhendo mais produtos ou clique em "Voltar ao Orçamento".';
+      } else if (itemEmEdicaoId === 'novo') {
+        txt.innerHTML = '<strong>📦 Modo de Seleção Ativo:</strong> Escolha um produto abaixo para incluir no Orçamento, ou cadastre um novo acima.';
+      } else {
+        txt.innerHTML = '<strong>📦 Modo de Seleção Ativo:</strong> Escolha um produto para preencher a linha do Orçamento. Você poderá adicionar mais produtos em seguida.';
+      }
     }
   } else {
     aviso.style.display = 'none';
@@ -9147,6 +9217,13 @@ function usarProdutoDoCatalogo(pId, nome) {
   const vm2Val = (p.vm2 !== '' && p.vm2 != null && Number(p.vm2) > 0) ? formatarValorPtBr(p.vm2) : '';
   const vunitVal = (p.vunit !== '' && p.vunit != null && Number(p.vunit) > 0) ? formatarValorPtBr(p.vunit) : '';
 
+  let fornSugerido = '';
+  if (p && p.nome && typeof materiais !== 'undefined' && Array.isArray(materiais)) {
+    const mat = materiais.find(m => m.nome && m.nome.toLowerCase() === p.nome.toLowerCase());
+    if (mat && mat.fornecedor) fornSugerido = mat.fornecedor;
+  }
+
+  // 1. Se estava editando uma linha específica do orçamento
   if (itemEmEdicaoId && itemEmEdicaoId !== 'novo') {
     const targetId = itemEmEdicaoId;
     const tr = document.getElementById('item-' + targetId);
@@ -9159,55 +9236,31 @@ function usarProdutoDoCatalogo(pId, nome) {
       if (inDesc) inDesc.value = p.nome || '';
       if (inVm2)   inVm2.value   = vm2Val;
       if (inVunit) inVunit.value = vunitVal;
-      if (inForn && !inForn.value) {
-        const mat = (typeof materiais !== 'undefined' && Array.isArray(materiais))
-          ? materiais.find(m => m.nome && m.nome.toLowerCase() === (p.nome || '').toLowerCase())
-          : null;
-        if (mat && mat.fornecedor) inForn.value = mat.fornecedor;
-      }
+      if (inForn && !inForn.value && fornSugerido) inForn.value = fornSugerido;
+
       calcItem(targetId);
       calcTotal();
       if (typeof salvarRascunhoOrcamento === 'function') salvarRascunhoOrcamento();
 
-      // Feedback visual na linha
-      tr.style.transition = 'all 0.4s ease';
-      tr.style.outline = '2px solid var(--gold)';
-      tr.style.backgroundColor = 'rgba(201,168,76,0.18)';
-      setTimeout(() => {
-        tr.style.outline = '';
-        tr.style.backgroundColor = '';
-      }, 1800);
-      itemEmEdicaoId = null;
+      // Muda para 'novo' para que a próxima seleção adicione uma nova linha sem sobrescrever
+      itemEmEdicaoId = 'novo';
+      itensSelecionadosCatalogoSessao++;
       atualizarBannerSelecaoProduto();
-      goTab('orcamento');
-      setTimeout(() => {
-        const trTarget = document.getElementById('item-' + targetId);
-        if (trTarget) trTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 100);
+      exibirToastProdutoAdicionado(p.nome);
       return;
     }
   }
 
-  // Novo item adicionado ao orçamento quando o usuário navega pelo catálogo
-  let fornSugerido = '';
-  if (p && p.nome && typeof materiais !== 'undefined' && Array.isArray(materiais)) {
-    const mat = materiais.find(m => m.nome && m.nome.toLowerCase() === p.nome.toLowerCase());
-    if (mat && mat.fornecedor) fornSugerido = mat.fornecedor;
-  }
+  // 2. Se já preencheu a primeira linha ou estava adicionando novo item
   addItem(p.nome, '1', '', '', '', vm2Val, vunitVal, '', fornSugerido);
   calcTotal();
   if (typeof salvarRascunhoOrcamento === 'function') {
     salvarRascunhoOrcamento();
   }
-  itemEmEdicaoId = null;
+  itemEmEdicaoId = 'novo';
+  itensSelecionadosCatalogoSessao++;
   atualizarBannerSelecaoProduto();
-  goTab('orcamento');
-  setTimeout(() => {
-    const list = document.getElementById('itens-lista');
-    if (list && list.lastElementChild) {
-      list.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  }, 100);
+  exibirToastProdutoAdicionado(p.nome);
 }
 
 function addProdutoDoCatalogo(id) {
