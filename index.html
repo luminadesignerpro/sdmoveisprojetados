@@ -9893,6 +9893,9 @@ function calcItem(id) {
 
   if (inTotal) inTotal.value = 'R$ ' + lineTotal.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
   calcTotal();
+  if (typeof agendarSalvarRascunhoOrcamento === 'function') {
+    agendarSalvarRascunhoOrcamento();
+  }
 }
 
 let valoresResumoEditadosManualmente = false;
