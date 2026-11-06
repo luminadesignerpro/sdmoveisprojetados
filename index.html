@@ -12371,12 +12371,41 @@ function criarRubricaDigitalSvgPadrao(nome) {
   return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
 }
 
+function isAssinaturaValidaParaOrdem(ord, regAssinatura) {
+  if (!ord || !regAssinatura) return false;
+  if (!regAssinatura.rubrica) return false;
+  
+  // 1. O nome do assinante deve bater com o cliente da ordem
+  const cliHist = (ord.nome || '').toLowerCase().trim();
+  const cliAss = (regAssinatura.nome || '').toLowerCase().trim();
+  if (!cliHist || !cliAss) return false;
+  
+  // Se for o mesmo cliente
+  const p1 = cliHist.split(' ')[0];
+  const p2 = cliAss.split(' ')[0];
+  if (p1 !== p2 && !cliHist.includes(cliAss) && !cliAss.includes(cliHist)) {
+    return false;
+  }
+  
+  // 2. REGRA DE DATA: A assinatura não pode ser anterior à criação da ordem (evita assinaturas antigas de testes)
+  if (regAssinatura.data) {
+    const dataAss = new Date(regAssinatura.data).getTime();
+    const dataOrd = ord.id ? Number(ord.id) : (ord.enviado_assinatura_em ? new Date(ord.enviado_assinatura_em).getTime() : 0);
+    // Se a assinatura for mais de 2 minutos mais velha que a ordem, é resíduo de teste antigo
+    if (dataOrd > 0 && dataAss < (dataOrd - 120000)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 function verificarAtualizacoesAprovacoesPendentes() {
   let alterou = false;
   if (!Array.isArray(historico)) return;
 
   historico.forEach(o => {
-    // 🛡️ A O.S. só pode ser aprovada se o CLIENTE REAL assinou o documento
+    // Se a ordem estiver pendente, ela NUNCA deve ser auto-aprovada com assinaturas antigas
     if (o.status === 'aprovado' || o.status === 'modificacao_aprovada') {
       return;
     }
@@ -12389,18 +12418,18 @@ function verificarAtualizacoesAprovacoesPendentes() {
         const salvo = localStorage.getItem('sdv_assinatura_' + numLimpo);
         if (salvo) {
           const parsed = JSON.parse(salvo);
-          // Só aceita a assinatura se o nome for compatível com o cliente desta O.S.!
-          const cliHist = (o.nome || '').toLowerCase().trim();
-          const cliAss = (parsed.nome || '').toLowerCase().trim();
-          if (cliHist && cliAss && (cliHist.includes(cliAss) || cliAss.includes(cliHist) || cliHist.split(' ')[0] === cliAss.split(' ')[0])) {
+          if (isAssinaturaValidaParaOrdem(o, parsed)) {
             regAssinatura = parsed;
+          } else {
+            // Remove assinatura antiga/inválida de teste para não contaminar a ordem
+            localStorage.removeItem('sdv_assinatura_' + numLimpo);
           }
         }
       } catch (_) {}
     }
 
-    // Se houver assinatura digital legítima com rubrica enviada pelo cliente
-    if (regAssinatura && regAssinatura.rubrica) {
+    // Se houver assinatura digital REAL e válida para esta ordem específica
+    if (regAssinatura && isAssinaturaValidaParaOrdem(o, regAssinatura)) {
       o.status = 'aprovado';
       o.assinado_por = regAssinatura.nome || o.nome || 'Cliente';
       o.assinado_em = regAssinatura.data || new Date().toISOString();
@@ -13054,7 +13083,7 @@ function renderHistFiltrado() {
   el.innerHTML = lista.map(o => {
     const st = o.status || 'pendente';
     const numLimpo = String(o.numero || '').replace(/\D/g,'');
-    const temAssinatura = !!(o.assinado_por || o.assinatura_digital || localStorage.getItem('sdv_assinatura_' + numLimpo));
+    const temAssinatura = (st === 'aprovado' || st === 'modificacao_aprovada') && !!(o.assinado_por || o.assinatura_digital);
     let assinadoBadge = '';
     if ((st === 'aprovado' || st === 'modificacao_aprovada') && o.assinado_por) {
       assinadoBadge = `<div onclick="abrirModalAssinaturaOs('${o.id}')" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;background:rgba(74,222,128,0.12);border:1.5px solid rgba(74,222,128,0.35);padding:5px 12px;border-radius:10px;font-size:12px;color:#4ade80;margin-top:6px;font-weight:700;">✍️ Autorizado por: ${esc(o.assinado_por)}</div>`;
@@ -13183,7 +13212,7 @@ function renderHist() {
   el.innerHTML = historico.slice().reverse().map(o => {
     const st = o.status || 'pendente';
     const numLimpo = String(o.numero || '').replace(/\D/g, '');
-    const temAssinatura = !!(o.assinado_por || o.assinatura_digital || localStorage.getItem('sdv_assinatura_' + numLimpo));
+    const temAssinatura = (st === 'aprovado' || st === 'modificacao_aprovada') && !!(o.assinado_por || o.assinatura_digital);
 
     let assinadoBadge = '';
     if ((st === 'aprovado' || st === 'modificacao_aprovada') && o.assinado_por) {
@@ -19564,6 +19593,15 @@ function sincronizarStatusContratos() {
             return;
           }
 
+          // 🛡️ VALIDAÇÃO DE DATA: O contrato no servidor não pode ser anterior à criação da O.S.
+          if (c.assinado_em) {
+            const tAss = new Date(c.assinado_em).getTime();
+            const tOrd = historico[idx].id ? Number(historico[idx].id) : 0;
+            if (tOrd > 0 && tAss < (tOrd - 120000)) {
+              return; // Contrato antigo de meses atrás -> IGNORAR!
+            }
+          }
+
           const jaTinhaRubrica = !!(historico[idx].assinatura_digital && historico[idx].assinatura_digital.rubrica);
           if (historico[idx].status !== 'aprovado' || (!jaTinhaRubrica && c.assinatura_base64)) {
             historico[idx].status = 'aprovado';
@@ -20908,18 +20946,36 @@ window.addEventListener('DOMContentLoaded', function() {
     if (typeof atualizarBadgeGaleriaOrcamento === 'function') atualizarBadgeGaleriaOrcamento();
   } catch(_) {}
 
-  // 🛡️ Autocura: remove assinaturas falsas/divergentes de testes anteriores (ex: cliente David marcado com assinatura de Samuel)
+  // 🛡️ Autocura definitiva: remove assinaturas falsas/retroativas (ex: assinatura de 30/09/2026 em ordem criada depois)
   try {
     let histAtual = load(K.orders, []);
     let alterouInconsist = false;
     histAtual.forEach(o => {
-      const cli = (o.nome || '').toLowerCase().trim();
-      const ass = (o.assinado_por || '').toLowerCase().trim();
-      if (cli && ass && !cli.includes('samuel') && ass.includes('samuel')) {
+      const assData = (o.assinatura_digital && o.assinatura_digital.data) || o.assinado_em;
+      const tOrd = o.id ? Number(o.id) : (o.enviado_assinatura_em ? new Date(o.enviado_assinatura_em).getTime() : 0);
+      
+      let invalido = false;
+      // 1. Assinatura retroativa (feita antes da ordem existir)
+      if (assData && tOrd > 0) {
+        const tAss = new Date(assData).getTime();
+        if (tAss < (tOrd - 120000)) invalido = true;
+      }
+      // 2. Qualquer assinatura de setembro de 2026 em ordens de novembro
+      if (assData && String(assData).includes('2026-09') && tOrd > new Date('2026-10-01').getTime()) {
+        invalido = true;
+      }
+      // 3. Cliente David assinado por Samuel
+      if (o.assinado_por && o.assinado_por.includes('SAMUEL D C SANTOS') && (o.nome || '').toLowerCase().includes('david') && !o.nome.toLowerCase().includes('santos')) {
+        invalido = true;
+      }
+
+      if (invalido) {
         o.status = 'pendente';
         o.assinado_por = '';
         o.assinado_em = '';
         delete o.assinatura_digital;
+        delete o.assinatura_base64;
+        delete o.rubrica_base64;
         alterouInconsist = true;
         const nL = String(o.numero || '').replace(/\D/g, '');
         localStorage.removeItem('sdv_assinatura_' + nL);
@@ -20930,6 +20986,20 @@ window.addEventListener('DOMContentLoaded', function() {
         } catch (_) {}
       }
     });
+
+    // Limpa todas as chaves sdv_assinatura_ antigas de setembro do localStorage
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('sdv_assinatura_')) {
+        try {
+          const v = JSON.parse(localStorage.getItem(k) || '{}');
+          if (v.data && String(v.data).includes('2026-09')) {
+            localStorage.removeItem(k);
+          }
+        } catch (_) {}
+      }
+    }
+
     if (alterouInconsist) {
       save(K.orders, histAtual);
       historico = histAtual;
