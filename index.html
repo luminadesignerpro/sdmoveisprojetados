@@ -10524,8 +10524,7 @@ function salvarOrdemInterna(silencioso = false, navegarParaHistorico = true) {
     } catch (_) {}
 
     if (!silencioso) {
-      alert('✅ Todos os dados da Ordem ' + o.numero + ' foram atualizados com sucesso!
-• Cliente, valores, itens, galeria de fotos e contrato sincronizados.');
+      alert('✅ Todos os dados da Ordem ' + o.numero + ' foram atualizados com sucesso!\n• Cliente, valores, itens, galeria de fotos e contrato sincronizados.');
       cancelarEdicaoOs();
     } else {
       if (typeof mostrarToastAprovacao === 'function') {
@@ -11870,38 +11869,29 @@ function obterFotosOrcamentoParaPdf(osNum) {
     }
   } catch(_) {}
 
-  // 2. Se não tem em sdm_orc_fotos_temp, tenta pela chave da O.S. específica
-  if (lista.length === 0 && osNum) {
-    try {
-      const k = typeof getGaleriaKey === 'function' ? getGaleriaKey(osNum) : ('sdv_galeria_' + String(osNum).replace(/\D/g, ''));
-      const salvo = localStorage.getItem(k);
-      if (salvo) {
-        const arr = JSON.parse(salvo);
-        if (Array.isArray(arr) && arr.length > 0) lista = arr;
-      }
-    } catch(_) {}
-  }
-
-  // 3. Se ainda não tem, tenta do histórico de ordens
-  if (lista.length === 0 && osNum && typeof historico !== 'undefined' && Array.isArray(historico)) {
-    const numLimpo = String(osNum).replace(/\D/g, '');
-    const ord = historico.find(x => String(x.numero || '').replace(/\D/g, '') === numLimpo || String(x.id) === String(osNum));
-    if (ord && Array.isArray(ord.fotos) && ord.fotos.length > 0) {
-      lista = ord.fotos;
-    } else if (ord && ord.dados && Array.isArray(ord.dados.fotos) && ord.dados.fotos.length > 0) {
-      lista = ord.dados.fotos;
+  // 2. Só carrega fotos salvas se estiver EDITANDO uma OS existente específica
+  if (typeof editandoOsId !== 'undefined' && editandoOsId) {
+    if (lista.length === 0 && osNum) {
+      try {
+        const k = typeof getGaleriaKey === 'function' ? getGaleriaKey(osNum) : ('sdv_galeria_' + String(osNum).replace(/\D/g, ''));
+        const salvo = localStorage.getItem(k);
+        if (salvo) {
+          const arr = JSON.parse(salvo);
+          if (Array.isArray(arr) && arr.length > 0) lista = arr;
+        }
+      } catch(_) {}
     }
-  }
 
-  // 4. Fallback final: sdm_cam_capturas geral
-  if (lista.length === 0) {
-    try {
-      const s = localStorage.getItem('sdm_cam_capturas');
-      if (s) {
-        const arr = JSON.parse(s);
-        if (Array.isArray(arr) && arr.length > 0) lista = arr;
+    // 3. Tenta do histórico de ordens
+    if (lista.length === 0 && osNum && typeof historico !== 'undefined' && Array.isArray(historico)) {
+      const numLimpo = String(osNum).replace(/\D/g, '');
+      const ord = historico.find(x => String(x.numero || '').replace(/\D/g, '') === numLimpo || String(x.id) === String(osNum));
+      if (ord && Array.isArray(ord.fotos) && ord.fotos.length > 0) {
+        lista = ord.fotos;
+      } else if (ord && ord.dados && Array.isArray(ord.dados.fotos) && ord.dados.fotos.length > 0) {
+        lista = ord.dados.fotos;
       }
-    } catch(_) {}
+    }
   }
 
   return lista;
@@ -20900,11 +20890,11 @@ window.addEventListener('DOMContentLoaded', function() {
   addItem();
   atualizarNumeroDisplay();
 
-  // Limpa galeria para que não apareçam imagens de orçamentos anteriores ao iniciar
+  // Limpa anexos da galeria temporária para não exibir imagens residuais
   try {
-    localStorage.removeItem('sdm_cam_capturas');
     localStorage.removeItem('sdm_orc_fotos_temp');
     localStorage.removeItem('sdm_orc_pdfs');
+    localStorage.removeItem('sdm_cam_capturas');
     if (typeof atualizarBadgeGaleriaOrcamento === 'function') atualizarBadgeGaleriaOrcamento();
   } catch(_) {}
 
