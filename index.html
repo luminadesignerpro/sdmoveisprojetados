@@ -12443,6 +12443,9 @@ function verificarAtualizacoesAprovacoesPendentes() {
         o.assinado_em = (regAssinatura && regAssinatura.data) || o.assinado_em || new Date().toISOString();
         alterou = true;
       }
+      if (typeof sincronizarProdutosAprovadosParaPedidosMaterial === 'function') {
+        sincronizarProdutosAprovadosParaPedidosMaterial(o);
+      }
       if (!regAssinatura) {
         regAssinatura = {
           nome: nomeFinal,
@@ -13329,6 +13332,9 @@ function aprovarOsDireto(id) {
   historico[idx].assinado_por = historico[idx].assinado_por || 'Confirmado via WhatsApp';
   historico[idx].assinado_em = new Date().toISOString();
   save(K.orders, historico);
+  if (typeof sincronizarProdutosAprovadosParaPedidosMaterial === 'function') {
+    sincronizarProdutosAprovadosParaPedidosMaterial(historico[idx]);
+  }
   renderHist();
   mostrarToastAprovacao(`✅ Orçamento ${historico[idx].numero} marcado como Aprovado!`);
   fetch('/api/aprovar-orcamento', {
@@ -19586,6 +19592,9 @@ function sincronizarStatusContratos() {
             historico[idx].status = 'aprovado';
             historico[idx].assinado_por = c.assinante_nome || c.cliente || 'Confirmado via WhatsApp';
             historico[idx].assinado_em = c.assinado_em || new Date().toISOString();
+            if (typeof sincronizarProdutosAprovadosParaPedidosMaterial === 'function') {
+              sincronizarProdutosAprovadosParaPedidosMaterial(historico[idx]);
+            }
             if (c.assinatura_base64) {
               historico[idx].assinatura_digital = {
                 nome: c.assinante_nome || c.cliente || 'Cliente',
@@ -20935,6 +20944,9 @@ window.addEventListener('DOMContentLoaded', function() {
   const el = document.getElementById('usuario-logado');
   if (el) el.textContent = '👤 ' + (user.nome || user.username || 'Usuário');
   iniciarRealtimePortalAdmin();
+  if (typeof sincronizarTodasOSAprovadasParaMateriais === 'function') {
+    sincronizarTodasOSAprovadasParaMateriais();
+  }
 });
 
 window.addEventListener('pageshow', function() {
@@ -27259,7 +27271,10 @@ function mudarAbaCronograma(aba) {
   if (aba === 'semana') renderCronoSemana();
   else if (aba === 'mes') renderCronoMes();
   else if (aba === 'ano') renderCronoAno();
-  else if (aba === 'material') renderPedidosMaterial();
+  else if (aba === 'material') {
+    if (typeof sincronizarTodasOSAprovadasParaMateriais === 'function') sincronizarTodasOSAprovadasParaMateriais();
+    renderPedidosMaterial();
+  }
 }
 
 // ── HELPERS DE DATA ─────────────────────────────────────────────
@@ -28182,6 +28197,146 @@ function carregarMateriais() {
 }
 function salvarMateriais(arr) {
   try { localStorage.setItem(K_CRONO.materiais, JSON.stringify(arr)); } catch(_) {}
+}
+
+
+// ══════════════════════════════════════════════════════════════════
+//  SINCRONIZAÇÃO AUTOMÁTICA: OS APROVADA / ASSINADA -> PEDIDO DE MATERIAL
+// ══════════════════════════════════════════════════════════════════
+function sincronizarProdutosAprovadosParaPedidosMaterial(os) {
+  if (!os) return 0;
+  const statusStr = (os.status || '').toLowerCase().trim();
+  const isAprovado = statusStr === 'aprovado' || statusStr === 'modificacao_aprovada';
+  const temAssinatura = !!(os.assinatura_digital || os.assinatura || os.assinado_por || os.assinado_em);
+
+  if (!isAprovado && !temAssinatura) return 0;
+
+  const numOs = os.numero || ('#' + String(os.id || '').replace(/\D/g, '').padStart(4, '0'));
+  const nomeCliente = (os.nome || os.cliente || '').trim();
+  if (!nomeCliente && !numOs) return 0;
+
+  let listaMateriais = [];
+  try {
+    if (typeof carregarMateriais === 'function') {
+      listaMateriais = carregarMateriais();
+    } else {
+      listaMateriais = JSON.parse(localStorage.getItem(K_CRONO.materiais) || '[]');
+    }
+  } catch(_) {
+    listaMateriais = [];
+  }
+
+  let inseridosCount = 0;
+
+  // 1. Busca materiais da pasta do cliente no comparativo de preços (sd_material_list_v1)
+  let materiaisComparativo = [];
+  try {
+    const rawComp = localStorage.getItem('sd_material_list_v1');
+    if (rawComp) {
+      const allComp = JSON.parse(rawComp);
+      if (Array.isArray(allComp)) {
+        materiaisComparativo = allComp.filter(m => {
+          const cName = (m.clientName || '').trim().toLowerCase();
+          const targetName = nomeCliente.toLowerCase();
+          return cName && (cName === targetName || targetName.includes(cName) || cName.includes(targetName));
+        });
+      }
+    }
+  } catch(_) {}
+
+  // 2. Se houver materiais do comparativo para este cliente, adiciona-os ao Pedido de Material
+  if (materiaisComparativo.length > 0) {
+    materiaisComparativo.forEach((matComp, idx) => {
+      const nomeItem = (matComp.productName || matComp.nome || '').trim();
+      if (!nomeItem) return;
+
+      const jaExiste = listaMateriais.some(it =>
+        (it.os === numOs || (it.cliente && it.cliente.toLowerCase() === nomeCliente.toLowerCase())) &&
+        (it.nome || '').trim().toLowerCase() === nomeItem.toLowerCase()
+      );
+
+      if (!jaExiste) {
+        const unitVal = parseFloat(String(matComp.selectedUnitPrice || matComp.unitPrice || 0)) || 0;
+        listaMateriais.unshift({
+          id: 'mat_aprov_' + Date.now() + '_' + idx,
+          nome: nomeItem,
+          qtd: String(matComp.quantity || 1),
+          unidade: 'un',
+          valor: unitVal > 0 ? unitVal.toFixed(2) : '',
+          urgencia: 'urgente',
+          fornecedor: matComp.selectedSupplierName || '',
+          status: 'a_comprar',
+          obs: `OS ${numOs} (${nomeCliente}) - Aprovado via Assinatura Digital`,
+          cliente: nomeCliente,
+          os: numOs,
+          origem: 'assinatura_digital_aprovada',
+          criadoEm: new Date().toISOString()
+        });
+        inseridosCount++;
+      }
+    });
+  }
+
+  // 3. Adiciona também os itens da própria OS que ainda não estejam na lista
+  const itensOs = Array.isArray(os.itens) ? os.itens : [];
+  itensOs.forEach((itOs, idx) => {
+    const descItem = (itOs.desc || itOs.nome || '').trim();
+    if (!descItem) return;
+
+    const jaExiste = listaMateriais.some(it =>
+      (it.os === numOs || (it.cliente && it.cliente.toLowerCase() === nomeCliente.toLowerCase())) &&
+      (it.nome || '').trim().toLowerCase() === descItem.toLowerCase()
+    );
+
+    if (!jaExiste) {
+      const vUnit = parseFloat(String(itOs.v_unit || itOs.vunit || itOs.v_m2 || itOs.preco || 0).replace(',', '.')) || 0;
+      listaMateriais.unshift({
+        id: 'mat_aprov_os_' + Date.now() + '_' + idx,
+        nome: descItem,
+        qtd: String(itOs.qtd || 1),
+        unidade: (itOs.v_m2 && !itOs.v_unit) ? 'm²' : 'un',
+        valor: vUnit > 0 ? vUnit.toFixed(2) : '',
+        urgencia: 'urgente',
+        fornecedor: itOs.fornecedor || '',
+        status: 'a_comprar',
+        obs: `OS ${numOs} (${nomeCliente}) - Aprovado via Assinatura Digital`,
+        cliente: nomeCliente,
+        os: numOs,
+        origem: 'assinatura_digital_aprovada',
+        criadoEm: new Date().toISOString()
+      });
+      inseridosCount++;
+    }
+  });
+
+  if (inseridosCount > 0) {
+    if (typeof salvarMateriais === 'function') {
+      salvarMateriais(listaMateriais);
+    } else {
+      try { localStorage.setItem(K_CRONO.materiais, JSON.stringify(listaMateriais)); } catch(_) {}
+    }
+    if (typeof renderPedidosMaterial === 'function') {
+      renderPedidosMaterial();
+    }
+  }
+
+  return inseridosCount;
+}
+
+function sincronizarTodasOSAprovadasParaMateriais() {
+  if (!Array.isArray(historico)) return;
+  let totalNovos = 0;
+  historico.forEach(os => {
+    const statusStr = (os.status || '').toLowerCase().trim();
+    const isAprovado = statusStr === 'aprovado' || statusStr === 'modificacao_aprovada';
+    const temAssinatura = !!(os.assinatura_digital || os.assinatura || os.assinado_por || os.assinado_em);
+    if (isAprovado || temAssinatura) {
+      totalNovos += sincronizarProdutosAprovadosParaPedidosMaterial(os);
+    }
+  });
+  if (totalNovos > 0) {
+    console.log(`✅ ${totalNovos} produto(s) de OS aprovada(s) sincronizado(s) para Pedido de Material!`);
+  }
 }
 
 function renderPedidosMaterial() {
