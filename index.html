@@ -12376,52 +12376,38 @@ function verificarAtualizacoesAprovacoesPendentes() {
   if (!Array.isArray(historico)) return;
 
   historico.forEach(o => {
+    // 🛡️ A O.S. só pode ser aprovada se o CLIENTE REAL assinou o documento
+    if (o.status === 'aprovado' || o.status === 'modificacao_aprovada') {
+      return;
+    }
+
     const numLimpo = String(o.numero || '').replace(/\D/g, '');
-    const ehTaciane = (o.nome || '').toLowerCase().includes('taciane') || numLimpo === '0003' || numLimpo === '3';
-    
     let regAssinatura = o.assinatura_digital || null;
+
     if (!regAssinatura) {
       try {
         const salvo = localStorage.getItem('sdv_assinatura_' + numLimpo);
-        if (salvo) regAssinatura = JSON.parse(salvo);
-      } catch (_) {}
-    }
-    if (!regAssinatura) {
-      try {
-        const mapa = JSON.parse(localStorage.getItem('sdv_assinaturas_map') || '{}');
-        if (mapa[numLimpo]) regAssinatura = mapa[numLimpo];
+        if (salvo) {
+          const parsed = JSON.parse(salvo);
+          // Só aceita a assinatura se o nome for compatível com o cliente desta O.S.!
+          const cliHist = (o.nome || '').toLowerCase().trim();
+          const cliAss = (parsed.nome || '').toLowerCase().trim();
+          if (cliHist && cliAss && (cliHist.includes(cliAss) || cliAss.includes(cliHist) || cliHist.split(' ')[0] === cliAss.split(' ')[0])) {
+            regAssinatura = parsed;
+          }
+        }
       } catch (_) {}
     }
 
-    if (ehTaciane || regAssinatura) {
-      const nomeFinal = (regAssinatura && regAssinatura.nome) || o.assinado_por || (ehTaciane ? 'Taciane Pereira' : (o.nome || 'Cliente'));
-      if (o.status !== 'aprovado') {
-        o.status = 'aprovado';
-        o.assinado_por = nomeFinal;
-        o.assinado_em = (regAssinatura && regAssinatura.data) || o.assinado_em || new Date().toISOString();
-        alterou = true;
-      }
+    // Se houver assinatura digital legítima com rubrica enviada pelo cliente
+    if (regAssinatura && regAssinatura.rubrica) {
+      o.status = 'aprovado';
+      o.assinado_por = regAssinatura.nome || o.nome || 'Cliente';
+      o.assinado_em = regAssinatura.data || new Date().toISOString();
+      o.assinatura_digital = regAssinatura;
+      alterou = true;
       if (typeof sincronizarProdutosAprovadosParaPedidosMaterial === 'function') {
         sincronizarProdutosAprovadosParaPedidosMaterial(o);
-      }
-      if (!regAssinatura) {
-        regAssinatura = {
-          nome: nomeFinal,
-          rubrica: criarRubricaDigitalSvgPadrao(nomeFinal),
-          data: o.assinado_em || new Date().toISOString(),
-          os: o.numero || ('#' + numLimpo.padStart(4, '0'))
-        };
-        o.assinatura_digital = regAssinatura;
-        try {
-          localStorage.setItem('sdv_assinatura_' + numLimpo, JSON.stringify(regAssinatura));
-          const mapa = JSON.parse(localStorage.getItem('sdv_assinaturas_map') || '{}');
-          mapa[numLimpo] = regAssinatura;
-          localStorage.setItem('sdv_assinaturas_map', JSON.stringify(mapa));
-        } catch(_) {}
-        alterou = true;
-      } else if (!o.assinatura_digital) {
-        o.assinatura_digital = regAssinatura;
-        alterou = true;
       }
     }
   });
@@ -19412,6 +19398,18 @@ async function enviarOrcamentoParaAssinaturaDigital() {
 
     carregarListaContratos();
     sincronizarStatusContratos();
+
+    // ✅ LIMPA COMPLETAMENTE O FORMULÁRIO DO ORÇAMENTO PARA UMA NOVA O.S.
+    setTimeout(() => {
+      try {
+        limparRascunhoOrcamento();
+        cancelarEdicaoOs();
+        atualizarNumeroDisplay();
+        if (typeof mostrarToastAprovacao === 'function') {
+          mostrarToastAprovacao('✅ Ordem ' + d.numero + ' salva e link enviado! Formulário limpo para nova O.S.');
+        }
+      } catch (_) {}
+    }, 400);
   } catch (err) {
     alert(err.message || 'Erro ao enviar para assinatura digital.');
   } finally {
@@ -19554,10 +19552,22 @@ function sincronizarStatusContratos() {
         const normC = norm(c.numero_os);
         const idx = historico.findIndex(o => norm(o.numero) === normC);
         if (idx !== -1) {
+          // 🛡️ VALIDAÇÃO CRÍTICA: Só aprova se o nome do cliente for compatível (evita aprovar nova OS com assinatura de teste antigo)
+          const cliHistorico = (historico[idx].nome || '').toLowerCase().trim();
+          const cliContrato = (c.assinante_nome || c.cliente || c.cliente_nome || '').toLowerCase().trim();
+          const compat = !cliHistorico || !cliContrato ||
+            cliHistorico.includes(cliContrato) || cliContrato.includes(cliHistorico) ||
+            cliHistorico.split(' ')[0] === cliContrato.split(' ')[0];
+
+          if (!compat) {
+            // Contrato de outro cliente (ex: teste antigo com o mesmo número de OS) - IGNORA!
+            return;
+          }
+
           const jaTinhaRubrica = !!(historico[idx].assinatura_digital && historico[idx].assinatura_digital.rubrica);
           if (historico[idx].status !== 'aprovado' || (!jaTinhaRubrica && c.assinatura_base64)) {
             historico[idx].status = 'aprovado';
-            historico[idx].assinado_por = c.assinante_nome || c.cliente || 'Confirmado via WhatsApp';
+            historico[idx].assinado_por = c.assinante_nome || c.cliente || 'Assinado pelo Cliente';
             historico[idx].assinado_em = c.assinado_em || new Date().toISOString();
             if (typeof sincronizarProdutosAprovadosParaPedidosMaterial === 'function') {
               sincronizarProdutosAprovadosParaPedidosMaterial(historico[idx]);
@@ -20897,6 +20907,35 @@ window.addEventListener('DOMContentLoaded', function() {
     localStorage.removeItem('sdm_cam_capturas');
     if (typeof atualizarBadgeGaleriaOrcamento === 'function') atualizarBadgeGaleriaOrcamento();
   } catch(_) {}
+
+  // 🛡️ Autocura: remove assinaturas falsas/divergentes de testes anteriores (ex: cliente David marcado com assinatura de Samuel)
+  try {
+    let histAtual = load(K.orders, []);
+    let alterouInconsist = false;
+    histAtual.forEach(o => {
+      const cli = (o.nome || '').toLowerCase().trim();
+      const ass = (o.assinado_por || '').toLowerCase().trim();
+      if (cli && ass && !cli.includes('samuel') && ass.includes('samuel')) {
+        o.status = 'pendente';
+        o.assinado_por = '';
+        o.assinado_em = '';
+        delete o.assinatura_digital;
+        alterouInconsist = true;
+        const nL = String(o.numero || '').replace(/\D/g, '');
+        localStorage.removeItem('sdv_assinatura_' + nL);
+        try {
+          const mapa = JSON.parse(localStorage.getItem('sdv_assinaturas_map') || '{}');
+          delete mapa[nL];
+          localStorage.setItem('sdv_assinaturas_map', JSON.stringify(mapa));
+        } catch (_) {}
+      }
+    });
+    if (alterouInconsist) {
+      save(K.orders, histAtual);
+      historico = histAtual;
+      renderHist();
+    }
+  } catch (_) {}
 
   iniciarRelogioPonto();
   atualizarSelectColaboradoresPonto();
