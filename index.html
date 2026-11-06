@@ -2008,13 +2008,14 @@
   <!-- ══════════════════════════════════════════ -->
   <div id="panel-orcamento" class="panel active">
 
-    <div class="os-bar" style="display:flex;justify-content:space-between;align-items:center;padding:12px 18px;gap:8px;flex-wrap:wrap;row-gap:8px;">
+    <div id="topo-orcamento" class="os-bar" style="display:flex;justify-content:space-between;align-items:center;padding:12px 18px;gap:8px;flex-wrap:wrap;">
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <button type="button" class="btn btn-sec btn-sm" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Voltar ao menu de abas no topo" style="padding:4px 9px;font-size:11px;font-weight:800;display:inline-flex;align-items:center;gap:4px;border-color:rgba(201,168,76,0.5);">⬆ Abas</button>
         <span class="lbl">Orçamento / O.S. Nº</span>
         <span class="val" id="orc-numero-display">#0003</span>
         <button class="btn btn-sec btn-sm" onclick="alterarProximoNumero()" title="Alterar número da O.S." style="padding:4px 9px;font-size:11px;">✏️ Alterar Nº</button>
       </div>
-      <button class="btn btn-gold btn-sm" onclick="abrirModalSync()" style="font-size:12px;padding:6px 13px;flex-shrink:0;">
+      <button class="btn btn-gold btn-sm" onclick="abrirModalSync()" style="font-size:12px;padding:6px 13px;">
         🔄 Backup / Sincronizar
       </button>
     </div>
@@ -2953,15 +2954,6 @@
   <!-- PANEL: PRODUTOS E SERVIÇOS (CATÁLOGO DA SEGUNDA IMAGEM) -->
   <!-- ══════════════════════════════════════════ -->
   <div id="panel-produtos" class="panel">
-    <!-- BARRA FIXA DE RETORNO AO ORÇAMENTO -->
-    <div id="catalogo-top-bar" style="position:sticky;top:8px;z-index:999;display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;padding:12px 16px;background:rgba(15,17,26,0.96);backdrop-filter:blur(10px);border:1.5px solid rgba(201,168,76,0.5);border-radius:14px;box-shadow:0 6px 20px rgba(0,0,0,0.65);">
-      <button type="button" class="btn btn-gold" onclick="cancelarSelecaoProduto()" style="display:inline-flex;align-items:center;gap:8px;font-weight:900;font-size:14px;padding:10px 18px;border-radius:10px;box-shadow:0 4px 15px rgba(201,168,76,0.35);cursor:pointer;">
-        ⬅ Voltar ao Orçamento
-      </button>
-      <div id="aviso-selecao-produto-txt" style="font-size:13px;font-weight:700;color:#fcd34d;text-align:right;">
-        Toque em "Usar" para escolher o produto
-      </div>
-    </div>
     <div class="card">
       <div class="card-title">➕ Cadastrar / Editar Produto ou Serviço</div>
       <div class="field-row">
@@ -2981,14 +2973,12 @@
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
         <div class="card-title" style="margin-bottom:0;">📦 Produtos e Serviços Cadastrados <span class="num-badge" id="prod-count">0</span></div>
-        <input id="busca-prod-filtro" placeholder="🔍 Filtrar produtos..." oninput="renderProdutos(this.value)" style="max-width:240px;padding:6px 12px;font-size:12px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:#08080f;color:var(--text);">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <input id="busca-prod-filtro" placeholder="🔍 Filtrar produtos..." oninput="renderProdutos(this.value)" style="max-width:200px;padding:6px 12px;font-size:12px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:#08080f;color:var(--text);">
+          <button type="button" class="btn btn-danger btn-sm" onclick="excluirTodosProdutos()" title="Excluir todos os produtos do catálogo" style="font-size:11px;padding:6px 10px;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;">🗑️ Excluir Todos</button>
+        </div>
       </div>
       <div id="prod-lista"><div class="empty">Nenhum produto cadastrado.</div></div>
-      <div style="margin-top:16px;text-align:center;">
-        <button type="button" class="btn btn-gold" onclick="cancelarSelecaoProduto()" style="display:inline-flex;align-items:center;gap:8px;font-weight:900;font-size:14px;padding:12px 22px;border-radius:10px;box-shadow:0 4px 15px rgba(201,168,76,0.35);cursor:pointer;">
-          ⬅ Voltar ao Orçamento
-        </button>
-      </div>
     </div>
   </div>
 
@@ -8210,27 +8200,38 @@ function salvarDadosEmpresaConfig() {
 function recarregarDadosEmpresaAtiva() {
   const licAtiva = obterLicencaAtiva();
 
-  // 1. Produtos do catálogo da empresa (garante que produtos cadastrados fiquem sempre salvos)
-  produtos = load(K.products);
+  // 1. Produtos do catálogo da empresa (respeita exclusões e cadastros do usuário)
+  const empId = licAtiva.id || 'sdmoveis';
+  const catalogoIniciadoKey = 'sdv_catalogo_iniciado_' + empId;
+  const jaIniciou = localStorage.getItem(catalogoIniciadoKey);
+
+  const storedProd = load(K.products, null);
+
   const catalogoPadraoSegmento = (licAtiva.tipoContrato === 'moveis' || licAtiva.id === 'sdmoveis')
     ? JSON.parse(JSON.stringify(PRODUTOS_PADRAO_MOVEIS))
     : JSON.parse(JSON.stringify(PRODUTOS_PADRAO));
 
-  if (!produtos || !produtos.length) {
+  if (!jaIniciou && (storedProd === null || !Array.isArray(storedProd))) {
+    // Apenas na primeira inicialização da empresa carrega o catálogo inicial padrão
     produtos = catalogoPadraoSegmento;
     save(K.products, produtos);
+    try { localStorage.setItem(catalogoIniciadoKey, '1'); } catch(_) {}
   } else {
-    // Mescla produtos padrão sem sobrescrever ou apagar nenhum produto já cadastrado pelo usuário
-    let alterouCatalogo = false;
-    catalogoPadraoSegmento.forEach(def => {
-      if (!produtos.some(p => p.nome && p.nome.toLowerCase() === def.nome.toLowerCase())) {
-        produtos.push(def);
-        alterouCatalogo = true;
+    // Empresa já inicializada: respeita estritamente o catálogo atual (produtos excluídos não voltam)
+    produtos = Array.isArray(storedProd) ? storedProd : [];
+    
+    // Filtra produtos que foram excluídos pelo usuário caso tenham retornado
+    try {
+      const kExcluidos = 'sdv_produtos_excluidos_' + empId;
+      const excluidos = JSON.parse(localStorage.getItem(kExcluidos) || '[]');
+      if (excluidos.length && produtos.length) {
+        const antes = produtos.length;
+        produtos = produtos.filter(p => !excluidos.includes((p.nome || '').trim().toLowerCase()));
+        if (produtos.length !== antes) {
+          save(K.products, produtos);
+        }
       }
-    });
-    if (alterouCatalogo) {
-      save(K.products, produtos);
-    }
+    } catch(_) {}
   }
 
   // 2. Clientes da empresa
@@ -8773,6 +8774,24 @@ function goTab(t, bypassAuth = false) {
   if (t==='relatorio')  renderRelatorio();
   if (t==='cronograma') { if (typeof mudarAbaCronograma === 'function') mudarAbaCronograma('semana'); }
   if (t==='ferramentas') { renderFerramentas(); }
+
+  // Rola para o topo do painel correspondente
+  const panAtivo = document.getElementById('panel-' + t);
+  if (panAtivo) {
+    setTimeout(function() {
+      try {
+        if (t === 'orcamento') {
+          var topoOrc = document.getElementById('topo-orcamento') || panAtivo;
+          topoOrc.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+          panAtivo.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      } catch(_) {
+        panAtivo.scrollIntoView();
+      }
+    }, 40);
+  }
+
 }
 
 // ══════════════════════════════════════════════
@@ -8844,7 +8863,8 @@ function isDescricaoServico(desc) {
 
 function updateDatalistProdutos() {
   const dl = document.getElementById('lista-produtos-sugeridos');
-  if (dl) dl.innerHTML = '';
+  if (!dl) return;
+  dl.innerHTML = produtos.map(p => `<option value="${esc(p.nome)}">${p.cat ? p.cat + ' - ' : ''}R$ ${p.vm2 ? p.vm2 + '/m²' : p.vunit + ' un'}</option>`).join('');
 }
 
 // ── FORNECEDORES SUGERIDOS ──────────────────────────────────────────
@@ -8999,17 +9019,17 @@ let itemEmEdicaoId = null;
 function irParaAbaProdutosParaItem(id) {
   itemEmEdicaoId = id;
   goTab('produtos');
-  if (typeof renderProdutos === 'function') renderProdutos();
   atualizarBannerSelecaoProduto();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  const aviso = document.getElementById('aviso-selecao-produto');
+  if (aviso) aviso.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function irParaAbaProdutosParaNovoItem() {
   itemEmEdicaoId = 'novo';
   goTab('produtos');
-  if (typeof renderProdutos === 'function') renderProdutos();
   atualizarBannerSelecaoProduto();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  const aviso = document.getElementById('aviso-selecao-produto');
+  if (aviso) aviso.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function cancelarSelecaoProduto() {
@@ -9018,27 +9038,35 @@ function cancelarSelecaoProduto() {
   goTab('orcamento');
 }
 
+function toggleStatusEnvioItem(id) {
+  var btn = document.getElementById('btn-status-' + id);
+  if (!btn) return;
+  var enviado = btn.getAttribute('data-enviado') === '1';
+  if (enviado) {
+    btn.setAttribute('data-enviado', '0');
+    btn.style.background = '#dc2626';
+    btn.innerHTML = '<span style="font-size:12px;">&#10060;</span> Não Enviado';
+  } else {
+    btn.setAttribute('data-enviado', '1');
+    btn.style.background = '#16a34a';
+    btn.innerHTML = '<span style="font-size:12px;">&#9989;</span> Enviado';
+  }
+  if (typeof agendarSalvarRascunhoOrcamento === 'function') agendarSalvarRascunhoOrcamento();
+}
+
 function atualizarBannerSelecaoProduto() {
-  const topBar = document.getElementById('catalogo-top-bar');
+  const aviso = document.getElementById('aviso-selecao-produto');
   const txt = document.getElementById('aviso-selecao-produto-txt');
+  if (!aviso) return;
   if (itemEmEdicaoId) {
-    if (topBar) {
-      topBar.style.borderColor = '#d4af37';
-      topBar.style.background = 'linear-gradient(135deg, rgba(201,168,76,0.25), rgba(15,17,26,0.98))';
-    }
-    if (txt) {
-      txt.innerHTML = itemEmEdicaoId === 'novo'
-        ? '📦 <strong>Modo Seleção:</strong> Escolha um produto para novo item'
-        : '📦 <strong>Modo Seleção:</strong> Escolha um produto para a linha do orçamento';
+    aviso.style.display = 'flex';
+    if (itemEmEdicaoId === 'novo') {
+      if (txt) txt.innerHTML = '<strong>📦 Modo de Seleção Ativo:</strong> Escolha um produto abaixo para adicionar como novo item no Orçamento, ou cadastre um novo produto acima.';
+    } else {
+      if (txt) txt.innerHTML = '<strong>📦 Modo de Seleção Ativo:</strong> Escolha um produto abaixo para preencher a linha do Orçamento, ou cadastre um novo produto acima.';
     }
   } else {
-    if (topBar) {
-      topBar.style.borderColor = 'rgba(201,168,76,0.4)';
-      topBar.style.background = 'rgba(15,17,26,0.96)';
-    }
-    if (txt) {
-      txt.innerHTML = 'Toque em "Usar" para escolher o produto';
-    }
+    aviso.style.display = 'none';
   }
 }
 
@@ -9097,9 +9125,6 @@ function usarProdutoDoCatalogo(pId, nome) {
       itemEmEdicaoId = null;
       atualizarBannerSelecaoProduto();
       goTab('orcamento');
-      if (typeof mostrarToastAprovacao === 'function') {
-        mostrarToastAprovacao('✅ Produto "' + (p.nome || '') + '" inserido no orçamento!');
-      }
       setTimeout(() => {
         const trTarget = document.getElementById('item-' + targetId);
         if (trTarget) trTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -9122,9 +9147,6 @@ function usarProdutoDoCatalogo(pId, nome) {
   itemEmEdicaoId = null;
   atualizarBannerSelecaoProduto();
   goTab('orcamento');
-  if (typeof mostrarToastAprovacao === 'function') {
-    mostrarToastAprovacao('✅ Produto "' + (p.nome || '') + '" adicionado ao orçamento!');
-  }
   setTimeout(() => {
     const list = document.getElementById('itens-lista');
     if (list && list.lastElementChild) {
@@ -9777,7 +9799,7 @@ function addItem(desc='', qtd='1', cor='', alt='', larg='', v_m2='', v_unit='', 
     </td>
     <td style="min-width:240px">
       <div style="display:flex;gap:5px;align-items:center;">
-        <input type="text" autocomplete="off" class="inp-item-desc" placeholder="Descrição do produto ou serviço..." value="${esc(desc)}" oninput="aoMudarDescricaoItem(${id})" onchange="aoMudarDescricaoItem(${id})" onblur="aoMudarDescricaoItem(${id})" style="flex:1;min-width:130px;">
+        <input list="lista-produtos-sugeridos" class="inp-item-desc" placeholder="Digite ou selecione..." value="${esc(desc)}" oninput="aoMudarDescricaoItem(${id})" onchange="aoMudarDescricaoItem(${id})" onblur="aoMudarDescricaoItem(${id})" style="flex:1;min-width:130px;">
         <button type="button" class="btn btn-gold btn-xs" onclick="irParaAbaProdutosParaItem(${id})" title="Ir para a aba Produtos & Serviços e escolher o produto cadastrado" style="padding:5px 8px;font-size:11px;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;flex-shrink:0;">
           📦 Catálogo
         </button>
@@ -9815,6 +9837,13 @@ function addItem(desc='', qtd='1', cor='', alt='', larg='', v_m2='', v_unit='', 
     </td>
     <td>
       <input id="total-${id}" class="inp-item-total" readonly value="R$ 0,00" style="text-align:right">
+    </td>
+    <td style="text-align:center;white-space:nowrap">
+      <button type="button" id="btn-status-${id}" data-enviado="0" onclick="toggleStatusEnvioItem(${id})"
+        style="background:#dc2626;color:#fff;font-size:10px;padding:4px 8px;border-radius:6px;border:none;cursor:pointer;font-weight:800;min-width:88px;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;gap:3px;"
+        title="Clique para alternar: Enviado / Nao Enviado ao fornecedor">
+        <span style="font-size:12px;">&#10060;</span> Não Enviado
+      </button>
     </td>
     <td style="text-align:center;white-space:nowrap">
       <div style="display:flex;gap:3px;justify-content:center">
@@ -14784,6 +14813,16 @@ function salvarProduto() {
     vm2:   parseNum(document.getElementById('p-vm2').value),
     vunit: parseNum(document.getElementById('p-vunit').value)
   };
+  // Se o usuário recadastrar um item, remove da lista de excluídos
+  try {
+    const licAtiva = (typeof obterLicencaAtiva === 'function') ? obterLicencaAtiva() : { id: 'sdmoveis' };
+    const empId = licAtiva.id || 'sdmoveis';
+    const kExcluidos = 'sdv_produtos_excluidos_' + empId;
+    let excluidos = JSON.parse(localStorage.getItem(kExcluidos) || '[]');
+    excluidos = excluidos.filter(n => n !== nome.toLowerCase());
+    localStorage.setItem(kExcluidos, JSON.stringify(excluidos));
+  } catch(_) {}
+
   if (editandoProdId) {
     const idx = produtos.findIndex(x => x.id === editandoProdId);
     if (idx !== -1) produtos[idx] = { ...produtos[idx], ...novo };
@@ -14901,7 +14940,54 @@ function editarProd(id, nome) {
 
 function deletarProd(id, nome) {
   if (!confirm('Tem certeza que deseja excluir este produto do catálogo?')) return;
-  produtos = produtos.filter(x => String(x.id) !== String(id) && (!nome || x.nome !== nome));
+  const licAtiva = (typeof obterLicencaAtiva === 'function') ? obterLicencaAtiva() : { id: 'sdmoveis' };
+  const empId = licAtiva.id || 'sdmoveis';
+
+  // Grava o nome na lista de excluídos para garantir que nunca mais volte automaticamente
+  try {
+    const kExcluidos = 'sdv_produtos_excluidos_' + empId;
+    const excluidos = JSON.parse(localStorage.getItem(kExcluidos) || '[]');
+    const nomeLimpo = (nome || '').trim().toLowerCase();
+    if (nomeLimpo && !excluidos.includes(nomeLimpo)) {
+      excluidos.push(nomeLimpo);
+    }
+    const itemAlvo = produtos.find(x => String(x.id) === String(id));
+    if (itemAlvo && itemAlvo.nome) {
+      const nAlvo = itemAlvo.nome.trim().toLowerCase();
+      if (!excluidos.includes(nAlvo)) excluidos.push(nAlvo);
+    }
+    localStorage.setItem(kExcluidos, JSON.stringify(excluidos));
+    localStorage.setItem('sdv_catalogo_iniciado_' + empId, '1');
+  } catch(_) {}
+
+  produtos = produtos.filter(x => {
+    const matchId = (id != null && id !== '' && String(x.id) === String(id));
+    const matchNome = (nome && x.nome && x.nome.trim().toLowerCase() === nome.trim().toLowerCase());
+    return !matchId && !matchNome;
+  });
+  save(K.products, produtos);
+  updateDatalistProdutos();
+  renderProdutos();
+}
+
+function excluirTodosProdutos() {
+  if (!confirm('Tem certeza que deseja excluir TODOS os produtos e serviços cadastrados no catálogo?')) return;
+  const licAtiva = (typeof obterLicencaAtiva === 'function') ? obterLicencaAtiva() : { id: 'sdmoveis' };
+  const empId = licAtiva.id || 'sdmoveis';
+  try {
+    const kExcluidos = 'sdv_produtos_excluidos_' + empId;
+    const excluidos = JSON.parse(localStorage.getItem(kExcluidos) || '[]');
+    produtos.forEach(p => {
+      if (p.nome) {
+        const n = p.nome.trim().toLowerCase();
+        if (!excluidos.includes(n)) excluidos.push(n);
+      }
+    });
+    localStorage.setItem(kExcluidos, JSON.stringify(excluidos));
+    localStorage.setItem('sdv_catalogo_iniciado_' + empId, '1');
+  } catch(_) {}
+
+  produtos = [];
   save(K.products, produtos);
   updateDatalistProdutos();
   renderProdutos();
@@ -20790,12 +20876,6 @@ window.addEventListener('DOMContentLoaded', function() {
   document.getElementById('itens-lista').innerHTML = '';
   itemId = 0; addItem();
   atualizarNumeroDisplay();
-  // Restaura rascunho ao abrir a página (inclui retorno do comparativo)
-  setTimeout(function() {
-    if (typeof restaurarRascunhoOrcamento === 'function') {
-      restaurarRascunhoOrcamento();
-    }
-  }, 80);
 
   iniciarRelogioPonto();
   atualizarSelectColaboradoresPonto();
