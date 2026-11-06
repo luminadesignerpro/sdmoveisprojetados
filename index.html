@@ -8921,11 +8921,23 @@ function inicializarAutoSaveOrcamento() {
 }
 
 function salvarRascunhoOrcamento() {
-  // Não salva rascunho enquanto estiver em modo de edição (editarOs), pois é controlado separado
   if (editandoOsId) return;
   try {
+    let nomeCli = (document.getElementById('o-nome') || {}).value || '';
+    if (!nomeCli) {
+      const tit = document.getElementById('dados-cli-titulo-nome');
+      if (tit && tit.textContent && !tit.textContent.includes('Dados do Cliente')) {
+        nomeCli = tit.textContent.trim();
+      }
+    }
+    if (!nomeCli) {
+      const prev = document.getElementById('dados-cli-nome-preview');
+      if (prev && prev.textContent) {
+        nomeCli = prev.textContent.replace(/^[—\-\s]+/, '').trim();
+      }
+    }
     const dados = {
-      nome:    (document.getElementById('o-nome')     || {}).value || '',
+      nome:    nomeCli,
       cnpj:    (document.getElementById('o-cnpj')     || {}).value || '',
       tel:     (document.getElementById('o-tel')      || {}).value || '',
       bairro:  (document.getElementById('o-bairro')   || {}).value || '',
@@ -8948,7 +8960,6 @@ function salvarRascunhoOrcamento() {
       itens: (typeof getItens === 'function') ? getItens() : [],
       direcionamentoTemp: dirOrcamentoTemp || null
     };
-    // Só salva se houver algum dado preenchido
     const temDados = dados.nome || dados.tel || (dados.itens && dados.itens.length > 0) || dados.obs || dados.end || dados.bairro || (dados.direcionamentoTemp != null);
     if (temDados) {
       localStorage.setItem(RASCUNHO_KEY, JSON.stringify(dados));
@@ -8957,54 +8968,98 @@ function salvarRascunhoOrcamento() {
 }
 
 function restaurarRascunhoOrcamento() {
-  if (editandoOsId) return; // Não sobrescreve modo de edição
+  if (editandoOsId) return false;
   try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const clienteParam = (urlParams.get('cliente') || urlParams.get('pasta') || '').trim();
+    const itensParam = urlParams.get('itens');
+
     const raw = localStorage.getItem(RASCUNHO_KEY);
-    if (!raw) return;
-    const d = JSON.parse(raw);
+    const d = raw ? JSON.parse(raw) : {};
+
+    if (clienteParam) d.nome = clienteParam;
+
+    if (itensParam) {
+      try {
+        const itensUrl = JSON.parse(itensParam);
+        if (Array.isArray(itensUrl) && itensUrl.length > 0) {
+          d.itens = itensUrl.map(it => ({
+            desc: it.nome || it.desc || '',
+            qtd: String(it.qtd || 1),
+            cor: it.cor || '',
+            alt: it.alt || '',
+            larg: it.larg || '',
+            v_m2: it.vm2 ? String(it.vm2) : (it.v_m2 || ''),
+            v_unit: it.vunit ? String(it.vunit) : (it.v_unit || ''),
+            bizt: it.bizt || '',
+            fornecedor: it.fornecedor || ''
+          }));
+        }
+      } catch(e) {}
+    }
+
+    const temDados = d.nome || d.tel || (d.itens && d.itens.length > 0) || d.obs || d.end || d.bairro;
+    if (!temDados) return false;
+
     const set = (id, val) => { const el = document.getElementById(id); if (el && val != null) el.value = val; };
-    set('o-nome',    d.nome);
-    set('o-cnpj',    d.cnpj);
-    set('o-tel',     d.tel);
-    set('o-bairro',  d.bairro);
-    set('o-end',     d.end);
-    set('o-num',     d.num);
-    set('o-apto',    d.apto);
-    set('o-resp',    d.resp);
-    set('o-prazo',   d.prazo);
-    set('o-garantia',d.garantia);
-    set('o-obs',     d.obs);
-    set('forma-outro', d.formaOutro || '');
-    if (d.forma) { formaAtual = d.forma; selChip(document.querySelector(`.chip[data-forma="${d.forma}"]`) || document.querySelector('.chip'), d.forma); }
+    if (d.nome != null) set('o-nome',    d.nome);
+    if (d.cnpj != null) set('o-cnpj',    d.cnpj);
+    if (d.tel != null) set('o-tel',     d.tel);
+    if (d.bairro != null) set('o-bairro',  d.bairro);
+    if (d.end != null) set('o-end',     d.end);
+    if (d.num != null) set('o-num',     d.num);
+    if (d.apto != null) set('o-apto',    d.apto);
+    if (d.resp != null) set('o-resp',    d.resp);
+    if (d.prazo != null) set('o-prazo',   d.prazo);
+    if (d.garantia != null) set('o-garantia',d.garantia);
+    if (d.obs != null) set('o-obs',     d.obs);
+    if (d.formaOutro != null) set('forma-outro', d.formaOutro || '');
+    if (d.forma) { 
+      formaAtual = d.forma; 
+      const chipEl = document.querySelector(`.chip[data-forma="${d.forma}"]`) || document.querySelector('.chip');
+      if (chipEl && typeof selChip === 'function') selChip(chipEl, d.forma); 
+    }
+
     // Restaura itens
     if (d.itens && d.itens.length) {
       document.getElementById('itens-lista').innerHTML = '';
       itemId = 0;
       d.itens.forEach(it => addItem(it.desc, it.qtd, it.cor, it.alt, it.larg, it.v_m2, it.v_unit, it.bizt, it.fornecedor||''));
     }
+
     // Restaura financeiro
     if (d.tipoDesconto === 'porc') {
-      alternarTipoDesconto('porc');
-      set('o-taxa-desconto', d.taxaDesconto);
+      if (typeof alternarTipoDesconto === 'function') alternarTipoDesconto('porc');
+      if (d.taxaDesconto != null) set('o-taxa-desconto', d.taxaDesconto);
     } else {
-      alternarTipoDesconto('reais');
-      set('o-val-desconto', d.valDesconto);
-      set('o-taxa-desconto', d.taxaDesconto);
+      if (typeof alternarTipoDesconto === 'function') alternarTipoDesconto('reais');
+      if (d.valDesconto != null) set('o-val-desconto', d.valDesconto);
+      if (d.taxaDesconto != null) set('o-taxa-desconto', d.taxaDesconto);
     }
-    set('o-val-produtos',   d.valProdutos);
-    set('o-val-servico',    d.valServico);
-    set('o-taxa-acrescimo', d.taxaAcrescimo);
-    set('o-val-frete',      d.valFrete);
+    if (d.valProdutos != null) set('o-val-produtos',   d.valProdutos);
+    if (d.valServico != null) set('o-val-servico',    d.valServico);
+    if (d.taxaAcrescimo != null) set('o-taxa-acrescimo', d.taxaAcrescimo);
+    if (d.valFrete != null) set('o-val-frete',      d.valFrete);
 
     if (d.direcionamentoTemp) {
       dirOrcamentoTemp = d.direcionamentoTemp;
       if (typeof atualizarBadgeBotaoDirecionamentoOrc === 'function') atualizarBadgeBotaoDirecionamentoOrc();
     }
 
-    calcTotal();
-    recalcularTotaisGerais('rascunho');
-    atualizarDatalistFornecedores();
-  } catch(_) {}
+    if (typeof atualizarPreviewNomeCliente === 'function') atualizarPreviewNomeCliente();
+    if (typeof calcTotal === 'function') calcTotal();
+    if (typeof recalcularTotaisGerais === 'function') recalcularTotaisGerais('rascunho');
+    if (typeof atualizarDatalistFornecedores === 'function') atualizarDatalistFornecedores();
+
+    // Limpa parâmetros da URL de retorno mantendo a barra de endereço limpa
+    if (window.history && window.history.replaceState && (clienteParam || itensParam)) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    return true;
+  } catch(_) {
+    return false;
+  }
 }
 
 function limparRascunhoOrcamento() {
@@ -20876,8 +20931,24 @@ window.addEventListener('DOMContentLoaded', function() {
   aplicarLicencaVisual(licAtiva);
   recarregarDadosEmpresaAtiva();
 
+  // Ativa listeners de auto-salvamento em tempo real do orçamento
+  if (typeof inicializarAutoSaveOrcamento === 'function') {
+    inicializarAutoSaveOrcamento();
+  }
+
+  // Tenta restaurar rascunho anterior ou dados passados pelo comparativo
   document.getElementById('itens-lista').innerHTML = '';
-  itemId = 0; addItem();
+  itemId = 0;
+  let restaurouOrc = false;
+  if (typeof restaurarRascunhoOrcamento === 'function') {
+    restaurouOrc = restaurarRascunhoOrcamento();
+  }
+  const linhasItens = document.querySelectorAll('#itens-lista tr');
+  if (!restaurouOrc || !linhasItens || linhasItens.length === 0) {
+    document.getElementById('itens-lista').innerHTML = '';
+    itemId = 0;
+    addItem();
+  }
   atualizarNumeroDisplay();
 
   iniciarRelogioPonto();
@@ -20910,6 +20981,20 @@ window.addEventListener('DOMContentLoaded', function() {
   const el = document.getElementById('usuario-logado');
   if (el) el.textContent = '👤 ' + (user.nome || user.username || 'Usuário');
   iniciarRealtimePortalAdmin();
+});
+
+window.addEventListener('pageshow', function() {
+  const trs = document.querySelectorAll('#itens-lista tr');
+  let temItensPreenchidos = false;
+  if (trs && trs.length > 0) {
+    temItensPreenchidos = Array.from(trs).some(tr => {
+      const desc = tr.querySelector('.inp-item-desc');
+      return desc && desc.value.trim().length > 0;
+    });
+  }
+  if (!temItensPreenchidos && typeof restaurarRascunhoOrcamento === 'function') {
+    restaurarRascunhoOrcamento();
+  }
 });
 
 // ══════════════════════════════════════════════
