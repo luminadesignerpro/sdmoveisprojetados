@@ -3776,6 +3776,22 @@
 
     <!-- PAINEL: PEDIDO DE MATERIAL -->
     <div id="crono-panel-material" style="display:none;">
+      <!-- ── PASTAS DE PEDIDO DE MATERIAL POR CLIENTE ── -->
+      <div id="material-pastas-wrapper" style="background:linear-gradient(135deg, rgba(20,20,32,0.9), rgba(13,13,21,0.95));border:1.5px solid rgba(201,168,76,0.3);border-radius:12px;padding:10px 14px;margin-bottom:14px;box-shadow:0 4px 16px rgba(0,0,0,0.4);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
+          <div style="font-size:12px;font-weight:900;color:var(--gold-light);text-transform:uppercase;letter-spacing:0.5px;display:flex;align-items:center;gap:6px;">
+            <span>📁</span> <span>Pastas do Pedido de Material por Cliente</span>
+          </div>
+          <div id="material-pasta-ativa-info" style="font-size:11.5px;color:#94a3b8;">
+            Pasta aberta: <strong id="material-pasta-ativa-nome" style="color:#fde047;">Todos os Clientes</strong>
+          </div>
+        </div>
+        <!-- Scroll horizontal das Pastas dos Clientes -->
+        <div id="material-pastas-lista" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:thin;">
+          <!-- Inserido dinamicamente por renderPastasClienteMaterial() -->
+        </div>
+      </div>
+
       <!-- FILTROS E BUSCA -->
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">
         <input type="text" id="material-busca" oninput="renderPedidosMaterial()" placeholder="🔍 Buscar item..." style="flex:1;min-width:180px;padding:9px 14px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:13px;" />
@@ -10505,6 +10521,13 @@ function salvarOrdemInterna(silencioso = false, navegarParaHistorico = true) {
     save(K.orders, historico);
     dirOrcamentoTemp = null;
     if (typeof atualizarBadgeBotaoDirecionamentoOrc === 'function') atualizarBadgeBotaoDirecionamentoOrc();
+
+    // Sincroniza produtos para o Pedido de Material na pasta do cliente
+    try {
+      if (typeof sincronizarProdutosOrcamentoParaPedidosMaterial === 'function') {
+        sincronizarProdutosOrcamentoParaPedidosMaterial(o, o.nome, o.numero);
+      }
+    } catch (_) {}
 
     // Sincroniza contrato
     try {
@@ -19425,6 +19448,15 @@ async function enviarOrcamentoParaAssinaturaDigital() {
     // 5. Enviar diretamente no WhatsApp do cliente
     abrirWhats(d.tel, msg);
 
+    // 📦 SINCRONIZAÇÃO AUTOMÁTICA DOS PRODUTOS DA OS / COMPARATIVO PARA O PEDIDO DE MATERIAL
+    try {
+      if (typeof sincronizarProdutosOrcamentoParaPedidosMaterial === 'function') {
+        sincronizarProdutosOrcamentoParaPedidosMaterial(d, d.nome, d.numero);
+      }
+    } catch (errSyncMat) {
+      console.warn('Erro ao sincronizar produtos com Pedido de Material:', errSyncMat);
+    }
+
     carregarListaContratos();
     sincronizarStatusContratos();
 
@@ -28282,8 +28314,10 @@ function excluirEventoCronograma(id) {
 }
 
 // ══════════════════════════════════════════════════════════════════
-//  MÓDULO: PEDIDO DE MATERIAL
+//  MÓDULO: PEDIDO DE MATERIAL COM PASTAS POR CLIENTE & SINCRONIZAÇÃO AUTOMÁTICA
 // ══════════════════════════════════════════════════════════════════
+
+let _materialClienteFolderAtivo = 'todos';
 
 function carregarMateriais() {
   try { return JSON.parse(localStorage.getItem(K_CRONO.materiais) || '[]'); } catch(_) { return []; }
@@ -28292,122 +28326,218 @@ function salvarMateriais(arr) {
   try { localStorage.setItem(K_CRONO.materiais, JSON.stringify(arr)); } catch(_) {}
 }
 
+function selecionarPastaClienteMaterial(pastaNome) {
+  _materialClienteFolderAtivo = (pastaNome || 'todos').trim();
+  const labelNome = document.getElementById('material-pasta-ativa-nome');
+  if (labelNome) {
+    labelNome.textContent = _materialClienteFolderAtivo === 'todos' ? 'Todos os Clientes' : _materialClienteFolderAtivo;
+  }
+  renderPedidosMaterial();
+}
+window.selecionarPastaClienteMaterial = selecionarPastaClienteMaterial;
 
-// ══════════════════════════════════════════════════════════════════
-//  SINCRONIZAÇÃO AUTOMÁTICA: OS APROVADA / ASSINADA -> PEDIDO DE MATERIAL
-// ══════════════════════════════════════════════════════════════════
-function sincronizarProdutosAprovadosParaPedidosMaterial(os) {
-  if (!os) return 0;
-  const statusStr = (os.status || '').toLowerCase().trim();
-  const isAprovado = statusStr === 'aprovado' || statusStr === 'modificacao_aprovada';
-  const temAssinatura = !!(os.assinatura_digital || os.assinatura || os.assinado_por || os.assinado_em);
+function renderPastasClienteMaterial(lista) {
+  const container = document.getElementById('material-pastas-lista');
+  if (!container) return;
 
-  if (!isAprovado && !temAssinatura) return 0;
+  const mapaClientes = {};
 
-  const numOs = os.numero || ('#' + String(os.id || '').replace(/\D/g, '').padStart(4, '0'));
-  const nomeCliente = (os.nome || os.cliente || '').trim();
-  if (!nomeCliente && !numOs) return 0;
-
-  let listaMateriais = [];
-  try {
-    if (typeof carregarMateriais === 'function') {
-      listaMateriais = carregarMateriais();
-    } else {
-      listaMateriais = JSON.parse(localStorage.getItem(K_CRONO.materiais) || '[]');
+  // 1. Extrai clientes dos itens de materiais existentes
+  (lista || []).forEach(it => {
+    let c = (it.cliente || '').trim();
+    if (!c && it.obs) {
+      const mObs = it.obs.match(/OS\s*#?\d+\s*\(([^)]+)\)/i);
+      if (mObs && mObs[1]) c = mObs[1].trim();
     }
-  } catch(_) {
-    listaMateriais = [];
+    if (c) {
+      if (!mapaClientes[c]) mapaClientes[c] = { nome: c, os: it.os || '', total: 0 };
+      mapaClientes[c].total++;
+      if (it.os && !mapaClientes[c].os) mapaClientes[c].os = it.os;
+    }
+  });
+
+  // 2. Extrai clientes do histórico de ordens
+  if (Array.isArray(historico)) {
+    historico.forEach(os => {
+      const c = (os.nome || os.cliente || '').trim();
+      const num = os.numero || '';
+      if (c) {
+        if (!mapaClientes[c]) mapaClientes[c] = { nome: c, os: num, total: 0 };
+        else if (num && !mapaClientes[c].os) mapaClientes[c].os = num;
+      }
+    });
   }
 
-  let inseridosCount = 0;
-
-  // 1. Busca materiais da pasta do cliente no comparativo de preços (sd_material_list_v1)
-  let materiaisComparativo = [];
+  // 3. Extrai clientes salvos em pastas do comparativo se houver
   try {
-    const rawComp = localStorage.getItem('sd_material_list_v1');
-    if (rawComp) {
-      const allComp = JSON.parse(rawComp);
-      if (Array.isArray(allComp)) {
-        materiaisComparativo = allComp.filter(m => {
-          const cName = (m.clientName || '').trim().toLowerCase();
-          const targetName = nomeCliente.toLowerCase();
-          return cName && (cName === targetName || targetName.includes(cName) || cName.includes(targetName));
+    const rawFolders = localStorage.getItem('sd_client_folders_v1');
+    if (rawFolders) {
+      const folders = JSON.parse(rawFolders);
+      if (Array.isArray(folders)) {
+        folders.forEach(f => {
+          const c = (f.name || '').trim();
+          if (c && !mapaClientes[c]) {
+            mapaClientes[c] = { nome: c, os: '', total: 0 };
+          }
         });
       }
     }
   } catch(_) {}
 
-  // 2. Se houver materiais do comparativo para este cliente, adiciona-os ao Pedido de Material
-  if (materiaisComparativo.length > 0) {
-    materiaisComparativo.forEach((matComp, idx) => {
-      const nomeItem = (matComp.productName || matComp.nome || '').trim();
-      if (!nomeItem) return;
+  const clientesArray = Object.values(mapaClientes).sort((a, b) => a.nome.localeCompare(b.nome));
+  const totalGeral = (lista || []).length;
+  const isTodosAtivo = _materialClienteFolderAtivo === 'todos';
 
-      const jaExiste = listaMateriais.some(it =>
-        (it.os === numOs || (it.cliente && it.cliente.toLowerCase() === nomeCliente.toLowerCase())) &&
-        (it.nome || '').trim().toLowerCase() === nomeItem.toLowerCase()
-      );
+  let html = `
+    <button type="button" onclick="selecionarPastaClienteMaterial('todos')"
+      style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:10px;font-size:12px;font-weight:800;white-space:nowrap;cursor:pointer;transition:all 0.2s;
+      ${isTodosAtivo ? 'background:linear-gradient(135deg, rgba(201,168,76,0.35), rgba(234,179,8,0.25));border:1.5px solid #eab308;color:#fff;box-shadow:0 0 12px rgba(234,179,8,0.35);' : 'background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;'}">
+      <span>📋</span> <span>Todos</span>
+      <span style="background:${isTodosAtivo ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.08)'};padding:2px 7px;border-radius:12px;font-size:10.5px;color:${isTodosAtivo ? '#fde047' : '#cbd5e1'};">${totalGeral}</span>
+    </button>
+  `;
 
-      if (!jaExiste) {
-        const unitVal = parseFloat(String(matComp.selectedUnitPrice || matComp.unitPrice || 0)) || 0;
-        listaMateriais.unshift({
-          id: 'mat_aprov_' + Date.now() + '_' + idx,
-          nome: nomeItem,
-          qtd: String(matComp.quantity || 1),
-          unidade: 'un',
-          valor: unitVal > 0 ? unitVal.toFixed(2) : '',
-          urgencia: 'urgente',
-          fornecedor: matComp.selectedSupplierName || '',
-          status: 'a_comprar',
-          obs: `OS ${numOs} (${nomeCliente}) - Aprovado via Assinatura Digital`,
-          cliente: nomeCliente,
-          os: numOs,
-          origem: 'assinatura_digital_aprovada',
-          criadoEm: new Date().toISOString()
+  clientesArray.forEach(cli => {
+    const isAtivo = _materialClienteFolderAtivo.toLowerCase() === cli.nome.toLowerCase();
+    const osBadge = cli.os ? `<span style="font-size:10px;opacity:0.85;margin-left:2px;">(${cli.os})</span>` : '';
+    html += `
+      <button type="button" onclick="selecionarPastaClienteMaterial('${cli.nome.replace(/'/g, "\\'")}')"
+        style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:10px;font-size:12px;font-weight:800;white-space:nowrap;cursor:pointer;transition:all 0.2s;
+        ${isAtivo ? 'background:linear-gradient(135deg, rgba(201,168,76,0.35), rgba(234,179,8,0.25));border:1.5px solid #eab308;color:#fff;box-shadow:0 0 12px rgba(234,179,8,0.35);' : 'background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;'}">
+        <span>📁</span> <span>${cli.nome}</span> ${osBadge}
+        <span style="background:${isAtivo ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.08)'};padding:2px 7px;border-radius:12px;font-size:10.5px;color:${isAtivo ? '#fde047' : '#cbd5e1'};">${cli.total}</span>
+      </button>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  SINCRONIZAÇÃO AUTOMÁTICA DOS PRODUTOS DO ORÇAMENTO / COMPARATIVO PARA PEDIDO DE MATERIAL
+// ══════════════════════════════════════════════════════════════════
+function sincronizarProdutosOrcamentoParaPedidosMaterial(dadosOrc, nomeCli, numOs) {
+  if (!dadosOrc) return 0;
+  const clienteFinal = (nomeCli || dadosOrc.nome || dadosOrc.cliente || '').trim();
+  const osFinal = (numOs || dadosOrc.numero || '').trim();
+  if (!clienteFinal && !osFinal) return 0;
+
+  let listaMateriais = carregarMateriais();
+  let inseridosCount = 0;
+
+  // 1. Itens da tabela do orçamento no DOM ou dadosOrc
+  const itensDom = [];
+  try {
+    document.querySelectorAll('#itens-lista tr').forEach(tr => {
+      const inDesc  = tr.querySelector('.inp-item-desc');
+      const inQtd   = tr.querySelector('.inp-item-qtd');
+      const inVm2   = tr.querySelector('.inp-item-vm2');
+      const inVunit = tr.querySelector('.inp-item-vunit');
+      const inForn  = tr.querySelector('.item-fornecedor-input');
+      const desc = inDesc ? inDesc.value.trim() : '';
+      const rawQtd = inQtd ? inQtd.value.trim() : '1';
+      const qtd = rawQtd === '' ? 1 : (parseNum(rawQtd) || 1);
+      const vm2 = inVm2 ? parseNum(inVm2.value) : 0;
+      const vunit = inVunit ? parseNum(inVunit.value) : 0;
+      const preco = vunit > 0 ? vunit : vm2;
+      if (desc) {
+        itensDom.push({
+          desc: desc,
+          qtd: qtd,
+          v_unit: preco,
+          fornecedor: inForn ? inForn.value.trim() : ''
         });
-        inseridosCount++;
       }
     });
-  }
+  } catch(_) {}
 
-  // 3. Adiciona também os itens da própria OS que ainda não estejam na lista
-  const itensOs = Array.isArray(os.itens) ? os.itens : [];
-  itensOs.forEach((itOs, idx) => {
-    const descItem = (itOs.desc || itOs.nome || '').trim();
-    if (!descItem) return;
+  const itensFonte = (itensDom.length > 0) ? itensDom : (Array.isArray(dadosOrc.itens) ? dadosOrc.itens : []);
 
-    const jaExiste = listaMateriais.some(it =>
-      (it.os === numOs || (it.cliente && it.cliente.toLowerCase() === nomeCliente.toLowerCase())) &&
-      (it.nome || '').trim().toLowerCase() === descItem.toLowerCase()
+  // 2. Itens do comparativo de preços (sd_material_list_v1)
+  let itensComp = [];
+  try {
+    const rawComp = localStorage.getItem('sd_material_list_v1');
+    if (rawComp) {
+      const compList = JSON.parse(rawComp);
+      if (Array.isArray(compList)) {
+        itensComp = compList.filter(m => {
+          const cName = (m.clientName || '').trim().toLowerCase();
+          const target = clienteFinal.toLowerCase();
+          return cName && (cName === target || target.includes(cName) || cName.includes(target));
+        });
+      }
+    }
+  } catch(_) {}
+
+  // Insere itens do comparativo de preços
+  itensComp.forEach((comp, idx) => {
+    const nomeComp = (comp.productName || comp.nome || '').trim();
+    if (!nomeComp) return;
+    const jaTem = listaMateriais.some(m => 
+      ((m.cliente && m.cliente.toLowerCase() === clienteFinal.toLowerCase()) || (osFinal && m.os === osFinal)) &&
+      (m.nome || '').trim().toLowerCase() === nomeComp.toLowerCase()
     );
-
-    if (!jaExiste) {
-      const vUnit = parseFloat(String(itOs.v_unit || itOs.vunit || itOs.v_m2 || itOs.preco || 0).replace(',', '.')) || 0;
+    if (!jaTem) {
+      const unitVal = parseFloat(String(comp.selectedUnitPrice || comp.unitPrice || 0)) || 0;
       listaMateriais.unshift({
-        id: 'mat_aprov_os_' + Date.now() + '_' + idx,
-        nome: descItem,
-        qtd: String(itOs.qtd || 1),
-        unidade: (itOs.v_m2 && !itOs.v_unit) ? 'm²' : 'un',
-        valor: vUnit > 0 ? vUnit.toFixed(2) : '',
+        id: 'mat_comp_' + Date.now() + '_' + idx,
+        nome: nomeComp,
+        qtd: String(comp.quantity || 1),
+        unidade: 'un',
+        valor: unitVal > 0 ? unitVal.toFixed(2) : '',
         urgencia: 'urgente',
-        fornecedor: itOs.fornecedor || '',
+        fornecedor: comp.selectedSupplierName || '',
         status: 'a_comprar',
-        obs: `OS ${numOs} (${nomeCliente}) - Aprovado via Assinatura Digital`,
-        cliente: nomeCliente,
-        os: numOs,
-        origem: 'assinatura_digital_aprovada',
+        obs: `OS ${osFinal} (${clienteFinal}) - Vindo do Comparativo de Preços`,
+        cliente: clienteFinal,
+        os: osFinal,
+        origem: 'comparativo_precos',
         criadoEm: new Date().toISOString()
       });
       inseridosCount++;
     }
   });
 
-  if (inseridosCount > 0) {
-    if (typeof salvarMateriais === 'function') {
-      salvarMateriais(listaMateriais);
+  // Insere itens do orçamento
+  itensFonte.forEach((it, idx) => {
+    const desc = (it.desc || it.nome || '').trim();
+    if (!desc) return;
+    const jaTem = listaMateriais.some(m =>
+      ((m.cliente && m.cliente.toLowerCase() === clienteFinal.toLowerCase()) || (osFinal && m.os === osFinal)) &&
+      (m.nome || '').trim().toLowerCase() === desc.toLowerCase()
+    );
+    if (!jaTem) {
+      const vUnit = parseFloat(String(it.v_unit || it.vunit || it.v_m2 || it.preco || 0).replace(',', '.')) || 0;
+      listaMateriais.unshift({
+        id: 'mat_orc_' + Date.now() + '_' + idx,
+        nome: desc,
+        qtd: String(it.qtd || 1),
+        unidade: (it.v_m2 && !it.v_unit) ? 'm²' : 'un',
+        valor: vUnit > 0 ? vUnit.toFixed(2) : '',
+        urgencia: 'urgente',
+        fornecedor: it.fornecedor || '',
+        status: 'a_comprar',
+        obs: `OS ${osFinal} (${clienteFinal}) - Enviado via Assinatura Digital`,
+        cliente: clienteFinal,
+        os: osFinal,
+        origem: 'assinatura_digital',
+        criadoEm: new Date().toISOString()
+      });
+      inseridosCount++;
     } else {
-      try { localStorage.setItem(K_CRONO.materiais, JSON.stringify(listaMateriais)); } catch(_) {}
+      // Garante que o item existente possua o cliente e a OS atribuídos
+      const itemExistente = listaMateriais.find(m =>
+        (m.nome || '').trim().toLowerCase() === desc.toLowerCase() && (!m.cliente || m.cliente.toLowerCase() === clienteFinal.toLowerCase())
+      );
+      if (itemExistente) {
+        if (!itemExistente.cliente) itemExistente.cliente = clienteFinal;
+        if (!itemExistente.os && osFinal) itemExistente.os = osFinal;
+      }
     }
+  });
+
+  if (inseridosCount > 0) {
+    salvarMateriais(listaMateriais);
     if (typeof renderPedidosMaterial === 'function') {
       renderPedidosMaterial();
     }
@@ -28415,48 +28545,93 @@ function sincronizarProdutosAprovadosParaPedidosMaterial(os) {
 
   return inseridosCount;
 }
+window.sincronizarProdutosOrcamentoParaPedidosMaterial = sincronizarProdutosOrcamentoParaPedidosMaterial;
+
+function sincronizarProdutosAprovadosParaPedidosMaterial(os) {
+  if (!os) return 0;
+  const statusStr = (os.status || '').toLowerCase().trim();
+  const isAprovado = statusStr === 'aprovado' || statusStr === 'modificacao_aprovada';
+  const temAssinatura = !!(os.assinatura_digital || os.assinatura || os.assinado_por || os.assinado_em);
+  if (!isAprovado && !temAssinatura) return 0;
+
+  const numOs = os.numero || ('#' + String(os.id || '').replace(/\D/g, '').padStart(4, '0'));
+  const nomeCliente = (os.nome || os.cliente || '').trim();
+  const dados = os.dados || os;
+
+  return sincronizarProdutosOrcamentoParaPedidosMaterial(dados, nomeCliente, numOs);
+}
+window.sincronizarProdutosAprovadosParaPedidosMaterial = sincronizarProdutosAprovadosParaPedidosMaterial;
 
 function sincronizarTodasOSAprovadasParaMateriais() {
   if (!Array.isArray(historico)) return;
   let totalNovos = 0;
   historico.forEach(os => {
-    const statusStr = (os.status || '').toLowerCase().trim();
-    const isAprovado = statusStr === 'aprovado' || statusStr === 'modificacao_aprovada';
-    const temAssinatura = !!(os.assinatura_digital || os.assinatura || os.assinado_por || os.assinado_em);
-    if (isAprovado || temAssinatura) {
-      totalNovos += sincronizarProdutosAprovadosParaPedidosMaterial(os);
+    const nomeCliente = (os.nome || os.cliente || '').trim();
+    const numOs = os.numero || '';
+    if (os.itens && os.itens.length || (os.dados && os.dados.itens && os.dados.itens.length)) {
+      totalNovos += sincronizarProdutosOrcamentoParaPedidosMaterial(os.dados || os, nomeCliente, numOs);
     }
   });
   if (totalNovos > 0) {
-    console.log(`✅ ${totalNovos} produto(s) de OS aprovada(s) sincronizado(s) para Pedido de Material!`);
+    console.log(`✅ ${totalNovos} produto(s) sincronizado(s) para Pedido de Material!`);
   }
 }
+window.sincronizarTodasOSAprovadasParaMateriais = sincronizarTodasOSAprovadasParaMateriais;
 
 function renderPedidosMaterial() {
   const lista = carregarMateriais();
   const busca = (document.getElementById('material-busca') || {}).value || '';
   const filtroStatus = (document.getElementById('material-filtro-status') || {}).value || 'todos';
 
-  // Contadores
+  // Renderiza botões de pastas por cliente
+  renderPastasClienteMaterial(lista);
+
+  // Atualiza título da pasta aberta
+  const lblPasta = document.getElementById('material-pasta-ativa-nome');
+  if (lblPasta) {
+    lblPasta.textContent = _materialClienteFolderAtivo === 'todos' ? 'Todos os Clientes' : _materialClienteFolderAtivo;
+  }
+
+  // Filtra itens pela pasta do cliente selecionado
+  let listaDaPasta = lista;
+  if (_materialClienteFolderAtivo !== 'todos') {
+    const pastaAlvo = _materialClienteFolderAtivo.toLowerCase().trim();
+    listaDaPasta = lista.filter(it => {
+      const cli = (it.cliente || '').toLowerCase().trim();
+      let matchObs = false;
+      if (it.obs) {
+        matchObs = it.obs.toLowerCase().includes(pastaAlvo);
+      }
+      return cli === pastaAlvo || pastaAlvo.includes(cli) || cli.includes(pastaAlvo) || matchObs;
+    });
+  }
+
+  // Contadores calculados sobre os itens da pasta atual
   const counts = { a_comprar: 0, pendente: 0, comprado: 0 };
-  lista.forEach(it => { if (counts.hasOwnProperty(it.status)) counts[it.status]++; });
+  listaDaPasta.forEach(it => { if (counts.hasOwnProperty(it.status)) counts[it.status]++; });
   ['a_comprar', 'pendente', 'comprado'].forEach(s => {
     const el = document.getElementById(`material-count-${s}`);
     if (el) el.textContent = counts[s];
   });
 
-  let filtrado = lista;
+  let filtrado = listaDaPasta;
   if (filtroStatus !== 'todos') filtrado = filtrado.filter(it => it.status === filtroStatus);
   if (busca.trim()) {
     const b = busca.toLowerCase().trim();
-    filtrado = filtrado.filter(it => (it.nome||'').toLowerCase().includes(b) || (it.fornecedor||'').toLowerCase().includes(b));
+    filtrado = filtrado.filter(it => 
+      (it.nome||'').toLowerCase().includes(b) || 
+      (it.fornecedor||'').toLowerCase().includes(b) ||
+      (it.cliente||'').toLowerCase().includes(b) ||
+      (it.os||'').toLowerCase().includes(b)
+    );
   }
 
   const cont = document.getElementById('material-lista');
   if (!cont) return;
 
   if (!filtrado.length) {
-    cont.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:12.5px;padding:20px;">Nenhum item encontrado.</div>`;
+    const msgPasta = _materialClienteFolderAtivo !== 'todos' ? ` na pasta "${_materialClienteFolderAtivo}"` : '';
+    cont.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:12.5px;padding:24px;background:rgba(255,255,255,0.01);border:1px dashed rgba(255,255,255,0.08);border-radius:12px;">Nenhum item encontrado${msgPasta}.</div>`;
     return;
   }
 
@@ -28476,10 +28651,19 @@ function renderPedidosMaterial() {
     const st = statusInfo[it.status] || statusInfo.a_comprar;
     const urg = urgInfo[it.urgencia] || urgInfo.normal;
     const total = it.qtd && it.valor ? (parseFloat(it.qtd) * parseFloat(it.valor)).toFixed(2).replace('.', ',') : null;
+    const badgeCliente = it.cliente ? `
+      <span style="font-size:10.5px;font-weight:800;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.3);color:var(--gold-light);padding:2px 7px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;">
+        📁 ${esc(it.cliente)}${it.os ? ' · ' + esc(it.os) : ''}
+      </span>
+    ` : '';
+
     return `<div style="background:rgba(255,255,255,0.03);border:1.5px solid ${st.border};border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">
         <div style="flex:1;min-width:0;">
-          <div style="font-weight:900;font-size:13.5px;color:#fff;">${esc(it.nome || '')}</div>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px;">
+            <div style="font-weight:900;font-size:13.5px;color:#fff;">${esc(it.nome || '')}</div>
+            ${badgeCliente}
+          </div>
           <div style="font-size:11px;color:var(--muted);margin-top:2px;">
             ${it.qtd ? `Qtd: <strong style="color:#fff;">${it.qtd} ${it.unidade||'un'}</strong>` : ''}
             ${it.valor ? ` · Unit: <strong style="color:#fff;">R$ ${parseFloat(it.valor).toFixed(2).replace('.',',')}</strong>` : ''}
@@ -28672,8 +28856,9 @@ function enviarPedidoMaterialWhatsApp() {
 
   const nomeEmp = (typeof obterEmpresaAtivaGlobal === 'function' ? obterEmpresaAtivaGlobal() : null)?.nome || 'SD Móveis Projetados';
   const hoje = new Date().toLocaleDateString('pt-BR');
+  const clienteHeader = (_materialClienteFolderAtivo && _materialClienteFolderAtivo !== 'todos') ? `📁 *PASTA DO CLIENTE:* ${_materialClienteFolderAtivo}\n` : '';
 
-  let msg = `📦 *PEDIDO DE MATERIAL – ${nomeEmp}*\n📅 Data: ${hoje}\n\n`;
+  let msg = `📦 *PEDIDO DE MATERIAL – ${nomeEmp}*\n${clienteHeader}📅 Data: ${hoje}\n\n`;
 
   const statusLabel = { a_comprar: '🛒 A Comprar', pendente: '⏳ Pendente', comprado: '✅ Comprado' };
   const grupos = {};
