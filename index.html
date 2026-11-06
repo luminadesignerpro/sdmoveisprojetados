@@ -9504,11 +9504,10 @@ function abrirComparativoPrincipal(event) {
     }
   });
 
-  if (itensTabela.length > 0) {
-    params.set('itens', JSON.stringify(itensTabela));
-    if (itensTabela[0].nome && !params.has('produto')) {
-      params.set('produto', itensTabela[0].nome);
-    }
+  // Envia sempre a lista exata dos itens do orçamento para sincronização estrita
+  params.set('itens', JSON.stringify(itensTabela));
+  if (itensTabela.length > 0 && itensTabela[0].nome && !params.has('produto')) {
+    params.set('produto', itensTabela[0].nome);
   }
 
   // Primeiro produto digitado para pré-filtro se houver
