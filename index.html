@@ -27208,7 +27208,7 @@ if (typeof setInterval !== 'undefined') {
       <div class="field-row">
         <div class="field">
           <label>Quantidade</label>
-          <input type="number" id="pedido-form-qtd" placeholder="1" min="1" step="1" style="width:100%;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:13px;">
+          <input type="number" id="pedido-form-qtd" oninput="calcularTotalPedidoMaterial()" placeholder="1" min="0.01" step="any" style="width:100%;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:13px;">
         </div>
         <div class="field">
           <label>Unidade</label>
@@ -27220,7 +27220,27 @@ if (typeof setInterval !== 'undefined') {
       <div class="field-row">
         <div class="field">
           <label>Valor Unitário (R$)</label>
-          <input type="number" id="pedido-form-valor" placeholder="0,00" min="0" step="0.01" style="width:100%;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:13px;">
+          <input type="number" id="pedido-form-valor" oninput="calcularTotalPedidoMaterial()" placeholder="0,00" min="0" step="0.01" style="width:100%;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:13px;">
+        </div>
+        <div class="field">
+          <label style="color:var(--gold-light);font-weight:900;">💰 Valor Total (Qtd × Unit)</label>
+          <input type="text" id="pedido-form-valor-total" readonly placeholder="R$ 0,00" style="width:100%;padding:10px 12px;border-radius:10px;background:rgba(201,168,76,0.12);border:1.5px solid #eab308;color:#fde047;font-family:var(--font);font-size:13.5px;font-weight:900;">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>💳 Forma de Pagamento</label>
+          <select id="pedido-form-pagamento" style="width:100%;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:13px;">
+            <option value="">Não informado</option>
+            <option value="PIX">⚡ PIX</option>
+            <option value="Dinheiro">💵 Dinheiro</option>
+            <option value="Cartão de Crédito">💳 Cartão de Crédito</option>
+            <option value="Cartão de Débito">💳 Cartão de Débito</option>
+            <option value="Boleto">📄 Boleto</option>
+            <option value="A Prazo / Faturado">⏳ A Prazo / Faturado</option>
+            <option value="Transferência">🔁 Transferência Bancária</option>
+            <option value="Outro">📝 Outro</option>
+          </select>
         </div>
         <div class="field">
           <label>Urgência</label>
@@ -27229,6 +27249,30 @@ if (typeof setInterval !== 'undefined') {
             <option value="urgente">🔥 Urgente</option>
             <option value="critico">🚨 Crítico</option>
           </select>
+        </div>
+      </div>
+      <!-- Foto do Comprovante de Pagamento -->
+      <div class="field" style="background:rgba(255,255,255,0.02);border:1.5px dashed rgba(201,168,76,0.35);border-radius:10px;padding:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
+          <label style="font-weight:900;color:var(--gold-light);display:flex;align-items:center;gap:6px;margin:0;">
+            <span>📸</span> Comprovante de Pagamento (Foto / Anexo)
+          </label>
+          <span id="pedido-form-comprovante-status" style="font-size:11px;color:#94a3b8;">Nenhum comprovante</span>
+        </div>
+        <input type="file" id="pedido-form-comprovante-input" accept="image/*" capture="environment" style="display:none;" onchange="lidarUploadComprovanteMaterial(event)">
+        <input type="hidden" id="pedido-form-comprovante-base64" value="">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <button type="button" onclick="document.getElementById('pedido-form-comprovante-input').click()" class="btn btn-gold btn-sm" style="font-size:12px;font-weight:800;display:inline-flex;align-items:center;gap:6px;">
+            <span>📷</span> Tirar Foto / Anexar Comprovante
+          </button>
+          <button type="button" id="btn-remover-comprovante" onclick="removerComprovanteMaterial()" class="btn btn-sec btn-sm" style="display:none;font-size:11.5px;color:#f87171;border-color:rgba(248,113,113,0.3);">
+            🗑️ Remover Foto
+          </button>
+        </div>
+        <!-- Preview da Foto do Comprovante -->
+        <div id="pedido-form-comprovante-preview-box" style="display:none;margin-top:10px;text-align:center;">
+          <img id="pedido-form-comprovante-img" src="" style="max-height:160px;max-width:100%;border-radius:8px;border:1.5px solid #eab308;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,0.5);" onclick="abrirFotoComprovanteModal(this.src)" title="Clique para ampliar">
+          <div style="font-size:10.5px;color:#94a3b8;margin-top:4px;">🔍 Toque na foto para ampliar</div>
         </div>
       </div>
       <div class="field">
@@ -27252,6 +27296,19 @@ if (typeof setInterval !== 'undefined') {
     <div style="display:flex;gap:8px;margin-top:16px;">
       <button type="button" class="btn btn-sec btn-sm" onclick="fecharModalNovoPedidoMaterial()" style="flex:1;">Cancelar</button>
       <button type="button" class="btn btn-gold" onclick="salvarPedidoMaterial()" style="flex:2;font-size:13px;font-weight:800;">💾 Salvar Item</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: VISUALIZAR COMPROVANTE AMPLIADO -->
+<div id="modal-visualizar-comprovante" class="modal-overlay" style="display:none;z-index:9999999;align-items:center;justify-content:center;background:rgba(0,0,0,0.85);backdrop-filter:blur(6px);" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:92vw;max-height:92vh;padding:16px;background:#0d0d15;border:1.5px solid #eab308;border-radius:14px;display:flex;flex-direction:column;align-items:center;box-shadow:0 10px 40px rgba(0,0,0,0.9);">
+    <div style="display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:12px;">
+      <span style="font-size:14.5px;font-weight:900;color:var(--gold-light);display:flex;align-items:center;gap:6px;">🧾 Comprovante de Pagamento</span>
+      <button class="modal-close" onclick="document.getElementById('modal-visualizar-comprovante').style.display='none'" style="font-size:16px;cursor:pointer;">✕</button>
+    </div>
+    <div style="flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;width:100%;">
+      <img id="img-comprovante-ampliado" src="" style="max-width:100%;max-height:75vh;border-radius:8px;object-fit:contain;box-shadow:0 4px 20px rgba(0,0,0,0.8);">
     </div>
   </div>
 </div>
@@ -28478,10 +28535,18 @@ function renderCardItemMaterial(it) {
         <div style="font-size:11px;color:var(--muted);margin-top:2px;">
           ${it.qtd ? `Qtd: <strong style="color:#fff;">${it.qtd} ${it.unidade||'un'}</strong>` : ''}
           ${it.valor ? ` · Unit: <strong style="color:#fff;">R$ ${parseFloat(it.valor).toFixed(2).replace('.',',')}</strong>` : ''}
-          ${total ? ` · Total: <strong style="color:var(--gold-light);">R$ ${total}</strong>` : ''}
+          ${total ? ` · Total: <strong style="color:#fde047;font-weight:900;">R$ ${total}</strong>` : ''}
           ${it.fornecedor ? ` · 🏪 ${esc(it.fornecedor)}` : ''}
+          ${it.formaPagamento ? ` · 💳 <strong style="color:#67e8f9;">${esc(it.formaPagamento)}</strong>` : ''}
         </div>
         ${it.obs ? `<div style="font-size:11px;color:var(--text2);margin-top:4px;">${esc(it.obs)}</div>` : ''}
+        ${it.comprovante ? `
+          <div style="margin-top:6px;display:flex;align-items:center;gap:6px;">
+            <button type="button" onclick="abrirFotoComprovanteModal('${it.comprovante.replace(/'/g, "\\'")}')" style="background:rgba(34,197,94,0.18);border:1.5px solid #22c55e;color:#4ade80;font-size:11px;font-weight:800;padding:4px 10px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;box-shadow:0 2px 8px rgba(34,197,94,0.25);">
+              <span>🧾</span> <span>Ver Comprovante de Pagamento</span>
+            </button>
+          </div>
+        ` : ''}
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
         <span style="font-size:10.5px;font-weight:800;background:${st.bg};color:${st.color};border:1px solid ${st.border};padding:3px 8px;border-radius:20px;">${st.label}</span>
@@ -28674,6 +28739,9 @@ function abrirModalNovoPedidoMaterial(it) {
     const valEl = document.getElementById('pedido-form-valor');
     if (valEl) valEl.value = it ? (it.valor||'') : '';
 
+    const pagEl = document.getElementById('pedido-form-pagamento');
+    if (pagEl) pagEl.value = it ? (it.formaPagamento||'') : '';
+
     const urgEl = document.getElementById('pedido-form-urgencia');
     if (urgEl) urgEl.value = it ? (it.urgencia||'normal') : 'normal';
 
@@ -28685,6 +28753,29 @@ function abrirModalNovoPedidoMaterial(it) {
 
     const obsEl = document.getElementById('pedido-form-obs');
     if (obsEl) obsEl.value = it ? (it.obs||'') : '';
+
+    // Calcula valor total inicial
+    calcularTotalPedidoMaterial();
+
+    // Carrega comprovante se existente
+    if (it && it.comprovante) {
+      const inputBase64 = document.getElementById('pedido-form-comprovante-base64');
+      const imgEl = document.getElementById('pedido-form-comprovante-img');
+      const previewBox = document.getElementById('pedido-form-comprovante-preview-box');
+      const btnRemover = document.getElementById('btn-remover-comprovante');
+      const stComp = document.getElementById('pedido-form-comprovante-status');
+
+      if (inputBase64) inputBase64.value = it.comprovante;
+      if (imgEl) imgEl.src = it.comprovante;
+      if (previewBox) previewBox.style.display = 'block';
+      if (btnRemover) btnRemover.style.display = 'inline-block';
+      if (stComp) {
+        stComp.textContent = '✅ Comprovante anexado';
+        stComp.style.color = '#4ade80';
+      }
+    } else {
+      removerComprovanteMaterial();
+    }
 
     m.style.setProperty('display', 'flex', 'important');
     m.classList.add('active');
@@ -28719,18 +28810,33 @@ function salvarPedidoMaterial() {
   const lista = carregarMateriais();
   const editId = document.getElementById('pedido-material-edit-id').value;
 
+  const qtdVal = document.getElementById('pedido-form-qtd').value || '1';
+  const unitVal = document.getElementById('pedido-form-valor').value || '0';
+  const totalCalculado = (parseFloat(String(qtdVal).replace(',', '.')) * parseFloat(String(unitVal).replace(',', '.'))) || 0;
+
+  const formaPagamento = document.getElementById('pedido-form-pagamento') ? document.getElementById('pedido-form-pagamento').value : '';
+  const comprovanteBase64 = document.getElementById('pedido-form-comprovante-base64') ? document.getElementById('pedido-form-comprovante-base64').value : '';
+
   const obj = {
     id: editId || `mat_${Date.now()}`,
     nome,
-    qtd: document.getElementById('pedido-form-qtd').value,
+    qtd: qtdVal,
     unidade: document.getElementById('pedido-form-unidade').value,
-    valor: document.getElementById('pedido-form-valor').value,
+    valor: unitVal,
+    valorTotal: totalCalculado.toFixed(2),
+    formaPagamento: formaPagamento,
+    comprovante: comprovanteBase64,
     urgencia: document.getElementById('pedido-form-urgencia').value,
     fornecedor: document.getElementById('pedido-form-fornecedor').value.trim(),
     status: document.getElementById('pedido-form-status').value,
     obs: document.getElementById('pedido-form-obs').value.trim(),
     criadoEm: editId ? undefined : new Date().toISOString()
   };
+
+  // Se o item estiver sendo criado e houver uma pasta de cliente ativa (diferente de 'todos'), atribui a ela
+  if (!editId && _materialClienteFolderAtivo && _materialClienteFolderAtivo !== 'todos' && _materialClienteFolderAtivo !== 'outros') {
+    obj.cliente = _materialClienteFolderAtivo;
+  }
 
   if (editId) {
     const idx = lista.findIndex(x => x.id === editId);
@@ -28744,8 +28850,78 @@ function salvarPedidoMaterial() {
   fecharModalNovoPedidoMaterial();
   renderPedidosMaterial();
 }
+window.salvarPedidoMaterial = salvarPedidoMaterial;
 
-// ── ENVIO VIA WHATSAPP ───────────────────────────────────────────
+function calcularTotalPedidoMaterial() {
+  const qtdStr = document.getElementById('pedido-form-qtd') ? document.getElementById('pedido-form-qtd').value : '1';
+  const valStr = document.getElementById('pedido-form-valor') ? document.getElementById('pedido-form-valor').value : '0';
+  const qtd = parseFloat(String(qtdStr).replace(',', '.')) || 0;
+  const val = parseFloat(String(valStr).replace(',', '.')) || 0;
+  const total = qtd * val;
+  const elTotal = document.getElementById('pedido-form-valor-total');
+  if (elTotal) {
+    elTotal.value = 'R$ ' + total.toFixed(2).replace('.', ',');
+  }
+}
+window.calcularTotalPedidoMaterial = calcularTotalPedidoMaterial;
+
+function lidarUploadComprovanteMaterial(e) {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    const base64 = evt.target.result;
+    const inputBase64 = document.getElementById('pedido-form-comprovante-base64');
+    const imgEl = document.getElementById('pedido-form-comprovante-img');
+    const previewBox = document.getElementById('pedido-form-comprovante-preview-box');
+    const btnRemover = document.getElementById('btn-remover-comprovante');
+    const stEl = document.getElementById('pedido-form-comprovante-status');
+
+    if (inputBase64) inputBase64.value = base64;
+    if (imgEl) imgEl.src = base64;
+    if (previewBox) previewBox.style.display = 'block';
+    if (btnRemover) btnRemover.style.display = 'inline-block';
+    if (stEl) {
+      stEl.textContent = '✅ Comprovante anexado';
+      stEl.style.color = '#4ade80';
+    }
+  };
+  reader.readAsDataURL(file);
+}
+window.lidarUploadComprovanteMaterial = lidarUploadComprovanteMaterial;
+
+function removerComprovanteMaterial() {
+  const inputBase64 = document.getElementById('pedido-form-comprovante-base64');
+  const imgEl = document.getElementById('pedido-form-comprovante-img');
+  const previewBox = document.getElementById('pedido-form-comprovante-preview-box');
+  const btnRemover = document.getElementById('btn-remover-comprovante');
+  const fileInput = document.getElementById('pedido-form-comprovante-input');
+  const stEl = document.getElementById('pedido-form-comprovante-status');
+
+  if (inputBase64) inputBase64.value = '';
+  if (imgEl) imgEl.src = '';
+  if (previewBox) previewBox.style.display = 'none';
+  if (btnRemover) btnRemover.style.display = 'none';
+  if (fileInput) fileInput.value = '';
+  if (stEl) {
+    stEl.textContent = 'Nenhum comprovante';
+    stEl.style.color = '#94a3b8';
+  }
+}
+window.removerComprovanteMaterial = removerComprovanteMaterial;
+
+function abrirFotoComprovanteModal(src) {
+  if (!src) return;
+  const modal = document.getElementById('modal-visualizar-comprovante');
+  const img = document.getElementById('img-comprovante-ampliado');
+  if (modal && img) {
+    img.src = src;
+    modal.style.display = 'flex';
+  }
+}
+window.abrirFotoComprovanteModal = abrirFotoComprovanteModal;
+
 function abrirModalConfigWhatsappMaterial() {
   const m = document.getElementById('modal-config-whatsapp-material');
   if (!m) return;
