@@ -20900,6 +20900,14 @@ window.addEventListener('DOMContentLoaded', function() {
   addItem();
   atualizarNumeroDisplay();
 
+  // Limpa galeria para que não apareçam imagens de orçamentos anteriores ao iniciar
+  try {
+    localStorage.removeItem('sdm_cam_capturas');
+    localStorage.removeItem('sdm_orc_fotos_temp');
+    localStorage.removeItem('sdm_orc_pdfs');
+    if (typeof atualizarBadgeGaleriaOrcamento === 'function') atualizarBadgeGaleriaOrcamento();
+  } catch(_) {}
+
   iniciarRelogioPonto();
   atualizarSelectColaboradoresPonto();
 
