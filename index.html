@@ -2091,9 +2091,12 @@
             <!-- BOTÃO AMBIENTES ABAIXO DE QTD DESCRIÇÃO (PRODUTO / SERVIÇO) -->
             <tr id="tr-header-ambientes" style="background:#11121c;">
               <th colspan="11" style="padding:8px 10px;text-align:left;border-bottom:1.5px solid rgba(245,158,11,0.3);background:rgba(245,158,11,0.06);">
-                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-                  <button type="button" class="btn btn-sm" id="btn-orc-ambientes" onclick="abrirModalAmbientesOrc()" style="background:linear-gradient(135deg, rgba(245,158,11,0.25), rgba(217,119,6,0.22));border:1.5px solid #f59e0b;color:#fbbf24;font-weight:800;border-radius:8px;padding:6px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;box-shadow:0 2px 8px rgba(245,158,11,0.2);font-size:12px;" title="Adicionar e Organizar Itens por Ambientes">
-                    <span style="font-size:15px;">🛋️</span> <span id="label-orc-ambientes">Ambientes</span>
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                  <button type="button" class="btn btn-sm btn-seletor-ambientes" id="btn-orc-ambientes" onclick="abrirModalAmbientesOrc(this)" style="background:linear-gradient(135deg, rgba(245,158,11,0.25), rgba(217,119,6,0.22));border:1.5px solid #f59e0b;color:#fbbf24;font-weight:800;border-radius:8px;padding:6px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;box-shadow:0 2px 8px rgba(245,158,11,0.2);font-size:12px;" title="Escolher / Alterar Ambiente">
+                    <span style="font-size:15px;">🛋️</span> <span id="label-orc-ambientes" class="label-ambiente-texto">Ambientes</span>
+                  </button>
+                  <button type="button" class="btn btn-sm" id="btn-add-novo-ambiente" onclick="adicionarNovoAmbienteSecao()" style="background:linear-gradient(135deg, rgba(245,158,11,0.35), rgba(217,119,6,0.3));border:1.5px solid #f59e0b;color:#fbbf24;font-weight:900;border-radius:8px;padding:6px 13px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-size:13px;box-shadow:0 2px 8px rgba(245,158,11,0.25);" title="Adicionar Novo Ambiente com Linha de Item">
+                    <span style="font-size:14px;">➕</span>
                   </button>
                   <span id="badge-ambiente-ativo-texto" style="font-size:11.5px;color:#fcd34d;font-weight:700;"></span>
                 </div>
@@ -2222,7 +2225,7 @@
           <div id="wrap-dir-inline-orc" style="margin:0;background:#11111a;border:1.5px solid rgba(139,92,246,0.45);border-radius:14px;padding:14px;box-shadow:0 4px 20px rgba(0,0,0,0.5);">
             
             <!-- HEADER DO RATEIO (IDÊNTICO À PRIMEIRA IMAGEM) -->
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
               <div style="display:flex;align-items:center;gap:7px;">
                 <span style="font-size:18px;line-height:1;">📊</span>
                 <span style="font-size:13.5px;font-weight:800;color:#fff;">Rateio Proporcional Visual</span>
@@ -2230,6 +2233,12 @@
               <div style="display:flex;align-items:center;gap:6px;">
                 <span id="dir-inline-badge-soma" style="font-size:11.5px;font-weight:800;padding:4px 10px;border-radius:8px;background:#471a24;color:#ff6b81;border:1px solid #7d2a38;letter-spacing:0.3px;">100% Total</span>
               </div>
+            </div>
+
+            <!-- VALOR TOTAL DO ORÇAMENTO NO CARD (QUARTA IMAGEM) -->
+            <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:6px 10px;margin-bottom:10px;">
+              <span style="font-size:11.5px;color:#94a3b8;font-weight:700;">💰 Total do Orçamento:</span>
+              <strong id="dir-inline-val-total-orc" style="font-size:13.5px;color:var(--gold-light);font-weight:900;">R$ 0,00</strong>
             </div>
 
             <!-- BARRA PROGRESSO MULTICOLORIDA COM CORES DA PRIMEIRA IMAGEM -->
@@ -2258,31 +2267,6 @@
             </div>
 
           </div>
-
-            <!-- BARRA PROGRESSO MULTICOLORIDA -->
-            <div id="dir-inline-progress-bar" style="height:12px;width:100%;background:rgba(255,255,255,0.06);border-radius:6px;display:flex;overflow:hidden;position:relative;margin-bottom:8px;box-shadow:inset 0 1px 3px rgba(0,0,0,0.5);">
-              <!-- Segmentos gerados via JS -->
-            </div>
-
-            <!-- LEGENDA RESUMIDA -->
-            <div id="dir-inline-progress-legenda" style="display:flex;flex-wrap:wrap;gap:6px 10px;margin-bottom:10px;font-size:10.5px;">
-              <!-- Legendas geradas via JS -->
-            </div>
-
-            <!-- LISTA INLINE DE CATEGORIAS (NOME, % E R$) -->
-            <div id="dir-inline-lista-categorias" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;">
-              <!-- Categorias renderizadas via JS -->
-            </div>
-
-            <!-- FOOTER COM BOTÃO ADICIONAR CATEGORIA E NOTA -->
-            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;padding-top:8px;border-top:1px dashed rgba(255,255,255,0.08);">
-              <button type="button" onclick="adicionarCategoriaDirecionamentoInline()" style="background:linear-gradient(135deg,rgba(16,185,129,0.2),rgba(5,150,105,0.2));border:1.5px solid #10b981;color:#34d399;font-weight:800;font-size:11px;padding:6px 12px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
-                ➕ Adicionar Categoria
-              </button>
-              <div style="font-size:9.5px;color:var(--muted);">
-                🚫 Oculto ao cliente no PDF
-              </div>
-            </div>
 
           </div>
 
@@ -5779,6 +5763,12 @@
           <div style="font-size:12px;color:#94a3b8;font-weight:600;">Selecione ou crie um ambiente para o orçamento</div>
         </div>
       </div>
+    </div>
+
+    <!-- VALOR TOTAL DO ORÇAMENTO NO MODAL DE AMBIENTES -->
+    <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.3);border-radius:10px;padding:8px 12px;margin-bottom:12px;">
+      <span style="font-size:12px;color:#cbd5e1;font-weight:700;">💰 Total do Orçamento:</span>
+      <strong id="modal-ambientes-total-val" style="font-size:15px;color:var(--gold-light);font-weight:900;">R$ 0,00</strong>
       <button class="modal-close" onclick="fecharModalAmbientesOrc()" style="background:rgba(255,255,255,0.08);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">✕</button>
     </div>
 
@@ -13583,9 +13573,19 @@ let dirOrcamentoTemp = null;
 // ════════════════════════════════════════════════════════════════
 //  MODAL & GERENCIAMENTO DE AMBIENTES NO ORÇAMENTO
 // ════════════════════════════════════════════════════════════════
-function abrirModalAmbientesOrc() {
+let _btnAmbienteEmEdicao = null;
+let _contadorAmbientes = 1;
+
+function abrirModalAmbientesOrc(btnElement) {
+  _btnAmbienteEmEdicao = btnElement || document.querySelector('.btn-seletor-ambientes');
   const m = document.getElementById('modal-orc-ambientes');
   if (m) {
+    // Atualiza o valor total do orçamento no modal (quarta imagem)
+    const elTotal = document.getElementById('total');
+    const totalTxt = elTotal ? elTotal.textContent.trim() : 'R$ 0,00';
+    const totalElModal = document.getElementById('modal-ambientes-total-val');
+    if (totalElModal) totalElModal.textContent = totalTxt;
+
     m.style.display = 'flex';
     const inp = document.getElementById('inp-custom-ambiente-orc');
     if (inp) {
@@ -13606,19 +13606,19 @@ function inserirAmbienteNoOrcamento(nomeAmbiente) {
   if (!nomeAmbiente || !nomeAmbiente.trim()) return;
   const nomeLimpo = nomeAmbiente.trim();
 
-  // Insere uma linha no orçamento como cabeçalho do ambiente
-  addItem('🛋️ AMBIENTE: ' + nomeLimpo.toUpperCase(), '1', '', '', '', '', '0,00', '', '');
-
-  // Atualiza label do botão
-  const lbl = document.getElementById('label-orc-ambientes');
-  if (lbl) {
-    lbl.textContent = 'Ambientes (' + nomeLimpo + ')';
+  // ATUALIZA APENAS O BOTÃO DO AMBIENTE (NÃO CRIA ITEM NEM INSERE NA DESCRIÇÃO DO PRODUTO)
+  const targetBtn = _btnAmbienteEmEdicao || document.querySelector('.btn-seletor-ambientes');
+  if (targetBtn) {
+    const lbl = targetBtn.querySelector('.label-ambiente-texto') || targetBtn.querySelector('span:last-child');
+    if (lbl) {
+      lbl.textContent = 'Ambientes (' + nomeLimpo + ')';
+    }
   }
 
   fecharModalAmbientesOrc();
   if (typeof salvarOrcamentoLocal === 'function') salvarOrcamentoLocal();
   if (typeof showToast === 'function') {
-    showToast('Ambiente "' + nomeLimpo + '" adicionado ao orçamento! 🛋️');
+    showToast('Ambiente definido como "' + nomeLimpo + '"! 🛋️');
   }
 }
 
@@ -13630,6 +13630,45 @@ function inserirAmbienteCustomizadoNoOrcamento() {
     return;
   }
   inserirAmbienteNoOrcamento(val);
+}
+
+// Cria uma nova seção de Ambiente com botão próprio e linha de item limpa (Idêntico à Imagem 2)
+function adicionarNovoAmbienteSecao() {
+  const idAmb = ++_contadorAmbientes;
+  const tbody = document.getElementById('itens-lista');
+  if (!tbody) return;
+
+  // Linha do Ambiente com botão próprio
+  const trAmb = document.createElement('tr');
+  trAmb.className = 'tr-ambiente-secao';
+  trAmb.style.background = '#11121c';
+  trAmb.innerHTML = `
+    <td colspan="11" style="padding:8px 10px;text-align:left;border-top:2px solid rgba(245,158,11,0.35);border-bottom:1.5px solid rgba(245,158,11,0.25);background:rgba(245,158,11,0.06);">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button type="button" class="btn btn-sm btn-seletor-ambientes" onclick="abrirModalAmbientesOrc(this)" style="background:linear-gradient(135deg, rgba(245,158,11,0.25), rgba(217,119,6,0.22));border:1.5px solid #f59e0b;color:#fbbf24;font-weight:800;border-radius:8px;padding:6px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;box-shadow:0 2px 8px rgba(245,158,11,0.2);font-size:12px;" title="Escolher / Alterar Ambiente">
+            <span style="font-size:15px;">🛋️</span> <span class="label-ambiente-texto">Ambientes</span>
+          </button>
+        </div>
+        <button type="button" onclick="removerAmbienteSecao(this)" style="background:none;border:none;color:#ef4444;font-size:11px;font-weight:700;cursor:pointer;opacity:0.75;padding:2px 6px;" title="Remover este ambiente">
+          ✕ Remover
+        </button>
+      </div>
+    </td>
+  `;
+  tbody.appendChild(trAmb);
+
+  // E adiciona imediatamente uma linha limpa de produto/serviço logo abaixo
+  addItem('', '1', '', '', '', '', '', '', '');
+
+  if (typeof showToast === 'function') {
+    showToast('Novo ambiente criado! Toque em "Ambientes" para escolher o nome. 🛋️');
+  }
+}
+
+function removerAmbienteSecao(btn) {
+  const tr = btn.closest('.tr-ambiente-secao');
+  if (tr) tr.remove();
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -13720,6 +13759,11 @@ function renderRateioInline() {
         </div>
       </div>`;
   }).join('');
+
+  const elCardTotal = document.getElementById('dir-inline-val-total-orc');
+  if (elCardTotal) {
+    elCardTotal.textContent = elTotal ? elTotal.textContent.trim() : (typeof formatarValorPtBr === 'function' ? 'R$ ' + formatarValorPtBr(totalNum) : 'R$ 0,00');
+  }
 
   atualizarBarraEBadgeRateioInline();
   salvarRateioInlineParaOrcamento();
