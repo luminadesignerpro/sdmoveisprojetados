@@ -3827,6 +3827,22 @@
 
           <!-- PAINEL: PEDIDO DE MATERIAL -->
           <div id="crono-panel-material" style="display:none;">
+            <!-- ── PASTAS DE PEDIDO DE MATERIAL POR CLIENTE ── -->
+            <div id="material-pastas-wrapper" style="background:linear-gradient(135deg, rgba(20,20,32,0.9), rgba(13,13,21,0.95));border:1.5px solid rgba(201,168,76,0.3);border-radius:12px;padding:10px 14px;margin-bottom:14px;box-shadow:0 4px 16px rgba(0,0,0,0.4);">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
+                <div style="font-size:12px;font-weight:900;color:var(--gold-light);text-transform:uppercase;letter-spacing:0.5px;display:flex;align-items:center;gap:6px;">
+                  <span>📁</span> <span>Pastas do Pedido de Material por Cliente</span>
+                </div>
+                <div id="material-pasta-ativa-info" style="font-size:11.5px;color:#94a3b8;">
+                  Pasta aberta: <strong id="material-pasta-ativa-nome" style="color:#fde047;">Todos os Clientes</strong>
+                </div>
+              </div>
+              <!-- Scroll horizontal das Pastas dos Clientes -->
+              <div id="material-pastas-lista" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:thin;">
+                <!-- Inserido dinamicamente por renderPastasClienteMaterial() -->
+              </div>
+            </div>
+
             <!-- FILTROS E BUSCA -->
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">
               <input type="text" id="material-busca" oninput="renderPedidosMaterial()" placeholder="🔍 Buscar item..." style="flex:1;min-width:140px;padding:9px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:12.5px;" />
@@ -14179,90 +14195,338 @@ function salvarMateriais(arr) {
   try { localStorage.setItem(K_CRONO.materiais, JSON.stringify(arr)); } catch(_) {}
 }
 
+let _materialClienteFolderAtivo = 'todos';
+
+function itemPertenceAoCliente(it, pastaAlvo) {
+  if (!pastaAlvo || pastaAlvo === 'todos') return true;
+  const target = pastaAlvo.toLowerCase().trim();
+  const cli = (it.cliente || '').toLowerCase().trim();
+
+  if (target === 'outros' || target === 'geral' || target === 'outros / geral') {
+    return !cli;
+  }
+
+  if (cli) {
+    if (cli === target) return true;
+    if (target.includes(cli) || cli.includes(target)) return true;
+  }
+
+  // Se não tem it.cliente preenchido, só aceita se it.obs tiver explicitamente o nome
+  if (!cli && it.obs) {
+    const o = it.obs.toLowerCase();
+    if (o.includes(target)) return true;
+  }
+
+  return false;
+}
+window.itemPertenceAoCliente = itemPertenceAoCliente;
+
+function selecionarPastaClienteMaterial(pastaNome) {
+  _materialClienteFolderAtivo = (pastaNome || 'todos').trim();
+  const labelNome = document.getElementById('material-pasta-ativa-nome');
+  if (labelNome) {
+    labelNome.textContent = _materialClienteFolderAtivo === 'todos' ? 'Todos os Clientes' : _materialClienteFolderAtivo;
+  }
+  renderPedidosMaterial();
+}
+window.selecionarPastaClienteMaterial = selecionarPastaClienteMaterial;
+
+function enviarPedidoMaterialWhatsAppCliente(nomeCli) {
+  _materialClienteFolderAtivo = nomeCli || 'todos';
+  const labelNome = document.getElementById('material-pasta-ativa-nome');
+  if (labelNome) {
+    labelNome.textContent = _materialClienteFolderAtivo === 'todos' ? 'Todos os Clientes' : _materialClienteFolderAtivo;
+  }
+  enviarPedidoMaterialWhatsApp();
+}
+window.enviarPedidoMaterialWhatsAppCliente = enviarPedidoMaterialWhatsAppCliente;
+
+function renderPastasClienteMaterial(lista) {
+  const container = document.getElementById('material-pastas-lista');
+  if (!container) return;
+
+  const mapaClientes = {};
+  let semClienteCount = 0;
+
+  // 1. Extrai clientes dos itens de materiais existentes
+  (lista || []).forEach(it => {
+    let c = (it.cliente || '').trim();
+    if (!c && it.obs) {
+      const mObs = it.obs.match(/OS\s*#?\d+\s*\(([^)]+)\)/i);
+      if (mObs && mObs[1]) c = mObs[1].trim();
+    }
+    if (c) {
+      if (!mapaClientes[c]) mapaClientes[c] = { nome: c, os: it.os || '', total: 0 };
+      mapaClientes[c].total++;
+      if (it.os && !mapaClientes[c].os) mapaClientes[c].os = it.os;
+    } else {
+      semClienteCount++;
+    }
+  });
+
+  // 2. Extrai clientes das ordens salvas no storage
+  const ordens = (typeof carregarOrdensDoStorage === 'function') 
+    ? carregarOrdensDoStorage() 
+    : (typeof historico !== 'undefined' && Array.isArray(historico) ? historico : (JSON.parse(localStorage.getItem('orcamentos_historico') || '[]')));
+
+  if (Array.isArray(ordens)) {
+    ordens.forEach(os => {
+      const c = (os.nome || os.cliente || (os.dados && os.dados.nome) || '').trim();
+      const num = os.numero || (os.dados && os.dados.numero) || '';
+      if (c) {
+        if (!mapaClientes[c]) mapaClientes[c] = { nome: c, os: num, total: 0 };
+        else if (num && !mapaClientes[c].os) mapaClientes[c].os = num;
+      }
+    });
+  }
+
+  const clientesArray = Object.values(mapaClientes).sort((a, b) => a.nome.localeCompare(b.nome));
+  const totalGeral = (lista || []).length;
+  const isTodosAtivo = _materialClienteFolderAtivo === 'todos';
+
+  let html = `
+    <button type="button" onclick="selecionarPastaClienteMaterial('todos')"
+      style="display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border-radius:10px;font-size:12.5px;font-weight:900;white-space:nowrap;cursor:pointer;transition:all 0.2s;
+      ${isTodosAtivo ? 'background:linear-gradient(135deg, rgba(201,168,76,0.38), rgba(234,179,8,0.28));border:1.5px solid #eab308;color:#fff;box-shadow:0 0 14px rgba(234,179,8,0.4);' : 'background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);color:#94a3af;'}">
+      <span>📋</span> <span>Todos</span>
+      <span style="background:${isTodosAtivo ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.08)'};padding:2px 7px;border-radius:12px;font-size:11px;color:${isTodosAtivo ? '#fde047' : '#cbd5e1'};">${totalGeral}</span>
+    </button>
+  `;
+
+  clientesArray.forEach(cli => {
+    const isAtivo = _materialClienteFolderAtivo.toLowerCase() === cli.nome.toLowerCase();
+    const osBadge = cli.os ? `<span style="font-size:10px;opacity:0.85;margin-left:2px;">(${cli.os})</span>` : '';
+    html += `
+      <button type="button" onclick="selecionarPastaClienteMaterial('${cli.nome.replace(/'/g, "\\'")}')"
+        style="display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border-radius:10px;font-size:12.5px;font-weight:900;white-space:nowrap;cursor:pointer;transition:all 0.2s;
+        ${isAtivo ? 'background:linear-gradient(135deg, rgba(201,168,76,0.38), rgba(234,179,8,0.28));border:1.5px solid #eab308;color:#fff;box-shadow:0 0 14px rgba(234,179,8,0.4);' : 'background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);color:#94a3af;'}">
+        <span>📁</span> <span>${cli.nome}</span> ${osBadge}
+        <span style="background:${isAtivo ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.08)'};padding:2px 7px;border-radius:12px;font-size:11px;color:${isAtivo ? '#fde047' : '#cbd5e1'};">${cli.total}</span>
+      </button>
+    `;
+  });
+
+  if (semClienteCount > 0) {
+    const isOutrosAtivo = _materialClienteFolderAtivo === 'outros';
+    html += `
+      <button type="button" onclick="selecionarPastaClienteMaterial('outros')"
+        style="display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border-radius:10px;font-size:12.5px;font-weight:900;white-space:nowrap;cursor:pointer;transition:all 0.2s;
+        ${isOutrosAtivo ? 'background:linear-gradient(135deg, rgba(201,168,76,0.38), rgba(234,179,8,0.28));border:1.5px solid #eab308;color:#fff;box-shadow:0 0 14px rgba(234,179,8,0.4);' : 'background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);color:#94a3af;'}">
+        <span>📁</span> <span>Outros / Geral</span>
+        <span style="background:${isOutrosAtivo ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.08)'};padding:2px 7px;border-radius:12px;font-size:11px;color:${isOutrosAtivo ? '#fde047' : '#cbd5e1'};">${semClienteCount}</span>
+      </button>
+    `;
+  }
+
+  container.innerHTML = html;
+}
+
+function renderCardItemMaterial(it) {
+  const statusInfo = {
+    a_comprar: { label: '🛒 A Comprar', color: '#f87171', bg: 'rgba(239,68,68,0.12)', border: 'rgba(239,68,68,0.35)' },
+    pendente: { label: '⏳ Pendente', color: '#fbbf24', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.35)' },
+    comprado: { label: '✅ Comprado', color: '#34d399', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.35)' }
+  };
+
+  const urgInfo = {
+    normal: { label: '📋 Normal', color: '#94a3b8' },
+    urgente: { label: '🔥 Urgente', color: '#fbbf24' },
+    critico: { label: '🚨 Crítico', color: '#f87171' }
+  };
+
+  const st = statusInfo[it.status] || statusInfo.a_comprar;
+  const urg = urgInfo[it.urgencia] || urgInfo.normal;
+  const total = it.qtd && it.valor ? (parseFloat(it.qtd) * parseFloat(it.valor)).toFixed(2).replace('.', ',') : null;
+  const badgeCliente = it.cliente ? `
+    <span style="font-size:10.5px;font-weight:800;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.3);color:var(--gold-light);padding:2px 7px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;">
+      📁 ${esc(it.cliente)}${it.os ? ' · ' + esc(it.os) : ''}
+    </span>
+  ` : '';
+
+  return `<div style="background:rgba(255,255,255,0.03);border:1.5px solid ${st.border};border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px;">
+          <div style="font-weight:900;font-size:13.5px;color:#fff;">${esc(it.nome || '')}</div>
+          ${badgeCliente}
+        </div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px;">
+          ${it.qtd ? `Qtd: <strong style="color:#fff;">${it.qtd} ${it.unidade||'un'}</strong>` : ''}
+          ${it.valor ? ` · Unit: <strong style="color:#fff;">R$ ${parseFloat(it.valor).toFixed(2).replace('.',',')}</strong>` : ''}
+          ${total ? ` · Total: <strong style="color:#fde047;font-weight:900;">R$ ${total}</strong>` : ''}
+          ${it.fornecedor ? ` · 🏪 ${esc(it.fornecedor)}` : ''}
+          ${it.formaPagamento ? ` · 💳 <strong style="color:#67e8f9;">${esc(it.formaPagamento)}</strong>` : ''}
+        </div>
+        ${it.obs ? `<div style="font-size:11px;color:var(--text2);margin-top:4px;">${esc(it.obs)}</div>` : ''}
+        ${it.comprovante ? `
+          <div style="margin-top:6px;display:flex;align-items:center;gap:6px;">
+            <button type="button" onclick="abrirFotoComprovanteModal('${it.comprovante.replace(/'/g, "\\'")}')" style="background:rgba(34,197,94,0.18);border:1.5px solid #22c55e;color:#4ade80;font-size:11px;font-weight:800;padding:4px 10px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;box-shadow:0 2px 8px rgba(34,197,94,0.25);">
+              <span>🧾</span> <span>Ver Comprovante de Pagamento</span>
+            </button>
+          </div>
+        ` : ''}
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+        <span style="font-size:10.5px;font-weight:800;background:${st.bg};color:${st.color};border:1px solid ${st.border};padding:3px 8px;border-radius:20px;">${st.label}</span>
+        <span style="font-size:10px;color:${urg.color};">${urg.label}</span>
+      </div>
+    </div>
+    <!-- AÇÕES -->
+    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+      <button onclick="alterarStatusMaterial('${it.id}','a_comprar')" style="flex:1;padding:5px 4px;font-size:10.5px;font-weight:700;border-radius:6px;cursor:pointer;background:${it.status==='a_comprar'?'rgba(239,68,68,0.25)':'rgba(255,255,255,0.04)'};border:1px solid ${it.status==='a_comprar'?'rgba(239,68,68,0.5)':'rgba(255,255,255,0.1)'};color:${it.status==='a_comprar'?'#f87171':'#9ca3af'};">🛒 A Comprar</button>
+      <button onclick="alterarStatusMaterial('${it.id}','pendente')" style="flex:1;padding:5px 4px;font-size:10.5px;font-weight:700;border-radius:6px;cursor:pointer;background:${it.status==='pendente'?'rgba(245,158,11,0.25)':'rgba(255,255,255,0.04)'};border:1px solid ${it.status==='pendente'?'rgba(245,158,11,0.5)':'rgba(255,255,255,0.1)'};color:${it.status==='pendente'?'#fbbf24':'#9ca3af'};">⏳ Pendente</button>
+      <button onclick="alterarStatusMaterial('${it.id}','comprado')" style="flex:1;padding:5px 4px;font-size:10.5px;font-weight:700;border-radius:6px;cursor:pointer;background:${it.status==='comprado'?'rgba(16,185,129,0.25)':'rgba(255,255,255,0.04)'};border:1px solid ${it.status==='comprado'?'rgba(16,185,129,0.5)':'rgba(255,255,255,0.1)'};color:${it.status==='comprado'?'#34d399':'#9ca3af'};">✅ Comprado</button>
+      <button onclick="editarPedidoMaterial('${it.id}')" style="padding:5px 10px;font-size:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#fff;cursor:pointer;" title="Editar Item">✏️</button>
+      <button onclick="excluirPedidoMaterial('${it.id}')" style="padding:5px 8px;font-size:12px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:6px;color:#f87171;cursor:pointer;" title="Excluir">🗑️</button>
+    </div>
+  </div>`;
+}
+
 function renderPedidosMaterial() {
   const lista = carregarMateriais();
+  const busca = (document.getElementById('material-busca') || {}).value || '';
   const filtroStatus = (document.getElementById('material-filtro-status') || {}).value || 'todos';
-  const busca = ((document.getElementById('material-busca') || {}).value || '').toLowerCase().trim();
 
-  let aComprar = 0, pendente = 0, comprado = 0;
-  lista.forEach(m => {
-    if (m.status === 'comprado') comprado++;
-    else if (m.status === 'pendente') pendente++;
-    else aComprar++;
+  // Renderiza botões de pastas por cliente
+  renderPastasClienteMaterial(lista);
+
+  // Atualiza título da pasta aberta
+  const lblPasta = document.getElementById('material-pasta-ativa-nome');
+  if (lblPasta) {
+    lblPasta.textContent = _materialClienteFolderAtivo === 'todos' ? 'Todos os Clientes' : (_materialClienteFolderAtivo === 'outros' ? 'Outros / Geral' : _materialClienteFolderAtivo);
+  }
+
+  // Filtra itens pela pasta do cliente selecionado com verificação estrita
+  let listaDaPasta = lista.filter(it => itemPertenceAoCliente(it, _materialClienteFolderAtivo));
+
+  // Contadores calculados estritamente sobre a pasta selecionada
+  const counts = { a_comprar: 0, pendente: 0, comprado: 0 };
+  listaDaPasta.forEach(it => { if (counts.hasOwnProperty(it.status)) counts[it.status]++; });
+  ['a_comprar', 'pendente', 'comprado'].forEach(s => {
+    const el = document.getElementById(`material-count-${s}`);
+    if (el) el.textContent = counts[s];
   });
 
-  const cA = document.getElementById('material-count-a_comprar');
-  const cP = document.getElementById('material-count-pendente');
-  const cC = document.getElementById('material-count-comprado');
-  if (cA) cA.textContent = aComprar;
-  if (cP) cP.textContent = pendente;
-  if (cC) cC.textContent = comprado;
-
-  let filtrados = lista.filter(m => {
-    if (filtroStatus !== 'todos' && m.status !== filtroStatus) return false;
-    if (busca && !(m.nome || '').toLowerCase().includes(busca) && !(m.fornecedor || '').toLowerCase().includes(busca)) return false;
-    return true;
-  });
+  let filtrado = listaDaPasta;
+  if (filtroStatus !== 'todos') filtrado = filtrado.filter(it => it.status === filtroStatus);
+  if (busca.trim()) {
+    const b = busca.toLowerCase().trim();
+    filtrado = filtrado.filter(it => 
+      (it.nome||'').toLowerCase().includes(b) || 
+      (it.fornecedor||'').toLowerCase().includes(b) ||
+      (it.cliente||'').toLowerCase().includes(b) ||
+      (it.os||'').toLowerCase().includes(b)
+    );
+  }
 
   const cont = document.getElementById('material-lista');
   if (!cont) return;
 
-  if (!filtrados.length) {
-    cont.innerHTML = `<div style="text-align:center;padding:24px 0;color:var(--text2);font-size:12px;">Nenhum item de material encontrado.</div>`;
+  if (!filtrado.length) {
+    const msgPasta = _materialClienteFolderAtivo !== 'todos' ? ` na pasta "${_materialClienteFolderAtivo}"` : '';
+    cont.innerHTML = `<div style="text-align:center;color:var(--text2);font-size:12.5px;padding:24px;background:rgba(255,255,255,0.01);border:1px dashed rgba(255,255,255,0.08);border-radius:12px;">Nenhum item encontrado${msgPasta}.</div>`;
     return;
   }
 
-  const statusLabel = {
-    a_comprar: { label: '🛒 A Comprar', bg: 'rgba(239,68,68,0.15)', color: '#f87171', border: 'rgba(239,68,68,0.35)' },
-    pendente: { label: '⏳ Pendente', bg: 'rgba(245,158,11,0.15)', color: '#fbbf24', border: 'rgba(245,158,11,0.35)' },
-    comprado: { label: '✅ Comprado', bg: 'rgba(16,185,129,0.15)', color: '#34d399', border: 'rgba(16,185,129,0.35)' }
-  };
-
-  const urgLabel = {
-    normal: '',
-    urgente: '<span style="font-size:10px;background:rgba(245,158,11,0.2);color:#fbbf24;padding:1px 6px;border-radius:4px;font-weight:800;">🔥 Urgente</span>',
-    critico: '<span style="font-size:10px;background:rgba(239,68,68,0.2);color:#f87171;padding:1px 6px;border-radius:4px;font-weight:900;">🚨 Crítico</span>'
-  };
-
-  cont.innerHTML = filtrados.map(it => {
-    const st = statusLabel[it.status] || statusLabel.a_comprar;
-    const urg = urgLabel[it.urgencia] || '';
-    return `
-      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
-        <div style="min-width:0;flex:1;">
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <span style="font-weight:800;font-size:14px;color:#fff;">${esc(it.nome)}</span>
-            ${urg}
+  // Se o usuário selecionou uma pasta específica (ex: Samuel David ou Outros / Geral):
+  if (_materialClienteFolderAtivo !== 'todos') {
+    const nomeExibicao = _materialClienteFolderAtivo === 'outros' ? 'Outros / Itens Gerais' : _materialClienteFolderAtivo;
+    const numOsExib = filtrado[0]?.os ? ` · ${filtrado[0].os}` : '';
+    const bannerPasta = `
+      <div style="background:linear-gradient(135deg, rgba(201,168,76,0.18), rgba(15,15,25,0.8));border:1.5px solid #eab308;border-radius:12px;padding:12px 16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+        <div>
+          <div style="font-size:14px;font-weight:900;color:#fff;display:flex;align-items:center;gap:6px;">
+            <span>📂</span> <span>Pedido Separado: <strong style="color:#fde047;">${nomeExibicao}</strong>${numOsExib}</span>
           </div>
-          <div style="font-size:12px;color:var(--text2);margin-top:3px;display:flex;gap:12px;flex-wrap:wrap;">
-            <span>Qtd: <strong style="color:#fff;">${it.qtd || 1} ${it.unidade || 'un'}</strong></span>
-            ${it.valor ? `<span>Valor: <strong style="color:var(--gold-light);">R$ ${Number(it.valor).toFixed(2).replace('.',',')}</strong></span>` : ''}
-            ${it.fornecedor ? `<span>Fornecedor: <strong style="color:#fff;">${esc(it.fornecedor)}</strong></span>` : ''}
+          <div style="font-size:11.5px;color:#cbd5e1;margin-top:2px;">
+            Exibindo <strong>${filtrado.length}</strong> item(ns) deste cliente.
           </div>
-          ${it.obs ? `<div style="font-size:11px;color:rgba(255,255,255,0.6);margin-top:3px;">📝 ${esc(it.obs)}</div>` : ''}
         </div>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-          <select onchange="alterarStatusMaterial('${it.id}', this.value)" style="padding:4px 8px;border-radius:6px;font-size:11px;font-weight:800;background:#090913;border:1px solid ${st.border};color:${st.color};cursor:pointer;">
-            <option value="a_comprar" ${it.status === 'a_comprar' ? 'selected' : ''}>🛒 A Comprar</option>
-            <option value="pendente" ${it.status === 'pendente' ? 'selected' : ''}>⏳ Pendente</option>
-            <option value="comprado" ${it.status === 'comprado' ? 'selected' : ''}>✅ Comprado</option>
-          </select>
-          <button onclick='abrirModalNovoPedidoMaterial(${JSON.stringify(it).replace(/'/g, "&apos;")})' class="btn btn-sec btn-xs" title="Editar">✏️</button>
-          <button onclick="excluirPedidoMaterial('${it.id}')" class="btn btn-sec btn-xs" title="Excluir" style="color:#f87171;">✕</button>
+        <button type="button" onclick="selecionarPastaClienteMaterial('todos')" class="btn btn-sec btn-xs" style="font-size:11px;font-weight:800;border-radius:8px;padding:6px 14px;display:inline-flex;align-items:center;gap:5px;">
+          <span>📋</span> Ver Todos os Pedidos
+        </button>
+      </div>
+    `;
+    cont.innerHTML = bannerPasta + filtrado.map(renderCardItemMaterial).join('');
+    return;
+  }
+
+  // Se o usuário está na pasta "Todos":
+  // Mostra cada pedido de cliente SEPARADO em seu próprio bloco!
+  const grupos = {};
+  filtrado.forEach(it => {
+    let c = (it.cliente || '').trim();
+    if (!c && it.obs) {
+      const mObs = it.obs.match(/OS\s*#?\d+\s*\(([^)]+)\)/i);
+      if (mObs && mObs[1]) c = mObs[1].trim();
+    }
+    const chave = c || 'Outros / Geral';
+    if (!grupos[chave]) grupos[chave] = { nome: chave, os: it.os || '', itens: [] };
+    grupos[chave].itens.push(it);
+    if (it.os && !grupos[chave].os) grupos[chave].os = it.os;
+  });
+
+  const nomesGrupos = Object.keys(grupos).sort((a, b) => {
+    if (a === 'Outros / Geral') return 1;
+    if (b === 'Outros / Geral') return -1;
+    return a.localeCompare(b);
+  });
+
+  let htmlTodos = '';
+  nomesGrupos.forEach(chave => {
+    const g = grupos[chave];
+    const osBadge = g.os ? `<span style="background:rgba(234,179,8,0.18);border:1px solid #eab308;color:#fde047;font-size:11px;padding:2px 8px;border-radius:6px;font-weight:800;">${g.os}</span>` : '';
+    const totalValorGrupo = g.itens.reduce((acc, x) => acc + (parseFloat(x.qtd||1) * parseFloat(x.valor||0) || 0), 0);
+    const totalFormatado = totalValorGrupo > 0 ? ` · Total: <strong style="color:var(--gold-light);">R$ ${totalValorGrupo.toFixed(2).replace('.', ',')}</strong>` : '';
+
+    htmlTodos += `
+      <div style="background:linear-gradient(135deg, rgba(20,20,32,0.7), rgba(10,10,18,0.95));border:1.5px solid rgba(201,168,76,0.3);border-radius:14px;padding:14px;margin-bottom:16px;box-shadow:0 4px 16px rgba(0,0,0,0.35);">
+        <!-- Cabeçalho Separado da Pasta do Cliente -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1.5px solid rgba(255,255,255,0.08);flex-wrap:wrap;gap:8px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:22px;">📁</span>
+            <div>
+              <div style="font-size:15px;font-weight:900;color:#fff;display:flex;align-items:center;gap:6px;">
+                <span>Pedido: <strong style="color:#fde047;">${chave}</strong></span>
+                ${osBadge}
+              </div>
+              <div style="font-size:11px;color:var(--text2);margin-top:2px;">
+                <strong>${g.itens.length}</strong> item(ns) neste pedido${totalFormatado}
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button type="button" onclick="selecionarPastaClienteMaterial('${chave.replace(/'/g, "\\'")}')" class="btn btn-gold btn-xs" style="font-size:11px;font-weight:800;padding:5px 12px;border-radius:7px;display:inline-flex;align-items:center;gap:4px;">
+              <span>📂</span> Abrir só esta pasta
+            </button>
+            <button type="button" onclick="enviarPedidoMaterialWhatsAppCliente('${chave.replace(/'/g, "\\'")}')" class="btn btn-sec btn-xs" style="font-size:11px;font-weight:800;padding:5px 10px;border-radius:7px;color:#4ade80;border-color:rgba(74,222,128,0.4);display:inline-flex;align-items:center;gap:4px;">
+              <span>💬</span> WhatsApp
+            </button>
+          </div>
+        </div>
+
+        <!-- Lista dos Itens Separados deste Cliente -->
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          ${g.itens.map(renderCardItemMaterial).join('')}
         </div>
       </div>
     `;
-  }).join('');
+  });
+
+  cont.innerHTML = htmlTodos;
 }
 
-function alterarStatusMaterial(id, st) {
+function alterarStatusMaterial(id, novoStatus) {
   const lista = carregarMateriais();
-  const it = lista.find(x => x.id === id);
-  if (it) {
-    it.status = st;
-    salvarMateriais(lista);
-    renderPedidosMaterial();
-  }
+  const idx = lista.findIndex(it => it.id === id);
+  if (idx >= 0) { lista[idx].status = novoStatus; salvarMateriais(lista); }
+  renderPedidosMaterial();
+}
+
+function editarPedidoMaterial(id) {
+  const it = carregarMateriais().find(x => x.id === id);
+  if (!it) return;
+  abrirModalNovoPedidoMaterial(it);
 }
 
 function excluirPedidoMaterial(id) {
@@ -14282,53 +14546,186 @@ function abrirModalNovoPedidoMaterial(it) {
     if (titEl) titEl.textContent = it ? 'Editar Item' : 'Novo Item de Material';
 
     const nomeEl = document.getElementById('pedido-form-nome');
-    if (nomeEl) nomeEl.value = it ? (it.nome||'') : '';
+    if (nomeEl) nomeEl.value = it ? (it.nome || '') : '';
 
     const qtdEl = document.getElementById('pedido-form-qtd');
-    if (qtdEl) qtdEl.value = it ? (it.qtd||'') : '';
+    if (qtdEl) qtdEl.value = it ? (it.qtd || 1) : 1;
 
-    const uniEl = document.getElementById('pedido-form-unidade');
-    if (uniEl) uniEl.value = it ? (it.unidade||'un') : 'un';
+    const unEl = document.getElementById('pedido-form-unidade');
+    if (unEl) unEl.value = it ? (it.unidade || 'un') : 'un';
 
     const valEl = document.getElementById('pedido-form-valor');
-    if (valEl) valEl.value = it ? (it.valor||'') : '';
+    if (valEl) valEl.value = it ? (it.valor || '') : '';
+
+    const pagEl = document.getElementById('pedido-form-pagamento');
+    if (pagEl) pagEl.value = it ? (it.formaPagamento || '') : '';
 
     const urgEl = document.getElementById('pedido-form-urgencia');
-    if (urgEl) urgEl.value = it ? (it.urgencia||'normal') : 'normal';
+    if (urgEl) urgEl.value = it ? (it.urgencia || 'normal') : 'normal';
 
     const fornEl = document.getElementById('pedido-form-fornecedor');
-    if (fornEl) fornEl.value = it ? (it.fornecedor||'') : '';
+    if (fornEl) fornEl.value = it ? (it.fornecedor || '') : '';
 
     const stEl = document.getElementById('pedido-form-status');
-    if (stEl) stEl.value = it ? (it.status||'a_comprar') : 'a_comprar';
+    if (stEl) stEl.value = it ? (it.status || 'a_comprar') : 'a_comprar';
 
     const obsEl = document.getElementById('pedido-form-obs');
-    if (obsEl) obsEl.value = it ? (it.obs||'') : '';
+    if (obsEl) obsEl.value = it ? (it.obs || '') : '';
 
-    m.style.setProperty('display', 'flex', 'important');
-    m.classList.add('active');
-    m.style.zIndex = '999999';
+    // Comprovante
+    const base64El = document.getElementById('pedido-form-comprovante-base64');
+    const imgEl = document.getElementById('pedido-form-comprovante-img');
+    const prevBox = document.getElementById('pedido-form-comprovante-preview-box');
+    const btnRemover = document.getElementById('btn-remover-comprovante');
+    const statusComp = document.getElementById('pedido-form-comprovante-status');
+    const fileInp = document.getElementById('pedido-form-comprovante-input');
 
-    if (nomeEl) setTimeout(() => nomeEl.focus(), 100);
-  } catch(err) {
-    console.error('Erro ao abrir modal de pedido de material:', err);
-    const m = document.getElementById('modal-novo-pedido-material');
-    if (m) {
-      m.style.setProperty('display', 'flex', 'important');
-      m.classList.add('active');
-      m.style.zIndex = '999999';
+    if (fileInp) fileInp.value = '';
+    if (it && it.comprovante) {
+      if (base64El) base64El.value = it.comprovante;
+      if (imgEl) imgEl.src = it.comprovante;
+      if (prevBox) prevBox.style.display = 'block';
+      if (btnRemover) btnRemover.style.display = 'inline-block';
+      if (statusComp) { statusComp.textContent = '✅ Comprovante anexado'; statusComp.style.color = '#4ade80'; }
+    } else {
+      if (base64El) base64El.value = '';
+      if (imgEl) imgEl.src = '';
+      if (prevBox) prevBox.style.display = 'none';
+      if (btnRemover) btnRemover.style.display = 'none';
+      if (statusComp) { statusComp.textContent = 'Nenhuma foto anexada'; statusComp.style.color = 'var(--text2)'; }
     }
-  }
-}
 
-function fecharModalNovoPedidoMaterial() {
-  const m = document.getElementById('modal-novo-pedido-material');
-  if (m) {
-    m.classList.remove('active');
-    m.style.setProperty('display', 'none', 'important');
+    calcularTotalPedidoMaterial();
+    m.style.display = 'flex';
+  } catch (err) {
+    console.error('Erro ao abrir modal pedido material:', err);
   }
 }
 window.abrirModalNovoPedidoMaterial = abrirModalNovoPedidoMaterial;
+
+function fecharModalNovoPedidoMaterial() {
+  const m = document.getElementById('modal-novo-pedido-material');
+  if (m) m.style.display = 'none';
+}
+window.fecharModalNovoPedidoMaterial = fecharModalNovoPedidoMaterial;
+
+function salvarPedidoMaterial() {
+  const nome = (document.getElementById('pedido-form-nome').value || '').trim();
+  if (!nome) { alert('Informe o nome do material.'); return; }
+
+  const lista = carregarMateriais();
+  const editId = document.getElementById('pedido-material-edit-id').value;
+
+  const qtdVal = document.getElementById('pedido-form-qtd').value || '1';
+  const unitVal = document.getElementById('pedido-form-valor').value || '0';
+  const totalCalculado = (parseFloat(String(qtdVal).replace(',', '.')) * parseFloat(String(unitVal).replace(',', '.'))) || 0;
+
+  const formaPagamento = document.getElementById('pedido-form-pagamento') ? document.getElementById('pedido-form-pagamento').value : '';
+  const comprovanteBase64 = document.getElementById('pedido-form-comprovante-base64') ? document.getElementById('pedido-form-comprovante-base64').value : '';
+
+  const obj = {
+    id: editId || `mat_${Date.now()}`,
+    nome,
+    qtd: qtdVal,
+    unidade: document.getElementById('pedido-form-unidade').value,
+    valor: unitVal,
+    valorTotal: totalCalculado.toFixed(2),
+    formaPagamento: formaPagamento,
+    comprovante: comprovanteBase64,
+    urgencia: document.getElementById('pedido-form-urgencia').value,
+    fornecedor: document.getElementById('pedido-form-fornecedor').value.trim(),
+    status: document.getElementById('pedido-form-status').value,
+    obs: document.getElementById('pedido-form-obs').value.trim(),
+    criadoEm: editId ? undefined : new Date().toISOString()
+  };
+
+  // Se o item estiver sendo criado e houver uma pasta de cliente ativa (diferente de 'todos'), atribui a ela
+  if (!editId && _materialClienteFolderAtivo && _materialClienteFolderAtivo !== 'todos' && _materialClienteFolderAtivo !== 'outros') {
+    obj.cliente = _materialClienteFolderAtivo;
+  }
+
+  if (editId) {
+    const idx = lista.findIndex(x => x.id === editId);
+    if (idx >= 0) lista[idx] = {...lista[idx], ...obj};
+    else lista.push(obj);
+  } else {
+    lista.push(obj);
+  }
+
+  salvarMateriais(lista);
+  fecharModalNovoPedidoMaterial();
+  renderPedidosMaterial();
+}
+window.salvarPedidoMaterial = salvarPedidoMaterial;
+
+function calcularTotalPedidoMaterial() {
+  const qtdStr = document.getElementById('pedido-form-qtd') ? document.getElementById('pedido-form-qtd').value : '1';
+  const valStr = document.getElementById('pedido-form-valor') ? document.getElementById('pedido-form-valor').value : '0';
+  const qtd = parseFloat(String(qtdStr).replace(',', '.')) || 0;
+  const val = parseFloat(String(valStr).replace(',', '.')) || 0;
+  const total = qtd * val;
+  const elTotal = document.getElementById('pedido-form-valor-total');
+  if (elTotal) {
+    elTotal.value = 'R$ ' + total.toFixed(2).replace('.', ',');
+  }
+}
+window.calcularTotalPedidoMaterial = calcularTotalPedidoMaterial;
+
+function lidarUploadComprovanteMaterial(e) {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    const base64 = evt.target.result;
+    const inputBase64 = document.getElementById('pedido-form-comprovante-base64');
+    const imgEl = document.getElementById('pedido-form-comprovante-img');
+    const previewBox = document.getElementById('pedido-form-comprovante-preview-box');
+    const btnRemover = document.getElementById('btn-remover-comprovante');
+    const stEl = document.getElementById('pedido-form-comprovante-status');
+
+    if (inputBase64) inputBase64.value = base64;
+    if (imgEl) imgEl.src = base64;
+    if (previewBox) previewBox.style.display = 'block';
+    if (btnRemover) btnRemover.style.display = 'inline-block';
+    if (stEl) {
+      stEl.textContent = '✅ Comprovante anexado';
+      stEl.style.color = '#4ade80';
+    }
+  };
+  reader.readAsDataURL(file);
+}
+window.lidarUploadComprovanteMaterial = lidarUploadComprovanteMaterial;
+
+function removerComprovanteMaterial() {
+  const inputBase64 = document.getElementById('pedido-form-comprovante-base64');
+  const imgEl = document.getElementById('pedido-form-comprovante-img');
+  const previewBox = document.getElementById('pedido-form-comprovante-preview-box');
+  const btnRemover = document.getElementById('btn-remover-comprovante');
+  const fileInput = document.getElementById('pedido-form-comprovante-input');
+  const stEl = document.getElementById('pedido-form-comprovante-status');
+
+  if (inputBase64) inputBase64.value = '';
+  if (imgEl) imgEl.src = '';
+  if (previewBox) previewBox.style.display = 'none';
+  if (btnRemover) btnRemover.style.display = 'none';
+  if (fileInput) fileInput.value = '';
+  if (stEl) {
+    stEl.textContent = 'Nenhuma foto anexada';
+    stEl.style.color = 'var(--text2)';
+  }
+}
+window.removerComprovanteMaterial = removerComprovanteMaterial;
+
+function abrirFotoComprovanteModal(src) {
+  const m = document.getElementById('modal-visualizar-comprovante');
+  const img = document.getElementById('img-comprovante-ampliado');
+  if (m && img) {
+    img.src = src;
+    m.style.display = 'flex';
+  }
+}
+window.abrirFotoComprovanteModal = abrirFotoComprovanteModal;
 window.fecharModalNovoPedidoMaterial = fecharModalNovoPedidoMaterial;
 
 function salvarPedidoMaterial() {
@@ -14446,7 +14843,7 @@ function enviarPedidoMaterialWhatsApp() {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div class="field">
           <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;">Quantidade</label>
-          <input type="number" id="pedido-form-qtd" placeholder="1" min="1" step="1" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:inherit;font-size:13px;">
+          <input type="number" id="pedido-form-qtd" oninput="calcularTotalPedidoMaterial()" placeholder="1" min="0.01" step="any" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:inherit;font-size:13px;">
         </div>
         <div class="field">
           <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;">Unidade</label>
@@ -14458,7 +14855,27 @@ function enviarPedidoMaterialWhatsApp() {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div class="field">
           <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;">Valor Unitário (R$)</label>
-          <input type="number" id="pedido-form-valor" placeholder="0,00" min="0" step="0.01" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:inherit;font-size:13px;">
+          <input type="number" id="pedido-form-valor" oninput="calcularTotalPedidoMaterial()" placeholder="0,00" min="0" step="0.01" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:inherit;font-size:13px;">
+        </div>
+        <div class="field">
+          <label style="font-size:12px;font-weight:700;color:var(--gold-light);display:block;margin-bottom:4px;">💰 Valor Total (Qtd × Unit)</label>
+          <input type="text" id="pedido-form-valor-total" readonly placeholder="R$ 0,00" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;background:rgba(201,168,76,0.12);border:1.5px solid #eab308;color:#fde047;font-family:inherit;font-size:13.5px;font-weight:900;">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="field">
+          <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;">💳 Forma de Pagamento</label>
+          <select id="pedido-form-pagamento" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:inherit;font-size:13px;">
+            <option value="">Não informado</option>
+            <option value="PIX">⚡ PIX</option>
+            <option value="Dinheiro">💵 Dinheiro</option>
+            <option value="Cartão de Crédito">💳 Cartão de Crédito</option>
+            <option value="Cartão de Débito">💳 Cartão de Débito</option>
+            <option value="Boleto">📄 Boleto</option>
+            <option value="A Prazo / Faturado">⏳ A Prazo / Faturado</option>
+            <option value="Transferência">🔁 Transferência Bancária</option>
+            <option value="Outro">📝 Outro</option>
+          </select>
         </div>
         <div class="field">
           <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;">Urgência</label>
@@ -14467,6 +14884,26 @@ function enviarPedidoMaterialWhatsApp() {
             <option value="urgente">🔥 Urgente</option>
             <option value="critico">🚨 Crítico</option>
           </select>
+        </div>
+      </div>
+      <!-- Foto do Comprovante de Pagamento -->
+      <div class="field" style="background:rgba(255,255,255,0.02);border:1px dashed rgba(201,168,76,0.35);border-radius:10px;padding:10px;">
+        <label style="font-size:12px;font-weight:700;color:var(--gold-light);display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+          <span>📸</span> <span>Foto do Comprovante de Pagamento</span>
+        </label>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <label style="background:rgba(201,168,76,0.18);border:1px solid #eab308;color:#fde047;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:5px;">
+            <span>📷</span> <span>Tirar Foto / Anexar</span>
+            <input type="file" id="pedido-form-comprovante-input" accept="image/*" capture="environment" onchange="lidarUploadComprovanteMaterial(event)" style="display:none;">
+          </label>
+          <button type="button" id="btn-remover-comprovante" onclick="removerComprovanteMaterial()" style="display:none;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);color:#f87171;padding:6px 10px;border-radius:8px;font-size:11.5px;font-weight:700;cursor:pointer;">
+            ✕ Remover Foto
+          </button>
+          <span id="pedido-form-comprovante-status" style="font-size:11.5px;color:var(--text2);">Nenhuma foto anexada</span>
+        </div>
+        <input type="hidden" id="pedido-form-comprovante-base64" value="">
+        <div id="pedido-form-comprovante-preview-box" style="display:none;margin-top:8px;">
+          <img id="pedido-form-comprovante-img" src="" onclick="abrirFotoComprovanteModal(this.src)" style="max-height:120px;max-width:100%;border-radius:8px;border:1.5px solid #22c55e;cursor:pointer;object-fit:cover;box-shadow:0 4px 12px rgba(0,0,0,0.5);" title="Clique para ampliar">
         </div>
       </div>
       <div class="field">
@@ -14483,13 +14920,26 @@ function enviarPedidoMaterialWhatsApp() {
       </div>
       <div class="field">
         <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;">Observações</label>
-        <textarea id="pedido-form-obs" rows="2" placeholder="Informações adicionais..." style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:inherit;font-size:13px;resize:vertical;"></textarea>
+        <textarea id="pedido-form-obs" rows="2" placeholder="Informações adicionais, referências, links..." style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:inherit;font-size:13px;resize:vertical;"></textarea>
       </div>
     </div>
 
     <div style="display:flex;gap:8px;margin-top:16px;">
       <button type="button" class="btn btn-sec btn-sm" onclick="fecharModalNovoPedidoMaterial()" style="flex:1;">Cancelar</button>
       <button type="button" class="btn btn-gold" onclick="salvarPedidoMaterial()" style="flex:2;font-size:13px;font-weight:800;">💾 Salvar Item</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para Visualizar Comprovante Ampliado -->
+<div id="modal-visualizar-comprovante" class="modal-overlay" style="display:none;z-index:9999999;align-items:center;justify-content:center;background:rgba(0,0,0,0.85);backdrop-filter:blur(6px);" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:92vw;max-height:92vh;padding:16px;background:#0d0d15;border:1.5px solid #eab308;border-radius:14px;display:flex;flex-direction:column;align-items:center;box-shadow:0 10px 40px rgba(0,0,0,0.9);">
+    <div style="display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:12px;">
+      <span style="font-size:14.5px;font-weight:900;color:var(--gold-light);display:flex;align-items:center;gap:6px;">🧾 Comprovante de Pagamento</span>
+      <button class="modal-close" onclick="document.getElementById('modal-visualizar-comprovante').style.display='none'" style="font-size:16px;cursor:pointer;">✕</button>
+    </div>
+    <div style="flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;width:100%;">
+      <img id="img-comprovante-ampliado" src="" style="max-width:100%;max-height:75vh;border-radius:8px;object-fit:contain;box-shadow:0 4px 20px rgba(0,0,0,0.8);">
     </div>
   </div>
 </div>
