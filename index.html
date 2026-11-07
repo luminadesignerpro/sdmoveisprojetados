@@ -18,7 +18,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js?v=8.9.7').then(r => { r.update(); })
+        navigator.serviceWorker.register('/sw.js?v=8.9.8').then(r => { r.update(); })
           .then(function(reg){ console.log('SW registrado com sucesso:', reg.scope); })
           .catch(function(err){ console.warn('Erro ao registrar SW:', err); });
       });
@@ -9367,7 +9367,21 @@ function usarProdutoDoCatalogo(pId, nome) {
     };
   }
 
-  // Obter quantidade configurada no card
+  // 1. Marcar a opção de checkbox e destacar o card em verde
+  const card = document.getElementById('prod-card-' + pId) || 
+               (p.id ? document.getElementById('prod-card-' + p.id) : null) ||
+               (document.querySelector('[data-pid="' + pId + '"]') ? document.querySelector('[data-pid="' + pId + '"]').closest('.prod-card') : null);
+  if (card) {
+    card.style.border = '1.5px solid #10b981';
+    card.style.background = 'rgba(16,185,129,0.06)';
+    card.style.boxShadow = '0 0 10px rgba(16,185,129,0.15)';
+    const chk = card.querySelector('.chk-prod-catalogo');
+    if (chk) {
+      chk.checked = true;
+    }
+  }
+
+  // 2. Obter quantidade configurada no card
   let qtdVal = 1;
   const qtdInp = document.getElementById('qtd-prod-' + pId) || (p.id ? document.getElementById('qtd-prod-' + p.id) : null);
   if (qtdInp && qtdInp.value) {
@@ -9385,12 +9399,12 @@ function usarProdutoDoCatalogo(pId, nome) {
 
   let targetTr = null;
 
-  // 1. Se estava editando uma linha específica do orçamento
+  // Se estava editando uma linha específica do orçamento
   if (itemEmEdicaoId && itemEmEdicaoId !== 'novo') {
     targetTr = document.getElementById('item-' + itemEmEdicaoId);
   }
 
-  // 2. Se já existe uma linha deste produto no orçamento com quantidade diferente, atualiza ela
+  // Se já existe uma linha deste produto no orçamento, atualiza ela com a nova quantidade
   if (!targetTr) {
     const trMesmoNome = obterItemOrcamentoPorNome(p.nome);
     if (trMesmoNome) {
@@ -9398,7 +9412,7 @@ function usarProdutoDoCatalogo(pId, nome) {
     }
   }
 
-  // 3. Se não veio de linha específica e o produto não está no orçamento, procura primeira linha vazia
+  // Se não veio de linha específica e o produto não está no orçamento, procura primeira linha vazia
   if (!targetTr) {
     const allTrs = Array.from(document.querySelectorAll('#itens-lista tr')).filter(tr => !tr.classList.contains('tr-ambiente-secao'));
     const emptyTr = allTrs.find(tr => {
@@ -9430,22 +9444,25 @@ function usarProdutoDoCatalogo(pId, nome) {
     addItem(p.nome, String(qtdVal), '', '', '', vm2Val, vunitVal, '', fornSugerido);
   }
 
+  const veiodoItem = (itemEmEdicaoId && itemEmEdicaoId !== 'novo');
   itemEmEdicaoId = null;
+
   if (typeof calcTotal === 'function') calcTotal();
   if (typeof atualizarSubtotaisAmbientes === 'function') atualizarSubtotaisAmbientes();
   if (typeof salvarRascunhoOrcamento === 'function') salvarRascunhoOrcamento();
 
-  // Redireciona imediatamente para o orçamento
-  goTab('orcamento');
-
-  // Rola até os itens do orçamento
-  setTimeout(() => {
-    const secItens = document.getElementById('sec-itens') || document.getElementById('itens-lista') || document.getElementById('tabela-orcamento');
-    if (secItens) secItens.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }, 100);
-
   if (typeof showToast === 'function') {
-    showToast('✅ Produto "' + p.nome + '" (Qtd: ' + qtdVal + ') inserido no orçamento!');
+    showToast('✅ "' + p.nome + '" (Qtd: ' + qtdVal + ') marcado e adicionado ao orçamento!');
+  }
+
+  // Se veio do clique em "Catálogo" de uma linha específica, redireciona de volta;
+  // Se está navegando no catálogo, mantém no catálogo com o produto marcado e a setinha disponível para voltar quando quiser!
+  if (veiodoItem) {
+    goTab('orcamento');
+    setTimeout(() => {
+      const secItens = document.getElementById('sec-itens') || document.getElementById('itens-lista') || document.getElementById('tabela-orcamento');
+      if (secItens) secItens.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
   }
 }
 
