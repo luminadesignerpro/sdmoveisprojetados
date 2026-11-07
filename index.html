@@ -18,7 +18,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js?v=9.0.1').then(r => { r.update(); })
+        navigator.serviceWorker.register('/sw.js?v=9.0.2').then(r => { r.update(); })
           .then(function(reg){ console.log('SW registrado com sucesso:', reg.scope); })
           .catch(function(err){ console.warn('Erro ao registrar SW:', err); });
       });
@@ -3022,8 +3022,8 @@
     </div>
 
     <!-- BOTÃO FLUTUANTE PEQUENO: SETINHA PARA VOLTAR AO ORÇAMENTO AO ROLAR A LISTA -->
-    <button type="button" id="btn-flutuante-voltar-orc" onclick="voltarAoOrcamentoDoCatalogo()" title="Voltar ao Orçamento" style="position:fixed;bottom:24px;left:18px;width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#1f2230,#0d0e15);border:2px solid #c9a84c;color:#fcd34d;font-size:22px;font-weight:900;display:none;align-items:center;justify-content:center;cursor:pointer;z-index:999999;box-shadow:0 4px 18px rgba(0,0,0,0.9);line-height:1;transition:all 0.2s;" aria-label="Voltar ao Orçamento">
-      ←
+    <button type="button" id="btn-flutuante-voltar-orc" onclick="voltarAoOrcamentoDoCatalogo(event)" ontouchend="voltarAoOrcamentoDoCatalogo(event)" title="Voltar ao Orçamento" style="position:fixed;bottom:calc(28px + env(safe-area-inset-bottom, 0px));left:18px;width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#1f2230,#0d0e15);border:2px solid #c9a84c;color:#fcd34d;font-size:24px;font-weight:900;display:none;align-items:center;justify-content:center;cursor:pointer;z-index:999999;box-shadow:0 4px 18px rgba(0,0,0,0.9);line-height:1;transition:all 0.2s;touch-action:manipulation;pointer-events:auto;-webkit-tap-highlight-color:rgba(201,168,76,0.4);" aria-label="Voltar ao Orçamento">
+      <span style="display:inline-block;transform:translateY(-1px);pointer-events:none;">&#8592;</span>
     </button>
 
     <div class="card">
@@ -9251,6 +9251,22 @@ let itensSelecionadosCatalogoSessao = 0;
 function irParaAbaProdutosParaItem(id) {
   itemEmEdicaoId = id;
   itensSelecionadosCatalogoSessao = 0;
+
+  // Identifica a qual ambiente esta linha pertence
+  const tr = document.getElementById('item-' + id);
+  if (tr) {
+    let anterior = tr.previousElementSibling;
+    let secEncontrada = null;
+    while (anterior) {
+      if (anterior.classList && anterior.classList.contains('tr-ambiente-secao')) {
+        secEncontrada = anterior;
+        break;
+      }
+      anterior = anterior.previousElementSibling;
+    }
+    secaoAmbienteAtivaTr = secEncontrada; // null se for o ambiente topo
+  }
+
   goTab('produtos');
   atualizarBannerSelecaoProduto();
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -9345,79 +9361,154 @@ function aoClicarDeletarProdBtn(btn) {
   deletarProd(pId, nome);
 }
 
-function voltarAoOrcamentoDoCatalogo() {
-  if (typeof sincronizarCatalogoComOrcamento === 'function') {
-    sincronizarCatalogoComOrcamento();
+let secaoAmbienteAtivaTr = null;
+
+function obterLinhasDoAmbienteAtivo() {
+  const tbody = document.getElementById('itens-lista');
+  if (!tbody) return [];
+  const rows = Array.from(tbody.children);
+  const linhasAmbiente = [];
+
+  let capturando = (!secaoAmbienteAtivaTr);
+
+  for (const tr of rows) {
+    if (tr.classList && tr.classList.contains('tr-ambiente-secao')) {
+      if (secaoAmbienteAtivaTr && tr === secaoAmbienteAtivaTr) {
+        capturando = true;
+      } else {
+        capturando = false;
+      }
+      continue;
+    }
+    if (capturando) {
+      linhasAmbiente.push(tr);
+    }
   }
-  goTab('orcamento');
+  return linhasAmbiente;
+}
+
+function inserirLinhaNoAmbienteAtivo(novaTr) {
+  const tbody = document.getElementById('itens-lista');
+  if (!tbody) return;
+
+  const linhasAmbiente = obterLinhasDoAmbienteAtivo();
+  if (linhasAmbiente.length > 0) {
+    const ultimaLinha = linhasAmbiente[linhasAmbiente.length - 1];
+    ultimaLinha.insertAdjacentElement('afterend', novaTr);
+  } else if (secaoAmbienteAtivaTr) {
+    secaoAmbienteAtivaTr.insertAdjacentElement('afterend', novaTr);
+  } else {
+    const primeiraSecao = tbody.querySelector('.tr-ambiente-secao');
+    if (primeiraSecao) {
+      tbody.insertBefore(novaTr, primeiraSecao);
+    } else {
+      tbody.appendChild(novaTr);
+    }
+  }
+}
+
+function desmarcarTodosProdutosCatalogo() {
+  try {
+    const cards = document.querySelectorAll('#prod-lista .prod-card');
+    cards.forEach(card => {
+      card.style.border = '';
+      card.style.background = '';
+      card.style.boxShadow = '';
+      const chk = card.querySelector('.chk-prod-catalogo');
+      if (chk) chk.checked = false;
+    });
+  } catch(_) {}
+}
+
+function voltarAoOrcamentoDoCatalogo(ev) {
+  if (ev) {
+    if (ev.preventDefault) try { ev.preventDefault(); } catch(_) {}
+    if (ev.stopPropagation) try { ev.stopPropagation(); } catch(_) {}
+  }
+  try {
+    if (typeof sincronizarCatalogoComOrcamento === 'function') {
+      sincronizarCatalogoComOrcamento();
+    }
+  } catch(e) {
+    console.error('Erro ao sincronizar catálogo:', e);
+  }
+  try {
+    goTab('orcamento');
+  } catch(e2) {
+    console.error('Erro ao mudar de aba:', e2);
+  }
 }
 
 function sincronizarCatalogoComOrcamento() {
-  const cards = Array.from(document.querySelectorAll('#prod-lista .prod-card'));
-  if (!cards || cards.length === 0) return;
+  try {
+    const cards = Array.from(document.querySelectorAll('#prod-lista .prod-card'));
+    if (!cards || cards.length === 0) return;
 
-  const marcados = [];
-  cards.forEach(card => {
-    const chk = card.querySelector('.chk-prod-catalogo');
-    if (chk && chk.checked) {
-      const pId = chk.getAttribute('data-pid') || '';
-      const pNome = chk.getAttribute('data-pnome') || '';
-      const qtdInp = card.querySelector('input[type="number"]') || (pId ? document.getElementById('qtd-prod-' + pId) : null);
-      const qtd = qtdInp ? Math.max(1, parseInt(qtdInp.value, 10) || 1) : 1;
-      if (pNome || pId) {
-        marcados.push({ id: pId, nome: pNome, qtd: qtd });
-      }
-    }
-  });
-
-  if (marcados.length > 0) {
-    // 1. Remover placeholders vazios
-    const allTrs = Array.from(document.querySelectorAll('#itens-lista tr')).filter(tr => !tr.classList.contains('tr-ambiente-secao'));
-    allTrs.forEach(tr => {
-      const inDesc = tr.querySelector('.inp-item-desc') || tr.querySelectorAll('input')[1];
-      if (!inDesc || !inDesc.value.trim()) {
-        tr.remove();
-      }
-    });
-
-    // 2. Garantir cada produto marcado na tabela com quantidade e valores
-    marcados.forEach(m => {
-      let p = produtos.find(x => String(x.id) === String(m.id)) ||
-              produtos.find(x => x.nome && x.nome.trim().toLowerCase() === m.nome.trim().toLowerCase()) ||
-              { id: m.id, nome: m.nome, vm2: '', vunit: '' };
-
-      const vm2Val = (p.vm2 !== '' && p.vm2 != null && Number(p.vm2) > 0) ? formatarValorPtBr(p.vm2) : '';
-      const vunitVal = (p.vunit !== '' && p.vunit != null && Number(p.vunit) > 0) ? formatarValorPtBr(p.vunit) : '';
-      let fornSugerido = '';
-      if (typeof materiais !== 'undefined' && Array.isArray(materiais)) {
-        const mat = materiais.find(x => x.nome && x.nome.toLowerCase() === p.nome.toLowerCase());
-        if (mat && mat.fornecedor) fornSugerido = mat.fornecedor;
-      }
-
-      const trExistente = obterItemOrcamentoPorNome(p.nome);
-      if (trExistente) {
-        const inQtd = trExistente.querySelector('.inp-item-qtd') || trExistente.querySelectorAll('input')[0];
-        if (inQtd) {
-          inQtd.value = String(m.qtd);
-          const rowId = trExistente.id.replace('item-', '');
-          if (typeof calcItem === 'function') calcItem(rowId);
+    const marcados = [];
+    cards.forEach(card => {
+      const chk = card.querySelector('.chk-prod-catalogo');
+      if (chk && chk.checked) {
+        const pId = chk.getAttribute('data-pid') || '';
+        const pNome = chk.getAttribute('data-pnome') || '';
+        const qtdInp = card.querySelector('input[type="number"]') || (pId ? document.getElementById('qtd-prod-' + pId) : null);
+        const qtd = qtdInp ? Math.max(1, parseInt(qtdInp.value, 10) || 1) : 1;
+        if (pNome || pId) {
+          marcados.push({ id: pId, nome: pNome, qtd: qtd });
         }
-      } else {
-        addItem(p.nome, String(m.qtd), '', '', '', vm2Val, vunitVal, '', fornSugerido);
       }
     });
-  }
 
-  // Se a tabela ficar totalmente sem linhas, adiciona 1 linha padrão
-  const trsFinais = Array.from(document.querySelectorAll('#itens-lista tr')).filter(tr => !tr.classList.contains('tr-ambiente-secao'));
-  if (trsFinais.length === 0) {
-    addItem('', '1');
-  }
+    if (marcados.length > 0) {
+      // 1. Remover placeholders vazios do ambiente ativo
+      const linhasAmb = obterLinhasDoAmbienteAtivo();
+      linhasAmb.forEach(tr => {
+        const inDesc = tr.querySelector('.inp-item-desc') || tr.querySelectorAll('input')[1];
+        if (!inDesc || !inDesc.value.trim()) {
+          tr.remove();
+        }
+      });
 
-  itemEmEdicaoId = null;
-  if (typeof calcTotal === 'function') calcTotal();
-  if (typeof atualizarSubtotaisAmbientes === 'function') atualizarSubtotaisAmbientes();
-  if (typeof salvarRascunhoOrcamento === 'function') salvarRascunhoOrcamento();
+      // 2. Garantir cada produto marcado na tabela com quantidade e valores
+      marcados.forEach(m => {
+        let p = produtos.find(x => String(x.id) === String(m.id)) ||
+                produtos.find(x => x.nome && x.nome.trim().toLowerCase() === m.nome.trim().toLowerCase()) ||
+                { id: m.id, nome: m.nome, vm2: '', vunit: '' };
+
+        const vm2Val = (p.vm2 !== '' && p.vm2 != null && Number(p.vm2) > 0) ? formatarValorPtBr(p.vm2) : '';
+        const vunitVal = (p.vunit !== '' && p.vunit != null && Number(p.vunit) > 0) ? formatarValorPtBr(p.vunit) : '';
+        let fornSugerido = '';
+        if (typeof materiais !== 'undefined' && Array.isArray(materiais)) {
+          const mat = materiais.find(x => x.nome && x.nome.toLowerCase() === p.nome.toLowerCase());
+          if (mat && mat.fornecedor) fornSugerido = mat.fornecedor;
+        }
+
+        const trExistente = obterItemOrcamentoPorNome(p.nome);
+        if (trExistente) {
+          const inQtd = trExistente.querySelector('.inp-item-qtd') || trExistente.querySelectorAll('input')[0];
+          if (inQtd) {
+            inQtd.value = String(m.qtd);
+            const rowId = trExistente.id.replace('item-', '');
+            if (typeof calcItem === 'function') calcItem(rowId);
+          }
+        } else {
+          addItem(p.nome, String(m.qtd), '', '', '', vm2Val, vunitVal, '', fornSugerido);
+        }
+      });
+    }
+
+    // Se o ambiente ativo ficou sem nenhuma linha, garante 1 linha vazia
+    const linhasAmbFinais = obterLinhasDoAmbienteAtivo();
+    if (linhasAmbFinais.length === 0) {
+      addItem('', '1');
+    }
+
+    itemEmEdicaoId = null;
+    if (typeof calcTotal === 'function') calcTotal();
+    if (typeof atualizarSubtotaisAmbientes === 'function') atualizarSubtotaisAmbientes();
+    if (typeof salvarRascunhoOrcamento === 'function') salvarRascunhoOrcamento();
+  } catch(errSync) {
+    console.error('Erro em sincronizarCatalogoComOrcamento:', errSync);
+  }
 }
 
 function usarProdutoDoCatalogo(pId, nome) {
@@ -10223,7 +10314,7 @@ function addItem(desc='', qtd='1', cor='', alt='', larg='', v_m2='', v_unit='', 
         <button class="item-del" onclick="document.getElementById('item-${id}').remove();calcTotal();if(typeof agendarSalvarRascunhoOrcamento==='function') agendarSalvarRascunhoOrcamento();" title="Remover">✕</button>
       </div>
     </td>`;
-  document.getElementById('itens-lista').appendChild(tr);
+  if (typeof inserirLinhaNoAmbienteAtivo === 'function') { inserirLinhaNoAmbienteAtivo(tr); } else { document.getElementById('itens-lista').appendChild(tr); }
   calcItem(id);
 }
 
@@ -13827,7 +13918,7 @@ function calcularTotaisPorAmbiente() {
   const ambientes = [];
   let ambAtual = {
     nome: topNome,
-    btn: btnTop,
+    btn: (document.getElementById("btn-add-novo-ambiente") || null),
     produtosVal: 0,
     servicosVal: 0,
     totalVal: 0,
@@ -13853,7 +13944,7 @@ function calcularTotaisPorAmbiente() {
 
       ambAtual = {
         nome: nomeSec,
-        btn: btnSec,
+        btn: (tr.querySelector(".btn-seletor-ambientes") || null),
         trSec: tr,
         produtosVal: 0,
         servicosVal: 0,
@@ -14113,7 +14204,7 @@ function adicionarNovoAmbienteSecao() {
         <div style="display:flex;align-items:center;gap:8px;">
           <div class="wrap-ambiente-nome" style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg, rgba(245,158,11,0.22), rgba(217,119,6,0.18));border:1.5px solid #f59e0b;border-radius:8px;padding:5px 12px;box-shadow:0 2px 8px rgba(245,158,11,0.2);">
             <span style="font-size:15px;line-height:1;">🛋️</span>
-            <input type="text" class="inp-nome-ambiente label-ambiente-texto" placeholder="Nome do ambiente..." value="" oninput="atualizarSubtotaisAmbientes()" onfocus="this.select()" style="background:transparent;border:none;color:#fbbf24;font-weight:800;font-size:12.5px;outline:none;width:160px;min-width:120px;" title="Digite o nome do ambiente" />
+            <input type="text" class="inp-nome-ambiente label-ambiente-texto" placeholder="Nome do ambiente..." value="" oninput="atualizarSubtotaisAmbientes()" onfocus="secaoAmbienteAtivaTr=this.closest('.tr-ambiente-secao');this.select();" style="background:transparent;border:none;color:#fbbf24;font-weight:800;font-size:12.5px;outline:none;width:160px;min-width:120px;" title="Digite o nome do ambiente" />
           </div>
           <span class="badge-secao-produtos-val" style="background:rgba(59,130,246,0.18);border:1px solid rgba(59,130,246,0.4);color:#93c5fd;font-size:11.5px;font-weight:800;padding:4px 10px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;" title="Valor dos produtos deste ambiente">
             <span>📦</span> <span class="val-secao-produtos">R$ 0,00</span>
@@ -14127,12 +14218,22 @@ function adicionarNovoAmbienteSecao() {
   `;
   tbody.appendChild(trAmb);
 
-  // E adiciona imediatamente uma linha limpa de produto/serviço logo abaixo
+  // 1. Define este novo ambiente como a seção ativa
+  secaoAmbienteAtivaTr = trAmb;
+
+  // 2. Desmarca todos os produtos no catálogo para que o novo ambiente comece limpo
+  if (typeof desmarcarTodosProdutosCatalogo === 'function') {
+    desmarcarTodosProdutosCatalogo();
+  }
+
+  // 3. Adiciona imediatamente uma linha limpa de produto/serviço no novo ambiente
   addItem('', '1', '', '', '', '', '', '', '');
-  atualizarSubtotaisAmbientes();
+  if (typeof atualizarSubtotaisAmbientes === 'function') {
+    atualizarSubtotaisAmbientes();
+  }
 
   if (typeof showToast === 'function') {
-    showToast('Novo ambiente criado! Digite o nome do ambiente. 🛋️');
+    showToast('🛋️ Novo ambiente adicionado! Produtos no catálogo desmarcados para você escolher os novos itens.');
   }
 }
 
@@ -16014,7 +16115,7 @@ function excluirTodosProdutos() {
 function obterItemOrcamentoPorNome(nome) {
   if (!nome) return null;
   const n = String(nome).trim().toLowerCase();
-  const trs = Array.from(document.querySelectorAll('#itens-lista tr'));
+  const trs = (typeof obterLinhasDoAmbienteAtivo === 'function') ? obterLinhasDoAmbienteAtivo() : Array.from(document.querySelectorAll('#itens-lista tr'));
   for (const tr of trs) {
     if (tr.classList && tr.classList.contains('tr-ambiente-secao')) continue;
     const inDesc = tr.querySelector('.inp-item-desc') || tr.querySelectorAll('input')[1];
