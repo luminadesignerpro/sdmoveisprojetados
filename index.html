@@ -18,7 +18,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js?v=9.0.3').then(r => { r.update(); })
+        navigator.serviceWorker.register('/sw.js?v=9.0.4').then(r => { r.update(); })
           .then(function(reg){ console.log('SW registrado com sucesso:', reg.scope); })
           .catch(function(err){ console.warn('Erro ao registrar SW:', err); });
       });
@@ -1988,7 +1988,7 @@
     <button id="tab-detector" class="tab" data-tab="detector" onclick="goTab('detector')" title="Detector de Danos Elétrico e Hidráulico"><span>⚡💧</span><span>Detector Danos</span></button>
     <button id="tab-agenda" class="tab" data-tab="agenda" onclick="goTab('agenda')"><span>📅</span><span>Agenda</span></button>
     <button id="tab-agenda-pessoal" class="tab" data-tab="agenda-pessoal" onclick="goTab('agenda-pessoal')"><span>📅</span><span>Agenda Pessoal</span></button>
-    <button id="tab-produtos" class="tab" data-tab="produtos" onclick="goTab('produtos')"><span>📦</span><span>Produtos/Serviços</span></button>
+    <button id="tab-produtos" class="tab" data-tab="produtos" onclick="abrirAbaProdutosMenu()"><span>📦</span><span>Produtos/Serviços</span></button>
     <button id="tab-empresa" class="tab" data-tab="empresa" onclick="solicitarAcessoDadosEmpresa()"><span>🏢</span><span>Dados Empresa</span></button>
     <button id="tab-clientes" class="tab" data-tab="clientes" onclick="goTab('clientes')"><span>👤</span><span>Clientes</span></button>
     <button id="tab-ponto" class="tab" data-tab="ponto" onclick="goTab('ponto')"><span>👷</span><span>Equipe & Ponto</span></button>
@@ -3013,10 +3013,10 @@
     
     <!-- BARRA SUPERIOR: SETINHA PARA VOLTAR AO ORÇAMENTO -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:8px;">
-      <button type="button" class="btn-voltar-orc-seta" onclick="goTab('orcamento')" title="Voltar ao Orçamento" style="width:36px;height:36px;border-radius:10px;background:#101018;border:1.5px solid #c9a84c;color:#fcd34d;font-size:20px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,0.5);transition:all 0.2s;" aria-label="Voltar ao Orçamento">
+      <button type="button" class="btn-voltar-orc-seta" onclick="voltarAoOrcamentoDoCatalogo(event)" title="Voltar ao Orçamento" style="width:36px;height:36px;border-radius:10px;background:#101018;border:1.5px solid #c9a84c;color:#fcd34d;font-size:20px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,0.5);transition:all 0.2s;" aria-label="Voltar ao Orçamento">
         ←
       </button>
-      <button type="button" onclick="goTab('orcamento')" class="btn btn-sm btn-gold" style="font-size:11.5px;padding:6px 12px;border-radius:8px;font-weight:800;display:inline-flex;align-items:center;gap:6px;">
+      <button type="button" onclick="voltarAoOrcamentoDoCatalogo(event)" class="btn btn-sm btn-gold" style="font-size:11.5px;padding:6px 12px;border-radius:8px;font-weight:800;display:inline-flex;align-items:center;gap:6px;">
         <span>📋</span> Voltar ao Orçamento
       </button>
     </div>
@@ -9026,7 +9026,7 @@ function goTab(t, bypassAuth = false) {
   if (t==='financeiro') { renderFinanceiro(); }
   if (t==='agenda')     { renderAgenda(); }
   if (t==='agenda-pessoal') { renderAgendaPessoal(); }
-  if (t==='produtos')   { atualizarBannerSelecaoProduto(); renderProdutos(); }
+  if (t==='produtos')   { if (modoSelecaoMenuProdutos || !itemEmEdicaoId) { if (typeof desmarcarTodosProdutosCatalogo === 'function') desmarcarTodosProdutosCatalogo(); } atualizarBannerSelecaoProduto(); renderProdutos(); }
   if (t==='empresa') { carregarDadosConfiguracaoEmpresa(); }
   if (t==='clientes')   renderCli();
   if (t==='ponto')      { renderPontoView(); }
@@ -9248,9 +9248,22 @@ function limparRascunhoOrcamento() {
 let itemEmEdicaoId = null;
 let itensSelecionadosCatalogoSessao = 0;
 
+let modoSelecaoMenuProdutos = false;
+
+function abrirAbaProdutosMenu() {
+  itemEmEdicaoId = null;
+  itensSelecionadosCatalogoSessao = 0;
+  modoSelecaoMenuProdutos = true;
+  if (typeof desmarcarTodosProdutosCatalogo === 'function') {
+    desmarcarTodosProdutosCatalogo();
+  }
+  goTab('produtos');
+}
+
 function irParaAbaProdutosParaItem(id) {
   itemEmEdicaoId = id;
   itensSelecionadosCatalogoSessao = 0;
+  modoSelecaoMenuProdutos = false;
 
   // Identifica a qual ambiente esta linha pertence
   const tr = document.getElementById('item-' + id);
@@ -9432,6 +9445,7 @@ function voltarAoOrcamentoDoCatalogo(ev) {
   } catch(e) {
     console.error('Erro ao sincronizar catálogo:', e);
   }
+  modoSelecaoMenuProdutos = false;
   try {
     goTab('orcamento');
   } catch(e2) {
@@ -16227,13 +16241,17 @@ function renderProdutos(filtro = '') {
     const safeId = (p.id != null && p.id !== '') ? String(p.id) : (p.nome || '');
     const nomeVal = p.nome || '';
     
-    // Verifica se este produto já está no orçamento para marcar o checkbox
-    const trExistente = obterItemOrcamentoPorNome(nomeVal);
-    const estaMarcado = !!trExistente;
+    // Se veio do clique no botão Produtos/Serviços (menu), inicia 100% limpo (desmarcado)
+    // Se veio de um item específico do orçamento, verifica se está no ambiente ativo
+    let estaMarcado = false;
     let qtdAtual = 1;
-    if (trExistente) {
-      const inQtd = trExistente.querySelector('.inp-item-qtd') || trExistente.querySelectorAll('input')[0];
-      if (inQtd && inQtd.value) qtdAtual = parseInt(inQtd.value, 10) || 1;
+    if (!modoSelecaoMenuProdutos && itemEmEdicaoId && itemEmEdicaoId !== 'novo') {
+      const trExistente = obterItemOrcamentoPorNome(nomeVal);
+      estaMarcado = !!trExistente;
+      if (trExistente) {
+        const inQtd = trExistente.querySelector('.inp-item-qtd') || trExistente.querySelectorAll('input')[0];
+        if (inQtd && inQtd.value) qtdAtual = parseInt(inQtd.value, 10) || 1;
+      }
     }
 
     const cardBorder = estaMarcado 
