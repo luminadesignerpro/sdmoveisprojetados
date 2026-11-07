@@ -24707,17 +24707,23 @@ function obterIntervaloRelatorio() {
 }
 
 function parseDateOS(os) {
-  var dObj = os.dados || os;
+  var dObj = (os && os.dados) ? os.dados : (os || {});
   var raw = os.data_orc || os.data || dObj.data || dObj.data_orc || os.dataEmissao || os.dataCriacao || os.criadoEm || os.updatedAt || null;
   if (!raw) return null;
   if (raw instanceof Date) return isNaN(raw.getTime()) ? null : raw;
-  var d = new Date(raw);
-  if (isNaN(d.getTime())) {
-    var parts = String(raw).split('/');
-    if (parts.length === 3) {
-      d = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
-    }
+
+  var sRaw = String(raw).trim();
+  // Formato brasileiro DD/MM/YYYY ou DD-MM-YYYY
+  var ddmmyyyy = sRaw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+  if (ddmmyyyy) {
+    var dia = parseInt(ddmmyyyy[1], 10);
+    var mes = parseInt(ddmmyyyy[2], 10) - 1;
+    var ano = parseInt(ddmmyyyy[3], 10);
+    var d = new Date(ano, mes, dia);
+    return isNaN(d.getTime()) ? null : d;
   }
+
+  var d = new Date(sRaw);
   return isNaN(d.getTime()) ? null : d;
 }
 
@@ -24850,22 +24856,75 @@ function renderRelatorio() {
     return true;
   });
 
-  // Acumula totais
-  var totalServicos = 0, totalProdutos = 0, totalFretes = 0, totalDescontos = 0;
-  var cntServicos = 0, cntProdutos = 0, cntFretes = 0, cntDescontos = 0;
+  // ── MATERIAIS E PRODUTOS COMPRADOS (DO PEDIDO DE MATERIAL) ──
+  var todosMateriais = [];
+  try {
+    todosMateriais = typeof carregarMateriais === 'function' ? carregarMateriais() : JSON.parse(localStorage.getItem('sdv_crono_materiais') || '[]');
+  } catch(_) {}
+
+  var materiaisComprados = todosMateriais.filter(function(m) {
+    return (m.status || '').toLowerCase() === 'comprado';
+  });
+
+  // Filtra materiais comprados pelo período
+  var materiaisCompradosNoPeriodo = materiaisComprados.filter(function(m) {
+    if (intervalo.inicio) {
+      var dMat = null;
+      if (m.dataCompra) dMat = parseDateOS({ data: m.dataCompra });
+      else if (m.criadoEm) dMat = new Date(m.criadoEm);
+      else if (m.data) dMat = parseDateOS({ data: m.data });
+
+      if (!dMat && m.os) {
+        var numLimpo = String(m.os).replace(/\D/g, '');
+        var osVinculada = todasOS.find(function(o) {
+          return String(o.numero || (o.dados && o.dados.numero) || '').replace(/\D/g, '') === numLimpo;
+        });
+        if (osVinculada) dMat = parseDateOS(osVinculada);
+      }
+
+      if (dMat && (dMat < intervalo.inicio || dMat > intervalo.fim)) {
+        return false;
+      }
+    }
+    return true;
+  });
+
+  var totalMateriaisComprados = 0;
+  materiaisCompradosNoPeriodo.forEach(function(m) {
+    var val = parseFloat(m.valorTotal);
+    if (isNaN(val) || val <= 0) {
+      var qtd = parseFloat(String(m.qtd || 1).replace(',', '.')) || 1;
+      var unit = parseFloat(String(m.valor || 0).replace(',', '.')) || 0;
+      val = qtd * unit;
+    }
+    totalMateriaisComprados += val;
+  });
+
+  // Acumula totais das Ordens de Serviço
+  var totalServicos = 0, totalProdutosOS = 0, totalFretes = 0, totalDescontos = 0;
+  var cntServicos = 0, cntProdutosOS = 0, cntFretes = 0, cntDescontos = 0;
 
   var linhas = osFiltradas.map(function(os) {
     var v = extrairValoresOS(os);
     if (v.servico > 0) { totalServicos += v.servico; cntServicos++; }
-    if (v.produto > 0) { totalProdutos += v.produto; cntProdutos++; }
+    if (v.produto > 0) { totalProdutosOS += v.produto; cntProdutosOS++; }
     if (v.frete > 0) { totalFretes += v.frete; cntFretes++; }
     if (v.desconto > 0) { totalDescontos += v.desconto; cntDescontos++; }
     return { os: os, v: v };
   });
 
+  // O total do card de produtos reflete os produtos comprados do Pedido de Material!
+  var totalProdutos = totalMateriaisComprados > 0 ? (totalProdutosOS + totalMateriaisComprados) : totalProdutosOS;
+  var cntProdutos = materiaisCompradosNoPeriodo.length > 0 ? (cntProdutosOS + materiaisCompradosNoPeriodo.length) : cntProdutosOS;
+  var labelQtdProdutos = materiaisCompradosNoPeriodo.length > 0 
+    ? (materiaisCompradosNoPeriodo.length + ' comprados' + (cntProdutosOS > 0 ? ' (' + cntProdutosOS + ' O.S.)' : '')) 
+    : (cntProdutosOS + ' O.S.');
+
   var totalGeral = totalServicos + totalProdutos + totalFretes;
   var totalLiquido = totalGeral - totalDescontos;
-  var ticketMedio = linhas.length > 0 ? totalLiquido / linhas.length : 0;
+  var ticketMedio = (linhas.length + (materiaisCompradosNoPeriodo.length > 0 ? 1 : 0)) > 0 
+    ? totalLiquido / (linhas.length + (materiaisCompradosNoPeriodo.length > 0 ? 1 : 0)) 
+    : 0;
 
   // Atualiza KPI cards
   var maxVal = Math.max(totalServicos, totalProdutos, totalFretes, totalDescontos, 1);
@@ -24875,12 +24934,12 @@ function renderRelatorio() {
     var elQ = document.getElementById(qtdId);
     var elB = document.getElementById(barId);
     if (elV) elV.textContent = 'R$ ' + val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    if (elQ) elQ.textContent = qtd + ' O.S.';
+    if (elQ) elQ.textContent = typeof qtd === 'number' ? (qtd + ' O.S.') : qtd;
     if (elB) elB.style.width = Math.min(100, pct) + '%';
   }
 
   setKPI('rel-val-servicos', 'rel-qtd-servicos', 'rel-bar-servicos', totalServicos, cntServicos, (totalServicos / maxVal) * 100);
-  setKPI('rel-val-produtos', 'rel-qtd-produtos', 'rel-bar-produtos', totalProdutos, cntProdutos, (totalProdutos / maxVal) * 100);
+  setKPI('rel-val-produtos', 'rel-qtd-produtos', 'rel-bar-produtos', totalProdutos, labelQtdProdutos, (totalProdutos / maxVal) * 100);
   setKPI('rel-val-fretes', 'rel-qtd-fretes', 'rel-bar-fretes', totalFretes, cntFretes, (totalFretes / maxVal) * 100);
   setKPI('rel-val-descontos', 'rel-qtd-descontos', 'rel-bar-descontos', totalDescontos, cntDescontos, (totalDescontos / maxVal) * 100);
 
@@ -24935,15 +24994,67 @@ function renderRelatorio() {
 
   // Atualiza badge
   var badge = document.getElementById('rel-tabela-count');
-  if (badge) badge.textContent = linhasTabela.length;
+  if (badge) badge.textContent = linhasTabela.length + (materiaisCompradosNoPeriodo ? materiaisCompradosNoPeriodo.length : 0);
 
-  // ── RENDERIZA CARDS INTERATIVOS (PADRÃO HISTÓRICO O.S. - IMAGEM 3) ──
+  // ── RENDERIZA CARDS INTERATIVOS (PADRÃO HISTÓRICO O.S. + MATERIAIS COMPRADOS) ──
   var cardsContainer = document.getElementById('rel-cards-os-container');
   if (cardsContainer) {
-    if (linhasTabela.length === 0) {
-      cardsContainer.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:12.5px;background:rgba(255,255,255,0.02);border-radius:12px;">Nenhuma O.S. encontrada para o filtro selecionado.</div>';
+    var htmlMateriaisComprados = '';
+    if ((catFiltro === 'todas' || catFiltro === 'produto') && materiaisCompradosNoPeriodo.length > 0) {
+      htmlMateriaisComprados = materiaisCompradosNoPeriodo.map(function(m) {
+        var vTot = parseFloat(m.valorTotal);
+        if (isNaN(vTot) || vTot <= 0) {
+          var q = parseFloat(String(m.qtd || 1).replace(',', '.')) || 1;
+          var u = parseFloat(String(m.valor || 0).replace(',', '.')) || 0;
+          vTot = q * u;
+        }
+        var cliTag = m.cliente ? ('📁 ' + esc(m.cliente) + (m.os ? ' · ' + esc(m.os) : '')) : '📁 Outros / Geral';
+        var dStr = m.criadoEm ? new Date(m.criadoEm).toLocaleDateString('pt-BR') : '';
+
+        return `
+          <div style="background:linear-gradient(135deg, rgba(139,92,246,0.14), rgba(16,17,26,0.95));border:1.5px solid rgba(139,92,246,0.45);border-radius:14px;padding:14px;box-shadow:0 6px 20px rgba(0,0,0,0.5);margin-bottom:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-weight:900;color:#c4b5fd;font-size:13px;background:rgba(139,92,246,0.22);padding:2px 8px;border-radius:6px;border:1px solid rgba(139,92,246,0.4);">
+                  📦 PRODUTO COMPRADO
+                </span>
+                <span class="status-pill comprado" style="font-size:11px;font-weight:800;padding:3px 10px;border-radius:999px;background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.35);">
+                  ● Comprado
+                </span>
+              </div>
+              <span style="font-size:11.5px;color:var(--gold-light);font-weight:800;">${cliTag}</span>
+            </div>
+
+            <div style="font-weight:900;font-size:16px;color:#fff;margin-bottom:4px;">
+              ${esc(m.nome)}
+            </div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:8px;display:flex;gap:10px;flex-wrap:wrap;">
+              <span>Qtd: <strong style="color:#fff;">${m.qtd || 1} ${m.unidade || 'un'}</strong></span>
+              ${m.valor ? `<span>Unit: <strong style="color:#fff;">R$ ${parseFloat(m.valor).toFixed(2).replace('.', ',')}</strong></span>` : ''}
+              ${m.fornecedor ? `<span>🏪 ${esc(m.fornecedor)}</span>` : ''}
+              ${m.formaPagamento ? `<span>💳 <strong style="color:#67e8f9;">${esc(m.formaPagamento)}</strong></span>` : ''}
+              ${dStr ? `<span>📅 ${dStr}</span>` : ''}
+            </div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;border-top:1px solid rgba(255,255,255,0.06);padding-top:10px;">
+              <div style="font-size:20px;font-weight:900;color:#c4b5fd;">
+                ${fmtBRL(vTot)}
+              </div>
+              ${m.comprovante ? `
+                <button type="button" onclick="abrirFotoComprovanteModal('${m.comprovante.replace(/'/g, "\\'")}')" style="background:rgba(34,197,94,0.18);border:1.5px solid #22c55e;color:#4ade80;font-size:11px;font-weight:800;padding:5px 12px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;">
+                  <span>🧾</span> <span>Ver Comprovante</span>
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    if (linhasTabela.length === 0 && !htmlMateriaisComprados) {
+      cardsContainer.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:12.5px;background:rgba(255,255,255,0.02);border-radius:12px;">Nenhuma O.S. ou produto encontrado para o filtro selecionado.</div>';
     } else {
-      cardsContainer.innerHTML = linhasTabela.map(function(linha) {
+      var htmlCardsOS = linhasTabela.map(function(linha) {
         var os = linha.os;
         var v = linha.v;
         var num = os.numero ? ('#' + os.numero) : ('#' + os.id);
