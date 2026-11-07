@@ -2099,6 +2099,9 @@
                     <span style="font-size:14px;">➕</span>
                   </button>
                   <span id="badge-ambiente-ativo-texto" style="font-size:11.5px;color:#fcd34d;font-weight:700;"></span>
+                  <span id="badge-ambiente-top-produtos" style="background:rgba(59,130,246,0.18);border:1px solid rgba(59,130,246,0.4);color:#93c5fd;font-size:11.5px;font-weight:800;padding:4px 10px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;" title="Valor dos produtos deste ambiente">
+                    <span>📦</span> <span id="val-ambiente-top-produtos">R$ 0,00</span>
+                  </span>
                 </div>
               </th>
             </tr>
@@ -2219,6 +2222,17 @@
             <div style="font-size:9px;color:var(--muted);margin-top:2px;line-height:1.2;">
               🚫 Oculto ao cliente no PDF
             </div>
+          </div>
+
+          <!-- RESUMO DOS PRODUTOS SEPARADOS POR AMBIENTE (TERCEIRA IMAGEM) -->
+          <div id="resumo-produtos-por-ambiente" style="grid-column:1 / -1;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.22);border-radius:10px;padding:8px 12px;margin:2px 0 6px 0;display:none;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:4px;">
+              <span style="font-size:11px;font-weight:800;color:var(--gold-light);display:flex;align-items:center;gap:5px;">
+                <span>🛋️</span> <span>Produtos Separados por Ambiente:</span>
+              </span>
+              <span id="resumo-produtos-ambientes-count" style="font-size:10px;color:var(--muted);font-weight:600;"></span>
+            </div>
+            <div id="resumo-produtos-ambientes-chips" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
           </div>
 
           <!-- 3b. Rateio Proporcional de Custo / Direcionamento Inline (Interno - Idêntico à Primeira Imagem) -->
@@ -5766,10 +5780,24 @@
     </div>
 
     <!-- VALOR TOTAL DO ORÇAMENTO NO MODAL DE AMBIENTES -->
-    <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.3);border-radius:10px;padding:8px 12px;margin-bottom:12px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.3);border-radius:10px;padding:8px 12px;margin-bottom:10px;">
       <span style="font-size:12px;color:#cbd5e1;font-weight:700;">💰 Total do Orçamento:</span>
       <strong id="modal-ambientes-total-val" style="font-size:15px;color:var(--gold-light);font-weight:900;">R$ 0,00</strong>
       <button class="modal-close" onclick="fecharModalAmbientesOrc()" style="background:rgba(255,255,255,0.08);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">✕</button>
+    </div>
+
+    <!-- VALOR DOS PRODUTOS DO AMBIENTE SEPARADO (PRIMEIRA IMAGEM) -->
+    <div id="modal-ambientes-card-subtotal" style="background:rgba(59,130,246,0.12);border:1.5px solid rgba(59,130,246,0.35);border-radius:10px;padding:10px 12px;margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
+        <span style="font-size:12px;color:#93c5fd;font-weight:700;display:flex;align-items:center;gap:6px;">
+          <span>📦</span> <span id="modal-ambientes-nome-atual">Produtos deste Ambiente:</span>
+        </span>
+        <strong id="modal-ambientes-subtotal-val" style="font-size:16px;color:#60a5fa;font-weight:900;">R$ 0,00</strong>
+      </div>
+      <div id="modal-ambientes-itens-contagem" style="font-size:11px;color:#94a3b8;margin-top:3px;">0 item(ns) incluído(s) neste ambiente</div>
+
+      <!-- Detalhamento de todos os ambientes se houver mais de 1 -->
+      <div id="modal-ambientes-lista-todos" style="margin-top:8px;padding-top:8px;border-top:1px dashed rgba(255,255,255,0.1);display:none;flex-direction:column;gap:5px;"></div>
     </div>
 
     <!-- PRESETS GRID -->
@@ -10210,9 +10238,12 @@ function recalcularTotaisGerais(campoOrigem = '') {
   const elTotal = document.getElementById('total');
   if (elTotal) {
     elTotal.textContent = 'R$ ' + formatarValorPtBr(totalFinal);
-  if (typeof atualizarRateioInlineOrcamento === 'function') {
-    atualizarRateioInlineOrcamento(totalFinal);
+    if (typeof atualizarRateioInlineOrcamento === 'function') {
+      atualizarRateioInlineOrcamento(totalFinal);
+    }
   }
+  if (typeof atualizarSubtotaisAmbientes === 'function') {
+    atualizarSubtotaisAmbientes();
   }
   return totalFinal;
 }
@@ -13576,6 +13607,178 @@ let dirOrcamentoTemp = null;
 let _btnAmbienteEmEdicao = null;
 let _contadorAmbientes = 1;
 
+function calcularTotaisPorAmbiente() {
+  const tbody = document.getElementById('itens-lista');
+  const btnTop = document.getElementById('btn-orc-ambientes');
+  const lblTop = document.getElementById('label-orc-ambientes');
+  let topNome = lblTop ? lblTop.textContent.replace(/^Ambientes\s*\(?/, '').replace(/\)?$/, '').trim() : '';
+  if (!topNome || topNome.toLowerCase() === 'ambientes') topNome = 'Ambiente 1';
+
+  const ambientes = [];
+  let ambAtual = {
+    nome: topNome,
+    btn: btnTop,
+    produtosVal: 0,
+    servicosVal: 0,
+    totalVal: 0,
+    qtdItens: 0,
+    itens: []
+  };
+  ambientes.push(ambAtual);
+
+  if (!tbody) return ambientes;
+
+  const rows = Array.from(tbody.children);
+  for (const tr of rows) {
+    if (tr.classList && tr.classList.contains('tr-ambiente-secao')) {
+      const btnSec = tr.querySelector('.btn-seletor-ambientes');
+      const lblSec = tr.querySelector('.label-ambiente-texto');
+      let nomeSec = lblSec ? lblSec.textContent.replace(/^Ambientes\s*\(?/, '').replace(/\)?$/, '').trim() : '';
+      if (!nomeSec || nomeSec.toLowerCase() === 'ambientes') nomeSec = 'Ambiente ' + (ambientes.length + 1);
+
+      ambAtual = {
+        nome: nomeSec,
+        btn: btnSec,
+        trSec: tr,
+        produtosVal: 0,
+        servicosVal: 0,
+        totalVal: 0,
+        qtdItens: 0,
+        itens: []
+      };
+      ambientes.push(ambAtual);
+      continue;
+    }
+
+    // É linha de produto/serviço
+    const inDesc  = tr.querySelector('.inp-item-desc')  || tr.querySelectorAll('input')[1];
+    if (!inDesc) continue;
+
+    const inQtd   = tr.querySelector('.inp-item-qtd')   || tr.querySelectorAll('input')[0];
+    const inAlt   = tr.querySelector('.inp-item-alt')   || tr.querySelectorAll('input')[4];
+    const inLarg  = tr.querySelector('.inp-item-larg')  || tr.querySelectorAll('input')[5];
+    const inVm2   = tr.querySelector('.inp-item-vm2')   || tr.querySelectorAll('input')[7];
+    const inVunit = tr.querySelector('.inp-item-vunit') || tr.querySelectorAll('input')[8];
+
+    const desc   = (inDesc.value || '').trim();
+    const rawQtd = inQtd ? inQtd.value.trim() : '1';
+    const qtd    = rawQtd === '' ? 1 : (typeof parseNum === 'function' ? parseNum(rawQtd) : parseFloat(rawQtd) || 0);
+    const alt    = inAlt ? (typeof parseNum === 'function' ? parseNum(inAlt.value) : parseFloat(inAlt.value) || 0) : 0;
+    const larg   = inLarg ? (typeof parseNum === 'function' ? parseNum(inLarg.value) : parseFloat(inLarg.value) || 0) : 0;
+    const v_m2   = inVm2 ? (typeof parseNum === 'function' ? parseNum(inVm2.value) : parseFloat(inVm2.value) || 0) : 0;
+    const v_unit = inVunit ? (typeof parseNum === 'function' ? parseNum(inVunit.value) : parseFloat(inVunit.value) || 0) : 0;
+
+    const m2 = alt * larg;
+    const sub_m2 = m2 > 0 ? (m2 * v_m2) : 0;
+
+    let lineTotal = 0;
+    if (sub_m2 > 0 && v_unit > 0) {
+      lineTotal = qtd * (sub_m2 + v_unit);
+    } else if (sub_m2 > 0) {
+      lineTotal = qtd * sub_m2;
+    } else if (v_unit > 0) {
+      lineTotal = qtd * v_unit;
+    }
+
+    const isServico = typeof isDescricaoServico === 'function' ? isDescricaoServico(desc) : false;
+    if (isServico) {
+      ambAtual.servicosVal += lineTotal;
+    } else {
+      ambAtual.produtosVal += lineTotal;
+    }
+    ambAtual.totalVal += lineTotal;
+    ambAtual.qtdItens++;
+    ambAtual.itens.push({ desc, qtd, lineTotal, isServico });
+  }
+
+  return ambientes;
+}
+
+function atualizarSubtotaisAmbientes() {
+  const ambientes = calcularTotaisPorAmbiente();
+  const formatBRL = (val) => 'R$ ' + Number(val || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+  // 1. Atualiza badge do topo (primeiro ambiente)
+  const valTopEl = document.getElementById('val-ambiente-top-produtos');
+  if (valTopEl && ambientes[0]) {
+    valTopEl.textContent = formatBRL(ambientes[0].produtosVal);
+  }
+
+  // 2. Atualiza badge das seções subsequentes
+  ambientes.forEach(a => {
+    if (a.trSec) {
+      const valEl = a.trSec.querySelector('.val-secao-produtos');
+      if (valEl) valEl.textContent = formatBRL(a.produtosVal);
+    }
+  });
+
+  // 3. Atualiza dados no Modal de Ambientes (Primeira Imagem)
+  const targetBtn = _btnAmbienteEmEdicao || document.querySelector('.btn-seletor-ambientes');
+  let ambAtual = ambientes.find(a => a.btn === targetBtn) || ambientes[0];
+
+  const nomeAtualEl = document.getElementById('modal-ambientes-nome-atual');
+  const subtotalValEl = document.getElementById('modal-ambientes-subtotal-val');
+  const itensContagemEl = document.getElementById('modal-ambientes-itens-contagem');
+  const listaTodosEl = document.getElementById('modal-ambientes-lista-todos');
+
+  if (nomeAtualEl && ambAtual) {
+    nomeAtualEl.textContent = 'Produtos de "' + ambAtual.nome + '":';
+  }
+  if (subtotalValEl && ambAtual) {
+    subtotalValEl.textContent = formatBRL(ambAtual.produtosVal);
+  }
+  if (itensContagemEl && ambAtual) {
+    itensContagemEl.textContent = ambAtual.qtdItens + ' item(ns) incluído(s) neste ambiente (' + formatBRL(ambAtual.produtosVal) + ' em produtos)';
+  }
+
+  if (listaTodosEl) {
+    if (ambientes.length > 1) {
+      listaTodosEl.style.display = 'flex';
+      let htmlTodos = '<div style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:2px;">Subtotais de Produtos por Ambiente:</div>';
+      ambientes.forEach(a => {
+        const isSel = (a === ambAtual);
+        const selStyle = isSel ? 'border:1px solid rgba(59,130,246,0.4);background:rgba(59,130,246,0.08);' : '';
+        htmlTodos += '<div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.03);padding:4px 8px;border-radius:6px;font-size:11.5px;' + selStyle + '">' +
+          '<span style="color:#e2e8f0;">🛋️ ' + esc(a.nome) + ' (' + a.qtdItens + ' itens):</span>' +
+          '<strong style="color:#60a5fa;font-weight:800;">' + formatBRL(a.produtosVal) + '</strong>' +
+        '</div>';
+      });
+      listaTodosEl.innerHTML = htmlTodos;
+    } else {
+      listaTodosEl.style.display = 'none';
+      listaTodosEl.innerHTML = '';
+    }
+  }
+
+  // 4. Atualiza Resumo dos Produtos Separados por Ambiente na Composição Financeira (Terceira Imagem)
+  const resumoBox = document.getElementById('resumo-produtos-por-ambiente');
+  const resumoCount = document.getElementById('resumo-produtos-ambientes-count');
+  const resumoChips = document.getElementById('resumo-produtos-ambientes-chips');
+
+  if (resumoBox && resumoChips) {
+    const temProdutos = ambientes.some(a => a.produtosVal > 0 || a.qtdItens > 0);
+    if (temProdutos || ambientes.length > 1) {
+      resumoBox.style.display = 'block';
+      if (resumoCount) {
+        resumoCount.textContent = ambientes.length + (ambientes.length === 1 ? ' ambiente' : ' ambientes');
+      }
+      let htmlChips = '';
+      ambientes.forEach(a => {
+        htmlChips += '<div style="background:#0b0c14;border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:5px 10px;display:flex;align-items:center;gap:6px;font-size:11.5px;">' +
+          '<span style="color:#94a3b8;font-weight:600;">' + esc(a.nome) + ':</span>' +
+          '<strong style="color:var(--gold-light);font-weight:800;">' + formatBRL(a.produtosVal) + '</strong>' +
+          '<span style="font-size:10px;color:var(--muted);">(' + a.qtdItens + ' it)</span>' +
+        '</div>';
+      });
+      resumoChips.innerHTML = htmlChips;
+    } else {
+      resumoBox.style.display = 'none';
+      resumoChips.innerHTML = '';
+    }
+  }
+}
+
 function abrirModalAmbientesOrc(btnElement) {
   _btnAmbienteEmEdicao = btnElement || document.querySelector('.btn-seletor-ambientes');
   const m = document.getElementById('modal-orc-ambientes');
@@ -13585,6 +13788,9 @@ function abrirModalAmbientesOrc(btnElement) {
     const totalTxt = elTotal ? elTotal.textContent.trim() : 'R$ 0,00';
     const totalElModal = document.getElementById('modal-ambientes-total-val');
     if (totalElModal) totalElModal.textContent = totalTxt;
+
+    // Atualiza os subtotais e valores do ambiente antes de abrir o modal
+    atualizarSubtotaisAmbientes();
 
     m.style.display = 'flex';
     const inp = document.getElementById('inp-custom-ambiente-orc');
@@ -13615,6 +13821,7 @@ function inserirAmbienteNoOrcamento(nomeAmbiente) {
     }
   }
 
+  atualizarSubtotaisAmbientes();
   fecharModalAmbientesOrc();
   if (typeof salvarOrcamentoLocal === 'function') salvarOrcamentoLocal();
   if (typeof showToast === 'function') {
@@ -13649,6 +13856,9 @@ function adicionarNovoAmbienteSecao() {
           <button type="button" class="btn btn-sm btn-seletor-ambientes" onclick="abrirModalAmbientesOrc(this)" style="background:linear-gradient(135deg, rgba(245,158,11,0.25), rgba(217,119,6,0.22));border:1.5px solid #f59e0b;color:#fbbf24;font-weight:800;border-radius:8px;padding:6px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;box-shadow:0 2px 8px rgba(245,158,11,0.2);font-size:12px;" title="Escolher / Alterar Ambiente">
             <span style="font-size:15px;">🛋️</span> <span class="label-ambiente-texto">Ambientes</span>
           </button>
+          <span class="badge-secao-produtos-val" style="background:rgba(59,130,246,0.18);border:1px solid rgba(59,130,246,0.4);color:#93c5fd;font-size:11.5px;font-weight:800;padding:4px 10px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;" title="Valor dos produtos deste ambiente">
+            <span>📦</span> <span class="val-secao-produtos">R$ 0,00</span>
+          </span>
         </div>
         <button type="button" onclick="removerAmbienteSecao(this)" style="background:none;border:none;color:#ef4444;font-size:11px;font-weight:700;cursor:pointer;opacity:0.75;padding:2px 6px;" title="Remover este ambiente">
           ✕ Remover
@@ -13660,6 +13870,7 @@ function adicionarNovoAmbienteSecao() {
 
   // E adiciona imediatamente uma linha limpa de produto/serviço logo abaixo
   addItem('', '1', '', '', '', '', '', '', '');
+  atualizarSubtotaisAmbientes();
 
   if (typeof showToast === 'function') {
     showToast('Novo ambiente criado! Toque em "Ambientes" para escolher o nome. 🛋️');
@@ -13668,7 +13879,11 @@ function adicionarNovoAmbienteSecao() {
 
 function removerAmbienteSecao(btn) {
   const tr = btn.closest('.tr-ambiente-secao');
-  if (tr) tr.remove();
+  if (tr) {
+    tr.remove();
+    if (typeof calcTotal === 'function') calcTotal();
+    atualizarSubtotaisAmbientes();
+  }
 }
 
 // ════════════════════════════════════════════════════════════════
