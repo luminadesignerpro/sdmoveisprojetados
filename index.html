@@ -2092,9 +2092,10 @@
             <tr id="tr-header-ambientes" style="background:#11121c;">
               <th colspan="11" style="padding:8px 10px;text-align:left;border-bottom:1.5px solid rgba(245,158,11,0.3);background:rgba(245,158,11,0.06);">
                 <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                  <button type="button" class="btn btn-sm btn-seletor-ambientes" id="btn-orc-ambientes" onclick="abrirModalAmbientesOrc(this)" style="background:linear-gradient(135deg, rgba(245,158,11,0.25), rgba(217,119,6,0.22));border:1.5px solid #f59e0b;color:#fbbf24;font-weight:800;border-radius:8px;padding:6px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;box-shadow:0 2px 8px rgba(245,158,11,0.2);font-size:12px;" title="Escolher / Alterar Ambiente">
-                    <span style="font-size:15px;">🛋️</span> <span id="label-orc-ambientes" class="label-ambiente-texto">Ambientes</span>
-                  </button>
+                  <div class="wrap-ambiente-nome" style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg, rgba(245,158,11,0.22), rgba(217,119,6,0.18));border:1.5px solid #f59e0b;border-radius:8px;padding:5px 12px;box-shadow:0 2px 8px rgba(245,158,11,0.2);">
+                    <span style="font-size:15px;line-height:1;">🛋️</span>
+                    <input type="text" id="inp-orc-ambiente-top" class="inp-nome-ambiente label-ambiente-texto" placeholder="Nome do ambiente..." value="" oninput="atualizarSubtotaisAmbientes()" onfocus="this.select()" style="background:transparent;border:none;color:#fbbf24;font-weight:800;font-size:12.5px;outline:none;width:160px;min-width:120px;" title="Digite o nome do ambiente" />
+                  </div>
                   <button type="button" class="btn btn-sm" id="btn-add-novo-ambiente" onclick="adicionarNovoAmbienteSecao()" style="background:linear-gradient(135deg, rgba(245,158,11,0.35), rgba(217,119,6,0.3));border:1.5px solid #f59e0b;color:#fbbf24;font-weight:900;border-radius:8px;padding:6px 13px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-size:13px;box-shadow:0 2px 8px rgba(245,158,11,0.25);" title="Adicionar Novo Ambiente com Linha de Item">
                     <span style="font-size:14px;">➕</span>
                   </button>
@@ -13671,9 +13672,14 @@ let _contadorAmbientes = 1;
 
 function calcularTotaisPorAmbiente() {
   const tbody = document.getElementById('itens-lista');
-  const btnTop = document.getElementById('btn-orc-ambientes');
+  const inpTop = document.getElementById('inp-orc-ambiente-top') || document.querySelector('.inp-nome-ambiente');
   const lblTop = document.getElementById('label-orc-ambientes');
-  let topNome = lblTop ? lblTop.textContent.replace(/^Ambientes\s*\(?/, '').replace(/\)?$/, '').trim() : '';
+  let topNome = '';
+  if (inpTop && inpTop.value && inpTop.value.trim()) {
+    topNome = inpTop.value.trim();
+  } else if (lblTop && lblTop.textContent && lblTop.textContent.trim()) {
+    topNome = lblTop.textContent.replace(/^Ambientes\s*\(?/, '').replace(/\)?$/, '').trim();
+  }
   if (!topNome || topNome.toLowerCase() === 'ambientes') topNome = 'Ambiente 1';
 
   const ambientes = [];
@@ -13693,9 +13699,14 @@ function calcularTotaisPorAmbiente() {
   const rows = Array.from(tbody.children);
   for (const tr of rows) {
     if (tr.classList && tr.classList.contains('tr-ambiente-secao')) {
-      const btnSec = tr.querySelector('.btn-seletor-ambientes');
+      const inpSec = tr.querySelector('.inp-nome-ambiente');
       const lblSec = tr.querySelector('.label-ambiente-texto');
-      let nomeSec = lblSec ? lblSec.textContent.replace(/^Ambientes\s*\(?/, '').replace(/\)?$/, '').trim() : '';
+      let nomeSec = '';
+      if (inpSec && inpSec.value && inpSec.value.trim()) {
+        nomeSec = inpSec.value.trim();
+      } else if (lblSec && lblSec.textContent && lblSec.textContent.trim()) {
+        nomeSec = lblSec.textContent.replace(/^Ambientes\s*\(?/, '').replace(/\)?$/, '').trim();
+      }
       if (!nomeSec || nomeSec.toLowerCase() === 'ambientes') nomeSec = 'Ambiente ' + (ambientes.length + 1);
 
       ambAtual = {
@@ -13904,11 +13915,25 @@ function inserirAmbienteNoOrcamento(nomeAmbiente) {
   const nomeLimpo = nomeAmbiente.trim();
 
   // ATUALIZA APENAS O BOTÃO DO AMBIENTE (NÃO CRIA ITEM NEM INSERE NA DESCRIÇÃO DO PRODUTO)
+  let targetInp = null;
+  if (_btnAmbienteEmEdicao) {
+    if (_btnAmbienteEmEdicao.classList && _btnAmbienteEmEdicao.classList.contains('inp-nome-ambiente')) {
+      targetInp = _btnAmbienteEmEdicao;
+    } else if (_btnAmbienteEmEdicao.querySelector) {
+      targetInp = _btnAmbienteEmEdicao.querySelector('.inp-nome-ambiente');
+    }
+  }
+  if (!targetInp) {
+    targetInp = document.getElementById('inp-orc-ambiente-top') || document.querySelector('.inp-nome-ambiente');
+  }
+  if (targetInp) {
+    targetInp.value = nomeLimpo;
+  }
   const targetBtn = _btnAmbienteEmEdicao || document.querySelector('.btn-seletor-ambientes');
-  if (targetBtn) {
+  if (targetBtn && targetBtn.querySelector) {
     const lbl = targetBtn.querySelector('.label-ambiente-texto') || targetBtn.querySelector('span:last-child');
     if (lbl) {
-      lbl.textContent = 'Ambientes (' + nomeLimpo + ')';
+      lbl.textContent = nomeLimpo;
     }
   }
 
@@ -13944,9 +13969,10 @@ function adicionarNovoAmbienteSecao() {
     <td colspan="11" style="padding:8px 10px;text-align:left;border-top:2px solid rgba(245,158,11,0.35);border-bottom:1.5px solid rgba(245,158,11,0.25);background:rgba(245,158,11,0.06);">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
         <div style="display:flex;align-items:center;gap:8px;">
-          <button type="button" class="btn btn-sm btn-seletor-ambientes" onclick="abrirModalAmbientesOrc(this)" style="background:linear-gradient(135deg, rgba(245,158,11,0.25), rgba(217,119,6,0.22));border:1.5px solid #f59e0b;color:#fbbf24;font-weight:800;border-radius:8px;padding:6px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;box-shadow:0 2px 8px rgba(245,158,11,0.2);font-size:12px;" title="Escolher / Alterar Ambiente">
-            <span style="font-size:15px;">🛋️</span> <span class="label-ambiente-texto">Ambientes</span>
-          </button>
+          <div class="wrap-ambiente-nome" style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg, rgba(245,158,11,0.22), rgba(217,119,6,0.18));border:1.5px solid #f59e0b;border-radius:8px;padding:5px 12px;box-shadow:0 2px 8px rgba(245,158,11,0.2);">
+            <span style="font-size:15px;line-height:1;">🛋️</span>
+            <input type="text" class="inp-nome-ambiente label-ambiente-texto" placeholder="Nome do ambiente..." value="" oninput="atualizarSubtotaisAmbientes()" onfocus="this.select()" style="background:transparent;border:none;color:#fbbf24;font-weight:800;font-size:12.5px;outline:none;width:160px;min-width:120px;" title="Digite o nome do ambiente" />
+          </div>
           <span class="badge-secao-produtos-val" style="background:rgba(59,130,246,0.18);border:1px solid rgba(59,130,246,0.4);color:#93c5fd;font-size:11.5px;font-weight:800;padding:4px 10px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;" title="Valor dos produtos deste ambiente">
             <span>📦</span> <span class="val-secao-produtos">R$ 0,00</span>
           </span>
@@ -13964,7 +13990,7 @@ function adicionarNovoAmbienteSecao() {
   atualizarSubtotaisAmbientes();
 
   if (typeof showToast === 'function') {
-    showToast('Novo ambiente criado! Toque em "Ambientes" para escolher o nome. 🛋️');
+    showToast('Novo ambiente criado! Digite o nome do ambiente. 🛋️');
   }
 }
 
