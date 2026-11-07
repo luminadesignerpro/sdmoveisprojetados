@@ -18,7 +18,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js?v=8.9.8').then(r => { r.update(); })
+        navigator.serviceWorker.register('/sw.js?v=8.9.9').then(r => { r.update(); })
           .then(function(reg){ console.log('SW registrado com sucesso:', reg.scope); })
           .catch(function(err){ console.warn('Erro ao registrar SW:', err); });
       });
@@ -9412,19 +9412,18 @@ function usarProdutoDoCatalogo(pId, nome) {
     }
   }
 
-  // Se não veio de linha específica e o produto não está no orçamento, procura primeira linha vazia
+  // Se não veio de linha específica e o produto não está no orçamento:
+  // Remove linha vazia/placeholder se existir, e SEMPRE cria nova linha exclusiva para este produto
   if (!targetTr) {
-    const allTrs = Array.from(document.querySelectorAll('#itens-lista tr')).filter(tr => !tr.classList.contains('tr-ambiente-secao'));
-    const emptyTr = allTrs.find(tr => {
+    const allTrsUsar = Array.from(document.querySelectorAll('#itens-lista tr')).filter(tr => !tr.classList.contains('tr-ambiente-secao'));
+    const emptyTrUsar = allTrsUsar.find(tr => {
       const inDesc = tr.querySelector('.inp-item-desc') || tr.querySelectorAll('input')[1];
       return !inDesc || !inDesc.value.trim();
     });
-    if (emptyTr) {
-      targetTr = emptyTr;
-    }
-  }
-
-  if (targetTr) {
+    if (emptyTrUsar) emptyTrUsar.remove(); // Remove placeholder vazio para não poluir a tabela
+    addItem(p.nome, String(qtdVal), '', '', '', vm2Val, vunitVal, '', fornSugerido);
+  } else {
+    // targetTr encontrado (linha específica ou produto já existente) → atualiza ela
     const inQtd   = targetTr.querySelector('.inp-item-qtd')   || targetTr.querySelectorAll('input')[0];
     const inDesc  = targetTr.querySelector('.inp-item-desc')  || targetTr.querySelectorAll('input')[1];
     const inVm2   = targetTr.querySelector('.inp-item-vm2')   || targetTr.querySelectorAll('input')[7];
@@ -9439,9 +9438,6 @@ function usarProdutoDoCatalogo(pId, nome) {
 
     const rowId = targetTr.id.replace('item-', '');
     if (typeof calcItem === 'function') calcItem(rowId);
-  } else {
-    // Adiciona nova linha no orçamento com a quantidade
-    addItem(p.nome, String(qtdVal), '', '', '', vm2Val, vunitVal, '', fornSugerido);
   }
 
   const veiodoItem = (itemEmEdicaoId && itemEmEdicaoId !== 'novo');
@@ -15992,29 +15988,14 @@ function toggleMarcarProdutoCatalogo(pId, nome, marcado) {
         if (mat && mat.fornecedor) fornSugerido = mat.fornecedor;
       }
 
-      // Se houver linha vazia no orçamento, preenche nela
-      const allTrs = Array.from(document.querySelectorAll('#itens-lista tr')).filter(tr => !tr.classList.contains('tr-ambiente-secao'));
-      const emptyTr = allTrs.find(tr => {
+      // Remove linha vazia/placeholder se existir, e SEMPRE cria nova linha exclusiva para este produto
+      const allTrsChk = Array.from(document.querySelectorAll('#itens-lista tr')).filter(tr => !tr.classList.contains('tr-ambiente-secao'));
+      const emptyTrChk = allTrsChk.find(tr => {
         const inDesc = tr.querySelector('.inp-item-desc') || tr.querySelectorAll('input')[1];
         return !inDesc || !inDesc.value.trim();
       });
-
-      if (emptyTr) {
-        const inQtd   = emptyTr.querySelector('.inp-item-qtd')   || emptyTr.querySelectorAll('input')[0];
-        const inDesc  = emptyTr.querySelector('.inp-item-desc')  || emptyTr.querySelectorAll('input')[1];
-        const inVm2   = emptyTr.querySelector('.inp-item-vm2')   || emptyTr.querySelectorAll('input')[7];
-        const inVunit = emptyTr.querySelector('.inp-item-vunit') || emptyTr.querySelectorAll('input')[8];
-        const inForn  = emptyTr.querySelector('.item-fornecedor-input') || emptyTr.querySelector('.inp-item-fornecedor');
-        if (inQtd)   inQtd.value   = String(qtdVal);
-        if (inDesc)  inDesc.value  = p.nome || '';
-        if (inVm2)   inVm2.value   = vm2Val;
-        if (inVunit) inVunit.value = vunitVal;
-        if (inForn && !inForn.value && fornSugerido) inForn.value = fornSugerido;
-        const rowId = emptyTr.id.replace('item-', '');
-        if (typeof calcItem === 'function') calcItem(rowId);
-      } else {
-        addItem(p.nome, String(qtdVal), '', '', '', vm2Val, vunitVal, '', fornSugerido);
-      }
+      if (emptyTrChk) emptyTrChk.remove(); // Remove placeholder vazio
+      addItem(p.nome, String(qtdVal), '', '', '', vm2Val, vunitVal, '', fornSugerido);
     }
     if (card) {
       card.style.border = '1.5px solid #10b981';
