@@ -18,7 +18,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js?v=8.9.3').then(r => { r.update(); })
+        navigator.serviceWorker.register('/sw.js?v=8.9.6').then(r => { r.update(); })
           .then(function(reg){ console.log('SW registrado com sucesso:', reg.scope); })
           .catch(function(err){ console.warn('Erro ao registrar SW:', err); });
       });
@@ -9289,28 +9289,66 @@ function atualizarBannerSelecaoProduto() {
   // Banner removido conforme solicitação do usuário
 }
 
+function aoClicarUsarBtn(btn) {
+  const pId = btn.getAttribute('data-pid') || '';
+  const nome = btn.getAttribute('data-pnome') || '';
+  usarProdutoDoCatalogo(pId, nome);
+}
+
+function aoMudarCheckboxCatalogo(chk) {
+  const pId = chk.getAttribute('data-pid') || '';
+  const nome = chk.getAttribute('data-pnome') || '';
+  toggleMarcarProdutoCatalogo(pId, nome, chk.checked);
+}
+
+function aoClicarDeltaBtn(btn) {
+  const pId = btn.getAttribute('data-pid') || '';
+  const nome = btn.getAttribute('data-pnome') || '';
+  const delta = parseInt(btn.getAttribute('data-delta'), 10) || 1;
+  alterarQtdProdCatalogoBtn(pId, nome, delta);
+}
+
+function aoClicarEditarProdBtn(btn) {
+  const pId = btn.getAttribute('data-pid') || '';
+  const nome = btn.getAttribute('data-pnome') || '';
+  editarProd(pId, nome);
+}
+
+function aoClicarDeletarProdBtn(btn) {
+  const pId = btn.getAttribute('data-pid') || '';
+  const nome = btn.getAttribute('data-pnome') || '';
+  deletarProd(pId, nome);
+}
+
 function usarProdutoDoCatalogo(pId, nome) {
   let p = null;
   if (pId != null && pId !== '' && pId !== 'undefined') {
     p = produtos.find(x => String(x.id) === String(pId));
   }
   if (!p && nome) {
-    p = produtos.find(x => x.nome && x.nome.toLowerCase() === String(nome).toLowerCase());
+    p = produtos.find(x => x.nome && x.nome.trim().toLowerCase() === String(nome).trim().toLowerCase());
   }
   if (!p && typeof pId === 'string' && isNaN(Number(pId))) {
-    p = produtos.find(x => x.nome && x.nome.toLowerCase() === pId.toLowerCase());
+    p = produtos.find(x => x.nome && x.nome.trim().toLowerCase() === pId.trim().toLowerCase());
   }
   if (!p) {
     p = produtos.find(x => x.nome && (x.nome.includes(String(pId)) || (nome && x.nome.includes(String(nome)))));
   }
   if (!p) {
-    alert('Produto não localizado no catálogo.');
-    return;
+    p = {
+      id: pId || Date.now(),
+      nome: (nome || pId || 'Produto').trim(),
+      vm2: '',
+      vunit: ''
+    };
   }
 
   // Obter quantidade configurada no card
-  const qtdInp = document.getElementById('qtd-prod-' + pId);
-  const qtdVal = qtdInp ? (Math.max(1, parseInt(qtdInp.value, 10) || 1)) : 1;
+  let qtdVal = 1;
+  const qtdInp = document.getElementById('qtd-prod-' + pId) || (p.id ? document.getElementById('qtd-prod-' + p.id) : null);
+  if (qtdInp && qtdInp.value) {
+    qtdVal = Math.max(1, parseInt(qtdInp.value, 10) || 1);
+  }
 
   const vm2Val = (p.vm2 !== '' && p.vm2 != null && Number(p.vm2) > 0) ? formatarValorPtBr(p.vm2) : '';
   const vunitVal = (p.vunit !== '' && p.vunit != null && Number(p.vunit) > 0) ? formatarValorPtBr(p.vunit) : '';
@@ -9328,7 +9366,15 @@ function usarProdutoDoCatalogo(pId, nome) {
     targetTr = document.getElementById('item-' + itemEmEdicaoId);
   }
 
-  // 2. Se não veio de uma linha específica, verifica se a primeira ou última linha do orçamento está vazia
+  // 2. Se já existe uma linha deste produto no orçamento com quantidade diferente, atualiza ela
+  if (!targetTr) {
+    const trMesmoNome = obterItemOrcamentoPorNome(p.nome);
+    if (trMesmoNome) {
+      targetTr = trMesmoNome;
+    }
+  }
+
+  // 3. Se não veio de linha específica e o produto não está no orçamento, procura primeira linha vazia
   if (!targetTr) {
     const allTrs = Array.from(document.querySelectorAll('#itens-lista tr')).filter(tr => !tr.classList.contains('tr-ambiente-secao'));
     const emptyTr = allTrs.find(tr => {
@@ -9356,7 +9402,7 @@ function usarProdutoDoCatalogo(pId, nome) {
     const rowId = targetTr.id.replace('item-', '');
     if (typeof calcItem === 'function') calcItem(rowId);
   } else {
-    // Adiciona nova linha com a quantidade escolhida
+    // Adiciona nova linha no orçamento com a quantidade
     addItem(p.nome, String(qtdVal), '', '', '', vm2Val, vunitVal, '', fornSugerido);
   }
 
@@ -9368,8 +9414,14 @@ function usarProdutoDoCatalogo(pId, nome) {
   // Redireciona imediatamente para o orçamento
   goTab('orcamento');
 
+  // Rola até os itens do orçamento
+  setTimeout(() => {
+    const secItens = document.getElementById('sec-itens') || document.getElementById('itens-lista') || document.getElementById('tabela-orcamento');
+    if (secItens) secItens.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 100);
+
   if (typeof showToast === 'function') {
-    showToast('✅ Produto "' + p.nome + '" (Qtd: ' + qtdVal + ') adicionado ao orçamento!');
+    showToast('✅ Produto "' + p.nome + '" (Qtd: ' + qtdVal + ') inserido no orçamento!');
   }
 }
 
@@ -15863,7 +15915,7 @@ function obterItemOrcamentoPorNome(nome) {
   for (const tr of trs) {
     if (tr.classList && tr.classList.contains('tr-ambiente-secao')) continue;
     const inDesc = tr.querySelector('.inp-item-desc') || tr.querySelectorAll('input')[1];
-    if (inDesc && inDesc.value.trim().toLowerCase() === n) {
+    if (inDesc && inDesc.value && inDesc.value.trim().toLowerCase() === n) {
       return tr;
     }
   }
@@ -15872,7 +15924,9 @@ function obterItemOrcamentoPorNome(nome) {
 
 function toggleMarcarProdutoCatalogo(pId, nome, marcado) {
   let p = produtos.find(x => String(x.id) === String(pId)) || produtos.find(x => x.nome && x.nome.toLowerCase() === String(nome).toLowerCase());
-  if (!p) return;
+  if (!p) {
+    p = { id: pId, nome: nome, vm2: '', vunit: '' };
+  }
 
   const card = document.getElementById('prod-card-' + pId);
   const qtdInp = document.getElementById('qtd-prod-' + pId);
@@ -15882,7 +15936,6 @@ function toggleMarcarProdutoCatalogo(pId, nome, marcado) {
 
   if (marcado) {
     if (trExistente) {
-      // Atualiza quantidade se já existe
       const inQtd = trExistente.querySelector('.inp-item-qtd') || trExistente.querySelectorAll('input')[0];
       if (inQtd) {
         inQtd.value = String(qtdVal);
@@ -15890,7 +15943,6 @@ function toggleMarcarProdutoCatalogo(pId, nome, marcado) {
         if (typeof calcItem === 'function') calcItem(rowId);
       }
     } else {
-      // Adiciona o produto com a quantidade escolhida
       const vm2Val = (p.vm2 !== '' && p.vm2 != null && Number(p.vm2) > 0) ? formatarValorPtBr(p.vm2) : '';
       const vunitVal = (p.vunit !== '' && p.vunit != null && Number(p.vunit) > 0) ? formatarValorPtBr(p.vunit) : '';
       let fornSugerido = '';
@@ -15898,14 +15950,39 @@ function toggleMarcarProdutoCatalogo(pId, nome, marcado) {
         const mat = materiais.find(m => m.nome && m.nome.toLowerCase() === p.nome.toLowerCase());
         if (mat && mat.fornecedor) fornSugerido = mat.fornecedor;
       }
-      addItem(p.nome, String(qtdVal), '', '', '', vm2Val, vunitVal, '', fornSugerido);
+
+      // Se houver linha vazia no orçamento, preenche nela
+      const allTrs = Array.from(document.querySelectorAll('#itens-lista tr')).filter(tr => !tr.classList.contains('tr-ambiente-secao'));
+      const emptyTr = allTrs.find(tr => {
+        const inDesc = tr.querySelector('.inp-item-desc') || tr.querySelectorAll('input')[1];
+        return !inDesc || !inDesc.value.trim();
+      });
+
+      if (emptyTr) {
+        const inQtd   = emptyTr.querySelector('.inp-item-qtd')   || emptyTr.querySelectorAll('input')[0];
+        const inDesc  = emptyTr.querySelector('.inp-item-desc')  || emptyTr.querySelectorAll('input')[1];
+        const inVm2   = emptyTr.querySelector('.inp-item-vm2')   || emptyTr.querySelectorAll('input')[7];
+        const inVunit = emptyTr.querySelector('.inp-item-vunit') || emptyTr.querySelectorAll('input')[8];
+        const inForn  = emptyTr.querySelector('.item-fornecedor-input') || emptyTr.querySelector('.inp-item-fornecedor');
+        if (inQtd)   inQtd.value   = String(qtdVal);
+        if (inDesc)  inDesc.value  = p.nome || '';
+        if (inVm2)   inVm2.value   = vm2Val;
+        if (inVunit) inVunit.value = vunitVal;
+        if (inForn && !inForn.value && fornSugerido) inForn.value = fornSugerido;
+        const rowId = emptyTr.id.replace('item-', '');
+        if (typeof calcItem === 'function') calcItem(rowId);
+      } else {
+        addItem(p.nome, String(qtdVal), '', '', '', vm2Val, vunitVal, '', fornSugerido);
+      }
     }
     if (card) {
       card.style.border = '1.5px solid #10b981';
       card.style.background = 'rgba(16,185,129,0.06)';
+      const chk = card.querySelector('.chk-prod-catalogo');
+      if (chk) chk.checked = true;
     }
     if (typeof showToast === 'function') {
-      showToast('✅ "' + p.nome + '" (Qtd: ' + qtdVal + ') marcado no orçamento!');
+      showToast('✅ "' + p.nome + '" (Qtd: ' + qtdVal + ') adicionado ao orçamento!');
     }
   } else {
     // Desmarcar: remove a linha do produto no orçamento
@@ -15914,9 +15991,11 @@ function toggleMarcarProdutoCatalogo(pId, nome, marcado) {
       if (card) {
         card.style.border = '';
         card.style.background = '';
+        const chk = card.querySelector('.chk-prod-catalogo');
+        if (chk) chk.checked = false;
       }
       if (typeof showToast === 'function') {
-        showToast('🗑️ "' + p.nome + '" desmarcado e removido do orçamento.');
+        showToast('🗑️ "' + p.nome + '" removido do orçamento.');
       }
     }
   }
@@ -15924,7 +16003,6 @@ function toggleMarcarProdutoCatalogo(pId, nome, marcado) {
   if (typeof calcTotal === 'function') calcTotal();
   if (typeof atualizarSubtotaisAmbientes === 'function') atualizarSubtotaisAmbientes();
   if (typeof salvarRascunhoOrcamento === 'function') salvarRascunhoOrcamento();
-  renderProdutos();
 }
 
 function alterarQtdProdCatalogoBtn(pId, nome, delta) {
@@ -15975,10 +16053,10 @@ function renderProdutos(filtro = '') {
 
   el.innerHTML = lista.map(p => {
     const safeId = (p.id != null && p.id !== '') ? String(p.id) : (p.nome || '');
-    const safeNome = (p.nome || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    const nomeVal = p.nome || '';
     
     // Verifica se este produto já está no orçamento para marcar o checkbox
-    const trExistente = obterItemOrcamentoPorNome(p.nome);
+    const trExistente = obterItemOrcamentoPorNome(nomeVal);
     const estaMarcado = !!trExistente;
     let qtdAtual = 1;
     if (trExistente) {
@@ -15996,7 +16074,7 @@ function renderProdutos(filtro = '') {
       <!-- Lado Esquerdo: Checkbox de Marcar/Desmarcar + Dados do Produto -->
       <div style="display:flex;align-items:flex-start;gap:10px;flex:1;min-width:180px;">
         <label style="display:flex;align-items:center;cursor:pointer;margin-top:2px;" title="Marcar ou desmarcar este produto do orçamento">
-          <input type="checkbox" class="chk-prod-catalogo" ${estaMarcado ? 'checked' : ''} onchange="toggleMarcarProdutoCatalogo('${esc(safeId)}', '${safeNome}', this.checked)" style="width:20px;height:20px;cursor:pointer;accent-color:#10b981;" />
+          <input type="checkbox" class="chk-prod-catalogo" ${estaMarcado ? 'checked' : ''} data-pid="${esc(safeId)}" data-pnome="${esc(nomeVal)}" onchange="aoMudarCheckboxCatalogo(this)" style="width:20px;height:20px;cursor:pointer;accent-color:#10b981;" />
         </label>
         <div>
           <div class="prod-name" style="font-size:14px;font-weight:800;color:#fff;">${esc(p.nome)}</div>
@@ -16012,18 +16090,18 @@ function renderProdutos(filtro = '') {
         <!-- Opção de Colocar Quantidade (Qtd) -->
         <div style="display:inline-flex;align-items:center;background:#090911;border:1px solid rgba(255,255,255,0.18);border-radius:8px;padding:2px 4px;gap:2px;">
           <span style="font-size:10px;color:#94a3b8;font-weight:800;margin-right:2px;margin-left:3px;">Qtd:</span>
-          <button type="button" onclick="alterarQtdProdCatalogoBtn('${esc(safeId)}', '${safeNome}', -1)" style="background:rgba(255,255,255,0.08);border:none;color:#fff;width:24px;height:24px;border-radius:4px;cursor:pointer;font-weight:bold;font-size:14px;line-height:1;">-</button>
-          <input type="number" min="1" step="1" id="qtd-prod-${esc(safeId)}" value="${qtdAtual}" onchange="aoMudarQtdProdCatalogo('${esc(safeId)}', '${safeNome}', this.value)" style="width:38px;text-align:center;background:transparent;border:none;color:#fcd34d;font-weight:800;font-size:13px;outline:none;" />
-          <button type="button" onclick="alterarQtdProdCatalogoBtn('${esc(safeId)}', '${safeNome}', 1)" style="background:rgba(255,255,255,0.08);border:none;color:#fff;width:24px;height:24px;border-radius:4px;cursor:pointer;font-weight:bold;font-size:14px;line-height:1;">+</button>
+          <button type="button" data-pid="${esc(safeId)}" data-pnome="${esc(nomeVal)}" data-delta="-1" onclick="aoClicarDeltaBtn(this)" style="background:rgba(255,255,255,0.08);border:none;color:#fff;width:24px;height:24px;border-radius:4px;cursor:pointer;font-weight:bold;font-size:14px;line-height:1;">-</button>
+          <input type="number" min="1" step="1" id="qtd-prod-${esc(safeId)}" value="${qtdAtual}" onchange="aoMudarQtdProdCatalogo('${esc(safeId)}', '${esc(nomeVal)}', this.value)" style="width:38px;text-align:center;background:transparent;border:none;color:#fcd34d;font-weight:800;font-size:13px;outline:none;" />
+          <button type="button" data-pid="${esc(safeId)}" data-pnome="${esc(nomeVal)}" data-delta="1" onclick="aoClicarDeltaBtn(this)" style="background:rgba(255,255,255,0.08);border:none;color:#fff;width:24px;height:24px;border-radius:4px;cursor:pointer;font-weight:bold;font-size:14px;line-height:1;">+</button>
         </div>
 
         <!-- Botões de Ação -->
         <div class="prod-btns" style="position:relative;z-index:2;display:flex;gap:5px;flex-shrink:0;">
-          <button type="button" class="btn btn-gold btn-sm" onclick="usarProdutoDoCatalogo('${esc(safeId)}', '${safeNome}')" title="Usar este produto no orçamento" style="cursor:pointer;pointer-events:auto;min-height:32px;font-weight:800;padding:5px 12px;font-size:12px;display:inline-flex;align-items:center;gap:4px;">
+          <button type="button" class="btn btn-gold btn-sm" data-pid="${esc(safeId)}" data-pnome="${esc(nomeVal)}" onclick="aoClicarUsarBtn(this)" title="Usar este produto no orçamento" style="cursor:pointer;pointer-events:auto;min-height:34px;font-weight:900;padding:6px 14px;font-size:12px;display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,#c9a84c,#e5c76a);color:#08080f;border:none;border-radius:8px;">
             <span>➕</span> Usar
           </button>
-          <button type="button" class="btn btn-sec btn-sm" onclick="editarProd('${esc(safeId)}', '${safeNome}')" title="Editar cadastro" style="cursor:pointer;pointer-events:auto;min-height:32px;padding:5px 8px;">✏️</button>
-          <button type="button" class="btn btn-danger btn-sm" onclick="deletarProd('${esc(safeId)}', '${safeNome}')" title="Excluir" style="cursor:pointer;pointer-events:auto;min-height:32px;padding:5px 8px;">✕</button>
+          <button type="button" class="btn btn-sec btn-sm" data-pid="${esc(safeId)}" data-pnome="${esc(nomeVal)}" onclick="aoClicarEditarProdBtn(this)" title="Editar cadastro" style="cursor:pointer;pointer-events:auto;min-height:34px;padding:6px 9px;">✏️</button>
+          <button type="button" class="btn btn-danger btn-sm" data-pid="${esc(safeId)}" data-pnome="${esc(nomeVal)}" onclick="aoClicarDeletarProdBtn(this)" title="Excluir" style="cursor:pointer;pointer-events:auto;min-height:34px;padding:6px 9px;">✕</button>
         </div>
 
       </div>
