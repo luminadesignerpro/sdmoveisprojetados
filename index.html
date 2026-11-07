@@ -18,7 +18,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js?v=9.0.2').then(r => { r.update(); })
+        navigator.serviceWorker.register('/sw.js?v=9.0.3').then(r => { r.update(); })
           .then(function(reg){ console.log('SW registrado com sucesso:', reg.scope); })
           .catch(function(err){ console.warn('Erro ao registrar SW:', err); });
       });
@@ -8015,7 +8015,7 @@ const LICENCAS_PADRAO = [
   {
     id: 'sdmoveis',
     nome: 'SD Móveis Projetados',
-    segmento: 'Móveis Planejados & Marcenaria de Luxo',
+    segmento: '',
     slogan: 'Cozinhas Planejadas, Closets & Ambientes Sob Medida',
     telefone: '(85) 99611-9824',
     cidade: 'Itaitinga - CE',
@@ -8047,7 +8047,7 @@ function obterLicencas() {
           }
           // Se estava com segmento de vidraçaria/esquadrias, migra para móveis projetados
           if (!l.segmento || /vidra|vidro|esquadria/i.test(l.segmento)) {
-            l.segmento = 'Móveis Planejados & Marcenaria de Luxo';
+            l.segmento = '';
             mudou = true;
           }
           if (!l.banner || l.banner === 'banner.jpg') {
@@ -8175,7 +8175,7 @@ function carregarDadosConfiguracaoEmpresa() {
 
   setVal('cfg-emp-nome', lic.nome || 'SD Móveis Projetados');
   setVal('cfg-emp-razao', lic.razaoSocial || lic.nome || 'SD Móveis Projetados LTDA');
-  setVal('cfg-emp-segmento', lic.segmento || 'Móveis Planejados & Marcenaria de Luxo');
+  setVal('cfg-emp-segmento', (lic.segmento && !/m[oó]veis\s+planejados|marcenaria\s+de\s+luxo/i.test(lic.segmento)) ? lic.segmento : '');
   setVal('cfg-emp-slogan', lic.slogan || 'Cozinhas Planejadas, Closets & Ambientes Sob Medida');
   setVal('cfg-emp-logo', lic.logo || 'logo_moveis.jpg');
   setVal('cfg-emp-banner', lic.banner || 'banner_moveis.jpg');
@@ -8354,7 +8354,7 @@ function salvarDadosEmpresaConfig() {
 
   const nome = getVal('cfg-emp-nome') || 'SD Móveis Projetados';
   const razaoSocial = getVal('cfg-emp-razao');
-  const segmento = getVal('cfg-emp-segmento') || 'Móveis Planejados & Marcenaria de Luxo';
+  const segmento = getVal('cfg-emp-segmento') || '';
   const slogan = getVal('cfg-emp-slogan');
   const logo = getVal('cfg-emp-logo') || 'logo_moveis.jpg';
   const banner = getVal('cfg-emp-banner') || 'banner_moveis.jpg';
@@ -19386,7 +19386,7 @@ function imprimirPedidoCompleto() {
       '<div class="logo-badge"><img src="logo_moveis.jpg" onerror="this.style.display=\'none\'" alt="SD"></div>' +
       '<div>' +
         '<div class="empresa-title">' + esc(d.empresa.nome || 'SD MÓVEIS PROJETADOS') + '</div>' +
-        '<div class="empresa-sub">' + esc(d.empresa.segmento || 'Móveis Planejados & Marcenaria de Luxo') + '</div>' +
+        (d.empresa.segmento && !/m[oó]veis\s+planejados|marcenaria\s+de\s+luxo/i.test(d.empresa.segmento) ? '<div class="empresa-sub">' + esc(d.empresa.segmento) + '</div>' : '') +
         '<div class="empresa-meta">' + esc(d.empresa.cidade || 'Itaitinga - CE') + ' • CNPJ: ' + esc(d.empresa.cnpj || '85997602237') + '</div>' +
         '<div class="empresa-meta">WhatsApp: ' + esc(d.empresa.telefone || '85985749686') + ' | contato@sdmoveisprojetados.com.br</div>' +
       '</div>' +
@@ -21346,34 +21346,37 @@ async function gerarPdfOrcamentoDoc(dados) {
   page.drawText(nomeEmpresaUpper, { x: textX, y: headerY - 14, size: 16, font: fontBold, color: DARK });
 
   let sloganTxt = (lic.segmento || lic.slogan || '').trim();
-  if (ehMoveis) {
-    if (!sloganTxt || /vidra|vidro|esquadria/i.test(sloganTxt)) {
-      sloganTxt = "MÓVEIS PROJETADOS & AMBIENTES SOB MEDIDA";
-    }
-  } else if (!sloganTxt) {
-    sloganTxt = "SOLUÇÕES EM VIDROS TEMPERADOS E ESQUADRIAS DE ALUMÍNIO";
+  // Exclui 'Móveis Planejados & Marcenaria de Luxo' conforme solicitação do usuário
+  if (!sloganTxt || /m[oó]veis\s+planejados|marcenaria\s+de\s+luxo|vidra|vidro|esquadria/i.test(sloganTxt)) {
+    sloganTxt = "";
   }
-  const sloganEmpresa = sanitizePdf(sloganTxt.toUpperCase());
-  page.drawText(sloganEmpresa, { x: textX, y: headerY - 26, size: 7.2, font: fontBold, color: GOLD });
+
+  let yCursorEmpresa = headerY - 27;
+  if (sloganTxt) {
+    const sloganEmpresa = sanitizePdf(sloganTxt.toUpperCase());
+    page.drawText(sloganEmpresa, { x: textX, y: headerY - 26, size: 7.2, font: fontBold, color: GOLD });
+    yCursorEmpresa = headerY - 37;
+  }
 
   let endEmpresa = "";
   if (lic.id === "sdvidros") {
     endEmpresa = "Rua Jorge Figueiredo 740, Barrocão - Itaitinga-CE • CNPJ: 49.226.611/0001-33";
   } else {
-    const cid = lic.cidade || "Itaitinga-CE";
-    const cnp = lic.cnpj ? (" • CNPJ: " + lic.cnpj) : "";
+    const cid = lic.cidade || "Itaitinga - CE";
+    const cnp = lic.cnpj ? (" • CNPJ: " + lic.cnpj) : " • CNPJ: 85997602237";
     endEmpresa = cid + cnp;
   }
-  page.drawText(sanitizePdf(endEmpresa), { x: textX, y: headerY - 37, size: 7, font: fontRegular, color: GRAY });
+  page.drawText(sanitizePdf(endEmpresa), { x: textX, y: yCursorEmpresa, size: 7.2, font: fontRegular, color: GRAY });
+  yCursorEmpresa -= 11;
 
   let contatosEmpresa = "";
-  const zapEmpresa = lic.telefone || "(85) 99611-9824";
+  const zapEmpresa = lic.telefone || "85985749686";
   if (lic.id === "sdvidros") {
     contatosEmpresa = `WhatsApp: ${zapEmpresa} • 99760-2237 • 98574-9606 | sdvidros2025@gmail.com`;
   } else {
-    contatosEmpresa = `WhatsApp: ${zapEmpresa} | ${lic.email || "Atendimento & Projetos Sob Medida"}`;
+    contatosEmpresa = `WhatsApp: ${zapEmpresa} | ${lic.email || "contato@sdmoveisprojetados.com.br"}`;
   }
-  page.drawText(sanitizePdf(contatosEmpresa), { x: textX, y: headerY - 48, size: 7, font: fontRegular, color: GRAY });
+  page.drawText(sanitizePdf(contatosEmpresa), { x: textX, y: yCursorEmpresa, size: 7.2, font: fontRegular, color: GRAY });
 
   // Badge do Orçamento no canto direito superior
   const badgeW = 138;
@@ -22256,6 +22259,25 @@ window.addEventListener('DOMContentLoaded', function() {
     localStorage.removeItem('sdm_orc_pdfs');
     localStorage.removeItem('sdm_cam_capturas');
     if (typeof atualizarBadgeGaleriaOrcamento === 'function') atualizarBadgeGaleriaOrcamento();
+  } catch(_) {}
+
+  // 🛡️ Autocura: remove 'Móveis Planejados & Marcenaria de Luxo' do localStorage
+  try {
+    const lk = JSON.parse(localStorage.getItem('sdv_licencas') || '[]');
+    let mudouLk = false;
+    lk.forEach(l => {
+      if (l.segmento && /m[oó]veis\s+planejados|marcenaria\s+de\s+luxo/i.test(l.segmento)) {
+        l.segmento = '';
+        mudouLk = true;
+      }
+    });
+    if (mudouLk) localStorage.setItem('sdv_licencas', JSON.stringify(lk));
+
+    const cfgEmp = JSON.parse(localStorage.getItem('sdv_empresa_config') || '{}');
+    if (cfgEmp.segmento && /m[oó]veis\s+planejados|marcenaria\s+de\s+luxo/i.test(cfgEmp.segmento)) {
+      cfgEmp.segmento = '';
+      localStorage.setItem('sdv_empresa_config', JSON.stringify(cfgEmp));
+    }
   } catch(_) {}
 
   // 🛡️ Autocura definitiva: remove assinaturas falsas/retroativas (ex: assinatura de 30/09/2026 em ordem criada depois)
