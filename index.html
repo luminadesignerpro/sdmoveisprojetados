@@ -18,7 +18,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js?v=8.9.6').then(r => { r.update(); })
+        navigator.serviceWorker.register('/sw.js?v=8.9.7').then(r => { r.update(); })
           .then(function(reg){ console.log('SW registrado com sucesso:', reg.scope); })
           .catch(function(err){ console.warn('Erro ao registrar SW:', err); });
       });
@@ -3010,7 +3010,22 @@
   <!-- PANEL: PRODUTOS E SERVIÇOS (CATÁLOGO DA SEGUNDA IMAGEM) -->
   <!-- ══════════════════════════════════════════ -->
   <div id="panel-produtos" class="panel">
-    <!-- BANNER DINÂMICO DE SELEÇÃO DE PRODUTOS PARA O ORÇAMENTO -->
+    
+    <!-- BARRA SUPERIOR: SETINHA PARA VOLTAR AO ORÇAMENTO -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:8px;">
+      <button type="button" class="btn-voltar-orc-seta" onclick="goTab('orcamento')" title="Voltar ao Orçamento" style="width:36px;height:36px;border-radius:10px;background:#101018;border:1.5px solid #c9a84c;color:#fcd34d;font-size:20px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,0.5);transition:all 0.2s;" aria-label="Voltar ao Orçamento">
+        ←
+      </button>
+      <button type="button" onclick="goTab('orcamento')" class="btn btn-sm btn-gold" style="font-size:11.5px;padding:6px 12px;border-radius:8px;font-weight:800;display:inline-flex;align-items:center;gap:6px;">
+        <span>📋</span> Voltar ao Orçamento
+      </button>
+    </div>
+
+    <!-- BOTÃO FLUTUANTE PEQUENO: SETINHA PARA VOLTAR AO ORÇAMENTO AO ROLAR A LISTA -->
+    <button type="button" id="btn-flutuante-voltar-orc" onclick="goTab('orcamento')" title="Voltar ao Orçamento" style="position:fixed;bottom:24px;left:18px;width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#1f2230,#0d0e15);border:2px solid #c9a84c;color:#fcd34d;font-size:22px;font-weight:900;display:none;align-items:center;justify-content:center;cursor:pointer;z-index:999999;box-shadow:0 4px 18px rgba(0,0,0,0.9);line-height:1;transition:all 0.2s;" aria-label="Voltar ao Orçamento">
+      ←
+    </button>
+
     <div class="card">
       <div class="card-title">➕ Cadastrar / Editar Produto ou Serviço</div>
       <div class="field-row">
@@ -3029,7 +3044,12 @@
     </div>
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
-        <div class="card-title" style="margin-bottom:0;">📦 Produtos e Serviços Cadastrados <span class="num-badge" id="prod-count">0</span></div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button type="button" onclick="goTab('orcamento')" title="Voltar ao Orçamento" style="width:30px;height:30px;border-radius:8px;background:rgba(201,168,76,0.15);border:1.5px solid #c9a84c;color:#fcd34d;font-size:17px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;line-height:1;box-shadow:0 2px 6px rgba(0,0,0,0.4);" aria-label="Voltar ao Orçamento">
+            ←
+          </button>
+          <div class="card-title" style="margin-bottom:0;">📦 Produtos e Serviços Cadastrados <span class="num-badge" id="prod-count">0</span></div>
+        </div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
           <input id="busca-prod-filtro" placeholder="🔍 Filtrar produtos..." oninput="renderProdutos(this.value)" style="max-width:200px;padding:6px 12px;font-size:12px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:#08080f;color:var(--text);">
           <button type="button" class="btn btn-danger btn-sm" onclick="excluirTodosProdutos()" title="Excluir todos os produtos do catálogo" style="font-size:11px;padding:6px 10px;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;">🗑️ Excluir Todos</button>
@@ -8990,6 +9010,10 @@ function goTab(t, bypassAuth = false) {
     const tab = document.getElementById('tab-'+p);
     if (tab) tab.classList.toggle('active', p===t);
   });
+  const btnFlutuante = document.getElementById('btn-flutuante-voltar-orc');
+  if (btnFlutuante) {
+    btnFlutuante.style.display = (t === 'produtos') ? 'flex' : 'none';
+  }
   if (t==='orcamento')  {
     if (typeof atualizarBadgeGaleriaOrcamento === 'function') atualizarBadgeGaleriaOrcamento();
     if (typeof restaurarRascunhoOrcamento === 'function') restaurarRascunhoOrcamento();
