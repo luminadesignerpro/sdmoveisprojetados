@@ -2804,35 +2804,46 @@
     const endCliente = [d.end || d.e, d.num, d.apto, d.bairro || d.b].filter(Boolean).join(', ');
 
     let itensRaw = Array.isArray(d.itens) ? d.itens : (Array.isArray(d.i) ? d.i : []);
-    const itensStr = itensRaw.map((it, i) => {
+    let itensStr = '';
+    let ambAtualAssinar = '';
+    itensRaw.forEach((it, i) => {
+      let desc = '', qtd = 1, larg = '', alt = '', m2 = '', tot = '', cor = '', bizt = '', amb = '';
       if (Array.isArray(it)) {
-        // Formato compacto [desc, qtd, larg, alt, m2, v_unit, total, cor, bizt]
-        const desc = it[0] || '';
-        const qtd = it[1] || 1;
-        const larg = it[2] || '';
-        const alt = it[3] || '';
-        const m2 = it[4] || '';
-        const tot = it[6] || it[it.length - 1] || '';
-        let detalhe = '';
-        if (alt && larg) detalhe += ` [Dimensões: ${alt}m x ${larg}m${m2 ? ' = ' + m2 : ''}]`;
-        return `  ${i + 1}. ${desc}${detalhe} - Qtd: ${qtd} - Total: ${tot}`;
+        desc = it[0] || '';
+        qtd = it[1] || 1;
+        larg = it[2] || '';
+        alt = it[3] || '';
+        m2 = it[4] || '';
+        tot = it[6] || it[it.length - 1] || '';
+        cor = it[7] || '';
+        bizt = it[8] || '';
+        amb = it[9] || '';
       } else if (it && typeof it === 'object') {
-        const desc = it.d || it.desc || '';
-        const qtd = it.q || it.qtd || 1;
-        const larg = it.l || it.larg || '';
-        const alt = it.a || it.alt || '';
-        const m2 = it.m || it.m2 || '';
-        const tot = it.t || it.total || '';
-        const cor = it.c || it.cor || '';
-        const bizt = it.z || it.bizt || '';
-        let detalhe = '';
-        if (alt && larg) detalhe += ` [Dimensões: ${alt}m x ${larg}m${m2 ? ' = ' + m2 : ''}]`;
-        if (cor) detalhe += ` [Cor: ${cor}]`;
-        if (bizt) detalhe += ` [Lapidação/Bizotê: ${bizt}]`;
-        return `  ${i + 1}. ${desc}${detalhe} - Qtd: ${qtd} - Total: ${tot}`;
+        desc = it.d || it.desc || '';
+        qtd = it.q || it.qtd || 1;
+        larg = it.l || it.larg || '';
+        alt = it.a || it.alt || '';
+        m2 = it.m || it.m2 || '';
+        tot = it.t || it.total || '';
+        cor = it.c || it.cor || '';
+        bizt = it.z || it.bizt || '';
+        amb = it.ambiente || it.amb || '';
+      } else {
+        desc = String(it);
       }
-      return `  ${i + 1}. ${String(it)}`;
-    }).join('\n') || '  (itens conforme orçamento aprovado)';
+
+      if (amb && amb !== ambAtualAssinar) {
+        ambAtualAssinar = amb;
+        itensStr += `\n🛋️ AMBIENTE: ${amb.toUpperCase()}\n`;
+      }
+
+      let detalhe = '';
+      if (alt && larg) detalhe += ` [Dimensões: ${alt}m x ${larg}m${m2 ? ' = ' + m2 : ''}]`;
+      if (cor) detalhe += ` [Cor: ${cor}]`;
+      if (bizt) detalhe += ` [Lapidação/Bizotê: ${bizt}]`;
+      itensStr += `  • ${i + 1}. ${desc}${detalhe} - Qtd: ${qtd} - Total: ${tot}\n`;
+    });
+    if (!itensStr.trim()) itensStr = '  (itens conforme orçamento aprovado)';
 
     const licContrato = obterLicencaAtiva();
     const ehMoveisContrato = licContrato.tipoContrato === 'moveis' || (licContrato.nome && licContrato.nome.toLowerCase().includes('m'));
