@@ -2206,19 +2206,52 @@
             </div>
           </div>
 
-          <!-- 3b. Direcionamento Inline (Interno - Não vai pro PDF) -->
-          <div id="wrap-dir-inline-orc" style="margin:0;background:rgba(139,92,246,0.08);border:1.5px dashed rgba(139,92,246,0.5);border-radius:10px;padding:8px 10px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-              <label style="font-size:11px;font-weight:800;color:#c4b5fd;margin:0;display:flex;align-items:center;gap:4px;">
-                <span>🎯</span> <span id="label-dir-inline-nome">Direcionamento</span> de Custo
-              </label>
-              <span style="font-size:9px;color:#a78bfa;font-weight:800;background:rgba(139,92,246,0.15);padding:2px 6px;border-radius:4px;text-transform:uppercase;">Interno</span>
+          <!-- 3b. Rateio Proporcional de Custo / Direcionamento Inline (Interno - Não vai pro PDF) -->
+          <div id="wrap-dir-inline-orc" style="margin:0;background:linear-gradient(180deg,rgba(19,19,31,0.98),rgba(13,13,22,0.98));border:1.5px solid rgba(139,92,246,0.45);border-radius:12px;padding:12px;box-shadow:0 4px 16px rgba(0,0,0,0.45);">
+            
+            <!-- HEADER DO RATEIO -->
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span style="font-size:16px;">📊</span>
+                <span style="font-size:12px;font-weight:800;color:#c4b5fd;">Rateio Proporcional Visual</span>
+                <span style="font-size:9px;color:#a78bfa;font-weight:800;background:rgba(139,92,246,0.18);border:1px solid rgba(139,92,246,0.3);padding:1px 6px;border-radius:4px;text-transform:uppercase;">Interno</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span id="dir-inline-badge-soma" style="font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:6px;background:rgba(16,185,129,0.2);color:#34d399;">100% Total</span>
+                <button type="button" onclick="abrirModalDirecionamentoDoOrcamento()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);color:#cbd5e1;font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;" title="Abrir Modal Completo / Imprimir / Enviar">
+                  🔍 Modal
+                </button>
+              </div>
             </div>
-            <button type="button" onclick="abrirModalDirecionamentoDoOrcamento()" style="width:100%;background:linear-gradient(135deg,rgba(139,92,246,0.2),rgba(99,102,241,0.2));border:1.5px solid #8b5cf6;color:#c4b5fd;font-weight:800;border-radius:8px;padding:7px 12px;cursor:pointer;font-size:11.5px;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:all 0.2s;">
-              🎯 <span id="label-direcionamento-orc-linha">Direcionamento</span>
-            </button>
-            <div style="font-size:9px;color:var(--muted);margin-top:4px;line-height:1.2;">🚫 Oculto ao cliente no PDF</div>
+
+            <!-- BARRA PROGRESSO MULTICOLORIDA -->
+            <div id="dir-inline-progress-bar" style="height:12px;width:100%;background:rgba(255,255,255,0.06);border-radius:6px;display:flex;overflow:hidden;position:relative;margin-bottom:8px;box-shadow:inset 0 1px 3px rgba(0,0,0,0.5);">
+              <!-- Segmentos gerados via JS -->
+            </div>
+
+            <!-- LEGENDA RESUMIDA -->
+            <div id="dir-inline-progress-legenda" style="display:flex;flex-wrap:wrap;gap:6px 10px;margin-bottom:10px;font-size:10.5px;">
+              <!-- Legendas geradas via JS -->
+            </div>
+
+            <!-- LISTA INLINE DE CATEGORIAS (NOME, % E R$) -->
+            <div id="dir-inline-lista-categorias" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;">
+              <!-- Categorias renderizadas via JS -->
+            </div>
+
+            <!-- FOOTER COM BOTÃO ADICIONAR CATEGORIA E NOTA -->
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;padding-top:8px;border-top:1px dashed rgba(255,255,255,0.08);">
+              <button type="button" onclick="adicionarCategoriaDirecionamentoInline()" style="background:linear-gradient(135deg,rgba(16,185,129,0.2),rgba(5,150,105,0.2));border:1.5px solid #10b981;color:#34d399;font-weight:800;font-size:11px;padding:6px 12px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
+                ➕ Adicionar Categoria
+              </button>
+              <div style="font-size:9.5px;color:var(--muted);">
+                🚫 Oculto ao cliente no PDF
+              </div>
+            </div>
+
           </div>
+
+          
 
           <!-- 4. Frete -->
           <div class="field" style="margin:0;">
@@ -3914,6 +3947,21 @@
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;">
           <div style="font-size:11.5px;color:var(--muted);">Total em produtos</div>
           <div id="rel-qtd-produtos" style="font-size:11px;color:#a78bfa;font-weight:800;">0 O.S.</div>
+        </div>
+        
+        <!-- DESTAQUE EXCLUSIVO: PRODUTOS COMPRADOS (DO PEDIDO DE MATERIAL) -->
+        <div id="rel-box-produtos-comprados" style="margin-top:10px;margin-bottom:10px;padding:9px 12px;background:rgba(16,185,129,0.12);border:1.5px solid rgba(16,185,129,0.38);border-radius:10px;display:flex;justify-content:space-between;align-items:center;gap:6px;">
+          <div>
+            <div style="font-size:11px;font-weight:900;color:#34d399;display:flex;align-items:center;gap:4px;text-transform:uppercase;letter-spacing:0.04em;">
+              <span>✅ Comprados:</span>
+              <span id="rel-qtd-comprados-tag" style="background:rgba(16,185,129,0.25);color:#a7f3d0;padding:1px 6px;border-radius:6px;font-size:10px;font-weight:800;">0 itens</span>
+            </div>
+            <div style="font-size:9.5px;color:#94a3b8;margin-top:2px;">Itens adquiridos no pedido</div>
+          </div>
+          <div style="text-align:right;">
+            <div id="rel-val-comprados-tag" style="font-size:16px;font-weight:900;color:#34d399;line-height:1.1;">R$ 0,00</div>
+            <div id="rel-pct-comprados-tag" style="font-size:9.5px;color:#6ee7b7;font-weight:700;margin-top:1px;">0% do total</div>
+          </div>
         </div>
         <div style="height:3px;background:rgba(255,255,255,0.05);border-radius:99px;margin-top:10px;overflow:hidden;">
           <div id="rel-bar-produtos" style="height:100%;background:linear-gradient(90deg,#7c3aed,#c4b5fd);border-radius:99px;width:0%;transition:width .6s ease;"></div>
@@ -10069,6 +10117,9 @@ function recalcularTotaisGerais(campoOrigem = '') {
   const elTotal = document.getElementById('total');
   if (elTotal) {
     elTotal.textContent = 'R$ ' + formatarValorPtBr(totalFinal);
+  if (typeof atualizarRateioInlineOrcamento === 'function') {
+    atualizarRateioInlineOrcamento(totalFinal);
+  }
   }
   return totalFinal;
 }
@@ -13425,6 +13476,228 @@ let dirOsAtiva = null;
 let dirValorTotalNum = 0;
 let dirCategoriasEdicao = [];
 let dirOrcamentoTemp = null;
+
+// ════════════════════════════════════════════════════════════════
+//  RATEIO PROPORCIONAL VISUAL INLINE (COMPOSIÇÃO FINANCEIRA DO ORÇAMENTO)
+// ════════════════════════════════════════════════════════════════
+let _dirInlineCategorias = null;
+
+function obterCategoriasRateioInline() {
+  if (_dirInlineCategorias && _dirInlineCategorias.length) {
+    return _dirInlineCategorias;
+  }
+  if (dirOrcamentoTemp && Array.isArray(dirOrcamentoTemp.categorias) && dirOrcamentoTemp.categorias.length) {
+    _dirInlineCategorias = JSON.parse(JSON.stringify(dirOrcamentoTemp.categorias));
+    return _dirInlineCategorias;
+  }
+  // Categorias padrão conforme modelo solicitado pelo usuário
+  _dirInlineCategorias = [
+    { id: 'cat_mat', nome: 'Material', cor: '#3b82f6', porcentagem: 45, valor: 0 },
+    { id: 'cat_func', nome: 'Funcionário', cor: '#10b981', porcentagem: 15, valor: 0 },
+    { id: 'cat_esc', nome: 'Escritório', cor: '#8b5cf6', porcentagem: 3, valor: 0 },
+    { id: 'cat_alm', nome: 'Almoço', cor: '#f59e0b', porcentagem: 30, valor: 0 },
+    { id: 'cat_fre', nome: 'Frete', cor: '#06b6d4', porcentagem: 5, valor: 0 },
+    { id: 'cat_luc', nome: 'Lucro da empresa', cor: '#22c55e', porcentagem: 2, valor: 0 }
+  ];
+  return _dirInlineCategorias;
+}
+
+function salvarRateioInlineParaOrcamento() {
+  const cats = obterCategoriasRateioInline();
+  const elTotal = document.getElementById('total');
+  const totalNum = elTotal ? (typeof parseNum === 'function' ? parseNum(elTotal.textContent) : 0) : 0;
+  
+  if (!dirOrcamentoTemp) dirOrcamentoTemp = {};
+  dirOrcamentoTemp.categorias = JSON.parse(JSON.stringify(cats));
+  dirOrcamentoTemp.valorTotal = totalNum;
+  dirCategoriasEdicao = JSON.parse(JSON.stringify(cats));
+}
+
+function renderRateioInline() {
+  const containerList = document.getElementById('dir-inline-lista-categorias');
+  const progressBar = document.getElementById('dir-inline-progress-bar');
+  const badgeSoma = document.getElementById('dir-inline-badge-soma');
+  const legenda = document.getElementById('dir-inline-progress-legenda');
+  if (!containerList) return;
+
+  const cats = obterCategoriasRateioInline();
+  const elTotal = document.getElementById('total');
+  const totalNum = elTotal ? (typeof parseNum === 'function' ? parseNum(elTotal.textContent) : 0) : 0;
+
+  let somaPct = 0;
+  let somaVal = 0;
+
+  // Renderiza linhas de categorias com inputs de % e R$ e botão excluir
+  containerList.innerHTML = cats.map((c, idx) => {
+    const pct = Number(c.porcentagem) || 0;
+    const val = Number(c.valor) || 0;
+    somaPct += pct;
+    somaVal += val;
+
+    const valFmt = typeof formatarValorPtBr === 'function' ? formatarValorPtBr(val) : val.toFixed(2).replace('.', ',');
+
+    return `
+      <div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:6px 8px;transition:background 0.2s;">
+        <span style="width:10px;height:10px;border-radius:50%;background:${c.cor || '#8b5cf6'};flex-shrink:0;"></span>
+        
+        <input type="text" value="${c.nome || ''}" placeholder="Nome Categoria"
+          onchange="aoMudarNomeCategoriaInline(${idx}, this.value)"
+          style="flex:1;min-width:70px;background:transparent;border:none;color:#e2e8f0;font-size:11.5px;font-weight:700;outline:none;" />
+
+        <!-- Input Porcentagem -->
+        <div style="display:flex;align-items:center;background:#0d0d15;border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:2px 6px;width:66px;">
+          <input type="number" step="0.1" min="0" max="100" value="${pct.toFixed(1).replace('.0','')}"
+            oninput="aoMudarPctCategoriaInline(${idx}, this.value)"
+            style="width:100%;background:transparent;border:none;color:#fff;font-size:11px;font-weight:800;outline:none;text-align:right;" />
+          <span style="font-size:10px;color:#94a3b8;margin-left:2px;">%</span>
+        </div>
+
+        <!-- Input Valor R$ -->
+        <div style="display:flex;align-items:center;background:#0d0d15;border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:2px 6px;width:86px;">
+          <span style="font-size:9.5px;color:#94a3b8;margin-right:2px;">R$</span>
+          <input type="text" value="${valFmt}"
+            oninput="aoMudarValorCategoriaInline(${idx}, this.value)"
+            style="width:100%;background:transparent;border:none;color:#fff;font-size:11px;font-weight:800;outline:none;text-align:right;" />
+        </div>
+
+        <!-- Botão Excluir -->
+        <button type="button" onclick="removerCategoriaInline(${idx})" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:13px;padding:2px 4px;opacity:0.75;line-height:1;" title="Remover categoria" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.75'">✕</button>
+      </div>`;
+  }).join('');
+
+  // Atualiza Barra Progress
+  if (progressBar) {
+    const divisor = Math.max(100, somaPct);
+    let barHtml = '';
+    cats.forEach(c => {
+      const p = Number(c.porcentagem) || 0;
+      if (p > 0) {
+        const w = (p / divisor) * 100;
+        barHtml += `<div style="width:${w}%;background:${c.cor || '#8b5cf6'};height:100%;transition:width 0.3s;" title="${c.nome}: ${p.toFixed(1)}% (R$ ${(Number(c.valor)||0).toFixed(2)})"></div>`;
+      }
+    });
+    const sobraPct = Math.max(0, 100 - somaPct);
+    if (sobraPct > 0) {
+      const w = (sobraPct / divisor) * 100;
+      barHtml += `<div style="width:${w}%;background:rgba(16,185,129,0.22);height:100%;border-left:1px dashed #10b981;transition:width 0.3s;" title="Sobra: ${sobraPct.toFixed(1)}%"></div>`;
+    }
+    progressBar.innerHTML = barHtml;
+  }
+
+  // Atualiza Badge
+  if (badgeSoma) {
+    if (Math.abs(somaPct - 100) < 0.05) {
+      badgeSoma.textContent = '100% Total';
+      badgeSoma.style.background = 'rgba(16,185,129,0.2)';
+      badgeSoma.style.color = '#34d399';
+    } else if (somaPct > 100) {
+      badgeSoma.textContent = '⚠️ ' + somaPct.toFixed(1) + '% (Excedeu)';
+      badgeSoma.style.background = 'rgba(239,68,68,0.2)';
+      badgeSoma.style.color = '#f87171';
+    } else {
+      const rest = (100 - somaPct).toFixed(1);
+      badgeSoma.textContent = somaPct.toFixed(1) + '% (' + rest + '% Restante)';
+      badgeSoma.style.background = 'rgba(245,158,11,0.2)';
+      badgeSoma.style.color = '#fbbf24';
+    }
+  }
+
+  // Atualiza Legenda
+  if (legenda) {
+    legenda.innerHTML = cats.filter(c => (Number(c.porcentagem) > 0 || Number(c.valor) > 0)).map(c => {
+      const valFmt = typeof formatarValorPtBr === 'function' ? formatarValorPtBr(c.valor || 0) : (c.valor || 0).toFixed(2);
+      return `
+        <div style="display:inline-flex;align-items:center;gap:4px;color:#cbd5e1;">
+          <span style="width:8px;height:8px;border-radius:50%;background:${c.cor || '#8b5cf6'};"></span>
+          <span>${c.nome}:</span>
+          <strong style="color:#fff;">R$ ${valFmt}</strong>
+          <span style="color:#94a3b8;font-size:9.5px;">(${(Number(c.porcentagem)||0).toFixed(1)}%)</span>
+        </div>`;
+    }).join('');
+  }
+
+  salvarRateioInlineParaOrcamento();
+}
+
+function aoMudarPctCategoriaInline(idx, valStr) {
+  const cats = obterCategoriasRateioInline();
+  if (!cats[idx]) return;
+  const pct = parseFloat(String(valStr).replace(',', '.')) || 0;
+  cats[idx].porcentagem = pct;
+
+  const elTotal = document.getElementById('total');
+  const totalNum = elTotal ? (typeof parseNum === 'function' ? parseNum(elTotal.textContent) : 0) : 0;
+  cats[idx].valor = totalNum > 0 ? (totalNum * pct) / 100 : 0;
+
+  renderRateioInline();
+}
+
+function aoMudarValorCategoriaInline(idx, valStr) {
+  const cats = obterCategoriasRateioInline();
+  if (!cats[idx]) return;
+  const val = typeof parseNum === 'function' ? parseNum(valStr) : parseFloat(String(valStr).replace(/[^\d,\.]/g,'').replace(',','.')) || 0;
+  cats[idx].valor = val;
+
+  const elTotal = document.getElementById('total');
+  const totalNum = elTotal ? (typeof parseNum === 'function' ? parseNum(elTotal.textContent) : 0) : 0;
+  cats[idx].porcentagem = totalNum > 0 ? (val / totalNum) * 100 : 0;
+
+  renderRateioInline();
+}
+
+function aoMudarNomeCategoriaInline(idx, novoNome) {
+  const cats = obterCategoriasRateioInline();
+  if (!cats[idx]) return;
+  cats[idx].nome = (novoNome || '').trim() || 'Categoria';
+  renderRateioInline();
+}
+
+function adicionarCategoriaDirecionamentoInline() {
+  const cats = obterCategoriasRateioInline();
+  const paleta = (typeof CORES_PALETA_DIR !== 'undefined') ? CORES_PALETA_DIR : ['#3b82f6','#10b981','#8b5cf6','#f59e0b','#06b6d4','#ec4899','#f97316','#14b8a6'];
+  const cor = paleta[cats.length % paleta.length];
+  
+  cats.push({
+    id: 'cat_' + Date.now(),
+    nome: 'Nova Categoria',
+    cor: cor,
+    porcentagem: 0,
+    valor: 0
+  });
+
+  renderRateioInline();
+}
+
+function removerCategoriaInline(idx) {
+  const cats = obterCategoriasRateioInline();
+  if (cats.length <= 1) {
+    alert('Mantenha ao menos uma categoria no rateio.');
+    return;
+  }
+  cats.splice(idx, 1);
+  renderRateioInline();
+}
+
+function atualizarRateioInlineOrcamento(novoTotal) {
+  const cats = obterCategoriasRateioInline();
+  const totalNum = typeof novoTotal === 'number' ? novoTotal : (typeof parseNum === 'function' ? parseNum(novoTotal) : 0);
+  
+  cats.forEach(c => {
+    const pct = Number(c.porcentagem) || 0;
+    c.valor = totalNum > 0 ? (totalNum * pct) / 100 : 0;
+  });
+
+  renderRateioInline();
+}
+
+// Inicializa o rateio inline ao carregar a página
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(renderRateioInline, 600);
+  });
+} else {
+  setTimeout(renderRateioInline, 600);
+}
 
 // ════════════════════════════════════════════════════════════════
 //  Auto-popula categoria "Material" com os itens do orçamento
@@ -24939,7 +25212,25 @@ function renderRelatorio() {
   }
 
   setKPI('rel-val-servicos', 'rel-qtd-servicos', 'rel-bar-servicos', totalServicos, cntServicos, (totalServicos / maxVal) * 100);
-  setKPI('rel-val-produtos', 'rel-qtd-produtos', 'rel-bar-produtos', totalProdutos, labelQtdProdutos, (totalProdutos / maxVal) * 100);
+  // Card Produtos: Mostra o Total em Produtos do Relatório Geral SEM tirar nada, e destaca o valor dos Comprados!
+  var valExibirTotalProdutos = totalProdutosOS > 0 ? totalProdutosOS : totalMateriaisComprados;
+  var qtdExibirOS = cntProdutosOS + ' O.S.';
+  setKPI('rel-val-produtos', 'rel-qtd-produtos', 'rel-bar-produtos', valExibirTotalProdutos, qtdExibirOS, (valExibirTotalProdutos / maxVal) * 100);
+  
+  // Atualiza a linha destacada de Produtos Comprados
+  var elValComprados = document.getElementById('rel-val-comprados-tag');
+  var elQtdComprados = document.getElementById('rel-qtd-comprados-tag');
+  var elPctComprados = document.getElementById('rel-pct-comprados-tag');
+  if (elValComprados) {
+    elValComprados.textContent = 'R$ ' + totalMateriaisComprados.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  if (elQtdComprados) {
+    elQtdComprados.textContent = materiaisCompradosNoPeriodo.length + ' item(ns)';
+  }
+  if (elPctComprados) {
+    var pctComp = valExibirTotalProdutos > 0 ? Math.min(100, Math.round((totalMateriaisComprados / valExibirTotalProdutos) * 100)) : 0;
+    elPctComprados.textContent = pctComp + '% do total';
+  }
   setKPI('rel-val-fretes', 'rel-qtd-fretes', 'rel-bar-fretes', totalFretes, cntFretes, (totalFretes / maxVal) * 100);
   setKPI('rel-val-descontos', 'rel-qtd-descontos', 'rel-bar-descontos', totalDescontos, cntDescontos, (totalDescontos / maxVal) * 100);
 
