@@ -2099,6 +2099,14 @@
       <input type="file" id="orc-input-pdf" accept="application/pdf,.pdf" style="display:none;" multiple onchange="aoAnexarArquivoOrcamento(event,'pdf')">
 
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;">
+        <!-- BOTÃO AMBIENTES ACIMA DO + ADICIONAR LINHA -->
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px;margin-bottom:6px;">
+        <button type="button" class="btn btn-sm" id="btn-orc-ambientes" onclick="abrirModalAmbientesOrc()" style="background:linear-gradient(135deg, rgba(245,158,11,0.25), rgba(217,119,6,0.22));border:1.5px solid #f59e0b;color:#fbbf24;font-weight:800;border-radius:8px;padding:7px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;box-shadow:0 2px 8px rgba(245,158,11,0.2);font-size:12px;" title="Adicionar e Organizar Itens por Ambientes (Cozinha, Quarto, Closet, Banheiro, etc.)">
+          <span style="font-size:15px;">🛋️</span> <span id="label-orc-ambientes">Ambientes</span>
+        </button>
+      </div>
+
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:4px;">
         <button type="button" class="btn btn-sec btn-sm" onclick="addItem()">+ Adicionar linha</button>
 
         <!-- BOTÃO GALERIA com dropdown de 3 opções -->
@@ -2206,23 +2214,46 @@
             </div>
           </div>
 
-          <!-- 3b. Rateio Proporcional de Custo / Direcionamento Inline (Interno - Não vai pro PDF) -->
-          <div id="wrap-dir-inline-orc" style="margin:0;background:linear-gradient(180deg,rgba(19,19,31,0.98),rgba(13,13,22,0.98));border:1.5px solid rgba(139,92,246,0.45);border-radius:12px;padding:12px;box-shadow:0 4px 16px rgba(0,0,0,0.45);">
+          <!-- 3b. Rateio Proporcional de Custo / Direcionamento Inline (Interno - Idêntico à Primeira Imagem) -->
+          <div id="wrap-dir-inline-orc" style="margin:0;background:#11111a;border:1.5px solid rgba(139,92,246,0.45);border-radius:14px;padding:14px;box-shadow:0 4px 20px rgba(0,0,0,0.5);">
             
-            <!-- HEADER DO RATEIO -->
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
-              <div style="display:flex;align-items:center;gap:6px;">
-                <span style="font-size:16px;">📊</span>
-                <span style="font-size:12px;font-weight:800;color:#c4b5fd;">Rateio Proporcional Visual</span>
-                <span style="font-size:9px;color:#a78bfa;font-weight:800;background:rgba(139,92,246,0.18);border:1px solid rgba(139,92,246,0.3);padding:1px 6px;border-radius:4px;text-transform:uppercase;">Interno</span>
+            <!-- HEADER DO RATEIO (IDÊNTICO À PRIMEIRA IMAGEM) -->
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+              <div style="display:flex;align-items:center;gap:7px;">
+                <span style="font-size:18px;line-height:1;">📊</span>
+                <span style="font-size:13.5px;font-weight:800;color:#fff;">Rateio Proporcional Visual</span>
               </div>
               <div style="display:flex;align-items:center;gap:6px;">
-                <span id="dir-inline-badge-soma" style="font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:6px;background:rgba(16,185,129,0.2);color:#34d399;">100% Total</span>
-                <button type="button" onclick="abrirModalDirecionamentoDoOrcamento()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);color:#cbd5e1;font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;" title="Abrir Modal Completo / Imprimir / Enviar">
-                  🔍 Modal
-                </button>
+                <span id="dir-inline-badge-soma" style="font-size:11.5px;font-weight:800;padding:4px 10px;border-radius:8px;background:#471a24;color:#ff6b81;border:1px solid #7d2a38;letter-spacing:0.3px;">100% Total</span>
               </div>
             </div>
+
+            <!-- BARRA PROGRESSO MULTICOLORIDA COM CORES DA PRIMEIRA IMAGEM -->
+            <div id="dir-inline-progress-bar" style="height:14px;width:100%;background:rgba(255,255,255,0.06);border-radius:7px;display:flex;overflow:hidden;position:relative;margin-bottom:12px;box-shadow:inset 0 1px 3px rgba(0,0,0,0.5);">
+              <!-- Segmentos gerados via JS -->
+            </div>
+
+            <!-- LISTA INLINE DE CATEGORIAS (LINHA ÚNICA LIMPA SEM QUEBRAR O LAYOUT) -->
+            <div id="dir-inline-lista-categorias" style="display:flex;flex-direction:column;gap:7px;margin-bottom:12px;">
+              <!-- Categorias renderizadas via JS -->
+            </div>
+
+            <!-- FOOTER COM BOTÕES E AVISO INTERNO -->
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;padding-top:10px;border-top:1px dashed rgba(255,255,255,0.08);">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <button type="button" onclick="adicionarCategoriaDirecionamentoInline()" style="background:linear-gradient(135deg,rgba(16,185,129,0.22),rgba(5,150,105,0.22));border:1.5px solid #10b981;color:#34d399;font-weight:800;font-size:11px;padding:6px 12px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
+                  ➕ Adicionar Categoria
+                </button>
+                <button type="button" onclick="abrirModalDirecionamentoDoOrcamento()" style="background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.3);color:#c4b5fd;font-weight:700;font-size:11px;padding:6px 10px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;" title="Abrir Modal Completo / Imprimir / Enviar">
+                  🔍 Modal Completo
+                </button>
+              </div>
+              <div style="font-size:9.5px;color:var(--muted);">
+                🚫 Oculto ao cliente no PDF
+              </div>
+            </div>
+
+          </div>
 
             <!-- BARRA PROGRESSO MULTICOLORIDA -->
             <div id="dir-inline-progress-bar" style="height:12px;width:100%;background:rgba(255,255,255,0.06);border-radius:6px;display:flex;overflow:hidden;position:relative;margin-bottom:8px;box-shadow:inset 0 1px 3px rgba(0,0,0,0.5);">
@@ -5724,6 +5755,74 @@
     <!-- FOOTER -->
     <div style="padding:14px 20px;border-top:1px solid rgba(255,255,255,0.08);background:rgba(10,10,16,0.95);display:flex;justify-content:flex-end;">
       <button type="button" class="btn btn-sec btn-sm" onclick="fecharModalHistoricoDirecionamento()" style="padding:8px 18px;font-size:12.5px;">Fechar</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!--  MODAL: SELECIONAR E GERENCIAR AMBIENTES NO ORÇAMENTO              -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<div id="modal-orc-ambientes" class="modal-overlay" style="display:none;z-index:999999;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);" onclick="if(event.target===this)fecharModalAmbientesOrc()">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:480px;padding:22px 20px;border:1.5px solid rgba(245,158,11,0.4);border-radius:16px;background:#0d0e17;box-shadow:0 12px 40px rgba(0,0,0,0.8);">
+    
+    <!-- HEADER -->
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:28px;">🛋️</span>
+        <div>
+          <h3 style="font-size:18px;font-weight:900;color:#fff;margin:0;">Ambientes do Projeto</h3>
+          <div style="font-size:12px;color:#94a3b8;font-weight:600;">Selecione ou crie um ambiente para o orçamento</div>
+        </div>
+      </div>
+      <button class="modal-close" onclick="fecharModalAmbientesOrc()" style="background:rgba(255,255,255,0.08);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">✕</button>
+    </div>
+
+    <!-- PRESETS GRID -->
+    <div style="font-size:12px;font-weight:700;color:#cbd5e1;margin-bottom:8px;">Ambientes Rápidos:</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(130px, 1fr));gap:8px;margin-bottom:14px;">
+      <button type="button" onclick="inserirAmbienteNoOrcamento('Cozinha Planejada')" style="background:rgba(255,255,255,0.04);border:1px solid rgba(245,158,11,0.25);border-radius:8px;padding:8px 10px;color:#fcd34d;font-size:12px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:6px;transition:all 0.15s;">
+        <span>🍳</span> <span>Cozinha</span>
+      </button>
+      <button type="button" onclick="inserirAmbienteNoOrcamento('Quarto Casal / Suíte')" style="background:rgba(255,255,255,0.04);border:1px solid rgba(245,158,11,0.25);border-radius:8px;padding:8px 10px;color:#fcd34d;font-size:12px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:6px;transition:all 0.15s;">
+        <span>🛏️</span> <span>Quarto Casal</span>
+      </button>
+      <button type="button" onclick="inserirAmbienteNoOrcamento('Closet')" style="background:rgba(255,255,255,0.04);border:1px solid rgba(245,158,11,0.25);border-radius:8px;padding:8px 10px;color:#fcd34d;font-size:12px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:6px;transition:all 0.15s;">
+        <span>🚪</span> <span>Closet</span>
+      </button>
+      <button type="button" onclick="inserirAmbienteNoOrcamento('Banheiro / Lavabo')" style="background:rgba(255,255,255,0.04);border:1px solid rgba(245,158,11,0.25);border-radius:8px;padding:8px 10px;color:#fcd34d;font-size:12px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:6px;transition:all 0.15s;">
+        <span>🚿</span> <span>Banheiro</span>
+      </button>
+      <button type="button" onclick="inserirAmbienteNoOrcamento('Sala de Estar / Jantar')" style="background:rgba(255,255,255,0.04);border:1px solid rgba(245,158,11,0.25);border-radius:8px;padding:8px 10px;color:#fcd34d;font-size:12px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:6px;transition:all 0.15s;">
+        <span>🛋️</span> <span>Sala de Estar</span>
+      </button>
+      <button type="button" onclick="inserirAmbienteNoOrcamento('Área Gourmet / Varanda')" style="background:rgba(255,255,255,0.04);border:1px solid rgba(245,158,11,0.25);border-radius:8px;padding:8px 10px;color:#fcd34d;font-size:12px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:6px;transition:all 0.15s;">
+        <span>🍖</span> <span>Área Gourmet</span>
+      </button>
+      <button type="button" onclick="inserirAmbienteNoOrcamento('Lavanderia / Serviço')" style="background:rgba(255,255,255,0.04);border:1px solid rgba(245,158,11,0.25);border-radius:8px;padding:8px 10px;color:#fcd34d;font-size:12px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:6px;transition:all 0.15s;">
+        <span>🧺</span> <span>Lavanderia</span>
+      </button>
+      <button type="button" onclick="inserirAmbienteNoOrcamento('Home Office / Escritório')" style="background:rgba(255,255,255,0.04);border:1px solid rgba(245,158,11,0.25);border-radius:8px;padding:8px 10px;color:#fcd34d;font-size:12px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:6px;transition:all 0.15s;">
+        <span>💼</span> <span>Home Office</span>
+      </button>
+    </div>
+
+    <!-- CUSTOM INPUT -->
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px;margin-bottom:14px;">
+      <label style="font-size:11.5px;font-weight:700;color:#94a3b8;display:block;margin-bottom:6px;">Ou digite outro ambiente personalizado:</label>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="inp-custom-ambiente-orc" placeholder="Ex: Quarto de Hóspedes, Adega..." style="flex:1;background:#08090f;border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:8px 10px;color:#fff;font-size:13px;outline:none;" onkeydown="if(event.key==='Enter')inserirAmbienteCustomizadoNoOrcamento()" />
+        <button type="button" onclick="inserirAmbienteCustomizadoNoOrcamento()" style="background:linear-gradient(135deg,rgba(245,158,11,0.3),rgba(217,119,6,0.3));border:1.5px solid #f59e0b;color:#fbbf24;font-weight:800;font-size:12px;padding:8px 14px;border-radius:8px;cursor:pointer;white-space:nowrap;">
+          ➕ Adicionar
+        </button>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div style="display:flex;justify-content:flex-end;">
+      <button type="button" onclick="fecharModalAmbientesOrc()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);color:#cbd5e1;font-size:12px;padding:7px 16px;border-radius:8px;cursor:pointer;">
+        Fechar
+      </button>
     </div>
 
   </div>
@@ -13478,7 +13577,60 @@ let dirCategoriasEdicao = [];
 let dirOrcamentoTemp = null;
 
 // ════════════════════════════════════════════════════════════════
+//  MODAL & GERENCIAMENTO DE AMBIENTES NO ORÇAMENTO
+// ════════════════════════════════════════════════════════════════
+function abrirModalAmbientesOrc() {
+  const m = document.getElementById('modal-orc-ambientes');
+  if (m) {
+    m.style.display = 'flex';
+    const inp = document.getElementById('inp-custom-ambiente-orc');
+    if (inp) {
+      inp.value = '';
+      setTimeout(() => inp.focus(), 150);
+    }
+  }
+}
+
+function fecharModalAmbientesOrc(e) {
+  if (!e || e.target === document.getElementById('modal-orc-ambientes')) {
+    const m = document.getElementById('modal-orc-ambientes');
+    if (m) m.style.display = 'none';
+  }
+}
+
+function inserirAmbienteNoOrcamento(nomeAmbiente) {
+  if (!nomeAmbiente || !nomeAmbiente.trim()) return;
+  const nomeLimpo = nomeAmbiente.trim();
+
+  // Insere uma linha no orçamento como cabeçalho do ambiente
+  addItem('🛋️ AMBIENTE: ' + nomeLimpo.toUpperCase(), '1', '', '', '', '', '0,00', '', '');
+
+  // Atualiza label do botão
+  const lbl = document.getElementById('label-orc-ambientes');
+  if (lbl) {
+    lbl.textContent = 'Ambientes (' + nomeLimpo + ')';
+  }
+
+  fecharModalAmbientesOrc();
+  if (typeof salvarOrcamentoLocal === 'function') salvarOrcamentoLocal();
+  if (typeof showToast === 'function') {
+    showToast('Ambiente "' + nomeLimpo + '" adicionado ao orçamento! 🛋️');
+  }
+}
+
+function inserirAmbienteCustomizadoNoOrcamento() {
+  const inp = document.getElementById('inp-custom-ambiente-orc');
+  const val = inp ? inp.value.trim() : '';
+  if (!val) {
+    alert('Digite o nome do ambiente.');
+    return;
+  }
+  inserirAmbienteNoOrcamento(val);
+}
+
+// ════════════════════════════════════════════════════════════════
 //  RATEIO PROPORCIONAL VISUAL INLINE (COMPOSIÇÃO FINANCEIRA DO ORÇAMENTO)
+//  Comportamento idêntico à Primeira Imagem com edição inline de % ou R$
 // ════════════════════════════════════════════════════════════════
 let _dirInlineCategorias = null;
 
@@ -13490,14 +13642,14 @@ function obterCategoriasRateioInline() {
     _dirInlineCategorias = JSON.parse(JSON.stringify(dirOrcamentoTemp.categorias));
     return _dirInlineCategorias;
   }
-  // Categorias padrão conforme modelo solicitado pelo usuário
+  // Categorias padrão exatamente conforme a Primeira Imagem fornecida pelo usuário
   _dirInlineCategorias = [
     { id: 'cat_mat', nome: 'Material', cor: '#3b82f6', porcentagem: 45, valor: 0 },
     { id: 'cat_func', nome: 'Funcionário', cor: '#10b981', porcentagem: 15, valor: 0 },
     { id: 'cat_esc', nome: 'Escritório', cor: '#8b5cf6', porcentagem: 3, valor: 0 },
     { id: 'cat_alm', nome: 'Almoço', cor: '#f59e0b', porcentagem: 30, valor: 0 },
     { id: 'cat_fre', nome: 'Frete', cor: '#06b6d4', porcentagem: 5, valor: 0 },
-    { id: 'cat_luc', nome: 'Lucro da empresa', cor: '#22c55e', porcentagem: 2, valor: 0 }
+    { id: 'cat_luc', nome: 'Lucro da empresa', cor: '#22c55e', porcentagem: 3, valor: 0 }
   ];
   return _dirInlineCategorias;
 }
@@ -13515,57 +13667,71 @@ function salvarRateioInlineParaOrcamento() {
 
 function renderRateioInline() {
   const containerList = document.getElementById('dir-inline-lista-categorias');
-  const progressBar = document.getElementById('dir-inline-progress-bar');
-  const badgeSoma = document.getElementById('dir-inline-badge-soma');
-  const legenda = document.getElementById('dir-inline-progress-legenda');
   if (!containerList) return;
 
   const cats = obterCategoriasRateioInline();
   const elTotal = document.getElementById('total');
   const totalNum = elTotal ? (typeof parseNum === 'function' ? parseNum(elTotal.textContent) : 0) : 0;
 
-  let somaPct = 0;
-  let somaVal = 0;
+  // Atualiza valores R$ com base nas porcentagens e total
+  cats.forEach(c => {
+    const pct = Number(c.porcentagem) || 0;
+    if (totalNum > 0) {
+      c.valor = (totalNum * pct) / 100;
+    }
+  });
 
-  // Renderiza linhas de categorias com inputs de % e R$ e botão excluir
+  // Renderiza linhas de categorias elegantes e compactas (Idênticas à Primeira Imagem)
   containerList.innerHTML = cats.map((c, idx) => {
     const pct = Number(c.porcentagem) || 0;
     const val = Number(c.valor) || 0;
-    somaPct += pct;
-    somaVal += val;
-
     const valFmt = typeof formatarValorPtBr === 'function' ? formatarValorPtBr(val) : val.toFixed(2).replace('.', ',');
 
     return `
-      <div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:6px 8px;transition:background 0.2s;">
-        <span style="width:10px;height:10px;border-radius:50%;background:${c.cor || '#8b5cf6'};flex-shrink:0;"></span>
-        
-        <input type="text" value="${c.nome || ''}" placeholder="Nome Categoria"
-          onchange="aoMudarNomeCategoriaInline(${idx}, this.value)"
-          style="flex:1;min-width:70px;background:transparent;border:none;color:#e2e8f0;font-size:11.5px;font-weight:700;outline:none;" />
-
-        <!-- Input Porcentagem -->
-        <div style="display:flex;align-items:center;background:#0d0d15;border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:2px 6px;width:66px;">
-          <input type="number" step="0.1" min="0" max="100" value="${pct.toFixed(1).replace('.0','')}"
-            oninput="aoMudarPctCategoriaInline(${idx}, this.value)"
-            style="width:100%;background:transparent;border:none;color:#fff;font-size:11px;font-weight:800;outline:none;text-align:right;" />
-          <span style="font-size:10px;color:#94a3b8;margin-left:2px;">%</span>
+      <div class="dir-inline-cat-row" data-idx="${idx}" style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:12.5px;gap:6px;">
+        <!-- Lado esquerdo: Bolinha colorida + Nome da Categoria -->
+        <div style="display:flex;align-items:center;gap:7px;min-width:0;flex:1;">
+          <span style="width:10px;height:10px;border-radius:50%;background:${c.cor || '#8b5cf6'};flex-shrink:0;"></span>
+          <span style="color:#e2e8f0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${esc(c.nome)}">${esc(c.nome)}:</span>
         </div>
 
-        <!-- Input Valor R$ -->
-        <div style="display:flex;align-items:center;background:#0d0d15;border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:2px 6px;width:86px;">
-          <span style="font-size:9.5px;color:#94a3b8;margin-right:2px;">R$</span>
-          <input type="text" value="${valFmt}"
-            oninput="aoMudarValorCategoriaInline(${idx}, this.value)"
-            style="width:100%;background:transparent;border:none;color:#fff;font-size:11px;font-weight:800;outline:none;text-align:right;" />
-        </div>
+        <!-- Lado direito: R$ [valor] ( [%] % ) + Botão Excluir -->
+        <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
+          <span style="color:#cbd5e1;font-weight:700;font-size:11px;">R$</span>
+          <input type="text" class="inp-dir-cat-val" data-idx="${idx}" value="${valFmt}" inputmode="decimal"
+            onfocus="this.select()"
+            oninput="aoDigitarValorCategoriaInline(${idx}, this.value)"
+            style="width:70px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);border-radius:6px;color:#fff;font-size:12px;font-weight:800;text-align:right;padding:2px 5px;outline:none;" />
 
-        <!-- Botão Excluir -->
-        <button type="button" onclick="removerCategoriaInline(${idx})" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:13px;padding:2px 4px;opacity:0.75;line-height:1;" title="Remover categoria" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.75'">✕</button>
+          <span style="color:#94a3b8;font-weight:600;font-size:11px;margin-left:2px;">(</span>
+          <input type="number" step="0.1" min="0" max="100" class="inp-dir-cat-pct" data-idx="${idx}" value="${pct.toFixed(1).replace('.0','')}"
+            onfocus="this.select()"
+            oninput="aoDigitarPctCategoriaInline(${idx}, this.value)"
+            style="width:44px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);border-radius:6px;color:#c4b5fd;font-size:12px;font-weight:800;text-align:right;padding:2px 4px;outline:none;" />
+          <span style="color:#94a3b8;font-weight:600;font-size:11px;">%)</span>
+
+          <button type="button" onclick="removerCategoriaInline(${idx})"
+            style="background:none;border:none;color:#ef4444;font-size:11px;cursor:pointer;padding:2px 3px;opacity:0.6;line-height:1;"
+            title="Remover Categoria" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">✕</button>
+        </div>
       </div>`;
   }).join('');
 
-  // Atualiza Barra Progress
+  atualizarBarraEBadgeRateioInline();
+  salvarRateioInlineParaOrcamento();
+}
+
+function atualizarBarraEBadgeRateioInline() {
+  const progressBar = document.getElementById('dir-inline-progress-bar');
+  const badgeSoma = document.getElementById('dir-inline-badge-soma');
+  const cats = obterCategoriasRateioInline();
+
+  let somaPct = 0;
+  cats.forEach(c => {
+    somaPct += Number(c.porcentagem) || 0;
+  });
+
+  // Atualiza Barra Progress Multicolorida
   if (progressBar) {
     const divisor = Math.max(100, somaPct);
     let barHtml = '';
@@ -13573,7 +13739,7 @@ function renderRateioInline() {
       const p = Number(c.porcentagem) || 0;
       if (p > 0) {
         const w = (p / divisor) * 100;
-        barHtml += `<div style="width:${w}%;background:${c.cor || '#8b5cf6'};height:100%;transition:width 0.3s;" title="${c.nome}: ${p.toFixed(1)}% (R$ ${(Number(c.valor)||0).toFixed(2)})"></div>`;
+        barHtml += `<div style="width:${w}%;background:${c.cor || '#8b5cf6'};height:100%;transition:width 0.3s;" title="${c.nome}: ${p.toFixed(1)}%"></div>`;
       }
     });
     const sobraPct = Math.max(0, 100 - somaPct);
@@ -13584,42 +13750,29 @@ function renderRateioInline() {
     progressBar.innerHTML = barHtml;
   }
 
-  // Atualiza Badge
+  // Atualiza Badge (Idêntico à Primeira Imagem)
   if (badgeSoma) {
-    if (Math.abs(somaPct - 100) < 0.05) {
-      badgeSoma.textContent = '100% Total';
-      badgeSoma.style.background = 'rgba(16,185,129,0.2)';
-      badgeSoma.style.color = '#34d399';
-    } else if (somaPct > 100) {
+    if (somaPct > 100.05) {
       badgeSoma.textContent = '⚠️ ' + somaPct.toFixed(1) + '% (Excedeu)';
-      badgeSoma.style.background = 'rgba(239,68,68,0.2)';
-      badgeSoma.style.color = '#f87171';
+      badgeSoma.style.background = '#471a24';
+      badgeSoma.style.color = '#ff6b81';
+      badgeSoma.style.border = '1px solid #7d2a38';
+    } else if (Math.abs(somaPct - 100) <= 0.05) {
+      badgeSoma.textContent = '✅ 100.0% (Equilibrado)';
+      badgeSoma.style.background = '#113624';
+      badgeSoma.style.color = '#34d399';
+      badgeSoma.style.border = '1px solid #10b981';
     } else {
-      const rest = (100 - somaPct).toFixed(1);
-      badgeSoma.textContent = somaPct.toFixed(1) + '% (' + rest + '% Restante)';
-      badgeSoma.style.background = 'rgba(245,158,11,0.2)';
+      const livre = (100 - somaPct).toFixed(1);
+      badgeSoma.textContent = somaPct.toFixed(1) + '% Alocado (' + livre + '% livre)';
+      badgeSoma.style.background = '#3d2c13';
       badgeSoma.style.color = '#fbbf24';
+      badgeSoma.style.border = '1px solid #d97706';
     }
   }
-
-  // Atualiza Legenda
-  if (legenda) {
-    legenda.innerHTML = cats.filter(c => (Number(c.porcentagem) > 0 || Number(c.valor) > 0)).map(c => {
-      const valFmt = typeof formatarValorPtBr === 'function' ? formatarValorPtBr(c.valor || 0) : (c.valor || 0).toFixed(2);
-      return `
-        <div style="display:inline-flex;align-items:center;gap:4px;color:#cbd5e1;">
-          <span style="width:8px;height:8px;border-radius:50%;background:${c.cor || '#8b5cf6'};"></span>
-          <span>${c.nome}:</span>
-          <strong style="color:#fff;">R$ ${valFmt}</strong>
-          <span style="color:#94a3b8;font-size:9.5px;">(${(Number(c.porcentagem)||0).toFixed(1)}%)</span>
-        </div>`;
-    }).join('');
-  }
-
-  salvarRateioInlineParaOrcamento();
 }
 
-function aoMudarPctCategoriaInline(idx, valStr) {
+function aoDigitarPctCategoriaInline(idx, valStr) {
   const cats = obterCategoriasRateioInline();
   if (!cats[idx]) return;
   const pct = parseFloat(String(valStr).replace(',', '.')) || 0;
@@ -13627,12 +13780,20 @@ function aoMudarPctCategoriaInline(idx, valStr) {
 
   const elTotal = document.getElementById('total');
   const totalNum = elTotal ? (typeof parseNum === 'function' ? parseNum(elTotal.textContent) : 0) : 0;
-  cats[idx].valor = totalNum > 0 ? (totalNum * pct) / 100 : 0;
+  const val = totalNum > 0 ? (totalNum * pct) / 100 : 0;
+  cats[idx].valor = val;
 
-  renderRateioInline();
+  // Atualiza input de valor correspondente no DOM sem recriar elementos (mantém foco e digitação fluida)
+  const valInp = document.querySelector(`.inp-dir-cat-val[data-idx="${idx}"]`);
+  if (valInp) {
+    valInp.value = typeof formatarValorPtBr === 'function' ? formatarValorPtBr(val) : val.toFixed(2).replace('.', ',');
+  }
+
+  atualizarBarraEBadgeRateioInline();
+  salvarRateioInlineParaOrcamento();
 }
 
-function aoMudarValorCategoriaInline(idx, valStr) {
+function aoDigitarValorCategoriaInline(idx, valStr) {
   const cats = obterCategoriasRateioInline();
   if (!cats[idx]) return;
   const val = typeof parseNum === 'function' ? parseNum(valStr) : parseFloat(String(valStr).replace(/[^\d,\.]/g,'').replace(',','.')) || 0;
@@ -13640,32 +13801,39 @@ function aoMudarValorCategoriaInline(idx, valStr) {
 
   const elTotal = document.getElementById('total');
   const totalNum = elTotal ? (typeof parseNum === 'function' ? parseNum(elTotal.textContent) : 0) : 0;
-  cats[idx].porcentagem = totalNum > 0 ? (val / totalNum) * 100 : 0;
+  const pct = totalNum > 0 ? (val / totalNum) * 100 : 0;
+  cats[idx].porcentagem = Math.round(pct * 10) / 10;
 
-  renderRateioInline();
-}
+  // Atualiza input de % correspondente no DOM sem recriar elementos
+  const pctInp = document.querySelector(`.inp-dir-cat-pct[data-idx="${idx}"]`);
+  if (pctInp) {
+    pctInp.value = cats[idx].porcentagem.toFixed(1).replace('.0', '');
+  }
 
-function aoMudarNomeCategoriaInline(idx, novoNome) {
-  const cats = obterCategoriasRateioInline();
-  if (!cats[idx]) return;
-  cats[idx].nome = (novoNome || '').trim() || 'Categoria';
-  renderRateioInline();
+  atualizarBarraEBadgeRateioInline();
+  salvarRateioInlineParaOrcamento();
 }
 
 function adicionarCategoriaDirecionamentoInline() {
+  const nome = prompt('Nome da nova categoria:', '');
+  if (!nome || !nome.trim()) return;
+  const nomeLimpo = nome.trim();
+  const paletaCores = ['#ec4899', '#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#06b6d4', '#a855f7', '#14b8a6', '#f43f5e', '#6366f1'];
   const cats = obterCategoriasRateioInline();
-  const paleta = (typeof CORES_PALETA_DIR !== 'undefined') ? CORES_PALETA_DIR : ['#3b82f6','#10b981','#8b5cf6','#f59e0b','#06b6d4','#ec4899','#f97316','#14b8a6'];
-  const cor = paleta[cats.length % paleta.length];
-  
+  const corUsada = paletaCores[cats.length % paletaCores.length];
+
   cats.push({
     id: 'cat_' + Date.now(),
-    nome: 'Nova Categoria',
-    cor: cor,
+    nome: nomeLimpo,
+    cor: corUsada,
     porcentagem: 0,
     valor: 0
   });
 
   renderRateioInline();
+  if (typeof showToast === 'function') {
+    showToast('Categoria "' + nomeLimpo + '" adicionada ao rateio! ✅');
+  }
 }
 
 function removerCategoriaInline(idx) {
@@ -13674,6 +13842,8 @@ function removerCategoriaInline(idx) {
     alert('Mantenha ao menos uma categoria no rateio.');
     return;
   }
+  const nomeRemovido = cats[idx].nome;
+  if (!confirm(`Deseja remover a categoria "${nomeRemovido}" do rateio?`)) return;
   cats.splice(idx, 1);
   renderRateioInline();
 }
