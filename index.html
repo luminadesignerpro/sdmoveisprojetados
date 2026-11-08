@@ -2118,6 +2118,14 @@
                     </span>
                   </div>
                 </div>
+
+                <!-- OPÇÃO OBSERVAÇÕES ABAIXO DO AMBIENTE (SALA) -->
+                <div class="wrap-ambiente-obs-box" style="margin-top:7px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                  <label for="inp-orc-ambiente-top-obs" style="font-size:11px;font-weight:800;color:#fcd34d;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;margin:0;cursor:pointer;">
+                    <span>📝</span> Observações:
+                  </label>
+                  <input type="text" id="inp-orc-ambiente-top-obs" class="inp-ambiente-obs inp-ambiente-top-obs" placeholder="Observações deste ambiente (ex: Acabamento, puxadores, ferragens, medidas especiais...)" oninput="aoMudarObsAmbiente(this)" style="flex:1;min-width:200px;background:rgba(0,0,0,0.35);border:1px solid rgba(245,158,11,0.3);border-radius:6px;padding:4px 10px;color:#fff;font-size:11.5px;outline:none;box-sizing:border-box;" title="Digite observações deste ambiente" />
+                </div>
               </th>
             </tr>
           </thead>
@@ -8057,7 +8065,7 @@ const LICENCAS_PADRAO = [
     id: 'sdmoveis',
     nome: 'SD Móveis Projetados',
     segmento: '',
-    slogan: 'Cozinhas Planejadas, Closets & Ambientes Sob Medida',
+    slogan: '',
     telefone: '(85) 99611-9824',
     cidade: 'Itaitinga - CE',
     cnpj: '',
@@ -8198,7 +8206,7 @@ function carregarDadosConfiguracaoEmpresa() {
     id: 'sdmoveis',
     nome: 'SD Móveis Projetados',
     segmento: 'Móveis Planejados & Marcenaria de Luxo',
-    slogan: 'Cozinhas Planejadas, Closets & Ambientes Sob Medida',
+    slogan: '',
     telefone: '(85) 99611-9824',
     whatsapp: '(85) 99611-9824',
     cidade: 'Itaitinga',
@@ -8217,7 +8225,7 @@ function carregarDadosConfiguracaoEmpresa() {
   setVal('cfg-emp-nome', lic.nome || 'SD Móveis Projetados');
   setVal('cfg-emp-razao', lic.razaoSocial || lic.nome || 'SD Móveis Projetados LTDA');
   setVal('cfg-emp-segmento', (lic.segmento && !/m[oó]veis\s+planejados|marcenaria\s+de\s+luxo/i.test(lic.segmento)) ? lic.segmento : '');
-  setVal('cfg-emp-slogan', lic.slogan || 'Cozinhas Planejadas, Closets & Ambientes Sob Medida');
+  setVal('cfg-emp-slogan', (lic.slogan && !/cozinha|closet|sob\s*medida/i.test(lic.slogan)) ? lic.slogan : '');
   setVal('cfg-emp-logo', lic.logo || 'logo_moveis.jpg');
   setVal('cfg-emp-banner', lic.banner || 'banner_moveis.jpg');
   
@@ -8349,7 +8357,7 @@ function restaurarPadraoSDMoveisConfig() {
     nome: 'SD Móveis Projetados',
     razaoSocial: 'SD Móveis Projetados LTDA',
     segmento: 'Móveis Planejados & Marcenaria de Luxo',
-    slogan: 'Cozinhas Planejadas, Closets & Ambientes Sob Medida',
+    slogan: '',
     telefone: '(85) 99611-9824',
     whatsapp: '(85) 99611-9824',
     whatsapp_agenda: '(85) 99611-9824',
@@ -10871,6 +10879,8 @@ function getOrc() {
     taxaDesconto: taxaDesconto,
     tipoDesconto: tipoDesconto,
     itens:  getItens(),
+    ambientes: (typeof obterResumoAmbientesParaPdf === 'function' ? obterResumoAmbientesParaPdf() : []),
+    formatoPdf: (typeof _modoPdfOrcamentoSelecionado !== 'undefined' ? _modoPdfOrcamentoSelecionado : 'detalhado'),
     fotos:  (typeof obterFotosOrcamentoParaPdf === 'function' ? obterFotosOrcamentoParaPdf(document.getElementById('orc-numero-display') ? document.getElementById('orc-numero-display').textContent : '') : []),
     data:   new Date().toLocaleDateString('pt-BR')
   };
@@ -11289,7 +11299,7 @@ function cancelarEdicaoOs() {
   const btnAssinaturaTxt = document.getElementById('orc-assinatura-btn-text');
   if (btnAssinaturaTxt) btnAssinaturaTxt.textContent = '✍️ Enviar para Assinatura Digital';
 
-  ['o-nome','o-cnpj','o-tel','o-bairro','o-end','o-num','o-apto','o-resp','o-prazo','o-garantia','o-obs','forma-outro']
+  ['o-nome','o-cnpj','o-tel','o-bairro','o-end','o-num','o-apto','o-resp','o-prazo','o-garantia','o-obs','forma-outro','inp-orc-ambiente-top-obs']
     .forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   ['o-val-produtos','o-val-servico','o-taxa-acrescimo','o-val-frete','o-val-desconto','o-taxa-desconto']
     .forEach(id => { const el=document.getElementById(id); if(el) el.value='0,00'; });
@@ -12469,11 +12479,19 @@ function editarOs(id) {
             const lbl = targetBtn.querySelector('.label-ambiente-texto') || targetBtn.querySelector('span:last-child');
             if (lbl) lbl.textContent = ambNome;
           }
+          const ambObj = (d.ambientes && Array.isArray(d.ambientes)) ? d.ambientes.find(a => (a.nome || '').trim().toLowerCase() === ambNome.toLowerCase()) : null;
+          const inpTopObs = document.getElementById('inp-orc-ambiente-top-obs');
+          if (inpTopObs) inpTopObs.value = (ambObj && ambObj.obs) || d.obs_ambiente || '';
         }
         secaoAmbienteAtivaTr = null;
       } else {
         if (typeof adicionarNovoAmbienteSecao === 'function') {
           adicionarNovoAmbienteSecao(ambNome);
+          const ambObjSec = (d.ambientes && Array.isArray(d.ambientes)) ? d.ambientes.find(a => (a.nome || '').trim().toLowerCase() === ambNome.toLowerCase()) : null;
+          if (ambObjSec && ambObjSec.obs && secaoAmbienteAtivaTr) {
+            const inpSecObs = secaoAmbienteAtivaTr.querySelector('.inp-ambiente-obs');
+            if (inpSecObs) inpSecObs.value = ambObjSec.obs;
+          }
         }
       }
 
@@ -13120,6 +13138,20 @@ function selecionarModoPdf(modo) {
 }
 window.selecionarModoPdf = selecionarModoPdf;
 
+function aoMudarObsAmbiente(el) {
+  try {
+    const topObs = document.getElementById('inp-orc-ambiente-top-obs');
+    const globObs = document.getElementById('o-obs');
+    if (topObs && globObs && el === topObs) {
+      if (!globObs.value || globObs.dataset.autoSinc === '1') {
+        globObs.value = topObs.value;
+        globObs.dataset.autoSinc = '1';
+      }
+    }
+  } catch(e) {}
+}
+window.aoMudarObsAmbiente = aoMudarObsAmbiente;
+
 function obterResumoAmbientesParaPdf() {
   const lista = (typeof calcularTotaisPorAmbiente === 'function') ? calcularTotaisPorAmbiente() : [];
   const elTaxa = document.getElementById('o-taxa-acrescimo');
@@ -13141,6 +13173,7 @@ function obterResumoAmbientesParaPdf() {
     const tot = prod + serv;
     return {
       nome: a.nome,
+      obs: a.obs || '',
       produtosVal: prod,
       servicosVal: serv,
       totalVal: tot,
@@ -14224,6 +14257,7 @@ function calcularTotaisPorAmbiente() {
   const tbody = document.getElementById('itens-lista');
   const inpTop = document.getElementById('inp-orc-ambiente-top') || document.querySelector('.inp-nome-ambiente');
   const lblTop = document.getElementById('label-orc-ambientes');
+  const inpTopObs = document.getElementById('inp-orc-ambiente-top-obs');
   let topNome = '';
   if (inpTop && inpTop.value && inpTop.value.trim()) {
     topNome = inpTop.value.trim();
@@ -14231,10 +14265,12 @@ function calcularTotaisPorAmbiente() {
     topNome = lblTop.textContent.replace(/^Ambientes\s*\(?/, '').replace(/\)?$/, '').trim();
   }
   if (!topNome || topNome.toLowerCase() === 'ambientes') topNome = 'Ambiente 1';
+  const topObs = (inpTopObs && inpTopObs.value) ? inpTopObs.value.trim() : '';
 
   const ambientes = [];
   let ambAtual = {
     nome: topNome,
+    obs: topObs,
     btn: (document.getElementById("btn-add-novo-ambiente-linha") || document.getElementById("inp-orc-ambiente-top") || null),
     produtosVal: 0,
     servicosVal: 0,
@@ -14258,9 +14294,12 @@ function calcularTotaisPorAmbiente() {
         nomeSec = lblSec.textContent.replace(/^Ambientes\s*\(?/, '').replace(/\)?$/, '').trim();
       }
       if (!nomeSec || nomeSec.toLowerCase() === 'ambientes') nomeSec = 'Ambiente ' + (ambientes.length + 1);
+      const inpSecObs = tr.querySelector('.inp-ambiente-obs');
+      const secObs = (inpSecObs && inpSecObs.value) ? inpSecObs.value.trim() : '';
 
       ambAtual = {
         nome: nomeSec,
+        obs: secObs,
         btn: (tr.querySelector(".btn-seletor-ambientes") || null),
         trSec: tr,
         produtosVal: 0,
@@ -14630,6 +14669,12 @@ function adicionarNovoAmbienteSecao(nomePadrao = '') {
         <button type="button" onclick="removerAmbienteSecao(this)" style="background:none;border:none;color:#ef4444;font-size:11px;font-weight:700;cursor:pointer;opacity:0.75;padding:2px 6px;" title="Remover este ambiente">
           ✕ Remover
         </button>
+      </div>
+      <div class="wrap-ambiente-obs-box" style="margin-top:7px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <label style="font-size:11px;font-weight:800;color:#fcd34d;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;margin:0;cursor:pointer;">
+          <span>📝</span> Observações:
+        </label>
+        <input type="text" class="inp-ambiente-obs inp-secao-obs" placeholder="Observações deste ambiente (ex: Acabamento, puxadores, ferragens, medidas especiais...)" oninput="aoMudarObsAmbiente(this)" style="flex:1;min-width:200px;background:rgba(0,0,0,0.35);border:1px solid rgba(245,158,11,0.3);border-radius:6px;padding:4px 10px;color:#fff;font-size:11.5px;outline:none;box-sizing:border-box;" title="Digite observações deste ambiente" />
       </div>
     </td>
   `;
@@ -21794,8 +21839,8 @@ async function gerarPdfOrcamentoDoc(dados) {
   page.drawText(nomeEmpresaUpper, { x: textX, y: headerY - 14, size: 16, font: fontBold, color: DARK });
 
   let sloganTxt = (lic.segmento || lic.slogan || '').trim();
-  // Exclui 'Móveis Planejados & Marcenaria de Luxo' conforme solicitação do usuário
-  if (!sloganTxt || /m[oó]veis\s+planejados|marcenaria\s+de\s+luxo|vidra|vidro|esquadria/i.test(sloganTxt)) {
+  // Exclui 'Móveis Planejados', 'Marcenaria de Luxo', 'Cozinhas Planejadas, Closets & Ambientes Sob Medida' conforme solicitação do usuário
+  if (!sloganTxt || /m[oó]veis\s+planejados|marcenaria\s+de\s+luxo|vidra|vidro|esquadria|cozinha|closet|sob\s*medida/i.test(sloganTxt)) {
     sloganTxt = "";
   }
 
@@ -21966,32 +22011,38 @@ async function gerarPdfOrcamentoDoc(dados) {
         borderWidth: 0.6
       });
 
-      // Nome do Ambiente em destaque
+      const temObs = !!(amb.obs && String(amb.obs).trim());
+      const altLinha = temObs ? 26 : 22;
+      curY = curY + rowH - altLinha;
+
+      // Nome do Ambiente em destaque (só o valor total do ambiente, sem subtítulo de produtos/serviço)
       const titAmb = `AMBIENTE: ${String(amb.nome || '').toUpperCase()}`;
+      const posYTit = temObs ? (curY + altLinha - 12) : (curY + (altLinha / 2) - 3.5);
       page.drawText(sanitizePdf(titAmb), {
         x: MARGIN_X + 10,
-        y: curY + rowH - 12,
-        size: 8.2,
+        y: posYTit,
+        size: 8.5,
         font: fontBold,
         color: DARK
       });
 
-      // Detalhamento dos valores do ambiente (Produtos e Serviço)
-      const subTxt = (amb.produtosVal > 0 && amb.servicosVal > 0)
-        ? `Produtos: R$ ${Number(amb.produtosVal).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}   |   Serviço: R$ ${Number(amb.servicosVal).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}`
-        : (amb.qtdItens ? `Móveis planejados sob medida (${amb.qtdItens} itens)` : 'Móveis planejados sob medida');
-      page.drawText(sanitizePdf(subTxt), {
-        x: MARGIN_X + 10,
-        y: curY + 5,
-        size: 7,
-        font: fontRegular,
-        color: GRAY
-      });
+      // Se houver observações deste ambiente, exibe abaixo do nome
+      if (temObs) {
+        page.drawText(sanitizePdf(`Obs: ${String(amb.obs).trim()}`), {
+          x: MARGIN_X + 10,
+          y: curY + 5,
+          size: 6.8,
+          font: fontRegular,
+          color: GRAY
+        });
+      }
+
+      const posYValores = temObs ? (curY + altLinha - 14) : (curY + (altLinha / 2) - 3.5);
 
       // Medidas
       page.drawText('Sob Medida', {
         x: MARGIN_X + 250,
-        y: curY + rowH - 15,
+        y: posYValores,
         size: 7.5,
         font: fontRegular,
         color: GRAY
@@ -22000,7 +22051,7 @@ async function gerarPdfOrcamentoDoc(dados) {
       // Área
       page.drawText('-', {
         x: MARGIN_X + 345,
-        y: curY + rowH - 15,
+        y: posYValores,
         size: 7.5,
         font: fontRegular,
         color: GRAY
@@ -22009,7 +22060,7 @@ async function gerarPdfOrcamentoDoc(dados) {
       // QTD: 1 AMB
       page.drawText('1 AMB', {
         x: MARGIN_X + 395,
-        y: curY + rowH - 15,
+        y: posYValores,
         size: 7.5,
         font: fontRegular,
         color: DARK
@@ -22021,7 +22072,7 @@ async function gerarPdfOrcamentoDoc(dados) {
       // VL. UNIT: R$ Total do Ambiente
       page.drawText(vTotTxt, {
         x: MARGIN_X + 438,
-        y: curY + rowH - 15,
+        y: posYValores,
         size: 7.5,
         font: fontRegular,
         color: DARK
@@ -22030,7 +22081,7 @@ async function gerarPdfOrcamentoDoc(dados) {
       // TOTAL: R$ Total do Ambiente em negrito
       page.drawText(vTotTxt, {
         x: MARGIN_X + 488,
-        y: curY + rowH - 15,
+        y: posYValores,
         size: 8,
         font: fontBold,
         color: DARK
@@ -22181,8 +22232,10 @@ async function gerarPdfOrcamentoDoc(dados) {
   page.drawText('• Opções: 50% na entrada + 50% na entrega | Até 10x s/ juros no cartão', { x: MARGIN_X + 8, y: condY, size: 6.8, font: fontRegular, color: GRAY });
   condY -= 11;
   page.drawText(`• Prazo de Execução: ${prazo || '15 dias úteis após confirmação'}`, { x: MARGIN_X + 8, y: condY, size: 6.8, font: fontRegular, color: DARK });
-  condY -= 11;
-  page.drawText(`• Garantia: ${garantia || '1 Ano de garantia legal e de instalação'}`, { x: MARGIN_X + 8, y: condY, size: 6.8, font: fontRegular, color: DARK });
+  if (garantia && String(garantia).trim()) {
+    condY -= 11;
+    page.drawText(`• Garantia: ${String(garantia).trim()}`, { x: MARGIN_X + 8, y: condY, size: 6.8, font: fontRegular, color: DARK });
+  }
 
   if (obs) {
     condY -= 11;
@@ -22245,32 +22298,46 @@ async function gerarPdfOrcamentoDoc(dados) {
   const valFreteNum = parseNum(dados.valFrete);
   const valDescNum = parseNum(dados.valDesconto);
 
-  // O valor final do serviço apresentado no PDF já reflete a taxa/mão de obra sem exibir margem ao cliente
-  const valServicoFinal = valServNum > 0 ? valServNum : valAcrescimoNum;
+  if (formatoAmbiente) {
+    // Formato Só Ambientes: Não discrimina custo de produto e serviço, exibe valor consolidado
+    page.drawText('Valor Total dos Ambientes:', { x: rightCardX + 10, y: totY, size: 6.8, font: fontRegular, color: GRAY });
+    const txtTotAmbResumo = 'R$ ' + valorTotalLimpo;
+    page.drawText(txtTotAmbResumo, { x: rightCardX + rightCardW - 10 - fontBold.widthOfTextAtSize(txtTotAmbResumo, 7.2), y: totY, size: 7.2, font: fontBold, color: DARK });
 
-  let txtValProdutos = '';
-  if (valProdNum > 0) {
-    txtValProdutos = 'R$ ' + formatarValorPtBr(valProdNum);
-  } else if (valServicoFinal > 0) {
-    const totNum = parseNum(total || valorTotalLimpo);
-    const prodRestante = Math.max(0, totNum - valServicoFinal - valFreteNum + valDescNum);
-    txtValProdutos = 'R$ ' + formatarValorPtBr(prodRestante);
+    if (valFreteNum > 0) {
+      totY -= 13;
+      const txtValFrete = 'R$ ' + formatarValorPtBr(valFreteNum);
+      page.drawText('Frete e Deslocamento:', { x: rightCardX + 10, y: totY, size: 6.8, font: fontRegular, color: GRAY });
+      page.drawText(txtValFrete, { x: rightCardX + rightCardW - 10 - fontBold.widthOfTextAtSize(txtValFrete, 7.2), y: totY, size: 7.2, font: fontBold, color: DARK });
+    }
   } else {
-    txtValProdutos = 'R$ ' + valorTotalLimpo;
-  }
-  page.drawText('Valor dos Produtos / Materiais:', { x: rightCardX + 10, y: totY, size: 6.8, font: fontRegular, color: GRAY });
-  page.drawText(txtValProdutos, { x: rightCardX + rightCardW - 10 - fontBold.widthOfTextAtSize(txtValProdutos, 7.2), y: totY, size: 7.2, font: fontBold, color: DARK });
+    // Modo detalhado mantém Produtos e Mão de Obra
+    const valServicoFinal = valServNum > 0 ? valServNum : valAcrescimoNum;
 
-  totY -= 13;
-  const txtValServico = valServicoFinal > 0 ? ('R$ ' + formatarValorPtBr(valServicoFinal)) : 'Inclusa';
-  page.drawText('Mão de Obra e Instalação:', { x: rightCardX + 10, y: totY, size: 6.8, font: fontRegular, color: GRAY });
-  page.drawText(txtValServico, { x: rightCardX + rightCardW - 10 - fontBold.widthOfTextAtSize(txtValServico, 7.2), y: totY, size: 7.2, font: fontBold, color: DARK });
+    let txtValProdutos = '';
+    if (valProdNum > 0) {
+      txtValProdutos = 'R$ ' + formatarValorPtBr(valProdNum);
+    } else if (valServicoFinal > 0) {
+      const totNum = parseNum(total || valorTotalLimpo);
+      const prodRestante = Math.max(0, totNum - valServicoFinal - valFreteNum + valDescNum);
+      txtValProdutos = 'R$ ' + formatarValorPtBr(prodRestante);
+    } else {
+      txtValProdutos = 'R$ ' + valorTotalLimpo;
+    }
+    page.drawText('Valor dos Produtos / Materiais:', { x: rightCardX + 10, y: totY, size: 6.8, font: fontRegular, color: GRAY });
+    page.drawText(txtValProdutos, { x: rightCardX + rightCardW - 10 - fontBold.widthOfTextAtSize(txtValProdutos, 7.2), y: totY, size: 7.2, font: fontBold, color: DARK });
 
-  totY -= 13;
-  const txtValFrete = valFreteNum > 0 ? ('R$ ' + formatarValorPtBr(valFreteNum)) : '';
-  page.drawText('Frete e Deslocamento:', { x: rightCardX + 10, y: totY, size: 6.8, font: fontRegular, color: GRAY });
-  if (txtValFrete) {
-    page.drawText(txtValFrete, { x: rightCardX + rightCardW - 10 - fontBold.widthOfTextAtSize(txtValFrete, 7.2), y: totY, size: 7.2, font: fontBold, color: DARK });
+    totY -= 13;
+    const txtValServico = valServicoFinal > 0 ? ('R$ ' + formatarValorPtBr(valServicoFinal)) : 'Inclusa';
+    page.drawText('Mão de Obra e Instalação:', { x: rightCardX + 10, y: totY, size: 6.8, font: fontRegular, color: GRAY });
+    page.drawText(txtValServico, { x: rightCardX + rightCardW - 10 - fontBold.widthOfTextAtSize(txtValServico, 7.2), y: totY, size: 7.2, font: fontBold, color: DARK });
+
+    totY -= 13;
+    const txtValFrete = valFreteNum > 0 ? ('R$ ' + formatarValorPtBr(valFreteNum)) : '';
+    page.drawText('Frete e Deslocamento:', { x: rightCardX + 10, y: totY, size: 6.8, font: fontRegular, color: GRAY });
+    if (txtValFrete) {
+      page.drawText(txtValFrete, { x: rightCardX + rightCardW - 10 - fontBold.widthOfTextAtSize(txtValFrete, 7.2), y: totY, size: 7.2, font: fontBold, color: DARK });
+    }
   }
 
   if (valDescNum > 0) {
