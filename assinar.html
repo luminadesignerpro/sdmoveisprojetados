@@ -2687,30 +2687,32 @@
     contratoCache = data;
     try { aplicarBrandingLicenca(); } catch (_) {}
 
-    // ── VERIFICAÇÃO AUTOMÁTICA DE ASSINATURA PRÉVIA ──
-    // Bloqueia nova assinatura se a O.S. já foi assinada nesta máquina ou no sistema
+    // ── VERIFICAÇÃO DE ASSINATURA: só bloqueia se realmente assinado no servidor ──
+    // Não usa localStorage para bloquear - evita "fantasmas" de assinaturas antigas
     const numLimpoOs = String(data.numero_os || "").replace(/\D/g, "");
     if (!data.assinado && numLimpoOs) {
       try {
+        // Limpa qualquer resíduo de outubro/setembro que possa contaminar
         const regLocal = localStorage.getItem("sdv_assinatura_" + numLimpoOs);
-        const mapLocal = JSON.parse(localStorage.getItem("sdv_assinaturas_map") || "{}");
-        const ordensLocal = JSON.parse(localStorage.getItem("sdv_ordens") || "[]");
-        const ordEncontrada = ordensLocal.find(o => String(o.numero || "").replace(/\D/g, "") === numLimpoOs);
-
         if (regLocal) {
           const regObj = JSON.parse(regLocal);
-          data.assinado = true;
-          data.assinante_nome = regObj.nome || data.assinante_nome;
-          data.assinado_em = regObj.data || data.assinado_em;
-        } else if (mapLocal[numLimpoOs]) {
-          data.assinado = true;
-          data.assinante_nome = mapLocal[numLimpoOs].nome || data.assinante_nome;
-          data.assinado_em = mapLocal[numLimpoOs].data || data.assinado_em;
-        } else if (ordEncontrada && (ordEncontrada.status === "aprovado" || ordEncontrada.assinado_por || ordEncontrada.assinatura_digital)) {
-          data.assinado = true;
-          data.assinante_nome = ordEncontrada.assinado_por || (ordEncontrada.assinatura_digital && ordEncontrada.assinatura_digital.nome) || data.assinante_nome;
-          data.assinado_em = ordEncontrada.assinado_em || (ordEncontrada.assinatura_digital && ordEncontrada.assinatura_digital.data) || data.assinado_em;
+          const dataAss = regObj.data || '';
+          // Só usa se for assinatura recente (não de períodos de teste)
+          if (dataAss && (dataAss.includes('2026-09') || dataAss.includes('2026-10'))) {
+            // Assinatura fantasma de período de teste — limpa e ignora
+            localStorage.removeItem("sdv_assinatura_" + numLimpoOs);
+          }
         }
+        const mapLocal = JSON.parse(localStorage.getItem("sdv_assinaturas_map") || "{}");
+        if (mapLocal[numLimpoOs]) {
+          const dataAssMap = (mapLocal[numLimpoOs] && mapLocal[numLimpoOs].data) || '';
+          if (dataAssMap && (dataAssMap.includes('2026-09') || dataAssMap.includes('2026-10'))) {
+            delete mapLocal[numLimpoOs];
+            localStorage.setItem("sdv_assinaturas_map", JSON.stringify(mapLocal));
+          }
+        }
+        // NÃO marca como assinado baseado em localStorage — o servidor é a fonte de verdade
+        // data.assinado só é true se a API /contrato retornou assinado=true
       } catch (_) {}
     }
 

@@ -18,7 +18,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js?v=9.0.4').then(r => { r.update(); })
+        navigator.serviceWorker.register('/sw.js?v=9.0.5').then(r => { r.update(); })
           .then(function(reg){ console.log('SW registrado com sucesso:', reg.scope); })
           .catch(function(err){ console.warn('Erro ao registrar SW:', err); });
       });
@@ -20486,14 +20486,8 @@ async function enviarOrcamentoParaAssinaturaDigital() {
     return;
   }
 
-  // ✅ SALVA A ORDEM DE SERVIÇO AUTOMATICAMENTE AO ENVIAR PARA ASSINATURA DIGITAL
-  try {
-    if (typeof salvarOrdemInterna === 'function') {
-      salvarOrdemInterna(true, false);
-    }
-  } catch (errAutoSave) {
-    console.warn('Auto-save da ordem antes da assinatura digital:', errAutoSave);
-  }
+  // ✅ NOTE: Não chamamos salvarOrdemInterna() aqui pois enviarOrcamentoParaAssinaturaDigital
+  // já gerencia o histórico internamente, evitando PDF duplicado
 
   const btn = document.getElementById('btn-orc-assinatura');
   const spinner = document.getElementById('orc-assinatura-spinner');
@@ -20527,29 +20521,58 @@ async function enviarOrcamentoParaAssinaturaDigital() {
       const idx = historico.findIndex(x => x.id === editandoOsId);
       if (idx !== -1) {
         const ordAntiga = historico[idx];
-        // 🛡️ PRESERVAÇÃO: O primeiro PDF assinado nunca é apagado
-        if (!ordAntiga.versoes_pdf || !ordAntiga.versoes_pdf.length) {
+        // 🛡️ Verifica se a ordem já foi GENUINAMENTE assinada (não resíduo de teste)
+        const jaFoiAssinada = !!(ordAntiga.assinado_por &&
+          ordAntiga.assinado_por !== 'Aguardando Nova Assinatura' &&
+          !String(ordAntiga.assinado_em || '').includes('2026-10') &&
+          !String(ordAntiga.assinado_em || '').includes('2026-09') &&
+          ordAntiga.status === 'aprovado');
+
+        if (jaFoiAssinada) {
+          // 🛡️ PRESERVAÇÃO: O primeiro PDF assinado nunca é apagado - gera v2
+          if (!ordAntiga.versoes_pdf || !ordAntiga.versoes_pdf.length) {
+            ordAntiga.versoes_pdf = [{
+              versao: 1,
+              titulo: 'v1 (Original Assinado)',
+              data: ordAntiga.data_orc || d.data,
+              total: ordAntiga.total,
+              status: 'aprovado',
+              assinado_por: ordAntiga.assinado_por || '',
+              assinado_em: ordAntiga.assinado_em || '',
+              dados: JSON.parse(JSON.stringify(ordAntiga.dados || {}))
+            }];
+          }
+          const proxV = ordAntiga.versoes_pdf.length + 1;
+          ordAntiga.versoes_pdf.push({
+            versao: proxV,
+            titulo: `v${proxV} (${novoStatus === 'modificacao_aprovada' ? 'Modificação Aprovada' : 'Modificações'} - ${d.data})`,
+            data: d.data,
+            total: d.total,
+            status: novoStatus,
+            dados: JSON.parse(JSON.stringify(d))
+          });
+        } else {
+          // Ordem pendente ou com assinatura fantasma → mantém apenas v1 atualizado
           ordAntiga.versoes_pdf = [{
             versao: 1,
-            titulo: 'v1 (Original' + (ordAntiga.assinado_por ? ' Assinado' : '') + ')',
-            data: ordAntiga.data_orc || d.data,
-            total: ordAntiga.total,
-            status: ordAntiga.status || 'aprovado',
-            assinado_por: ordAntiga.assinado_por || '',
-            assinado_em: ordAntiga.assinado_em || '',
-            dados: JSON.parse(JSON.stringify(ordAntiga.dados || {}))
+            titulo: 'v1 (Original)',
+            data: d.data,
+            total: d.total,
+            status: 'pendente',
+            dados: JSON.parse(JSON.stringify(d))
           }];
+          // Limpa assinatura fantasma
+          ordAntiga.assinado_por = '';
+          ordAntiga.assinado_em = '';
+          delete ordAntiga.assinatura_digital;
+          const numLimpoEnv = String(ordAntiga.numero || '').replace(/\D/g, '');
+          try { localStorage.removeItem('sdv_assinatura_' + numLimpoEnv); } catch(_) {}
+          try {
+            const mapaEnv = JSON.parse(localStorage.getItem('sdv_assinaturas_map') || '{}');
+            delete mapaEnv[numLimpoEnv];
+            localStorage.setItem('sdv_assinaturas_map', JSON.stringify(mapaEnv));
+          } catch(_) {}
         }
-
-        const proxV = ordAntiga.versoes_pdf.length + 1;
-        ordAntiga.versoes_pdf.push({
-          versao: proxV,
-          titulo: `v${proxV} (${novoStatus === 'modificacao_aprovada' ? 'Modificação Aprovada' : 'Modificações'} - ${d.data})`,
-          data: d.data,
-          total: d.total,
-          status: novoStatus,
-          dados: JSON.parse(JSON.stringify(d))
-        });
 
         historico[idx] = {
           ...ordAntiga,
@@ -20557,13 +20580,13 @@ async function enviarOrcamentoParaAssinaturaDigital() {
           total: d.total,
           data_orc: d.data,
           dados: d,
-          status: novoStatus,
+          status: jaFoiAssinada ? novoStatus : 'pendente',
           versoes_pdf: ordAntiga.versoes_pdf,
           enviado_assinatura: true,
           enviado_assinatura_em: new Date().toISOString()
         };
 
-        if (novoStatus === 'reajustar') {
+        if (jaFoiAssinada && novoStatus === 'reajustar') {
           historico[idx].assinado_por = 'Aguardando Nova Assinatura';
         }
       }
@@ -22312,8 +22335,8 @@ window.addEventListener('DOMContentLoaded', function() {
         const tAss = new Date(assData).getTime();
         if (tAss < (tOrd - 120000)) invalido = true;
       }
-      // 2. Qualquer assinatura de setembro de 2026 em ordens de novembro
-      if (assData && String(assData).includes('2026-09') && tOrd > new Date('2026-10-01').getTime()) {
+      // 2. Qualquer assinatura de setembro OU outubro de 2026 em ordens de novembro+
+      if (assData && (String(assData).includes('2026-09') || String(assData).includes('2026-10')) && tOrd > new Date('2026-11-01').getTime()) {
         invalido = true;
       }
       // 3. Cliente David assinado por Samuel
@@ -22345,7 +22368,7 @@ window.addEventListener('DOMContentLoaded', function() {
       if (k && k.startsWith('sdv_assinatura_')) {
         try {
           const v = JSON.parse(localStorage.getItem(k) || '{}');
-          if (v.data && String(v.data).includes('2026-09')) {
+          if (v.data && (String(v.data).includes('2026-09') || String(v.data).includes('2026-10'))) {
             localStorage.removeItem(k);
           }
         } catch (_) {}
