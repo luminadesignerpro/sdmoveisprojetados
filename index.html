@@ -18,7 +18,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js?v=9.0.7').then(r => { r.update(); })
+        navigator.serviceWorker.register('/sw.js?v=9.0.8').then(r => { r.update(); })
           .then(function(reg){ console.log('SW registrado com sucesso:', reg.scope); })
           .catch(function(err){ console.warn('Erro ao registrar SW:', err); });
       });
@@ -30273,11 +30273,60 @@ function renderCardItemMaterial(it) {
   const st = statusInfo[it.status] || statusInfo.a_comprar;
   const urg = urgInfo[it.urgencia] || urgInfo.normal;
   const total = it.qtd && it.valor ? (parseFloat(it.qtd) * parseFloat(it.valor)).toFixed(2).replace('.', ',') : null;
+
   const badgeCliente = it.cliente ? `
-    <span style="font-size:10.5px;font-weight:800;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.3);color:var(--gold-light);padding:2px 7px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;">
+    <span style="font-size:10.5px;font-weight:800;background:rgba(139,92,246,0.18);border:1px solid rgba(139,92,246,0.35);color:#c4b5fd;padding:2px 7px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;">
       📁 ${esc(it.cliente)}${it.os ? ' · ' + esc(it.os) : ''}
     </span>
   ` : '';
+
+  // ── Bloco FORNECEDOR SELECIONADO (integrado com sdcomparativos) ──
+  let fornecedorHtml = '';
+  try {
+    const comparisons = typeof obterComparacoesArmazenadas === 'function' ? obterComparacoesArmazenadas() : [];
+    const match = comparisons.length ? encontrarCorrespondenciaComparativo(it.nome, comparisons) : null;
+    if (match && match.quotes && match.quotes.length) {
+      const cotacoes = match.quotes
+        .filter(q => (q.unitPrice || q.price || 0) > 0)
+        .sort((a, b) => (a.unitPrice || a.price || 0) - (b.unitPrice || b.price || 0));
+      if (cotacoes.length) {
+        const menor = cotacoes[0];
+        const nFornec = cotacoes.length;
+        const nomeProdEsc = esc(it.nome).replace(/'/g, "\\'");
+        fornecedorHtml = `
+          <div style="margin-top:6px;padding:7px 10px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);border-radius:8px;display:flex;flex-direction:column;gap:3px;">
+            <span style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.04em;">Fornecedor Selecionado</span>
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+              <span style="font-weight:900;font-size:12px;color:#fff;">🏢 ${esc(menor.supplierName)}</span>
+              <span style="background:#16a34a;color:#fff;font-size:9px;font-weight:900;padding:2px 7px;border-radius:5px;text-transform:uppercase;letter-spacing:.04em;">🏆 MENOR PREÇO</span>
+              <button type="button" onclick="abrirModalComparativoGeral('${nomeProdEsc}',${it.id})" style="background:none;border:none;color:#6ee7b7;font-size:10px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;">(${nFornec} fornecedor${nFornec>1?'es':''})</button>
+            </div>
+          </div>`;
+      } else {
+        const nomeProdEsc = esc(it.nome).replace(/'/g, "\\'");
+        fornecedorHtml = `
+          <div style="margin-top:6px;padding:7px 10px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:8px;display:flex;flex-direction:column;gap:3px;">
+            <span style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.04em;">Fornecedor Selecionado</span>
+            <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
+              <span style="font-weight:800;font-size:11px;color:#fbbf24;">⚠️ Não encontrado</span>
+              <span style="background:rgba(245,158,11,0.2);border:1px solid rgba(245,158,11,0.4);color:#fbbf24;font-size:9px;font-weight:900;padding:2px 6px;border-radius:4px;text-transform:uppercase;letter-spacing:.04em;">SEM COTAÇÃO</span>
+              <button type="button" onclick="abrirModalComparativoGeral('${nomeProdEsc}',${it.id})" style="background:none;border:none;color:#fbbf24;font-size:10px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;">+ Cotar</button>
+            </div>
+          </div>`;
+      }
+    } else {
+      const nomeProdEsc = esc(it.nome).replace(/'/g, "\\'");
+      fornecedorHtml = `
+        <div style="margin-top:6px;padding:7px 10px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:8px;display:flex;flex-direction:column;gap:3px;">
+          <span style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.04em;">Fornecedor Selecionado</span>
+          <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
+            <span style="font-weight:800;font-size:11px;color:#fbbf24;">⚠️ Não encontrado</span>
+            <span style="background:rgba(245,158,11,0.2);border:1px solid rgba(245,158,11,0.4);color:#fbbf24;font-size:9px;font-weight:900;padding:2px 6px;border-radius:4px;text-transform:uppercase;letter-spacing:.04em;">SEM COTAÇÃO</span>
+            <button type="button" onclick="abrirModalComparativoGeral('${nomeProdEsc}',${it.id})" style="background:none;border:none;color:#fbbf24;font-size:10px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;">+ Cotar</button>
+          </div>
+        </div>`;
+    }
+  } catch(e) {}
 
   return `<div style="background:rgba(255,255,255,0.03);border:1.5px solid ${st.border};border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">
@@ -30290,10 +30339,10 @@ function renderCardItemMaterial(it) {
           ${it.qtd ? `Qtd: <strong style="color:#fff;">${it.qtd} ${it.unidade||'un'}</strong>` : ''}
           ${it.valor ? ` · Unit: <strong style="color:#fff;">R$ ${parseFloat(it.valor).toFixed(2).replace('.',',')}</strong>` : ''}
           ${total ? ` · Total: <strong style="color:#fde047;font-weight:900;">R$ ${total}</strong>` : ''}
-          ${it.fornecedor ? ` · 🏪 ${esc(it.fornecedor)}` : ''}
           ${it.formaPagamento ? ` · 💳 <strong style="color:#67e8f9;">${esc(it.formaPagamento)}</strong>` : ''}
         </div>
         ${it.obs ? `<div style="font-size:11px;color:var(--text2);margin-top:4px;">${esc(it.obs)}</div>` : ''}
+        ${fornecedorHtml}
         ${it.comprovante ? `
           <div style="margin-top:6px;display:flex;align-items:center;gap:6px;">
             <button type="button" onclick="abrirFotoComprovanteModal('${it.comprovante.replace(/'/g, "\\'")}')" style="background:rgba(34,197,94,0.18);border:1.5px solid #22c55e;color:#4ade80;font-size:11px;font-weight:800;padding:4px 10px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;box-shadow:0 2px 8px rgba(34,197,94,0.25);">
@@ -30317,7 +30366,6 @@ function renderCardItemMaterial(it) {
     </div>
   </div>`;
 }
-
 function renderPedidosMaterial() {
   if (typeof sincronizarTodasOSAprovadasParaMateriais === 'function') {
     sincronizarTodasOSAprovadasParaMateriais();
