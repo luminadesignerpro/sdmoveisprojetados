@@ -2105,8 +2105,12 @@
                       <span>📦</span> <span>Valor Produtos:</span> <span id="val-ambiente-top-produtos">R$ 0,00</span>
                     </span>
                     <!-- 2. VALOR SERVIÇO -->
-                    <span id="badge-ambiente-top-servico" style="background:rgba(6,182,212,0.18);border:1px solid rgba(6,182,212,0.4);color:#67e8f9;font-size:11.5px;font-weight:800;padding:4px 9px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;" title="Valor do serviço deste ambiente">
-                      <span>🛠️</span> <span>Valor Serviço:</span> <span id="val-ambiente-top-servico">R$ 0,00 (0%)</span>
+                    <span id="badge-ambiente-top-servico" style="background:rgba(6,182,212,0.18);border:1px solid rgba(6,182,212,0.4);color:#67e8f9;font-size:11.5px;font-weight:800;padding:4px 9px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;" title="Valor do serviço deste ambiente. Digite a porcentagem ao lado para alterar em tempo real">
+                      <span>🛠️</span> <span>Valor Serviço:</span> <span id="val-ambiente-top-servico">R$ 0,00</span>
+                      <span style="display:inline-flex;align-items:center;background:rgba(6,182,212,0.15);border:1px solid rgba(6,182,212,0.5);border-radius:4px;padding:1px 4px;gap:2px;">
+                        <input type="text" id="inp-ambiente-top-taxa" class="inp-ambiente-taxa" inputmode="decimal" placeholder="0" value="0" oninput="aoDigitarTaxaNoBadge(this.value)" onfocus="this.select()" style="width:36px;background:transparent;border:none;color:#a5f3fc;font-weight:900;font-size:11.5px;text-align:right;padding:0;outline:none;" title="Digite a taxa de acréscimo (%)" />
+                        <span style="font-size:11px;font-weight:900;color:#67e8f9;">%</span>
+                      </span>
                     </span>
                     <!-- 3. VALOR TOTAL COM PORCENTAGEM -->
                     <span id="badge-ambiente-top-total" style="background:rgba(34,197,94,0.18);border:1px solid rgba(34,197,94,0.4);color:#86efac;font-size:11.5px;font-weight:800;padding:4px 9px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;" title="Valor total deste ambiente com a porcentagem">
@@ -2409,16 +2413,16 @@
         </div>
       </div>
 
-      <div style="margin-top:6px;">
-        <button type="button" class="btn btn-gold btn-full" onclick="enviarOuBaixarPdfOrcamento()" style="font-size:15px;padding:15px;" id="btn-pdf-orc">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;">
+        <button type="button" class="btn btn-gold" onclick="enviarOuBaixarPdfOrcamento()" style="font-size:14px;padding:14px;" id="btn-pdf-orc">
           <span id="pdf-orc-spinner" class="spinner" style="display:none"></span>
           <span id="pdf-orc-btn-text">📄 Enviar PDF</span>
         </button>
-        <button type="button" class="btn btn-sec" onclick="visualizarPdfOrcamentoAtual()" style="display:none;" id="btn-preview-orc-atual">
+        <button type="button" class="btn btn-sec" onclick="visualizarPdfOrcamentoAtual()" style="font-size:14px;padding:14px;border:1.5px solid var(--gold);color:var(--gold-light);font-weight:700;" id="btn-preview-orc-atual" title="Pré-visualizar o PDF deste orçamento diretamente na tela">
           👁️ Visualizar PDF
         </button>
       </div>
-      <button class="btn btn-ia btn-full" onclick="enviarOrcamentoParaAssinaturaDigital()" style="display:none;" id="btn-orc-assinatura">
+      <button class="btn btn-ia btn-full" onclick="enviarOrcamentoParaAssinaturaDigital()" style="font-size:15px;padding:15px;margin-top:10px;" id="btn-orc-assinatura">
         <span id="orc-assinatura-spinner" class="spinner" style="display:none"></span>
         <span id="orc-assinatura-btn-text">✍️ Enviar para Assinatura Digital</span>
       </button>
@@ -14217,6 +14221,25 @@ function calcularTotaisPorAmbiente() {
   return ambientes;
 }
 
+
+function aoDigitarTaxaNoBadge(val) {
+  const elTaxa = document.getElementById('o-taxa-acrescimo');
+  const modalTaxa = document.getElementById('modal-o-taxa-acrescimo');
+  if (elTaxa) elTaxa.value = val;
+  if (modalTaxa) modalTaxa.value = val;
+  
+  document.querySelectorAll('.inp-ambiente-taxa').forEach(inp => {
+    if (document.activeElement !== inp) inp.value = val;
+  });
+
+  if (typeof aoModificarValoresResumoFinanceiro === 'function') {
+    aoModificarValoresResumoFinanceiro('taxa');
+  } else if (typeof calcTotal === 'function') {
+    calcTotal();
+  }
+}
+window.aoDigitarTaxaNoBadge = aoDigitarTaxaNoBadge;
+
 function atualizarSubtotaisAmbientes() {
   const ambientes = calcularTotaisPorAmbiente();
   const formatBRL = (val) => 'R$ ' + Number(val || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -14266,7 +14289,7 @@ function atualizarSubtotaisAmbientes() {
     const pct0Str = formatPct(taxaPercent);
 
     if (valTopProdEl) valTopProdEl.textContent = formatBRL(prod0);
-    if (valTopServEl) valTopServEl.textContent = `${formatBRL(serv0)} (${pct0Str})`;
+    if (valTopServEl) valTopServEl.textContent = formatBRL(serv0);
     if (valTopTotalEl) valTopTotalEl.textContent = formatBRL(tot0);
   }
 
@@ -14285,11 +14308,21 @@ function atualizarSubtotaisAmbientes() {
         serv = somaGeralServico * (prod / somaTotalProdutos);
       }
       const tot = prod + serv;
-      const pctStr = formatPct(taxaPercent);
 
       if (valProdEl) valProdEl.textContent = formatBRL(prod);
-      if (valServEl) valServEl.textContent = `${formatBRL(serv)} (${pctStr})`;
+      if (valServEl) valServEl.textContent = formatBRL(serv);
       if (valTotalEl) valTotalEl.textContent = formatBRL(tot);
+    }
+  });
+
+  // 2b. Sincroniza o valor digitado nos inputs de porcentagem dos badges
+  const pctNumStr = (taxaPercent != null && !isNaN(taxaPercent))
+    ? Number(taxaPercent).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
+    : '0';
+
+  document.querySelectorAll('.inp-ambiente-taxa').forEach(inp => {
+    if (document.activeElement !== inp) {
+      inp.value = pctNumStr;
     }
   });
 
@@ -14486,8 +14519,12 @@ function adicionarNovoAmbienteSecao(nomePadrao = '') {
             <span class="badge-secao-produtos-val" style="background:rgba(59,130,246,0.18);border:1px solid rgba(59,130,246,0.4);color:#93c5fd;font-size:11.5px;font-weight:800;padding:4px 9px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;" title="Valor dos produtos deste ambiente">
               <span>📦</span> <span>Valor Produtos:</span> <span class="val-secao-produtos">R$ 0,00</span>
             </span>
-            <span class="badge-secao-servico-val" style="background:rgba(6,182,212,0.18);border:1px solid rgba(6,182,212,0.4);color:#67e8f9;font-size:11.5px;font-weight:800;padding:4px 9px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;" title="Valor do serviço deste ambiente">
-              <span>🛠️</span> <span>Valor Serviço:</span> <span class="val-secao-servico">R$ 0,00 (0%)</span>
+            <span class="badge-secao-servico-val" style="background:rgba(6,182,212,0.18);border:1px solid rgba(6,182,212,0.4);color:#67e8f9;font-size:11.5px;font-weight:800;padding:4px 9px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;" title="Valor do serviço deste ambiente. Digite a porcentagem ao lado para alterar em tempo real">
+              <span>🛠️</span> <span>Valor Serviço:</span> <span class="val-secao-servico">R$ 0,00</span>
+              <span style="display:inline-flex;align-items:center;background:rgba(6,182,212,0.15);border:1px solid rgba(6,182,212,0.5);border-radius:4px;padding:1px 4px;gap:2px;">
+                <input type="text" class="inp-secao-taxa inp-ambiente-taxa" inputmode="decimal" placeholder="0" value="0" oninput="aoDigitarTaxaNoBadge(this.value)" onfocus="this.select()" style="width:36px;background:transparent;border:none;color:#a5f3fc;font-weight:900;font-size:11.5px;text-align:right;padding:0;outline:none;" title="Digite a taxa de acréscimo (%)" />
+                <span style="font-size:11px;font-weight:900;color:#67e8f9;">%</span>
+              </span>
             </span>
             <span class="badge-secao-total-val" style="background:rgba(34,197,94,0.18);border:1px solid rgba(34,197,94,0.4);color:#86efac;font-size:11.5px;font-weight:800;padding:4px 9px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;" title="Valor total deste ambiente com a porcentagem">
               <span>💰</span> <span>Valor Total:</span> <span class="val-secao-total">R$ 0,00</span>
