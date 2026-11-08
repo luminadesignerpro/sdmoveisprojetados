@@ -12676,10 +12676,133 @@ function alternarStatusOs(id) {
 
 function deletarOs(id) {
   if (!confirm('Tem certeza que deseja excluir esta Ordem de Serviço?')) return;
-  historico = historico.filter(x => String(x.id) !== String(id));
+
+  const osAlvo = historico.find(x => String(x.id) === String(id) || String(x.numero) === String(id)) ||
+                 historico.find(x => {
+                   const numLimpo = String(id).replace(/\\D/g, '');
+                   return numLimpo && String(x.numero || '').replace(/\\D/g, '') === numLimpo;
+                 });
+
+  const numOs = (osAlvo && osAlvo.numero) ? String(osAlvo.numero).trim() : (String(id).startsWith('#') ? String(id).trim() : '');
+  const numPuro = numOs ? numOs.replace(/\\D/g, '') : String(id).replace(/\\D/g, '');
+  const nomeCliente = (osAlvo && (osAlvo.nome || osAlvo.cliente || (osAlvo.dados && (osAlvo.dados.nome || osAlvo.dados.cliente))))
+    ? String(osAlvo.nome || osAlvo.cliente || (osAlvo.dados && (osAlvo.dados.nome || osAlvo.dados.cliente))).trim()
+    : '';
+  const nomeClienteLower = nomeCliente.toLowerCase();
+
+  // Remove do histórico de ordens
+  historico = historico.filter(x => String(x.id) !== String(id) && (!numPuro || String(x.numero || '').replace(/\\D/g, '') !== numPuro));
   save(K.orders, historico);
+
+  const temOutraOsMesmoCliente = nomeClienteLower && historico.some(h => (h.nome || h.cliente || '').trim().toLowerCase() === nomeClienteLower);
+
+  // 1. Remove itens do Pedido de Material vinculados a esta OS
+  try {
+    let mats = typeof carregarMateriais === 'function' ? carregarMateriais() : JSON.parse(localStorage.getItem('sdv_pedidos_material') || '[]');
+    if (Array.isArray(mats) && mats.length > 0) {
+      mats = mats.filter(m => {
+        const mOs = (m.os || '').trim();
+        const mOsPuro = mOs.replace(/\\D/g, '');
+        if (numPuro && mOsPuro && mOsPuro === numPuro) return false;
+        if (numOs && mOs && mOs.toLowerCase() === numOs.toLowerCase()) return false;
+
+        if (numPuro && m.obs) {
+          const regOs = new RegExp('\\bOS\\s*#?0*' + numPuro + '\\b', 'i');
+          if (regOs.test(m.obs)) return false;
+        }
+
+        if (nomeClienteLower && !temOutraOsMesmoCliente) {
+          const mCli = (m.cliente || '').trim().toLowerCase();
+          if (mCli && mCli === nomeClienteLower) return false;
+          if (m.obs && m.obs.toLowerCase().includes('(' + nomeClienteLower + ')')) return false;
+        }
+
+        return true;
+      });
+
+      if (typeof salvarMateriais === 'function') {
+        salvarMateriais(mats);
+      } else {
+        localStorage.setItem('sdv_pedidos_material', JSON.stringify(mats));
+      }
+    }
+  } catch (errMat) {
+    console.error('Erro ao limpar materiais da OS excluída:', errMat);
+  }
+
+  // 2. Se a pasta ativa no Pedido de Material for deste cliente e não houver outra OS, reseta para todos
+  if (typeof _materialClienteFolderAtivo !== 'undefined' && nomeClienteLower && _materialClienteFolderAtivo.toLowerCase() === nomeClienteLower && !temOutraOsMesmoCliente) {
+    _materialClienteFolderAtivo = 'todos';
+  }
+
+  // 3. Atualiza UI de Pedidos de Material
+  if (typeof renderPedidosMaterial === 'function') {
+    try { renderPedidosMaterial(); } catch (_) {}
+  }
+
+  // 4. Limpa itens do Comparativo de Preços (sd_material_list_v1)
+  try {
+    const rawComp = localStorage.getItem('sd_material_list_v1');
+    if (rawComp) {
+      let compList = JSON.parse(rawComp);
+      if (Array.isArray(compList) && compList.length > 0) {
+        compList = compList.filter(c => {
+          const cOsPuro = (c.os || c.osNum || '').replace(/\\D/g, '');
+          if (numPuro && cOsPuro && cOsPuro === numPuro) return false;
+          if (nomeClienteLower && !temOutraOsMesmoCliente && c.clientName && String(c.clientName).trim().toLowerCase() === nomeClienteLower) return false;
+          return true;
+        });
+        localStorage.setItem('sd_material_list_v1', JSON.stringify(compList));
+      }
+    }
+  } catch (_) {}
+
+  // 5. Limpa eventos do Cronograma (sdv_cronograma_eventos)
+  try {
+    let evs = typeof carregarEventosCrono === 'function' ? carregarEventosCrono() : JSON.parse(localStorage.getItem('sdv_cronograma_eventos') || '[]');
+    if (Array.isArray(evs) && evs.length > 0) {
+      evs = evs.filter(e => {
+        const eOsPuro = (e.os || '').replace(/\\D/g, '');
+        if (numPuro && eOsPuro && eOsPuro === numPuro) return false;
+        if (numOs && e.os && String(e.os).trim().toLowerCase() === numOs.toLowerCase()) return false;
+        if (nomeClienteLower && !temOutraOsMesmoCliente && e.cliente && String(e.cliente).trim().toLowerCase() === nomeClienteLower) return false;
+        return true;
+      });
+      if (typeof salvarEventosCrono === 'function') {
+        salvarEventosCrono(evs);
+      } else {
+        localStorage.setItem('sdv_cronograma_eventos', JSON.stringify(evs));
+      }
+      if (typeof renderCronogramaView === 'function') {
+        try { renderCronogramaView(); } catch (_) {}
+      }
+    }
+  } catch (_) {}
+
+  // 6. Limpa galeria e chat
+  try {
+    if (numPuro) {
+      localStorage.removeItem('sdv_galeria_' + numPuro);
+      localStorage.removeItem('sdv_chat_' + numPuro);
+    }
+    if (numOs) {
+      localStorage.removeItem('sdv_galeria_' + numOs.replace(/\\D/g, ''));
+      localStorage.removeItem('sdv_chat_' + numOs.replace(/\\D/g, ''));
+    }
+  } catch (_) {}
+
+  // 7. Se estava em edição dessa OS no formulário principal, cancela a edição
+  if (typeof editandoOsId !== 'undefined' && (String(editandoOsId) === String(id) || (numPuro && String(editandoOsId).replace(/\\D/g, '') === numPuro))) {
+    if (typeof cancelarEdicaoOs === 'function') {
+      try { cancelarEdicaoOs(); } catch (_) {}
+    }
+  }
+
   renderHist();
   renderSelectContratos();
+  if (typeof mostrarToastAprovacao === 'function') {
+    mostrarToastAprovacao('🗑️ Ordem ' + (numOs || ('#' + numPuro)) + ' e materiais vinculados foram excluídos com sucesso!');
+  }
 }
 
 function abrirModalVersoesPdf(id) {
