@@ -1,5 +1,5 @@
 // Service Worker PWA – SD Móveis Projetados v8.9.5 (Alarme Ponto Segundo Plano + Notificações + Galeria O.S.)
-const CACHE_NAME = 'sdmoveisprojetados-v9.1.3';
+const CACHE_NAME = 'sdmoveisprojetados-v9.1.4';
 const ASSETS = [
   '/',
   '/index.html',
@@ -126,14 +126,14 @@ function verificarAlarmesPonto() {
     if (!alarme || !alarme.hora) return;
 
     // Verifica dias permitidos
-    const diasPermitidos = Array.isArray(alarme.dias) ? alarme.dias : [1,2,3,4,5]; // padrão seg-sex
+    const diasPermitidos = Array.isArray(alarme.dias) ? alarme.dias : [1, 2, 3, 4, 5]; // padrão seg-sex
     if (!diasPermitidos.includes(diaSemana)) return;
 
     // Converte hora do alarme (HH:MM) para comparação
     const [hAlarm, mAlarm] = (alarme.hora || '00:00').split(':').map(Number);
 
     // Notifica 5 minutos antes
-    const totalMinAtual  = horaAtual * 60 + minAtual;
+    const totalMinAtual = horaAtual * 60 + minAtual;
     const totalMinAlarme = hAlarm * 60 + mAlarm - 5;
 
     if (totalMinAtual !== totalMinAlarme) return;
