@@ -2092,12 +2092,35 @@
             <tr id="tr-header-ambientes" style="background:#11121c;">
               <th colspan="11" style="padding:10px 12px;text-align:left;border-bottom:1.5px solid rgba(245,158,11,0.3);background:rgba(245,158,11,0.06);text-transform:none;">
                 <div style="display:flex;flex-direction:column;gap:8px;">
-                  <!-- NOME DO AMBIENTE (SALA) -->
-                  <div style="display:flex;align-items:center;gap:8px;">
+                  <!-- NOME DO AMBIENTE (SALA) E BOTÃO GALERIA AO LADO -->
+                  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                     <div class="wrap-ambiente-nome" style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg, rgba(245,158,11,0.22), rgba(217,119,6,0.18));border:1.5px solid #f59e0b;border-radius:8px;padding:6px 12px;box-shadow:0 2px 8px rgba(245,158,11,0.2);">
                       <span style="font-size:15px;line-height:1;">🛋️</span>
-                      <input type="text" id="inp-orc-ambiente-top" class="inp-nome-ambiente label-ambiente-texto" placeholder="Nome do ambiente..." value="" oninput="atualizarSubtotaisAmbientes()" onfocus="this.select()" style="background:transparent;border:none;color:#fbbf24;font-weight:800;font-size:13px;outline:none;width:180px;min-width:130px;" title="Digite o nome do ambiente" />
+                      <input type="text" id="inp-orc-ambiente-top" class="inp-nome-ambiente label-ambiente-texto" placeholder="Nome do ambiente..." value="" oninput="atualizarSubtotaisAmbientes()" onfocus="this.select()" style="background:transparent;border:none;color:#fbbf24;font-weight:800;font-size:13px;outline:none;width:150px;min-width:120px;" title="Digite o nome do ambiente" />
                     </div>
+
+                    <!-- BOTÃO GALERIA AO LADO DO NOME DO AMBIENTE -->
+                    <div id="galeria-orc-menu-container" style="position:relative;display:inline-block;">
+                      <button type="button" class="btn btn-sm" id="btn-galeria-orc-linha" onclick="toggleMenuGaleriaOrc(event)" style="background:rgba(6,182,212,0.15);border:1.5px solid #06b6d4;color:#22d3ee;font-weight:800;display:inline-flex;align-items:center;gap:6px;cursor:pointer;border-radius:8px;padding:6px 12px;" title="Anexar fotos ou PDF a esta O.S.">
+                        <span>🖼️</span> <span id="label-galeria-orc-linha">Galeria (0)</span> <span style="font-size:10px;opacity:0.8;">▼</span>
+                      </button>
+                      <!-- DROPDOWN MENU -->
+                      <div id="galeria-orc-submenu" style="display:none;position:absolute;top:calc(100% + 6px);left:0;background:#0e1020;border:1.5px solid #06b6d4;border-radius:10px;min-width:215px;overflow:hidden;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,0.7);">
+                        <button type="button" onclick="toggleMenuGaleriaOrc(event); document.getElementById('orc-input-camera').click();" style="width:100%;padding:11px 14px;background:none;border:none;border-bottom:1px solid rgba(6,182,212,0.18);color:#22d3ee;font-size:12.5px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:9px;transition:background 0.15s;" onmouseover="this.style.background='rgba(6,182,212,0.12)'" onmouseout="this.style.background='none'">
+                          📷 Abrir Câmera do Celular
+                        </button>
+                        <button type="button" onclick="toggleMenuGaleriaOrc(event); document.getElementById('orc-input-galeria').click();" style="width:100%;padding:11px 14px;background:none;border:none;border-bottom:1px solid rgba(6,182,212,0.18);color:#34d399;font-size:12.5px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:9px;transition:background 0.15s;" onmouseover="this.style.background='rgba(52,211,153,0.1)'" onmouseout="this.style.background='none'">
+                          🖼️ Buscar na Galeria
+                        </button>
+                        <button type="button" onclick="toggleMenuGaleriaOrc(event); document.getElementById('orc-input-pdf').click();" style="width:100%;padding:11px 14px;background:none;border:none;border-bottom:1px solid rgba(6,182,212,0.18);color:#f59e0b;font-size:12.5px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:9px;transition:background 0.15s;" onmouseover="this.style.background='rgba(245,158,11,0.1)'" onmouseout="this.style.background='none'">
+                          📄 Buscar PDF
+                        </button>
+                        <button type="button" onclick="toggleMenuGaleriaOrc(event); abrirModalGaleriaOrcamento();" style="width:100%;padding:11px 14px;background:rgba(6,182,212,0.08);border:none;color:#38bdf8;font-size:12.5px;font-weight:800;cursor:pointer;text-align:left;display:flex;align-items:center;gap:9px;transition:background 0.15s;" onmouseover="this.style.background='rgba(6,182,212,0.2)'" onmouseout="this.style.background='rgba(6,182,212,0.08)'">
+                          👁️ Ver Fotos Salvas (<span id="menu-cont-galeria-orc">0</span>)
+                        </button>
+                      </div>
+                    </div>
+
                     <span id="badge-ambiente-ativo-texto" style="font-size:11.5px;color:#fcd34d;font-weight:700;"></span>
                   </div>
 
@@ -2151,40 +2174,15 @@
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;">
         <button type="button" class="btn btn-sec btn-sm" onclick="addItem()">+ Adicionar linha</button>
 
-        <!-- BOTÃO GALERIA com dropdown de 3 opções -->
-        <div id="galeria-orc-menu-container" style="position:relative;display:inline-block;">
-          <button type="button" class="btn btn-sm" id="btn-galeria-orc-linha" onclick="toggleMenuGaleriaOrc(event)" style="background:rgba(6,182,212,0.15);border:1.5px solid #06b6d4;color:#22d3ee;font-weight:800;display:inline-flex;align-items:center;gap:6px;cursor:pointer;" title="Anexar fotos ou PDF a esta O.S.">
-            <span>🖼️</span> <span id="label-galeria-orc-linha">Galeria (0)</span> <span style="font-size:10px;opacity:0.8;">▼</span>
-          </button>
-          <!-- DROPDOWN MENU -->
-          <div id="galeria-orc-submenu" style="display:none;position:absolute;bottom:calc(100% + 6px);left:0;background:#0e1020;border:1.5px solid #06b6d4;border-radius:10px;min-width:215px;overflow:hidden;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,0.7);">
-            <button type="button" onclick="toggleMenuGaleriaOrc(event); document.getElementById('orc-input-camera').click();" style="width:100%;padding:11px 14px;background:none;border:none;border-bottom:1px solid rgba(6,182,212,0.18);color:#22d3ee;font-size:12.5px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:9px;transition:background 0.15s;" onmouseover="this.style.background='rgba(6,182,212,0.12)'" onmouseout="this.style.background='none'">
-              📷 Abrir Câmera do Celular
-            </button>
-            <button type="button" onclick="toggleMenuGaleriaOrc(event); document.getElementById('orc-input-galeria').click();" style="width:100%;padding:11px 14px;background:none;border:none;border-bottom:1px solid rgba(6,182,212,0.18);color:#34d399;font-size:12.5px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:9px;transition:background 0.15s;" onmouseover="this.style.background='rgba(52,211,153,0.1)'" onmouseout="this.style.background='none'">
-              🖼️ Buscar na Galeria
-            </button>
-            <button type="button" onclick="toggleMenuGaleriaOrc(event); document.getElementById('orc-input-pdf').click();" style="width:100%;padding:11px 14px;background:none;border:none;border-bottom:1px solid rgba(6,182,212,0.18);color:#f59e0b;font-size:12.5px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:9px;transition:background 0.15s;" onmouseover="this.style.background='rgba(245,158,11,0.1)'" onmouseout="this.style.background='none'">
-              📄 Buscar PDF
-            </button>
-            <button type="button" onclick="toggleMenuGaleriaOrc(event); abrirModalGaleriaOrcamento();" style="width:100%;padding:11px 14px;background:rgba(6,182,212,0.08);border:none;color:#38bdf8;font-size:12.5px;font-weight:800;cursor:pointer;text-align:left;display:flex;align-items:center;gap:9px;transition:background 0.15s;" onmouseover="this.style.background='rgba(6,182,212,0.2)'" onmouseout="this.style.background='rgba(6,182,212,0.08)'">
-              👁️ Ver Fotos Salvas (<span id="menu-cont-galeria-orc">0</span>)
-            </button>
-          </div>
-        </div>
-
-
-        <!-- BOTÃO FORNECEDORES com menu dropdown (Primeira Aba - Orçamento) -->
-        <!-- BOTÃO COMPARATIVO (SEGUNDA IMAGEM / COMPARATIVOS.VERCEL.APP) -->
+        <!-- BOTÃO COMPARATIVO -->
         <a href="https://sdcomparativos.vercel.app" onclick="abrirComparativoPrincipal(event)" class="btn btn-sm btn-comparativo-principal" id="btn-comparativo-principal" style="background:linear-gradient(135deg, rgba(16,185,129,0.25), rgba(5,150,105,0.22));border:1.5px solid #10b981;color:#34d399;font-weight:800;border-radius:8px;padding:6px 13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;box-shadow:0 2px 8px rgba(16,185,129,0.25);text-decoration:none;" title="Acessar o Comparativo de Preços com o Cliente Selecionado">
           <span style="font-size:14px;">📊</span> <span id="label-comparativo-orc-linha">Comparativo de Preços</span>
         </a>
 
-        <!-- BOTÃO ADICIONAR NOVO AMBIENTE AO LADO DO COMPARATIVO (TERCEIRA IMAGEM) -->
+        <!-- BOTÃO ADICIONAR NOVO AMBIENTE AO LADO DO COMPARATIVO -->
         <button type="button" class="btn btn-sm" id="btn-add-novo-ambiente-linha" onclick="adicionarNovoAmbienteSecao()" style="background:linear-gradient(135deg, rgba(245,158,11,0.35), rgba(217,119,6,0.3));border:1.5px solid #f59e0b;color:#fbbf24;font-weight:900;border-radius:8px;padding:6px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-size:13px;box-shadow:0 2px 8px rgba(245,158,11,0.25);" title="Adicionar Novo Ambiente com Linha de Item">
           <span style="font-size:14px;">➕</span>
         </button>
-        
       </div>
 
       <!-- MINIATURAS VISUAIS DE FOTOS E ARQUIVOS ANEXADOS AO ORÇAMENTO -->
@@ -2220,64 +2218,64 @@
           </div>
         </div>
 
-        <div style="display:flex;flex-direction:column;gap:12px;">
+        <div style="display:flex;flex-direction:column;gap:8px;">
 
-          <!-- 4. Frete (Nome estilo Comparativo de Preços, sem excesso de bordas) -->
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
-            <label for="o-val-frete" style="cursor:pointer;margin:0;display:inline-flex;">
-              <span style="background:linear-gradient(135deg, rgba(16,185,129,0.25), rgba(5,150,105,0.22));border:1.5px solid #10b981;color:#34d399;font-weight:800;border-radius:8px;padding:6px 13px;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(16,185,129,0.25);font-size:12.5px;">
-                <span style="font-size:14px;">🚚</span> <span>Frete</span>
-              </span>
+          <!-- 4. Frete (Idêntico ao card de Valor Produtos) -->
+          <div style="background:rgba(16,185,129,0.16);border:1.5px solid rgba(16,185,129,0.4);color:#34d399;font-size:12px;font-weight:800;padding:6px 12px;border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:8px;box-shadow:0 2px 6px rgba(0,0,0,0.2);width:100%;max-width:320px;box-sizing:border-box;">
+            <label for="o-val-frete" style="cursor:pointer;margin:0;display:inline-flex;align-items:center;gap:6px;color:#34d399;font-weight:800;">
+              <span>🚚</span> <span>Frete:</span>
             </label>
-            <input type="text" id="o-val-frete" inputmode="decimal" placeholder="0,00" value="0,00"
-              onfocus="this.select()"
-              oninput="aoModificarValoresResumoFinanceiro('frete')"
-              onblur="formatarCampoMoeda(this);aoModificarValoresResumoFinanceiro('frete')"
-              style="font-weight:800;color:#fff;background:#0d0d15;border:1.5px solid rgba(255,255,255,0.2);padding:7px 12px;font-size:14px;border-radius:8px;text-align:right;width:130px;max-width:50%;outline:none;">
+            <div style="display:inline-flex;align-items:center;gap:4px;">
+              <span style="font-weight:900;color:#6ee7b7;font-size:12px;">R$</span>
+              <input type="text" id="o-val-frete" inputmode="decimal" placeholder="0,00" value="0,00"
+                onfocus="this.select()"
+                oninput="aoModificarValoresResumoFinanceiro('frete')"
+                onblur="formatarCampoMoeda(this);aoModificarValoresResumoFinanceiro('frete')"
+                style="font-weight:900;color:#fff;background:rgba(0,0,0,0.35);border:1px solid rgba(16,185,129,0.5);border-radius:6px;padding:3px 8px;font-size:13px;text-align:right;width:80px;outline:none;">
+            </div>
           </div>
 
-          <!-- 5. Desconto (Nome estilo Comparativo de Preços, sem excesso de bordas) -->
-          <div style="display:flex;flex-direction:column;gap:4px;">
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+          <!-- 5. Desconto (Idêntico ao card de Valor Produtos com seletor R$ e %) -->
+          <div style="width:100%;max-width:320px;box-sizing:border-box;">
+            <div style="background:rgba(239,68,68,0.16);border:1.5px solid rgba(239,68,68,0.4);color:#fca5a5;font-size:12px;font-weight:800;padding:6px 12px;border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:8px;box-shadow:0 2px 6px rgba(0,0,0,0.2);">
               <div style="display:inline-flex;align-items:center;gap:6px;">
-                <label for="o-val-desconto" style="cursor:pointer;margin:0;display:inline-flex;">
-                  <span style="background:linear-gradient(135deg, rgba(239,68,68,0.22), rgba(220,38,38,0.18));border:1.5px solid #ef4444;color:#fca5a5;font-weight:800;border-radius:8px;padding:6px 13px;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(239,68,68,0.2);font-size:12.5px;">
-                    <span style="font-size:14px;">🏷️</span> <span>Desconto</span>
-                  </span>
+                <label for="o-val-desconto" style="cursor:pointer;margin:0;display:inline-flex;align-items:center;gap:5px;color:#fca5a5;font-weight:800;">
+                  <span>🏷️</span> <span>Desconto:</span>
                 </label>
                 <!-- Switcher R$ vs % -->
                 <div style="display:inline-flex;background:rgba(0,0,0,0.6);border:1px solid rgba(239,68,68,0.4);border-radius:6px;padding:2px;gap:2px;">
                   <button type="button" id="btn-tipo-desc-reais" onclick="alternarTipoDesconto('reais')"
                     title="Digitar desconto em Reais (R$)"
-                    style="border:none;background:rgba(239,68,68,0.45);color:#fff;font-size:10px;font-weight:900;padding:2px 7px;border-radius:4px;cursor:pointer;transition:all 0.15s;">R$</button>
+                    style="border:none;background:rgba(239,68,68,0.45);color:#fff;font-size:10px;font-weight:900;padding:2px 6px;border-radius:4px;cursor:pointer;transition:all 0.15s;">R$</button>
                   <button type="button" id="btn-tipo-desc-porc" onclick="alternarTipoDesconto('porc')"
                     title="Digitar desconto em Porcentagem (%)"
-                    style="border:none;background:transparent;color:var(--muted);font-size:10px;font-weight:900;padding:2px 7px;border-radius:4px;cursor:pointer;transition:all 0.15s;">%</button>
+                    style="border:none;background:transparent;color:var(--muted);font-size:10px;font-weight:900;padding:2px 6px;border-radius:4px;cursor:pointer;transition:all 0.15s;">%</button>
                 </div>
               </div>
 
-              <!-- Entrada de Desconto na mesma linha -->
-              <div style="display:inline-flex;align-items:center;gap:6px;justify-content:flex-end;">
-                <div id="wrap-desc-reais" style="display:flex;align-items:center;width:130px;">
+              <!-- Entrada de Desconto -->
+              <div style="display:inline-flex;align-items:center;gap:4px;">
+                <div id="wrap-desc-reais" style="display:flex;align-items:center;gap:4px;">
+                  <span style="font-weight:900;color:#fca5a5;font-size:12px;">R$</span>
                   <input type="text" id="o-val-desconto" inputmode="decimal" placeholder="0,00" value="0,00"
                     onfocus="this.select()"
                     oninput="aoModificarValoresResumoFinanceiro('desconto')"
                     onblur="formatarCampoMoeda(this);aoModificarValoresResumoFinanceiro('desconto')"
-                    style="font-weight:800;color:#ff7878;background:#0d0d15;border:1.5px solid rgba(239,68,68,0.45);padding:7px 12px;font-size:14px;border-radius:8px;width:100%;text-align:right;outline:none;">
+                    style="font-weight:900;color:#ff7878;background:rgba(0,0,0,0.35);border:1px solid rgba(239,68,68,0.5);border-radius:6px;padding:3px 8px;font-size:13px;width:80px;text-align:right;outline:none;">
                 </div>
 
-                <div id="wrap-desc-porc" style="display:none;align-items:center;gap:3px;width:130px;">
+                <div id="wrap-desc-porc" style="display:none;align-items:center;gap:4px;">
                   <input type="text" id="o-taxa-desconto" inputmode="decimal" placeholder="0,00" value="0,00"
                     onfocus="this.select()"
                     oninput="aoModificarValoresResumoFinanceiro('desconto_porc')"
                     onblur="formatarCampoTaxa(this);aoModificarValoresResumoFinanceiro('desconto_porc')"
-                    style="font-weight:800;color:#ff7878;background:#0d0d15;border:1.5px solid rgba(239,68,68,0.45);text-align:right;padding:7px 8px;font-size:14px;border-radius:8px;width:100%;outline:none;">
-                  <span style="font-size:12px;font-weight:800;color:#ff7878;">%</span>
+                    style="font-weight:900;color:#ff7878;background:rgba(0,0,0,0.35);border:1px solid rgba(239,68,68,0.5);border-radius:6px;text-align:right;padding:3px 8px;font-size:13px;width:70px;outline:none;">
+                  <span style="font-size:12px;font-weight:900;color:#fca5a5;">%</span>
                 </div>
               </div>
             </div>
 
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:2px;font-size:10px;padding:0 2px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:3px;font-size:10px;padding:0 4px;">
               <span style="color:rgba(252,165,165,0.7);">💰 Aplicado sobre o total</span>
               <span id="o-desc-equiv-calc" style="color:#fca5a5;font-weight:700;">= 0% s/ total</span>
             </div>
