@@ -2090,41 +2090,51 @@
             </tr>
             <!-- BOTÃO AMBIENTES ABAIXO DE QTD DESCRIÇÃO (PRODUTO / SERVIÇO) -->
             <tr id="tr-header-ambientes" style="background:#11121c;">
-              <th colspan="11" style="padding:8px 10px;text-align:left;border-bottom:1.5px solid rgba(245,158,11,0.3);background:rgba(245,158,11,0.06);text-transform:none;">
-                <div style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap;white-space:nowrap;">
-                  <div class="wrap-ambiente-nome" style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg, rgba(245,158,11,0.22), rgba(217,119,6,0.18));border:1.5px solid #f59e0b;border-radius:8px;padding:5px 12px;box-shadow:0 2px 8px rgba(245,158,11,0.2);flex-shrink:0;">
-                    <span style="font-size:15px;line-height:1;">🛋️</span>
-                    <input type="text" id="inp-orc-ambiente-top" class="inp-nome-ambiente label-ambiente-texto" placeholder="Nome do ambiente..." value="" oninput="atualizarSubtotaisAmbientes()" onfocus="this.select()" style="background:transparent;border:none;color:#fbbf24;font-weight:800;font-size:12.5px;outline:none;width:160px;min-width:120px;" title="Digite o nome do ambiente" />
+              <th colspan="11" style="padding:10px 12px;text-align:left;border-bottom:1.5px solid rgba(245,158,11,0.3);background:rgba(245,158,11,0.06);text-transform:none;">
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                  <!-- NOME DO AMBIENTE (SALA) -->
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <div class="wrap-ambiente-nome" style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg, rgba(245,158,11,0.22), rgba(217,119,6,0.18));border:1.5px solid #f59e0b;border-radius:8px;padding:6px 12px;box-shadow:0 2px 8px rgba(245,158,11,0.2);">
+                      <span style="font-size:15px;line-height:1;">🛋️</span>
+                      <input type="text" id="inp-orc-ambiente-top" class="inp-nome-ambiente label-ambiente-texto" placeholder="Nome do ambiente..." value="" oninput="atualizarSubtotaisAmbientes()" onfocus="this.select()" style="background:transparent;border:none;color:#fbbf24;font-weight:800;font-size:13px;outline:none;width:180px;min-width:130px;" title="Digite o nome do ambiente" />
+                    </div>
+                    <span id="badge-ambiente-ativo-texto" style="font-size:11.5px;color:#fcd34d;font-weight:700;"></span>
                   </div>
-                  
-                  <span id="badge-ambiente-ativo-texto" style="font-size:11.5px;color:#fcd34d;font-weight:700;"></span>
-                  <!-- BADGES DE VALORES DO AMBIENTE: PRODUTO, SERVIÇO E TOTAL COM PORCENTAGEM -->
-                  <div style="display:inline-flex;align-items:center;gap:6px;flex-wrap:nowrap;flex-shrink:0;">
-                    <!-- 1. VALOR PRODUTO -->
-                    <span id="badge-ambiente-top-produtos" style="background:rgba(59,130,246,0.18);border:1px solid rgba(59,130,246,0.4);color:#93c5fd;font-size:11.5px;font-weight:800;padding:4px 9px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;" title="Valor dos produtos deste ambiente">
-                      <span>📦</span> <span>Valor Produtos:</span> <span id="val-ambiente-top-produtos">R$ 0,00</span>
-                    </span>
-                    <!-- 2. VALOR SERVIÇO -->
-                    <span id="badge-ambiente-top-servico" style="background:rgba(6,182,212,0.18);border:1px solid rgba(6,182,212,0.4);color:#67e8f9;font-size:11.5px;font-weight:800;padding:4px 9px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;" title="Valor do serviço deste ambiente. Digite a porcentagem ao lado para alterar em tempo real">
-                      <span>🛠️</span> <span>Valor Serviço:</span> <span id="val-ambiente-top-servico">R$ 0,00</span>
-                      <span style="display:inline-flex;align-items:center;background:rgba(6,182,212,0.15);border:1px solid rgba(6,182,212,0.5);border-radius:4px;padding:1px 4px;gap:2px;">
-                        <input type="text" id="inp-ambiente-top-taxa" class="inp-ambiente-taxa" inputmode="decimal" placeholder="0" value="0" oninput="aoDigitarTaxaNoBadge(this.value)" onfocus="this.select()" style="width:36px;background:transparent;border:none;color:#a5f3fc;font-weight:900;font-size:11.5px;text-align:right;padding:0;outline:none;" title="Digite a taxa de acréscimo (%)" />
-                        <span style="font-size:11px;font-weight:900;color:#67e8f9;">%</span>
-                      </span>
-                    </span>
-                    <!-- 3. VALOR TOTAL COM PORCENTAGEM -->
-                    <span id="badge-ambiente-top-total" style="background:rgba(34,197,94,0.18);border:1px solid rgba(34,197,94,0.4);color:#86efac;font-size:11.5px;font-weight:800;padding:4px 9px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;" title="Valor total deste ambiente com a porcentagem">
-                      <span>💰</span> <span>Valor Total:</span> <span id="val-ambiente-top-total">R$ 0,00</span>
-                    </span>
-                  </div>
-                </div>
 
-                <!-- OPÇÃO OBSERVAÇÕES ABAIXO DO AMBIENTE (SALA) -->
-                <div class="wrap-ambiente-obs-box" style="margin-top:7px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                  <label for="inp-orc-ambiente-top-obs" style="font-size:11px;font-weight:800;color:#fcd34d;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;margin:0;cursor:pointer;">
-                    <span>📝</span> Observações:
-                  </label>
-                  <input type="text" id="inp-orc-ambiente-top-obs" class="inp-ambiente-obs inp-ambiente-top-obs" placeholder="Observações deste ambiente (ex: Acabamento, puxadores, ferragens, medidas especiais...)" oninput="aoMudarObsAmbiente(this)" style="flex:1;min-width:200px;background:rgba(0,0,0,0.35);border:1px solid rgba(245,158,11,0.3);border-radius:6px;padding:4px 10px;color:#fff;font-size:11.5px;outline:none;box-sizing:border-box;" title="Digite observações deste ambiente" />
+                  <!-- VALORES DO AMBIENTE EMBAIXO DA SALA, UM ABAIXO DO OUTRO ORGANIZADO -->
+                  <div style="display:flex;flex-direction:column;gap:6px;width:100%;max-width:320px;margin-top:2px;">
+                    <!-- 1. VALOR PRODUTO -->
+                    <div id="badge-ambiente-top-produtos" style="background:rgba(59,130,246,0.16);border:1.5px solid rgba(59,130,246,0.4);color:#93c5fd;font-size:12px;font-weight:800;padding:6px 12px;border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:8px;box-shadow:0 2px 6px rgba(0,0,0,0.2);" title="Valor dos produtos deste ambiente">
+                      <span style="display:inline-flex;align-items:center;gap:6px;"><span>📦</span> <span>Valor Produtos:</span></span>
+                      <span id="val-ambiente-top-produtos" style="font-weight:900;color:#bfdbfe;">R$ 0,00</span>
+                    </div>
+
+                    <!-- 2. VALOR SERVIÇO COM PORCENTAGEM -->
+                    <div id="badge-ambiente-top-servico" style="background:rgba(6,182,212,0.16);border:1.5px solid rgba(6,182,212,0.4);color:#67e8f9;font-size:12px;font-weight:800;padding:6px 12px;border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:8px;box-shadow:0 2px 6px rgba(0,0,0,0.2);" title="Valor do serviço deste ambiente">
+                      <span style="display:inline-flex;align-items:center;gap:6px;"><span>🛠️</span> <span>Valor Serviço:</span></span>
+                      <div style="display:inline-flex;align-items:center;gap:6px;">
+                        <span id="val-ambiente-top-servico" style="font-weight:900;color:#a5f3fc;">R$ 0,00</span>
+                        <span style="display:inline-flex;align-items:center;background:rgba(6,182,212,0.2);border:1px solid rgba(6,182,212,0.6);border-radius:5px;padding:2px 5px;gap:2px;">
+                          <input type="text" id="inp-ambiente-top-taxa" class="inp-ambiente-taxa" inputmode="decimal" placeholder="0" value="0" oninput="aoDigitarTaxaNoBadge(this.value)" onfocus="this.select()" style="width:34px;background:transparent;border:none;color:#fff;font-weight:900;font-size:11.5px;text-align:right;padding:0;outline:none;" title="Digite a taxa de acréscimo (%)" />
+                          <span style="font-size:11px;font-weight:900;color:#67e8f9;">%</span>
+                        </span>
+                      </div>
+                    </div>
+
+                    <!-- 3. VALOR TOTAL -->
+                    <div id="badge-ambiente-top-total" style="background:rgba(34,197,94,0.16);border:1.5px solid rgba(34,197,94,0.4);color:#86efac;font-size:12px;font-weight:800;padding:6px 12px;border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:8px;box-shadow:0 2px 6px rgba(0,0,0,0.2);" title="Valor total deste ambiente com a taxa de serviço">
+                      <span style="display:inline-flex;align-items:center;gap:6px;"><span>💰</span> <span>Valor Total:</span></span>
+                      <span id="val-ambiente-top-total" style="font-weight:900;color:#bbf7d0;">R$ 0,00</span>
+                    </div>
+                  </div>
+
+                  <!-- OPÇÃO OBSERVAÇÕES ABAIXO DO AMBIENTE (SALA) -->
+                  <div class="wrap-ambiente-obs-box" style="margin-top:2px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <label for="inp-orc-ambiente-top-obs" style="font-size:11px;font-weight:800;color:#fcd34d;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;margin:0;cursor:pointer;">
+                      <span>📝</span> Observações:
+                    </label>
+                    <input type="text" id="inp-orc-ambiente-top-obs" class="inp-ambiente-obs inp-ambiente-top-obs" placeholder="Observações deste ambiente (ex: Acabamento, puxadores, ferragens, medidas especiais...)" oninput="aoMudarObsAmbiente(this)" style="flex:1;min-width:200px;background:rgba(0,0,0,0.35);border:1px solid rgba(245,158,11,0.3);border-radius:6px;padding:6px 10px;color:#fff;font-size:11.5px;outline:none;box-sizing:border-box;" title="Digite observações deste ambiente" />
+                  </div>
                 </div>
               </th>
             </tr>
@@ -2194,7 +2204,7 @@
       </div>
 
       <!-- Resumo Financeiro: Frete, Desconto e Total (Composição Financeira da 3ª imagem excluída a pedido do usuário) -->
-      <div class="resumo-financeiro-container" style="margin-top:14px;background:rgba(255,255,255,0.02);border:1.5px solid var(--border);border-radius:var(--r-md);padding:14px;">
+      <div class="resumo-financeiro-container" style="margin-top:14px;background:transparent;border:none;padding:4px 0;">
         
         <!-- Elementos de Composição Financeira e Rateio mantidos ocultos no DOM para preservação total dos cálculos -->
         <div id="bloco-composicao-financeira-oculto" style="display:none !important;" aria-hidden="true">
@@ -2210,32 +2220,36 @@
           </div>
         </div>
 
-        <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;flex-direction:column;gap:12px;">
 
-          <!-- 4. Frete (Nome e Valor na mesma linha) -->
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:8px 12px;">
-            <label for="o-val-frete" style="font-size:12.5px;font-weight:800;color:#fff;display:inline-flex;align-items:center;gap:6px;margin:0;white-space:nowrap;cursor:pointer;">
-              <span>🚚</span> Frete
+          <!-- 4. Frete (Nome estilo Comparativo de Preços, sem excesso de bordas) -->
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+            <label for="o-val-frete" style="cursor:pointer;margin:0;display:inline-flex;">
+              <span style="background:linear-gradient(135deg, rgba(16,185,129,0.25), rgba(5,150,105,0.22));border:1.5px solid #10b981;color:#34d399;font-weight:800;border-radius:8px;padding:6px 13px;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(16,185,129,0.25);font-size:12.5px;">
+                <span style="font-size:14px;">🚚</span> <span>Frete</span>
+              </span>
             </label>
             <input type="text" id="o-val-frete" inputmode="decimal" placeholder="0,00" value="0,00"
               onfocus="this.select()"
               oninput="aoModificarValoresResumoFinanceiro('frete')"
               onblur="formatarCampoMoeda(this);aoModificarValoresResumoFinanceiro('frete')"
-              style="font-weight:800;color:#fff;background:#0d0d15;border:1px solid rgba(255,255,255,0.18);padding:7px 12px;font-size:14px;border-radius:8px;text-align:right;width:140px;max-width:55%;outline:none;">
+              style="font-weight:800;color:#fff;background:#0d0d15;border:1.5px solid rgba(255,255,255,0.2);padding:7px 12px;font-size:14px;border-radius:8px;text-align:right;width:130px;max-width:50%;outline:none;">
           </div>
 
-          <!-- 5. Desconto (Nome e Valor na mesma linha com R$ e %) -->
-          <div style="background:rgba(239,68,68,0.06);border:1.5px solid rgba(239,68,68,0.35);border-radius:10px;padding:8px 12px;">
+          <!-- 5. Desconto (Nome estilo Comparativo de Preços, sem excesso de bordas) -->
+          <div style="display:flex;flex-direction:column;gap:4px;">
             <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
-              <div style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap;">
-                <label for="o-val-desconto" style="font-size:12.5px;font-weight:800;color:#ff8585;margin:0;display:inline-flex;align-items:center;gap:5px;cursor:pointer;">
-                  <span>🏷️</span> Desconto
+              <div style="display:inline-flex;align-items:center;gap:6px;">
+                <label for="o-val-desconto" style="cursor:pointer;margin:0;display:inline-flex;">
+                  <span style="background:linear-gradient(135deg, rgba(239,68,68,0.22), rgba(220,38,38,0.18));border:1.5px solid #ef4444;color:#fca5a5;font-weight:800;border-radius:8px;padding:6px 13px;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(239,68,68,0.2);font-size:12.5px;">
+                    <span style="font-size:14px;">🏷️</span> <span>Desconto</span>
+                  </span>
                 </label>
                 <!-- Switcher R$ vs % -->
                 <div style="display:inline-flex;background:rgba(0,0,0,0.6);border:1px solid rgba(239,68,68,0.4);border-radius:6px;padding:2px;gap:2px;">
                   <button type="button" id="btn-tipo-desc-reais" onclick="alternarTipoDesconto('reais')"
                     title="Digitar desconto em Reais (R$)"
-                    style="border:none;background:rgba(239,68,68,0.4);color:#fff;font-size:10px;font-weight:900;padding:2px 7px;border-radius:4px;cursor:pointer;transition:all 0.15s;">R$</button>
+                    style="border:none;background:rgba(239,68,68,0.45);color:#fff;font-size:10px;font-weight:900;padding:2px 7px;border-radius:4px;cursor:pointer;transition:all 0.15s;">R$</button>
                   <button type="button" id="btn-tipo-desc-porc" onclick="alternarTipoDesconto('porc')"
                     title="Digitar desconto em Porcentagem (%)"
                     style="border:none;background:transparent;color:var(--muted);font-size:10px;font-weight:900;padding:2px 7px;border-radius:4px;cursor:pointer;transition:all 0.15s;">%</button>
@@ -2243,27 +2257,27 @@
               </div>
 
               <!-- Entrada de Desconto na mesma linha -->
-              <div style="display:inline-flex;align-items:center;gap:6px;justify-content:flex-end;flex:1;min-width:140px;">
-                <div id="wrap-desc-reais" style="display:flex;align-items:center;width:100%;max-width:140px;">
+              <div style="display:inline-flex;align-items:center;gap:6px;justify-content:flex-end;">
+                <div id="wrap-desc-reais" style="display:flex;align-items:center;width:130px;">
                   <input type="text" id="o-val-desconto" inputmode="decimal" placeholder="0,00" value="0,00"
                     onfocus="this.select()"
                     oninput="aoModificarValoresResumoFinanceiro('desconto')"
                     onblur="formatarCampoMoeda(this);aoModificarValoresResumoFinanceiro('desconto')"
-                    style="font-weight:800;color:#ff7878;background:#0d0d15;border:1px solid rgba(239,68,68,0.4);padding:7px 12px;font-size:14px;border-radius:8px;width:100%;text-align:right;outline:none;">
+                    style="font-weight:800;color:#ff7878;background:#0d0d15;border:1.5px solid rgba(239,68,68,0.45);padding:7px 12px;font-size:14px;border-radius:8px;width:100%;text-align:right;outline:none;">
                 </div>
 
-                <div id="wrap-desc-porc" style="display:none;align-items:center;gap:3px;width:100%;max-width:140px;">
+                <div id="wrap-desc-porc" style="display:none;align-items:center;gap:3px;width:130px;">
                   <input type="text" id="o-taxa-desconto" inputmode="decimal" placeholder="0,00" value="0,00"
                     onfocus="this.select()"
                     oninput="aoModificarValoresResumoFinanceiro('desconto_porc')"
                     onblur="formatarCampoTaxa(this);aoModificarValoresResumoFinanceiro('desconto_porc')"
-                    style="font-weight:800;color:#ff7878;background:#0d0d15;border:1px solid rgba(239,68,68,0.4);text-align:right;padding:7px 8px;font-size:14px;border-radius:8px;width:100%;outline:none;">
+                    style="font-weight:800;color:#ff7878;background:#0d0d15;border:1.5px solid rgba(239,68,68,0.45);text-align:right;padding:7px 8px;font-size:14px;border-radius:8px;width:100%;outline:none;">
                   <span style="font-size:12px;font-weight:800;color:#ff7878;">%</span>
                 </div>
               </div>
             </div>
 
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;font-size:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:2px;font-size:10px;padding:0 2px;">
               <span style="color:rgba(252,165,165,0.7);">💰 Aplicado sobre o total</span>
               <span id="o-desc-equiv-calc" style="color:#fca5a5;font-weight:700;">= 0% s/ total</span>
             </div>
@@ -14677,38 +14691,45 @@ function adicionarNovoAmbienteSecao(nomePadrao = '') {
   trAmb.className = 'tr-ambiente-secao';
   trAmb.style.background = '#11121c';
   trAmb.innerHTML = `
-    <td colspan="11" style="padding:8px 10px;text-align:left;border-top:2px solid rgba(245,158,11,0.35);border-bottom:1.5px solid rgba(245,158,11,0.25);background:rgba(245,158,11,0.06);">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap;white-space:nowrap;">
-          <div class="wrap-ambiente-nome" style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg, rgba(245,158,11,0.22), rgba(217,119,6,0.18));border:1.5px solid #f59e0b;border-radius:8px;padding:5px 12px;box-shadow:0 2px 8px rgba(245,158,11,0.2);flex-shrink:0;">
+    <td colspan="11" style="padding:10px 12px;text-align:left;border-top:2px solid rgba(245,158,11,0.35);border-bottom:1.5px solid rgba(245,158,11,0.25);background:rgba(245,158,11,0.06);">
+      <div style="display:flex;flex-direction:column;gap:8px;width:100%;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+          <div class="wrap-ambiente-nome" style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg, rgba(245,158,11,0.22), rgba(217,119,6,0.18));border:1.5px solid #f59e0b;border-radius:8px;padding:6px 12px;box-shadow:0 2px 8px rgba(245,158,11,0.2);">
             <span style="font-size:15px;line-height:1;">🛋️</span>
-            <input type="text" class="inp-nome-ambiente label-ambiente-texto" placeholder="Nome do ambiente..." value="${esc(valNome)}" oninput="atualizarSubtotaisAmbientes()" onfocus="secaoAmbienteAtivaTr=this.closest('.tr-ambiente-secao');this.select();" style="background:transparent;border:none;color:#fbbf24;font-weight:800;font-size:12.5px;outline:none;width:160px;min-width:120px;" title="Digite o nome do ambiente" />
+            <input type="text" class="inp-nome-ambiente label-ambiente-texto" placeholder="Nome do ambiente..." value="${esc(valNome)}" oninput="atualizarSubtotaisAmbientes()" onfocus="secaoAmbienteAtivaTr=this.closest('.tr-ambiente-secao');this.select();" style="background:transparent;border:none;color:#fbbf24;font-weight:800;font-size:13px;outline:none;width:180px;min-width:130px;" title="Digite o nome do ambiente" />
           </div>
-          <div style="display:inline-flex;align-items:center;gap:6px;flex-wrap:nowrap;flex-shrink:0;">
-            <span class="badge-secao-produtos-val" style="background:rgba(59,130,246,0.18);border:1px solid rgba(59,130,246,0.4);color:#93c5fd;font-size:11.5px;font-weight:800;padding:4px 9px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;" title="Valor dos produtos deste ambiente">
-              <span>📦</span> <span>Valor Produtos:</span> <span class="val-secao-produtos">R$ 0,00</span>
-            </span>
-            <span class="badge-secao-servico-val" style="background:rgba(6,182,212,0.18);border:1px solid rgba(6,182,212,0.4);color:#67e8f9;font-size:11.5px;font-weight:800;padding:4px 9px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;" title="Valor do serviço deste ambiente. Digite a porcentagem ao lado para alterar em tempo real">
-              <span>🛠️</span> <span>Valor Serviço:</span> <span class="val-secao-servico">R$ 0,00</span>
-              <span style="display:inline-flex;align-items:center;background:rgba(6,182,212,0.15);border:1px solid rgba(6,182,212,0.5);border-radius:4px;padding:1px 4px;gap:2px;">
-                <input type="text" class="inp-secao-taxa inp-ambiente-taxa" inputmode="decimal" placeholder="0" value="0" oninput="aoDigitarTaxaNoBadge(this.value)" onfocus="this.select()" style="width:36px;background:transparent;border:none;color:#a5f3fc;font-weight:900;font-size:11.5px;text-align:right;padding:0;outline:none;" title="Digite a taxa de acréscimo (%)" />
+          <button type="button" onclick="removerAmbienteSecao(this)" style="background:none;border:none;color:#ef4444;font-size:11px;font-weight:700;cursor:pointer;opacity:0.85;padding:2px 6px;" title="Remover este ambiente">
+            ✕ Remover
+          </button>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:6px;width:100%;max-width:320px;margin-top:2px;">
+          <div class="badge-secao-produtos-val" style="background:rgba(59,130,246,0.16);border:1.5px solid rgba(59,130,246,0.4);color:#93c5fd;font-size:12px;font-weight:800;padding:6px 12px;border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:8px;box-shadow:0 2px 6px rgba(0,0,0,0.2);" title="Valor dos produtos deste ambiente">
+            <span style="display:inline-flex;align-items:center;gap:6px;"><span>📦</span> <span>Valor Produtos:</span></span>
+            <span class="val-secao-produtos" style="font-weight:900;color:#bfdbfe;">R$ 0,00</span>
+          </div>
+          <div class="badge-secao-servico-val" style="background:rgba(6,182,212,0.16);border:1.5px solid rgba(6,182,212,0.4);color:#67e8f9;font-size:12px;font-weight:800;padding:6px 12px;border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:8px;box-shadow:0 2px 6px rgba(0,0,0,0.2);" title="Valor do serviço deste ambiente">
+            <span style="display:inline-flex;align-items:center;gap:6px;"><span>🛠️</span> <span>Valor Serviço:</span></span>
+            <div style="display:inline-flex;align-items:center;gap:6px;">
+              <span class="val-secao-servico" style="font-weight:900;color:#a5f3fc;">R$ 0,00</span>
+              <span style="display:inline-flex;align-items:center;background:rgba(6,182,212,0.2);border:1px solid rgba(6,182,212,0.6);border-radius:5px;padding:2px 5px;gap:2px;">
+                <input type="text" class="inp-secao-taxa inp-ambiente-taxa" inputmode="decimal" placeholder="0" value="0" oninput="aoDigitarTaxaNoBadge(this.value)" onfocus="this.select()" style="width:34px;background:transparent;border:none;color:#fff;font-weight:900;font-size:11.5px;text-align:right;padding:0;outline:none;" title="Digite a taxa de acréscimo (%)" />
                 <span style="font-size:11px;font-weight:900;color:#67e8f9;">%</span>
               </span>
-            </span>
-            <span class="badge-secao-total-val" style="background:rgba(34,197,94,0.18);border:1px solid rgba(34,197,94,0.4);color:#86efac;font-size:11.5px;font-weight:800;padding:4px 9px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;" title="Valor total deste ambiente com a porcentagem">
-              <span>💰</span> <span>Valor Total:</span> <span class="val-secao-total">R$ 0,00</span>
-            </span>
+            </div>
+          </div>
+          <div class="badge-secao-total-val" style="background:rgba(34,197,94,0.16);border:1.5px solid rgba(34,197,94,0.4);color:#86efac;font-size:12px;font-weight:800;padding:6px 12px;border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:8px;box-shadow:0 2px 6px rgba(0,0,0,0.2);" title="Valor total deste ambiente com a porcentagem">
+            <span style="display:inline-flex;align-items:center;gap:6px;"><span>💰</span> <span>Valor Total:</span></span>
+            <span class="val-secao-total" style="font-weight:900;color:#bbf7d0;">R$ 0,00</span>
           </div>
         </div>
-        <button type="button" onclick="removerAmbienteSecao(this)" style="background:none;border:none;color:#ef4444;font-size:11px;font-weight:700;cursor:pointer;opacity:0.75;padding:2px 6px;" title="Remover este ambiente">
-          ✕ Remover
-        </button>
-      </div>
-      <div class="wrap-ambiente-obs-box" style="margin-top:7px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-        <label style="font-size:11px;font-weight:800;color:#fcd34d;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;margin:0;cursor:pointer;">
-          <span>📝</span> Observações:
-        </label>
-        <input type="text" class="inp-ambiente-obs inp-secao-obs" placeholder="Observações deste ambiente (ex: Acabamento, puxadores, ferragens, medidas especiais...)" oninput="aoMudarObsAmbiente(this)" style="flex:1;min-width:200px;background:rgba(0,0,0,0.35);border:1px solid rgba(245,158,11,0.3);border-radius:6px;padding:4px 10px;color:#fff;font-size:11.5px;outline:none;box-sizing:border-box;" title="Digite observações deste ambiente" />
+
+        <div class="wrap-ambiente-obs-box" style="margin-top:2px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <label style="font-size:11px;font-weight:800;color:#fcd34d;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;margin:0;cursor:pointer;">
+            <span>📝</span> Observações:
+          </label>
+          <input type="text" class="inp-ambiente-obs inp-secao-obs" placeholder="Observações deste ambiente (ex: Acabamento, puxadores, ferragens, medidas especiais...)" oninput="aoMudarObsAmbiente(this)" style="flex:1;min-width:200px;background:rgba(0,0,0,0.35);border:1px solid rgba(245,158,11,0.3);border-radius:6px;padding:6px 10px;color:#fff;font-size:11.5px;outline:none;box-sizing:border-box;" title="Digite observações deste ambiente" />
+        </div>
       </div>
     </td>
   `;
