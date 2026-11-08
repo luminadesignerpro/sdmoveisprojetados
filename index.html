@@ -2193,112 +2193,24 @@
         <div id="galeria-orc-preview-itens" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin;"></div>
       </div>
 
-      <!-- Resumo Financeiro Completo: Produtos, Serviço, Taxa de Acréscimo, Frete, Desconto e Total -->
+      <!-- Resumo Financeiro: Frete, Desconto e Total (Composição Financeira da 3ª imagem excluída a pedido do usuário) -->
       <div class="resumo-financeiro-container" style="margin-top:14px;background:rgba(255,255,255,0.02);border:1.5px solid var(--border);border-radius:var(--r-md);padding:14px;">
-        <div style="font-size:12px;font-weight:800;color:var(--gold-light);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
-          <span style="display:flex;align-items:center;gap:6px;"><span>📊</span> Composição Financeira do Orçamento</span>
-          <span style="font-size:10.5px;color:var(--muted);font-weight:600;">Cálculo automático em tempo real</span>
+        
+        <!-- Elementos de Composição Financeira e Rateio mantidos ocultos no DOM para preservação total dos cálculos -->
+        <div id="bloco-composicao-financeira-oculto" style="display:none !important;" aria-hidden="true">
+          <input type="hidden" id="o-val-produtos" value="0,00">
+          <input type="hidden" id="o-val-servico" value="0,00">
+          <input type="hidden" id="o-taxa-acrescimo" value="0,00">
+          <div id="o-taxa-acrescimo-calc"></div>
+          <div id="wrap-dir-inline-orc">
+            <span id="dir-inline-badge-soma"></span>
+            <strong id="dir-inline-val-total-orc"></strong>
+            <div id="dir-inline-progress-bar"></div>
+            <div id="dir-inline-lista-categorias"></div>
+          </div>
         </div>
 
         <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(135px, 1fr));gap:10px;">
-          <!-- 1. Valor Produtos -->
-          <div class="field" style="margin:0;">
-            <label style="font-size:11px;font-weight:700;color:var(--text2);display:flex;align-items:center;gap:4px;">
-              <span>📦</span> Valor Produtos
-            </label>
-            <input type="text" id="o-val-produtos" inputmode="decimal" placeholder="0,00" value="0,00"
-              onfocus="this.select()"
-              oninput="aoModificarValoresResumoFinanceiro('produtos')"
-              onblur="formatarCampoMoeda(this);aoModificarValoresResumoFinanceiro('produtos')"
-              style="font-weight:800;color:#fff;background:#0d0d15;border:1px solid rgba(255,255,255,0.12);padding:9px 10px;font-size:13px;border-radius:8px;">
-          </div>
-
-          <!-- 2. Valor Serviço -->
-          <div class="field" style="margin:0;">
-            <label style="font-size:11px;font-weight:700;color:var(--text2);display:flex;align-items:center;gap:4px;">
-              <span>🛠️</span> Valor Serviço
-            </label>
-            <input type="text" id="o-val-servico" inputmode="decimal" placeholder="0,00" value="0,00"
-              onfocus="this.select()"
-              oninput="aoModificarValoresResumoFinanceiro('servico')"
-              onblur="formatarCampoMoeda(this);aoModificarValoresResumoFinanceiro('servico')"
-              style="font-weight:800;color:#fff;background:#0d0d15;border:1px solid rgba(255,255,255,0.12);padding:9px 10px;font-size:13px;border-radius:8px;">
-          </div>
-
-          <!-- 3. Taxa de Acréscimo (Interno - Nunca aparece no PDF) -->
-          <div class="field" style="margin:0;background:rgba(201,168,76,0.08);border:1.5px dashed rgba(201,168,76,0.5);border-radius:10px;padding:8px 10px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <label style="font-size:11px;font-weight:800;color:var(--gold-light);margin:0;display:flex;align-items:center;gap:4px;">
-                <span>🔒</span> Taxa Acréscimo (%)
-              </label>
-              <span style="font-size:9px;color:var(--gold-dim);font-weight:800;background:rgba(201,168,76,0.15);padding:2px 6px;border-radius:4px;text-transform:uppercase;">Interno</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:4px;margin-top:4px;">
-              <input type="text" id="o-taxa-acrescimo" inputmode="decimal" placeholder="0,00" value="0,00"
-                onfocus="this.select()"
-                oninput="aoModificarValoresResumoFinanceiro('taxa')"
-                onblur="formatarCampoTaxa(this);aoModificarValoresResumoFinanceiro('taxa')"
-                style="font-weight:800;color:var(--gold-light);background:#0d0d15;border:1px solid rgba(201,168,76,0.4);text-align:right;padding:7px 8px;font-size:13px;border-radius:6px;width:100%;">
-              <span style="font-size:13px;font-weight:800;color:var(--gold-light);">%</span>
-            </div>
-            <div id="o-taxa-acrescimo-calc" style="font-size:10px;color:var(--gold-light);margin-top:4px;text-align:right;font-weight:700;">
-              = R$ 0,00 em serviço
-            </div>
-            <div style="font-size:9px;color:var(--muted);margin-top:2px;line-height:1.2;">
-              🚫 Oculto ao cliente no PDF
-            </div>
-          </div>
-
-
-
-          <!-- 3b. Rateio Proporcional de Custo / Direcionamento Inline (Interno - Idêntico à Primeira Imagem) -->
-          <div id="wrap-dir-inline-orc" style="margin:0;background:#11111a;border:1.5px solid rgba(139,92,246,0.45);border-radius:14px;padding:14px;box-shadow:0 4px 20px rgba(0,0,0,0.5);">
-            
-            <!-- HEADER DO RATEIO (IDÊNTICO À PRIMEIRA IMAGEM) -->
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
-              <div style="display:flex;align-items:center;gap:7px;">
-                <span style="font-size:18px;line-height:1;">📊</span>
-                <span style="font-size:13.5px;font-weight:800;color:#fff;">Rateio Proporcional Visual</span>
-              </div>
-              <div style="display:flex;align-items:center;gap:6px;">
-                <span id="dir-inline-badge-soma" style="font-size:11.5px;font-weight:800;padding:4px 10px;border-radius:8px;background:#471a24;color:#ff6b81;border:1px solid #7d2a38;letter-spacing:0.3px;">100% Total</span>
-              </div>
-            </div>
-
-            <!-- VALOR TOTAL DO ORÇAMENTO NO CARD (QUARTA IMAGEM) -->
-            <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:6px 10px;margin-bottom:10px;">
-              <span style="font-size:11.5px;color:#94a3b8;font-weight:700;">💰 Total do Orçamento:</span>
-              <strong id="dir-inline-val-total-orc" style="font-size:13.5px;color:var(--gold-light);font-weight:900;">R$ 0,00</strong>
-            </div>
-
-            <!-- BARRA PROGRESSO MULTICOLORIDA COM CORES DA PRIMEIRA IMAGEM -->
-            <div id="dir-inline-progress-bar" style="height:14px;width:100%;background:rgba(255,255,255,0.06);border-radius:7px;display:flex;overflow:hidden;position:relative;margin-bottom:12px;box-shadow:inset 0 1px 3px rgba(0,0,0,0.5);">
-              <!-- Segmentos gerados via JS -->
-            </div>
-
-            <!-- LISTA INLINE DE CATEGORIAS (LINHA ÚNICA LIMPA SEM QUEBRAR O LAYOUT) -->
-            <div id="dir-inline-lista-categorias" style="display:flex;flex-direction:column;gap:7px;margin-bottom:12px;">
-              <!-- Categorias renderizadas via JS -->
-            </div>
-
-            <!-- FOOTER COM BOTÕES E AVISO INTERNO -->
-            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;padding-top:10px;border-top:1px dashed rgba(255,255,255,0.08);">
-              <div style="display:flex;align-items:center;gap:6px;">
-                <button type="button" onclick="adicionarCategoriaDirecionamentoInline()" style="background:linear-gradient(135deg,rgba(16,185,129,0.22),rgba(5,150,105,0.22));border:1.5px solid #10b981;color:#34d399;font-weight:800;font-size:11px;padding:6px 12px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
-                  ➕ Adicionar Categoria
-                </button>
-                <button type="button" onclick="abrirModalDirecionamentoDoOrcamento()" style="background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.3);color:#c4b5fd;font-weight:700;font-size:11px;padding:6px 10px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;" title="Abrir Modal Completo / Imprimir / Enviar">
-                  🔍 Modal Completo
-                </button>
-              </div>
-              <div style="font-size:9.5px;color:var(--muted);">
-                🚫 Oculto ao cliente no PDF
-              </div>
-            </div>
-
-          </div>
-
-          </div>
 
           
 
@@ -21980,9 +21892,12 @@ async function gerarPdfOrcamentoDoc(dados) {
 
   let curY = tableHeaderY - tableHeaderH;
   const itensList = Array.isArray(itens) && itens.length ? itens : [];
-  const formatoAmbiente = (dados.formatoPdf === 'ambiente' || dados.formato === 'ambiente');
+  const formatoAmbiente = (dados.formatoPdf === 'ambiente' || dados.formato === 'ambiente' || (typeof _modoPdfOrcamentoSelecionado !== 'undefined' && _modoPdfOrcamentoSelecionado === 'ambiente'));
   
   let ambientesParaPdf = (Array.isArray(dados.ambientes) && dados.ambientes.length) ? dados.ambientes : [];
+  if (formatoAmbiente && (!ambientesParaPdf || !ambientesParaPdf.length)) {
+    ambientesParaPdf = (typeof obterResumoAmbientesParaPdf === 'function') ? obterResumoAmbientesParaPdf() : [];
+  }
   if (formatoAmbiente && (!ambientesParaPdf || !ambientesParaPdf.length) && itensList.length) {
     const mapAmb = {};
     itensList.forEach(it => {
@@ -22011,7 +21926,8 @@ async function gerarPdfOrcamentoDoc(dados) {
         borderWidth: 0.6
       });
 
-      const temObs = !!(amb.obs && String(amb.obs).trim());
+      const obsTexto = (amb.obs && String(amb.obs).trim()) || (dados.obs ? String(dados.obs).trim() : '');
+      const temObs = !!obsTexto;
       const altLinha = temObs ? 26 : 22;
       curY = curY + rowH - altLinha;
 
@@ -22026,9 +21942,9 @@ async function gerarPdfOrcamentoDoc(dados) {
         color: DARK
       });
 
-      // Se houver observações deste ambiente, exibe abaixo do nome
+      // Se houver observações deste ambiente ou do orçamento, exibe abaixo do nome
       if (temObs) {
-        page.drawText(sanitizePdf(`Obs: ${String(amb.obs).trim()}`), {
+        page.drawText(sanitizePdf(`Obs: ${obsTexto}`), {
           x: MARGIN_X + 10,
           y: curY + 5,
           size: 6.8,
