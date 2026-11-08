@@ -9824,6 +9824,22 @@ function identificarFamiliasMaterial(tokens) {
   return set;
 }
 
+const CORES_MADEIRAS = new Set([
+  'branco', 'preto', 'cinza', 'grafite', 'chumbo', 'carbono',
+  'louro', 'freijo', 'cumaru', 'madeirado', 'amadeirado',
+  'carvalho', 'noce', 'nogal', 'imbuia', 'tauari', 'peroba',
+  'gianduia', 'fendi', 'areia', 'sand', 'salvia', 'titanio',
+  'camurca', 'capuccino', 'marfim', 'castanho', 'ebano', 'cedro',
+  'teka', 'araucaria', 'itapua', 'savana', 'jacaranda', 'pau-ferro',
+  'cerejeira', 'canela', 'rosa', 'azul', 'verde', 'amarelo', 'terracota'
+]);
+
+const TEXTURAS = new Set([
+  'tx', 'trama', 'ripado', 'nature', 'matt', 'matte', 'fosco',
+  'brilho', 'cristal', 'chess', 'silk', 'syncron', 'couro',
+  'bufalo', 'pedra', 'concreto', 'aco', 'corten'
+]);
+
 function pontuarCorrespondenciaComparativo(descricao, nomeCandidato) {
   const qNorm = normalizarTextoParaBusca(descricao);
   const cNorm = normalizarTextoParaBusca(nomeCandidato);
@@ -9834,6 +9850,7 @@ function pontuarCorrespondenciaComparativo(descricao, nomeCandidato) {
   const cTokens = extrairTokensBusca(nomeCandidato);
   if (!qTokens.length || !cTokens.length) return 0;
 
+  // 1. Validação de Família de Material (MDF vs Fórmica vs Fita vs Dobradiça etc.)
   const qFams = identificarFamiliasMaterial(qTokens);
   const cFams = identificarFamiliasMaterial(cTokens);
 
@@ -9842,36 +9859,55 @@ function pontuarCorrespondenciaComparativo(descricao, nomeCandidato) {
     for (const f of qFams) {
       if (cFams.has(f)) { intersec = true; break; }
     }
-    if (!intersec) return 0;
+    if (!intersec) return 0; // Tipos de materiais diferentes
   }
   if (qFams.size > 0 && cFams.size === 0) {
     return 0;
   }
 
+  // 2. Validação Estrita de Cor e Madeira (ex: grafite vs branco vs louro freijo)
+  const qCores = qTokens.filter(t => CORES_MADEIRAS.has(t));
+  const cCores = cTokens.filter(t => CORES_MADEIRAS.has(t));
+
+  if (qCores.length > 0) {
+    let temCor = false;
+    for (const qc of qCores) {
+      if (cCores.includes(qc)) { temCor = true; break; }
+    }
+    if (!temCor) return 0; // Cor incompatível (ex: grafite não bate com branco)
+  }
+
+  // 3. Validação Estrita de Textura/Acabamento (ex: trama vs tx)
+  const qTex = qTokens.filter(t => TEXTURAS.has(t));
+  const cTex = cTokens.filter(t => TEXTURAS.has(t));
+
+  if (qTex.length > 0) {
+    let temTex = false;
+    for (const qt of qTex) {
+      if (cTex.includes(qt)) { temTex = true; break; }
+    }
+    if (!temTex) return 0; // Textura incompatível (ex: trama vs tx)
+  }
+
+  // 4. Validação Estrita de Números (espessuras e dimensões, ex: 15 vs 06 vs 18; 35 vs 45)
   const qNums = qTokens.filter(t => /^\d+$/.test(t)).map(n => parseInt(n, 10));
   const cNums = cTokens.filter(t => /^\d+$/.test(t)).map(n => parseInt(n, 10));
 
   if (qNums.length > 0 && cNums.length > 0) {
     for (const qn of qNums) {
-      if (!cNums.includes(qn)) return 0;
+      if (!cNums.includes(qn)) return 0; // Espessura ou medida incompatível
     }
   }
 
-  const acabamentos = new Set(['branco', 'preto', 'cinza', 'tx', 'fosco', 'brilho', 'amadeirado', 'madeirado', 'trama', 'grafite']);
+  // 5. Contagem de Tokens coincidentes
   let matchCount = 0;
-  let nonAcabamentoMatch = 0;
   for (const qt of qTokens) {
     if (cTokens.includes(qt)) {
       matchCount++;
-      if (!acabamentos.has(qt)) nonAcabamentoMatch++;
     }
   }
 
-  if (nonAcabamentoMatch === 0 && matchCount > 0) {
-    return 0;
-  }
-
-  if (matchCount >= 2 && (matchCount / qTokens.length) >= 0.45) {
+  if (matchCount >= 2 && (matchCount / qTokens.length) >= 0.5) {
     return matchCount * 10;
   }
   return 0;
