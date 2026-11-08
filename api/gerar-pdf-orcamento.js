@@ -425,12 +425,23 @@ async function gerarPdfOrcamento(dados, fetchLogo, empInfo) {
   let totY = bottomY - 32;
   const valorTotalFormatado = formatMoney(total);
 
-  page.drawText('Valor dos Materiais:', { x: rightCardX + 10, y: totY, size: 7, font: fontRegular, color: GRAY });
-  page.drawText(`R$ ${valorTotalFormatado}`, { x: rightCardX + rightCardW - 10 - fontBold.widthOfTextAtSize(`R$ ${valorTotalFormatado}`, 7.5), y: totY, size: 7.5, font: fontBold, color: DARK });
+  let valorMateriaisFormatado = valorTotalFormatado;
+  if (dados.valProdutos) {
+    valorMateriaisFormatado = formatMoney(dados.valProdutos);
+  } else if (dados.valServico) {
+    const totNum = parseFloat(String(total || '0').replace(/[^\d,\.]/g, '').replace(/\./g, '').replace(',', '.')) || 0;
+    const servNum = parseFloat(String(dados.valServico || '0').replace(/[^\d,\.]/g, '').replace(/\./g, '').replace(',', '.')) || 0;
+    if (totNum > servNum && servNum > 0) {
+      valorMateriaisFormatado = formatMoney(totNum - servNum);
+    }
+  }
+  page.drawText('Valor dos Produtos / Materiais:', { x: rightCardX + 10, y: totY, size: 7, font: fontRegular, color: GRAY });
+  page.drawText(`R$ ${valorMateriaisFormatado}`, { x: rightCardX + rightCardW - 10 - fontBold.widthOfTextAtSize(`R$ ${valorMateriaisFormatado}`, 7.5), y: totY, size: 7.5, font: fontBold, color: DARK });
 
   totY -= 14;
+  const vServApi = dados.valServico ? ('R$ ' + formatMoney(dados.valServico)) : 'Inclusa';
   page.drawText('Mão de Obra e Instalação:', { x: rightCardX + 10, y: totY, size: 7, font: fontRegular, color: GRAY });
-  page.drawText('Inclusa', { x: rightCardX + rightCardW - 10 - fontRegular.widthOfTextAtSize('Inclusa', 7), y: totY, size: 7, font: fontRegular, color: DARK });
+  page.drawText(vServApi, { x: rightCardX + rightCardW - 10 - fontRegular.widthOfTextAtSize(vServApi, 7), y: totY, size: 7, font: fontRegular, color: DARK });
 
   totY -= 14;
   page.drawText('Frete e Deslocamento:', { x: rightCardX + 10, y: totY, size: 7, font: fontRegular, color: GRAY });
@@ -678,6 +689,10 @@ module.exports = async (req, res) => {
             resp: p.resp || '',
             itens: listaItens,
             total: p.v || p.total || '',
+            valProdutos: p.vp || p.valProdutos,
+            valServico: p.vs || p.valServico,
+            valFrete: p.vf || p.valFrete,
+            valDesconto: p.vd || p.valDesconto,
             forma: p.f || p.forma || '',
             obs: p.obs || '',
             prazo: p.p || p.prazo || '',

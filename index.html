@@ -18,7 +18,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js?v=9.0.5').then(r => { r.update(); })
+        navigator.serviceWorker.register('/sw.js?v=9.0.6').then(r => { r.update(); })
           .then(function(reg){ console.log('SW registrado com sucesso:', reg.scope); })
           .catch(function(err){ console.warn('Erro ao registrar SW:', err); });
       });
@@ -9404,6 +9404,10 @@ function inserirLinhaNoAmbienteAtivo(novaTr) {
   const tbody = document.getElementById('itens-lista');
   if (!tbody) return;
 
+  if (secaoAmbienteAtivaTr && !tbody.contains(secaoAmbienteAtivaTr)) {
+    secaoAmbienteAtivaTr = null;
+  }
+
   const linhasAmbiente = obterLinhasDoAmbienteAtivo();
   if (linhasAmbiente.length > 0) {
     const ultimaLinha = linhasAmbiente[linhasAmbiente.length - 1];
@@ -10788,6 +10792,10 @@ function gerarParametroD(d) {
     if (d.cnpj) payloadCompacto.cnpj = d.cnpj;
     if (d.resp) payloadCompacto.resp = d.resp;
     if (d.obs) payloadCompacto.obs = d.obs;
+    if (d.valProdutos != null) payloadCompacto.vp = d.valProdutos;
+    if (d.valServico != null) payloadCompacto.vs = d.valServico;
+    if (d.valFrete != null) payloadCompacto.vf = d.valFrete;
+    if (d.valDesconto != null) payloadCompacto.vd = d.valDesconto;
     if (d.itens && d.itens.length) {
       payloadCompacto.i = d.itens.map(it => [
         it.desc || "",
@@ -10798,7 +10806,8 @@ function gerarParametroD(d) {
         it.v_unit || "",
         it.total || "",
         it.cor || "",
-        it.bizt || ""
+        it.bizt || "",
+        it.ambiente || ""
       ]);
     }
     const jsonStr = JSON.stringify(payloadCompacto);
@@ -12268,9 +12277,67 @@ function editarOs(id) {
   document.getElementById('forma-outro').value = '';
   document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
   atualizarBadge();
-  document.getElementById('itens-lista').innerHTML = ''; itemId = 0;
-  if (d.itens && d.itens.length) {
-    d.itens.forEach(it=>addItem(it.desc, it.qtd, it.cor, it.alt, it.larg, it.v_m2, it.v_unit, it.bizt, it.fornecedor||''));
+  document.getElementById('itens-lista').innerHTML = '';
+  itemId = 0;
+  secaoAmbienteAtivaTr = null;
+
+  const listaItensRaw = (d.itens && d.itens.length) ? d.itens : ((o.versoes_pdf && o.versoes_pdf[0] && o.versoes_pdf[0].dados && o.versoes_pdf[0].dados.itens) || []);
+
+  if (listaItensRaw && listaItensRaw.length) {
+    const itensNorm = listaItensRaw.map(it => {
+      if (Array.isArray(it)) {
+        return {
+          desc: it[0] || '',
+          qtd: it[1] || '1',
+          larg: it[2] || '',
+          alt: it[3] || '',
+          m2: it[4] || '',
+          v_unit: it[5] || '',
+          total: it[6] || '',
+          cor: it[7] || '',
+          bizt: it[8] || '',
+          ambiente: it[9] || ''
+        };
+      }
+      return it;
+    });
+
+    const grupos = {};
+    const ordemAmbs = [];
+    itensNorm.forEach(it => {
+      const amb = (it.ambiente && String(it.ambiente).trim()) || '';
+      if (!grupos[amb]) {
+        grupos[amb] = [];
+        ordemAmbs.push(amb);
+      }
+      grupos[amb].push(it);
+    });
+
+    ordemAmbs.forEach((ambNome, idx) => {
+      if (idx === 0) {
+        if (ambNome) {
+          const inpTop = document.getElementById('inp-orc-ambiente-top') || document.querySelector('.inp-nome-ambiente');
+          if (inpTop) inpTop.value = ambNome;
+          const targetBtn = document.querySelector('.btn-seletor-ambientes');
+          if (targetBtn && targetBtn.querySelector) {
+            const lbl = targetBtn.querySelector('.label-ambiente-texto') || targetBtn.querySelector('span:last-child');
+            if (lbl) lbl.textContent = ambNome;
+          }
+        }
+        secaoAmbienteAtivaTr = null;
+      } else {
+        if (typeof adicionarNovoAmbienteSecao === 'function') {
+          adicionarNovoAmbienteSecao(ambNome);
+        }
+      }
+
+      grupos[ambNome].forEach(it => {
+        addItem(it.desc || '', it.qtd || '1', it.cor || '', it.alt || '', it.larg || '', it.v_m2 || '', it.v_unit || '', it.bizt || '', it.fornecedor || '');
+      });
+    });
+
+    if (typeof calcTotal === 'function') calcTotal();
+    if (typeof atualizarSubtotaisAmbientes === 'function') atualizarSubtotaisAmbientes();
   } else {
     addItem();
   }
@@ -12659,6 +12726,18 @@ function normalizarDadosParaPdf(orig) {
     resp: d.resp || '',
     itens: Array.isArray(d.itens) ? d.itens : [],
     total: d.total || 'R$ 0,00',
+    valProdutos: d.valProdutos,
+    valServico: d.valServico,
+    taxaAcrescimo: d.taxaAcrescimo,
+    valAcrescimo: d.valAcrescimo,
+    valFrete: d.valFrete,
+    valDesconto: d.valDesconto,
+    taxaDesconto: d.taxaDesconto,
+    tipoDesconto: d.tipoDesconto,
+    fotos: d.fotos || [],
+    status: d.status || '',
+    assinatura_base64: d.assinatura_base64 || '',
+    assinatura_digital: d.assinatura_digital || null,
     forma: d.forma || '',
     obs: d.obs || '',
     prazo: d.prazo || '',
@@ -14203,10 +14282,12 @@ function inserirAmbienteCustomizadoNoOrcamento() {
 }
 
 // Cria uma nova seção de Ambiente com botão próprio e linha de item limpa (Idêntico à Imagem 2)
-function adicionarNovoAmbienteSecao() {
+function adicionarNovoAmbienteSecao(nomePadrao = '') {
   const idAmb = ++_contadorAmbientes;
   const tbody = document.getElementById('itens-lista');
   if (!tbody) return;
+
+  const valNome = (nomePadrao && String(nomePadrao).trim()) ? String(nomePadrao).trim() : '';
 
   // Linha do Ambiente com botão próprio
   const trAmb = document.createElement('tr');
@@ -14218,7 +14299,7 @@ function adicionarNovoAmbienteSecao() {
         <div style="display:flex;align-items:center;gap:8px;">
           <div class="wrap-ambiente-nome" style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg, rgba(245,158,11,0.22), rgba(217,119,6,0.18));border:1.5px solid #f59e0b;border-radius:8px;padding:5px 12px;box-shadow:0 2px 8px rgba(245,158,11,0.2);">
             <span style="font-size:15px;line-height:1;">🛋️</span>
-            <input type="text" class="inp-nome-ambiente label-ambiente-texto" placeholder="Nome do ambiente..." value="" oninput="atualizarSubtotaisAmbientes()" onfocus="secaoAmbienteAtivaTr=this.closest('.tr-ambiente-secao');this.select();" style="background:transparent;border:none;color:#fbbf24;font-weight:800;font-size:12.5px;outline:none;width:160px;min-width:120px;" title="Digite o nome do ambiente" />
+            <input type="text" class="inp-nome-ambiente label-ambiente-texto" placeholder="Nome do ambiente..." value="${esc(valNome)}" oninput="atualizarSubtotaisAmbientes()" onfocus="secaoAmbienteAtivaTr=this.closest('.tr-ambiente-secao');this.select();" style="background:transparent;border:none;color:#fbbf24;font-weight:800;font-size:12.5px;outline:none;width:160px;min-width:120px;" title="Digite o nome do ambiente" />
           </div>
           <span class="badge-secao-produtos-val" style="background:rgba(59,130,246,0.18);border:1px solid rgba(59,130,246,0.4);color:#93c5fd;font-size:11.5px;font-weight:800;padding:4px 10px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;" title="Valor dos produtos deste ambiente">
             <span>📦</span> <span class="val-secao-produtos">R$ 0,00</span>
@@ -20652,6 +20733,10 @@ async function enviarOrcamentoParaAssinaturaDigital() {
     if (d.cnpj) payloadCompacto.cnpj = d.cnpj;
     if (d.resp) payloadCompacto.resp = d.resp;
     if (d.obs) payloadCompacto.obs = d.obs;
+    if (d.valProdutos != null) payloadCompacto.vp = d.valProdutos;
+    if (d.valServico != null) payloadCompacto.vs = d.valServico;
+    if (d.valFrete != null) payloadCompacto.vf = d.valFrete;
+    if (d.valDesconto != null) payloadCompacto.vd = d.valDesconto;
     if (d.itens && d.itens.length) {
       payloadCompacto.i = d.itens.map(it => [
         it.desc || '',
@@ -21741,16 +21826,23 @@ async function gerarPdfOrcamentoDoc(dados) {
   // O valor final do serviço apresentado no PDF já reflete a taxa/mão de obra sem exibir margem ao cliente
   const valServicoFinal = valServNum > 0 ? valServNum : valAcrescimoNum;
 
-  const txtValProdutos = valProdNum > 0 ? ('R$ ' + formatarValorPtBr(valProdNum)) : ('R$ ' + valorTotalLimpo);
+  let txtValProdutos = '';
+  if (valProdNum > 0) {
+    txtValProdutos = 'R$ ' + formatarValorPtBr(valProdNum);
+  } else if (valServicoFinal > 0) {
+    const totNum = parseNum(total || valorTotalLimpo);
+    const prodRestante = Math.max(0, totNum - valServicoFinal - valFreteNum + valDescNum);
+    txtValProdutos = 'R$ ' + formatarValorPtBr(prodRestante);
+  } else {
+    txtValProdutos = 'R$ ' + valorTotalLimpo;
+  }
   page.drawText('Valor dos Produtos / Materiais:', { x: rightCardX + 10, y: totY, size: 6.8, font: fontRegular, color: GRAY });
   page.drawText(txtValProdutos, { x: rightCardX + rightCardW - 10 - fontBold.widthOfTextAtSize(txtValProdutos, 7.2), y: totY, size: 7.2, font: fontBold, color: DARK });
 
   totY -= 13;
-  const txtValServico = valServicoFinal > 0 ? ('R$ ' + formatarValorPtBr(valServicoFinal)) : '';
+  const txtValServico = valServicoFinal > 0 ? ('R$ ' + formatarValorPtBr(valServicoFinal)) : 'Inclusa';
   page.drawText('Mão de Obra e Instalação:', { x: rightCardX + 10, y: totY, size: 6.8, font: fontRegular, color: GRAY });
-  if (txtValServico) {
-    page.drawText(txtValServico, { x: rightCardX + rightCardW - 10 - fontBold.widthOfTextAtSize(txtValServico, 7.2), y: totY, size: 7.2, font: fontBold, color: DARK });
-  }
+  page.drawText(txtValServico, { x: rightCardX + rightCardW - 10 - fontBold.widthOfTextAtSize(txtValServico, 7.2), y: totY, size: 7.2, font: fontBold, color: DARK });
 
   totY -= 13;
   const txtValFrete = valFreteNum > 0 ? ('R$ ' + formatarValorPtBr(valFreteNum)) : '';
