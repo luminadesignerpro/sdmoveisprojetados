@@ -115,16 +115,40 @@ async function gerarPdfOrcamento(dados, fetchLogo, empInfo) {
 
   const textX = logoImage ? MARGIN_X + 56 : MARGIN_X;
   const nomeEmpresaUpper = sanitizePdf((empInfo.nome || (empInfo.ehMoveis ? 'SD MÓVEIS PROJETADOS' : 'SD VIDROS')).toUpperCase());
-  page.drawText(nomeEmpresaUpper, { x: textX, y: headerY - 14, size: 16.5, font: fontBold, color: DARK });
+  page.drawText(nomeEmpresaUpper, { x: textX, y: headerY - 14, size: 16, font: fontBold, color: DARK });
 
-  const segmentoEmpresa = sanitizePdf((empInfo.segmento || (empInfo.ehMoveis ? 'MÓVEIS PLANEJADOS & MARCENARIA DE LUXO' : 'SOLUÇÕES EM VIDROS TEMPERADOS E ESQUADRIAS DE ALUMÍNIO')).toUpperCase());
-  page.drawText(segmentoEmpresa, { x: textX, y: headerY - 26, size: 7.2, font: fontBold, color: GOLD });
+  let sloganTxt = (empInfo.segmento || empInfo.slogan || '').trim();
+  // Exclui 'Móveis Planejados', 'Marcenaria de Luxo', 'Cozinhas Planejadas, Closets & Ambientes Sob Medida' conforme solicitação do usuário
+  if (!sloganTxt || /m[oó]veis\s+planejados|marcenaria\s+de\s+luxo|vidra|vidro|esquadria|cozinha|closet|sob\s*medida/i.test(sloganTxt)) {
+    sloganTxt = "";
+  }
 
-  const endEmpresa = sanitizePdf(empInfo.endereco || (empInfo.ehMoveis ? 'Itaitinga - CE' : 'Rua Jorge Figueiredo 740, Barrocão - Itaitinga-CE • CNPJ: 49.226.611/0001-33'));
-  page.drawText(endEmpresa, { x: textX, y: headerY - 37, size: 7, font: fontRegular, color: GRAY });
+  let yCursorEmpresa = headerY - 27;
+  if (sloganTxt) {
+    const segmentoEmpresa = sanitizePdf(sloganTxt.toUpperCase());
+    page.drawText(segmentoEmpresa, { x: textX, y: headerY - 26, size: 7.2, font: fontBold, color: GOLD });
+    yCursorEmpresa = headerY - 37;
+  }
 
-  const contatosEmpresa = sanitizePdf(empInfo.contatos || (empInfo.ehMoveis ? 'WhatsApp: (85) 99611-9824 | Atendimento & Projetos Sob Medida' : 'WhatsApp: (85) 99611-9824 • 99760-2237 • 98574-9606 | sdvidros2025@gmail.com'));
-  page.drawText(contatosEmpresa, { x: textX, y: headerY - 48, size: 7, font: fontRegular, color: GRAY });
+  let endEmpresa = "";
+  if (!empInfo.ehMoveis) {
+    endEmpresa = empInfo.endereco || "Rua Jorge Figueiredo 740, Barrocão - Itaitinga-CE • CNPJ: 49.226.611/0001-33";
+  } else {
+    const cid = empInfo.cidade || "Itaitinga - CE";
+    const cnp = empInfo.cnpj ? (" • CNPJ: " + empInfo.cnpj) : " • CNPJ: 85997602237";
+    endEmpresa = cid + cnp;
+  }
+  page.drawText(sanitizePdf(endEmpresa), { x: textX, y: yCursorEmpresa, size: 7.2, font: fontRegular, color: GRAY });
+  yCursorEmpresa -= 11;
+
+  let contatosEmpresa = "";
+  const zapEmpresa = empInfo.telefone || "85985749686";
+  if (!empInfo.ehMoveis) {
+    contatosEmpresa = `WhatsApp: ${zapEmpresa} • 99760-2237 • 98574-9606 | sdvidros2025@gmail.com`;
+  } else {
+    contatosEmpresa = `WhatsApp: ${zapEmpresa} | ${empInfo.email || "contato@sdmoveisprojetados.com.br"}`;
+  }
+  page.drawText(sanitizePdf(contatosEmpresa), { x: textX, y: yCursorEmpresa, size: 7.2, font: fontRegular, color: GRAY });
 
   // Badge do Orçamento no canto direito superior
   const badgeW = 142;
@@ -226,18 +250,135 @@ async function gerarPdfOrcamento(dados, fetchLogo, empInfo) {
     color: DARK
   });
 
-  page.drawText('ITEM', { x: MARGIN_X + 6, y: tableHeaderY - 13, size: 7, font: fontBold, color: WHITE });
-  page.drawText('DESCRIÇÃO DO PRODUTO / SERVIÇO', { x: MARGIN_X + 30, y: tableHeaderY - 13, size: 7, font: fontBold, color: WHITE });
-  page.drawText('MEDIDAS (L x A)', { x: MARGIN_X + 248, y: tableHeaderY - 13, size: 7, font: fontBold, color: WHITE });
-  page.drawText('ÁREA (M²)', { x: MARGIN_X + 322, y: tableHeaderY - 13, size: 7, font: fontBold, color: WHITE });
-  page.drawText('QTD', { x: MARGIN_X + 374, y: tableHeaderY - 13, size: 7, font: fontBold, color: WHITE });
-  page.drawText('VL. UNIT (R$)', { x: MARGIN_X + 418, y: tableHeaderY - 13, size: 7, font: fontBold, color: WHITE });
-  page.drawText('TOTAL (R$)', { x: MARGIN_X + 478, y: tableHeaderY - 13, size: 7, font: fontBold, color: WHITE });
+  page.drawText('DESCRIÇÃO DO PRODUTO / SERVIÇO', { x: MARGIN_X + 8, y: tableHeaderY - 13, size: 7, font: fontBold, color: WHITE });
+  page.drawText('MEDIDAS (L x A)', { x: MARGIN_X + 250, y: tableHeaderY - 13, size: 7, font: fontBold, color: WHITE });
+  page.drawText('ÁREA (M²)', { x: MARGIN_X + 338, y: tableHeaderY - 13, size: 7, font: fontBold, color: WHITE });
+  page.drawText('QTD', { x: MARGIN_X + 395, y: tableHeaderY - 13, size: 7, font: fontBold, color: WHITE });
+  page.drawText('VL. UNIT (R$)', { x: MARGIN_X + 434, y: tableHeaderY - 13, size: 7, font: fontBold, color: WHITE });
+  page.drawText('TOTAL (R$)', { x: MARGIN_X + 486, y: tableHeaderY - 13, size: 7, font: fontBold, color: WHITE });
 
   let curY = tableHeaderY - tableHeaderH;
   const itensList = Array.isArray(itens) && itens.length ? itens : [];
+  const formatoAmbiente = (dados.formatoPdf === 'ambiente' || dados.formato === 'ambiente' || dados.fpdf === 'ambiente' || (empInfo.ehMoveis && dados.formatoPdf !== 'detalhado'));
 
-  if (!itensList.length) {
+  let ambientesParaPdf = (Array.isArray(dados.ambientes) && dados.ambientes.length) ? dados.ambientes : [];
+  if (formatoAmbiente && (!ambientesParaPdf || !ambientesParaPdf.length) && itensList.length) {
+    const mapAmb = {};
+    itensList.forEach(it => {
+      const aNome = (it.ambiente || dados.ambNome || 'Sala').trim();
+      if (!mapAmb[aNome]) mapAmb[aNome] = { nome: aNome, obs: (dados.obs || ''), produtosVal: 0, servicosVal: 0, totalVal: 0, qtdItens: 0 };
+      const val = parseFloat(String(it.total || '').replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
+      mapAmb[aNome].produtosVal += val;
+      mapAmb[aNome].totalVal += val;
+      mapAmb[aNome].qtdItens++;
+    });
+    ambientesParaPdf = Object.values(mapAmb);
+  }
+  if (formatoAmbiente && (!ambientesParaPdf || !ambientesParaPdf.length)) {
+    const totNum = parseFloat(String(total || '0').replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
+    ambientesParaPdf = [{
+      nome: dados.ambNome || 'Sala',
+      obs: dados.obs || '',
+      produtosVal: totNum,
+      servicosVal: 0,
+      totalVal: totNum,
+      qtdItens: 1
+    }];
+  }
+
+  if (formatoAmbiente && ambientesParaPdf.length) {
+    ambientesParaPdf.forEach((amb, idx) => {
+      const rowH = 26;
+      curY -= rowH;
+
+      page.drawRectangle({
+        x: MARGIN_X,
+        y: curY,
+        width: CONTENT_W,
+        height: rowH,
+        color: idx % 2 === 0 ? WHITE : ROW_ALT,
+        borderColor: BORDER,
+        borderWidth: 0.6
+      });
+
+      const obsTexto = (amb.obs && String(amb.obs).trim()) || (dados.obs ? String(dados.obs).trim() : '');
+      const temObs = !!obsTexto;
+      const altLinha = temObs ? 26 : 22;
+      curY = curY + rowH - altLinha;
+
+      // Nome do Ambiente em destaque (só o valor total do ambiente, sem subtítulo de produtos/serviço)
+      const titAmb = `AMBIENTE: ${String(amb.nome || '').toUpperCase()}`;
+      const posYTit = temObs ? (curY + altLinha - 12) : (curY + (altLinha / 2) - 3.5);
+      page.drawText(sanitizePdf(titAmb), {
+        x: MARGIN_X + 10,
+        y: posYTit,
+        size: 8.5,
+        font: fontBold,
+        color: DARK
+      });
+
+      // Se houver observações deste ambiente ou do orçamento, exibe abaixo do nome
+      if (temObs) {
+        page.drawText(sanitizePdf(`Obs: ${obsTexto}`), {
+          x: MARGIN_X + 10,
+          y: curY + 5,
+          size: 6.8,
+          font: fontRegular,
+          color: GRAY
+        });
+      }
+
+      const posYValores = temObs ? (curY + altLinha - 14) : (curY + (altLinha / 2) - 3.5);
+
+      // Medidas
+      page.drawText('Sob Medida', {
+        x: MARGIN_X + 250,
+        y: posYValores,
+        size: 7.5,
+        font: fontRegular,
+        color: GRAY
+      });
+
+      // Área
+      page.drawText('-', {
+        x: MARGIN_X + 345,
+        y: posYValores,
+        size: 7.5,
+        font: fontRegular,
+        color: GRAY
+      });
+
+      // QTD: 1 AMB
+      page.drawText('1 AMB', {
+        x: MARGIN_X + 395,
+        y: posYValores,
+        size: 7.5,
+        font: fontRegular,
+        color: DARK
+      });
+
+      const totAmbNum = amb.totalVal || (amb.produtosVal + (amb.servicosVal || 0));
+      const vTotTxt = Number(totAmbNum || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+      // VL. UNIT: R$ Total do Ambiente
+      page.drawText(vTotTxt, {
+        x: MARGIN_X + 438,
+        y: posYValores,
+        size: 7.5,
+        font: fontRegular,
+        color: DARK
+      });
+
+      // TOTAL: R$ Total do Ambiente em negrito
+      page.drawText(vTotTxt, {
+        x: MARGIN_X + 488,
+        y: posYValores,
+        size: 8,
+        font: fontBold,
+        color: DARK
+      });
+    });
+  } else if (!itensList.length) {
     const rowH = 26;
     curY -= rowH;
     page.drawRectangle({
@@ -249,16 +390,15 @@ async function gerarPdfOrcamento(dados, fetchLogo, empInfo) {
       borderColor: BORDER,
       borderWidth: 0.6
     });
-    page.drawText('01', { x: MARGIN_X + 8, y: curY + 9, size: 7.5, font: fontBold, color: GRAY });
     const itemPadrao = empInfo.ehMoveis ? 'MÓVEIS PLANEJADOS & MARCENARIA SOB MEDIDA' : 'SERVIÇOS DE VIDRAÇARIA E ESQUADRIAS DE ALUMÍNIO';
-    page.drawText(itemPadrao, { x: MARGIN_X + 30, y: curY + 9, size: 7.5, font: fontBold, color: DARK });
-    page.drawText('Sob Medida', { x: MARGIN_X + 248, y: curY + 9, size: 7.5, font: fontRegular, color: GRAY });
-    page.drawText('-', { x: MARGIN_X + 332, y: curY + 9, size: 7.5, font: fontRegular, color: GRAY });
-    page.drawText('1 UND', { x: MARGIN_X + 374, y: curY + 9, size: 7.5, font: fontRegular, color: DARK });
+    page.drawText(itemPadrao, { x: MARGIN_X + 8, y: curY + 9, size: 7.5, font: fontBold, color: DARK });
+    page.drawText('Sob Medida', { x: MARGIN_X + 250, y: curY + 9, size: 7.5, font: fontRegular, color: GRAY });
+    page.drawText('-', { x: MARGIN_X + 345, y: curY + 9, size: 7.5, font: fontRegular, color: GRAY });
+    page.drawText('1 UND', { x: MARGIN_X + 395, y: curY + 9, size: 7.5, font: fontRegular, color: DARK });
 
     const valTot = formatMoney(total);
-    page.drawText(valTot, { x: MARGIN_X + 418, y: curY + 9, size: 7.5, font: fontRegular, color: DARK });
-    page.drawText(valTot, { x: MARGIN_X + 478, y: curY + 9, size: 8, font: fontBold, color: DARK });
+    page.drawText(valTot, { x: MARGIN_X + 438, y: curY + 9, size: 7.5, font: fontRegular, color: DARK });
+    page.drawText(valTot, { x: MARGIN_X + 488, y: curY + 8, size: 8, font: fontBold, color: DARK });
   } else {
     itensList.forEach((it, idx) => {
       let descTxt = String(it.desc || '').toUpperCase();
@@ -367,7 +507,10 @@ async function gerarPdfOrcamento(dados, fetchLogo, empInfo) {
   condY -= 11;
   page.drawText(`• Prazo de Execução: ${prazo || '15 dias úteis após confirmação'}`, { x: MARGIN_X + 8, y: condY, size: 6.8, font: fontRegular, color: DARK });
   condY -= 11;
-  page.drawText(`• Garantia: ${garantia || '1 Ano de garantia legal e de instalação'}`, { x: MARGIN_X + 8, y: condY, size: 6.8, font: fontRegular, color: DARK });
+  if (garantia && String(garantia).trim()) {
+    page.drawText(`• Garantia: ${String(garantia).trim()}`, { x: MARGIN_X + 8, y: condY, size: 6.8, font: fontRegular, color: DARK });
+    condY -= 11;
+  }
 
   if (obs) {
     condY -= 11;
@@ -425,27 +568,46 @@ async function gerarPdfOrcamento(dados, fetchLogo, empInfo) {
   let totY = bottomY - 32;
   const valorTotalFormatado = formatMoney(total);
 
-  let valorMateriaisFormatado = valorTotalFormatado;
-  if (dados.valProdutos) {
-    valorMateriaisFormatado = formatMoney(dados.valProdutos);
-  } else if (dados.valServico) {
-    const totNum = parseFloat(String(total || '0').replace(/[^\d,\.]/g, '').replace(/\./g, '').replace(',', '.')) || 0;
-    const servNum = parseFloat(String(dados.valServico || '0').replace(/[^\d,\.]/g, '').replace(/\./g, '').replace(',', '.')) || 0;
-    if (totNum > servNum && servNum > 0) {
-      valorMateriaisFormatado = formatMoney(totNum - servNum);
+  const valProdNum = parseFloat(String(dados.valProdutos || '').replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
+  const valServNum = parseFloat(String(dados.valServico || '').replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
+  const valFreteNum = parseFloat(String(dados.valFrete || '').replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
+  const valDescNum = parseFloat(String(dados.valDesconto || '').replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
+
+  if (formatoAmbiente) {
+    page.drawText('Valor Total dos Ambientes:', { x: rightCardX + 10, y: totY, size: 6.8, font: fontRegular, color: GRAY });
+    const totAmbientesNum = Math.max(0, (parseFloat(String(total || '0').replace(/[^\d,.-]/g, '').replace(',', '.')) || 0) - valFreteNum + valDescNum);
+    const txtTotAmbResumo = 'R$ ' + (totAmbientesNum > 0 ? totAmbientesNum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : valorTotalFormatado);
+    page.drawText(txtTotAmbResumo, { x: rightCardX + rightCardW - 10 - fontBold.widthOfTextAtSize(txtTotAmbResumo, 7.2), y: totY, size: 7.2, font: fontBold, color: DARK });
+
+    if (valFreteNum > 0) {
+      totY -= 13;
+      const txtValFrete = 'R$ ' + valFreteNum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      page.drawText('Frete:', { x: rightCardX + 10, y: totY, size: 6.8, font: fontRegular, color: GRAY });
+      page.drawText(txtValFrete, { x: rightCardX + rightCardW - 10 - fontBold.widthOfTextAtSize(txtValFrete, 7.2), y: totY, size: 7.2, font: fontBold, color: DARK });
+    }
+  } else {
+    page.drawText('Valor dos Produtos / Materiais:', { x: rightCardX + 10, y: totY, size: 6.8, font: fontRegular, color: GRAY });
+    page.drawText(`R$ ${formatMoney(dados.valProdutos || total)}`, { x: rightCardX + rightCardW - 10 - fontBold.widthOfTextAtSize(`R$ ${formatMoney(dados.valProdutos || total)}`, 7.2), y: totY, size: 7.2, font: fontBold, color: DARK });
+
+    totY -= 13;
+    const vServApi = dados.valServico ? ('R$ ' + formatMoney(dados.valServico)) : 'Inclusa';
+    page.drawText('Mão de Obra e Instalação:', { x: rightCardX + 10, y: totY, size: 6.8, font: fontRegular, color: GRAY });
+    page.drawText(vServApi, { x: rightCardX + rightCardW - 10 - fontRegular.widthOfTextAtSize(vServApi, 7.2), y: totY, size: 7.2, font: fontRegular, color: DARK });
+
+    totY -= 13;
+    const txtValFrete = valFreteNum > 0 ? ('R$ ' + valFreteNum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })) : '';
+    page.drawText('Frete:', { x: rightCardX + 10, y: totY, size: 6.8, font: fontRegular, color: GRAY });
+    if (txtValFrete) {
+      page.drawText(txtValFrete, { x: rightCardX + rightCardW - 10 - fontBold.widthOfTextAtSize(txtValFrete, 7.2), y: totY, size: 7.2, font: fontBold, color: DARK });
     }
   }
-  page.drawText('Valor dos Produtos / Materiais:', { x: rightCardX + 10, y: totY, size: 7, font: fontRegular, color: GRAY });
-  page.drawText(`R$ ${valorMateriaisFormatado}`, { x: rightCardX + rightCardW - 10 - fontBold.widthOfTextAtSize(`R$ ${valorMateriaisFormatado}`, 7.5), y: totY, size: 7.5, font: fontBold, color: DARK });
 
-  totY -= 14;
-  const vServApi = dados.valServico ? ('R$ ' + formatMoney(dados.valServico)) : 'Inclusa';
-  page.drawText('Mão de Obra e Instalação:', { x: rightCardX + 10, y: totY, size: 7, font: fontRegular, color: GRAY });
-  page.drawText(vServApi, { x: rightCardX + rightCardW - 10 - fontRegular.widthOfTextAtSize(vServApi, 7), y: totY, size: 7, font: fontRegular, color: DARK });
-
-  totY -= 14;
-  page.drawText('Frete e Deslocamento:', { x: rightCardX + 10, y: totY, size: 7, font: fontRegular, color: GRAY });
-  page.drawText('Incluso', { x: rightCardX + rightCardW - 10 - fontRegular.widthOfTextAtSize('Incluso', 7), y: totY, size: 7, font: fontRegular, color: DARK });
+  if (valDescNum > 0) {
+    totY -= 13;
+    const txtDesc = '- R$ ' + valDescNum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    page.drawText('Desconto Especial:', { x: rightCardX + 10, y: totY, size: 6.8, font: fontRegular, color: rgb(0.8, 0.2, 0.2) });
+    page.drawText(txtDesc, { x: rightCardX + rightCardW - 10 - fontBold.widthOfTextAtSize(txtDesc, 7.2), y: totY, size: 7.2, font: fontBold, color: rgb(0.8, 0.2, 0.2) });
+  }
 
   // Bloco de destaque do VALOR TOTAL
   const totalBoxH = 50;
@@ -469,51 +631,7 @@ async function gerarPdfOrcamento(dados, fetchLogo, empInfo) {
   page.drawText('TOTAL DO ORÇAMENTO', { x: rightCardX + 18, y: totalBoxY + 34, size: 7, font: fontBold, color: GOLD });
   page.drawText(`R$ ${valorTotalFormatado}`, { x: rightCardX + 18, y: totalBoxY + 14, size: 14, font: fontBold, color: WHITE });
 
-  // ---------------- 6. BARRA DE DIFERENCIAIS & CARD DE ESPECIFICAÇÕES TÉCNICAS ----------------
-  // ---------------- 6. BARRA DE DIFERENCIAIS (4 PILARES DE CONFIANÇA) ----------------
-  if (spaceBelowCards >= 35) {
-    const badgesY = cardBottomY - 12;
-    const badgesH = 24;
-    const badgeColW = (CONTENT_W - 18) / 4;
 
-    const selos = [
-      { t1: '100% MDF', t2: 'NAVAL PREMIUM' },
-      { t1: 'PADRÃO LUXO', t2: 'SOB MEDIDA' },
-      { t1: 'PONTUALIDADE', t2: 'NA ENTREGA' },
-      { t1: '1 ANO DE', t2: 'GARANTIA REAL' }
-    ];
-
-    selos.forEach((s, sIdx) => {
-      const bX = MARGIN_X + (sIdx * (badgeColW + 6));
-      page.drawRectangle({
-        x: bX,
-        y: badgesY - badgesH,
-        width: badgeColW,
-        height: badgesH,
-        color: BOX_BG,
-        borderColor: BORDER,
-        borderWidth: 0.6
-      });
-      // Borda decorativa dourada no topo de cada selo
-      page.drawRectangle({
-        x: bX,
-        y: badgesY - 2.5,
-        width: badgeColW,
-        height: 2.5,
-        color: GOLD
-      });
-
-      const txtFull = `${s.t1} ${s.t2}`;
-      const txtW = fontBold.widthOfTextAtSize(txtFull, 6.2);
-      page.drawText(txtFull, {
-        x: bX + Math.max(4, (badgeColW - txtW) / 2),
-        y: badgesY - 15,
-        size: 6.2,
-        font: fontBold,
-        color: DARK
-      });
-    });
-  }
 
   // ---------------- 7. RODAPÉ DE APROVAÇÃO & ASSINATURA ----------------
   page.drawRectangle({
@@ -657,7 +775,8 @@ module.exports = async (req, res) => {
                   v_unit: it[5] || '',
                   total: it[6] || '',
                   cor: it[7] || '',
-                  bizt: it[8] || ''
+                  bizt: it[8] || '',
+                  ambiente: it[9] || ''
                 };
               } else if (it && typeof it === 'object') {
                 return {
@@ -676,6 +795,24 @@ module.exports = async (req, res) => {
             });
           }
 
+          let listaAmbientes = [];
+          if (Array.isArray(p.ambientes) && p.ambientes.length) {
+            listaAmbientes = p.ambientes;
+          } else if (Array.isArray(p.amb) && p.amb.length) {
+            listaAmbientes = p.amb.map(a => {
+              if (Array.isArray(a)) {
+                return {
+                  nome: a[0] || '',
+                  obs: a[1] || '',
+                  produtosVal: Number(a[2]) || 0,
+                  servicosVal: Number(a[3]) || 0,
+                  totalVal: Number(a[4]) || 0
+                };
+              }
+              return a;
+            });
+          }
+
           dados = {
             numero: p.n || p.numero || '0001',
             dataStr: p.d || p.data || new Date().toLocaleDateString('pt-BR'),
@@ -688,6 +825,7 @@ module.exports = async (req, res) => {
             apto: p.apto || '',
             resp: p.resp || '',
             itens: listaItens,
+            ambientes: listaAmbientes,
             total: p.v || p.total || '',
             valProdutos: p.vp || p.valProdutos,
             valServico: p.vs || p.valServico,
@@ -696,7 +834,9 @@ module.exports = async (req, res) => {
             forma: p.f || p.forma || '',
             obs: p.obs || '',
             prazo: p.p || p.prazo || '',
-            garantia: p.g || p.garantia || ''
+            garantia: p.g || p.garantia || '',
+            ambNome: p.ambNome || '',
+            formatoPdf: p.fpdf || p.formatoPdf || p.formato || 'ambiente'
           };
         } catch (e) {
           return res.status(400).json({ error: 'Parâmetro de orçamento inválido' });

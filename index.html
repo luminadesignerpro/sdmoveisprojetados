@@ -10875,6 +10875,42 @@ function gerarParametroD(d) {
     if (d.valServico != null) payloadCompacto.vs = d.valServico;
     if (d.valFrete != null) payloadCompacto.vf = d.valFrete;
     if (d.valDesconto != null) payloadCompacto.vd = d.valDesconto;
+    payloadCompacto.fpdf = (typeof _modoPdfOrcamentoSelecionado !== 'undefined' ? _modoPdfOrcamentoSelecionado : (d.formatoPdf || 'ambiente'));
+    payloadCompacto.ambNome = (document.getElementById('inp-orc-ambiente-top') ? document.getElementById('inp-orc-ambiente-top').value.trim() : '') || 'Sala';
+    if (d.ambientes && Array.isArray(d.ambientes) && d.ambientes.length) {
+      payloadCompacto.amb = d.ambientes.map(a => [
+        a.nome || '',
+        a.obs || '',
+        Math.round(a.produtosVal || 0),
+        Math.round(a.servicosVal || 0),
+        Math.round(a.totalVal || 0)
+      ]);
+    } else if (typeof obterResumoAmbientesParaPdf === 'function') {
+      const resAmb = obterResumoAmbientesParaPdf();
+      if (resAmb && resAmb.length) {
+        payloadCompacto.amb = resAmb.map(a => [
+          a.nome || '',
+          a.obs || '',
+          Math.round(a.produtosVal || 0),
+          Math.round(a.servicosVal || 0),
+          Math.round(a.totalVal || 0)
+        ]);
+      }
+    }
+    payloadCompacto.fpdf = (typeof _modoPdfOrcamentoSelecionado !== 'undefined' ? _modoPdfOrcamentoSelecionado : (d.formatoPdf || 'ambiente'));
+    payloadCompacto.ambNome = (document.getElementById('inp-orc-ambiente-top') ? document.getElementById('inp-orc-ambiente-top').value.trim() : '') || 'Sala';
+    if (typeof obterResumoAmbientesParaPdf === 'function') {
+      const resAmb = obterResumoAmbientesParaPdf();
+      if (resAmb && resAmb.length) {
+        payloadCompacto.amb = resAmb.map(a => [
+          a.nome || '',
+          a.obs || '',
+          Math.round(a.produtosVal || 0),
+          Math.round(a.servicosVal || 0),
+          Math.round(a.totalVal || 0)
+        ]);
+      }
+    }
     if (d.itens && d.itens.length) {
       payloadCompacto.i = d.itens.map(it => [
         it.desc || "",
