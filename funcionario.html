@@ -3775,7 +3775,7 @@
             <button id="crono-tab-semana" class="btn btn-primary btn-sm" onclick="mudarAbaCronograma('semana')" style="font-size:12px;font-weight:800;border-radius:8px;">📆 Semana</button>
             <button id="crono-tab-mes" class="btn btn-sec btn-sm" onclick="mudarAbaCronograma('mes')" style="font-size:12px;font-weight:700;border-radius:8px;">📅 Mês</button>
             <button id="crono-tab-ano" class="btn btn-sec btn-sm" onclick="mudarAbaCronograma('ano')" style="font-size:12px;font-weight:700;border-radius:8px;">🗓️ Ano</button>
-            <button id="crono-tab-material" class="btn btn-sec btn-sm" onclick="mudarAbaCronograma('material')" style="font-size:12px;font-weight:700;border-radius:8px;">📦 Pedido de Material</button>
+            <button id="crono-tab-material" class="btn btn-sec btn-sm" onclick="mudarAbaCronograma('material')" style="font-size:12px;font-weight:700;border-radius:8px;display:inline-flex;align-items:center;gap:5px;"><span>📦 Pedido de Material</span><span style="font-size:10px;opacity:0.85;">🔒</span></button>
           </div>
 
           <!-- PAINEL: SEMANA -->
@@ -11092,6 +11092,26 @@ function baterPontoNoCliente(tipo) {
 
 
 
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- MODAL DE SENHA: ACESSO AO PEDIDO DE MATERIAL (PORTAL EQUIPE)   -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div id="modal-senha-material-portal" class="portal-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:999999;align-items:center;justify-content:center;backdrop-filter:blur(6px);" onclick="if(event.target===this) fecharModalSenhaMaterialPortal()">
+  <div class="portal-modal-card" style="background:#0f111e;border:1.5px solid #d97706;border-radius:16px;padding:24px 20px;max-width:340px;width:90%;box-shadow:0 16px 40px rgba(0,0,0,0.85);text-align:center;" onclick="event.stopPropagation()">
+    <div style="font-size:36px;margin-bottom:8px;">🔒</div>
+    <div style="font-size:17px;font-weight:900;color:#fbbf24;margin-bottom:6px;">Acesso Restrito</div>
+    <div style="font-size:12.5px;color:#94a3b8;margin-bottom:16px;line-height:1.4;">
+      Digite a senha para acessar o <strong>Pedido de Material</strong>:
+    </div>
+    <input type="password" id="inp-senha-material-portal" placeholder="Digite a senha..." style="width:100%;padding:11px 12px;background:#181a2e;border:1.5px solid rgba(217,119,6,0.5);border-radius:10px;color:#fff;font-size:15px;text-align:center;letter-spacing:3px;outline:none;margin-bottom:10px;box-sizing:border-box;" onkeydown="if(event.key==='Enter') confirmarSenhaMaterialPortal();" />
+    <div id="msg-erro-senha-material-portal" style="display:none;color:#ef4444;font-size:12px;font-weight:700;margin-bottom:12px;">Senha incorreta! Tente novamente.</div>
+    <div style="display:flex;gap:10px;justify-content:center;margin-top:6px;">
+      <button type="button" onclick="fecharModalSenhaMaterialPortal()" class="btn btn-sec btn-sm" style="flex:1;padding:10px;border-radius:8px;font-weight:700;cursor:pointer;">Cancelar</button>
+      <button type="button" onclick="confirmarSenhaMaterialPortal()" class="btn btn-gold btn-sm" style="flex:1;padding:10px;border-radius:8px;font-weight:800;cursor:pointer;background:linear-gradient(135deg,#f59e0b,#d97706);color:#000;">Acessar</button>
+    </div>
+  </div>
+</div>
+
 </body>
         </html>
       `);
@@ -13518,7 +13538,82 @@ let _cronoMesOffset = 0;
 let _cronoAnoOffset = 0;
 let _cronoDiaSelecionado = null;
 
+let _callbackAcessoMaterialPortal = null;
+
+function solicitarSenhaPedidoMaterialPortal(onSuccess) {
+  _callbackAcessoMaterialPortal = onSuccess;
+  const modal = document.getElementById('modal-senha-material-portal');
+  const inp = document.getElementById('inp-senha-material-portal');
+  const msgErro = document.getElementById('msg-erro-senha-material-portal');
+  if (msgErro) msgErro.style.display = 'none';
+  if (inp) {
+    inp.value = '';
+    setTimeout(() => inp.focus(), 150);
+  }
+  if (modal) {
+    modal.style.display = 'flex';
+  }
+}
+
+function fecharModalSenhaMaterialPortal() {
+  const modal = document.getElementById('modal-senha-material-portal');
+  if (modal) modal.style.display = 'none';
+  _callbackAcessoMaterialPortal = null;
+}
+
+function confirmarSenhaMaterialPortal() {
+  const inp = document.getElementById('inp-senha-material-portal');
+  const msgErro = document.getElementById('msg-erro-senha-material-portal');
+  const val = inp ? inp.value.trim() : '';
+
+  // Senhas aceitas: padrão '123', 'admin123', 'admin', ou senha de funcionários/admin
+  const senhaConfigurada = localStorage.getItem('sdv_senha_pedido_material');
+  let senhaValida = (val === '123' || val === 'admin123' || val === 'admin' || (senhaConfigurada && val === senhaConfigurada));
+
+  if (!senhaValida) {
+    try {
+      const users = JSON.parse(localStorage.getItem('sdv_users') || '[]');
+      if (Array.isArray(users)) {
+        senhaValida = users.some(u => (u.senha === val || u.pin === val));
+      }
+    } catch (_) {}
+  }
+  if (!senhaValida) {
+    try {
+      const funcs = (typeof carregarFuncionariosDoStorage === 'function') ? carregarFuncionariosDoStorage() : JSON.parse(localStorage.getItem('sdv_funcionarios') || '[]');
+      if (Array.isArray(funcs)) {
+        senhaValida = funcs.some(f => (f.senha === val || f.pin === val || (f.admin && f.senha === val)));
+      }
+    } catch (_) {}
+  }
+
+  if (senhaValida) {
+    sessionStorage.setItem('sdv_material_liberado_sessao', 'true');
+    fecharModalSenhaMaterialPortal();
+    if (typeof _callbackAcessoMaterialPortal === 'function') {
+      const cb = _callbackAcessoMaterialPortal;
+      _callbackAcessoMaterialPortal = null;
+      cb();
+    }
+  } else {
+    if (msgErro) msgErro.style.display = 'block';
+    if (inp) {
+      inp.select();
+      inp.focus();
+    }
+  }
+}
+
 function mudarAbaCronograma(aba) {
+  if (aba === 'material') {
+    const liberado = sessionStorage.getItem('sdv_material_liberado_sessao') === 'true';
+    if (!liberado) {
+      solicitarSenhaPedidoMaterialPortal(() => {
+        mudarAbaCronograma('material');
+      });
+      return;
+    }
+  }
   _cronoAbaAtual = aba;
   const abas = ['semana', 'mes', 'ano', 'material'];
   abas.forEach(a => {
@@ -14536,6 +14631,13 @@ function excluirPedidoMaterial(id) {
 }
 
 function abrirModalNovoPedidoMaterial(it) {
+  const liberado = sessionStorage.getItem('sdv_material_liberado_sessao') === 'true';
+  if (!liberado) {
+    solicitarSenhaPedidoMaterialPortal(() => {
+      abrirModalNovoPedidoMaterial(it);
+    });
+    return;
+  }
   try {
     const m = document.getElementById('modal-novo-pedido-material');
     if (!m) return;
