@@ -1,11 +1,12 @@
 // Service Worker PWA – SD Móveis Projetados v8.9.5 (Alarme Ponto Segundo Plano + Notificações + Galeria O.S.)
-const CACHE_NAME = 'sdmoveisprojetados-v9.3.0';
+const CACHE_NAME = 'sdmoveisprojetados-v9.3.1';
 const ASSETS = [
   '/',
   '/index.html',
   '/confirmar.html',
   '/banner.jpg',
   '/logo_moveis.jpg',
+  '/icsee_icon.png',
   '/cliente.html',
   '/funcionario.html',
   '/assinar.html',
