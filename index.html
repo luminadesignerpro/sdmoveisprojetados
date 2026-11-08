@@ -18,7 +18,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js?v=9.0.6').then(r => { r.update(); })
+        navigator.serviceWorker.register('/sw.js?v=9.0.7').then(r => { r.update(); })
           .then(function(reg){ console.log('SW registrado com sucesso:', reg.scope); })
           .catch(function(err){ console.warn('Erro ao registrar SW:', err); });
       });
@@ -29947,24 +29947,201 @@ function salvarMateriais(arr) {
   try { localStorage.setItem(K_CRONO.materiais, JSON.stringify(arr)); } catch(_) {}
 }
 
+// ════════════════════════════════════════════════════════════════
+//  SINCRONIZAÇÃO AUTOMÁTICA DOS PRODUTOS DO ORÇAMENTO / COMPARATIVO PARA PEDIDO DE MATERIAL
+// ════════════════════════════════════════════════════════════════
+function sincronizarProdutosOrcamentoParaPedidosMaterial(dadosOrc, nomeCli, numOs) {
+  if (!dadosOrc) return 0;
+  const clienteFinal = (nomeCli || dadosOrc.nome || dadosOrc.cliente || '').trim();
+  const osFinal = (numOs || dadosOrc.numero || '').trim();
+  if (!clienteFinal && !osFinal) return 0;
+
+  let listaMateriais = carregarMateriais();
+  let inseridosCount = 0;
+
+  // 1. Extração segura dos itens do orçamento:
+  let itensFonte = [];
+  if (Array.isArray(dadosOrc.itens) && dadosOrc.itens.length > 0) {
+    itensFonte = dadosOrc.itens;
+  } else if (dadosOrc.dados && Array.isArray(dadosOrc.dados.itens) && dadosOrc.dados.itens.length > 0) {
+    itensFonte = dadosOrc.dados.itens;
+  } else {
+    const formNome = (document.getElementById('o-nome') ? document.getElementById('o-nome').value.trim() : '') ||
+                     (document.getElementById('c-nome') ? document.getElementById('c-nome').value.trim() : '');
+    const formNum = (document.getElementById('orc-numero-display') ? document.getElementById('orc-numero-display').textContent.trim() : '');
+    const ehMesmaOs = (osFinal && formNum && formNum.replace(/\D/g, '') === osFinal.replace(/\D/g, '')) ||
+                      (clienteFinal && formNome && formNome.toLowerCase() === clienteFinal.toLowerCase());
+    if (ehMesmaOs && typeof getItens === 'function') {
+      itensFonte = getItens();
+    }
+  }
+
+  // 2. Itens do comparativo de preços (sd_material_list_v1)
+  let itensComp = [];
+  try {
+    const rawComp = localStorage.getItem('sd_material_list_v1');
+    if (rawComp) {
+      const compList = JSON.parse(rawComp);
+      if (Array.isArray(compList)) {
+        itensComp = compList.filter(m => {
+          const cName = (m.clientName || '').trim().toLowerCase();
+          const target = clienteFinal.toLowerCase();
+          return cName && cName === target;
+        });
+      }
+    }
+  } catch(_) {}
+
+  // Insere itens do comparativo de preços
+  itensComp.forEach((comp, idx) => {
+    const nomeComp = (comp.productName || comp.nome || '').trim();
+    if (!nomeComp) return;
+    const jaTem = listaMateriais.some(m => 
+      ((m.cliente && m.cliente.toLowerCase() === clienteFinal.toLowerCase()) || (osFinal && m.os === osFinal)) &&
+      (m.nome || '').trim().toLowerCase() === nomeComp.toLowerCase()
+    );
+    if (!jaTem) {
+      const unitVal = parseFloat(String(comp.selectedUnitPrice || comp.unitPrice || 0)) || 0;
+      listaMateriais.unshift({
+        id: 'mat_comp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5) + '_' + idx,
+        nome: nomeComp,
+        qtd: String(comp.quantity || 1),
+        unidade: 'un',
+        valor: unitVal > 0 ? unitVal.toFixed(2) : '',
+        urgencia: 'urgente',
+        fornecedor: comp.selectedSupplierName || '',
+        status: 'a_comprar',
+        obs: `OS ${osFinal} (${clienteFinal}) - Vindo do Comparativo de Preços`,
+        cliente: clienteFinal,
+        os: osFinal,
+        origem: 'comparativo_precos',
+        criadoEm: new Date().toISOString()
+      });
+      inseridosCount++;
+    }
+  });
+
+  // Insere itens do orçamento
+  itensFonte.forEach((it, idx) => {
+    const desc = (it.desc || it.nome || it.descricao || '').trim();
+    if (!desc) return;
+    // Ignora serviço "Mão de Obra e Instalação" pois não é produto/material a comprar
+    if (desc.toLowerCase().includes('mão de obra') || desc.toLowerCase().includes('mao de obra') || it.isServico) {
+      return;
+    }
+
+    const jaTem = listaMateriais.some(m =>
+      ((m.cliente && m.cliente.toLowerCase() === clienteFinal.toLowerCase()) || (osFinal && m.os === osFinal)) &&
+      (m.nome || '').trim().toLowerCase() === desc.toLowerCase()
+    );
+
+    if (!jaTem) {
+      const vUnit = parseFloat(String(it.v_unit || it.vunit || it.v_m2 || it.preco || it.valorUnitario || it.valor || 0).replace(',', '.')) || 0;
+      listaMateriais.unshift({
+        id: 'mat_orc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5) + '_' + idx,
+        nome: desc,
+        qtd: String(it.qtd || 1),
+        unidade: (it.v_m2 && !it.v_unit) ? 'm²' : (it.unidade || 'un'),
+        valor: vUnit > 0 ? vUnit.toFixed(2) : '',
+        urgencia: 'urgente',
+        fornecedor: it.fornecedor || '',
+        status: 'a_comprar',
+        obs: `OS ${osFinal} (${clienteFinal}) - Enviado via Assinatura Digital`,
+        cliente: clienteFinal,
+        os: osFinal,
+        origem: 'assinatura_digital',
+        criadoEm: new Date().toISOString()
+      });
+      inseridosCount++;
+    } else {
+      // Garante que o item existente possua o cliente e a OS atribuídos
+      const itemExistente = listaMateriais.find(m =>
+        (m.nome || '').trim().toLowerCase() === desc.toLowerCase() &&
+        (!m.cliente || m.cliente.toLowerCase() === clienteFinal.toLowerCase())
+      );
+      if (itemExistente) {
+        if (!itemExistente.cliente) itemExistente.cliente = clienteFinal;
+        if (!itemExistente.os && osFinal) itemExistente.os = osFinal;
+      }
+    }
+  });
+
+  if (inseridosCount > 0) {
+    salvarMateriais(listaMateriais);
+    if (typeof renderPedidosMaterial === 'function') {
+      renderPedidosMaterial();
+    }
+  }
+
+  return inseridosCount;
+}
+window.sincronizarProdutosOrcamentoParaPedidosMaterial = sincronizarProdutosOrcamentoParaPedidosMaterial;
+
+function sincronizarProdutosAprovadosParaPedidosMaterial(os) {
+  if (!os) return 0;
+  const numOs = os.numero || ('#' + String(os.id || '').replace(/\D/g, '').padStart(4, '0'));
+  const nomeCliente = (os.nome || os.cliente || '').trim();
+  const dados = os.dados || os;
+  return sincronizarProdutosOrcamentoParaPedidosMaterial(dados, nomeCliente, numOs);
+}
+window.sincronizarProdutosAprovadosParaPedidosMaterial = sincronizarProdutosAprovadosParaPedidosMaterial;
+
+function sincronizarTodasOSAprovadasParaMateriais() {
+  if (!Array.isArray(historico)) return;
+  let totalNovos = 0;
+  historico.forEach(os => {
+    const nomeCliente = (os.nome || os.cliente || '').trim();
+    const numOs = os.numero || '';
+    const dados = os.dados || os;
+    const temItens = (os.itens && os.itens.length) || (dados && dados.itens && dados.itens.length);
+    if (temItens && (nomeCliente || numOs)) {
+      totalNovos += sincronizarProdutosOrcamentoParaPedidosMaterial(dados, nomeCliente, numOs);
+    }
+  });
+  if (totalNovos > 0) {
+    console.log(`✅ ${totalNovos} produto(s) sincronizado(s) para Pedido de Material!`);
+  }
+}
+window.sincronizarTodasOSAprovadasParaMateriais = sincronizarTodasOSAprovadasParaMateriais;
+
 function itemPertenceAoCliente(it, pastaAlvo) {
   if (!pastaAlvo || pastaAlvo === 'todos') return true;
-  const target = pastaAlvo.toLowerCase().trim();
-  const cli = (it.cliente || '').toLowerCase().trim();
+  const target = (pastaAlvo || '').toLowerCase().trim();
+  if (!target) return true;
 
   if (target === 'outros' || target === 'geral' || target === 'outros / geral') {
-    return !cli;
+    let c = (it.cliente || '').trim();
+    if (!c && it.obs) {
+      const mObs = it.obs.match(/OS\s*#?\d+\s*\(([^)]+)\)/i);
+      if (mObs && mObs[1]) c = mObs[1].trim();
+    }
+    return !c;
   }
 
+  // 1. Cliente atribuído diretamente ao item
+  let cli = (it.cliente || '').toLowerCase().trim();
+  let osItem = (it.os || '').toLowerCase().trim();
+
+  // 2. Extrai de obs se cliente ou OS estiverem ausentes
+  if ((!cli || !osItem) && it.obs) {
+    const mObs = it.obs.match(/OS\s*#?([0-9a-zA-Z]+)?\s*\(([^)]+)\)/i);
+    if (mObs) {
+      if (!cli && mObs[2]) cli = mObs[2].toLowerCase().trim();
+      if (!osItem && mObs[1]) osItem = '#' + mObs[1].trim().toLowerCase();
+    }
+  }
+
+  // 3. Comparação ESTRITA de cliente:
+  // IMPORTANTE: NUNCA usar .includes() entre nomes parciais (ex: 'david' NÃO deve casar com 'samuel david')
   if (cli) {
     if (cli === target) return true;
-    if (target.includes(cli) || cli.includes(target)) return true;
   }
 
-  // Se não tem it.cliente preenchido, só aceita se it.obs tiver explicitamente o nome
-  if (!cli && it.obs) {
-    const o = it.obs.toLowerCase();
-    if (o.includes(target)) return true;
+  // 4. Se pastaAlvo contiver número de OS (ex: "#0008" ou "0008") e o item tiver OS correspondente:
+  const targetDigits = target.replace(/\D/g, '');
+  const itemDigits = osItem.replace(/\D/g, '');
+  if (targetDigits && itemDigits && targetDigits === itemDigits) {
+    return true;
   }
 
   return false;
@@ -30001,14 +30178,23 @@ function renderPastasClienteMaterial(lista) {
   // 1. Extrai clientes dos itens de materiais existentes
   (lista || []).forEach(it => {
     let c = (it.cliente || '').trim();
+    let osNum = (it.os || '').trim();
     if (!c && it.obs) {
-      const mObs = it.obs.match(/OS\s*#?\d+\s*\(([^)]+)\)/i);
-      if (mObs && mObs[1]) c = mObs[1].trim();
+      const mObs = it.obs.match(/OS\s*#?([0-9a-zA-Z]+)?\s*\(([^)]+)\)/i);
+      if (mObs) {
+        if (mObs[2]) c = mObs[2].trim();
+        if (mObs[1] && !osNum) osNum = '#' + mObs[1].trim();
+      }
     }
     if (c) {
-      if (!mapaClientes[c]) mapaClientes[c] = { nome: c, os: it.os || '', total: 0 };
-      mapaClientes[c].total++;
-      if (it.os && !mapaClientes[c].os) mapaClientes[c].os = it.os;
+      const chave = c.toLowerCase();
+      if (!mapaClientes[chave]) {
+        mapaClientes[chave] = { nome: c, os: osNum, total: 0 };
+      }
+      mapaClientes[chave].total++;
+      if (osNum && !mapaClientes[chave].os) {
+        mapaClientes[chave].os = osNum;
+      }
     } else {
       semClienteCount++;
     }
@@ -30020,8 +30206,12 @@ function renderPastasClienteMaterial(lista) {
       const c = (os.nome || os.cliente || '').trim();
       const num = os.numero || '';
       if (c) {
-        if (!mapaClientes[c]) mapaClientes[c] = { nome: c, os: num, total: 0 };
-        else if (num && !mapaClientes[c].os) mapaClientes[c].os = num;
+        const chave = c.toLowerCase();
+        if (!mapaClientes[chave]) {
+          mapaClientes[chave] = { nome: c, os: num, total: 0 };
+        } else if (num && !mapaClientes[chave].os) {
+          mapaClientes[chave].os = num;
+        }
       }
     });
   }
@@ -30129,6 +30319,9 @@ function renderCardItemMaterial(it) {
 }
 
 function renderPedidosMaterial() {
+  if (typeof sincronizarTodasOSAprovadasParaMateriais === 'function') {
+    sincronizarTodasOSAprovadasParaMateriais();
+  }
   const lista = carregarMateriais();
   const busca = (document.getElementById('material-busca') || {}).value || '';
   const filtroStatus = (document.getElementById('material-filtro-status') || {}).value || 'todos';
@@ -30177,7 +30370,12 @@ function renderPedidosMaterial() {
   // Se o usuário selecionou uma pasta específica (ex: Samuel David ou Outros / Geral):
   if (_materialClienteFolderAtivo !== 'todos') {
     const nomeExibicao = _materialClienteFolderAtivo === 'outros' ? 'Outros / Itens Gerais' : _materialClienteFolderAtivo;
-    const numOsExib = filtrado[0]?.os ? ` · ${filtrado[0].os}` : '';
+    let osExib = filtrado.find(x => x.os)?.os || '';
+    if (!osExib && Array.isArray(historico)) {
+      const matchHist = historico.find(h => (h.nome || h.cliente || '').trim().toLowerCase() === _materialClienteFolderAtivo.toLowerCase());
+      if (matchHist && matchHist.numero) osExib = matchHist.numero;
+    }
+    const numOsExib = osExib ? ` · ${osExib}` : '';
     const bannerPasta = `
       <div style="background:linear-gradient(135deg, rgba(201,168,76,0.18), rgba(15,15,25,0.8));border:1.5px solid #eab308;border-radius:12px;padding:12px 16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
         <div>
@@ -30531,7 +30729,9 @@ function enviarPedidoMaterialWhatsApp() {
 
   const lista = carregarMateriais();
   const filtroStatus = (document.getElementById('material-filtro-status') || {}).value || 'todos';
-  const itens = filtroStatus !== 'todos' ? lista.filter(it => it.status === filtroStatus) : lista.filter(it => it.status !== 'comprado');
+  let itens = lista.filter(it => itemPertenceAoCliente(it, _materialClienteFolderAtivo));
+  if (filtroStatus !== 'todos') itens = itens.filter(it => it.status === filtroStatus);
+  else itens = itens.filter(it => it.status !== 'comprado');
 
   if (!itens.length) {
     alert('Nenhum item para enviar com o filtro atual.');
