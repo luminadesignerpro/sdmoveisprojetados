@@ -18,7 +18,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js?v=9.1.0').then(r => { r.update(); })
+        navigator.serviceWorker.register('/sw.js?v=9.1.1').then(r => { r.update(); })
           .then(function(reg){ console.log('SW registrado com sucesso:', reg.scope); })
           .catch(function(err){ console.warn('Erro ao registrar SW:', err); });
       });
@@ -30327,7 +30327,15 @@ function renderCardItemMaterial(it) {
     </span>
   ` : '';
 
-  // ── Bloco FORNECEDOR SELECIONADO (integrado com sdcomparativos) ──
+  // ── Bloco FORNECEDOR DA COMPRA (ex: Rio Branco) ──
+  const fornCompraHtml = it.fornecedor ? `
+    <div style="margin-top:6px;padding-top:6px;border-top:1px dashed rgba(255,255,255,0.12);display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+      <span style="font-size:10.5px;color:#cbd5e1;font-weight:700;">🏪 ${it.status === 'comprado' ? 'Comprado no Fornecedor:' : 'Fornecedor da Compra:'}</span>
+      <strong style="font-size:12px;color:#38bdf8;font-weight:900;">${esc(it.fornecedor)}</strong>
+      ${it.status === 'comprado' ? '<span style="background:rgba(52,211,153,0.18);color:#34d399;border:1px solid rgba(52,211,153,0.35);font-size:9px;font-weight:800;padding:1px 6px;border-radius:4px;">✓ COMPRADO</span>' : ''}
+    </div>` : '';
+
+  // ── Bloco FORNECEDOR SELECIONADO (integrado com sdcomparativos / Itaipu / Menor Preço) ──
   let fornecedorHtml = '';
   try {
     const comparisons = typeof obterComparacoesArmazenadas === 'function' ? obterComparacoesArmazenadas() : [];
@@ -30342,12 +30350,13 @@ function renderCardItemMaterial(it) {
         const nomeProdEsc = esc(it.nome).replace(/'/g, "\\'");
         fornecedorHtml = `
           <div style="margin-top:6px;padding:7px 10px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);border-radius:8px;display:flex;flex-direction:column;gap:3px;">
-            <span style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.04em;">Fornecedor Selecionado</span>
+            <span style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.04em;">Fornecedor Selecionado (Menor Preço)</span>
             <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
               <span style="font-weight:900;font-size:12px;color:#fff;">🏢 ${esc(menor.supplierName)}</span>
               <span style="background:#16a34a;color:#fff;font-size:9px;font-weight:900;padding:2px 7px;border-radius:5px;text-transform:uppercase;letter-spacing:.04em;">🏆 MENOR PREÇO</span>
               <button type="button" onclick="abrirModalComparativoGeral('${nomeProdEsc}',${it.id})" style="background:none;border:none;color:#6ee7b7;font-size:10px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;">(${nFornec} fornecedor${nFornec>1?'es':''})</button>
             </div>
+            ${fornCompraHtml}
           </div>`;
       } else {
         const nomeProdEsc = esc(it.nome).replace(/'/g, "\\'");
@@ -30359,6 +30368,7 @@ function renderCardItemMaterial(it) {
               <span style="background:rgba(245,158,11,0.2);border:1px solid rgba(245,158,11,0.4);color:#fbbf24;font-size:9px;font-weight:900;padding:2px 6px;border-radius:4px;text-transform:uppercase;letter-spacing:.04em;">SEM COTAÇÃO</span>
               <button type="button" onclick="abrirModalComparativoGeral('${nomeProdEsc}',${it.id})" style="background:none;border:none;color:#fbbf24;font-size:10px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;">+ Cotar</button>
             </div>
+            ${fornCompraHtml}
           </div>`;
       }
     } else {
@@ -30371,6 +30381,7 @@ function renderCardItemMaterial(it) {
             <span style="background:rgba(245,158,11,0.2);border:1px solid rgba(245,158,11,0.4);color:#fbbf24;font-size:9px;font-weight:900;padding:2px 6px;border-radius:4px;text-transform:uppercase;letter-spacing:.04em;">SEM COTAÇÃO</span>
             <button type="button" onclick="abrirModalComparativoGeral('${nomeProdEsc}',${it.id})" style="background:none;border:none;color:#fbbf24;font-size:10px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;">+ Cotar</button>
           </div>
+          ${fornCompraHtml}
         </div>`;
     }
   } catch(e) {}
@@ -30386,6 +30397,7 @@ function renderCardItemMaterial(it) {
           ${it.qtd ? `Qtd: <strong style="color:#fff;">${it.qtd} ${it.unidade||'un'}</strong>` : ''}
           ${it.valor ? ` · Unit: <strong style="color:#fff;">R$ ${parseFloat(it.valor).toFixed(2).replace('.',',')}</strong>` : ''}
           ${total ? ` · Total: <strong style="color:#fde047;font-weight:900;">R$ ${total}</strong>` : ''}
+          ${it.fornecedor ? ` · 🏪 <strong style="color:#38bdf8;">${esc(it.fornecedor)}</strong>` : ''}
           ${it.formaPagamento ? ` · 💳 <strong style="color:#67e8f9;">${esc(it.formaPagamento)}</strong>` : ''}
         </div>
         ${it.obs ? `<div style="font-size:11px;color:var(--text2);margin-top:4px;">${esc(it.obs)}</div>` : ''}
@@ -30920,7 +30932,11 @@ function montarTextoWhatsappMaterial(itens, pastaNome) {
 
       msg += `*${i+1}. ${it.nome}*${urgEmoji[it.urgencia] || ''}\n`;
       msg += `   ▫ Qtd: ${it.qtd || 1} ${it.unidade || 'un'} · Unit: R$ ${uVal.toFixed(2).replace('.', ',')} · Total: R$ ${totVal.toFixed(2).replace('.', ',')}\n`;
-      msg += `   ▫ Fornecedor: ${fornTxt}\n\n`;
+      msg += `   ▫ Menor Preço (Cotação): ${fornTxt}\n`;
+      if (it.fornecedor) {
+        msg += `   ▫ ${it.status === 'comprado' ? 'Comprado no Fornecedor:' : 'Fornecedor da Compra:'} 🏪 ${it.fornecedor}${it.status === 'comprado' ? ' (✓ Efetuado)' : ''}\n`;
+      }
+      msg += '\n';
     });
   });
 
@@ -31138,19 +31154,25 @@ async function gerarPdfPedidoMaterialBlob(itens, pastaNome) {
       color: GRAY
     });
 
-    page.drawText(sanitize(fornNome.length > 22 ? fornNome.slice(0, 20) + '..' : fornNome), {
+    let linhaForn1 = fornNome;
+    let linhaForn2 = fornBadge;
+    if (it.fornecedor && it.fornecedor.toLowerCase() !== fornNome.toLowerCase()) {
+      linhaForn1 = fornNome + ' (' + fornBadge.split(' ')[0] + ')';
+      linhaForn2 = (it.status === 'comprado' ? 'Comprado: ' : 'Fornec: ') + it.fornecedor;
+    }
+    page.drawText(sanitize(linhaForn1.length > 28 ? linhaForn1.slice(0, 26) + '..' : linhaForn1), {
       x: cols[1].x + 6,
       y: y - 11,
-      size: 8.5,
+      size: 8,
       font: fontBold,
       color: isMenor ? GREEN : AMBER
     });
-    page.drawText(sanitize(fornBadge), {
+    page.drawText(sanitize(linhaForn2.length > 28 ? linhaForn2.slice(0, 26) + '..' : linhaForn2), {
       x: cols[1].x + 6,
       y: y - 21,
       size: 7,
-      font: fontReg,
-      color: isMenor ? GREEN : AMBER
+      font: (it.fornecedor && it.fornecedor.toLowerCase() !== fornNome.toLowerCase()) ? fontBold : fontReg,
+      color: (it.fornecedor && it.fornecedor.toLowerCase() !== fornNome.toLowerCase()) ? rgb(0.1, 0.45, 0.75) : (isMenor ? GREEN : AMBER)
     });
 
     const qtdTxt = sanitize(`${it.qtd || 1} ${it.unidade || 'un'}`);
