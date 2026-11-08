@@ -2409,16 +2409,16 @@
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;">
-        <button type="button" class="btn btn-gold" onclick="enviarOuBaixarPdfOrcamento()" style="font-size:14px;padding:14px;" id="btn-pdf-orc">
+      <div style="margin-top:6px;">
+        <button type="button" class="btn btn-gold btn-full" onclick="enviarOuBaixarPdfOrcamento()" style="font-size:15px;padding:15px;" id="btn-pdf-orc">
           <span id="pdf-orc-spinner" class="spinner" style="display:none"></span>
           <span id="pdf-orc-btn-text">📄 Enviar PDF</span>
         </button>
-        <button type="button" class="btn btn-sec" onclick="visualizarPdfOrcamentoAtual()" style="font-size:14px;padding:14px;border:1.5px solid var(--gold);color:var(--gold-light);font-weight:700;" id="btn-preview-orc-atual" title="Pré-visualizar o PDF deste orçamento diretamente na tela">
+        <button type="button" class="btn btn-sec" onclick="visualizarPdfOrcamentoAtual()" style="display:none;" id="btn-preview-orc-atual">
           👁️ Visualizar PDF
         </button>
       </div>
-      <button class="btn btn-ia btn-full" onclick="enviarOrcamentoParaAssinaturaDigital()" style="font-size:15px;padding:15px;margin-top:10px;" id="btn-orc-assinatura">
+      <button class="btn btn-ia btn-full" onclick="enviarOrcamentoParaAssinaturaDigital()" style="display:none;" id="btn-orc-assinatura">
         <span id="orc-assinatura-spinner" class="spinner" style="display:none"></span>
         <span id="orc-assinatura-btn-text">✍️ Enviar para Assinatura Digital</span>
       </button>
