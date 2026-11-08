@@ -9761,6 +9761,24 @@ const DADOS_INICIAIS_COMPARATIVO = [
   }
 ];
 
+const FAMILIAS_MATERIAIS = [
+  { id: 'mdf_mdp', terms: ['mdf', 'mdp'] },
+  { id: 'formica', terms: ['formica', 'laminado'] },
+  { id: 'fita', terms: ['fita', 'fita de borda', 'borda'] },
+  { id: 'porta', terms: ['porta', 'portas'] },
+  { id: 'dobradica', terms: ['dobradica', 'dobradicas'] },
+  { id: 'corredica', terms: ['corredica', 'corredicas'] },
+  { id: 'puxador', terms: ['puxador', 'puxadores'] },
+  { id: 'perfil', terms: ['perfil', 'perfis'] },
+  { id: 'trilho', terms: ['trilho', 'trilhos'] },
+  { id: 'kit', terms: ['kit'] },
+  { id: 'fechadura', terms: ['fechadura', 'fechaduras'] },
+  { id: 'parafuso', terms: ['parafuso', 'parafusos'] },
+  { id: 'cola', terms: ['cola', 'adesivo', 'silicone', 'selante'] },
+  { id: 'compensado', terms: ['compensado'] },
+  { id: 'vidro', terms: ['vidro', 'espelho'] }
+];
+
 function normalizarTextoParaBusca(str) {
   return (str || '')
     .toLowerCase()
@@ -9770,47 +9788,97 @@ function normalizarTextoParaBusca(str) {
 }
 
 function extrairTokensBusca(str) {
-  return normalizarTextoParaBusca(str).split(/\s+/).filter(w => w.length > 0);
+  const expandido = (str || '').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/([0-9]+)([a-z]+)/g, '$1 $2')
+    .replace(/([a-z]+)([0-9]+)/g, '$1 $2')
+    .replace(/[^a-z0-9]/g, ' ')
+    .trim();
+  const stopwords = new Set(['mm', 'cm', 'm', 'un', 'de', 'da', 'do', 'com', 'e', 'em', 'para', 'x', 'faces', 'face']);
+  return expandido.split(/\s+/).filter(w => w.length > 0 && !stopwords.has(w));
+}
+
+function identificarFamiliasMaterial(tokens) {
+  const set = new Set();
+  for (const t of tokens) {
+    for (const fam of FAMILIAS_MATERIAIS) {
+      if (fam.terms.includes(t)) set.add(fam.id);
+    }
+  }
+  return set;
+}
+
+function pontuarCorrespondenciaComparativo(descricao, nomeCandidato) {
+  const qNorm = normalizarTextoParaBusca(descricao);
+  const cNorm = normalizarTextoParaBusca(nomeCandidato);
+  if (!qNorm || !cNorm) return 0;
+  if (qNorm === cNorm) return 1000;
+
+  const qTokens = extrairTokensBusca(descricao);
+  const cTokens = extrairTokensBusca(nomeCandidato);
+  if (!qTokens.length || !cTokens.length) return 0;
+
+  const qFams = identificarFamiliasMaterial(qTokens);
+  const cFams = identificarFamiliasMaterial(cTokens);
+
+  if (qFams.size > 0 && cFams.size > 0) {
+    let intersec = false;
+    for (const f of qFams) {
+      if (cFams.has(f)) { intersec = true; break; }
+    }
+    if (!intersec) return 0;
+  }
+  if (qFams.size > 0 && cFams.size === 0) {
+    return 0;
+  }
+
+  const qNums = qTokens.filter(t => /^\d+$/.test(t)).map(n => parseInt(n, 10));
+  const cNums = cTokens.filter(t => /^\d+$/.test(t)).map(n => parseInt(n, 10));
+
+  if (qNums.length > 0 && cNums.length > 0) {
+    for (const qn of qNums) {
+      if (!cNums.includes(qn)) return 0;
+    }
+  }
+
+  const acabamentos = new Set(['branco', 'preto', 'cinza', 'tx', 'fosco', 'brilho', 'amadeirado', 'madeirado', 'trama', 'grafite']);
+  let matchCount = 0;
+  let nonAcabamentoMatch = 0;
+  for (const qt of qTokens) {
+    if (cTokens.includes(qt)) {
+      matchCount++;
+      if (!acabamentos.has(qt)) nonAcabamentoMatch++;
+    }
+  }
+
+  if (nonAcabamentoMatch === 0 && matchCount > 0) {
+    return 0;
+  }
+
+  if (matchCount >= 2 && (matchCount / qTokens.length) >= 0.45) {
+    return matchCount * 10;
+  }
+  return 0;
 }
 
 function encontrarCorrespondenciaComparativo(descricao, listaComparacoes) {
-  const inTokens = extrairTokensBusca(descricao);
-  if (!inTokens.length) return null;
-
-  const inNumbers = inTokens.filter(t => /^\d+$/.test(t)).map(n => parseInt(n, 10));
+  if (!descricao || !listaComparacoes || !listaComparacoes.length) return null;
 
   let best = null;
-  let bestScore = -1;
+  let bestScore = 0;
 
   for (const comp of listaComparacoes) {
-    if (!comp.productName || !comp.quotes || !comp.quotes.length) continue;
-    const pTokens = extrairTokensBusca(comp.productName);
-    const pNumbers = pTokens.filter(t => /^\d+$/.test(t)).map(n => parseInt(n, 10));
+    const nomeComp = comp.productName || comp.name || '';
+    if (!nomeComp) continue;
 
-    // Se o usuário especificou um número (ex: 15), mas o produto tem outro (ex: 06 ou 18), descarta!
-    let numberMismatch = false;
-    for (const num of inNumbers) {
-      if (pNumbers.length && !pNumbers.includes(num)) {
-        numberMismatch = true;
-        break;
-      }
-    }
-    if (numberMismatch) continue;
-
-    let matched = 0;
-    for (const t of inTokens) {
-      if (pTokens.some(pt => pt === t || pt.includes(t) || t.includes(pt))) {
-        matched++;
-      }
-    }
-
-    if (matched > bestScore) {
-      bestScore = matched;
+    const score = pontuarCorrespondenciaComparativo(descricao, nomeComp);
+    if (score > bestScore) {
+      bestScore = score;
       best = comp;
     }
   }
 
-  return (bestScore >= 1) ? best : null;
+  return bestScore > 0 ? best : null;
 }
 
 function obterComparacoesArmazenadas() {
@@ -30360,8 +30428,8 @@ function renderCardItemMaterial(it) {
         ${it.status === 'comprado' ? '<span style="background:rgba(52,211,153,0.18);color:#34d399;border:1px solid rgba(52,211,153,0.35);font-size:9px;font-weight:800;padding:1px 6px;border-radius:4px;">✓ COMPRADO</span>' : ''}
       </div>` : '';
 
-    if (match && match.quotes && match.quotes.length) {
-      const cotacoes = match.quotes
+    if (match) {
+      const cotacoes = (match.quotes || [])
         .filter(q => (q.unitPrice || q.price || 0) > 0)
         .sort((a, b) => (a.unitPrice || a.price || 0) - (b.unitPrice || b.price || 0));
 
@@ -30400,6 +30468,7 @@ function renderCardItemMaterial(it) {
             ${fornCompraHtml}
           </div>`;
       } else {
+        // Produto cadastrado no comparativo, mas sem fornecedores / cotação
         fornecedorHtml = `
           <div style="margin-top:6px;padding:8px 10px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:10px;display:flex;flex-direction:column;gap:4px;">
             <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
@@ -30409,14 +30478,15 @@ function renderCardItemMaterial(it) {
               </button>
             </div>
             <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-              <span style="font-weight:800;font-size:11.5px;color:#fbbf24;">⚠️ Não encontrado nos fornecedores</span>
+              <span style="font-weight:800;font-size:11.5px;color:#fbbf24;">⚠️ Não tem fornecedor cadastrado</span>
               <span style="background:rgba(245,158,11,0.2);border:1px solid rgba(245,158,11,0.4);color:#fbbf24;font-size:9px;font-weight:900;padding:2px 6px;border-radius:4px;text-transform:uppercase;letter-spacing:.04em;">SEM COTAÇÃO</span>
-              <button type="button" onclick="abrirComparativoDeMateriais('${nomeProdEsc}')" style="background:none;border:none;color:#fbbf24;font-size:10.5px;font-weight:800;cursor:pointer;text-decoration:underline;padding:0;">+ Cotar</button>
+              <button type="button" onclick="abrirComparativoDeMateriais('${nomeProdEsc}')" style="background:none;border:none;color:#fbbf24;font-size:10.5px;font-weight:800;cursor:pointer;text-decoration:underline;padding:0;">+ Cotar Fornecedor</button>
             </div>
             ${fornCompraHtml}
           </div>`;
       }
     } else {
+      // Produto não cadastrado no comparativo
       fornecedorHtml = `
         <div style="margin-top:6px;padding:8px 10px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:10px;display:flex;flex-direction:column;gap:4px;">
           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
@@ -30968,7 +31038,7 @@ function montarTextoWhatsappMaterial(itens, pastaNome) {
             const nFornec = cotacoes.length;
             fornTxt = `🏢 ${menor.supplierName} 🏆 MENOR PREÇO (${nFornec} fornecedor${nFornec > 1 ? 'es' : ''})`;
           } else {
-            fornTxt = '⚠️ Não encontrado (SEM COTAÇÃO)';
+            fornTxt = '⚠️ Não tem fornecedor cadastrado (SEM COTAÇÃO)';
           }
         } else if (it.fornecedor) {
           fornTxt = `🏢 ${it.fornecedor}`;
@@ -31396,7 +31466,8 @@ function abrirComparativoDeMateriais(termoProduto = null, clienteAlvo = null) {
 
   const params = new URLSearchParams();
   params.set('origem', 'material');
-  params.set('retorno', 'https://sdmoveisprojetados.vercel.app/?origem=material#crono-material');
+  const urlRetorno = 'https://sdmoveisprojetados.vercel.app/?origem=material' + (pasta ? '&pasta=' + encodeURIComponent(pasta) : '') + '#crono-material';
+  params.set('retorno', urlRetorno);
 
   if (clienteNome) {
     params.set('cliente', clienteNome);
@@ -38745,30 +38816,49 @@ window.moverArrastoPecaCorte = moverArrastoPecaCorte;
 window.soltarArrastoPecaCorte = soltarArrastoPecaCorte;
 </script>
 
-
-// ── RETORNO INTELIGENTE DO COMPARATIVO (VOLTAR AO PEDIDO DE MATERIAL OU ORÇAMENTO) ──
-(function verificarRetornoComparativo() {
+<!-- RETORNO INTELIGENTE DO COMPARATIVO DE PREÇOS (CRONOGRAMA / PEDIDO DE MATERIAL OU ORÇAMENTO) -->
+<script>
+function aplicarRetornoComparativo() {
   try {
     const p = new URLSearchParams(window.location.search);
     const origem = p.get('origem') || p.get('from');
     const hash = window.location.hash;
+    const pasta = p.get('pasta') || p.get('cliente');
+
     if (origem === 'material' || hash === '#crono-material' || hash === '#material') {
-      window.addEventListener('DOMContentLoaded', function() {
-        setTimeout(function() {
-          if (typeof goTab === 'function') goTab('cronograma');
-          if (typeof mudarAbaCronograma === 'function') mudarAbaCronograma('material');
-          const cli = p.get('cliente') || p.get('pasta');
-          if (cli && typeof selecionarPastaClienteMaterial === 'function') {
-            selecionarPastaClienteMaterial(cli);
-          }
-        }, 120);
-      });
+      const navegar = () => {
+        if (typeof goTab === 'function') goTab('cronograma');
+        if (typeof mudarAbaCronograma === 'function') mudarAbaCronograma('material');
+        if (pasta && typeof selecionarPastaClienteMaterial === 'function') {
+          selecionarPastaClienteMaterial(pasta);
+        }
+      };
+      navegar();
+      setTimeout(navegar, 100);
+      setTimeout(navegar, 300);
+      setTimeout(navegar, 700);
+      setTimeout(navegar, 1200);
     } else if (origem === 'orcamento' || hash === '#orcamento') {
-      window.addEventListener('DOMContentLoaded', function() {
-        setTimeout(function() {
-          if (typeof goTab === 'function') goTab('orcamento');
-        }, 120);
-      });
+      const navegar = () => {
+        if (typeof goTab === 'function') goTab('orcamento');
+      };
+      navegar();
+      setTimeout(navegar, 100);
+      setTimeout(navegar, 300);
     }
-  } catch(_) {}
-})();
+  } catch(e) {
+    console.warn('Erro ao aplicar retorno do comparativo:', e);
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', aplicarRetornoComparativo);
+} else {
+  aplicarRetornoComparativo();
+}
+window.addEventListener('load', aplicarRetornoComparativo);
+window.addEventListener('hashchange', aplicarRetornoComparativo);
+window.addEventListener('popstate', aplicarRetornoComparativo);
+</script>
+</body>
+</html>
