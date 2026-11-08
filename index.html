@@ -2090,16 +2090,16 @@
             </tr>
             <!-- BOTÃO AMBIENTES ABAIXO DE QTD DESCRIÇÃO (PRODUTO / SERVIÇO) -->
             <tr id="tr-header-ambientes" style="background:#11121c;">
-              <th colspan="11" style="padding:8px 10px;text-align:left;border-bottom:1.5px solid rgba(245,158,11,0.3);background:rgba(245,158,11,0.06);">
-                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                  <div class="wrap-ambiente-nome" style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg, rgba(245,158,11,0.22), rgba(217,119,6,0.18));border:1.5px solid #f59e0b;border-radius:8px;padding:5px 12px;box-shadow:0 2px 8px rgba(245,158,11,0.2);">
+              <th colspan="11" style="padding:8px 10px;text-align:left;border-bottom:1.5px solid rgba(245,158,11,0.3);background:rgba(245,158,11,0.06);text-transform:none;">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap;white-space:nowrap;">
+                  <div class="wrap-ambiente-nome" style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg, rgba(245,158,11,0.22), rgba(217,119,6,0.18));border:1.5px solid #f59e0b;border-radius:8px;padding:5px 12px;box-shadow:0 2px 8px rgba(245,158,11,0.2);flex-shrink:0;">
                     <span style="font-size:15px;line-height:1;">🛋️</span>
                     <input type="text" id="inp-orc-ambiente-top" class="inp-nome-ambiente label-ambiente-texto" placeholder="Nome do ambiente..." value="" oninput="atualizarSubtotaisAmbientes()" onfocus="this.select()" style="background:transparent;border:none;color:#fbbf24;font-weight:800;font-size:12.5px;outline:none;width:160px;min-width:120px;" title="Digite o nome do ambiente" />
                   </div>
                   
                   <span id="badge-ambiente-ativo-texto" style="font-size:11.5px;color:#fcd34d;font-weight:700;"></span>
                   <!-- BADGES DE VALORES DO AMBIENTE: PRODUTO, SERVIÇO E TOTAL COM PORCENTAGEM -->
-                  <div style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                  <div style="display:inline-flex;align-items:center;gap:6px;flex-wrap:nowrap;flex-shrink:0;">
                     <!-- 1. VALOR PRODUTO -->
                     <span id="badge-ambiente-top-produtos" style="background:rgba(59,130,246,0.18);border:1px solid rgba(59,130,246,0.4);color:#93c5fd;font-size:11.5px;font-weight:800;padding:4px 9px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;" title="Valor dos produtos deste ambiente">
                       <span>📦</span> <span>Valor Produtos:</span> <span id="val-ambiente-top-produtos">R$ 0,00</span>
@@ -14477,12 +14477,12 @@ function adicionarNovoAmbienteSecao(nomePadrao = '') {
   trAmb.innerHTML = `
     <td colspan="11" style="padding:8px 10px;text-align:left;border-top:2px solid rgba(245,158,11,0.35);border-bottom:1.5px solid rgba(245,158,11,0.25);background:rgba(245,158,11,0.06);">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <div class="wrap-ambiente-nome" style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg, rgba(245,158,11,0.22), rgba(217,119,6,0.18));border:1.5px solid #f59e0b;border-radius:8px;padding:5px 12px;box-shadow:0 2px 8px rgba(245,158,11,0.2);">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap;white-space:nowrap;">
+          <div class="wrap-ambiente-nome" style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg, rgba(245,158,11,0.22), rgba(217,119,6,0.18));border:1.5px solid #f59e0b;border-radius:8px;padding:5px 12px;box-shadow:0 2px 8px rgba(245,158,11,0.2);flex-shrink:0;">
             <span style="font-size:15px;line-height:1;">🛋️</span>
             <input type="text" class="inp-nome-ambiente label-ambiente-texto" placeholder="Nome do ambiente..." value="${esc(valNome)}" oninput="atualizarSubtotaisAmbientes()" onfocus="secaoAmbienteAtivaTr=this.closest('.tr-ambiente-secao');this.select();" style="background:transparent;border:none;color:#fbbf24;font-weight:800;font-size:12.5px;outline:none;width:160px;min-width:120px;" title="Digite o nome do ambiente" />
           </div>
-          <div style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <div style="display:inline-flex;align-items:center;gap:6px;flex-wrap:nowrap;flex-shrink:0;">
             <span class="badge-secao-produtos-val" style="background:rgba(59,130,246,0.18);border:1px solid rgba(59,130,246,0.4);color:#93c5fd;font-size:11.5px;font-weight:800;padding:4px 9px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;" title="Valor dos produtos deste ambiente">
               <span>📦</span> <span>Valor Produtos:</span> <span class="val-secao-produtos">R$ 0,00</span>
             </span>
