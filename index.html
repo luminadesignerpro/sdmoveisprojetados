@@ -2386,8 +2386,26 @@
     </div>
 
     <!-- Send / Save -->
-    <div class="card">
+    <div class="card" id="card-enviar-orc">
       <div class="card-title">📤 Enviar / Salvar Orçamento</div>
+
+      <!-- OPÇÃO: ENVIAR DETALHADO OU SÓ AMBIENTE COM VALOR TOTAL -->
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(201,168,76,0.3);border-radius:10px;padding:10px 12px;margin-bottom:14px;">
+        <div style="font-size:11px;font-weight:800;color:var(--gold-light);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+          <span>📄</span> Opção de Envio do PDF:
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <button type="button" id="btn-pdf-modo-detalhado" class="btn-modo-pdf" onclick="selecionarModoPdf('detalhado')" style="padding:9px 10px;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;border:1.5px solid var(--gold);background:linear-gradient(135deg, rgba(201,168,76,0.3), rgba(201,168,76,0.15));color:#fff;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 2px 8px rgba(201,168,76,0.2);transition:all 0.15s;">
+            <span>📑</span> Detalhado (Itens)
+          </button>
+          <button type="button" id="btn-pdf-modo-ambiente" class="btn-modo-pdf" onclick="selecionarModoPdf('ambiente')" style="padding:9px 10px;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;border:1px solid rgba(255,255,255,0.12);background:rgba(0,0,0,0.35);color:var(--muted);display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.15s;">
+            <span>🛋️</span> Só Ambientes (Totais)
+          </button>
+        </div>
+        <div id="hint-modo-pdf" style="font-size:10.5px;color:var(--text2);margin-top:6px;line-height:1.35;">
+          ℹ️ <strong>Detalhado:</strong> Lista todos os produtos, peças e medidas agrupados por ambiente.
+        </div>
+      </div>
 
       <!-- SELETOR DE STATUS EM CASO DE MODIFICAÇÕES (EDIÇÃO) -->
       <div id="edicao-status-box" style="display:none;margin-bottom:14px;padding:12px;background:rgba(201,168,76,0.08);border:1.5px solid rgba(201,168,76,0.35);border-radius:14px;">
@@ -13057,6 +13075,81 @@ async function visualizarPdfVersaoEspecifica(id, versaoNum, btnEl = null) {
   }
 }
 
+
+let _modoPdfOrcamentoSelecionado = 'detalhado';
+
+function selecionarModoPdf(modo) {
+  _modoPdfOrcamentoSelecionado = (modo === 'ambiente') ? 'ambiente' : 'detalhado';
+  const btnDet = document.getElementById('btn-pdf-modo-detalhado');
+  const btnAmb = document.getElementById('btn-pdf-modo-ambiente');
+  const hint = document.getElementById('hint-modo-pdf');
+
+  if (modo === 'ambiente') {
+    if (btnAmb) {
+      btnAmb.style.border = '1.5px solid var(--gold)';
+      btnAmb.style.background = 'linear-gradient(135deg, rgba(201,168,76,0.3), rgba(201,168,76,0.15))';
+      btnAmb.style.color = '#fff';
+      btnAmb.style.boxShadow = '0 2px 8px rgba(201,168,76,0.2)';
+    }
+    if (btnDet) {
+      btnDet.style.border = '1px solid rgba(255,255,255,0.12)';
+      btnDet.style.background = 'rgba(0,0,0,0.35)';
+      btnDet.style.color = 'var(--muted)';
+      btnDet.style.boxShadow = 'none';
+    }
+    if (hint) {
+      hint.innerHTML = 'ℹ️ <strong>Só Ambientes:</strong> Exibe apenas o resumo de cada ambiente com seu valor total por ambiente no PDF (sem listar produtos individualmente).';
+    }
+  } else {
+    if (btnDet) {
+      btnDet.style.border = '1.5px solid var(--gold)';
+      btnDet.style.background = 'linear-gradient(135deg, rgba(201,168,76,0.3), rgba(201,168,76,0.15))';
+      btnDet.style.color = '#fff';
+      btnDet.style.boxShadow = '0 2px 8px rgba(201,168,76,0.2)';
+    }
+    if (btnAmb) {
+      btnAmb.style.border = '1px solid rgba(255,255,255,0.12)';
+      btnAmb.style.background = 'rgba(0,0,0,0.35)';
+      btnAmb.style.color = 'var(--muted)';
+      btnAmb.style.boxShadow = 'none';
+    }
+    if (hint) {
+      hint.innerHTML = 'ℹ️ <strong>Detalhado:</strong> Lista todos os produtos, peças e medidas agrupados por ambiente.';
+    }
+  }
+}
+window.selecionarModoPdf = selecionarModoPdf;
+
+function obterResumoAmbientesParaPdf() {
+  const lista = (typeof calcularTotaisPorAmbiente === 'function') ? calcularTotaisPorAmbiente() : [];
+  const elTaxa = document.getElementById('o-taxa-acrescimo');
+  const taxaPercent = elTaxa ? (typeof parseNum === 'function' ? parseNum(elTaxa.value) : parseFloat(elTaxa.value) || 0) : 0;
+  
+  const elProd = document.getElementById('o-val-produtos');
+  const elServ = document.getElementById('o-val-servico');
+  const somaTotalProdutos = elProd ? (typeof parseNum === 'function' ? parseNum(elProd.value) : parseFloat(elProd.value) || 0) : 0;
+  const somaGeralServico = elServ ? (typeof parseNum === 'function' ? parseNum(elServ.value) : parseFloat(elServ.value) || 0) : 0;
+
+  return lista.map(a => {
+    const prod = a.produtosVal || 0;
+    let serv = a.servicosVal || 0;
+    if (taxaPercent > 0 && prod > 0) {
+      serv = prod * (taxaPercent / 100);
+    } else if (serv === 0 && somaTotalProdutos > 0 && somaGeralServico > 0) {
+      serv = somaGeralServico * (prod / somaTotalProdutos);
+    }
+    const tot = prod + serv;
+    return {
+      nome: a.nome,
+      produtosVal: prod,
+      servicosVal: serv,
+      totalVal: tot,
+      qtdItens: a.qtdItens || (a.itens ? a.itens.length : 0)
+    };
+  });
+}
+window.obterResumoAmbientesParaPdf = obterResumoAmbientesParaPdf;
+
 async function visualizarPdfOrcamentoAtual() {
   const o = getOrc();
   if (!o.nome && (!o.itens || !o.itens.length)) {
@@ -13067,6 +13160,9 @@ async function visualizarPdfOrcamentoAtual() {
   if (!o.fotos || !o.fotos.length) {
     o.fotos = (typeof obterFotosOrcamentoParaPdf === 'function') ? obterFotosOrcamentoParaPdf(o.numero) : [];
   }
+
+  o.formatoPdf = _modoPdfOrcamentoSelecionado || 'detalhado';
+  o.ambientes = (typeof obterResumoAmbientesParaPdf === 'function') ? obterResumoAmbientesParaPdf() : [];
 
   const fileName = `Orcamento-${(o.numero || '0001').replace('#', '')}.pdf`;
   await abrirVisualizadorPdfParaDados(o, `👁️ Visualizar Orçamento ${o.numero || ''}`, fileName);
@@ -21839,8 +21935,108 @@ async function gerarPdfOrcamentoDoc(dados) {
 
   let curY = tableHeaderY - tableHeaderH;
   const itensList = Array.isArray(itens) && itens.length ? itens : [];
+  const formatoAmbiente = (dados.formatoPdf === 'ambiente' || dados.formato === 'ambiente');
+  
+  let ambientesParaPdf = (Array.isArray(dados.ambientes) && dados.ambientes.length) ? dados.ambientes : [];
+  if (formatoAmbiente && (!ambientesParaPdf || !ambientesParaPdf.length) && itensList.length) {
+    const mapAmb = {};
+    itensList.forEach(it => {
+      const aNome = (it.ambiente || 'Geral').trim();
+      if (!mapAmb[aNome]) mapAmb[aNome] = { nome: aNome, produtosVal: 0, servicosVal: 0, totalVal: 0, qtdItens: 0 };
+      const val = typeof parseNum === 'function' ? parseNum(it.total) : parseFloat(String(it.total || '').replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
+      mapAmb[aNome].produtosVal += val;
+      mapAmb[aNome].totalVal += val;
+      mapAmb[aNome].qtdItens++;
+    });
+    ambientesParaPdf = Object.values(mapAmb);
+  }
 
-  if (!itensList.length) {
+  if (formatoAmbiente && ambientesParaPdf.length) {
+    ambientesParaPdf.forEach((amb, idx) => {
+      const rowH = 26;
+      curY -= rowH;
+
+      page.drawRectangle({
+        x: MARGIN_X,
+        y: curY,
+        width: CONTENT_W,
+        height: rowH,
+        color: idx % 2 === 0 ? WHITE : ROW_ALT,
+        borderColor: BORDER,
+        borderWidth: 0.6
+      });
+
+      // Nome do Ambiente em destaque
+      const titAmb = `AMBIENTE: ${String(amb.nome || '').toUpperCase()}`;
+      page.drawText(sanitizePdf(titAmb), {
+        x: MARGIN_X + 10,
+        y: curY + rowH - 12,
+        size: 8.2,
+        font: fontBold,
+        color: DARK
+      });
+
+      // Detalhamento dos valores do ambiente (Produtos e Serviço)
+      const subTxt = (amb.produtosVal > 0 && amb.servicosVal > 0)
+        ? `Produtos: R$ ${Number(amb.produtosVal).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}   |   Serviço: R$ ${Number(amb.servicosVal).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}`
+        : (amb.qtdItens ? `Móveis planejados sob medida (${amb.qtdItens} itens)` : 'Móveis planejados sob medida');
+      page.drawText(sanitizePdf(subTxt), {
+        x: MARGIN_X + 10,
+        y: curY + 5,
+        size: 7,
+        font: fontRegular,
+        color: GRAY
+      });
+
+      // Medidas
+      page.drawText('Sob Medida', {
+        x: MARGIN_X + 250,
+        y: curY + rowH - 15,
+        size: 7.5,
+        font: fontRegular,
+        color: GRAY
+      });
+
+      // Área
+      page.drawText('-', {
+        x: MARGIN_X + 345,
+        y: curY + rowH - 15,
+        size: 7.5,
+        font: fontRegular,
+        color: GRAY
+      });
+
+      // QTD: 1 AMB
+      page.drawText('1 AMB', {
+        x: MARGIN_X + 395,
+        y: curY + rowH - 15,
+        size: 7.5,
+        font: fontRegular,
+        color: DARK
+      });
+
+      const totAmbNum = amb.totalVal || (amb.produtosVal + (amb.servicosVal || 0));
+      const vTotTxt = Number(totAmbNum || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+      // VL. UNIT: R$ Total do Ambiente
+      page.drawText(vTotTxt, {
+        x: MARGIN_X + 438,
+        y: curY + rowH - 15,
+        size: 7.5,
+        font: fontRegular,
+        color: DARK
+      });
+
+      // TOTAL: R$ Total do Ambiente em negrito
+      page.drawText(vTotTxt, {
+        x: MARGIN_X + 488,
+        y: curY + rowH - 15,
+        size: 8,
+        font: fontBold,
+        color: DARK
+      });
+    });
+  } else if (!itensList.length) {
     const rowH = 24;
     curY -= rowH;
     page.drawRectangle({
@@ -22450,6 +22646,8 @@ async function enviarOuBaixarPdfOrcamento(orcObj = null) {
       prazo: o.prazo || '',
       garantia: o.garantia || '',
       status: o.status || '',
+      formatoPdf: o.formatoPdf || _modoPdfOrcamentoSelecionado || 'detalhado',
+      ambientes: (o.ambientes && o.ambientes.length) ? o.ambientes : ((typeof obterResumoAmbientesParaPdf === 'function') ? obterResumoAmbientesParaPdf() : []),
       assinatura_base64: (o.assinatura_digital && o.assinatura_digital.rubrica) || o.assinatura_base64 || o.rubrica_base64 || ''
     };
 
