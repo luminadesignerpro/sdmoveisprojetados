@@ -18,7 +18,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js?v=9.0.9').then(r => { r.update(); })
+        navigator.serviceWorker.register('/sw.js?v=9.1.0').then(r => { r.update(); })
           .then(function(reg){ console.log('SW registrado com sucesso:', reg.scope); })
           .catch(function(err){ console.warn('Erro ao registrar SW:', err); });
       });
@@ -3842,14 +3842,9 @@
           <option value="pendente">⏳ Pendente</option>
           <option value="comprado">✅ Comprado</option>
         </select>
-        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-          <button class="btn btn-gold btn-sm" onclick="enviarPedidoMaterialWhatsApp()" style="font-size:12px;font-weight:800;display:inline-flex;align-items:center;gap:5px;">
-            <span>💬</span> Enviar via WhatsApp
-          </button>
-          <button class="btn btn-sec btn-sm" onclick="abrirModalOpcoesEnvioMaterial()" style="font-size:12px;font-weight:800;display:inline-flex;align-items:center;gap:5px;border-color:rgba(201,168,76,0.4);color:var(--gold-light);">
-            <span>📄</span> Enviar PDF
-          </button>
-        </div>
+        <button class="btn btn-gold btn-sm" onclick="abrirModalOpcoesEnvioMaterial()" style="font-size:12px;font-weight:800;display:inline-flex;align-items:center;gap:5px;">
+          <span>📄</span> Enviar PDF
+        </button>
       </div>
 
       <!-- RESUMO DE STATUS -->
@@ -29003,15 +28998,6 @@ if (typeof setInterval !== 'undefined') {
     </div>
 
     <div style="display:flex;flex-direction:column;gap:10px;">
-      <!-- OPÇÃO 1: WhatsApp com Texto Completo (Itens + Preços + Fornecedores) -->
-      <button type="button" onclick="executarEnvioMaterial('texto')" style="background:rgba(37,211,102,0.12);border:1.5px solid #25d366;border-radius:12px;padding:12px 14px;cursor:pointer;display:flex;align-items:center;gap:12px;text-align:left;transition:all 0.2s;">
-        <div style="background:#25d366;color:#000;width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">💬</div>
-        <div style="flex:1;">
-          <div style="font-size:13.5px;font-weight:900;color:#fff;">Enviar Mensagem no WhatsApp</div>
-          <div style="font-size:11px;color:#a7f3d0;margin-top:2px;">Com fornecedores, valores, quantidades e menor preço</div>
-        </div>
-      </button>
-
       <!-- OPÇÃO 2: Enviar PDF no WhatsApp (Compartilhar direto) -->
       <button type="button" onclick="executarEnvioMaterial('pdf_whatsapp')" style="background:rgba(201,168,76,0.14);border:1.5px solid #eab308;border-radius:12px;padding:12px 14px;cursor:pointer;display:flex;align-items:center;gap:12px;text-align:left;transition:all 0.2s;">
         <div style="background:#eab308;color:#000;width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">📄</div>
@@ -30552,8 +30538,8 @@ function renderPedidosMaterial() {
             <button type="button" onclick="selecionarPastaClienteMaterial('${chave.replace(/'/g, "\\'")}')" class="btn btn-gold btn-xs" style="font-size:11px;font-weight:800;padding:5px 12px;border-radius:7px;display:inline-flex;align-items:center;gap:4px;">
               <span>📂</span> Abrir só esta pasta
             </button>
-            <button type="button" onclick="enviarPedidoMaterialWhatsAppCliente('${chave.replace(/'/g, "\\'")}')" class="btn btn-sec btn-xs" style="font-size:11px;font-weight:800;padding:5px 10px;border-radius:7px;color:#4ade80;border-color:rgba(74,222,128,0.4);display:inline-flex;align-items:center;gap:4px;">
-              <span>💬</span> WhatsApp
+            <button type="button" onclick="enviarPedidoMaterialWhatsAppCliente('${chave.replace(/'/g, "\\'")}')" class="btn btn-sec btn-xs" style="font-size:11px;font-weight:800;padding:5px 10px;border-radius:7px;color:var(--gold-light);border-color:rgba(201,168,76,0.4);display:inline-flex;align-items:center;gap:4px;">
+              <span>📄</span> Enviar PDF
             </button>
           </div>
         </div>
