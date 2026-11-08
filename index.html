@@ -18,7 +18,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js?v=9.1.1').then(r => { r.update(); })
+        navigator.serviceWorker.register('/sw.js?v=9.1.2').then(r => { r.update(); })
           .then(function(reg){ console.log('SW registrado com sucesso:', reg.scope); })
           .catch(function(err){ console.warn('Erro ao registrar SW:', err); });
       });
@@ -3842,9 +3842,14 @@
           <option value="pendente">⏳ Pendente</option>
           <option value="comprado">✅ Comprado</option>
         </select>
-        <button class="btn btn-gold btn-sm" onclick="abrirModalOpcoesEnvioMaterial()" style="font-size:12px;font-weight:800;display:inline-flex;align-items:center;gap:5px;">
-          <span>📄</span> Enviar PDF
-        </button>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+          <button class="btn btn-gold btn-sm" onclick="abrirModalOpcoesEnvioMaterial()" style="font-size:12px;font-weight:800;display:inline-flex;align-items:center;gap:5px;">
+            <span>📄</span> Enviar PDF
+          </button>
+          <button type="button" class="btn btn-sm" onclick="abrirComparativoDeMateriais()" style="font-size:12px;font-weight:800;display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg, rgba(16,185,129,0.25), rgba(5,150,105,0.22));border:1.5px solid #10b981;color:#34d399;border-radius:8px;padding:6px 12px;cursor:pointer;box-shadow:0 2px 8px rgba(16,185,129,0.2);">
+            <span>📊</span> Comparativo de Preços
+          </button>
+        </div>
       </div>
 
       <!-- RESUMO DE STATUS -->
@@ -9980,7 +9985,8 @@ function abrirComparativoPrincipal(event) {
     params.set('produto', primeiroItem.value.trim());
   }
 
-  params.set('retorno', window.location.origin + window.location.pathname);
+  params.set('origem', 'orcamento');
+  params.set('retorno', 'https://sdmoveisprojetados.vercel.app/?origem=orcamento#orcamento');
 
   const finalUrl = 'https://sdcomparativos.vercel.app/' + (params.toString() ? '?' + params.toString() : '');
 
@@ -30327,59 +30333,102 @@ function renderCardItemMaterial(it) {
     </span>
   ` : '';
 
-  // ── Bloco FORNECEDOR DA COMPRA (ex: Rio Branco) ──
-  const fornCompraHtml = it.fornecedor ? `
-    <div style="margin-top:6px;padding-top:6px;border-top:1px dashed rgba(255,255,255,0.12);display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-      <span style="font-size:10.5px;color:#cbd5e1;font-weight:700;">🏪 ${it.status === 'comprado' ? 'Comprado no Fornecedor:' : 'Fornecedor da Compra:'}</span>
-      <strong style="font-size:12px;color:#38bdf8;font-weight:900;">${esc(it.fornecedor)}</strong>
-      ${it.status === 'comprado' ? '<span style="background:rgba(52,211,153,0.18);color:#34d399;border:1px solid rgba(52,211,153,0.35);font-size:9px;font-weight:800;padding:1px 6px;border-radius:4px;">✓ COMPRADO</span>' : ''}
-    </div>` : '';
-
-  // ── Bloco FORNECEDOR SELECIONADO (integrado com sdcomparativos / Itaipu / Menor Preço) ──
+  // ── Bloco FORNECEDOR SELECIONADO com VALORES e acesso ao Comparativo ──
   let fornecedorHtml = '';
   try {
     const comparisons = typeof obterComparacoesArmazenadas === 'function' ? obterComparacoesArmazenadas() : [];
     const match = comparisons.length ? encontrarCorrespondenciaComparativo(it.nome, comparisons) : null;
+    const nomeProdEsc = esc(it.nome || '').replace(/'/g, "\\'");
+
+    // Valor do fornecedor onde foi comprado (se informado)
+    let precoFornCompraStr = '';
+    if (it.fornecedor && match && match.quotes) {
+      const qCompra = match.quotes.find(q => (q.supplierName || '').toLowerCase().includes(it.fornecedor.toLowerCase()));
+      if (qCompra && (qCompra.unitPrice || qCompra.price)) {
+        precoFornCompraStr = (qCompra.unitPrice || qCompra.price).toFixed(2).replace('.', ',');
+      }
+    }
+    if (!precoFornCompraStr && it.valor) {
+      precoFornCompraStr = parseFloat(it.valor).toFixed(2).replace('.', ',');
+    }
+
+    const fornCompraHtml = it.fornecedor ? `
+      <div style="margin-top:6px;padding-top:6px;border-top:1px dashed rgba(255,255,255,0.12);display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <span style="font-size:10.5px;color:#cbd5e1;font-weight:700;">🏪 ${it.status === 'comprado' ? 'Comprado no Fornecedor:' : 'Fornecedor da Compra:'}</span>
+        <strong style="font-size:12px;color:#38bdf8;font-weight:900;">${esc(it.fornecedor)}</strong>
+        ${precoFornCompraStr ? `<span style="font-size:11px;font-weight:900;color:#38bdf8;background:rgba(56,189,248,0.15);border:1px solid rgba(56,189,248,0.35);padding:1px 6px;border-radius:5px;">R$ ${precoFornCompraStr}</span>` : ''}
+        ${it.status === 'comprado' ? '<span style="background:rgba(52,211,153,0.18);color:#34d399;border:1px solid rgba(52,211,153,0.35);font-size:9px;font-weight:800;padding:1px 6px;border-radius:4px;">✓ COMPRADO</span>' : ''}
+      </div>` : '';
+
     if (match && match.quotes && match.quotes.length) {
       const cotacoes = match.quotes
         .filter(q => (q.unitPrice || q.price || 0) > 0)
         .sort((a, b) => (a.unitPrice || a.price || 0) - (b.unitPrice || b.price || 0));
+
       if (cotacoes.length) {
         const menor = cotacoes[0];
+        const menorPreco = (menor.unitPrice || menor.price || 0).toFixed(2).replace('.', ',');
         const nFornec = cotacoes.length;
-        const nomeProdEsc = esc(it.nome).replace(/'/g, "\\'");
+
+        // Pílulas com valores de todos os fornecedores cotados
+        const pillsCotacoes = cotacoes.map(c => {
+          const p = (c.unitPrice || c.price || 0).toFixed(2).replace('.', ',');
+          const isMin = c.supplierName === menor.supplierName;
+          return `<span style="font-size:10px;padding:2px 7px;border-radius:5px;background:${isMin ? 'rgba(16,185,129,0.18)' : 'rgba(255,255,255,0.06)'};border:1px solid ${isMin ? 'rgba(16,185,129,0.4)' : 'rgba(255,255,255,0.1)'};color:${isMin ? '#34d399' : '#cbd5e1'};display:inline-flex;align-items:center;gap:3px;">
+            <b>${esc(c.supplierName)}:</b> R$ ${p}
+          </span>`;
+        }).join(' ');
+
         fornecedorHtml = `
-          <div style="margin-top:6px;padding:7px 10px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);border-radius:8px;display:flex;flex-direction:column;gap:3px;">
-            <span style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.04em;">Fornecedor Selecionado (Menor Preço)</span>
+          <div style="margin-top:6px;padding:8px 10px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);border-radius:10px;display:flex;flex-direction:column;gap:5px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
+              <span style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.04em;">Fornecedor Selecionado (Menor Preço)</span>
+              <button type="button" onclick="abrirComparativoDeMateriais('${nomeProdEsc}')" style="background:rgba(16,185,129,0.18);border:1px solid rgba(16,185,129,0.45);color:#6ee7b7;font-size:10px;font-weight:800;padding:2px 8px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
+                <span>📊</span> <span>Ver no Comparativo</span>
+              </button>
+            </div>
             <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-              <span style="font-weight:900;font-size:12px;color:#fff;">🏢 ${esc(menor.supplierName)}</span>
+              <span style="font-weight:900;font-size:13px;color:#fff;">🏢 ${esc(menor.supplierName)}</span>
+              <span style="font-size:12.5px;font-weight:900;color:#34d399;background:rgba(16,185,129,0.22);border:1px solid rgba(16,185,129,0.45);padding:1px 7px;border-radius:5px;">R$ ${menorPreco}</span>
               <span style="background:#16a34a;color:#fff;font-size:9px;font-weight:900;padding:2px 7px;border-radius:5px;text-transform:uppercase;letter-spacing:.04em;">🏆 MENOR PREÇO</span>
-              <button type="button" onclick="abrirModalComparativoGeral('${nomeProdEsc}',${it.id})" style="background:none;border:none;color:#6ee7b7;font-size:10px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;">(${nFornec} fornecedor${nFornec>1?'es':''})</button>
+              <button type="button" onclick="abrirComparativoDeMateriais('${nomeProdEsc}')" style="background:none;border:none;color:#94a3b8;font-size:10px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;">(${nFornec} fornecedores)</button>
+            </div>
+            <!-- Lista com valores de todos os fornecedores -->
+            <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:2px;">
+              ${pillsCotacoes}
             </div>
             ${fornCompraHtml}
           </div>`;
       } else {
-        const nomeProdEsc = esc(it.nome).replace(/'/g, "\\'");
         fornecedorHtml = `
-          <div style="margin-top:6px;padding:7px 10px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:8px;display:flex;flex-direction:column;gap:3px;">
-            <span style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.04em;">Fornecedor Selecionado</span>
-            <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
-              <span style="font-weight:800;font-size:11px;color:#fbbf24;">⚠️ Não encontrado</span>
+          <div style="margin-top:6px;padding:8px 10px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:10px;display:flex;flex-direction:column;gap:4px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
+              <span style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.04em;">Fornecedor Selecionado</span>
+              <button type="button" onclick="abrirComparativoDeMateriais('${nomeProdEsc}')" style="background:rgba(245,158,11,0.2);border:1px solid rgba(245,158,11,0.45);color:#fde047;font-size:10px;font-weight:800;padding:2px 8px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
+                <span>📊</span> <span>Abrir Comparativo</span>
+              </button>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+              <span style="font-weight:800;font-size:11.5px;color:#fbbf24;">⚠️ Não encontrado nos fornecedores</span>
               <span style="background:rgba(245,158,11,0.2);border:1px solid rgba(245,158,11,0.4);color:#fbbf24;font-size:9px;font-weight:900;padding:2px 6px;border-radius:4px;text-transform:uppercase;letter-spacing:.04em;">SEM COTAÇÃO</span>
-              <button type="button" onclick="abrirModalComparativoGeral('${nomeProdEsc}',${it.id})" style="background:none;border:none;color:#fbbf24;font-size:10px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;">+ Cotar</button>
+              <button type="button" onclick="abrirComparativoDeMateriais('${nomeProdEsc}')" style="background:none;border:none;color:#fbbf24;font-size:10.5px;font-weight:800;cursor:pointer;text-decoration:underline;padding:0;">+ Cotar</button>
             </div>
             ${fornCompraHtml}
           </div>`;
       }
     } else {
-      const nomeProdEsc = esc(it.nome).replace(/'/g, "\\'");
       fornecedorHtml = `
-        <div style="margin-top:6px;padding:7px 10px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:8px;display:flex;flex-direction:column;gap:3px;">
-          <span style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.04em;">Fornecedor Selecionado</span>
-          <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
-            <span style="font-weight:800;font-size:11px;color:#fbbf24;">⚠️ Não encontrado</span>
+        <div style="margin-top:6px;padding:8px 10px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:10px;display:flex;flex-direction:column;gap:4px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
+            <span style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.04em;">Fornecedor Selecionado</span>
+            <button type="button" onclick="abrirComparativoDeMateriais('${nomeProdEsc}')" style="background:rgba(245,158,11,0.2);border:1px solid rgba(245,158,11,0.45);color:#fde047;font-size:10px;font-weight:800;padding:2px 8px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
+              <span>📊</span> <span>Abrir Comparativo</span>
+            </button>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <span style="font-weight:800;font-size:11.5px;color:#fbbf24;">⚠️ Não encontrado nos fornecedores</span>
             <span style="background:rgba(245,158,11,0.2);border:1px solid rgba(245,158,11,0.4);color:#fbbf24;font-size:9px;font-weight:900;padding:2px 6px;border-radius:4px;text-transform:uppercase;letter-spacing:.04em;">SEM COTAÇÃO</span>
-            <button type="button" onclick="abrirModalComparativoGeral('${nomeProdEsc}',${it.id})" style="background:none;border:none;color:#fbbf24;font-size:10px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;">+ Cotar</button>
+            <button type="button" onclick="abrirComparativoDeMateriais('${nomeProdEsc}')" style="background:none;border:none;color:#fbbf24;font-size:10.5px;font-weight:800;cursor:pointer;text-decoration:underline;padding:0;">+ Cotar</button>
           </div>
           ${fornCompraHtml}
         </div>`;
@@ -31338,6 +31387,48 @@ function enviarPedidoMaterialPdf(targetFolder = null) {
   executarEnvioMaterial('pdf_whatsapp', targetFolder);
 }
 window.enviarPedidoMaterialPdf = enviarPedidoMaterialPdf;
+
+function abrirComparativoDeMateriais(termoProduto = null, clienteAlvo = null) {
+  const pasta = clienteAlvo || _materialClienteFolderAtivo || 'todos';
+  const clienteNome = (pasta && pasta !== 'todos' && pasta !== 'outros') ? pasta : '';
+  const lista = carregarMateriais();
+  const itensPasta = lista.filter(it => itemPertenceAoCliente(it, pasta));
+
+  const params = new URLSearchParams();
+  params.set('origem', 'material');
+  params.set('retorno', 'https://sdmoveisprojetados.vercel.app/?origem=material#crono-material');
+
+  if (clienteNome) {
+    params.set('cliente', clienteNome);
+    params.set('pasta', clienteNome);
+  }
+
+  if (termoProduto) {
+    params.set('produto', termoProduto);
+  }
+
+  const itensParaEnviar = itensPasta.map(it => ({
+    nome: it.nome,
+    qtd: parseFloat(String(it.qtd || 1).replace(',', '.')) || 1,
+    vunit: parseFloat(String(it.valor || 0).replace(',', '.')) || 0,
+    fornecedor: it.fornecedor || '',
+    status: it.status || 'a_comprar'
+  }));
+
+  if (itensParaEnviar.length > 0) {
+    params.set('itens', JSON.stringify(itensParaEnviar));
+  }
+
+  const finalUrl = 'https://sdcomparativos.vercel.app/?' + params.toString();
+  const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.innerWidth <= 768);
+
+  if (isMobile) {
+    window.location.href = finalUrl;
+  } else {
+    window.open(finalUrl, '_blank');
+  }
+}
+window.abrirComparativoDeMateriais = abrirComparativoDeMateriais;
 
 // ══════════════════════════════════════════════════════════════════
 //  MÓDULO: COMISSÕES POR SERVIÇOS FINALIZADOS
@@ -38654,3 +38745,30 @@ window.moverArrastoPecaCorte = moverArrastoPecaCorte;
 window.soltarArrastoPecaCorte = soltarArrastoPecaCorte;
 </script>
 
+
+// ── RETORNO INTELIGENTE DO COMPARATIVO (VOLTAR AO PEDIDO DE MATERIAL OU ORÇAMENTO) ──
+(function verificarRetornoComparativo() {
+  try {
+    const p = new URLSearchParams(window.location.search);
+    const origem = p.get('origem') || p.get('from');
+    const hash = window.location.hash;
+    if (origem === 'material' || hash === '#crono-material' || hash === '#material') {
+      window.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+          if (typeof goTab === 'function') goTab('cronograma');
+          if (typeof mudarAbaCronograma === 'function') mudarAbaCronograma('material');
+          const cli = p.get('cliente') || p.get('pasta');
+          if (cli && typeof selecionarPastaClienteMaterial === 'function') {
+            selecionarPastaClienteMaterial(cli);
+          }
+        }, 120);
+      });
+    } else if (origem === 'orcamento' || hash === '#orcamento') {
+      window.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+          if (typeof goTab === 'function') goTab('orcamento');
+        }, 120);
+      });
+    }
+  } catch(_) {}
+})();
