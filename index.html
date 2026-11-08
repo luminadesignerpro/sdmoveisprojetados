@@ -18,7 +18,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js?v=9.0.8').then(r => { r.update(); })
+        navigator.serviceWorker.register('/sw.js?v=9.0.9').then(r => { r.update(); })
           .then(function(reg){ console.log('SW registrado com sucesso:', reg.scope); })
           .catch(function(err){ console.warn('Erro ao registrar SW:', err); });
       });
@@ -3842,9 +3842,14 @@
           <option value="pendente">⏳ Pendente</option>
           <option value="comprado">✅ Comprado</option>
         </select>
-        <button class="btn btn-gold btn-sm" onclick="enviarPedidoMaterialWhatsApp()" style="font-size:12px;font-weight:800;display:inline-flex;align-items:center;gap:5px;">
-          <span>💬</span> Enviar via WhatsApp
-        </button>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+          <button class="btn btn-gold btn-sm" onclick="enviarPedidoMaterialWhatsApp()" style="font-size:12px;font-weight:800;display:inline-flex;align-items:center;gap:5px;">
+            <span>💬</span> Enviar via WhatsApp
+          </button>
+          <button class="btn btn-sec btn-sm" onclick="abrirModalOpcoesEnvioMaterial()" style="font-size:12px;font-weight:800;display:inline-flex;align-items:center;gap:5px;border-color:rgba(201,168,76,0.4);color:var(--gold-light);">
+            <span>📄</span> Enviar PDF
+          </button>
+        </div>
       </div>
 
       <!-- RESUMO DE STATUS -->
@@ -28976,6 +28981,62 @@ if (typeof setInterval !== 'undefined') {
     </div>
   </div>
 </div>
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!--  MODAL: OPÇÕES DE ENVIO DO PEDIDO DE MATERIAL (WHATSAPP / PDF)    -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<div id="modal-opcoes-envio-material" class="modal-overlay" style="display:none;z-index:999999;" onclick="if(event.target===this)fecharModalOpcoesEnvioMaterial()">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:440px;padding:22px 20px;background:#11131a;border:1.5px solid rgba(201,168,76,0.35);border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,0.7);">
+    <div class="modal-title" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:10px;">
+      <div style="font-size:15px;font-weight:900;color:#fff;display:flex;align-items:center;gap:8px;">
+        <span>📦</span> <span>Enviar Pedido de Material</span>
+      </div>
+      <button class="modal-close" type="button" onclick="fecharModalOpcoesEnvioMaterial()">✕</button>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <div id="modal-envio-material-subtitulo" style="font-size:12.5px;font-weight:800;color:#fde047;display:flex;align-items:center;gap:6px;">
+        <span>📁</span> <span>Pasta: Todos os Clientes</span>
+      </div>
+      <div style="font-size:11.5px;color:var(--muted);margin-top:3px;">
+        Escolha como deseja enviar este pedido de compra:
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <!-- OPÇÃO 1: WhatsApp com Texto Completo (Itens + Preços + Fornecedores) -->
+      <button type="button" onclick="executarEnvioMaterial('texto')" style="background:rgba(37,211,102,0.12);border:1.5px solid #25d366;border-radius:12px;padding:12px 14px;cursor:pointer;display:flex;align-items:center;gap:12px;text-align:left;transition:all 0.2s;">
+        <div style="background:#25d366;color:#000;width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">💬</div>
+        <div style="flex:1;">
+          <div style="font-size:13.5px;font-weight:900;color:#fff;">Enviar Mensagem no WhatsApp</div>
+          <div style="font-size:11px;color:#a7f3d0;margin-top:2px;">Com fornecedores, valores, quantidades e menor preço</div>
+        </div>
+      </button>
+
+      <!-- OPÇÃO 2: Enviar PDF no WhatsApp (Compartilhar direto) -->
+      <button type="button" onclick="executarEnvioMaterial('pdf_whatsapp')" style="background:rgba(201,168,76,0.14);border:1.5px solid #eab308;border-radius:12px;padding:12px 14px;cursor:pointer;display:flex;align-items:center;gap:12px;text-align:left;transition:all 0.2s;">
+        <div style="background:#eab308;color:#000;width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">📄</div>
+        <div style="flex:1;">
+          <div style="font-size:13.5px;font-weight:900;color:#fff;">Enviar em PDF pelo WhatsApp</div>
+          <div style="font-size:11px;color:#fde047;margin-top:2px;">Gera o documento PDF oficial formatado e compartilha direto</div>
+        </div>
+      </button>
+
+      <!-- OPÇÃO 3: Baixar PDF -->
+      <button type="button" onclick="executarEnvioMaterial('pdf_download')" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.15);border-radius:12px;padding:11px 14px;cursor:pointer;display:flex;align-items:center;gap:12px;text-align:left;transition:all 0.2s;">
+        <div style="background:rgba(255,255,255,0.1);color:#fff;width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">📥</div>
+        <div style="flex:1;">
+          <div style="font-size:12.5px;font-weight:800;color:#fff;">Baixar Arquivo PDF</div>
+          <div style="font-size:10.5px;color:#94a3b8;margin-top:2px;">Salva o arquivo PDF no seu celular ou computador</div>
+        </div>
+      </button>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;margin-top:14px;">
+      <button type="button" class="btn btn-sec btn-sm" onclick="fecharModalOpcoesEnvioMaterial()" style="padding:6px 16px;font-size:11.5px;font-weight:700;">Fechar</button>
+    </div>
+  </div>
+</div>
+
 
 <script>
 // ══════════════════════════════════════════════════════════════════
@@ -30764,35 +30825,71 @@ function salvarConfigWhatsappMaterial() {
   alert(`✅ WhatsApp de pedidos salvo: ${numero}${nome ? ' (' + nome + ')' : ''}`);
 }
 
-function enviarPedidoMaterialWhatsApp() {
-  let cfg = {};
-  try { cfg = JSON.parse(localStorage.getItem(K_CRONO.whatsapp) || '{}'); } catch(_) {}
+let _envioMaterialPastaAlvo = null;
 
-  if (!cfg.numero) {
-    if (confirm('Nenhum número de WhatsApp configurado para pedidos. Deseja configurar agora?')) {
-      abrirModalConfigWhatsappMaterial();
-    }
+function abrirModalOpcoesEnvioMaterial(targetFolder = null) {
+  _envioMaterialPastaAlvo = targetFolder || _materialClienteFolderAtivo || 'todos';
+  const m = document.getElementById('modal-opcoes-envio-material');
+  if (!m) {
+    executarEnvioMaterial('texto', _envioMaterialPastaAlvo);
     return;
   }
+  const subEl = document.getElementById('modal-envio-material-subtitulo');
+  if (subEl) {
+    const nomeExib = _envioMaterialPastaAlvo === 'todos' ? 'Todos os Clientes' : (_envioMaterialPastaAlvo === 'outros' ? 'Outros / Geral' : _envioMaterialPastaAlvo);
+    let osExib = '';
+    const lista = carregarMateriais();
+    const itemOs = lista.find(it => itemPertenceAoCliente(it, _envioMaterialPastaAlvo) && it.os);
+    if (itemOs && itemOs.os) osExib = itemOs.os;
+    else if (typeof historico !== 'undefined' && Array.isArray(historico)) {
+      const matchH = historico.find(h => (h.nome || h.cliente || '').trim().toLowerCase() === nomeExib.toLowerCase());
+      if (matchH && matchH.numero) osExib = matchH.numero;
+    }
+    const osTxt = osExib ? ' · ' + osExib : '';
+    subEl.textContent = 'Pasta: ' + nomeExib + osTxt;
+  }
+  m.style.setProperty('display', 'flex', 'important');
+  m.classList.add('active');
+}
+window.abrirModalOpcoesEnvioMaterial = abrirModalOpcoesEnvioMaterial;
 
+function fecharModalOpcoesEnvioMaterial() {
+  const m = document.getElementById('modal-opcoes-envio-material');
+  if (m) {
+    m.classList.remove('active');
+    m.style.setProperty('display', 'none', 'important');
+  }
+}
+window.fecharModalOpcoesEnvioMaterial = fecharModalOpcoesEnvioMaterial;
+
+function obterItensMaterialParaEnvio(targetFolder = null) {
+  const pasta = targetFolder || _envioMaterialPastaAlvo || _materialClienteFolderAtivo || 'todos';
   const lista = carregarMateriais();
   const filtroStatus = (document.getElementById('material-filtro-status') || {}).value || 'todos';
-  let itens = lista.filter(it => itemPertenceAoCliente(it, _materialClienteFolderAtivo));
+  let itens = lista.filter(it => itemPertenceAoCliente(it, pasta));
   if (filtroStatus !== 'todos') itens = itens.filter(it => it.status === filtroStatus);
   else itens = itens.filter(it => it.status !== 'comprado');
+  return { itens, pasta };
+}
 
-  if (!itens.length) {
-    alert('Nenhum item para enviar com o filtro atual.');
-    return;
-  }
-
+function montarTextoWhatsappMaterial(itens, pastaNome) {
   const nomeEmp = (typeof obterEmpresaAtivaGlobal === 'function' ? obterEmpresaAtivaGlobal() : null)?.nome || 'SD Móveis Projetados';
   const hoje = new Date().toLocaleDateString('pt-BR');
-  const clienteHeader = (_materialClienteFolderAtivo && _materialClienteFolderAtivo !== 'todos') ? `📁 *PASTA DO CLIENTE:* ${_materialClienteFolderAtivo}\n` : '';
+
+  let clienteTitulo = pastaNome && pastaNome !== 'todos' ? (pastaNome === 'outros' ? 'Outros / Geral' : pastaNome) : 'Todos os Clientes';
+  let osExib = itens.find(x => x.os)?.os || '';
+  if (!osExib && typeof historico !== 'undefined' && Array.isArray(historico)) {
+    const matchH = historico.find(h => (h.nome || h.cliente || '').trim().toLowerCase() === clienteTitulo.toLowerCase());
+    if (matchH && matchH.numero) osExib = matchH.numero;
+  }
+  const osTxt = osExib ? ' • ' + osExib : '';
+  const clienteHeader = (pastaNome && pastaNome !== 'todos') ? `📁 *PASTA DO CLIENTE:* ${clienteTitulo}${osTxt}\n` : '';
 
   let msg = `📦 *PEDIDO DE MATERIAL – ${nomeEmp}*\n${clienteHeader}📅 Data: ${hoje}\n\n`;
 
-  const statusLabel = { a_comprar: '🛒 A Comprar', pendente: '⏳ Pendente', comprado: '✅ Comprado' };
+  const statusLabel = { a_comprar: '🛒 *A Comprar*', pendente: '⏳ *Pendente*', comprado: '✅ *Comprado*' };
+  const urgEmoji = { urgente: ' 🔥', critico: ' 🚨', normal: '' };
+
   const grupos = {};
   itens.forEach(it => {
     const g = it.status || 'a_comprar';
@@ -30800,20 +30897,439 @@ function enviarPedidoMaterialWhatsApp() {
     grupos[g].push(it);
   });
 
-  Object.keys(grupos).forEach(st => {
-    msg += `*${statusLabel[st] || st}*\n`;
+  const comparisons = typeof obterComparacoesArmazenadas === 'function' ? obterComparacoesArmazenadas() : [];
+  let totalGeral = 0;
+
+  ['a_comprar', 'pendente', 'comprado'].forEach(st => {
+    if (!grupos[st] || !grupos[st].length) return;
+    msg += `${statusLabel[st] || st}\n\n`;
     grupos[st].forEach((it, i) => {
-      msg += `${i+1}. ${it.nome}${it.qtd ? ' – ' + it.qtd + ' ' + (it.unidade||'un') : ''}${it.urgencia === 'urgente' ? ' 🔥' : it.urgencia === 'critico' ? ' 🚨' : ''}${it.fornecedor ? ' (' + it.fornecedor + ')' : ''}\n`;
+      const qVal = parseFloat(String(it.qtd || 1).replace(',', '.')) || 1;
+      const uVal = parseFloat(String(it.valor || 0).replace(',', '.')) || 0;
+      const totVal = qVal * uVal;
+      totalGeral += totVal;
+
+      let fornTxt = '';
+      try {
+        const match = comparisons.length && typeof encontrarCorrespondenciaComparativo === 'function' ? encontrarCorrespondenciaComparativo(it.nome, comparisons) : null;
+        if (match && match.quotes && match.quotes.length) {
+          const cotacoes = match.quotes
+            .filter(q => (q.unitPrice || q.price || 0) > 0)
+            .sort((a, b) => (a.unitPrice || a.price || 0) - (b.unitPrice || b.price || 0));
+          if (cotacoes.length) {
+            const menor = cotacoes[0];
+            const nFornec = cotacoes.length;
+            fornTxt = `🏢 ${menor.supplierName} 🏆 MENOR PREÇO (${nFornec} fornecedor${nFornec > 1 ? 'es' : ''})`;
+          } else {
+            fornTxt = '⚠️ Não encontrado (SEM COTAÇÃO)';
+          }
+        } else if (it.fornecedor) {
+          fornTxt = `🏢 ${it.fornecedor}`;
+        } else {
+          fornTxt = '⚠️ Não encontrado (SEM COTAÇÃO)';
+        }
+      } catch(_) {
+        fornTxt = it.fornecedor ? `🏢 ${it.fornecedor}` : '⚠️ Não encontrado (SEM COTAÇÃO)';
+      }
+
+      msg += `*${i+1}. ${it.nome}*${urgEmoji[it.urgencia] || ''}\n`;
+      msg += `   ▫ Qtd: ${it.qtd || 1} ${it.unidade || 'un'} · Unit: R$ ${uVal.toFixed(2).replace('.', ',')} · Total: R$ ${totVal.toFixed(2).replace('.', ',')}\n`;
+      msg += `   ▫ Fornecedor: ${fornTxt}\n\n`;
     });
-    msg += '\n';
   });
 
+  msg += `━━━━━━━━━━━━━━━━━━━━━\n`;
+  msg += `📊 *Resumo do Pedido:*\n`;
+  msg += `📦 Total de Itens: ${itens.length} produto(s)\n`;
+  if (totalGeral > 0) {
+    msg += `💰 *VALOR TOTAL: R$ ${totalGeral.toFixed(2).replace('.', ',')}*\n`;
+  }
+  msg += `━━━━━━━━━━━━━━━━━━━━━\n`;
   msg += `_Enviado via SD Móveis Projetados_`;
 
-  const tel = cfg.numero.replace(/\D/g, '');
-  const url = `https://wa.me/55${tel}?text=${encodeURIComponent(msg)}`;
-  window.open(url, '_blank');
+  return msg;
 }
+
+async function gerarPdfPedidoMaterialBlob(itens, pastaNome) {
+  if (typeof PDFLib === 'undefined') {
+    throw new Error('Biblioteca PDF não carregada. Verifique a conexão com a internet.');
+  }
+  const { PDFDocument, StandardFonts, rgb } = PDFLib;
+  const pdfDoc = await PDFDocument.create();
+
+  const DARK = rgb(0.08, 0.10, 0.15);
+  const GOLD = rgb(0.82, 0.65, 0.22);
+  const GRAY = rgb(0.45, 0.49, 0.56);
+  const BORDER = rgb(0.85, 0.88, 0.92);
+  const HEADER_BG = rgb(0.12, 0.15, 0.22);
+  const ROW_ALT = rgb(0.96, 0.97, 0.99);
+  const WHITE = rgb(1, 1, 1);
+  const GREEN = rgb(0.10, 0.55, 0.25);
+  const AMBER = rgb(0.75, 0.45, 0.05);
+
+  const PAGE_W = 595.28;
+  const PAGE_H = 841.89;
+  const MARGIN_X = 36;
+  const CONTENT_W = PAGE_W - (MARGIN_X * 2);
+
+  function sanitize(txt) {
+    if (txt == null) return '';
+    return String(txt)
+      .replace(/[^\x20-\x7E\xA0-\xFF]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  const fontReg = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+  let page = pdfDoc.addPage([PAGE_W, PAGE_H]);
+  let y = PAGE_H - 40;
+
+  function checkPageBreak(neededHeight) {
+    if (y - neededHeight < 45) {
+      page = pdfDoc.addPage([PAGE_W, PAGE_H]);
+      y = PAGE_H - 40;
+      return true;
+    }
+    return false;
+  }
+
+  // Header Box
+  page.drawRectangle({
+    x: MARGIN_X,
+    y: y - 65,
+    width: CONTENT_W,
+    height: 65,
+    color: rgb(0.07, 0.09, 0.14)
+  });
+
+  page.drawText(sanitize('SD MÓVEIS PROJETADOS'), {
+    x: MARGIN_X + 16,
+    y: y - 24,
+    size: 15,
+    font: fontBold,
+    color: GOLD
+  });
+
+  page.drawText(sanitize('PEDIDO DE COMPRA DE MATERIAIS'), {
+    x: MARGIN_X + 16,
+    y: y - 42,
+    size: 11,
+    font: fontBold,
+    color: WHITE
+  });
+
+  const hoje = new Date().toLocaleDateString('pt-BR');
+  page.drawText(sanitize(`Data: ${hoje}`), {
+    x: MARGIN_X + CONTENT_W - 120,
+    y: y - 24,
+    size: 10,
+    font: fontReg,
+    color: WHITE
+  });
+
+  let clienteTitulo = pastaNome && pastaNome !== 'todos' ? (pastaNome === 'outros' ? 'Outros / Geral' : pastaNome) : 'Todos os Clientes';
+  let osExib = itens.find(x => x.os)?.os || '';
+  if (!osExib && typeof historico !== 'undefined' && Array.isArray(historico)) {
+    const matchH = historico.find(h => (h.nome || h.cliente || '').trim().toLowerCase() === clienteTitulo.toLowerCase());
+    if (matchH && matchH.numero) osExib = matchH.numero;
+  }
+  const osTxt = osExib ? ' · ' + osExib : '';
+
+  page.drawText(sanitize(`Pasta / Cliente: ${clienteTitulo}${osTxt}`), {
+    x: MARGIN_X + 16,
+    y: y - 56,
+    size: 9.5,
+    font: fontReg,
+    color: rgb(0.8, 0.85, 0.95)
+  });
+
+  y -= 85;
+
+  const cols = [
+    { label: 'PRODUTO / MATERIAL', x: MARGIN_X, w: 185 },
+    { label: 'FORNECEDOR SELECIONADO', x: MARGIN_X + 185, w: 165 },
+    { label: 'QTD', x: MARGIN_X + 350, w: 45, align: 'center' },
+    { label: 'UNITÁRIO', x: MARGIN_X + 395, w: 60, align: 'right' },
+    { label: 'SUBTOTAL', x: MARGIN_X + 455, w: 68, align: 'right' }
+  ];
+
+  function drawTableHeader() {
+    page.drawRectangle({
+      x: MARGIN_X,
+      y: y - 20,
+      width: CONTENT_W,
+      height: 20,
+      color: HEADER_BG
+    });
+
+    cols.forEach(col => {
+      const txt = sanitize(col.label);
+      const txtW = fontBold.widthOfTextAtSize(txt, 8);
+      let tx = col.x + 6;
+      if (col.align === 'center') tx = col.x + (col.w - txtW) / 2;
+      else if (col.align === 'right') tx = col.x + col.w - txtW - 6;
+
+      page.drawText(txt, {
+        x: tx,
+        y: y - 14,
+        size: 8,
+        font: fontBold,
+        color: GOLD
+      });
+    });
+    y -= 20;
+  }
+
+  drawTableHeader();
+
+  const comparisons = typeof obterComparacoesArmazenadas === 'function' ? obterComparacoesArmazenadas() : [];
+  let totalGeral = 0;
+
+  for (let i = 0; i < itens.length; i++) {
+    const it = itens[i];
+    const qVal = parseFloat(String(it.qtd || 1).replace(',', '.')) || 1;
+    const uVal = parseFloat(String(it.valor || 0).replace(',', '.')) || 0;
+    const totVal = qVal * uVal;
+    totalGeral += totVal;
+
+    let fornNome = 'Não encontrado';
+    let fornBadge = 'SEM COTAÇÃO';
+    let isMenor = false;
+    try {
+      const match = comparisons.length && typeof encontrarCorrespondenciaComparativo === 'function' ? encontrarCorrespondenciaComparativo(it.nome, comparisons) : null;
+      if (match && match.quotes && match.quotes.length) {
+        const cotacoes = match.quotes
+          .filter(q => (q.unitPrice || q.price || 0) > 0)
+          .sort((a, b) => (a.unitPrice || a.price || 0) - (b.unitPrice || b.price || 0));
+        if (cotacoes.length) {
+          fornNome = cotacoes[0].supplierName;
+          fornBadge = `MENOR PREÇO (${cotacoes.length} fornec.)`;
+          isMenor = true;
+        }
+      } else if (it.fornecedor) {
+        fornNome = it.fornecedor;
+        fornBadge = 'INDICADO';
+      }
+    } catch(_) {}
+
+    const rowH = 26;
+    if (checkPageBreak(rowH + 10)) {
+      drawTableHeader();
+    }
+
+    if (i % 2 === 1) {
+      page.drawRectangle({
+        x: MARGIN_X,
+        y: y - rowH,
+        width: CONTENT_W,
+        height: rowH,
+        color: ROW_ALT
+      });
+    }
+
+    page.drawLine({
+      start: { x: MARGIN_X, y: y - rowH },
+      end: { x: MARGIN_X + CONTENT_W, y: y - rowH },
+      thickness: 0.5,
+      color: BORDER
+    });
+
+    const nomeTxt = sanitize(it.nome || 'Produto');
+    page.drawText(nomeTxt.length > 32 ? nomeTxt.slice(0, 30) + '...' : nomeTxt, {
+      x: cols[0].x + 6,
+      y: y - 11,
+      size: 9,
+      font: fontBold,
+      color: DARK
+    });
+    page.drawText(sanitize(it.categoria || 'Geral'), {
+      x: cols[0].x + 6,
+      y: y - 21,
+      size: 7.5,
+      font: fontReg,
+      color: GRAY
+    });
+
+    page.drawText(sanitize(fornNome.length > 22 ? fornNome.slice(0, 20) + '..' : fornNome), {
+      x: cols[1].x + 6,
+      y: y - 11,
+      size: 8.5,
+      font: fontBold,
+      color: isMenor ? GREEN : AMBER
+    });
+    page.drawText(sanitize(fornBadge), {
+      x: cols[1].x + 6,
+      y: y - 21,
+      size: 7,
+      font: fontReg,
+      color: isMenor ? GREEN : AMBER
+    });
+
+    const qtdTxt = sanitize(`${it.qtd || 1} ${it.unidade || 'un'}`);
+    const qW = fontReg.widthOfTextAtSize(qtdTxt, 8.5);
+    page.drawText(qtdTxt, {
+      x: cols[2].x + (cols[2].w - qW) / 2,
+      y: y - 15,
+      size: 8.5,
+      font: fontReg,
+      color: DARK
+    });
+
+    const unitTxt = sanitize(`R$ ${uVal.toFixed(2).replace('.', ',')}`);
+    const uW = fontReg.widthOfTextAtSize(unitTxt, 8.5);
+    page.drawText(unitTxt, {
+      x: cols[3].x + cols[3].w - uW - 6,
+      y: y - 15,
+      size: 8.5,
+      font: fontReg,
+      color: DARK
+    });
+
+    const totTxt = sanitize(`R$ ${totVal.toFixed(2).replace('.', ',')}`);
+    const tW = fontBold.widthOfTextAtSize(totTxt, 9);
+    page.drawText(totTxt, {
+      x: cols[4].x + cols[4].w - tW - 6,
+      y: y - 15,
+      size: 9,
+      font: fontBold,
+      color: isMenor ? GREEN : DARK
+    });
+
+    y -= rowH;
+  }
+
+  checkPageBreak(50);
+  y -= 12;
+  page.drawRectangle({
+    x: MARGIN_X,
+    y: y - 30,
+    width: CONTENT_W,
+    height: 30,
+    color: rgb(0.94, 0.96, 0.98),
+    borderColor: BORDER,
+    borderWidth: 1
+  });
+
+  page.drawText(sanitize(`Total de Itens: ${itens.length} produto(s)`), {
+    x: MARGIN_X + 12,
+    y: y - 19,
+    size: 9.5,
+    font: fontReg,
+    color: DARK
+  });
+
+  const totalGeralTxt = sanitize(`TOTAL DO PEDIDO: R$ ${totalGeral.toFixed(2).replace('.', ',')}`);
+  const totGW = fontBold.widthOfTextAtSize(totalGeralTxt, 11);
+  page.drawText(totalGeralTxt, {
+    x: MARGIN_X + CONTENT_W - totGW - 12,
+    y: y - 19,
+    size: 11,
+    font: fontBold,
+    color: GREEN
+  });
+
+  y -= 45;
+  page.drawText(sanitize('Emitido por SD Móveis Projetados — Sistema de Gestão'), {
+    x: MARGIN_X,
+    y: Math.max(20, y),
+    size: 8,
+    font: fontReg,
+    color: GRAY
+  });
+
+  const pdfBytes = await pdfDoc.save();
+  return new Blob([pdfBytes], { type: 'application/pdf' });
+}
+window.gerarPdfPedidoMaterialBlob = gerarPdfPedidoMaterialBlob;
+
+async function executarEnvioMaterial(modo, targetFolder = null) {
+  fecharModalOpcoesEnvioMaterial();
+  const { itens, pasta } = obterItensMaterialParaEnvio(targetFolder);
+  if (!itens.length) {
+    alert('Nenhum item para enviar com o filtro atual.');
+    return;
+  }
+
+  let cfg = {};
+  try { cfg = JSON.parse(localStorage.getItem(K_CRONO.whatsapp) || '{}'); } catch(_) {}
+  const tel = (cfg.numero || '').replace(/\D/g, '');
+
+  if (modo === 'texto') {
+    if (!tel) {
+      if (confirm('Nenhum número de WhatsApp configurado para pedidos. Deseja configurar agora?')) {
+        abrirModalConfigWhatsappMaterial();
+      }
+      return;
+    }
+    const msg = montarTextoWhatsappMaterial(itens, pasta);
+    const url = `https://wa.me/55${tel}?text=${encodeURIComponent(msg)}`;
+    window.open(url, '_blank');
+  } else if (modo === 'pdf_whatsapp' || modo === 'pdf_download') {
+    try {
+      const blob = await gerarPdfPedidoMaterialBlob(itens, pasta);
+      const nomeLimpo = (pasta || 'Pedido').replace(/[^a-zA-Z0-9]/g, '_');
+      const fileName = `Pedido-Material-${nomeLimpo}.pdf`;
+      const file = new File([blob], fileName, { type: 'application/pdf' });
+
+      if (modo === 'pdf_whatsapp') {
+        let compartilhou = false;
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({
+              files: [file],
+              title: `Pedido de Material - ${pasta}`,
+              text: `Segue em anexo o PDF do Pedido de Material - SD Móveis Projetados`
+            });
+            compartilhou = true;
+          } catch(errShare) {
+            if (errShare.name !== 'AbortError') console.warn('Compartilhamento cancelado:', errShare);
+            else compartilhou = true;
+          }
+        }
+
+        if (!compartilhou) {
+          const urlBlob = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = urlBlob;
+          a.download = fileName;
+          a.click();
+          setTimeout(() => URL.revokeObjectURL(urlBlob), 3000);
+
+          if (tel) {
+            const msg = montarTextoWhatsappMaterial(itens, pasta) + '\n\n📄 *O arquivo PDF oficial deste pedido foi gerado e baixado no seu aparelho.*';
+            const url = `https://wa.me/55${tel}?text=${encodeURIComponent(msg)}`;
+            window.open(url, '_blank');
+          } else {
+            alert('PDF do pedido baixado com sucesso!');
+          }
+        }
+      } else {
+        const urlBlob = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = urlBlob;
+        a.download = fileName;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(urlBlob), 3000);
+      }
+    } catch(errPdf) {
+      console.error('Erro ao gerar PDF do pedido de material:', errPdf);
+      alert('Erro ao gerar PDF: ' + (errPdf.message || errPdf));
+    }
+  }
+}
+window.executarEnvioMaterial = executarEnvioMaterial;
+
+function enviarPedidoMaterialWhatsApp(targetFolder = null) {
+  abrirModalOpcoesEnvioMaterial(targetFolder);
+}
+window.enviarPedidoMaterialWhatsApp = enviarPedidoMaterialWhatsApp;
+
+function enviarPedidoMaterialPdf(targetFolder = null) {
+  executarEnvioMaterial('pdf_whatsapp', targetFolder);
+}
+window.enviarPedidoMaterialPdf = enviarPedidoMaterialPdf;
 
 // ══════════════════════════════════════════════════════════════════
 //  MÓDULO: COMISSÕES POR SERVIÇOS FINALIZADOS
