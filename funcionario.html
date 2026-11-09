@@ -5799,6 +5799,13 @@ function validarCodigoLiberadoManual() {}
 function checarLiberacaoEmpresaAutomatica() {}
 
 function mudarAba(tab) {
+      // Ao sair da aba cronograma, bloqueia o acesso do Pedido de Material
+      if (tab !== 'cronograma') {
+        sessionStorage.removeItem('sdv_material_liberado_sessao');
+        if (typeof _cronoAbaAtual !== 'undefined' && _cronoAbaAtual === 'material') {
+          _cronoAbaAtual = 'semana';
+        }
+      }
       if (tab === 'financeiro') tab = 'ponto';
       ['status', 'galeria', 'mensagens', 'ponto', 'cronograma', 'opiniao', 'jogos', 'meu-financeiro', 'financeiro-pessoal', 'camera'].forEach(t => {
         const pane = document.getElementById(t === 'ponto' ? 'pane-financeiro' : ('pane-' + t));
@@ -13514,6 +13521,68 @@ function fecharModalSenhaMaterialPortal() {
   _callbackAcessoMaterialPortal = null;
 }
 
+function abrirModalConfigurarSenhaMaterial() {
+  fecharModalSenhaMaterialPortal();
+  const modal = document.getElementById('modal-config-senha-material');
+  const inpAtual = document.getElementById('cfg-senha-atual-material');
+  const inpNova = document.getElementById('cfg-senha-nova-material');
+  const inpConf = document.getElementById('cfg-senha-confirmar-material');
+  const msg = document.getElementById('msg-cfg-senha-material');
+  if (inpAtual) inpAtual.value = '';
+  if (inpNova) inpNova.value = '';
+  if (inpConf) inpConf.value = '';
+  if (msg) { msg.style.display = 'none'; msg.textContent = ''; }
+  if (modal) { modal.style.display = 'flex'; setTimeout(() => { if(inpAtual) inpAtual.focus(); }, 150); }
+}
+
+function fecharModalConfigurarSenhaMaterial() {
+  const modal = document.getElementById('modal-config-senha-material');
+  if (modal) modal.style.display = 'none';
+}
+
+function salvarConfigurarSenhaMaterial() {
+  const inpAtual = document.getElementById('cfg-senha-atual-material');
+  const inpNova = document.getElementById('cfg-senha-nova-material');
+  const inpConf = document.getElementById('cfg-senha-confirmar-material');
+  const msg = document.getElementById('msg-cfg-senha-material');
+  const valAtual = inpAtual ? inpAtual.value.trim() : '';
+  const valNova = inpNova ? inpNova.value.trim() : '';
+  const valConf = inpConf ? inpConf.value.trim() : '';
+
+  function showMsg(txt, cor) {
+    if (msg) { msg.textContent = txt; msg.style.color = cor; msg.style.display = 'block'; }
+  }
+
+  // Verificar senha atual
+  const senhaConfigurada = localStorage.getItem('sdv_senha_pedido_material');
+  const senhasDefault = ['123','1234','123456','admin','admin123'];
+  let senhaAtualValida = senhasDefault.includes(valAtual) || (senhaConfigurada && valAtual === senhaConfigurada);
+  if (!senhaAtualValida) {
+    try {
+      const funcs = (typeof carregarFuncionariosDoStorage === 'function') ? carregarFuncionariosDoStorage() : [];
+      senhaAtualValida = Array.isArray(funcs) && funcs.some(f => f.senha === valAtual || f.pin === valAtual);
+    } catch(_){}
+  }
+
+  if (!senhaAtualValida) { showMsg('❌ Senha atual incorreta!', '#ef4444'); return; }
+  if (valNova.length < 3) { showMsg('⚠️ A nova senha precisa ter ao menos 3 caracteres.', '#fbbf24'); return; }
+  if (valNova !== valConf) { showMsg('❌ As senhas não coincidem!', '#ef4444'); return; }
+
+  localStorage.setItem('sdv_senha_pedido_material', valNova);
+  showMsg('✅ Senha configurada com sucesso!', '#34d399');
+  setTimeout(() => fecharModalConfigurarSenhaMaterial(), 1200);
+}
+
+// Auto-lock ao sair da aba Cronograma ou ao fechar/minimizar o portal
+(function() {
+  // Fechar acesso quando sair da aba do cronograma
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'hidden') {
+      sessionStorage.removeItem('sdv_material_liberado_sessao');
+    }
+  });
+})();
+
 function confirmarSenhaMaterialPortal() {
   const inp = document.getElementById('inp-senha-material-portal');
   const msgErro = document.getElementById('msg-erro-senha-material-portal');
@@ -13570,6 +13639,10 @@ function confirmarSenhaMaterialPortal() {
 }
 
 function mudarAbaCronograma(aba) {
+  if (aba !== 'material') {
+    // Ao sair da aba do Pedido de Material, fecha o acesso com senha imediatamente
+    sessionStorage.removeItem('sdv_material_liberado_sessao');
+  }
   if (aba === 'material') {
     const liberado = sessionStorage.getItem('sdv_material_liberado_sessao') === 'true';
     if (!liberado) {
@@ -15199,6 +15272,9 @@ function enviarPedidoMaterialWhatsApp() {
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <!-- MODAL DE SENHA: ACESSO AO PEDIDO DE MATERIAL (PORTAL EQUIPE)   -->
 <!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- MODAL DE SENHA: ACESSO AO PEDIDO DE MATERIAL (PORTAL EQUIPE)   -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
 <div id="modal-senha-material-portal" class="portal-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:99999999;align-items:center;justify-content:center;backdrop-filter:blur(6px);" onclick="if(event.target===this) fecharModalSenhaMaterialPortal()">
   <div class="portal-modal-card" style="background:#0f111e;border:1.5px solid #d97706;border-radius:16px;padding:24px 20px;max-width:340px;width:90%;box-shadow:0 16px 40px rgba(0,0,0,0.85);text-align:center;" onclick="event.stopPropagation()">
     <div style="font-size:36px;margin-bottom:8px;">🔒</div>
@@ -15211,6 +15287,44 @@ function enviarPedidoMaterialWhatsApp() {
     <div style="display:flex;gap:10px;justify-content:center;margin-top:6px;">
       <button type="button" onclick="fecharModalSenhaMaterialPortal()" class="btn btn-sec btn-sm" style="flex:1;padding:10px;border-radius:8px;font-weight:700;cursor:pointer;">Cancelar</button>
       <button type="button" onclick="confirmarSenhaMaterialPortal()" class="btn btn-gold btn-sm" style="flex:1;padding:10px;border-radius:8px;font-weight:800;cursor:pointer;background:linear-gradient(135deg,#f59e0b,#d97706);color:#000;">Acessar</button>
+    </div>
+    <!-- Configurar Senha -->
+    <div style="margin-top:14px;border-top:1px solid rgba(255,255,255,0.08);padding-top:12px;">
+      <button type="button" onclick="abrirModalConfigurarSenhaMaterial()" style="background:none;border:none;color:#94a3b8;font-size:11.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:5px;text-decoration:underline;">
+        ⚙️ Configurar senha de acesso
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- MODAL: CONFIGURAR SENHA DO PEDIDO DE MATERIAL                   -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div id="modal-config-senha-material" class="portal-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:999999999;align-items:center;justify-content:center;backdrop-filter:blur(8px);" onclick="if(event.target===this) fecharModalConfigurarSenhaMaterial()">
+  <div style="background:#0f111e;border:1.5px solid #10b981;border-radius:16px;padding:24px 20px;max-width:340px;width:90%;box-shadow:0 16px 40px rgba(0,0,0,0.9);text-align:center;" onclick="event.stopPropagation()">
+    <div style="font-size:30px;margin-bottom:8px;">⚙️</div>
+    <div style="font-size:16px;font-weight:900;color:#34d399;margin-bottom:6px;">Configurar Senha</div>
+    <div style="font-size:12px;color:#94a3b8;margin-bottom:16px;line-height:1.4;">
+      Define a senha exclusiva para o <strong>Pedido de Material</strong>.<br>
+      <span style="font-size:10.5px;color:#64748b;">Deixe em branco para usar a senha padrão.</span>
+    </div>
+    <!-- Senha atual (admin) para autorizar a troca -->
+    <div style="text-align:left;margin-bottom:12px;">
+      <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:4px;">Senha atual (para confirmar)</label>
+      <input type="password" id="cfg-senha-atual-material" placeholder="Senha atual..." style="width:100%;padding:10px 12px;background:#181a2e;border:1.5px solid rgba(255,255,255,0.15);border-radius:9px;color:#fff;font-size:14px;outline:none;box-sizing:border-box;" />
+    </div>
+    <div style="text-align:left;margin-bottom:12px;">
+      <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:4px;">Nova senha</label>
+      <input type="password" id="cfg-senha-nova-material" placeholder="Nova senha..." style="width:100%;padding:10px 12px;background:#181a2e;border:1.5px solid rgba(16,185,129,0.4);border-radius:9px;color:#fff;font-size:14px;outline:none;box-sizing:border-box;" />
+    </div>
+    <div style="text-align:left;margin-bottom:16px;">
+      <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:4px;">Confirmar nova senha</label>
+      <input type="password" id="cfg-senha-confirmar-material" placeholder="Confirme a nova senha..." style="width:100%;padding:10px 12px;background:#181a2e;border:1.5px solid rgba(16,185,129,0.4);border-radius:9px;color:#fff;font-size:14px;outline:none;box-sizing:border-box;" onkeydown="if(event.key==='Enter') salvarConfigurarSenhaMaterial();" />
+    </div>
+    <div id="msg-cfg-senha-material" style="display:none;font-size:12px;font-weight:700;margin-bottom:12px;"></div>
+    <div style="display:flex;gap:10px;">
+      <button type="button" onclick="fecharModalConfigurarSenhaMaterial()" style="flex:1;padding:10px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:8px;font-weight:700;cursor:pointer;">Cancelar</button>
+      <button type="button" onclick="salvarConfigurarSenhaMaterial()" style="flex:1;padding:10px;background:linear-gradient(135deg,#10b981,#059669);border:none;color:#fff;border-radius:8px;font-weight:800;cursor:pointer;">💾 Salvar</button>
     </div>
   </div>
 </div>
