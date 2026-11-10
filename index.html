@@ -5391,18 +5391,25 @@
       <button class="modal-close" onclick="fecharModalGaleriaOrcamento()" style="background:none; border:none; color:var(--text2); font-size:18px; cursor:pointer; padding:4px 8px;">✕</button>
     </div>
 
-    <div style="background:rgba(6,182,212,0.08); border:1px solid rgba(6,182,212,0.25); border-radius:8px; padding:8px 12px; margin-bottom:12px; font-size:11.5px; color:#a5f3fc; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; flex-shrink:0;">
+    <div style="background:rgba(6,182,212,0.08); border:1.5px solid rgba(6,182,212,0.3); border-radius:10px; padding:8px 12px; margin-bottom:12px; font-size:11.5px; color:#a5f3fc; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; flex-shrink:0;">
       <span>ℹ️ As fotos anexadas ficam salvas nesta O.S. e são incluídas automaticamente no <strong>PDF</strong>.</span>
-      <div style="display:flex; gap:6px;">
-        <button type="button" class="btn btn-sm" onclick="document.getElementById('orc-input-camera').click()" style="background:rgba(6,182,212,0.25); border:1px solid #06b6d4; color:#22d3ee; font-size:11px; font-weight:700; padding:4px 10px; border-radius:6px; cursor:pointer;">
-          📷 Câmera
-        </button>
-        <button type="button" class="btn btn-sm" onclick="document.getElementById('orc-input-galeria').click()" style="background:rgba(52,211,153,0.2); border:1px solid #34d399; color:#34d399; font-size:11px; font-weight:700; padding:4px 10px; border-radius:6px; cursor:pointer;">
-          🖼️ Galeria
-        </button>
-        <button type="button" class="btn btn-sm" onclick="document.getElementById('orc-input-pdf').click()" style="background:rgba(245,158,11,0.2); border:1px solid #f59e0b; color:#f59e0b; font-size:11px; font-weight:700; padding:4px 10px; border-radius:6px; cursor:pointer;">
-          📄 PDF
-        </button>
+      <div style="display:inline-flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <div style="display:inline-flex; align-items:center; gap:5px; background:rgba(0,0,0,0.35); padding:3px 8px; border-radius:7px; border:1px solid rgba(245,158,11,0.4);">
+          <span style="font-size:11px; font-weight:800; color:#fbbf24;">Ambiente destino:</span>
+          <select id="modal-galeria-sel-ambiente-destino" onchange="aoMudarAmbienteDestinoModal(this.value)" style="background:#0e1020; border:1px solid #f59e0b; color:#fbbf24; font-size:11.5px; font-weight:800; border-radius:5px; padding:2px 6px; outline:none; cursor:pointer;">
+          </select>
+        </div>
+        <div style="display:inline-flex; gap:6px;">
+          <button type="button" class="btn btn-sm" onclick="acionarUploadDoModalGaleria('camera')" style="background:rgba(6,182,212,0.25); border:1px solid #06b6d4; color:#22d3ee; font-size:11px; font-weight:700; padding:4px 10px; border-radius:6px; cursor:pointer;">
+            📷 Câmera
+          </button>
+          <button type="button" class="btn btn-sm" onclick="acionarUploadDoModalGaleria('galeria')" style="background:rgba(52,211,153,0.2); border:1px solid #34d399; color:#34d399; font-size:11px; font-weight:700; padding:4px 10px; border-radius:6px; cursor:pointer;">
+            🖼️ Galeria
+          </button>
+          <button type="button" class="btn btn-sm" onclick="acionarUploadDoModalGaleria('pdf')" style="background:rgba(245,158,11,0.2); border:1px solid #f59e0b; color:#f59e0b; font-size:11px; font-weight:700; padding:4px 10px; border-radius:6px; cursor:pointer;">
+            📄 PDF
+          </button>
+        </div>
       </div>
     </div>
 
@@ -26111,15 +26118,60 @@ function toggleMenuGaleriaAgenda() {
 let _ambienteGaleriaAtivo = '';
 let _modalGaleriaFiltroAmbiente = 'todos';
 
+function obterListaNomesAmbientes() {
+  const lista = [];
+  const topInp = document.getElementById('inp-orc-ambiente-top');
+  const topNome = (topInp && topInp.value && topInp.value.trim()) ? topInp.value.trim() : 'Sala';
+  lista.push(topNome);
+
+  document.querySelectorAll('.tr-ambiente-secao').forEach(tr => {
+    const inp = tr.querySelector('.inp-nome-ambiente');
+    const n = (inp && inp.value && inp.value.trim()) ? inp.value.trim() : '';
+    if (n && !lista.some(x => x.toLowerCase() === n.toLowerCase())) {
+      lista.push(n);
+    }
+  });
+
+  return lista;
+}
+
 function obterNomeAmbienteDoElemento(el) {
-  if (!el) return '';
+  if (!el) {
+    const topInp = document.getElementById('inp-orc-ambiente-top');
+    return (topInp && topInp.value && topInp.value.trim()) ? topInp.value.trim() : 'Sala';
+  }
+
+  // 1. Se estiver dentro de uma tr-ambiente-secao (seções criadas)
   const trSec = el.closest ? el.closest('.tr-ambiente-secao') : null;
   if (trSec) {
     const inp = trSec.querySelector('.inp-nome-ambiente');
     if (inp && inp.value && inp.value.trim()) return inp.value.trim();
+    const lbl = trSec.querySelector('.label-ambiente-texto');
+    if (lbl && lbl.textContent && lbl.textContent.trim()) return lbl.textContent.trim();
   }
+
+  // 2. Se estiver dentro do header do topo (#tr-header-ambientes) ou galeria-orc-menu-container
+  const trTop = el.closest ? (el.closest('#tr-header-ambientes') || el.closest('#galeria-orc-menu-container') || el.closest('.card-ambiente-box')) : null;
+  if (trTop) {
+    const topInp = trTop.querySelector('#inp-orc-ambiente-top') || trTop.querySelector('.inp-nome-ambiente');
+    if (topInp && topInp.value && topInp.value.trim()) return topInp.value.trim();
+    const lbl = trTop.querySelector('.label-ambiente-texto');
+    if (lbl && lbl.textContent && lbl.textContent.trim()) return lbl.textContent.trim();
+  }
+
+  // 3. Se for do próprio modal da galeria
+  if (el.closest && el.closest('#modal-galeria-orcamento')) {
+    if (_modalGaleriaFiltroAmbiente && _modalGaleriaFiltroAmbiente !== 'todos') {
+      return _modalGaleriaFiltroAmbiente;
+    }
+    const selDestino = document.getElementById('modal-galeria-sel-ambiente-destino');
+    if (selDestino && selDestino.value) return selDestino.value;
+  }
+
+  // 4. Fallback: input do topo
   const topInp = document.getElementById('inp-orc-ambiente-top');
   if (topInp && topInp.value && topInp.value.trim()) return topInp.value.trim();
+
   return 'Sala';
 }
 
@@ -26188,10 +26240,91 @@ function acionarUploadGaleriaAmbiente(btn, tipo) {
 }
 
 function abrirModalGaleriaDoAmbiente(btn) {
-  // Ao clicar em Ver Fotos Salvas, sempre abre na aba "todos" para ver todas as fotos anexadas
-  _modalGaleriaFiltroAmbiente = 'todos';
+  const nomeAmb = obterNomeAmbienteDoElemento(btn);
+  _ambienteGaleriaAtivo = nomeAmb;
+  _modalGaleriaFiltroAmbiente = nomeAmb || 'todos';
   fecharTodosMenusGaleria();
-  abrirModalGaleriaOrcamento('todos');
+  abrirModalGaleriaOrcamento(_modalGaleriaFiltroAmbiente);
+}
+
+function acionarUploadDoModalGaleria(tipo) {
+  let ambAlvo = '';
+  if (_modalGaleriaFiltroAmbiente && _modalGaleriaFiltroAmbiente !== 'todos') {
+    ambAlvo = _modalGaleriaFiltroAmbiente;
+  } else {
+    const selDestino = document.getElementById('modal-galeria-sel-ambiente-destino');
+    if (selDestino && selDestino.value) {
+      ambAlvo = selDestino.value;
+    } else if (_ambienteGaleriaAtivo) {
+      ambAlvo = _ambienteGaleriaAtivo;
+    } else {
+      const topInp = document.getElementById('inp-orc-ambiente-top');
+      ambAlvo = (topInp && topInp.value && topInp.value.trim()) ? topInp.value.trim() : 'Sala';
+    }
+  }
+
+  _ambienteGaleriaAtivo = ambAlvo;
+
+  if (tipo === 'camera') {
+    const el = document.getElementById('orc-input-camera');
+    if (el) el.click();
+  } else if (tipo === 'galeria') {
+    const el = document.getElementById('orc-input-galeria');
+    if (el) el.click();
+  } else if (tipo === 'pdf') {
+    const el = document.getElementById('orc-input-pdf');
+    if (el) el.click();
+  }
+}
+
+function aoMudarAmbienteDestinoModal(novoAmb) {
+  if (!novoAmb) return;
+  _ambienteGaleriaAtivo = novoAmb;
+  if (_modalGaleriaFiltroAmbiente !== 'todos') {
+    _modalGaleriaFiltroAmbiente = novoAmb;
+    renderizarModalGaleriaOrc();
+  }
+}
+
+function alterarAmbienteItemGaleria(identificador, tipo, novoAmbiente) {
+  if (!novoAmbiente) return;
+  const numEl = document.getElementById('orc-numero-display');
+  const osNum = numEl ? numEl.textContent.trim() : '';
+
+  if (tipo === 'pdf') {
+    const arr = window._pdfsOrcamentoMemoria || [];
+    const item = arr.find(p => p && (p.id === identificador || p === identificador));
+    if (item) {
+      item.ambiente = novoAmbiente;
+      if (typeof salvarItemIndexedDb === 'function') salvarItemIndexedDb('pdfs_orcamento', item);
+      try { localStorage.setItem('sdm_orc_pdfs', JSON.stringify(arr)); } catch(_) {}
+    }
+  } else {
+    const arr = window._fotosOrcamentoMemoria || [];
+    const item = arr.find(f => f && (f.id === identificador || f === identificador));
+    if (item) {
+      item.ambiente = novoAmbiente;
+      const baseOrigem = (item.origem || 'Câmera').replace(/\s*\([^)]*\)\s*$/, '').trim();
+      item.origem = baseOrigem + ' (' + novoAmbiente + ')';
+      if (typeof salvarItemIndexedDb === 'function') salvarItemIndexedDb('fotos_orcamento', item);
+      try {
+        localStorage.setItem('sdm_orc_fotos_temp', JSON.stringify(arr));
+        localStorage.setItem('sdm_cam_capturas', JSON.stringify(arr));
+        if (osNum && typeof getGaleriaKey === 'function') {
+          localStorage.setItem(getGaleriaKey(osNum), JSON.stringify(arr));
+        }
+      } catch(_) {}
+    }
+  }
+
+  atualizarBadgeGaleriaOrcamento();
+  if (typeof renderMiniaturasGaleriaOrcamento === 'function') renderMiniaturasGaleriaOrcamento();
+  if (typeof _renderGaleriaGrid === 'function') _renderGaleriaGrid();
+  renderizarModalGaleriaOrc();
+
+  if (typeof mostrarToastAprovacao === 'function') {
+    mostrarToastAprovacao('Ambiente alterado para "' + novoAmbiente + '"! 🛋️');
+  }
 }
 
 // ── PROCESSAMENTO DE ARQUIVO ANEXADO NO ORÇAMENTO ────────────────────────────
@@ -26842,7 +26975,10 @@ function limparArquivosOrcamento() {
 // ── MODAL GALERIA DA O.S. ────────────────────────────────────────────────────
 
 function abrirModalGaleriaOrcamento(filtro) {
-  if (filtro) _modalGaleriaFiltroAmbiente = filtro;
+  if (filtro) {
+    _modalGaleriaFiltroAmbiente = filtro;
+    if (filtro !== 'todos') _ambienteGaleriaAtivo = filtro;
+  }
   const modal = document.getElementById('modal-galeria-orcamento');
   if (!modal) return;
   modal.style.display = 'flex';
@@ -26851,6 +26987,9 @@ function abrirModalGaleriaOrcamento(filtro) {
 
 function filtrarModalGaleriaAmbiente(nomeAmbiente) {
   _modalGaleriaFiltroAmbiente = nomeAmbiente || 'todos';
+  if (_modalGaleriaFiltroAmbiente !== 'todos') {
+    _ambienteGaleriaAtivo = _modalGaleriaFiltroAmbiente;
+  }
   renderizarModalGaleriaOrc();
 }
 
@@ -26884,17 +27023,22 @@ function renderizarModalGaleriaOrc() {
     } catch(_) {}
   }
 
-  // Coleta nomes de todos os ambientes cadastrados no orçamento
-  const ambientesLista = [];
-  const topNome = (document.getElementById('inp-orc-ambiente-top') ? document.getElementById('inp-orc-ambiente-top').value.trim() : '') || 'Sala';
-  ambientesLista.push(topNome);
-  document.querySelectorAll('.tr-ambiente-secao').forEach(tr => {
-    const inp = tr.querySelector('.inp-nome-ambiente');
-    if (inp && inp.value && inp.value.trim()) {
-      const n = inp.value.trim();
-      if (!ambientesLista.some(x => x.toLowerCase() === n.toLowerCase())) ambientesLista.push(n);
-    }
-  });
+  // Coleta lista atualizada de ambientes cadastrados
+  const ambientesLista = (typeof obterListaNomesAmbientes === 'function') ? obterListaNomesAmbientes() : [];
+  const topInp = document.getElementById('inp-orc-ambiente-top');
+  const topNome = (topInp && topInp.value && topInp.value.trim()) ? topInp.value.trim() : 'Sala';
+  if (!ambientesLista.length) ambientesLista.push(topNome);
+
+  // Sincroniza o select de destino do topo do modal
+  const selDestino = document.getElementById('modal-galeria-sel-ambiente-destino');
+  if (selDestino) {
+    const ambAtivoAtual = (_modalGaleriaFiltroAmbiente && _modalGaleriaFiltroAmbiente !== 'todos')
+      ? _modalGaleriaFiltroAmbiente
+      : (_ambienteGaleriaAtivo || topNome);
+    selDestino.innerHTML = ambientesLista.map(a => 
+      '<option value="' + a.replace(/"/g, '&quot;') + '"' + (a.toLowerCase() === ambAtivoAtual.toLowerCase() ? ' selected' : '') + '>🛋️ ' + a + '</option>'
+    ).join('');
+  }
 
   // Renderiza abas de filtro por ambiente
   let containerAbas = document.getElementById('modal-galeria-abas-ambientes');
@@ -26908,17 +27052,17 @@ function renderizarModalGaleriaOrc() {
   let htmlAbas = '';
   const isTodos = _modalGaleriaFiltroAmbiente === 'todos';
   const totalGeral = fotos.length + pdfs.length;
-  htmlAbas += '<button type="button" onclick="filtrarModalGaleriaAmbiente(\'todos\')" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:8px;font-size:11.5px;font-weight:800;cursor:pointer;white-space:nowrap;' +
-    (isTodos ? 'background:rgba(6,182,212,0.25);border:1.5px solid #06b6d4;color:#22d3ee;' : 'background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);color:var(--text2);') +
-    '"><span>📋</span> <span>Todos</span> <span style="font-size:10px;opacity:0.8;">(' + totalGeral + ')</span></button>';
+  htmlAbas += '<button type="button" onclick="filtrarModalGaleriaAmbiente(\'todos\')" style="display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;' +
+    (isTodos ? 'background:rgba(6,182,212,0.25);border:1.5px solid #06b6d4;color:#22d3ee;box-shadow:0 0 10px rgba(6,182,212,0.3);' : 'background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);color:var(--text2);') +
+    '"><span>📋</span> <span>Todos</span> <span style="font-size:10.5px;opacity:0.85;">(' + totalGeral + ')</span></button>';
 
   ambientesLista.forEach(amb => {
     const isAtivo = _modalGaleriaFiltroAmbiente.toLowerCase() === amb.toLowerCase();
     const countAmb = fotos.filter(f => (f.ambiente || topNome).toLowerCase() === amb.toLowerCase()).length +
                      pdfs.filter(p => (p.ambiente || topNome).toLowerCase() === amb.toLowerCase()).length;
-    htmlAbas += '<button type="button" onclick="filtrarModalGaleriaAmbiente(\'' + amb.replace(/'/g, "\\'") + '\')" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:8px;font-size:11.5px;font-weight:800;cursor:pointer;white-space:nowrap;' +
-      (isAtivo ? 'background:rgba(6,182,212,0.25);border:1.5px solid #06b6d4;color:#22d3ee;' : 'background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);color:var(--text2);') +
-      '"><span>🛋️</span> <span>' + amb + '</span> <span style="font-size:10px;opacity:0.8;">(' + countAmb + ')</span></button>';
+    htmlAbas += '<button type="button" onclick="filtrarModalGaleriaAmbiente(\'' + amb.replace(/'/g, "\\'") + '\')" style="display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;' +
+      (isAtivo ? 'background:rgba(245,158,11,0.25);border:1.5px solid #f59e0b;color:#fbbf24;box-shadow:0 0 10px rgba(245,158,11,0.3);' : 'background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);color:var(--text2);') +
+      '"><span>🛋️</span> <span>' + amb + '</span> <span style="font-size:10.5px;opacity:0.85;">(' + countAmb + ')</span></button>';
   });
   containerAbas.innerHTML = htmlAbas;
 
@@ -26949,52 +27093,84 @@ function renderizarModalGaleriaOrc() {
   }
 
   grid.style.display = 'grid';
-  grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(130px, 1fr))';
+  grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(140px, 1fr))';
+  grid.style.gap = '12px';
   grid.style.alignItems = '';
   grid.style.justifyContent = '';
 
   // Renderiza fotos
   fotosFiltradas.forEach((f, idx) => {
     const src = f.dataUrl || f.url || (typeof f === 'string' ? f : '');
+    const ambFoto = f.ambiente || topNome;
+    const fId = f.id || ('foto_' + idx);
+
     const card = document.createElement('div');
-    card.style.cssText = 'position:relative;border-radius:10px;overflow:hidden;border:1.5px solid rgba(6,182,212,0.45);background:#1a1a2e;aspect-ratio:1;cursor:pointer;transition:transform 0.15s;';
-    card.onmouseover = () => card.style.transform = 'scale(1.03)';
+    card.style.cssText = 'position:relative;border-radius:10px;overflow:hidden;border:1.5px solid rgba(6,182,212,0.45);background:#1a1a2e;display:flex;flex-direction:column;box-shadow:0 4px 12px rgba(0,0,0,0.4);transition:transform 0.15s;';
+    card.onmouseover = () => card.style.transform = 'scale(1.02)';
     card.onmouseout = () => card.style.transform = 'scale(1)';
+
+    const imgWrap = document.createElement('div');
+    imgWrap.style.cssText = 'position:relative;width:100%;aspect-ratio:1;cursor:pointer;overflow:hidden;';
 
     const img = document.createElement('img');
     img.src = src;
     img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
     img.onclick = () => window.open(src, '_blank');
-
-    const labelDiv = document.createElement('div');
-    labelDiv.style.cssText = 'position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.8));color:#22d3ee;font-size:9.5px;font-weight:700;padding:14px 6px 4px;';
-    labelDiv.textContent = 'Foto ' + (idx + 1) + (f.origem ? ' • ' + f.origem : '');
+    imgWrap.appendChild(img);
 
     const delBtn = document.createElement('button');
     delBtn.type = 'button';
     delBtn.innerHTML = '✕';
-    delBtn.title = 'Remover foto ' + (idx + 1);
-    delBtn.style.cssText = 'position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(239,68,68,0.92);color:#fff;border:none;font-size:13px;font-weight:bold;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;line-height:1;z-index:5;';
+    delBtn.title = 'Remover foto';
+    delBtn.style.cssText = 'position:absolute;top:5px;right:5px;width:24px;height:24px;border-radius:50%;background:rgba(239,68,68,0.92);color:#fff;border:none;font-size:13px;font-weight:bold;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;line-height:1;z-index:5;box-shadow:0 2px 6px rgba(0,0,0,0.5);';
     delBtn.onclick = (e) => {
       e.stopPropagation();
-      const idxReal = fotos.findIndex(x => x === f || (x.dataUrl && x.dataUrl === f.dataUrl));
+      const idxReal = fotos.findIndex(x => x === f || (x.id && x.id === f.id) || (x.dataUrl && x.dataUrl === f.dataUrl));
       removerItemGaleriaOrcamento(idxReal !== -1 ? idxReal : idx, 'foto');
       renderizarModalGaleriaOrc();
     };
+    imgWrap.appendChild(delBtn);
 
-    card.appendChild(img);
-    card.appendChild(labelDiv);
-    card.appendChild(delBtn);
+    const labelDiv = document.createElement('div');
+    labelDiv.style.cssText = 'position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.85));color:#22d3ee;font-size:9.5px;font-weight:700;padding:12px 6px 4px;pointer-events:none;';
+    labelDiv.textContent = 'Foto ' + (idx + 1) + ' · ' + (f.origem ? f.origem.replace(/\s*\([^)]*\)/g, '') : 'Câmera');
+    imgWrap.appendChild(labelDiv);
+
+    // Barra inferior com seletor de ambiente
+    const footerDiv = document.createElement('div');
+    footerDiv.style.cssText = 'background:#0f111c;padding:6px;border-top:1px solid rgba(6,182,212,0.25);display:flex;flex-direction:column;gap:3px;';
+
+    const selAmb = document.createElement('select');
+    selAmb.style.cssText = 'width:100%;background:#16192b;border:1px solid rgba(245,158,11,0.5);color:#fbbf24;font-size:10px;font-weight:800;border-radius:5px;padding:3px 4px;outline:none;cursor:pointer;';
+    selAmb.title = 'Mover foto para outro ambiente';
+    selAmb.innerHTML = ambientesLista.map(amb => 
+      '<option value="' + amb.replace(/"/g, '&quot;') + '"' + (amb.toLowerCase() === ambFoto.toLowerCase() ? ' selected' : '') + '>🛋️ ' + amb + '</option>'
+    ).join('');
+    selAmb.onchange = (e) => {
+      e.stopPropagation();
+      alterarAmbienteItemGaleria(fId, 'foto', selAmb.value);
+    };
+
+    footerDiv.appendChild(selAmb);
+
+    card.appendChild(imgWrap);
+    card.appendChild(footerDiv);
     grid.appendChild(card);
   });
 
   // Renderiza PDFs
   pdfsFiltrados.forEach((p, idx) => {
+    const ambPdf = p.ambiente || topNome;
+    const pId = p.id || ('pdf_' + idx);
+
     const card = document.createElement('div');
-    card.style.cssText = 'position:relative;border-radius:10px;border:1.5px solid rgba(245,158,11,0.5);background:rgba(245,158,11,0.08);display:flex;flex-direction:column;align-items:center;justify-content:center;aspect-ratio:1;cursor:pointer;padding:10px;transition:transform 0.15s;';
-    card.onmouseover = () => card.style.transform = 'scale(1.03)';
+    card.style.cssText = 'position:relative;border-radius:10px;border:1.5px solid rgba(245,158,11,0.5);background:rgba(245,158,11,0.08);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.4);transition:transform 0.15s;';
+    card.onmouseover = () => card.style.transform = 'scale(1.02)';
     card.onmouseout = () => card.style.transform = 'scale(1)';
-    card.onclick = () => {
+
+    const bodyWrap = document.createElement('div');
+    bodyWrap.style.cssText = 'position:relative;width:100%;aspect-ratio:1;cursor:pointer;padding:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;';
+    bodyWrap.onclick = () => {
       if (p.dataUrl) {
         const w = window.open('');
         if (w) w.document.write('<iframe src="' + p.dataUrl + '" frameborder="0" style="border:0;top:0;left:0;bottom:0;right:0;width:100%;height:100%;" allowfullscreen></iframe>');
@@ -27013,21 +27189,40 @@ function renderizarModalGaleriaOrc() {
     delBtn.type = 'button';
     delBtn.innerHTML = '✕';
     delBtn.title = 'Remover PDF';
-    delBtn.style.cssText = 'position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(239,68,68,0.92);color:#fff;border:none;font-size:13px;font-weight:bold;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;line-height:1;z-index:5;';
+    delBtn.style.cssText = 'position:absolute;top:5px;right:5px;width:24px;height:24px;border-radius:50%;background:rgba(239,68,68,0.92);color:#fff;border:none;font-size:13px;font-weight:bold;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;line-height:1;z-index:5;';
     delBtn.onclick = (e) => {
       e.stopPropagation();
-      const idxRealPdf = pdfs.findIndex(x => x === p || (x.dataUrl && x.dataUrl === p.dataUrl));
+      const idxRealPdf = pdfs.findIndex(x => x === p || (x.id && x.id === p.id) || (x.dataUrl && x.dataUrl === p.dataUrl));
       removerItemGaleriaOrcamento(idxRealPdf !== -1 ? idxRealPdf : idx, 'pdf');
       renderizarModalGaleriaOrc();
     };
 
-    card.appendChild(icon);
-    card.appendChild(name);
-    card.appendChild(delBtn);
+    bodyWrap.appendChild(icon);
+    bodyWrap.appendChild(name);
+    bodyWrap.appendChild(delBtn);
+
+    // Barra inferior com seletor de ambiente para PDF
+    const footerDiv = document.createElement('div');
+    footerDiv.style.cssText = 'background:#0f111c;padding:6px;border-top:1px solid rgba(245,158,11,0.25);display:flex;flex-direction:column;gap:3px;';
+
+    const selAmb = document.createElement('select');
+    selAmb.style.cssText = 'width:100%;background:#16192b;border:1px solid rgba(245,158,11,0.5);color:#fbbf24;font-size:10px;font-weight:800;border-radius:5px;padding:3px 4px;outline:none;cursor:pointer;';
+    selAmb.title = 'Mover PDF para outro ambiente';
+    selAmb.innerHTML = ambientesLista.map(amb => 
+      '<option value="' + amb.replace(/"/g, '&quot;') + '"' + (amb.toLowerCase() === ambPdf.toLowerCase() ? ' selected' : '') + '>🛋️ ' + amb + '</option>'
+    ).join('');
+    selAmb.onchange = (e) => {
+      e.stopPropagation();
+      alterarAmbienteItemGaleria(pId, 'pdf', selAmb.value);
+    };
+
+    footerDiv.appendChild(selAmb);
+
+    card.appendChild(bodyWrap);
+    card.appendChild(footerDiv);
     grid.appendChild(card);
   });
 }
-
 
 function abrirSeletorGaleriaFotosAgenda() {
   const inp = document.getElementById('input-galeria-agenda');
