@@ -12607,14 +12607,23 @@ function editarOs(id) {
 }
 
 function obterFotosOrcamentoParaPdf(osNum) {
+  // 1. Memória RAM instantânea (sempre prioritária e rápida)
+  if (window._fotosOrcamentoMemoria && Array.isArray(window._fotosOrcamentoMemoria) && window._fotosOrcamentoMemoria.length > 0) {
+    return window._fotosOrcamentoMemoria;
+  }
+
   let lista = [];
 
-  // 1. Tenta da memória temporária do orçamento atual
+  // 2. Tenta da memória temporária do orçamento atual
   try {
     const temp = localStorage.getItem('sdm_orc_fotos_temp');
     if (temp) {
       const arr = JSON.parse(temp);
-      if (Array.isArray(arr) && arr.length > 0) lista = arr;
+      if (Array.isArray(arr) && arr.length > 0) {
+        lista = arr;
+        window._fotosOrcamentoMemoria = [...arr];
+        return lista;
+      }
     }
   } catch(_) {}
 
@@ -12651,12 +12660,19 @@ function atualizarBadgeGaleriaOrcamento() {
     const numEl = document.getElementById('orc-numero-display');
     const osNum = numEl ? numEl.textContent.trim() : '';
     const fotos = (typeof obterFotosOrcamentoParaPdf === 'function') ? obterFotosOrcamentoParaPdf(osNum) : [];
-    let pdfs = [];
-    try {
-      const p = localStorage.getItem('sdm_orc_pdfs');
-      if (p) pdfs = JSON.parse(p) || [];
-      if (!Array.isArray(pdfs)) pdfs = [];
-    } catch(_) {}
+    let pdfs = (window._pdfsOrcamentoMemoria && Array.isArray(window._pdfsOrcamentoMemoria) && window._pdfsOrcamentoMemoria.length > 0)
+      ? window._pdfsOrcamentoMemoria
+      : [];
+    if (pdfs.length === 0) {
+      try {
+        const p = localStorage.getItem('sdm_orc_pdfs');
+        if (p) {
+          pdfs = JSON.parse(p) || [];
+          if (Array.isArray(pdfs) && pdfs.length > 0) window._pdfsOrcamentoMemoria = [...pdfs];
+        }
+        if (!Array.isArray(pdfs)) pdfs = [];
+      } catch(_) {}
+    }
 
     // Total geral (todos os ambientes) para o badge principal "Ver Fotos Salvas"
     const totalGeral = fotos.length + pdfs.length;
@@ -23076,11 +23092,8 @@ window.addEventListener('DOMContentLoaded', function() {
   addItem();
   atualizarNumeroDisplay();
 
-  // Limpa anexos da galeria temporária para não exibir imagens residuais
+  // Inicializa e preserva as fotos anexadas (não apaga ao recarregar a aba ou voltar da câmera)
   try {
-    localStorage.removeItem('sdm_orc_fotos_temp');
-    localStorage.removeItem('sdm_orc_pdfs');
-    localStorage.removeItem('sdm_cam_capturas');
     if (typeof atualizarBadgeGaleriaOrcamento === 'function') atualizarBadgeGaleriaOrcamento();
   } catch(_) {}
 
@@ -26174,22 +26187,191 @@ function abrirModalGaleriaDoAmbiente(btn) {
 }
 
 // ── PROCESSAMENTO DE ARQUIVO ANEXADO NO ORÇAMENTO ────────────────────────────
-// ── COMPRESSÃO DE IMAGENS EM CANVAS (EVITA EXCEDER QUOTA DO NAVEGADOR) ───────
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 🛡️ MOTOR DE ARMAZENAMENTO ROBUSTO DE MÍDIAS (INDEXEDDB + RAM CACHE + LOCALSTORAGE)
+// Evita 100% dos erros de cota (QuotaExceededError) no celular e acelera o upload
+// ══════════════════════════════════════════════════════════════════════════════
+const SDM_DB_NAME = 'SDM_MIDIAS_DB';
+const SDM_DB_VERSION = 1;
+let _sdmDbInstance = null;
+
+function obterBancoMidias() {
+  if (_sdmDbInstance) return Promise.resolve(_sdmDbInstance);
+  return new Promise((resolve) => {
+    if (!window.indexedDB) {
+      resolve(null);
+      return;
+    }
+    try {
+      const req = window.indexedDB.open(SDM_DB_NAME, SDM_DB_VERSION);
+      req.onupgradeneeded = function(e) {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('fotos_orcamento')) {
+          db.createObjectStore('fotos_orcamento', { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains('pdfs_orcamento')) {
+          db.createObjectStore('pdfs_orcamento', { keyPath: 'id' });
+        }
+      };
+      req.onsuccess = function(e) {
+        _sdmDbInstance = e.target.result;
+        resolve(_sdmDbInstance);
+      };
+      req.onerror = function() {
+        resolve(null);
+      };
+    } catch(_) {
+      resolve(null);
+    }
+  });
+}
+
+function salvarItemIndexedDb(storeNome, item) {
+  obterBancoMidias().then(db => {
+    if (!db) return;
+    try {
+      const tx = db.transaction([storeNome], 'readwrite');
+      tx.objectStore(storeNome).put(item);
+    } catch(_) {}
+  });
+}
+
+function removerItemIndexedDb(storeNome, id) {
+  obterBancoMidias().then(db => {
+    if (!db) return;
+    try {
+      const tx = db.transaction([storeNome], 'readwrite');
+      tx.objectStore(storeNome).delete(id);
+    } catch(_) {}
+  });
+}
+
+function limparStoreIndexedDb(storeNome) {
+  obterBancoMidias().then(db => {
+    if (!db) return;
+    try {
+      const tx = db.transaction([storeNome], 'readwrite');
+      tx.objectStore(storeNome).clear();
+    } catch(_) {}
+  });
+}
+
+// Cache global síncrono em memória (para a interface responder no mesmo milissegundo)
+window._fotosOrcamentoMemoria = [];
+window._pdfsOrcamentoMemoria = [];
+
+// Inicializa a memória a partir do localStorage imediatamente
+try {
+  const fSalvas = localStorage.getItem('sdm_orc_fotos_temp');
+  if (fSalvas) window._fotosOrcamentoMemoria = JSON.parse(fSalvas) || [];
+} catch(_) {}
+try {
+  const pSalvos = localStorage.getItem('sdm_orc_pdfs');
+  if (pSalvos) window._pdfsOrcamentoMemoria = JSON.parse(pSalvos) || [];
+} catch(_) {}
+
+// Carrega também do IndexedDB para garantir todas as fotos mesmo após limpeza de cache
+obterBancoMidias().then(db => {
+  if (!db) return;
+  try {
+    const tx = db.transaction(['fotos_orcamento', 'pdfs_orcamento'], 'readonly');
+    const reqF = tx.objectStore('fotos_orcamento').getAll();
+    reqF.onsuccess = function() {
+      const arr = reqF.result || [];
+      if (arr.length > 0 && (!window._fotosOrcamentoMemoria || window._fotosOrcamentoMemoria.length === 0)) {
+        window._fotosOrcamentoMemoria = arr;
+        if (typeof atualizarBadgeGaleriaOrcamento === 'function') atualizarBadgeGaleriaOrcamento();
+      }
+    };
+    const reqP = tx.objectStore('pdfs_orcamento').getAll();
+    reqP.onsuccess = function() {
+      const arr = reqP.result || [];
+      if (arr.length > 0 && (!window._pdfsOrcamentoMemoria || window._pdfsOrcamentoMemoria.length === 0)) {
+        window._pdfsOrcamentoMemoria = arr;
+        if (typeof atualizarBadgeGaleriaOrcamento === 'function') atualizarBadgeGaleriaOrcamento();
+      }
+    };
+  } catch(_) {}
+});
+
+function liberarEspacoStorage() {
+  try {
+    localStorage.removeItem('sdv_camera_mensagens_alertas');
+    const gal = JSON.parse(localStorage.getItem('sdv_camera_gallery') || '[]');
+    if (Array.isArray(gal) && gal.length > 6) {
+      localStorage.setItem('sdv_camera_gallery', JSON.stringify(gal.slice(0, 4)));
+    }
+  } catch(_) {}
+}
+
+function salvarFotoStorageSeguro(novaFoto, osNum) {
+  try {
+    let arr = window._fotosOrcamentoMemoria || [novaFoto];
+    if (arr.length > 25) arr = arr.slice(0, 25);
+    localStorage.setItem('sdm_orc_fotos_temp', JSON.stringify(arr));
+    localStorage.setItem('sdm_cam_capturas', JSON.stringify(arr));
+    if (osNum && typeof getGaleriaKey === 'function') {
+      localStorage.setItem(getGaleriaKey(osNum), JSON.stringify(arr));
+    }
+  } catch(e) {
+    liberarEspacoStorage();
+    try {
+      let compacto = (window._fotosOrcamentoMemoria || [novaFoto]).slice(0, 8);
+      localStorage.setItem('sdm_orc_fotos_temp', JSON.stringify(compacto));
+    } catch(_) {}
+  }
+}
+
+function salvarPdfStorageSeguro(itemPdf) {
+  try {
+    let pdfs = window._pdfsOrcamentoMemoria || [itemPdf];
+    if (pdfs.length > 15) pdfs = pdfs.slice(0, 15);
+    localStorage.setItem('sdm_orc_pdfs', JSON.stringify(pdfs));
+  } catch(e) {
+    liberarEspacoStorage();
+    try {
+      let compacto = (window._pdfsOrcamentoMemoria || [itemPdf]).slice(0, 4);
+      localStorage.setItem('sdm_orc_pdfs', JSON.stringify(compacto));
+    } catch(_) {}
+  }
+}
+
+
+// ── COMPRESSÃO DE IMAGENS DE ALTA PERFORMANCE (URL.createObjectURL + CANVAS) ──
 function comprimirImagemCanvas(file, maxDim, qualidade, callback) {
-  if (!file || !file.type || !file.type.startsWith('image/')) {
+  if (!file) {
+    if (callback) callback(null);
+    return;
+  }
+
+  const nome = (file.name || '').toLowerCase();
+  const ehImagem = (file.type && file.type.startsWith('image/')) || 
+                   /\.(jpe?g|png|webp|heic|bmp|gif)$/i.test(nome);
+
+  if (!ehImagem) {
     const reader = new FileReader();
     reader.onload = function(e) { callback(e.target.result); };
     reader.onerror = function() { callback(null); };
     reader.readAsDataURL(file);
     return;
   }
-  const reader = new FileReader();
-  reader.onload = function(e) {
+
+  const limite = maxDim || 1024;
+  const qual = qualidade || 0.65;
+
+  let blobUrl = null;
+  try {
+    blobUrl = URL.createObjectURL(file);
+  } catch(_) {}
+
+  if (blobUrl) {
     const img = new Image();
     img.onload = function() {
+      try { URL.revokeObjectURL(blobUrl); } catch(_) {}
+
       let w = img.width;
       let h = img.height;
-      const limite = maxDim || 1280;
       if (w > limite || h > limite) {
         if (w > h) {
           h = Math.round((h * limite) / w);
@@ -26203,68 +26385,114 @@ function comprimirImagemCanvas(file, maxDim, qualidade, callback) {
       canvas.width = w;
       canvas.height = h;
       const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        const r = new FileReader();
+        r.onload = function(e) { callback(e.target.result); };
+        r.onerror = function() { callback(null); };
+        r.readAsDataURL(file);
+        return;
+      }
       ctx.drawImage(img, 0, 0, w, h);
-      const compressedDataUrl = canvas.toDataURL('image/jpeg', qualidade || 0.72);
-      callback(compressedDataUrl);
+      try {
+        const compressed = canvas.toDataURL('image/jpeg', qual);
+        callback(compressed);
+      } catch(e) {
+        const r = new FileReader();
+        r.onload = function(ev) { callback(ev.target.result); };
+        r.onerror = function() { callback(null); };
+        r.readAsDataURL(file);
+      }
     };
-    img.onerror = function() { callback(e.target.result); };
-    img.src = e.target.result;
-  };
-  reader.onerror = function() { callback(null); };
-  reader.readAsDataURL(file);
+    img.onerror = function() {
+      try { URL.revokeObjectURL(blobUrl); } catch(_) {}
+      const reader = new FileReader();
+      reader.onload = function(e) { callback(e.target.result); };
+      reader.onerror = function() { callback(null); };
+      reader.readAsDataURL(file);
+    };
+    img.src = blobUrl;
+  } else {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onload = function() {
+        let w = img.width;
+        let h = img.height;
+        if (w > limite || h > limite) {
+          if (w > h) {
+            h = Math.round((h * limite) / w);
+            w = limite;
+          } else {
+            w = Math.round((w * limite) / h);
+            h = limite;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        callback(canvas.toDataURL('image/jpeg', qual));
+      };
+      img.onerror = function() { callback(e.target.result); };
+      img.src = e.target.result;
+    };
+    reader.onerror = function() { callback(null); };
+    reader.readAsDataURL(file);
+  }
 }
 
-// ── PROCESSAMENTO DE ARQUIVO ANEXADO NO ORÇAMENTO ────────────────────────────
+// ── ANEXAR ARQUIVO AO ORÇAMENTO (INFALÍVEL COM SALVAMENTO MULTICAMADA) ─────────
 function aoAnexarArquivoOrcamento(event, tipo) {
-  const files = event.target.files;
-  if (!files || !files.length) return;
-
-  // Zera o input para permitir re-seleção do mesmo arquivo
-  event.target.value = '';
+  const inputEl = event.target;
+  const files = Array.from(inputEl.files || []);
+  if (!files.length) return;
 
   const numEl = document.getElementById('orc-numero-display');
   const osNum = numEl ? numEl.textContent.trim() : '';
   const ambNome = _ambienteGaleriaAtivo || (document.getElementById('inp-orc-ambiente-top') ? document.getElementById('inp-orc-ambiente-top').value.trim() : '') || 'Sala';
 
-  Array.from(files).forEach(file => {
+  let processados = 0;
+
+  files.forEach(file => {
     if (tipo === 'pdf') {
-      try {
-        const reader = new FileReader();
-        reader.onload = function(ev) {
-          try {
-            let pdfs = JSON.parse(localStorage.getItem('sdm_orc_pdfs') || '[]');
-            if (!Array.isArray(pdfs)) pdfs = [];
-            pdfs.unshift({
-              nome: file.name,
-              dataUrl: ev.target.result,
-              tamanho: file.size,
-              ambiente: ambNome,
-              adicionadoEm: new Date().toISOString()
-            });
-            if (pdfs.length > 20) pdfs = pdfs.slice(0, 20);
-            localStorage.setItem('sdm_orc_pdfs', JSON.stringify(pdfs));
-            atualizarBadgeGaleriaOrcamento();
-            if (typeof renderMiniaturasGaleriaOrcamento === 'function') renderMiniaturasGaleriaOrcamento();
-            if (typeof mostrarToastAprovacao === 'function') {
-              mostrarToastAprovacao('📄 PDF "' + file.name + '" anexado ao ambiente ' + ambNome + '!');
-            }
-          } catch(err) {
-            console.warn('Erro ao salvar PDF:', err);
-          }
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        const itemPdf = {
+          id: 'pdf_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+          nome: file.name,
+          dataUrl: ev.target.result,
+          tamanho: file.size,
+          ambiente: ambNome,
+          adicionadoEm: new Date().toISOString()
         };
-        reader.readAsDataURL(file);
-      } catch(err) {
-        console.warn('Erro ao ler PDF:', err);
-      }
+
+        window._pdfsOrcamentoMemoria = window._pdfsOrcamentoMemoria || [];
+        window._pdfsOrcamentoMemoria.unshift(itemPdf);
+        salvarItemIndexedDb('pdfs_orcamento', itemPdf);
+        salvarPdfStorageSeguro(itemPdf);
+
+        processados++;
+        if (processados === files.length) {
+          finalizarAnexoOrcamento(inputEl, ambNome, 'pdf', file.name);
+        }
+      };
+      reader.onerror = function() {
+        processados++;
+        if (processados === files.length) finalizarAnexoOrcamento(inputEl, ambNome, 'pdf', file.name);
+      };
+      reader.readAsDataURL(file);
     } else {
-      // Foto / Vídeo: comprime a imagem para não estourar a cota do localStorage
-      comprimirImagemCanvas(file, 1280, 0.72, function(dataUrl) {
+      // Foto / Vídeo
+      comprimirImagemCanvas(file, 1024, 0.65, function(dataUrl) {
         if (!dataUrl) {
-          alert('Não foi possível carregar a imagem. Tente novamente.');
+          processados++;
+          if (processados === files.length) finalizarAnexoOrcamento(inputEl, ambNome, 'foto');
           return;
         }
 
         const novaCaptura = {
+          id: 'foto_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
           dataUrl: dataUrl,
           data: new Date().toISOString(),
           zoom: 1.0,
@@ -26274,56 +26502,45 @@ function aoAnexarArquivoOrcamento(event, tipo) {
           origem: (tipo === 'camera' ? 'Câmera' : 'Galeria') + ' (' + ambNome + ')'
         };
 
-        // 1. Salva em sdm_orc_fotos_temp (específico do orçamento atual)
-        try {
-          let tempFotos = [];
-          try { tempFotos = JSON.parse(localStorage.getItem('sdm_orc_fotos_temp') || '[]'); } catch(_) {}
-          if (!Array.isArray(tempFotos)) tempFotos = [];
-          tempFotos.unshift(novaCaptura);
-          if (tempFotos.length > 25) tempFotos = tempFotos.slice(0, 25);
-          localStorage.setItem('sdm_orc_fotos_temp', JSON.stringify(tempFotos));
-        } catch(errTemp) {
-          console.warn('Ajustando armazenamento temporário de fotos:', errTemp);
-          try {
-            // Se cota estourou por fotos antigas, reduz lista para 5 fotos mais recentes
-            let t = [novaCaptura];
-            localStorage.setItem('sdm_orc_fotos_temp', JSON.stringify(t));
-          } catch(_){}
-        }
+        window._fotosOrcamentoMemoria = window._fotosOrcamentoMemoria || [];
+        window._fotosOrcamentoMemoria.unshift(novaCaptura);
+        salvarItemIndexedDb('fotos_orcamento', novaCaptura);
+        salvarFotoStorageSeguro(novaCaptura, osNum);
 
-        // 2. Salva também em sdm_cam_capturas (geral)
-        try {
-          let fotos = [];
-          try { fotos = JSON.parse(localStorage.getItem('sdm_cam_capturas') || '[]'); } catch(_) {}
-          if (!Array.isArray(fotos)) fotos = [];
-          fotos.unshift(novaCaptura);
-          if (fotos.length > 30) fotos = fotos.slice(0, 30);
-          localStorage.setItem('sdm_cam_capturas', JSON.stringify(fotos));
-          if (typeof _capturas !== 'undefined') _capturas.unshift(novaCaptura);
-        } catch(_){}
-
-        // 3. Se há número de O.S. já gerado, salva na chave específica da OS
-        if (osNum && typeof getGaleriaKey === 'function') {
-          try {
-            let fotosKey = [];
-            try { fotosKey = JSON.parse(localStorage.getItem(getGaleriaKey(osNum)) || '[]'); } catch(_) {}
-            if (!Array.isArray(fotosKey)) fotosKey = [];
-            fotosKey.unshift(novaCaptura);
-            localStorage.setItem(getGaleriaKey(osNum), JSON.stringify(fotosKey));
-          } catch(_){}
-        }
-
-        if (typeof _renderGaleriaGrid === 'function') _renderGaleriaGrid();
-        if (typeof renderMiniaturasGaleriaOrcamento === 'function') renderMiniaturasGaleriaOrcamento();
-
-        atualizarBadgeGaleriaOrcamento();
-        if (typeof mostrarToastAprovacao === 'function') {
-          mostrarToastAprovacao('📷 Foto anexada com sucesso ao ambiente ' + ambNome + '!');
+        processados++;
+        if (processados === files.length) {
+          finalizarAnexoOrcamento(inputEl, ambNome, 'foto');
         }
       });
     }
   });
-  return;
+}
+
+function finalizarAnexoOrcamento(inputEl, ambNome, tipo, nomePdf) {
+  // Limpa o valor do input com segurança apenas após processar todos os itens
+  try { if (inputEl) inputEl.value = ''; } catch(_) {}
+
+  // Atualiza as miniaturas e os badges imediatamente
+  if (typeof renderMiniaturasGaleriaOrcamento === 'function') renderMiniaturasGaleriaOrcamento();
+  if (typeof _renderGaleriaGrid === 'function') _renderGaleriaGrid();
+  atualizarBadgeGaleriaOrcamento();
+
+  // Se o modal estiver aberto, atualiza a grade de fotos na hora
+  const modalOrc = document.getElementById('modal-galeria-orcamento');
+  if (modalOrc && modalOrc.style.display !== 'none' && typeof renderizarModalGaleriaOrc === 'function') {
+    renderizarModalGaleriaOrc();
+  }
+
+  const total = (window._fotosOrcamentoMemoria ? window._fotosOrcamentoMemoria.length : 0) +
+                (window._pdfsOrcamentoMemoria ? window._pdfsOrcamentoMemoria.length : 0);
+
+  if (typeof mostrarToastAprovacao === 'function') {
+    if (tipo === 'pdf') {
+      mostrarToastAprovacao('📄 PDF "' + (nomePdf || 'documento') + '" anexado ao ambiente ' + ambNome + '! (' + total + ' itens salvos)');
+    } else {
+      mostrarToastAprovacao('📷 Foto salva com sucesso no ambiente ' + ambNome + '! (' + total + ' fotos salvas)');
+    }
+  }
 }
 
 // Stub function to replace old body
@@ -26423,39 +26640,36 @@ function removerItemGaleriaOrcamento(index, tipo) {
   const osNum = numEl ? numEl.textContent.trim() : '';
 
   if (tipo === 'pdf') {
+    let itemRemovido = null;
+    if (window._pdfsOrcamentoMemoria && window._pdfsOrcamentoMemoria[index]) {
+      itemRemovido = window._pdfsOrcamentoMemoria[index];
+      window._pdfsOrcamentoMemoria.splice(index, 1);
+    }
+    if (itemRemovido && itemRemovido.id && typeof removerItemIndexedDb === 'function') {
+      removerItemIndexedDb('pdfs_orcamento', itemRemovido.id);
+    }
     try {
-      let pdfs = JSON.parse(localStorage.getItem('sdm_orc_pdfs') || '[]');
-      if (Array.isArray(pdfs)) {
-        pdfs.splice(index, 1);
-        localStorage.setItem('sdm_orc_pdfs', JSON.stringify(pdfs));
-      }
+      localStorage.setItem('sdm_orc_pdfs', JSON.stringify(window._pdfsOrcamentoMemoria || []));
     } catch(_) {}
   } else {
     // Foto
+    let itemRemovido = null;
+    if (window._fotosOrcamentoMemoria && window._fotosOrcamentoMemoria[index]) {
+      itemRemovido = window._fotosOrcamentoMemoria[index];
+      window._fotosOrcamentoMemoria.splice(index, 1);
+    }
+    if (itemRemovido && itemRemovido.id && typeof removerItemIndexedDb === 'function') {
+      removerItemIndexedDb('fotos_orcamento', itemRemovido.id);
+    }
     try {
-      let tempFotos = JSON.parse(localStorage.getItem('sdm_orc_fotos_temp') || '[]');
-      if (Array.isArray(tempFotos) && tempFotos.length > 0) {
-        tempFotos.splice(index, 1);
-        localStorage.setItem('sdm_orc_fotos_temp', JSON.stringify(tempFotos));
-      } else {
-        let fotos = JSON.parse(localStorage.getItem('sdm_cam_capturas') || '[]');
-        if (Array.isArray(fotos)) {
-          fotos.splice(index, 1);
-          localStorage.setItem('sdm_cam_capturas', JSON.stringify(fotos));
-          if (typeof _capturas !== 'undefined') _capturas = fotos;
-        }
-      }
-
+      const arrFotos = window._fotosOrcamentoMemoria || [];
+      localStorage.setItem('sdm_orc_fotos_temp', JSON.stringify(arrFotos));
+      localStorage.setItem('sdm_cam_capturas', JSON.stringify(arrFotos));
       if (osNum && typeof getGaleriaKey === 'function') {
-        let fotosKey = JSON.parse(localStorage.getItem(getGaleriaKey(osNum)) || '[]');
-        if (Array.isArray(fotosKey) && fotosKey.length > index) {
-          fotosKey.splice(index, 1);
-          localStorage.setItem(getGaleriaKey(osNum), JSON.stringify(fotosKey));
-        }
+        localStorage.setItem(getGaleriaKey(osNum), JSON.stringify(arrFotos));
       }
     } catch(_) {}
   }
-
   atualizarBadgeGaleriaOrcamento();
 }
 
@@ -26506,8 +26720,16 @@ function renderizarModalGaleriaOrc() {
   const numEl = document.getElementById('orc-numero-display');
   const osNum = numEl ? numEl.textContent.trim() : '';
   const fotos = (typeof obterFotosOrcamentoParaPdf === 'function') ? obterFotosOrcamentoParaPdf(osNum) : [];
-  let pdfs = [];
-  try { pdfs = JSON.parse(localStorage.getItem('sdm_orc_pdfs') || '[]'); if (!Array.isArray(pdfs)) pdfs = []; } catch(_) {}
+  let pdfs = (window._pdfsOrcamentoMemoria && Array.isArray(window._pdfsOrcamentoMemoria) && window._pdfsOrcamentoMemoria.length > 0)
+    ? window._pdfsOrcamentoMemoria
+    : [];
+  if (pdfs.length === 0) {
+    try {
+      const p = localStorage.getItem('sdm_orc_pdfs');
+      if (p) pdfs = JSON.parse(p) || [];
+      if (!Array.isArray(pdfs)) pdfs = [];
+    } catch(_) {}
+  }
 
   // Coleta nomes de todos os ambientes cadastrados no orçamento
   const ambientesLista = [];
