@@ -15351,7 +15351,28 @@ function abrirModalDirecionamentoDoOrcamento() {
         dirValorTotalNum = autoDir.valorTotal;
       }
     } else {
-      dirCategoriasEdicao = JSON.parse(JSON.stringify(CATEGORIAS_DIR_PADRAO));
+      // Tentar carregar o padrão salvo pelo usuário antes de usar o padrão do sistema
+      let carregouPadraoUsuario = false;
+      try {
+        const padraoSalvo = localStorage.getItem('sdm_dir_padrao_usuario');
+        if (padraoSalvo) {
+          const obj = JSON.parse(padraoSalvo);
+          if (obj && Array.isArray(obj.categorias) && obj.categorias.length > 0) {
+            // Carregar categorias do padrão do usuário mas com valor/porcentagem zerados
+            // (pois é um novo orçamento com valor diferente)
+            dirCategoriasEdicao = obj.categorias.map(c => ({
+              ...c,
+              valor: 0,
+              // Manter as porcentagens do padrão do usuário!
+              porcentagem: Number(c.porcentagem) || 0
+            }));
+            carregouPadraoUsuario = true;
+          }
+        }
+      } catch(_) {}
+      if (!carregouPadraoUsuario) {
+        dirCategoriasEdicao = JSON.parse(JSON.stringify(CATEGORIAS_DIR_PADRAO));
+      }
     }
   }
 
@@ -15401,7 +15422,21 @@ function abrirModalDirecionamentoOs(id) {
         dirValorTotalNum = autoDir.valorTotal;
       }
     } else {
-      dirCategoriasEdicao = JSON.parse(JSON.stringify(CATEGORIAS_DIR_PADRAO));
+      // Tentar carregar o padrão salvo pelo usuário antes de usar o padrão do sistema
+      let _carregouPadraoUsr = false;
+      try {
+        const _padraoSalvo = localStorage.getItem('sdm_dir_padrao_usuario');
+        if (_padraoSalvo) {
+          const _obj = JSON.parse(_padraoSalvo);
+          if (_obj && Array.isArray(_obj.categorias) && _obj.categorias.length > 0) {
+            dirCategoriasEdicao = _obj.categorias.map(c => ({ ...c, valor: 0, porcentagem: Number(c.porcentagem) || 0 }));
+            _carregouPadraoUsr = true;
+          }
+        }
+      } catch(_) {}
+      if (!_carregouPadraoUsr) {
+        dirCategoriasEdicao = JSON.parse(JSON.stringify(CATEGORIAS_DIR_PADRAO));
+      }
     }
   }
 
@@ -15594,7 +15629,17 @@ function removerCategoriaDirecionamento(idx) {
 }
 
 function redefinirPadraoDirecionamento() {
-  if (!confirm('Deseja restaurar as 5 categorias padrão (Material, Funcionário, Escritório, Almoço, Frete)?')) return;
+  // Verificar se o usuário tem um padrão próprio salvo
+  let temPadraoUsuario = false;
+  try {
+    const p = localStorage.getItem('sdm_dir_padrao_usuario');
+    if (p) { const obj = JSON.parse(p); if (obj && Array.isArray(obj.categorias) && obj.categorias.length > 0) temPadraoUsuario = true; }
+  } catch(_) {}
+
+  const msg = temPadraoUsuario
+    ? 'Deseja restaurar as 5 categorias padrão do sistema (Material, Funcionário, Escritório, Almoço, Frete)?\n\nIsso NÃO apaga seu padrão salvo, apenas reseta as categorias desta tela.'
+    : 'Deseja restaurar as 5 categorias padrão (Material, Funcionário, Escritório, Almoço, Frete)?';
+  if (!confirm(msg)) return;
   dirCategoriasEdicao = JSON.parse(JSON.stringify(CATEGORIAS_DIR_PADRAO));
   renderizarTabelaCategoriasDir();
   recalcularBalancoDir();
@@ -15722,9 +15767,16 @@ function salvarDirecionamentoOs() {
       categorias: JSON.parse(JSON.stringify(dirCategoriasEdicao)),
       salvoEm: new Date().toISOString()
     };
+    // Salvar como padrão permanente do usuário (usado em novos orçamentos)
+    try {
+      localStorage.setItem('sdm_dir_padrao_usuario', JSON.stringify({
+        categorias: JSON.parse(JSON.stringify(dirCategoriasEdicao)),
+        salvoEm: new Date().toISOString()
+      }));
+    } catch(_) {}
     atualizarBadgeBotaoDirecionamentoOrc();
     if (typeof mostrarToastAprovacao === 'function') {
-      mostrarToastAprovacao(`✅ ${nomeBtn} configurado para este orçamento!`);
+      mostrarToastAprovacao(`✅ ${nomeBtn} configurado e salvo como padrão!`);
     } else {
       alert(`${nomeBtn} configurado para este orçamento!`);
     }
@@ -15757,12 +15809,20 @@ function salvarDirecionamentoOs() {
   };
   dirOrcamentoTemp = JSON.parse(JSON.stringify(historico[idx].direcionamento));
 
+  // Salvar como padrão permanente do usuário (usado em novos orçamentos)
+  try {
+    localStorage.setItem('sdm_dir_padrao_usuario', JSON.stringify({
+      categorias: JSON.parse(JSON.stringify(dirCategoriasEdicao)),
+      salvoEm: new Date().toISOString()
+    }));
+  } catch(_) {}
+
   save(K.orders, historico);
   renderHist();
   atualizarBadgeBotaoDirecionamentoOrc();
 
   if (typeof mostrarToastAprovacao === 'function') {
-    mostrarToastAprovacao(`✅ ${nomeBtn} da O.S. #${historico[idx].numero} salvo com sucesso!`);
+    mostrarToastAprovacao(`✅ ${nomeBtn} da O.S. #${historico[idx].numero} salvo e definido como padrão!`);
   } else {
     alert(`${nomeBtn} da O.S. #${historico[idx].numero} salvo com sucesso!`);
   }
