@@ -12618,21 +12618,21 @@ function obterFotosOrcamentoParaPdf(osNum) {
     }
   } catch(_) {}
 
-  // 2. Só carrega fotos salvas se estiver EDITANDO uma OS existente específica
-  if (typeof editandoOsId !== 'undefined' && editandoOsId) {
-    if (lista.length === 0 && osNum) {
-      try {
-        const k = typeof getGaleriaKey === 'function' ? getGaleriaKey(osNum) : ('sdv_galeria_' + String(osNum).replace(/\D/g, ''));
-        const salvo = localStorage.getItem(k);
-        if (salvo) {
-          const arr = JSON.parse(salvo);
-          if (Array.isArray(arr) && arr.length > 0) lista = arr;
-        }
-      } catch(_) {}
-    }
+  // 2. Se lista temporária vazia, tenta da chave salva da O.S.
+  if (lista.length === 0 && osNum) {
+    try {
+      const k = typeof getGaleriaKey === 'function' ? getGaleriaKey(osNum) : ('sdv_galeria_' + String(osNum).replace(/\D/g, ''));
+      const salvo = localStorage.getItem(k);
+      if (salvo) {
+        const arr = JSON.parse(salvo);
+        if (Array.isArray(arr) && arr.length > 0) lista = arr;
+      }
+    } catch(_) {}
+  }
 
-    // 3. Tenta do histórico de ordens
-    if (lista.length === 0 && osNum && typeof historico !== 'undefined' && Array.isArray(historico)) {
+  // 3. Se ainda vazia, tenta do histórico de ordens
+  if (lista.length === 0 && osNum && typeof historico !== 'undefined' && Array.isArray(historico)) {
+    try {
       const numLimpo = String(osNum).replace(/\D/g, '');
       const ord = historico.find(x => String(x.numero || '').replace(/\D/g, '') === numLimpo || String(x.id) === String(osNum));
       if (ord && Array.isArray(ord.fotos) && ord.fotos.length > 0) {
@@ -12640,7 +12640,7 @@ function obterFotosOrcamentoParaPdf(osNum) {
       } else if (ord && ord.dados && Array.isArray(ord.dados.fotos) && ord.dados.fotos.length > 0) {
         lista = ord.dados.fotos;
       }
-    }
+    } catch(_) {}
   }
 
   return lista;
@@ -12658,6 +12658,9 @@ function atualizarBadgeGaleriaOrcamento() {
       if (!Array.isArray(pdfs)) pdfs = [];
     } catch(_) {}
 
+    // Total geral (todos os ambientes) para o badge principal "Ver Fotos Salvas"
+    const totalGeral = fotos.length + pdfs.length;
+
     // 1. Atualiza badge do topo (primeiro ambiente: Sala)
     const topNome = (document.getElementById('inp-orc-ambiente-top') ? document.getElementById('inp-orc-ambiente-top').value.trim() : '') || 'Sala';
     const topNomeLower = topNome.toLowerCase();
@@ -12666,10 +12669,12 @@ function atualizarBadgeGaleriaOrcamento() {
     const pdfsTop = pdfs.filter(p => !p.ambiente || p.ambiente.toLowerCase() === topNomeLower);
     const countTop = fotosTop.length + pdfsTop.length;
 
+    // Label "Galeria (N)" mostra count do ambiente atual
     const lblTop = document.getElementById('label-galeria-orc-linha');
     if (lblTop) lblTop.textContent = 'Galeria (' + countTop + ')';
+    // "Ver Fotos Salvas (N)" mostra total geral de TODOS os ambientes
     const menuContTop = document.getElementById('menu-cont-galeria-orc');
-    if (menuContTop) menuContTop.textContent = countTop;
+    if (menuContTop) menuContTop.textContent = totalGeral;
 
     // 2. Atualiza badge de cada ambiente subsequente (ex: Cozinha, Quarto, etc.)
     document.querySelectorAll('.tr-ambiente-secao').forEach(tr => {
@@ -26162,10 +26167,10 @@ function acionarUploadGaleriaAmbiente(btn, tipo) {
 }
 
 function abrirModalGaleriaDoAmbiente(btn) {
-  const nomeAmb = obterNomeAmbienteDoElemento(btn);
-  _modalGaleriaFiltroAmbiente = nomeAmb || 'todos';
+  // Ao clicar em Ver Fotos Salvas, sempre abre na aba "todos" para ver todas as fotos anexadas
+  _modalGaleriaFiltroAmbiente = 'todos';
   fecharTodosMenusGaleria();
-  abrirModalGaleriaOrcamento(_modalGaleriaFiltroAmbiente);
+  abrirModalGaleriaOrcamento('todos');
 }
 
 // ── PROCESSAMENTO DE ARQUIVO ANEXADO NO ORÇAMENTO ────────────────────────────
@@ -26574,7 +26579,7 @@ function renderizarModalGaleriaOrc() {
   grid.style.justifyContent = '';
 
   // Renderiza fotos
-  fotos.forEach((f, idx) => {
+  fotosFiltradas.forEach((f, idx) => {
     const src = f.dataUrl || f.url || (typeof f === 'string' ? f : '');
     const card = document.createElement('div');
     card.style.cssText = 'position:relative;border-radius:10px;overflow:hidden;border:1.5px solid rgba(6,182,212,0.45);background:#1a1a2e;aspect-ratio:1;cursor:pointer;transition:transform 0.15s;';
@@ -26597,7 +26602,8 @@ function renderizarModalGaleriaOrc() {
     delBtn.style.cssText = 'position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(239,68,68,0.92);color:#fff;border:none;font-size:13px;font-weight:bold;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;line-height:1;z-index:5;';
     delBtn.onclick = (e) => {
       e.stopPropagation();
-      removerItemGaleriaOrcamento(idx, 'foto');
+      const idxReal = fotos.findIndex(x => x === f || (x.dataUrl && x.dataUrl === f.dataUrl));
+      removerItemGaleriaOrcamento(idxReal !== -1 ? idxReal : idx, 'foto');
       renderizarModalGaleriaOrc();
     };
 
@@ -26608,7 +26614,7 @@ function renderizarModalGaleriaOrc() {
   });
 
   // Renderiza PDFs
-  pdfs.forEach((p, idx) => {
+  pdfsFiltrados.forEach((p, idx) => {
     const card = document.createElement('div');
     card.style.cssText = 'position:relative;border-radius:10px;border:1.5px solid rgba(245,158,11,0.5);background:rgba(245,158,11,0.08);display:flex;flex-direction:column;align-items:center;justify-content:center;aspect-ratio:1;cursor:pointer;padding:10px;transition:transform 0.15s;';
     card.onmouseover = () => card.style.transform = 'scale(1.03)';
@@ -26635,7 +26641,8 @@ function renderizarModalGaleriaOrc() {
     delBtn.style.cssText = 'position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(239,68,68,0.92);color:#fff;border:none;font-size:13px;font-weight:bold;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;line-height:1;z-index:5;';
     delBtn.onclick = (e) => {
       e.stopPropagation();
-      removerItemGaleriaOrcamento(idx, 'pdf');
+      const idxRealPdf = pdfs.findIndex(x => x === p || (x.dataUrl && x.dataUrl === p.dataUrl));
+      removerItemGaleriaOrcamento(idxRealPdf !== -1 ? idxRealPdf : idx, 'pdf');
       renderizarModalGaleriaOrc();
     };
 
@@ -39753,9 +39760,9 @@ window.addEventListener('popstate', aplicarRetornoComparativo);
         🎥 Gravar Vídeo
         <input type="file" accept="video/*" capture="environment" onchange="salvarMidiaGaleriaComCamera(event,'video')" style="display:none;">
       </label>
-      <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px;background:rgba(16,185,129,0.15);border:1.5px solid #10b981;border-radius:10px;cursor:pointer;font-size:12px;font-weight:800;color:#6ee7b7;">
+      <label id="btn-importar-icsee" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px;background:rgba(16,185,129,0.15);border:1.5px solid #10b981;border-radius:10px;cursor:pointer;font-size:12px;font-weight:800;color:#6ee7b7;" title="Abre o iCSee para capturar, depois importe as fotos">
         📂 Importar iCSee
-        <input type="file" accept="image/*,video/*" multiple onchange="salvarMidiaGaleriaComCamera(event,'importar')" style="display:none;">
+        <input id="input-importar-icsee" type="file" accept="image/*,video/*" multiple onchange="salvarMidiaGaleriaComCamera(event,'importar')" style="display:none;">
       </label>
     </div>
 
@@ -39881,11 +39888,13 @@ function abrirGaleriaCamera() {
   const modal = document.getElementById('modal-galeria-camera');
   if (modal) modal.style.display = 'flex';
   renderGaleriaCamera();
+  if (typeof iniciarAutoRefreshGaleriaCamera === 'function') iniciarAutoRefreshGaleriaCamera();
 }
 
 function fecharGaleriaCamera() {
   const modal = document.getElementById('modal-galeria-camera');
   if (modal) modal.style.display = 'none';
+  if (typeof pararAutoRefreshGaleriaCamera === 'function') pararAutoRefreshGaleriaCamera();
 }
 window.fecharGaleriaCamera = fecharGaleriaCamera;
 window.abrirGaleriaCamera = abrirGaleriaCamera;
@@ -40151,19 +40160,30 @@ function renderGaleriaCamera() {
   const fotos = midiasFiltradas.filter(it => it.type !== 'video');
   const videos = midiasFiltradas.filter(it => it.type === 'video');
 
-  // 1. RENDER PAINEL TEMPO REAL (FOTOS)
+  // 1. RENDER PAINEL TEMPO REAL (FOTOS E FILMAGENS EM TEMPO REAL)
   if (pTempoReal) {
-    if (!fotos.length) {
-      pTempoReal.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:36px 16px;color:#475569;font-size:12px;">🔴 Nenhuma captura em tempo real salva.<br>Toque em <strong>"Capturar Foto"</strong> ou <strong>"Importar"</strong> para salvar.</div>';
+    // Na aba Tempo Real são exibidas todas as capturas (fotos e vídeos gravados em tempo real)
+    const midiasTempoReal = midiasFiltradas;
+    if (!midiasTempoReal.length) {
+      pTempoReal.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:36px 16px;color:#475569;font-size:12px;">🔴 Nenhuma captura ou filmagem em tempo real salva.<br>Toque em <strong>"Capturar Foto"</strong>, <strong>"Gravar Vídeo"</strong> ou <strong>"Importar iCSee"</strong> para salvar.</div>';
     } else {
-      pTempoReal.innerHTML = fotos.map((item, i) => {
+      pTempoReal.innerHTML = midiasTempoReal.map((item, i) => {
         const data = new Date(item.timestamp);
         const dataStr = data.toLocaleDateString('pt-BR') + ' ' + data.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
         const idxGlobal = todasMidias.findIndex(x => x.id === item.id);
-        return `<div style="position:relative;border-radius:10px;overflow:hidden;aspect-ratio:1;background:#090911;cursor:pointer;border:1.5px solid rgba(14,165,233,0.35);box-shadow:0 3px 10px rgba(0,0,0,0.5);" onclick="abrirPreviewGaleria(${idxGlobal})" title="${item.camera || 'Câmera'}\n${dataStr}">
-          <img src="${item.data}" style="width:100%;height:100%;object-fit:cover;" loading="lazy">
-          <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top, rgba(0,0,0,0.85), transparent);padding:5px 4px 3px;font-size:8px;color:#e0f2fe;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-            🔴 ${item.camera || 'Tempo Real'}
+        const isVid = item.type === 'video';
+        
+        return `<div style="position:relative;border-radius:10px;overflow:hidden;aspect-ratio:1;background:#090911;cursor:pointer;border:1.5px solid ${isVid ? 'rgba(239,68,68,0.55)' : 'rgba(14,165,233,0.45)'};box-shadow:0 3px 10px rgba(0,0,0,0.5);" onclick="abrirPreviewGaleria(${idxGlobal})" title="${item.camera || 'Câmera'}\n${dataStr}">
+          ${isVid 
+            ? `<video src="${item.data}" style="width:100%;height:100%;object-fit:cover;" muted preload="metadata"></video>
+               <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.3);">
+                 <div style="width:30px;height:30px;border-radius:50%;background:rgba(239,68,68,0.9);display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;">▶</div>
+               </div>`
+            : `<img src="${item.data}" style="width:100%;height:100%;object-fit:cover;" loading="lazy">`
+          }
+          <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top, rgba(0,0,0,0.88), transparent);padding:5px 4px 3px;font-size:8px;color:#e0f2fe;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;justify-content:space-between;align-items:center;">
+            <span>${isVid ? '📹 Filmagem' : '🔴 Foto'}</span>
+            <span style="font-size:7.5px;color:#cbd5e1;">${item.camera || 'Porta de entrada'}</span>
           </div>
         </div>`;
       }).join('');
@@ -40223,7 +40243,7 @@ function renderGaleriaCamera() {
   // Atualiza footer info
   if (info) {
     if (_galeriaAbaAtual === 'tempo-real') {
-      info.textContent = fotos.length + ' foto(s) em tempo real';
+      info.textContent = midiasFiltradas.length + ' captura(s) e filmagem(ns) em tempo real';
     } else if (_galeriaAbaAtual === 'gravacao') {
       info.textContent = videos.length + ' gravação(ões) salva(s)';
     } else {
@@ -40233,6 +40253,44 @@ function renderGaleriaCamera() {
   }
 }
 window.renderGaleriaCamera = renderGaleriaCamera;
+
+// AUTO-REFRESH: Quando o usuário volta do iCSee para o app, re-renderiza a galeria
+let _galeriaAutoRefreshInterval = null;
+
+function iniciarAutoRefreshGaleriaCamera() {
+  // Para qualquer interval anterior
+  if (_galeriaAutoRefreshInterval) clearInterval(_galeriaAutoRefreshInterval);
+  // Atualiza a cada 8 segundos enquanto modal estiver aberto
+  _galeriaAutoRefreshInterval = setInterval(function() {
+    const modal = document.getElementById('modal-galeria-camera');
+    if (modal && modal.style.display !== 'none') {
+      renderGaleriaCamera();
+    } else {
+      // Modal fechou: para o interval
+      clearInterval(_galeriaAutoRefreshInterval);
+      _galeriaAutoRefreshInterval = null;
+    }
+  }, 8000);
+}
+
+function pararAutoRefreshGaleriaCamera() {
+  if (_galeriaAutoRefreshInterval) {
+    clearInterval(_galeriaAutoRefreshInterval);
+    _galeriaAutoRefreshInterval = null;
+  }
+}
+window.pararAutoRefreshGaleriaCamera = pararAutoRefreshGaleriaCamera;
+
+// Quando o usuário volta ao app (após sair para iCSee), auto-importa e atualiza galeria
+document.addEventListener('visibilitychange', function() {
+  if (!document.hidden) {
+    const modal = document.getElementById('modal-galeria-camera');
+    if (modal && modal.style.display !== 'none') {
+      // App ficou visível com modal aberto: re-renderiza para mostrar novas capturas
+      setTimeout(function() { renderGaleriaCamera(); }, 500);
+    }
+  }
+});
 
 function abrirPreviewGaleria(idx) {
   const arr = carregarGaleria();
