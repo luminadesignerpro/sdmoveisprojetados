@@ -1,5 +1,5 @@
-// Service Worker PWA – SD Móveis Projetados v9.4.8 (Fix: cada ambiente salva suas fotos corretamente)
-const CACHE_NAME = 'sdmoveisprojetados-v9.4.8';
+// Service Worker PWA – SD Móveis Projetados v9.4.9 (Fix: cada ambiente salva suas fotos corretamente)
+const CACHE_NAME = 'sdmoveisprojetados-v9.4.9';
 const ASSETS = [
   '/',
   '/index.html',

@@ -704,6 +704,24 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Método não permitido' });
   }
   try {
+    // ── SUPORTE A PDF COMPLETO COM REGISTRO FOTOGRÁFICO DO PROJETO ──
+    if (req.query && req.query.p) {
+      const fileId = String(req.query.p).trim().replace(/[^a-zA-Z0-9_-]/g, '');
+      const numOs = String(req.query.num || '0001').replace('#', '');
+      if (fileId) {
+        try {
+          const respNtfy = await fetch(`https://ntfy.sh/file/${fileId}.pdf`);
+          if (respNtfy.ok) {
+            const pdfBytes = Buffer.from(await respNtfy.arrayBuffer());
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Content-Disposition', `inline; filename="Orcamento-${numOs}.pdf"`);
+            return res.status(200).send(pdfBytes);
+          }
+        } catch (errP) {
+          console.warn('Erro ao carregar PDF pré-renderizado do ntfy:', errP);
+        }
+      }
+    }
     let dados = req.body || {};
     let queryEmpresa = '';
     let queryEmpNome = '';

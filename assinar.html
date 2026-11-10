@@ -2720,7 +2720,12 @@ window.selecionarPagamento = function(metodo) {
     const empParamPdf = '&empresa=' + encodeURIComponent(licParaPdf.id || 'sdmoveis')
       + '&empNome=' + encodeURIComponent(licParaPdf.nome || 'SD Móveis Projetados')
       + '&empTipo=' + encodeURIComponent(licParaPdf.tipoContrato || 'moveis');
-    if (dParam) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const pParamUrl = urlParams.get('p');
+    const numParamUrl = urlParams.get('num') || '';
+    if (pParamUrl) {
+      window.open('/api/gerar-pdf-orcamento?p=' + encodeURIComponent(pParamUrl) + (numParamUrl ? ('&num=' + encodeURIComponent(numParamUrl)) : '') + (dParam ? ('&d=' + encodeURIComponent(dParam)) : '') + empParamPdf, '_blank');
+    } else if (dParam) {
       window.open('/api/gerar-pdf-orcamento?d=' + encodeURIComponent(dParam) + empParamPdf, '_blank');
     } else if (contratoId) {
       window.open('/api/gerar-pdf-orcamento?id=' + encodeURIComponent(contratoId) + empParamPdf, '_blank');
