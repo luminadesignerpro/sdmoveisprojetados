@@ -11308,45 +11308,91 @@ function salvarOrdem() {
 }
 
 function cancelarEdicaoOs() {
+  limparFormularioOrcamentoAposEnvio();
+}
+
+function limparFormularioOrcamentoAposEnvio() {
   editandoOsId = null;
-  document.getElementById('btn-salvar-os').innerHTML = '✅ Salvar Ordem de Serviço';
-  document.getElementById('btn-cancelar-os').style.display = 'none';
+  const btnSalvar = document.getElementById('btn-salvar-os');
+  if (btnSalvar) btnSalvar.innerHTML = '✅ Salvar Ordem de Serviço';
+  const btnCanc = document.getElementById('btn-cancelar-os');
+  if (btnCanc) btnCanc.style.display = 'none';
   const statusBox = document.getElementById('edicao-status-box');
   if (statusBox) statusBox.style.display = 'none';
   const btnAssinaturaTxt = document.getElementById('orc-assinatura-btn-text');
   if (btnAssinaturaTxt) btnAssinaturaTxt.textContent = '✍️ Enviar para Assinatura Digital';
 
+  // 1. Limpeza de campos de texto do cliente e do orçamento
   ['o-nome','o-cnpj','o-tel','o-bairro','o-end','o-num','o-apto','o-resp','o-prazo','o-garantia','o-obs','forma-outro','inp-orc-ambiente-top-obs']
     .forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+
+  // 2. Limpeza do ambiente topo
+  const inpAmbTop = document.getElementById('inp-orc-ambiente-top');
+  if (inpAmbTop) inpAmbTop.value = '';
+
+  // 3. Limpeza de valores financeiros
   ['o-val-produtos','o-val-servico','o-taxa-acrescimo','o-val-frete','o-val-desconto','o-taxa-desconto']
     .forEach(id => { const el=document.getElementById(id); if(el) el.value='0,00'; });
+  const elTot = document.getElementById('total');
+  if (elTot) elTot.textContent = 'R$ 0,00';
   const elAcrescimoCalc = document.getElementById('o-taxa-acrescimo-calc');
   if (elAcrescimoCalc) elAcrescimoCalc.innerHTML = '= R$ 0,00 em serviço';
   const elDescCalc = document.getElementById('o-desc-equiv-calc');
   if (elDescCalc) elDescCalc.innerHTML = '= 0% s/ total';
-  alternarTipoDesconto('reais');
-  document.getElementById('itens-lista').innerHTML = '';
-  itemId = 0; addItem();
-  selChip(document.querySelector('.chip'),'À vista');
-  atualizarNumeroDisplay();
+  if (typeof alternarTipoDesconto === 'function') alternarTipoDesconto('reais');
 
-  // Limpa a galeria para que ao começar uma nova O.S. a galeria esteja limpa
+  // 4. Limpeza de seções dinâmicas de ambientes (deixando apenas o ambiente topo inicial)
   try {
+    document.querySelectorAll('#itens-lista tr.tr-ambiente-secao').forEach(tr => tr.remove());
+    secaoAmbienteAtivaTr = null;
+    _ambienteGaleriaAtivo = null;
+    sessionStorage.removeItem('sdm_amb_galeria_ativo');
+    sessionStorage.removeItem('sdm_amb_galeria_ts');
+  } catch(_) {}
+
+  // 5. Limpeza e reinicialização das linhas de produtos/itens
+  const tbodyItens = document.getElementById('itens-lista');
+  if (tbodyItens) tbodyItens.innerHTML = '';
+  itemId = 0;
+  if (typeof addItem === 'function') addItem();
+
+  const chipAvista = document.querySelector('.chip');
+  if (chipAvista && typeof selChip === 'function') selChip(chipAvista, 'À vista');
+
+  // 6. LIMPEZA PROFUNDA E TOTAL DA GALERIA (Memória RAM, Storages, Locks e DOM)
+  try {
+    window._fotosOrcamentoMemoria = [];
+    window._pdfsOrcamentoMemoria = [];
     localStorage.removeItem('sdm_cam_capturas');
     localStorage.removeItem('sdm_orc_fotos_temp');
     localStorage.removeItem('sdm_orc_pdfs');
-    if (typeof _capturas !== 'undefined') _capturas = [];
+    localStorage.removeItem('sdm_camera_lock');
+    localStorage.removeItem('sdm_camera_lock_val');
+
+    // Esconde a barra de preview de imagens anexadas do orçamento
+    const boxPreview = document.getElementById('galeria-orc-preview-container');
+    if (boxPreview) boxPreview.style.display = 'none';
+    const itensBox = document.getElementById('galeria-orc-preview-itens');
+    if (itensBox) itensBox.innerHTML = '';
+
     const boxCam = document.getElementById('agenda-preview-fotos-capturadas');
     if (boxCam) boxCam.style.display = 'none';
     const thumbsCam = document.getElementById('agenda-fotos-thumbs');
     if (thumbsCam) thumbsCam.innerHTML = '';
     const countCam = document.getElementById('agenda-fotos-count');
     if (countCam) countCam.textContent = '0';
+
     if (typeof _renderGaleriaGrid === 'function') _renderGaleriaGrid();
-    atualizarBadgeGaleriaOrcamento();
+    if (typeof renderMiniaturasGaleriaOrcamento === 'function') renderMiniaturasGaleriaOrcamento();
+    if (typeof atualizarBadgeGaleriaOrcamento === 'function') atualizarBadgeGaleriaOrcamento();
+
     dirOrcamentoTemp = null;
     if (typeof atualizarBadgeBotaoDirecionamentoOrc === 'function') atualizarBadgeBotaoDirecionamentoOrc();
+    localStorage.removeItem(typeof RASCUNHO_KEY !== 'undefined' ? RASCUNHO_KEY : 'sdm_rascunho_orcamento');
   } catch(_) {}
+
+  atualizarNumeroDisplay();
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch(_) {}
 }
 
 function abrirPortalCliente() {
@@ -21431,8 +21477,36 @@ async function enviarOrcamentoParaAssinaturaDigital() {
     const empParamUrl = "&empresa=" + encodeURIComponent(lic.id || (ehMoveisUrl ? "sdmoveis" : "sdvidros"))
       + "&empNome=" + encodeURIComponent(lic.nome || (ehMoveisUrl ? "SD Móveis Projetados" : "SD Vidros"))
       + "&empTipo=" + encodeURIComponent(ehMoveisUrl ? "moveis" : "vidros");
-    let linkAssinatura = window.location.origin + "/assinar.html?d=" + dParam + empParamUrl;
-    let linkPdf = window.location.origin + "/api/gerar-pdf-orcamento?d=" + dParam + empParamUrl;
+
+    // ── GERAÇÃO DO PDF COMPLETO COM REGISTRO FOTOGRÁFICO DO PROJETO EM ALTA DEFINIÇÃO ──
+    let pdfFileId = '';
+    try {
+      if (typeof gerarPdfOrcamentoDoc === 'function') {
+        const pdfBlobCompleto = await gerarPdfOrcamentoDoc(d);
+        if (pdfBlobCompleto) {
+          const numOsLimpo = String(d.numero || '0001').replace(/D/g, '');
+          const resNtfy = await fetch(`https://ntfy.sh/sdm_pdf_${numOsLimpo}_${Date.now()}`, {
+            method: 'POST',
+            body: pdfBlobCompleto,
+            headers: { 'Filename': `Orcamento-${numOsLimpo}.pdf` }
+          });
+          if (resNtfy.ok) {
+            const dataNtfy = await resNtfy.json().catch(() => ({}));
+            if (dataNtfy.attachment && dataNtfy.attachment.url) {
+              const urlParts = dataNtfy.attachment.url.split('/');
+              const lastPart = urlParts[urlParts.length - 1];
+              pdfFileId = lastPart.replace('.pdf', '');
+            }
+          }
+        }
+      }
+    } catch(errPdfUpload) {
+      console.warn('Erro ao enviar PDF completo para armazenamento ntfy:', errPdfUpload);
+    }
+
+    const pParam = pdfFileId ? ('&p=' + encodeURIComponent(pdfFileId) + '&num=' + encodeURIComponent(String(d.numero || '0001').replace('#', ''))) : '';
+    let linkAssinatura = window.location.origin + "/assinar.html?d=" + dParam + pParam + empParamUrl;
+    let linkPdf = window.location.origin + "/api/gerar-pdf-orcamento?d=" + dParam + pParam + empParamUrl;
 
     // 3. Tentar criar registro no Supabase
     try {
@@ -21488,17 +21562,15 @@ async function enviarOrcamentoParaAssinaturaDigital() {
     carregarListaContratos();
     sincronizarStatusContratos();
 
-    // ✅ LIMPA COMPLETAMENTE O FORMULÁRIO DO ORÇAMENTO PARA UMA NOVA O.S.
+    // ✅ LIMPA COMPLETAMENTE O FORMULÁRIO DO ORÇAMENTO (AMBIENTE + GALERIA + ITENS) PARA NOVA O.S.
     setTimeout(() => {
       try {
-        limparRascunhoOrcamento();
-        cancelarEdicaoOs();
-        atualizarNumeroDisplay();
+        limparFormularioOrcamentoAposEnvio();
         if (typeof mostrarToastAprovacao === 'function') {
-          mostrarToastAprovacao('✅ Ordem ' + d.numero + ' salva e link enviado! Formulário limpo para nova O.S.');
+          mostrarToastAprovacao('✅ Ordem ' + d.numero + ' salva e link enviado! Ambiente e Galeria limpos para nova O.S.');
         }
       } catch (_) {}
-    }, 400);
+    }, 300);
   } catch (err) {
     alert(err.message || 'Erro ao enviar para assinatura digital.');
   } finally {
