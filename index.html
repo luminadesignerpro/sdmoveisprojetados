@@ -12607,8 +12607,11 @@ function editarOs(id) {
 }
 
 function obterFotosOrcamentoParaPdf(osNum) {
-  // 1. Memória RAM instantânea (sempre prioritária e rápida)
+  // 1. Memória RAM instantânea (sempre prioritária, rápida e desduplicada)
   if (window._fotosOrcamentoMemoria && Array.isArray(window._fotosOrcamentoMemoria) && window._fotosOrcamentoMemoria.length > 0) {
+    if (typeof desduplicarListaFotos === 'function') {
+      window._fotosOrcamentoMemoria = desduplicarListaFotos(window._fotosOrcamentoMemoria);
+    }
     return window._fotosOrcamentoMemoria;
   }
 
@@ -26200,19 +26203,45 @@ function abrirModalGaleriaDoAmbiente(btn) {
 
 function desduplicarListaFotos(arr) {
   if (!Array.isArray(arr)) return [];
-  const vistos = new Set();
-  return arr.filter(item => {
-    if (!item) return false;
-    // Usa uma assinatura única baseada no dataUrl ou id
-    const assinatura = item.dataUrl 
-      ? item.dataUrl.substring(0, 200) + '_' + (item.ambiente || '') 
-      : (item.id || Math.random());
-    if (vistos.has(assinatura)) {
-      return false; // Duplicata descartada!
+  const resultado = [];
+
+  for (let i = 0; i < arr.length; i++) {
+    const item = arr[i];
+    if (!item || !item.dataUrl) continue;
+
+    const ehDuplicado = resultado.some(existente => {
+      if (!existente || !existente.dataUrl) return false;
+
+      // 1. dataUrl exatamente igual
+      if (item.dataUrl === existente.dataUrl) return true;
+
+      // 2. Tamanho da imagem exatamente igual
+      if (item.dataUrl.length === existente.dataUrl.length) {
+        // Amostra do miolo do Base64 igual
+        const m1 = item.dataUrl.substring(100, 400);
+        const m2 = existente.dataUrl.substring(100, 400);
+        if (m1 === m2) return true;
+      }
+
+      // 3. Capturadas com menos de 3.5 segundos de diferença no mesmo ambiente
+      if (item.data && existente.data) {
+        const tItem = new Date(item.data).getTime();
+        const tExist = new Date(existente.data).getTime();
+        if (Math.abs(tItem - tExist) < 3500) {
+          const lDiff = Math.abs(item.dataUrl.length - existente.dataUrl.length);
+          if (lDiff < 1000) return true;
+        }
+      }
+
+      return false;
+    });
+
+    if (!ehDuplicado) {
+      resultado.push(item);
     }
-    vistos.add(assinatura);
-    return true;
-  });
+  }
+
+  return resultado;
 }
 
 function desduplicarListaPdfs(arr) {
@@ -26487,26 +26516,40 @@ function comprimirImagemCanvas(file, maxDim, qualidade, callback) {
 let _ultimoDisparoAnexo = 0;
 let _ultimoArquivoProcessadoKey = '';
 
+let _processandoCameraBloqueio = false;
+
 function aoAnexarArquivoOrcamento(event, tipo) {
   const inputEl = event.target;
-  const files = Array.from(inputEl.files || []);
-  if (!files.length) return;
+  let rawFiles = Array.from(inputEl.files || []);
+  if (!rawFiles.length) return;
 
-  // Proteção contra múltiplos disparos do evento change no Android Chrome
+  // Se for câmera, aceita RIGOROSAMENTE apenas 1 arquivo e bloqueia disparos repetidos
+  if (tipo === 'camera') {
+    if (_processandoCameraBloqueio) {
+      console.warn('Bloqueio de duplo disparo da câmera ativo, ignorando evento extra.');
+      try { inputEl.value = ''; } catch(_) {}
+      return;
+    }
+    _processandoCameraBloqueio = true;
+    setTimeout(() => { _processandoCameraBloqueio = false; }, 2500);
+    rawFiles = [rawFiles[0]]; // Força estritamente 1 arquivo único
+  }
+
   const agora = Date.now();
-  if (agora - _ultimoDisparoAnexo < 600 && files.length === 1) {
-    const key = files[0].name + '_' + files[0].size;
+  if (agora - _ultimoDisparoAnexo < 1200 && rawFiles.length === 1) {
+    const key = rawFiles[0].name + '_' + rawFiles[0].size;
     if (key === _ultimoArquivoProcessadoKey) {
-      console.warn('Disparo duplicado do change ignorado.');
+      console.warn('Disparo duplicado ignorado.');
       try { inputEl.value = ''; } catch(_) {}
       return;
     }
   }
   _ultimoDisparoAnexo = agora;
-  if (files.length === 1) {
-    _ultimoArquivoProcessadoKey = files[0].name + '_' + files[0].size;
+  if (rawFiles.length === 1) {
+    _ultimoArquivoProcessadoKey = rawFiles[0].name + '_' + rawFiles[0].size;
   }
 
+  const files = rawFiles;
   const numEl = document.getElementById('orc-numero-display');
   const osNum = numEl ? numEl.textContent.trim() : '';
   const ambNome = _ambienteGaleriaAtivo || (document.getElementById('inp-orc-ambiente-top') ? document.getElementById('inp-orc-ambiente-top').value.trim() : '') || 'Sala';
@@ -26824,7 +26867,12 @@ function renderizarModalGaleriaOrc() {
 
   const numEl = document.getElementById('orc-numero-display');
   const osNum = numEl ? numEl.textContent.trim() : '';
-  const fotos = (typeof obterFotosOrcamentoParaPdf === 'function') ? obterFotosOrcamentoParaPdf(osNum) : [];
+  let fotosBrutas = (typeof obterFotosOrcamentoParaPdf === 'function') ? obterFotosOrcamentoParaPdf(osNum) : [];
+  const fotos = (typeof desduplicarListaFotos === 'function') ? desduplicarListaFotos(fotosBrutas) : fotosBrutas;
+  if (window._fotosOrcamentoMemoria && window._fotosOrcamentoMemoria.length !== fotos.length) {
+    window._fotosOrcamentoMemoria = [...fotos];
+    try { localStorage.setItem('sdm_orc_fotos_temp', JSON.stringify(fotos)); } catch(_) {}
+  }
   let pdfs = (window._pdfsOrcamentoMemoria && Array.isArray(window._pdfsOrcamentoMemoria) && window._pdfsOrcamentoMemoria.length > 0)
     ? window._pdfsOrcamentoMemoria
     : [];
