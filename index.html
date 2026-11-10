@@ -26370,10 +26370,17 @@ function alterarAmbienteItemGaleria(identificador, tipo, novoAmbiente) {
 function desduplicarListaFotos(arr) {
   if (!Array.isArray(arr)) return [];
   const resultado = [];
+  const idsVistos = new Set();
 
   for (let i = 0; i < arr.length; i++) {
     const item = arr[i];
     if (!item || !item.dataUrl) continue;
+
+    // 0. Verificar por ID único (mais rápido)
+    if (item.id && idsVistos.has(item.id)) {
+      console.log('[Dedup] ID duplicado removido:', item.id);
+      continue;
+    }
 
     const ambItem = (item.ambiente || '').trim().toLowerCase();
 
@@ -26387,12 +26394,12 @@ function desduplicarListaFotos(arr) {
       // 1. dataUrl exatamente idêntico no mesmo ambiente
       if (item.dataUrl === existente.dataUrl) return true;
 
-      // 2. Mesma foto exata (mesmo tamanho e miolo) no mesmo ambiente
+      // 2. Mesma foto exata (mesmo tamanho e trecho do meio) no mesmo ambiente
       if (item.dataUrl.length === existente.dataUrl.length) {
         const len = item.dataUrl.length;
         if (len > 1000) {
-          const m1 = item.dataUrl.substring(len / 2, len / 2 + 300);
-          const m2 = existente.dataUrl.substring(len / 2, len / 2 + 300);
+          const m1 = item.dataUrl.substring(Math.floor(len / 2), Math.floor(len / 2) + 300);
+          const m2 = existente.dataUrl.substring(Math.floor(len / 2), Math.floor(len / 2) + 300);
           if (m1 === m2) return true;
         }
       }
@@ -26402,6 +26409,7 @@ function desduplicarListaFotos(arr) {
 
     if (!ehDuplicado) {
       resultado.push(item);
+      if (item.id) idsVistos.add(item.id);
     }
   }
 
@@ -26542,6 +26550,11 @@ function liberarEspacoStorage() {
 function salvarFotoStorageSeguro(novaFoto, osNum) {
   try {
     let arr = window._fotosOrcamentoMemoria || [novaFoto];
+    // Deduplicar antes de salvar no localStorage
+    if (typeof desduplicarListaFotos === 'function') {
+      arr = desduplicarListaFotos(arr);
+      window._fotosOrcamentoMemoria = arr; // Manter sincronizado
+    }
     if (arr.length > 25) arr = arr.slice(0, 25);
     localStorage.setItem('sdm_orc_fotos_temp', JSON.stringify(arr));
     localStorage.setItem('sdm_cam_capturas', JSON.stringify(arr));
@@ -26687,30 +26700,52 @@ function aoAnexarArquivoOrcamento(event, tipo) {
   let rawFiles = Array.from(inputEl.files || []);
   if (!rawFiles.length) return;
 
-  // Se for câmera, aceita RIGOROSAMENTE apenas 1 arquivo e bloqueia disparos repetidos
+  // ── BLOQUEIO ANTI-DUPLICAÇÃO (sobrevive reload de página no Android) ──
   if (tipo === 'camera') {
+    rawFiles = [rawFiles[0]]; // Força estritamente 1 arquivo
+    const arquivo = rawFiles[0];
+    const lockKey = 'sdm_camera_lock';
+    const lockValKey = 'sdm_camera_lock_val';
+    const agora = Date.now();
+    const lockVal = arquivo.name + '_' + arquivo.size;
+    try {
+      const lockTs = parseInt(localStorage.getItem(lockKey) || '0', 10);
+      const lockSavedVal = localStorage.getItem(lockValKey) || '';
+      // Se o lock é recente (< 8s) E é para o mesmo arquivo, é duplicata
+      if ((agora - lockTs) < 8000 && lockSavedVal === lockVal) {
+        console.warn('[Camera] Disparo duplicado detectado via localStorage lock. Ignorando.');
+        try { inputEl.value = ''; } catch(_) {}
+        return;
+      }
+    } catch(_) {}
+    // Registrar o lock agora
+    try {
+      localStorage.setItem(lockKey, String(agora));
+      localStorage.setItem(lockValKey, lockVal);
+    } catch(_) {}
+    // Também usar flag em memória como backup
     if (_processandoCameraBloqueio) {
-      console.warn('Bloqueio de duplo disparo da câmera ativo, ignorando evento extra.');
+      console.warn('[Camera] Flag em memória: duplo disparo bloqueado.');
       try { inputEl.value = ''; } catch(_) {}
       return;
     }
     _processandoCameraBloqueio = true;
-    setTimeout(() => { _processandoCameraBloqueio = false; }, 2500);
-    rawFiles = [rawFiles[0]]; // Força estritamente 1 arquivo único
-  }
-
-  const agora = Date.now();
-  if (agora - _ultimoDisparoAnexo < 1200 && rawFiles.length === 1) {
-    const key = rawFiles[0].name + '_' + rawFiles[0].size + '_' + (_ambienteGaleriaAtivo || '');
-    if (key === _ultimoArquivoProcessadoKey) {
-      console.warn('Disparo duplicado ignorado.');
-      try { inputEl.value = ''; } catch(_) {}
-      return;
+    setTimeout(() => { _processandoCameraBloqueio = false; }, 10000);
+  } else {
+    // Para galeria/pdf, usar bloqueio por nome+tamanho com timestamp
+    const agora = Date.now();
+    if (rawFiles.length === 1 && agora - _ultimoDisparoAnexo < 1200) {
+      const key = rawFiles[0].name + '_' + rawFiles[0].size + '_' + (_ambienteGaleriaAtivo || '');
+      if (key === _ultimoArquivoProcessadoKey) {
+        console.warn('Disparo duplicado de galeria/pdf ignorado.');
+        try { inputEl.value = ''; } catch(_) {}
+        return;
+      }
     }
-  }
-  _ultimoDisparoAnexo = agora;
-  if (rawFiles.length === 1) {
-    _ultimoArquivoProcessadoKey = rawFiles[0].name + '_' + rawFiles[0].size + '_' + (_ambienteGaleriaAtivo || '');
+    _ultimoDisparoAnexo = Date.now();
+    if (rawFiles.length === 1) {
+      _ultimoArquivoProcessadoKey = rawFiles[0].name + '_' + rawFiles[0].size + '_' + (_ambienteGaleriaAtivo || '');
+    }
   }
 
   const files = rawFiles;
@@ -26812,6 +26847,9 @@ function aoAnexarArquivoOrcamento(event, tipo) {
 function finalizarAnexoOrcamento(inputEl, ambNome, tipo, nomePdf) {
   // Limpa o valor do input com segurança apenas após processar todos os itens
   try { if (inputEl) inputEl.value = ''; } catch(_) {}
+  // Limpar o lock de câmera após processamento completo
+  try { localStorage.removeItem('sdm_camera_lock'); localStorage.removeItem('sdm_camera_lock_val'); } catch(_) {}
+  _processandoCameraBloqueio = false;
 
   // Atualiza as miniaturas e os badges imediatamente
   if (typeof renderMiniaturasGaleriaOrcamento === 'function') renderMiniaturasGaleriaOrcamento();
