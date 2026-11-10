@@ -12662,7 +12662,7 @@ function obterFotosOrcamentoParaPdf(osNum) {
     } catch(_) {}
   }
 
-  return lista;
+  return (typeof desduplicarListaFotos === 'function') ? desduplicarListaFotos(lista) : lista;
 }
 
 function atualizarBadgeGaleriaOrcamento() {
@@ -13255,6 +13255,9 @@ async function visualizarPdfOs(id, versaoNum = null) {
       dadosRaw.fotos = obterFotosOrcamentoParaPdf(o.numero);
     }
   }
+  if (Array.isArray(dadosRaw.fotos) && typeof desduplicarListaFotos === 'function') {
+    dadosRaw.fotos = desduplicarListaFotos(dadosRaw.fotos);
+  }
   let titulo = `👁️ Visualizar PDF - O.S. ${o.numero || ''}`;
   let fileName = `Orcamento-${(o.numero || '0001').replace('#', '')}.pdf`;
 
@@ -13390,6 +13393,9 @@ async function visualizarPdfOrcamentoAtual() {
 
   if (!o.fotos || !o.fotos.length) {
     o.fotos = (typeof obterFotosOrcamentoParaPdf === 'function') ? obterFotosOrcamentoParaPdf(o.numero) : [];
+  }
+  if (Array.isArray(o.fotos) && typeof desduplicarListaFotos === 'function') {
+    o.fotos = desduplicarListaFotos(o.fotos);
   }
 
   o.formatoPdf = _modoPdfOrcamentoSelecionado || 'detalhado';
@@ -22773,6 +22779,10 @@ async function gerarPdfOrcamentoDoc(dados) {
   } else if (typeof obterFotosOrcamentoParaPdf === 'function') {
     fotosParaEmbed = obterFotosOrcamentoParaPdf(dados.numero);
   }
+  // GARANTIA ABSOLUTA CONTRA DUPLICAÇÃO NO PDF
+  if (typeof desduplicarListaFotos === 'function') {
+    fotosParaEmbed = desduplicarListaFotos(fotosParaEmbed);
+  }
 
   if (fotosParaEmbed && fotosParaEmbed.length > 0) {
     const fotosPorPagina = 4;
@@ -26434,33 +26444,65 @@ function desduplicarListaFotos(arr) {
 
   for (let i = 0; i < arr.length; i++) {
     const item = arr[i];
-    if (!item || !item.dataUrl) continue;
+    if (!item || (!item.dataUrl && !item.url)) continue;
 
-    // 0. Verificar por ID único (mais rápido)
+    // 0. Verificar por ID único
     if (item.id && idsVistos.has(item.id)) {
-      console.log('[Dedup] ID duplicado removido:', item.id);
       continue;
     }
 
     const ambItem = (item.ambiente || '').trim().toLowerCase();
+    const rawUrlItem = String(item.dataUrl || item.url || '');
+    const lenItem = rawUrlItem.length;
+    const timeItem = item.data ? new Date(item.data).getTime() : 0;
+    const ehCameraItem = String(item.origem || '').toLowerCase().includes('câmera') || String(item.origem || '').toLowerCase().includes('camera');
 
     const ehDuplicado = resultado.some(existente => {
-      if (!existente || !existente.dataUrl) return false;
+      if (!existente) return false;
       const ambExist = (existente.ambiente || '').trim().toLowerCase();
 
       // Fotos de ambientes diferentes NUNCA são consideradas duplicadas
       if (ambItem !== ambExist) return false;
 
-      // 1. dataUrl exatamente idêntico no mesmo ambiente
-      if (item.dataUrl === existente.dataUrl) return true;
+      const rawUrlExist = String(existente.dataUrl || existente.url || '');
+      const lenExist = rawUrlExist.length;
+      const timeExist = existente.data ? new Date(existente.data).getTime() : 0;
+      const ehCameraExist = String(existente.origem || '').toLowerCase().includes('câmera') || String(existente.origem || '').toLowerCase().includes('camera');
 
-      // 2. Mesma foto exata (mesmo tamanho e trecho do meio) no mesmo ambiente
-      if (item.dataUrl.length === existente.dataUrl.length) {
-        const len = item.dataUrl.length;
-        if (len > 1000) {
-          const m1 = item.dataUrl.substring(Math.floor(len / 2), Math.floor(len / 2) + 300);
-          const m2 = existente.dataUrl.substring(Math.floor(len / 2), Math.floor(len / 2) + 300);
-          if (m1 === m2) return true;
+      // Regra 1: dataUrl exatamente idêntico no mesmo ambiente
+      if (rawUrlItem === rawUrlExist) return true;
+
+      // Regra 2: Base64 com tamanho muito próximo (diferença <= 2% ou <= 2000 chars)
+      const diffLen = Math.abs(lenItem - lenExist);
+      const diffPct = lenExist > 0 ? (diffLen / lenExist) : 1;
+      if (diffPct <= 0.02 || diffLen <= 2000) {
+        if (lenItem > 800 && lenExist > 800) {
+          // Extrai o miolo (após cabeçalho do data:image/jpeg;base64,)
+          const payloadItem = rawUrlItem.includes(',') ? rawUrlItem.split(',')[1] : rawUrlItem;
+          const payloadExist = rawUrlExist.includes(',') ? rawUrlExist.split(',')[1] : rawUrlExist;
+          
+          const pLenItem = payloadItem.length;
+          const pLenExist = payloadExist.length;
+          
+          if (pLenItem > 500 && pLenExist > 500) {
+            // Amostra do meio
+            const m1 = payloadItem.substring(Math.floor(pLenItem * 0.45), Math.floor(pLenItem * 0.45) + 80);
+            const m2 = payloadExist.substring(Math.floor(pLenExist * 0.45), Math.floor(pLenExist * 0.45) + 80);
+            if (m1 && m2 && m1 === m2) return true;
+
+            // Amostra a 65%
+            const f1 = payloadItem.substring(Math.floor(pLenItem * 0.65), Math.floor(pLenItem * 0.65) + 80);
+            const f2 = payloadExist.substring(Math.floor(pLenExist * 0.65), Math.floor(pLenExist * 0.65) + 80);
+            if (f1 && f2 && f1 === f2) return true;
+          }
+        }
+      }
+
+      // Regra 3: Disparo duplo de Câmera no mesmo ambiente em menos de 8 segundos
+      if (ehCameraItem && ehCameraExist && timeItem > 0 && timeExist > 0) {
+        const diffSegundos = Math.abs(timeItem - timeExist) / 1000;
+        if (diffSegundos < 8) {
+          return true; // Duplo disparo detectado por timestamp
         }
       }
 
@@ -26907,9 +26949,8 @@ function aoAnexarArquivoOrcamento(event, tipo) {
 function finalizarAnexoOrcamento(inputEl, ambNome, tipo, nomePdf) {
   // Limpa o valor do input com segurança apenas após processar todos os itens
   try { if (inputEl) inputEl.value = ''; } catch(_) {}
-  // Limpar o lock de câmera após processamento completo
-  try { localStorage.removeItem('sdm_camera_lock'); localStorage.removeItem('sdm_camera_lock_val'); } catch(_) {}
-  _processandoCameraBloqueio = false;
+  // O lock da câmera NÃO deve ser removido imediatamente aqui.
+  // Ele expira sozinho após 4 segundos para bloquear disparos duplicados do Android.
 
   // Atualiza as miniaturas e os badges imediatamente
   if (typeof renderMiniaturasGaleriaOrcamento === 'function') renderMiniaturasGaleriaOrcamento();
