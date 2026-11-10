@@ -12659,7 +12659,12 @@ function atualizarBadgeGaleriaOrcamento() {
   try {
     const numEl = document.getElementById('orc-numero-display');
     const osNum = numEl ? numEl.textContent.trim() : '';
-    const fotos = (typeof obterFotosOrcamentoParaPdf === 'function') ? obterFotosOrcamentoParaPdf(osNum) : [];
+    let fotosBrutas = (typeof obterFotosOrcamentoParaPdf === 'function') ? obterFotosOrcamentoParaPdf(osNum) : [];
+    const fotos = (typeof desduplicarListaFotos === 'function') ? desduplicarListaFotos(fotosBrutas) : fotosBrutas;
+    if (window._fotosOrcamentoMemoria && window._fotosOrcamentoMemoria.length !== fotos.length) {
+      window._fotosOrcamentoMemoria = [...fotos];
+      try { localStorage.setItem('sdm_orc_fotos_temp', JSON.stringify(fotos)); } catch(_) {}
+    }
     let pdfs = (window._pdfsOrcamentoMemoria && Array.isArray(window._pdfsOrcamentoMemoria) && window._pdfsOrcamentoMemoria.length > 0)
       ? window._pdfsOrcamentoMemoria
       : [];
@@ -26192,6 +26197,36 @@ function abrirModalGaleriaDoAmbiente(btn) {
 // 🛡️ MOTOR DE ARMAZENAMENTO ROBUSTO DE MÍDIAS (INDEXEDDB + RAM CACHE + LOCALSTORAGE)
 // Evita 100% dos erros de cota (QuotaExceededError) no celular e acelera o upload
 // ══════════════════════════════════════════════════════════════════════════════
+
+function desduplicarListaFotos(arr) {
+  if (!Array.isArray(arr)) return [];
+  const vistos = new Set();
+  return arr.filter(item => {
+    if (!item) return false;
+    // Usa uma assinatura única baseada no dataUrl ou id
+    const assinatura = item.dataUrl 
+      ? item.dataUrl.substring(0, 200) + '_' + (item.ambiente || '') 
+      : (item.id || Math.random());
+    if (vistos.has(assinatura)) {
+      return false; // Duplicata descartada!
+    }
+    vistos.add(assinatura);
+    return true;
+  });
+}
+
+function desduplicarListaPdfs(arr) {
+  if (!Array.isArray(arr)) return [];
+  const vistos = new Set();
+  return arr.filter(item => {
+    if (!item) return false;
+    const assinatura = (item.nome || '') + '_' + (item.tamanho || '') + '_' + (item.ambiente || '');
+    if (vistos.has(assinatura)) return false;
+    vistos.add(assinatura);
+    return true;
+  });
+}
+
 const SDM_DB_NAME = 'SDM_MIDIAS_DB';
 const SDM_DB_VERSION = 1;
 let _sdmDbInstance = null;
@@ -26264,7 +26299,13 @@ window._pdfsOrcamentoMemoria = [];
 // Inicializa a memória a partir do localStorage imediatamente
 try {
   const fSalvas = localStorage.getItem('sdm_orc_fotos_temp');
-  if (fSalvas) window._fotosOrcamentoMemoria = JSON.parse(fSalvas) || [];
+  if (fSalvas) {
+    const brutas = JSON.parse(fSalvas) || [];
+    window._fotosOrcamentoMemoria = desduplicarListaFotos(brutas);
+    if (window._fotosOrcamentoMemoria.length !== brutas.length) {
+      localStorage.setItem('sdm_orc_fotos_temp', JSON.stringify(window._fotosOrcamentoMemoria));
+    }
+  }
 } catch(_) {}
 try {
   const pSalvos = localStorage.getItem('sdm_orc_pdfs');
@@ -26443,10 +26484,28 @@ function comprimirImagemCanvas(file, maxDim, qualidade, callback) {
 }
 
 // ── ANEXAR ARQUIVO AO ORÇAMENTO (INFALÍVEL COM SALVAMENTO MULTICAMADA) ─────────
+let _ultimoDisparoAnexo = 0;
+let _ultimoArquivoProcessadoKey = '';
+
 function aoAnexarArquivoOrcamento(event, tipo) {
   const inputEl = event.target;
   const files = Array.from(inputEl.files || []);
   if (!files.length) return;
+
+  // Proteção contra múltiplos disparos do evento change no Android Chrome
+  const agora = Date.now();
+  if (agora - _ultimoDisparoAnexo < 600 && files.length === 1) {
+    const key = files[0].name + '_' + files[0].size;
+    if (key === _ultimoArquivoProcessadoKey) {
+      console.warn('Disparo duplicado do change ignorado.');
+      try { inputEl.value = ''; } catch(_) {}
+      return;
+    }
+  }
+  _ultimoDisparoAnexo = agora;
+  if (files.length === 1) {
+    _ultimoArquivoProcessadoKey = files[0].name + '_' + files[0].size;
+  }
 
   const numEl = document.getElementById('orc-numero-display');
   const osNum = numEl ? numEl.textContent.trim() : '';
@@ -26503,9 +26562,19 @@ function aoAnexarArquivoOrcamento(event, tipo) {
         };
 
         window._fotosOrcamentoMemoria = window._fotosOrcamentoMemoria || [];
-        window._fotosOrcamentoMemoria.unshift(novaCaptura);
-        salvarItemIndexedDb('fotos_orcamento', novaCaptura);
-        salvarFotoStorageSeguro(novaCaptura, osNum);
+        
+        // Verifica se esta imagem exata já está na lista para nunca duplicar
+        const jaExiste = window._fotosOrcamentoMemoria.some(f => 
+          f && f.dataUrl && (f.dataUrl === dataUrl || f.dataUrl.substring(0, 300) === dataUrl.substring(0, 300))
+        );
+
+        if (!jaExiste) {
+          window._fotosOrcamentoMemoria.unshift(novaCaptura);
+          salvarItemIndexedDb('fotos_orcamento', novaCaptura);
+          salvarFotoStorageSeguro(novaCaptura, osNum);
+        } else {
+          console.log('Imagem idêntica já presente na memória, duplicação evitada.');
+        }
 
         processados++;
         if (processados === files.length) {
@@ -26551,7 +26620,12 @@ function renderMiniaturasGaleriaOrcamento() {
 
   const numEl = document.getElementById('orc-numero-display');
   const osNum = numEl ? numEl.textContent.trim() : '';
-  const fotos = (typeof obterFotosOrcamentoParaPdf === 'function') ? obterFotosOrcamentoParaPdf(osNum) : [];
+  let fotosBrutasModal = (typeof obterFotosOrcamentoParaPdf === 'function') ? obterFotosOrcamentoParaPdf(osNum) : [];
+  const fotos = (typeof desduplicarListaFotos === 'function') ? desduplicarListaFotos(fotosBrutasModal) : fotosBrutasModal;
+  if (window._fotosOrcamentoMemoria && window._fotosOrcamentoMemoria.length !== fotos.length) {
+    window._fotosOrcamentoMemoria = [...fotos];
+    try { localStorage.setItem('sdm_orc_fotos_temp', JSON.stringify(fotos)); } catch(_) {}
+  }
   let pdfs = [];
   try {
     pdfs = JSON.parse(localStorage.getItem('sdm_orc_pdfs') || '[]');
