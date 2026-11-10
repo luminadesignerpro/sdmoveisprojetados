@@ -26748,10 +26748,21 @@ function removerItemGaleriaOrcamento(index, tipo) {
 }
 
 function limparArquivosOrcamento() {
-  if (!confirm('Deseja remover todas as fotos e PDFs anexados a esta O.S.?')) return;
+  if (!confirm('Deseja realmente remover todas as fotos e anexos desta O.S.?')) return;
   const numEl = document.getElementById('orc-numero-display');
   const osNum = numEl ? numEl.textContent.trim() : '';
 
+  // 1. Zera a memória RAM ativa imediatamente
+  window._fotosOrcamentoMemoria = [];
+  window._pdfsOrcamentoMemoria = [];
+
+  // 2. Limpa o IndexedDB persistente
+  if (typeof limparStoreIndexedDb === 'function') {
+    limparStoreIndexedDb('fotos_orcamento');
+    limparStoreIndexedDb('pdfs_orcamento');
+  }
+
+  // 3. Limpa todas as chaves do localStorage associadas
   try {
     localStorage.removeItem('sdm_orc_fotos_temp');
     localStorage.removeItem('sdm_orc_pdfs');
@@ -26760,9 +26771,29 @@ function limparArquivosOrcamento() {
     if (osNum && typeof getGaleriaKey === 'function') {
       localStorage.removeItem(getGaleriaKey(osNum));
     }
+    // Se estiver editando uma O.S., remove também do histórico
+    if (osNum && typeof historico !== 'undefined' && Array.isArray(historico)) {
+      const numLimpo = String(osNum).replace(/\D/g, '');
+      const ord = historico.find(x => String(x.numero || '').replace(/\D/g, '') === numLimpo || String(x.id) === String(osNum));
+      if (ord) {
+        ord.fotos = [];
+        if (ord.dados) ord.dados.fotos = [];
+        try { localStorage.setItem(K.ordens, JSON.stringify(historico)); } catch(_) {}
+      }
+    }
   } catch(_) {}
 
+  // 4. Atualiza os contadores, limpa a grade do modal e avisa o usuário
   atualizarBadgeGaleriaOrcamento();
+  if (typeof renderizarModalGaleriaOrc === 'function') {
+    renderizarModalGaleriaOrc();
+  }
+  if (typeof renderMiniaturasGaleriaOrcamento === 'function') {
+    renderMiniaturasGaleriaOrcamento();
+  }
+  if (typeof mostrarToastAprovacao === 'function') {
+    mostrarToastAprovacao('🗑️ Todas as fotos foram excluídas com sucesso!');
+  }
 }
 
 // ── MODAL GALERIA DA O.S. ────────────────────────────────────────────────────
