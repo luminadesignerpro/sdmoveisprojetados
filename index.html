@@ -12692,12 +12692,19 @@ function atualizarBadgeGaleriaOrcamento() {
     // Total geral (todos os ambientes) para o badge principal "Ver Fotos Salvas"
     const totalGeral = fotos.length + pdfs.length;
 
-    // 1. Atualiza badge do topo (primeiro ambiente: Sala)
-    const topNome = (document.getElementById('inp-orc-ambiente-top') ? document.getElementById('inp-orc-ambiente-top').value.trim() : '') || 'Sala';
+    // 1. Atualiza badge do topo (primeiro ambiente: Banheiro, Sala, etc.)
+    const topInp = document.getElementById('inp-orc-ambiente-top');
+    const topNome = (topInp && topInp.value && topInp.value.trim()) ? topInp.value.trim() : 'Sala';
     const topNomeLower = topNome.toLowerCase();
 
-    const fotosTop = fotos.filter(f => !f.ambiente || f.ambiente.toLowerCase() === topNomeLower);
-    const pdfsTop = pdfs.filter(p => !p.ambiente || p.ambiente.toLowerCase() === topNomeLower);
+    const fotosTop = fotos.filter(f => {
+      const amb = (f.ambiente || '').trim().toLowerCase();
+      return !amb || amb === topNomeLower;
+    });
+    const pdfsTop = pdfs.filter(p => {
+      const amb = (p.ambiente || '').trim().toLowerCase();
+      return !amb || amb === topNomeLower;
+    });
     const countTop = fotosTop.length + pdfsTop.length;
 
     // Label "Galeria (N)" mostra count do ambiente atual
@@ -12705,16 +12712,16 @@ function atualizarBadgeGaleriaOrcamento() {
     if (lblTop) lblTop.textContent = 'Galeria (' + countTop + ')';
     // "Ver Fotos Salvas (N)" mostra total geral de TODOS os ambientes
     const menuContTop = document.getElementById('menu-cont-galeria-orc');
-    if (menuContTop) menuContTop.textContent = totalGeral;
+    if (menuContTop) menuContTop.textContent = countTop;
 
-    // 2. Atualiza badge de cada ambiente subsequente (ex: Cozinha, Quarto, etc.)
+    // 2. Atualiza badge de cada ambiente subsequente (ex: Quarto, Cozinha, etc.)
     document.querySelectorAll('.tr-ambiente-secao').forEach(tr => {
       const inpNome = tr.querySelector('.inp-nome-ambiente');
-      const nomeSec = (inpNome && inpNome.value ? inpNome.value.trim() : '') || 'Ambiente';
+      const nomeSec = (inpNome && inpNome.value && inpNome.value.trim()) ? inpNome.value.trim() : 'Ambiente';
       const nomeSecLower = nomeSec.toLowerCase();
 
-      const fotosSec = fotos.filter(f => f.ambiente && f.ambiente.toLowerCase() === nomeSecLower);
-      const pdfsSec = pdfs.filter(p => p.ambiente && p.ambiente.toLowerCase() === nomeSecLower);
+      const fotosSec = fotos.filter(f => (f.ambiente || '').trim().toLowerCase() === nomeSecLower);
+      const pdfsSec = pdfs.filter(p => (p.ambiente || '').trim().toLowerCase() === nomeSecLower);
       const countSec = fotosSec.length + pdfsSec.length;
 
       const lblSec = tr.querySelector('.label-galeria-secao');
@@ -26141,7 +26148,7 @@ function obterNomeAmbienteDoElemento(el) {
     return (topInp && topInp.value && topInp.value.trim()) ? topInp.value.trim() : 'Sala';
   }
 
-  // 1. Se estiver dentro de uma tr-ambiente-secao (seções criadas)
+  // 1. Se estiver dentro de uma tr-ambiente-secao (seções criadas dinamicamente: Quarto, Cozinha, etc.)
   const trSec = el.closest ? el.closest('.tr-ambiente-secao') : null;
   if (trSec) {
     const inp = trSec.querySelector('.inp-nome-ambiente');
@@ -26150,10 +26157,10 @@ function obterNomeAmbienteDoElemento(el) {
     if (lbl && lbl.textContent && lbl.textContent.trim()) return lbl.textContent.trim();
   }
 
-  // 2. Se estiver dentro do header do topo (#tr-header-ambientes) ou galeria-orc-menu-container
-  const trTop = el.closest ? (el.closest('#tr-header-ambientes') || el.closest('#galeria-orc-menu-container') || el.closest('.card-ambiente-box')) : null;
+  // 2. Se estiver dentro do header do topo (#tr-header-ambientes) ou seu menu dropdown
+  const trTop = el.closest ? (el.closest('#tr-header-ambientes') || el.closest('#galeria-orc-menu-container')) : null;
   if (trTop) {
-    const topInp = trTop.querySelector('#inp-orc-ambiente-top') || trTop.querySelector('.inp-nome-ambiente');
+    const topInp = document.getElementById('inp-orc-ambiente-top') || trTop.querySelector('.inp-nome-ambiente');
     if (topInp && topInp.value && topInp.value.trim()) return topInp.value.trim();
     const lbl = trTop.querySelector('.label-ambiente-texto');
     if (lbl && lbl.textContent && lbl.textContent.trim()) return lbl.textContent.trim();
@@ -26168,7 +26175,7 @@ function obterNomeAmbienteDoElemento(el) {
     if (selDestino && selDestino.value) return selDestino.value;
   }
 
-  // 4. Fallback: input do topo
+  // 4. Fallback inteligente
   const topInp = document.getElementById('inp-orc-ambiente-top');
   if (topInp && topInp.value && topInp.value.trim()) return topInp.value.trim();
 
@@ -26226,6 +26233,8 @@ function toggleMenuGaleriaSecao(e, btn) {
 
 function acionarUploadGaleriaAmbiente(btn, tipo) {
   _ambienteGaleriaAtivo = obterNomeAmbienteDoElemento(btn);
+  // Persistir no sessionStorage para sobreviver a recargas de pagina no mobile
+  try { sessionStorage.setItem('sdm_amb_galeria_ativo', _ambienteGaleriaAtivo); } catch(_) {}
   fecharTodosMenusGaleria();
   if (tipo === 'camera') {
     const el = document.getElementById('orc-input-camera');
@@ -26264,6 +26273,8 @@ function acionarUploadDoModalGaleria(tipo) {
   }
 
   _ambienteGaleriaAtivo = ambAlvo;
+  // Persistir no sessionStorage para sobreviver a recargas de pagina no mobile
+  try { sessionStorage.setItem('sdm_amb_galeria_ativo', _ambienteGaleriaAtivo); } catch(_) {}
 
   if (tipo === 'camera') {
     const el = document.getElementById('orc-input-camera');
@@ -26342,27 +26353,25 @@ function desduplicarListaFotos(arr) {
     const item = arr[i];
     if (!item || !item.dataUrl) continue;
 
+    const ambItem = (item.ambiente || '').trim().toLowerCase();
+
     const ehDuplicado = resultado.some(existente => {
       if (!existente || !existente.dataUrl) return false;
+      const ambExist = (existente.ambiente || '').trim().toLowerCase();
 
-      // 1. dataUrl exatamente igual
+      // Fotos de ambientes diferentes NUNCA são consideradas duplicadas
+      if (ambItem !== ambExist) return false;
+
+      // 1. dataUrl exatamente idêntico no mesmo ambiente
       if (item.dataUrl === existente.dataUrl) return true;
 
-      // 2. Tamanho da imagem exatamente igual
+      // 2. Mesma foto exata (mesmo tamanho e miolo) no mesmo ambiente
       if (item.dataUrl.length === existente.dataUrl.length) {
-        // Amostra do miolo do Base64 igual
-        const m1 = item.dataUrl.substring(100, 400);
-        const m2 = existente.dataUrl.substring(100, 400);
-        if (m1 === m2) return true;
-      }
-
-      // 3. Capturadas com menos de 3.5 segundos de diferença no mesmo ambiente
-      if (item.data && existente.data) {
-        const tItem = new Date(item.data).getTime();
-        const tExist = new Date(existente.data).getTime();
-        if (Math.abs(tItem - tExist) < 3500) {
-          const lDiff = Math.abs(item.dataUrl.length - existente.dataUrl.length);
-          if (lDiff < 1000) return true;
+        const len = item.dataUrl.length;
+        if (len > 1000) {
+          const m1 = item.dataUrl.substring(len / 2, len / 2 + 300);
+          const m2 = existente.dataUrl.substring(len / 2, len / 2 + 300);
+          if (m1 === m2) return true;
         }
       }
 
@@ -26670,7 +26679,7 @@ function aoAnexarArquivoOrcamento(event, tipo) {
 
   const agora = Date.now();
   if (agora - _ultimoDisparoAnexo < 1200 && rawFiles.length === 1) {
-    const key = rawFiles[0].name + '_' + rawFiles[0].size;
+    const key = rawFiles[0].name + '_' + rawFiles[0].size + '_' + (_ambienteGaleriaAtivo || '');
     if (key === _ultimoArquivoProcessadoKey) {
       console.warn('Disparo duplicado ignorado.');
       try { inputEl.value = ''; } catch(_) {}
@@ -26679,12 +26688,19 @@ function aoAnexarArquivoOrcamento(event, tipo) {
   }
   _ultimoDisparoAnexo = agora;
   if (rawFiles.length === 1) {
-    _ultimoArquivoProcessadoKey = rawFiles[0].name + '_' + rawFiles[0].size;
+    _ultimoArquivoProcessadoKey = rawFiles[0].name + '_' + rawFiles[0].size + '_' + (_ambienteGaleriaAtivo || '');
   }
 
   const files = rawFiles;
   const numEl = document.getElementById('orc-numero-display');
   const osNum = numEl ? numEl.textContent.trim() : '';
+  // Restaurar o ambiente ativo do sessionStorage caso a pagina tenha sido recarregada (mobile)
+  if (!_ambienteGaleriaAtivo) {
+    try {
+      const ambSalvo = sessionStorage.getItem('sdm_amb_galeria_ativo');
+      if (ambSalvo && ambSalvo.trim()) _ambienteGaleriaAtivo = ambSalvo.trim();
+    } catch(_) {}
+  }
   const ambNome = _ambienteGaleriaAtivo || (document.getElementById('inp-orc-ambiente-top') ? document.getElementById('inp-orc-ambiente-top').value.trim() : '') || 'Sala';
 
   let processados = 0;
@@ -26739,9 +26755,9 @@ function aoAnexarArquivoOrcamento(event, tipo) {
 
         window._fotosOrcamentoMemoria = window._fotosOrcamentoMemoria || [];
         
-        // Verifica se esta imagem exata já está na lista para nunca duplicar
+        // Verifica se esta imagem exata já está na lista PARA O MESMO AMBIENTE
         const jaExiste = window._fotosOrcamentoMemoria.some(f => 
-          f && f.dataUrl && (f.dataUrl === dataUrl || f.dataUrl.substring(0, 300) === dataUrl.substring(0, 300))
+          f && f.dataUrl && f.dataUrl === dataUrl && (f.ambiente || '').trim().toLowerCase() === ambNome.trim().toLowerCase()
         );
 
         if (!jaExiste) {
@@ -26749,7 +26765,7 @@ function aoAnexarArquivoOrcamento(event, tipo) {
           salvarItemIndexedDb('fotos_orcamento', novaCaptura);
           salvarFotoStorageSeguro(novaCaptura, osNum);
         } else {
-          console.log('Imagem idêntica já presente na memória, duplicação evitada.');
+          console.log('Imagem idêntica já presente neste ambiente, duplicação evitada.');
         }
 
         processados++;
