@@ -26195,6 +26195,13 @@ function toggleMenuGaleriaOrc(e) {
   const isVisible = menu.style.display !== 'none';
   fecharTodosMenusGaleria();
   if (!isVisible) {
+    // Definir ambiente ativo AGORA ao abrir o menu, antes de qualquer clique
+    const topInp = document.getElementById('inp-orc-ambiente-top');
+    _ambienteGaleriaAtivo = (topInp && topInp.value && topInp.value.trim()) ? topInp.value.trim() : (document.getElementById('inp-orc-ambiente-top') ? document.getElementById('inp-orc-ambiente-top').placeholder : 'Sala');
+    if (!_ambienteGaleriaAtivo || !_ambienteGaleriaAtivo.trim()) {
+      _ambienteGaleriaAtivo = 'Sala';
+    }
+    try { sessionStorage.setItem('sdm_amb_galeria_ativo', _ambienteGaleriaAtivo); sessionStorage.setItem('sdm_amb_galeria_ts', String(Date.now())); } catch(_) {}
     menu.style.display = 'block';
     setTimeout(() => {
       const closeHandler = (ev) => {
@@ -26218,6 +26225,21 @@ function toggleMenuGaleriaSecao(e, btn) {
   const isVisible = menu.style.display !== 'none';
   fecharTodosMenusGaleria();
   if (!isVisible) {
+    // Definir ambiente ativo AGORA ao abrir o menu da seção dinâmica
+    // Buscar o nome do ambiente a partir do input mais próximo na mesma tr-ambiente-secao
+    const trSec = container.closest('.tr-ambiente-secao');
+    if (trSec) {
+      const inpAmb = trSec.querySelector('.inp-nome-ambiente');
+      if (inpAmb && inpAmb.value && inpAmb.value.trim()) {
+        _ambienteGaleriaAtivo = inpAmb.value.trim();
+      } else {
+        const lblAmb = trSec.querySelector('.label-ambiente-texto');
+        _ambienteGaleriaAtivo = (lblAmb && lblAmb.textContent && lblAmb.textContent.trim()) ? lblAmb.textContent.trim() : 'Ambiente';
+      }
+    } else {
+      _ambienteGaleriaAtivo = obterNomeAmbienteDoElemento(btn);
+    }
+    try { sessionStorage.setItem('sdm_amb_galeria_ativo', _ambienteGaleriaAtivo); sessionStorage.setItem('sdm_amb_galeria_ts', String(Date.now())); } catch(_) {}
     menu.style.display = 'block';
     setTimeout(() => {
       const closeHandler = (ev) => {
@@ -26234,7 +26256,7 @@ function toggleMenuGaleriaSecao(e, btn) {
 function acionarUploadGaleriaAmbiente(btn, tipo) {
   _ambienteGaleriaAtivo = obterNomeAmbienteDoElemento(btn);
   // Persistir no sessionStorage para sobreviver a recargas de pagina no mobile
-  try { sessionStorage.setItem('sdm_amb_galeria_ativo', _ambienteGaleriaAtivo); } catch(_) {}
+  try { sessionStorage.setItem('sdm_amb_galeria_ativo', _ambienteGaleriaAtivo); sessionStorage.setItem('sdm_amb_galeria_ts', String(Date.now())); } catch(_) {}
   fecharTodosMenusGaleria();
   if (tipo === 'camera') {
     const el = document.getElementById('orc-input-camera');
@@ -26274,7 +26296,7 @@ function acionarUploadDoModalGaleria(tipo) {
 
   _ambienteGaleriaAtivo = ambAlvo;
   // Persistir no sessionStorage para sobreviver a recargas de pagina no mobile
-  try { sessionStorage.setItem('sdm_amb_galeria_ativo', _ambienteGaleriaAtivo); } catch(_) {}
+  try { sessionStorage.setItem('sdm_amb_galeria_ativo', _ambienteGaleriaAtivo); sessionStorage.setItem('sdm_amb_galeria_ts', String(Date.now())); } catch(_) {}
 
   if (tipo === 'camera') {
     const el = document.getElementById('orc-input-camera');
@@ -26695,10 +26717,20 @@ function aoAnexarArquivoOrcamento(event, tipo) {
   const numEl = document.getElementById('orc-numero-display');
   const osNum = numEl ? numEl.textContent.trim() : '';
   // Restaurar o ambiente ativo do sessionStorage caso a pagina tenha sido recarregada (mobile)
+  // Apenas restaurar se o valor foi salvo há menos de 60 segundos (evitar usar ambiente de sessão anterior)
   if (!_ambienteGaleriaAtivo) {
     try {
       const ambSalvo = sessionStorage.getItem('sdm_amb_galeria_ativo');
-      if (ambSalvo && ambSalvo.trim()) _ambienteGaleriaAtivo = ambSalvo.trim();
+      const ambTs = parseInt(sessionStorage.getItem('sdm_amb_galeria_ts') || '0', 10);
+      const agora60s = Date.now();
+      if (ambSalvo && ambSalvo.trim() && (agora60s - ambTs) < 60000) {
+        _ambienteGaleriaAtivo = ambSalvo.trim();
+        console.log('[Galeria] Ambiente restaurado do sessionStorage:', _ambienteGaleriaAtivo);
+      } else if (ambSalvo && ambTs === 0) {
+        // Compatibilidade: se não tem timestamp, usa o valor mas avisa
+        _ambienteGaleriaAtivo = ambSalvo.trim();
+        console.log('[Galeria] Ambiente restaurado do sessionStorage (sem timestamp):', _ambienteGaleriaAtivo);
+      }
     } catch(_) {}
   }
   const ambNome = _ambienteGaleriaAtivo || (document.getElementById('inp-orc-ambiente-top') ? document.getElementById('inp-orc-ambiente-top').value.trim() : '') || 'Sala';
