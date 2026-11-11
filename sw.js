@@ -1,4 +1,4 @@
-// Service Worker PWA – SD Móveis Projetados v9.5.3 (Fix: irParaAssinatura, totAmbientesNum, parseNumSafe unicode)'sdmoveisprojetados-v9.5.3 (Fix: irParaAssinatura, totAmbientesNum, parseNumSafe unicode)';
+// Service Worker PWA – SD Móveis Projetados v9.5.4 (Fix: funcionario, cliente pages, relatorio almoco)'sdmoveisprojetados-v9.5.4 (Fix: funcionario, cliente pages, relatorio almoco)';
 const ASSETS = [
   '/',
   '/index.html',
