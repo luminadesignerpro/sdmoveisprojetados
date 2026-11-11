@@ -2129,14 +2129,14 @@
                     <!-- 1. VALOR PRODUTO -->
                     <div id="badge-ambiente-top-produtos" style="background:rgba(59,130,246,0.16);border:1.5px solid rgba(59,130,246,0.4);color:#93c5fd;font-size:11.5px;font-weight:800;padding:4px 10px;border-radius:7px;display:flex;align-items:center;justify-content:space-between;gap:8px;box-shadow:0 2px 6px rgba(0,0,0,0.2);" title="Valor dos produtos deste ambiente">
                       <span style="display:inline-flex;align-items:center;gap:5px;"><span>📦</span> <span>Valor Produtos:</span></span>
-                      <span id="val-ambiente-top-produtos" style="font-weight:900;color:#bfdbfe;">R$ 0,00</span>
+                      <span id="val-ambiente-top-produtos" style="font-weight:900;color:#bfdbfe;white-space:nowrap;flex-shrink:0;">R$ 0,00</span>
                     </div>
 
                     <!-- 2. VALOR SERVIÇO COM PORCENTAGEM -->
                     <div id="badge-ambiente-top-servico" style="background:rgba(6,182,212,0.16);border:1.5px solid rgba(6,182,212,0.4);color:#67e8f9;font-size:11.5px;font-weight:800;padding:4px 10px;border-radius:7px;display:flex;align-items:center;justify-content:space-between;gap:8px;box-shadow:0 2px 6px rgba(0,0,0,0.2);" title="Valor do serviço deste ambiente">
                       <span style="display:inline-flex;align-items:center;gap:5px;"><span>🛠️</span> <span>Valor Serviço:</span></span>
                       <div style="display:inline-flex;align-items:center;gap:5px;">
-                        <span id="val-ambiente-top-servico" style="font-weight:900;color:#a5f3fc;">R$ 0,00</span>
+                        <span id="val-ambiente-top-servico" style="font-weight:900;color:#a5f3fc;white-space:nowrap;flex-shrink:0;">R$ 0,00</span>
                         <span style="display:inline-flex;align-items:center;background:rgba(6,182,212,0.2);border:1px solid rgba(6,182,212,0.6);border-radius:5px;padding:1px 4px;gap:2px;">
                           <input type="text" id="inp-ambiente-top-taxa" class="inp-ambiente-taxa" inputmode="decimal" placeholder="0" value="0" oninput="aoDigitarTaxaNoBadge(this.value, this)" onfocus="this.select()" style="width:30px;background:transparent;border:none;color:#fff;font-weight:900;font-size:11px;text-align:right;padding:0;outline:none;" title="Digite a taxa de acréscimo (%)" />
                           <span style="font-size:10.5px;font-weight:900;color:#67e8f9;">%</span>
@@ -2147,7 +2147,7 @@
                     <!-- 3. VALOR TOTAL -->
                     <div id="badge-ambiente-top-total" style="background:rgba(34,197,94,0.16);border:1.5px solid rgba(34,197,94,0.4);color:#86efac;font-size:11.5px;font-weight:800;padding:4px 10px;border-radius:7px;display:flex;align-items:center;justify-content:space-between;gap:8px;box-shadow:0 2px 6px rgba(0,0,0,0.2);" title="Valor total deste ambiente com a taxa de serviço">
                       <span style="display:inline-flex;align-items:center;gap:5px;"><span>💰</span> <span>Valor Total:</span></span>
-                      <span id="val-ambiente-top-total" style="font-weight:900;color:#bbf7d0;">R$ 0,00</span>
+                      <span id="val-ambiente-top-total" style="font-weight:900;color:#bbf7d0;white-space:nowrap;flex-shrink:0;">R$ 0,00</span>
                     </div>
                   </div>
 
@@ -13384,7 +13384,9 @@ function normalizarDadosParaPdf(orig) {
     forma: d.forma || '',
     obs: d.obs || '',
     prazo: d.prazo || '',
-    garantia: d.garantia || ''
+    garantia: d.garantia || '',
+    formatoPdf: d.formatoPdf || (typeof _modoPdfOrcamentoSelecionado !== 'undefined' ? _modoPdfOrcamentoSelecionado : 'ambiente'),
+    ambientes: (Array.isArray(d.ambientes) && d.ambientes.length) ? d.ambientes : ((typeof obterResumoAmbientesParaPdf === 'function') ? obterResumoAmbientesParaPdf() : [])
   };
 }
 
@@ -13502,13 +13504,69 @@ async function abrirVisualizadorPdfParaDados(dadosRaw, tituloModal, fileName) {
         container.appendChild(wrapperGeral);
         renderizouComSucesso = true;
       } catch (errPdfJs) {
-        console.warn('Falha na renderização PDF.js, tentando fallback com iframe:', errPdfJs);
+        console.warn('Tentando fallback PDF.js sem worker externo:', errPdfJs);
+        try {
+          // Tenta sem worker thread (renderização inline síncrona/direta)
+          if (pdfjsLib.GlobalWorkerOptions) {
+            delete pdfjsLib.GlobalWorkerOptions.workerSrc;
+          }
+          const arrayBuffer2 = await blob.arrayBuffer();
+          const loadingTask2 = pdfjsLib.getDocument({ data: arrayBuffer2, disableFontFace: true });
+          const pdfDoc2 = await loadingTask2.promise;
+
+          container.innerHTML = '';
+          const wrapperGeral2 = document.createElement('div');
+          wrapperGeral2.style.cssText = 'display:flex;flex-direction:column;gap:14px;padding:4px;align-items:center;width:100%;';
+          const larguraDisponivel2 = Math.min(container.clientWidth || window.innerWidth * 0.9, 780);
+
+          for (let numPag = 1; numPag <= pdfDoc2.numPages; numPag++) {
+            const page = await pdfDoc2.getPage(numPag);
+            const viewportPadrao = page.getViewport({ scale: 1.0 });
+            const escala = (larguraDisponivel2 / viewportPadrao.width) || 1.3;
+            const dpr = Math.max(window.devicePixelRatio || 1, 1.5);
+            const viewport = page.getViewport({ scale: escala * dpr });
+
+            const pageCard = document.createElement('div');
+            pageCard.style.cssText = 'position:relative;max-width:100%;border-radius:10px;overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,0.6);background:#ffffff;';
+
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            canvas.style.width = (viewport.width / dpr) + 'px';
+            canvas.style.maxWidth = '100%';
+            canvas.style.display = 'block';
+
+            pageCard.appendChild(canvas);
+            wrapperGeral2.appendChild(pageCard);
+            await page.render({ canvasContext: ctx, viewport }).promise;
+          }
+          container.appendChild(wrapperGeral2);
+          renderizouComSucesso = true;
+        } catch(err2) {
+          console.warn('Falha final na renderização PDF.js:', err2);
+        }
       }
     }
 
-    // 2. Se PDF.js não estiver disponível ou falhou, usa iframe nativo
+    // 2. Se PDF.js não estiver disponível ou falhou completamente
     if (!renderizouComSucesso) {
-      container.innerHTML = `<iframe src="${currentPdfBlobUrl}" style="width:100%;height:100%;min-height:75vh;border:none;border-radius:10px;background:#fff;" title="Visualizador do PDF"></iframe>`;
+      container.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:26px;text-align:center;min-height:300px;background:rgba(255,255,255,0.02);border-radius:12px;">
+          <div style="font-size:46px;">📄</div>
+          <div style="font-size:15px;font-weight:800;color:var(--gold-light);">Documento PDF Pronto</div>
+          <div style="font-size:12.5px;color:var(--text2);max-width:320px;line-height:1.5;">Toque no botão abaixo para visualizar ou baixar o PDF oficial com alta resolução.</div>
+          <div style="display:flex;flex-direction:column;gap:10px;width:100%;max-width:280px;margin-top:6px;">
+            <a href="${currentPdfBlobUrl}" download="${currentPdfFileName || 'Orcamento.pdf'}" 
+               style="background:linear-gradient(135deg,#c9a84c,#f59e0b);color:#052e16;font-weight:900;padding:14px 20px;border-radius:10px;text-decoration:none;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 14px rgba(201,168,76,0.35);">
+              📥 Baixar Arquivo PDF
+            </a>
+            <button type="button" onclick="abrirPdfNovaAba()" 
+                    style="background:rgba(201,168,76,0.15);border:1.5px solid var(--gold);color:var(--gold-light);font-weight:800;padding:12px 20px;border-radius:10px;font-size:13.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+              ↗️ Abrir em Tela Cheia
+            </button>
+          </div>
+        </div>`;
     }
 
   } catch (err) {
@@ -14913,15 +14971,15 @@ function adicionarNovoAmbienteSecao(nomePadrao = '') {
         </div>
 
         <!-- BADGES DE VALORES -->
-        <div style="display:flex;flex-direction:column;gap:6px;width:100%;">
+        <div style="display:flex;flex-direction:column;gap:5px;width:100%;max-width:240px;margin-top:2px;">
           <div class="badge-secao-produtos-val" style="background:rgba(59,130,246,0.16);border:1.5px solid rgba(59,130,246,0.4);color:#93c5fd;font-size:11.5px;font-weight:800;padding:4px 10px;border-radius:7px;display:flex;align-items:center;justify-content:space-between;gap:8px;box-shadow:0 2px 6px rgba(0,0,0,0.2);" title="Valor dos produtos deste ambiente">
             <span style="display:inline-flex;align-items:center;gap:5px;"><span>📦</span> <span>Valor Produtos:</span></span>
-            <span class="val-secao-produtos" style="font-weight:900;color:#bfdbfe;">R$ 0,00</span>
+            <span class="val-secao-produtos" style="font-weight:900;color:#bfdbfe;white-space:nowrap;flex-shrink:0;">R$ 0,00</span>
           </div>
           <div class="badge-secao-servico-val" style="background:rgba(6,182,212,0.16);border:1.5px solid rgba(6,182,212,0.4);color:#67e8f9;font-size:11.5px;font-weight:800;padding:4px 10px;border-radius:7px;display:flex;align-items:center;justify-content:space-between;gap:8px;box-shadow:0 2px 6px rgba(0,0,0,0.2);" title="Valor do serviço deste ambiente">
             <span style="display:inline-flex;align-items:center;gap:5px;"><span>🛠️</span> <span>Valor Serviço:</span></span>
             <div style="display:inline-flex;align-items:center;gap:5px;">
-              <span class="val-secao-servico" style="font-weight:900;color:#a5f3fc;">R$ 0,00</span>
+              <span class="val-secao-servico" style="font-weight:900;color:#a5f3fc;white-space:nowrap;flex-shrink:0;">R$ 0,00</span>
               <span style="display:inline-flex;align-items:center;background:rgba(6,182,212,0.2);border:1px solid rgba(6,182,212,0.6);border-radius:5px;padding:1px 4px;gap:2px;">
                 <input type="text" class="inp-secao-taxa inp-ambiente-taxa" inputmode="decimal" placeholder="0" value="0" oninput="aoDigitarTaxaNoBadge(this.value, this)" onfocus="this.select()" style="width:30px;background:transparent;border:none;color:#fff;font-weight:900;font-size:11px;text-align:right;padding:0;outline:none;" title="Digite a taxa de acréscimo (%)" />
                 <span style="font-size:10.5px;font-weight:900;color:#67e8f9;">%</span>
@@ -14930,7 +14988,7 @@ function adicionarNovoAmbienteSecao(nomePadrao = '') {
           </div>
           <div class="badge-secao-total-val" style="background:rgba(34,197,94,0.16);border:1.5px solid rgba(34,197,94,0.4);color:#86efac;font-size:11.5px;font-weight:800;padding:4px 10px;border-radius:7px;display:flex;align-items:center;justify-content:space-between;gap:8px;box-shadow:0 2px 6px rgba(0,0,0,0.2);" title="Valor total deste ambiente com a porcentagem">
             <span style="display:inline-flex;align-items:center;gap:5px;"><span>💰</span> <span>Valor Total:</span></span>
-            <span class="val-secao-total" style="font-weight:900;color:#bbf7d0;">R$ 0,00</span>
+            <span class="val-secao-total" style="font-weight:900;color:#bbf7d0;white-space:nowrap;flex-shrink:0;">R$ 0,00</span>
           </div>
         </div>
 
@@ -21622,7 +21680,8 @@ async function enviarOrcamentoParaAssinaturaDigital() {
 
     const pParam = pdfFileId ? ('&p=' + encodeURIComponent(pdfFileId) + '&num=' + encodeURIComponent(String(d.numero || '0001').replace('#', ''))) : '';
     let linkAssinatura = window.location.origin + "/assinar.html?d=" + dParam + pParam + empParamUrl;
-    let linkPdf = window.location.origin + "/api/gerar-pdf-orcamento?d=" + dParam + pParam + empParamUrl;
+    // O link do PDF deve priorizar o arquivo pré-renderizado pParam se existir, ou o id do contrato
+    let linkPdf = pdfFileId ? (window.location.origin + "/api/gerar-pdf-orcamento?p=" + encodeURIComponent(pdfFileId) + "&num=" + encodeURIComponent(String(d.numero || '0001').replace('#', '')) + empParamUrl) : (window.location.origin + "/api/gerar-pdf-orcamento?d=" + dParam + empParamUrl);
 
     // 3. Tentar criar registro no Supabase
     try {
