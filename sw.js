@@ -1,5 +1,5 @@
-// Service Worker PWA – SD Móveis Projetados v9.5.1 (Fix: taxa de acrescimo por ambiente, link de assinatura unico no zap, historico protegido e acoes completas em assinar)
-const CACHE_NAME = 'sdmoveisprojetados-v9.5.1';
+// Service Worker PWA – SD Móveis Projetados v9.5.2 (Fix: restaurar link Baixar PDF Oficial na mensagem WhatsApp)
+const CACHE_NAME = 'sdmoveisprojetados-v9.5.2';
 const ASSETS = [
   '/',
   '/index.html',
