@@ -2405,10 +2405,15 @@
           👁️ Visualizar PDF
         </button>
       </div>
-      <button class="btn btn-ia btn-full" onclick="enviarOrcamentoParaAssinaturaDigital()" style="font-size:15px;padding:15px;margin-top:10px;" id="btn-orc-assinatura">
-        <span id="orc-assinatura-spinner" class="spinner" style="display:none"></span>
-        <span id="orc-assinatura-btn-text">✍️ Enviar para Assinatura Digital</span>
-      </button>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button class="btn btn-ia" onclick="enviarOrcamentoParaAssinaturaDigital()" style="flex:2;font-size:14px;padding:14px;margin-top:0;" id="btn-orc-assinatura">
+          <span id="orc-assinatura-spinner" class="spinner" style="display:none"></span>
+          <span id="orc-assinatura-btn-text">✍️ Enviar para Assinatura Digital</span>
+        </button>
+        <button class="btn btn-sec" type="button" onclick="abrirEditorContratoOrcamentoAtual()" style="flex:1;font-size:12.5px;padding:12px;font-weight:800;border:1.5px solid var(--gold);color:var(--gold-light);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;" id="btn-orc-editar-contrato" title="Personalizar cláusulas do contrato desta O.S.">
+          ✏️ Editar Contrato
+        </button>
+      </div>
       <button class="btn btn-primary btn-full" id="btn-salvar-os" onclick="salvarOrdem()" style="margin-top:10px">✅ Salvar Ordem de Serviço</button>
       <button class="btn btn-sec btn-full" id="btn-cancelar-os" onclick="cancelarEdicaoOs()" style="margin-top:8px;display:none">✕ Cancelar Edição</button>
     </div>
@@ -11307,6 +11312,60 @@ function salvarOrdem() {
   }, 250);
 }
 
+function abrirEditorContratoOrcamentoAtual() {
+  const o = (typeof getOrc === 'function') ? getOrc() : {};
+  const numOs = o.numero || '0001';
+  const nomeCli = o.nome || 'Cliente';
+  
+  // Verifica se já tem texto de contrato customizado salvo para esta OS
+  let textoContrato = '';
+  try {
+    const salvo = localStorage.getItem('sdv_contrato_editado_' + String(numOs).replace(/\D/g, ''));
+    if (salvo && salvo.trim()) textoContrato = salvo;
+  } catch(_) {}
+  
+  if (!textoContrato && typeof montarTextoContrato === 'function') {
+    textoContrato = montarTextoContrato(o);
+  }
+
+  const modal = document.getElementById('modal-contrato-editor');
+  const tit = document.getElementById('modal-contrato-editor-titulo');
+  const idInput = document.getElementById('modal-contrato-editor-id');
+  const viewPre = document.getElementById('modal-contrato-view-pre');
+  const viewBody = document.getElementById('modal-contrato-view-body');
+  const editBody = document.getElementById('modal-contrato-editor-body');
+  const editArea = document.getElementById('modal-contrato-editor-textarea');
+
+  if (tit) tit.textContent = '📄 Editar Contrato • O.S. ' + numOs + ' (' + nomeCli + ')';
+  if (idInput) idInput.value = 'orc_' + String(numOs).replace(/\D/g, '');
+  if (editArea) editArea.value = textoContrato;
+  if (viewPre) viewPre.textContent = textoContrato;
+
+  // Abre diretamente no modo de edição
+  if (viewBody) viewBody.style.display = 'none';
+  if (editBody) editBody.style.display = 'flex';
+  if (modal) modal.style.display = 'flex';
+}
+
+function salvarContratoOrcamentoAtual() {
+  const editArea = document.getElementById('modal-contrato-editor-textarea');
+  const idInput = document.getElementById('modal-contrato-editor-id');
+  const val = editArea ? editArea.value : '';
+  const numOsLimpo = (idInput ? idInput.value : '').replace(/\D/g, '');
+
+  if (numOsLimpo && val) {
+    try {
+      localStorage.setItem('sdv_contrato_editado_' + numOsLimpo, val);
+      if (typeof mostrarToastAprovacao === 'function') {
+        mostrarToastAprovacao('✅ Contrato da O.S. #' + numOsLimpo + ' personalizado com sucesso!');
+      } else {
+        alert('Contrato salvo com sucesso!');
+      }
+    } catch(_) {}
+  }
+  fecharModalContratoEditor();
+}
+
 function cancelarEdicaoOs() {
   limparFormularioOrcamentoAposEnvio();
 }
@@ -12660,55 +12719,43 @@ function editarOs(id) {
 }
 
 function obterFotosOrcamentoParaPdf(osNum) {
-  // 1. Memória RAM instantânea (sempre prioritária, rápida e desduplicada)
-  if (window._fotosOrcamentoMemoria && Array.isArray(window._fotosOrcamentoMemoria) && window._fotosOrcamentoMemoria.length > 0) {
-    if (typeof desduplicarListaFotos === 'function') {
-      window._fotosOrcamentoMemoria = desduplicarListaFotos(window._fotosOrcamentoMemoria);
+  const numLimpo = String(osNum || '').replace(/\D/g, '');
+  const numDisplayEl = document.getElementById('orc-numero-display');
+  const numAtualPainel = String(numDisplayEl ? numDisplayEl.textContent : '').replace(/\D/g, '');
+
+  // 1. Se foi informado um osNum e ele pertence a uma O.S. gravada no histórico:
+  // AS FOTOS DEVEM VIR EXCLUSIVAMENTE DAQUELA ORDEM DO HISTÓRICO!
+  if (numLimpo && typeof historico !== 'undefined' && Array.isArray(historico)) {
+    const ord = historico.find(x => String(x.numero || '').replace(/\D/g, '') === numLimpo || String(x.id) === String(osNum));
+    if (ord) {
+      // Se estamos editando esta mesma OS no painel, a memória RAM pode ter anexos recentes
+      if (typeof editandoOsId !== 'undefined' && editandoOsId && String(ord.id) === String(editandoOsId)) {
+        if (window._fotosOrcamentoMemoria && Array.isArray(window._fotosOrcamentoMemoria)) {
+          return (typeof desduplicarListaFotos === 'function') ? desduplicarListaFotos(window._fotosOrcamentoMemoria) : window._fotosOrcamentoMemoria;
+        }
+      }
+      let fotosSalvas = [];
+      if (Array.isArray(ord.fotos) && ord.fotos.length > 0) fotosSalvas = ord.fotos;
+      else if (ord.dados && Array.isArray(ord.dados.fotos) && ord.dados.fotos.length > 0) fotosSalvas = ord.dados.fotos;
+      else {
+        // Tenta chave dedicada da OS no storage
+        try {
+          const k = typeof getGaleriaKey === 'function' ? getGaleriaKey(osNum) : ('sdv_galeria_' + numLimpo);
+          const salv = localStorage.getItem(k);
+          if (salv) fotosSalvas = JSON.parse(salv) || [];
+        } catch(_) {}
+      }
+      return (typeof desduplicarListaFotos === 'function') ? desduplicarListaFotos(fotosSalvas) : fotosSalvas;
     }
-    return window._fotosOrcamentoMemoria;
   }
 
-  let lista = [];
-
-  // 2. Tenta da memória temporária do orçamento atual
-  try {
-    const temp = localStorage.getItem('sdm_orc_fotos_temp');
-    if (temp) {
-      const arr = JSON.parse(temp);
-      if (Array.isArray(arr) && arr.length > 0) {
-        lista = arr;
-        window._fotosOrcamentoMemoria = [...arr];
-        return lista;
-      }
-    }
-  } catch(_) {}
-
-  // 2. Se lista temporária vazia, tenta da chave salva da O.S.
-  if (lista.length === 0 && osNum) {
-    try {
-      const k = typeof getGaleriaKey === 'function' ? getGaleriaKey(osNum) : ('sdv_galeria_' + String(osNum).replace(/\D/g, ''));
-      const salvo = localStorage.getItem(k);
-      if (salvo) {
-        const arr = JSON.parse(salvo);
-        if (Array.isArray(arr) && arr.length > 0) lista = arr;
-      }
-    } catch(_) {}
+  // 2. Se for o orçamento em elaboração no painel (novo orçamento ou sem registro no histórico):
+  // Retorna apenas fotos anexadas especificamente ao orçamento atual
+  if (window._fotosOrcamentoMemoria && Array.isArray(window._fotosOrcamentoMemoria)) {
+    return (typeof desduplicarListaFotos === 'function') ? desduplicarListaFotos(window._fotosOrcamentoMemoria) : window._fotosOrcamentoMemoria;
   }
 
-  // 3. Se ainda vazia, tenta do histórico de ordens
-  if (lista.length === 0 && osNum && typeof historico !== 'undefined' && Array.isArray(historico)) {
-    try {
-      const numLimpo = String(osNum).replace(/\D/g, '');
-      const ord = historico.find(x => String(x.numero || '').replace(/\D/g, '') === numLimpo || String(x.id) === String(osNum));
-      if (ord && Array.isArray(ord.fotos) && ord.fotos.length > 0) {
-        lista = ord.fotos;
-      } else if (ord && ord.dados && Array.isArray(ord.dados.fotos) && ord.dados.fotos.length > 0) {
-        lista = ord.dados.fotos;
-      }
-    } catch(_) {}
-  }
-
-  return (typeof desduplicarListaFotos === 'function') ? desduplicarListaFotos(lista) : lista;
+  return [];
 }
 
 function atualizarBadgeGaleriaOrcamento() {
@@ -21417,7 +21464,15 @@ async function enviarOrcamentoParaAssinaturaDigital() {
     renderSelectContratos();
 
     // 2. Gerar texto do contrato e links
-    const textoContrato = montarTextoContrato(d);
+    let textoContrato = '';
+    const numLimpoOs = String(d.numero || '').replace(/\D/g, '');
+    try {
+      const salvo = localStorage.getItem('sdv_contrato_editado_' + numLimpoOs);
+      if (salvo && salvo.trim()) textoContrato = salvo.trim();
+    } catch(_) {}
+    if (!textoContrato && typeof montarTextoContrato === 'function') {
+      textoContrato = montarTextoContrato(d);
+    }
 
     const licAtivaParaPayload = (typeof obterLicencaAtiva === "function") ? obterLicencaAtiva() : { id: "sdmoveis", nome: "SD Móveis Projetados" };
     const ehMoveisPayload = (licAtivaParaPayload.tipoContrato === "moveis" || licAtivaParaPayload.id === "sdmoveis" || (licAtivaParaPayload.nome && licAtivaParaPayload.nome.toLowerCase().includes("moveis")) || licAtivaParaPayload.id === "emp_1789700331599");
@@ -21983,9 +22038,23 @@ function salvarEdicaoContrato() {
   textosEditados[id] = novoTexto;
   try { localStorage.setItem('sdv_contratos_textos_editados', JSON.stringify(textosEditados)); } catch(_) {}
 
+  // Se for edição do contrato do orçamento atual
+  if (String(id).startsWith('orc_') || String(id).includes('#')) {
+    const numLimpo = String(id).replace(/\D/g, '');
+    try {
+      localStorage.setItem('sdv_contrato_editado_' + numLimpo, novoTexto);
+    } catch(_) {}
+  }
+
   fecharModalContratoEditor();
-  renderListaContratos();
-  alert('✅ Edições salvas com sucesso!');
+  if (typeof renderListaContratos === 'function') {
+    try { renderListaContratos(); } catch(_) {}
+  }
+  if (typeof mostrarToastAprovacao === 'function') {
+    mostrarToastAprovacao('✅ Contrato salvo com sucesso!');
+  } else {
+    alert('✅ Edições salvas com sucesso!');
+  }
 }
 
 function fecharModalContratoEditor() {
@@ -26671,44 +26740,14 @@ function limparStoreIndexedDb(storeNome) {
 window._fotosOrcamentoMemoria = [];
 window._pdfsOrcamentoMemoria = [];
 
-// Inicializa a memória a partir do localStorage imediatamente
-try {
-  const fSalvas = localStorage.getItem('sdm_orc_fotos_temp');
-  if (fSalvas) {
-    const brutas = JSON.parse(fSalvas) || [];
-    window._fotosOrcamentoMemoria = desduplicarListaFotos(brutas);
-    if (window._fotosOrcamentoMemoria.length !== brutas.length) {
-      localStorage.setItem('sdm_orc_fotos_temp', JSON.stringify(window._fotosOrcamentoMemoria));
-    }
-  }
-} catch(_) {}
-try {
-  const pSalvos = localStorage.getItem('sdm_orc_pdfs');
-  if (pSalvos) window._pdfsOrcamentoMemoria = JSON.parse(pSalvos) || [];
-} catch(_) {}
+// Inicialização limpa: não restaura fotos de orçamentos anteriores cegamente
+// Garante que cada novo orçamento inicie com a galeria 100% zerada
+window._fotosOrcamentoMemoria = [];
+window._pdfsOrcamentoMemoria = [];
 
-// Carrega também do IndexedDB para garantir todas as fotos mesmo após limpeza de cache
+// Inicialização limpa: não restaura fotos de orçamentos anteriores cegamente
 obterBancoMidias().then(db => {
-  if (!db) return;
-  try {
-    const tx = db.transaction(['fotos_orcamento', 'pdfs_orcamento'], 'readonly');
-    const reqF = tx.objectStore('fotos_orcamento').getAll();
-    reqF.onsuccess = function() {
-      const arr = reqF.result || [];
-      if (arr.length > 0 && (!window._fotosOrcamentoMemoria || window._fotosOrcamentoMemoria.length === 0)) {
-        window._fotosOrcamentoMemoria = arr;
-        if (typeof atualizarBadgeGaleriaOrcamento === 'function') atualizarBadgeGaleriaOrcamento();
-      }
-    };
-    const reqP = tx.objectStore('pdfs_orcamento').getAll();
-    reqP.onsuccess = function() {
-      const arr = reqP.result || [];
-      if (arr.length > 0 && (!window._pdfsOrcamentoMemoria || window._pdfsOrcamentoMemoria.length === 0)) {
-        window._pdfsOrcamentoMemoria = arr;
-        if (typeof atualizarBadgeGaleriaOrcamento === 'function') atualizarBadgeGaleriaOrcamento();
-      }
-    };
-  } catch(_) {}
+  // Banco pronto para uso, mas não polui a memória de novos orçamentos com fotos antigas
 });
 
 function liberarEspacoStorage() {
