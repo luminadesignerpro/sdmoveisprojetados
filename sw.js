@@ -1,5 +1,5 @@
-// Service Worker PWA – SD Móveis Projetados v9.5.0 (Fix: isolamento total de fotos por OS + download e edição formal do contrato)
-const CACHE_NAME = 'sdmoveisprojetados-v9.5.0';
+// Service Worker PWA – SD Móveis Projetados v9.5.1 (Fix: taxa de acrescimo por ambiente, link de assinatura unico no zap, historico protegido e acoes completas em assinar)
+const CACHE_NAME = 'sdmoveisprojetados-v9.5.1';
 const ASSETS = [
   '/',
   '/index.html',

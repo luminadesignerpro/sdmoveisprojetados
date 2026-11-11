@@ -1254,38 +1254,23 @@
     </div>
 
     <!-- Ações Secundárias: WhatsApp e PDF -->
-    <div style="display:flex;flex-direction:column;gap:10px;margin-top:14px;">
-      <a id="btn-notificar-sdv" href="#" target="_blank" class="btn btn-whats" style="display:none;">
-        📱 Enviar Confirmação & Link no WhatsApp
-      </a>
-      <button id="btn-baixar-pdf-sucesso" class="btn btn-outline" onclick="baixarPdfAtual()">
-        📄 Baixar Cópia do Contrato (PDF)
-      </button>
-    </div>
-  </div>
-
-  <!-- Main Proposal & Signing View -->
-  <div id="tela-form" class="hidden">
-    <!-- Document Card -->
-    <div class="card">
-      <div class="doc-info-bar">
-        <div class="doc-num" id="display-numero">Orçamento</div>
-        <div id="display-status" class="status-pill status-pendente">Aguardando Aprovação</div>
-      </div>
-
-      <div class="client-row">
-        <div>Cliente: <strong id="display-cliente">-</strong></div>
-        <div style="margin-top:4px;">Documento: <strong id="subtitulo">SD Móveis Projetados</strong></div>
-      </div>
-
-      <!-- Actions: Download PDF or Review -->
-      <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
-        <button class="btn btn-outline btn-sm" onclick="baixarPdfAtual()" style="flex:1;">
-          📄 Baixar Contrato em PDF
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+        <button type="button" class="btn btn-outline btn-sm" onclick="visualizarPdfContratoModal()" style="flex:1;min-width:130px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-weight:700;">
+          👁️ Visualizar PDF
         </button>
-        <button class="btn btn-green btn-sm" onclick="irParaAssinatura()" style="flex:1;">
+        <button type="button" class="btn btn-outline btn-sm" onclick="baixarPdfAtual()" style="flex:1;min-width:130px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-weight:700;">
+          📥 Baixar PDF
+        </button>
+        <button type="button" class="btn btn-green btn-sm" onclick="irParaAssinatura()" style="flex:1.2;min-width:150px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-weight:800;">
           ✍️ Aprovar & Assinar
         </button>
+      </div>
+
+      <!-- Solicitar Ajustes à Empresa -->
+      <div style="margin-bottom:14px;">
+        <a id="btn-solicitar-ajuste-empresa-top" href="javascript:void(0)" onclick="solicitarAjustesEmpresaWhats()" class="btn btn-sec btn-sm" style="width:100%;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:9px 12px;font-size:12px;font-weight:800;border:1.5px solid #f59e0b;color:#fbbf24;background:rgba(245,158,11,0.1);text-decoration:none;border-radius:8px;">
+          💬 Solicitar Ajustes no Orçamento (Enviar à Empresa)
+        </a>
       </div>
 
       <!-- Scrollable Contract / Proposal text -->
@@ -2733,6 +2718,67 @@ window.selecionarPagamento = function(metodo) {
   };
 
   
+
+  window.visualizarPdfContratoModal = function() {
+    const elTexto = document.getElementById('contrato-texto');
+    const textoContrato = (elTexto ? elTexto.innerText : '') || (contratoCache && contratoCache.texto) || '';
+    const numOs = (contratoCache && contratoCache.numero_os) || (typeof dParam !== 'undefined' && dParam ? '0017' : '0001');
+
+    if (!textoContrato || !textoContrato.trim()) {
+      alert('Texto do contrato não encontrado.');
+      return;
+    }
+
+    const btn = document.querySelector('button[onclick="visualizarPdfContratoModal()"]');
+    const txtOrig = btn ? btn.innerHTML : '';
+    if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Gerando...'; }
+
+    fetch('/api/gerar-pdf-contrato-texto', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        texto: textoContrato,
+        numero: numOs,
+        empresa: 'SD Móveis Projetados'
+      })
+    })
+      .then(r => {
+        if (!r.ok) throw new Error('Falha ao gerar visualização do contrato.');
+        return r.blob();
+      })
+      .then(blob => {
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+      })
+      .catch(err => {
+        alert('Erro ao visualizar o PDF: ' + (err.message || err));
+      })
+      .finally(() => {
+        if (btn) { btn.disabled = false; btn.innerHTML = txtOrig; }
+      });
+  };
+
+  window.solicitarAjustesEmpresaWhats = function() {
+    const numOs = (contratoCache && contratoCache.numero_os) || (typeof dParam !== 'undefined' && dParam ? '0017' : '0001');
+    const cliNome = (contratoCache && (contratoCache.cliente_nome || contratoCache.cliente)) || 'Cliente';
+    const totalStr = (contratoCache && contratoCache.valor_total) || '';
+    const telEmpresa = '5585996119824';
+
+    const detalhe = prompt('Por favor, informe quais ajustes ou dúvidas você tem sobre esta proposta/contrato (opcional):');
+    let textoDetalhe = '';
+    if (detalhe && detalhe.trim()) {
+      textoDetalhe = '\n\n*Ajustes solicitados pelo cliente:*\n"' + detalhe.trim() + '"';
+    }
+
+    const msg = '*SOLICITAÇÃO DE AJUSTE DE PROPOSTA* 🛋️\n\n'
+      + 'Olá, *SD Móveis Projetados*! Sou *' + cliNome + '*, referente ao *Orçamento #' + String(numOs).replace('#','') + (totalStr ? ' (' + totalStr + ')' : '') + '*.\n\n'
+      + 'Gostaria de solicitar alguns ajustes na proposta antes de assinar.' + textoDetalhe + '\n\n'
+      + 'Podemos conversar a respeito?';
+
+    const url = 'https://wa.me/' + telEmpresa + '?text=' + encodeURIComponent(msg);
+    window.open(url, '_blank');
+  };
 
   window.baixarPdfAtual = function() {
     const elTexto = document.getElementById('contrato-texto');
