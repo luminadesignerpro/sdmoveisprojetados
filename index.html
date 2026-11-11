@@ -21386,11 +21386,13 @@ async function enviarOrcamentoParaAssinaturaDigital() {
     if (ehReenvio) {
       msg = `*${nomeEmpresaUpper} — REAJUSTE DE PROPOSTA & NOVA ASSINATURA DIGITAL* ✍️ ${iconeEmp}\n\n`
         + "Olá" + (d.nome ? ", " + d.nome : "") + "! Conforme solicitado, atualizamos sua Ordem de Serviço *" + d.numero + "* no valor de *" + d.total + "* com as novas modificações:\n\n"
+        + "📄 *Baixar Novo PDF com Modificações:*\n" + linkPdf + "\n\n"
         + "✍️ *Assinar Nova Versão Online:*\n" + linkAssinatura + "\n\n"
         + "💡 _A versão anterior assinada permanece arquivada em nosso sistema com total transparência e segurança._";
     } else {
       msg = `*${nomeEmpresaUpper} — PROPOSTA & ASSINATURA DIGITAL* ✍️ ${iconeEmp}\n\n`
         + "Olá" + (d.nome ? ", " + d.nome : "") + "! Segue o link com seu orçamento *" + d.numero + "* no valor de *" + d.total + "*:\n\n"
+        + "📄 *Baixar PDF Oficial:*\n" + linkPdf + "\n\n"
         + "✍️ *Assinar Orçamento Online:*\n" + linkAssinatura;
     }
 
