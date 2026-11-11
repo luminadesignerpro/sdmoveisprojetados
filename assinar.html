@@ -1254,26 +1254,17 @@
     </div>
 
     <!-- Ações Secundárias: WhatsApp e PDF -->
-    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
-        <button type="button" class="btn btn-outline btn-sm" onclick="visualizarPdfContratoModal()" style="flex:1;min-width:130px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-weight:700;">
-          👁️ Visualizar PDF
-        </button>
-        <button type="button" class="btn btn-outline btn-sm" onclick="baixarPdfAtual()" style="flex:1;min-width:130px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-weight:700;">
-          📥 Baixar PDF
-        </button>
-        <button type="button" class="btn btn-green btn-sm" onclick="irParaAssinatura()" style="flex:1.2;min-width:150px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-weight:800;">
-          ✍️ Aprovar & Assinar
-        </button>
-      </div>
+    <!-- Download PDF or Review (Idêntico à Imagem 4) -->
+    <div style="display:flex;gap:8px;margin-top:14px;margin-bottom:16px;flex-wrap:wrap;">
+      <button type="button" class="btn btn-outline btn-sm" onclick="baixarPdfAtual()" style="flex:1;min-width:140px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-weight:700;padding:10px 14px;">
+        📄 Baixar Contrato em PDF
+      </button>
+      <button type="button" class="btn btn-green btn-sm" onclick="irParaAssinatura()" style="flex:1.2;min-width:150px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-weight:800;padding:10px 14px;">
+        ✍️ Aprovar & Assinar
+      </button>
+    </div>
 
-      <!-- Solicitar Ajustes à Empresa -->
-      <div style="margin-bottom:14px;">
-        <a id="btn-solicitar-ajuste-empresa-top" href="javascript:void(0)" onclick="solicitarAjustesEmpresaWhats()" class="btn btn-sec btn-sm" style="width:100%;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:9px 12px;font-size:12px;font-weight:800;border:1.5px solid #f59e0b;color:#fbbf24;background:rgba(245,158,11,0.1);text-decoration:none;border-radius:8px;">
-          💬 Solicitar Ajustes no Orçamento (Enviar à Empresa)
-        </a>
-      </div>
-
-      <!-- Scrollable Contract / Proposal text -->
+    <!-- Scrollable Contract / Proposal text -->
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
         <span style="font-size:12px;font-weight:800;color:var(--gold-light,#c9a84c);display:flex;align-items:center;gap:6px;">
           📋 Cláusulas do Contrato de Prestação de Serviços
@@ -1299,16 +1290,15 @@
     <!-- Interactive Decision Area -->
     <div class="card" id="card-decisao" style="text-align:center;">
       <h3 style="font-size:16px;color:#f1f5f9;margin-bottom:6px;">Deseja autorizar este serviço?</h3>
-      <p style="font-size:13px;color:#94a3b8;margin-bottom:14px;">
+      <p style="font-size:13px;color:#94a3b8;margin-bottom:18px;">
         Ao aprovar, sua proposta será convertida em Ordem de Serviço para início da produção.
       </p>
-
-      <div class="actions-grid">
-        <button class="btn btn-green" onclick="irParaAssinatura()">
-          ✅ Aprovar e Assinar Orçamento
-        </button>
-        <a id="btn-ajustar-zap" href="https://wa.me/5585996119824" target="_blank" class="btn btn-outline">
-          💬 Falar com SD Móveis / Solicitar Ajustes
+      <button class="btn btn-primary" onclick="irParaAssinatura()" style="width:100%;font-size:15px;padding:14px;background:#22c55e;color:#052e16;font-weight:900;">
+        ✍️ Aprovar &amp; Assinar Proposta Comercial
+      </button>
+      <div style="margin-top:12px;">
+        <a id="btn-ajustar-zap" href="javascript:void(0)" onclick="solicitarAjustesEmpresaWhats()" class="btn btn-outline" style="font-size:12px;opacity:0.85;border:1px solid rgba(245,158,11,0.5);color:#fbbf24;">
+          💬 Solicitar Ajuste de Detalhes com a Empresa
         </a>
       </div>
     </div>
@@ -2016,24 +2006,17 @@
   };
 
   window.irParaAssinatura = function() {
-    const cardDecisao = document.getElementById('card-decisao');
     const cardPagamento = document.getElementById('card-pagamento');
+    if (cardPagamento) cardPagamento.classList.add('hidden');
+    const cardDecisao = document.getElementById('card-decisao');
     if (cardDecisao) cardDecisao.classList.add('hidden');
-    if (cardPagamento) {
-      cardPagamento.classList.remove('hidden');
-      cardPagamento.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const cardAssinatura = document.getElementById('card-assinatura');
+    if (cardAssinatura) {
+      cardAssinatura.classList.remove('hidden');
+      cardAssinatura.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const inp = document.getElementById('nome-input');
+      if (inp) { setTimeout(() => inp.focus(), 250); }
     }
-    if (typeof renderizarDadosRecebedor === 'function') {
-      renderizarDadosRecebedor();
-    }
-
-    try {
-      const lic = (typeof obterLicencaAtiva === 'function') ? obterLicencaAtiva() : { telefone: '(85) 99611-9824' };
-      const zapLimpo = String(lic.telefone || '85996119824').replace(/\D/g, '');
-      const zapHref = 'https://wa.me/' + (zapLimpo.startsWith('55') ? zapLimpo : '55' + zapLimpo);
-      const btnZapCard = document.getElementById('pay-btn-zap-card');
-      if (btnZapCard) btnZapCard.href = zapHref;
-    } catch (_) {}
   };
 
   let tempQrCustomEmpresa = '';
@@ -2452,23 +2435,17 @@
   }
 
   window.irParaAssinatura = function() {
-    // Show payment card first
-    const cardDecisao = document.getElementById('card-decisao');
     const cardPagamento = document.getElementById('card-pagamento');
+    if (cardPagamento) cardPagamento.classList.add('hidden');
+    const cardDecisao = document.getElementById('card-decisao');
     if (cardDecisao) cardDecisao.classList.add('hidden');
-    if (cardPagamento) {
-      cardPagamento.classList.remove('hidden');
-      cardPagamento.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const cardAssinatura = document.getElementById('card-assinatura');
+    if (cardAssinatura) {
+      cardAssinatura.classList.remove('hidden');
+      cardAssinatura.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const inp = document.getElementById('nome-input');
+      if (inp) { setTimeout(() => inp.focus(), 250); }
     }
-    renderizarDadosRecebedor();
-
-    try {
-      const lic = obterLicencaAtiva();
-      const zapLimpo = String(lic.telefone || '85996119824').replace(/\D/g, '');
-      const zapHref = 'https://wa.me/' + (zapLimpo.startsWith('55') ? zapLimpo : '55' + zapLimpo);
-      const btnZapCard = document.getElementById('pay-btn-zap-card');
-      if (btnZapCard) btnZapCard.href = zapHref;
-    } catch (_) {}
   };
 
   let formaPagamentoEscolhida = '';
@@ -3505,6 +3482,23 @@ WhatsApp: ${d.tel || d.t || '_________________________________'}`;
     });
   }
 })();
+
+function irParaAssinatura() {
+  // Esconde card de decisão e card de pagamento — vai direto para assinatura
+  const cardDecisao = document.getElementById('card-decisao');
+  const cardPagamento = document.getElementById('card-pagamento');
+  const cardAssinatura = document.getElementById('card-assinatura');
+  if (cardDecisao) cardDecisao.classList.add('hidden');
+  if (cardPagamento) cardPagamento.classList.add('hidden');
+  if (cardAssinatura) {
+    cardAssinatura.classList.remove('hidden');
+    setTimeout(function() {
+      cardAssinatura.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  }
+}
+window.irParaAssinatura = irParaAssinatura;
+
 </script>
 </body>
 </html>

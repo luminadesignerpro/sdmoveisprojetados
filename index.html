@@ -12776,6 +12776,24 @@ function obterFotosOrcamentoParaPdf(osNum) {
   const numDisplayEl = document.getElementById('orc-numero-display');
   const numAtualPainel = String(numDisplayEl ? numDisplayEl.textContent : '').replace(/\D/g, '');
 
+  // 0. Se for o orçamento ativo no painel, a memória RAM ou temp contém os anexos mais frescos
+  const ehMesmaOsDoPainel = (!numLimpo) || (numAtualPainel && numLimpo === numAtualPainel);
+  if (ehMesmaOsDoPainel) {
+    if (window._fotosOrcamentoMemoria && Array.isArray(window._fotosOrcamentoMemoria) && window._fotosOrcamentoMemoria.length > 0) {
+      return (typeof desduplicarListaFotos === 'function') ? desduplicarListaFotos(window._fotosOrcamentoMemoria) : window._fotosOrcamentoMemoria;
+    }
+    try {
+      const salvTemp = localStorage.getItem('sdm_orc_fotos_temp') || localStorage.getItem('sdm_cam_capturas');
+      if (salvTemp) {
+        const arrTemp = JSON.parse(salvTemp);
+        if (Array.isArray(arrTemp) && arrTemp.length > 0) {
+          window._fotosOrcamentoMemoria = [...arrTemp];
+          return (typeof desduplicarListaFotos === 'function') ? desduplicarListaFotos(arrTemp) : arrTemp;
+        }
+      }
+    } catch(_) {}
+  }
+
   // 1. Se foi informado um osNum e ele pertence a uma O.S. gravada no histórico:
   // AS FOTOS DEVEM VIR EXCLUSIVAMENTE DAQUELA ORDEM DO HISTÓRICO!
   if (numLimpo && typeof historico !== 'undefined' && Array.isArray(historico)) {
@@ -14727,6 +14745,120 @@ function aoDigitarTaxaNoBadge(val, elOrigem) {
   }
 }
 window.aoDigitarTaxaNoBadge = aoDigitarTaxaNoBadge;
+
+
+function adicionarNovoAmbienteSecao(nomePadrao = '') {
+  if (typeof _contadorAmbientes === 'undefined') window._contadorAmbientes = 0;
+  const idAmb = ++_contadorAmbientes;
+  const tbody = document.getElementById('itens-lista');
+  if (!tbody) return;
+
+  const valNome = (nomePadrao && String(nomePadrao).trim()) ? String(nomePadrao).trim() : '';
+
+  // Linha do Ambiente com botão próprio
+  const trAmb = document.createElement('tr');
+  trAmb.className = 'tr-ambiente-secao';
+  trAmb.style.background = '#11121c';
+  trAmb.innerHTML = `
+    <td colspan="11" style="padding:10px 12px;text-align:left;border-top:2px solid rgba(245,158,11,0.35);border-bottom:1.5px solid rgba(245,158,11,0.25);background:rgba(245,158,11,0.06);">
+      <div class="card-ambiente-box" style="display:flex;flex-direction:column;gap:8px;width:100%;background:rgba(17,18,28,0.92);border:1.5px solid #f59e0b;border-radius:12px;padding:12px;box-shadow:0 4px 16px rgba(0,0,0,0.35);">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+          <div style="display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <div class="wrap-ambiente-nome" style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg, rgba(245,158,11,0.22), rgba(217,119,6,0.18));border:1.5px solid #f59e0b;border-radius:8px;padding:6px 12px;box-shadow:0 2px 8px rgba(245,158,11,0.2);">
+              <span style="font-size:15px;line-height:1;">🛋️</span>
+              <input type="text" class="inp-nome-ambiente label-ambiente-texto" placeholder="Nome do ambiente..." value="${typeof esc === 'function' ? esc(valNome) : valNome}" oninput="atualizarSubtotaisAmbientes(); if(typeof atualizarBadgeGaleriaOrcamento==='function') atualizarBadgeGaleriaOrcamento();" onfocus="secaoAmbienteAtivaTr=this.closest('.tr-ambiente-secao');this.select();" style="background:transparent;border:none;color:#fbbf24;font-weight:800;font-size:13px;outline:none;width:150px;min-width:120px;" title="Digite o nome do ambiente" />
+            </div>
+
+            <!-- BOTÃO GALERIA AO LADO DESTE AMBIENTE -->
+            <div class="galeria-secao-menu-container" style="position:relative;display:inline-block;">
+              <button type="button" class="btn btn-sm btn-galeria-secao" onclick="toggleMenuGaleriaSecao(event, this)" style="background:rgba(6,182,212,0.15);border:1.5px solid #06b6d4;color:#22d3ee;font-weight:800;display:inline-flex;align-items:center;gap:6px;cursor:pointer;border-radius:8px;padding:6px 12px;" title="Anexar fotos ou PDF a este ambiente">
+                <span>🖼️</span> <span class="label-galeria-secao">Galeria (0)</span> <span style="font-size:10px;opacity:0.8;">▼</span>
+              </button>
+              <div class="galeria-secao-submenu" style="display:none;position:absolute;top:calc(100% + 6px);left:0;background:#0e1020;border:1.5px solid #06b6d4;border-radius:10px;min-width:215px;overflow:hidden;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,0.7);">
+                <button type="button" onclick="acionarUploadGaleriaAmbiente(this, 'camera')" style="width:100%;padding:11px 14px;background:none;border:none;border-bottom:1px solid rgba(6,182,212,0.18);color:#22d3ee;font-size:12.5px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:9px;transition:background 0.15s;" onmouseover="this.style.background='rgba(6,182,212,0.12)'" onmouseout="this.style.background='none'">
+                  📷 Abrir Câmera do Celular
+                </button>
+                <button type="button" onclick="acionarUploadGaleriaAmbiente(this, 'galeria')" style="width:100%;padding:11px 14px;background:none;border:none;border-bottom:1px solid rgba(6,182,212,0.18);color:#34d399;font-size:12.5px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:9px;transition:background 0.15s;" onmouseover="this.style.background='rgba(52,211,153,0.1)'" onmouseout="this.style.background='none'">
+                  🖼️ Buscar na Galeria
+                </button>
+                <button type="button" onclick="acionarUploadGaleriaAmbiente(this, 'pdf')" style="width:100%;padding:11px 14px;background:none;border:none;border-bottom:1px solid rgba(6,182,212,0.18);color:#f59e0b;font-size:12.5px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:9px;transition:background 0.15s;" onmouseover="this.style.background='rgba(245,158,11,0.1)'" onmouseout="this.style.background='none'">
+                  📄 Buscar PDF
+                </button>
+                <button type="button" onclick="abrirModalGaleriaDoAmbiente(this)" style="width:100%;padding:11px 14px;background:rgba(6,182,212,0.08);border:none;color:#38bdf8;font-size:12.5px;font-weight:800;cursor:pointer;text-align:left;display:flex;align-items:center;gap:9px;transition:background 0.15s;" onmouseover="this.style.background='rgba(6,182,212,0.2)'" onmouseout="this.style.background='rgba(6,182,212,0.08)'">
+                  👁️ Gerenciar Anexos Deste Ambiente
+                </button>
+              </div>
+            </div>
+          </div>
+          <button type="button" onclick="removerAmbienteSecao(this)" style="background:none;border:none;color:#ef4444;font-size:11px;font-weight:700;cursor:pointer;opacity:0.75;padding:2px 6px;" title="Remover este ambiente">
+            ✕ Remover
+          </button>
+        </div>
+
+        <!-- BADGES DE VALORES -->
+        <div style="display:flex;flex-direction:column;gap:6px;width:100%;">
+          <div class="badge-secao-produtos-val" style="background:rgba(59,130,246,0.16);border:1.5px solid rgba(59,130,246,0.4);color:#93c5fd;font-size:11.5px;font-weight:800;padding:4px 10px;border-radius:7px;display:flex;align-items:center;justify-content:space-between;gap:8px;box-shadow:0 2px 6px rgba(0,0,0,0.2);" title="Valor dos produtos deste ambiente">
+            <span style="display:inline-flex;align-items:center;gap:5px;"><span>📦</span> <span>Valor Produtos:</span></span>
+            <span class="val-secao-produtos" style="font-weight:900;color:#bfdbfe;">R$ 0,00</span>
+          </div>
+          <div class="badge-secao-servico-val" style="background:rgba(6,182,212,0.16);border:1.5px solid rgba(6,182,212,0.4);color:#67e8f9;font-size:11.5px;font-weight:800;padding:4px 10px;border-radius:7px;display:flex;align-items:center;justify-content:space-between;gap:8px;box-shadow:0 2px 6px rgba(0,0,0,0.2);" title="Valor do serviço deste ambiente">
+            <span style="display:inline-flex;align-items:center;gap:5px;"><span>🛠️</span> <span>Valor Serviço:</span></span>
+            <div style="display:inline-flex;align-items:center;gap:5px;">
+              <span class="val-secao-servico" style="font-weight:900;color:#a5f3fc;">R$ 0,00</span>
+              <span style="display:inline-flex;align-items:center;background:rgba(6,182,212,0.2);border:1px solid rgba(6,182,212,0.6);border-radius:5px;padding:1px 4px;gap:2px;">
+                <input type="text" class="inp-secao-taxa inp-ambiente-taxa" inputmode="decimal" placeholder="0" value="0" oninput="aoDigitarTaxaNoBadge(this.value, this)" onfocus="this.select()" style="width:30px;background:transparent;border:none;color:#fff;font-weight:900;font-size:11px;text-align:right;padding:0;outline:none;" title="Digite a taxa de acréscimo (%)" />
+                <span style="font-size:10.5px;font-weight:900;color:#67e8f9;">%</span>
+              </span>
+            </div>
+          </div>
+          <div class="badge-secao-total-val" style="background:rgba(34,197,94,0.16);border:1.5px solid rgba(34,197,94,0.4);color:#86efac;font-size:11.5px;font-weight:800;padding:4px 10px;border-radius:7px;display:flex;align-items:center;justify-content:space-between;gap:8px;box-shadow:0 2px 6px rgba(0,0,0,0.2);" title="Valor total deste ambiente com a porcentagem">
+            <span style="display:inline-flex;align-items:center;gap:5px;"><span>💰</span> <span>Valor Total:</span></span>
+            <span class="val-secao-total" style="font-weight:900;color:#bbf7d0;">R$ 0,00</span>
+          </div>
+        </div>
+
+        <div class="wrap-ambiente-obs-box" style="margin-top:2px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <label style="font-size:11px;font-weight:800;color:#fcd34d;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;margin:0;cursor:pointer;">
+            <span>📝</span> Observações:
+          </label>
+          <input type="text" class="inp-ambiente-obs inp-secao-obs" placeholder="Observações deste ambiente (ex: Acabamento, puxadores, ferragens, medidas especiais...)" oninput="aoMudarObsAmbiente(this)" style="flex:1;min-width:200px;background:rgba(0,0,0,0.35);border:1px solid rgba(245,158,11,0.3);border-radius:6px;padding:6px 10px;color:#fff;font-size:11.5px;outline:none;box-sizing:border-box;" title="Digite observações deste ambiente" />
+        </div>
+      </div>
+    </td>
+  `;
+  tbody.appendChild(trAmb);
+  if (typeof atualizarBadgeGaleriaOrcamento === "function") atualizarBadgeGaleriaOrcamento();
+
+  // 1. Define este novo ambiente como a seção ativa
+  secaoAmbienteAtivaTr = trAmb;
+
+  // 2. Desmarca todos os produtos no catálogo para que o novo ambiente comece limpo
+  if (typeof desmarcarTodosProdutosCatalogo === 'function') {
+    desmarcarTodosProdutosCatalogo();
+  }
+
+  // 3. Adiciona imediatamente uma linha limpa de produto/serviço no novo ambiente
+  addItem('', '1', '', '', '', '', '', '', '');
+  if (typeof atualizarSubtotaisAmbientes === 'function') {
+    atualizarSubtotaisAmbientes();
+  }
+
+  if (typeof showToast === 'function') {
+    showToast('🛋️ Novo ambiente adicionado! Produtos no catálogo desmarcados para você escolher os novos itens.');
+  }
+}
+window.adicionarNovoAmbienteSecao = adicionarNovoAmbienteSecao;
+
+function removerAmbienteSecao(btn) {
+  const tr = btn.closest('.tr-ambiente-secao');
+  if (tr) {
+    tr.remove();
+    if (typeof calcTotal === 'function') calcTotal();
+    if (typeof atualizarSubtotaisAmbientes === 'function') atualizarSubtotaisAmbientes();
+    if (typeof atualizarBadgeGaleriaOrcamento === 'function') atualizarBadgeGaleriaOrcamento();
+  }
+}
+window.removerAmbienteSecao = removerAmbienteSecao;
 
 function atualizarSubtotaisAmbientes(origemTaxa = false) {
   const ambientes = calcularTotaisPorAmbiente();
@@ -21257,6 +21389,22 @@ async function enviarOrcamentoParaAssinaturaDigital() {
     renderHist();
     renderSelectContratos();
 
+    // Garante que as fotos anexadas na O.S. sejam gravadas no histórico e no PDF
+    let fotosAtuaisOs = (typeof obterFotosOrcamentoParaPdf === 'function') ? obterFotosOrcamentoParaPdf(d.numero) : [];
+    if (!fotosAtuaisOs || !fotosAtuaisOs.length) {
+      fotosAtuaisOs = window._fotosOrcamentoMemoria || [];
+    }
+    if (typeof desduplicarListaFotos === 'function') {
+      fotosAtuaisOs = desduplicarListaFotos(fotosAtuaisOs);
+    }
+    d.fotos = fotosAtuaisOs;
+    if (Array.isArray(fotosAtuaisOs) && fotosAtuaisOs.length > 0) {
+      try {
+        const kGal = typeof getGaleriaKey === 'function' ? getGaleriaKey(d.numero) : ('sdv_galeria_' + String(d.numero || '').replace(/\D/g, ''));
+        localStorage.setItem(kGal, JSON.stringify(fotosAtuaisOs));
+      } catch(_) {}
+    }
+
     // 2. Gerar texto do contrato e links
     let textoContrato = '';
     const numLimpoOs = String(d.numero || '').replace(/\D/g, '');
@@ -21333,7 +21481,7 @@ async function enviarOrcamentoParaAssinaturaDigital() {
       if (typeof gerarPdfOrcamentoDoc === 'function') {
         const pdfBlobCompleto = await gerarPdfOrcamentoDoc(d);
         if (pdfBlobCompleto) {
-          const numOsLimpo = String(d.numero || '0001').replace(/D/g, '');
+          const numOsLimpo = String(d.numero || '0001').replace(/\D/g, '') || '0001';
           const resNtfy = await fetch(`https://ntfy.sh/sdm_pdf_${numOsLimpo}_${Date.now()}`, {
             method: 'POST',
             body: pdfBlobCompleto,

@@ -43,6 +43,33 @@ function wrapText(text, font, size, maxWidth) {
   return lines.length ? lines : [''];
 }
 
+
+function parseNumSafe(val) {
+  if (val == null) return 0;
+  if (typeof val === 'number') return isNaN(val) ? 0 : val;
+  // Remove prefixos de moeda e espaços unicode (incluindo narrow no-break space \u202f e \u00a0)
+  let str = String(val)
+    .replace(/R\s*\$\s*/g, '')   // remove R$ e variações
+    .replace(/[\u00a0\u202f\u2009\u200b]/g, '') // remove espaços especiais unicode
+    .trim();
+  if (!str) return 0;
+  // Formato BRL: 1.059,00 (ponto=milhar, vírgula=decimal)
+  if (str.includes(',') && str.includes('.')) {
+    if (str.indexOf('.') < str.indexOf(',')) {
+      // BRL: 1.059,00 → 1059.00
+      str = str.replace(/\./g, '').replace(',', '.');
+    } else {
+      // US: 1,059.00 → remove vírgulas
+      str = str.replace(/,/g, '');
+    }
+  } else if (str.includes(',')) {
+    // Só vírgula: 1059,00 → 1059.00
+    str = str.replace(',', '.');
+  }
+  const n = parseFloat(str);
+  return isNaN(n) ? 0 : n;
+}
+
 function formatMoney(val) {
   if (val == null) return '0,00';
   let str = String(val).replace('R$', '').trim();
@@ -267,7 +294,7 @@ async function gerarPdfOrcamento(dados, fetchLogo, empInfo) {
     itensList.forEach(it => {
       const aNome = (it.ambiente || dados.ambNome || 'Sala').trim();
       if (!mapAmb[aNome]) mapAmb[aNome] = { nome: aNome, obs: (dados.obs || ''), produtosVal: 0, servicosVal: 0, totalVal: 0, qtdItens: 0 };
-      const val = parseFloat(String(it.total || '').replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
+      const val = parseNumSafe(it.total);
       mapAmb[aNome].produtosVal += val;
       mapAmb[aNome].totalVal += val;
       mapAmb[aNome].qtdItens++;
@@ -275,7 +302,7 @@ async function gerarPdfOrcamento(dados, fetchLogo, empInfo) {
     ambientesParaPdf = Object.values(mapAmb);
   }
   if (formatoAmbiente && (!ambientesParaPdf || !ambientesParaPdf.length)) {
-    const totNum = parseFloat(String(total || '0').replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
+    const totNum = parseNumSafe(total);
     ambientesParaPdf = [{
       nome: dados.ambNome || 'Sala',
       obs: dados.obs || '',
@@ -568,14 +595,18 @@ async function gerarPdfOrcamento(dados, fetchLogo, empInfo) {
   let totY = bottomY - 32;
   const valorTotalFormatado = formatMoney(total);
 
-  const valProdNum = parseFloat(String(dados.valProdutos || '').replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
-  const valServNum = parseFloat(String(dados.valServico || '').replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
-  const valFreteNum = parseFloat(String(dados.valFrete || '').replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
-  const valDescNum = parseFloat(String(dados.valDesconto || '').replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
+  const valProdNum = parseNumSafe(dados.valProdutos);
+  const valServNum = parseNumSafe(dados.valServico);
+  const valFreteNum = parseNumSafe(dados.valFrete);
+  const valDescNum = parseNumSafe(dados.valDesconto);
+  const totalGeralNum = parseNumSafe(total);
 
   if (formatoAmbiente) {
     page.drawText('Valor Total dos Ambientes:', { x: rightCardX + 10, y: totY, size: 6.8, font: fontRegular, color: GRAY });
-    const totAmbientesNum = Math.max(0, (parseFloat(String(total || '0').replace(/[^\d,.-]/g, '').replace(',', '.')) || 0) - valFreteNum + valDescNum);
+    // Somar os totais de cada ambiente (mais preciso que totalGeralNum - frete + desconto)
+    const totAmbientesNum = ambientesParaPdf && ambientesParaPdf.length
+      ? ambientesParaPdf.reduce((acc, a) => acc + (parseNumSafe(a.totalVal) || 0), 0)
+      : Math.max(0, totalGeralNum - valFreteNum + valDescNum);
     const txtTotAmbResumo = 'R$ ' + (totAmbientesNum > 0 ? totAmbientesNum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : valorTotalFormatado);
     page.drawText(txtTotAmbResumo, { x: rightCardX + rightCardW - 10 - fontBold.widthOfTextAtSize(txtTotAmbResumo, 7.2), y: totY, size: 7.2, font: fontBold, color: DARK });
 
@@ -695,6 +726,147 @@ async function gerarPdfOrcamento(dados, fetchLogo, empInfo) {
     font: fontBold,
     color: GOLD
   });
+
+  // ── INCLUSÃO DAS FOTOS ANEXADAS NA GALERIA NO PDF ──
+  const fotosParaEmbed = Array.isArray(dados.fotos) ? dados.fotos : [];
+  if (fotosParaEmbed && fotosParaEmbed.length > 0) {
+    const fotosPorPagina = 4;
+    const totalPagsFotos = Math.ceil(fotosParaEmbed.length / fotosPorPagina);
+
+    for (let pIdx = 0; pIdx < totalPagsFotos; pIdx++) {
+      const fotoPage = pdfDoc.addPage([PAGE_W, PAGE_H]);
+      const fotosDoLote = fotosParaEmbed.slice(pIdx * fotosPorPagina, (pIdx + 1) * fotosPorPagina);
+
+      fotoPage.drawRectangle({
+        x: MARGIN_X,
+        y: PAGE_H - 72,
+        width: CONTENT_W,
+        height: 48,
+        color: BOX_BG,
+        borderColor: BORDER,
+        borderWidth: 1
+      });
+
+      fotoPage.drawText('SD MÓVEIS PROJETADOS • REGISTRO FOTOGRÁFICO DO PROJETO', {
+        x: MARGIN_X + 14,
+        y: PAGE_H - 44,
+        size: 11,
+        font: fontBold,
+        color: DARK
+      });
+
+      const numOsSan = sanitizePdf(dados.numero || '');
+      const cliSan = sanitizePdf(dados.nome || '');
+      const dtSan = sanitizePdf(dados.data || new Date().toLocaleDateString('pt-BR'));
+      fotoPage.drawText(`O.S. ${numOsSan} • Cliente: ${cliSan} • Emissão: ${dtSan} • (Anexos Fotográficos - Pág. ${pIdx + 2} de ${totalPagsFotos + 1})`, {
+        x: MARGIN_X + 14,
+        y: PAGE_H - 60,
+        size: 7.5,
+        font: fontRegular,
+        color: GRAY
+      });
+
+      const gridStartX = MARGIN_X;
+      const gridStartY = PAGE_H - 86;
+      const boxW = (CONTENT_W - 14) / 2;
+      const boxH = 340;
+
+      for (let i = 0; i < fotosDoLote.length; i++) {
+        const itemFoto = fotosDoLote[i];
+        if (!itemFoto) continue;
+
+        const col = i % 2;
+        const row = Math.floor(i / 2);
+        const cardX = gridStartX + (col * (boxW + 14));
+        const cardY = gridStartY - ((row + 1) * (boxH + 12));
+
+        fotoPage.drawRectangle({
+          x: cardX,
+          y: cardY,
+          width: boxW,
+          height: boxH,
+          color: WHITE,
+          borderColor: BORDER,
+          borderWidth: 1
+        });
+
+        fotoPage.drawRectangle({
+          x: cardX,
+          y: cardY + boxH - 24,
+          width: boxW,
+          height: 24,
+          color: HEADER_BG
+        });
+
+        const numFotoGlobal = pIdx * fotosPorPagina + i + 1;
+        const ambNome = sanitizePdf(itemFoto.ambiente || '');
+        const origemFoto = sanitizePdf(itemFoto.origem || 'Câmera');
+        const titCard = ambNome ? `Foto ${numFotoGlobal} • ${origemFoto} (${ambNome})` : `Foto ${numFotoGlobal} • ${origemFoto}`;
+
+        fotoPage.drawText(titCard, {
+          x: cardX + 10,
+          y: cardY + boxH - 17,
+          size: 8.5,
+          font: fontBold,
+          color: DARK
+        });
+
+        try {
+          const rawUrl = itemFoto.dataUrl || itemFoto.url || (typeof itemFoto === 'string' ? itemFoto : '');
+          if (rawUrl && rawUrl.includes(',')) {
+            const isPng = rawUrl.startsWith('data:image/png');
+            const b64 = rawUrl.split(',')[1];
+            const binBuffer = Buffer.from(b64, 'base64');
+
+            let embedded = null;
+            if (isPng) {
+              try { embedded = await pdfDoc.embedPng(binBuffer); } catch(_) {
+                try { embedded = await pdfDoc.embedJpg(binBuffer); } catch(_) {}
+              }
+            } else {
+              try { embedded = await pdfDoc.embedJpg(binBuffer); } catch(_) {
+                try { embedded = await pdfDoc.embedPng(binBuffer); } catch(_) {}
+              }
+            }
+
+            if (embedded) {
+              const maxImgW = boxW - 16;
+              const maxImgH = boxH - 36;
+              const scale = Math.min(maxImgW / embedded.width, maxImgH / embedded.height);
+              const wFinal = embedded.width * scale;
+              const hFinal = embedded.height * scale;
+              const xFinal = cardX + (boxW - wFinal) / 2;
+              const yFinal = cardY + 6 + (maxImgH - hFinal) / 2;
+
+              fotoPage.drawImage(embedded, {
+                x: xFinal,
+                y: yFinal,
+                width: wFinal,
+                height: hFinal
+              });
+            }
+          }
+        } catch(errEmbed) {
+          console.warn('Erro ao embutir foto ' + numFotoGlobal + ' no PDF:', errEmbed);
+        }
+      }
+
+      fotoPage.drawText(sanitizePdf(`SD Móveis Projetados • (85) 99611-9824`), {
+        x: MARGIN_X + 10,
+        y: 18,
+        size: 7,
+        font: fontRegular,
+        color: GRAY
+      });
+      fotoPage.drawText(sanitizePdf(`Documento gerado eletronicamente em ${new Date().toLocaleDateString('pt-BR')}`), {
+        x: MARGIN_X + CONTENT_W - 190,
+        y: 18,
+        size: 7,
+        font: fontRegular,
+        color: GRAY
+      });
+    }
+  }
 
   return pdfDoc.save();
 }
