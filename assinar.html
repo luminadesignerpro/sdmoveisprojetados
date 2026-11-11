@@ -1289,7 +1289,26 @@
       </div>
 
       <!-- Scrollable Contract / Proposal text -->
-      <div class="contrato-box" id="contrato-texto"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-size:12px;font-weight:800;color:var(--gold-light,#c9a84c);display:flex;align-items:center;gap:6px;">
+          📋 Cláusulas do Contrato de Prestação de Serviços
+        </span>
+        <button type="button" id="btn-toggle-editar-contrato" onclick="toggleEditarContratoAssinar()" style="background:rgba(201,168,76,0.15);border:1.5px solid var(--gold,#c9a84c);color:var(--gold-light,#e8d27a);font-size:11.5px;font-weight:800;padding:6px 14px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+          ✏️ Editar Contrato
+        </button>
+      </div>
+
+      <!-- Barra de salvar edição do contrato (oculta por padrão) -->
+      <div id="barra-salvar-edicao-contrato" style="display:none;margin-bottom:10px;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.3);border-radius:8px;padding:8px 12px;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+        <span style="font-size:11.5px;color:#fbbf24;font-weight:700;">✏️ Modo de edição ativo: você pode alterar qualquer cláusula abaixo</span>
+        <div style="display:flex;gap:6px;">
+          <button type="button" onclick="cancelarEdicaoContratoAssinar()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);color:#94a3b8;font-size:11px;font-weight:700;padding:5px 12px;border-radius:6px;cursor:pointer;">✕ Cancelar</button>
+          <button type="button" onclick="salvarEdicaoContratoAssinar()" style="background:#16a34a;border:none;color:#fff;font-size:11px;font-weight:800;padding:5px 14px;border-radius:6px;cursor:pointer;">💾 Salvar Alterações</button>
+        </div>
+      </div>
+
+      <!-- Scrollable Contract / Proposal text -->
+      <div class="contrato-box" id="contrato-texto" style="outline:none;transition:border 0.2s;white-space:pre-wrap;"></div>
     </div>
 
     <!-- Interactive Decision Area -->
@@ -2716,41 +2735,110 @@ window.selecionarPagamento = function(metodo) {
   
 
   window.baixarPdfAtual = function() {
-    const licParaPdf = (typeof obterLicencaAtiva === 'function') ? obterLicencaAtiva() : { id: 'sdmoveis', nome: 'SD Móveis Projetados', tipoContrato: 'moveis' };
-    const empParamPdf = '&empresa=' + encodeURIComponent(licParaPdf.id || 'sdmoveis')
-      + '&empNome=' + encodeURIComponent(licParaPdf.nome || 'SD Móveis Projetados')
-      + '&empTipo=' + encodeURIComponent(licParaPdf.tipoContrato || 'moveis');
-    const urlParams = new URLSearchParams(window.location.search);
-    const pParamUrl = urlParams.get('p');
-    const numParamUrl = urlParams.get('num') || '';
-    if (pParamUrl) {
-      window.open('/api/gerar-pdf-orcamento?p=' + encodeURIComponent(pParamUrl) + (numParamUrl ? ('&num=' + encodeURIComponent(numParamUrl)) : '') + (dParam ? ('&d=' + encodeURIComponent(dParam)) : '') + empParamPdf, '_blank');
-    } else if (dParam) {
-      window.open('/api/gerar-pdf-orcamento?d=' + encodeURIComponent(dParam) + empParamPdf, '_blank');
-    } else if (contratoId) {
-      window.open('/api/gerar-pdf-orcamento?id=' + encodeURIComponent(contratoId) + empParamPdf, '_blank');
-    } else if (contratoCache && contratoCache.texto) {
-      fetch('/api/gerar-pdf-contrato-texto', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          texto: contratoCache.texto,
-          numero: contratoCache.numero_os || '0001'
-        })
-      })
-        .then(r => { if (!r.ok) throw new Error(); return r.blob(); })
-        .then(blob => {
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = 'Contrato-' + (contratoCache.numero_os || '0001').replace('#', '') + '.pdf';
-          a.click();
-          setTimeout(() => URL.revokeObjectURL(url), 2000);
-        })
-        .catch(() => alert('Erro ao gerar PDF do contrato.'));
-    } else {
-      alert('Informações do orçamento não encontradas.');
+    const elTexto = document.getElementById('contrato-texto');
+    const textoContrato = (elTexto ? elTexto.innerText : '') || (contratoCache && contratoCache.texto) || '';
+    const numOs = (contratoCache && contratoCache.numero_os) || (typeof dParam !== 'undefined' && dParam ? '0017' : '0001');
+
+    if (!textoContrato || !textoContrato.trim()) {
+      alert('Texto do contrato não encontrado.');
+      return;
     }
+
+    const btn = document.getElementById('btn-baixar-pdf-sucesso') || document.querySelector('button[onclick="baixarPdfAtual()"]');
+    const txtOrig = btn ? btn.innerHTML : '';
+    if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Gerando Contrato em PDF...'; }
+
+    fetch('/api/gerar-pdf-contrato-texto', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        texto: textoContrato,
+        numero: numOs,
+        empresa: 'SD Móveis Projetados'
+      })
+    })
+      .then(r => {
+        if (!r.ok) throw new Error('Falha ao gerar PDF do contrato.');
+        return r.blob();
+      })
+      .then(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'Contrato-Prestacao-Servicos-' + String(numOs).replace('#', '') + '.pdf';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
+      })
+      .catch(err => {
+        alert('Erro ao baixar o contrato em PDF: ' + (err.message || err));
+      })
+      .finally(() => {
+        if (btn) { btn.disabled = false; btn.innerHTML = txtOrig; }
+      });
+  };
+
+  let _textoContratoOriginalCache = '';
+
+  window.toggleEditarContratoAssinar = function() {
+    const box = document.getElementById('contrato-texto');
+    const barra = document.getElementById('barra-salvar-edicao-contrato');
+    const btn = document.getElementById('btn-toggle-editar-contrato');
+    if (!box) return;
+
+    if (box.getAttribute('contenteditable') === 'true') {
+      cancelarEdicaoContratoAssinar();
+    } else {
+      _textoContratoOriginalCache = box.innerText;
+      box.setAttribute('contenteditable', 'true');
+      box.style.border = '2px dashed var(--gold, #c9a84c)';
+      box.style.background = 'rgba(201,168,76,0.06)';
+      box.focus();
+      if (barra) barra.style.display = 'flex';
+      if (btn) btn.innerHTML = '✕ Fechar Edição';
+    }
+  };
+
+  window.cancelarEdicaoContratoAssinar = function() {
+    const box = document.getElementById('contrato-texto');
+    const barra = document.getElementById('barra-salvar-edicao-contrato');
+    const btn = document.getElementById('btn-toggle-editar-contrato');
+    if (!box) return;
+
+    if (_textoContratoOriginalCache) {
+      box.innerText = _textoContratoOriginalCache;
+    }
+    box.removeAttribute('contenteditable');
+    box.style.border = '';
+    box.style.background = '';
+    if (barra) barra.style.display = 'none';
+    if (btn) btn.innerHTML = '✏️ Editar Contrato';
+  };
+
+  window.salvarEdicaoContratoAssinar = function() {
+    const box = document.getElementById('contrato-texto');
+    const barra = document.getElementById('barra-salvar-edicao-contrato');
+    const btn = document.getElementById('btn-toggle-editar-contrato');
+    if (!box) return;
+
+    const novoTexto = box.innerText;
+    _textoContratoOriginalCache = novoTexto;
+    if (contratoCache) contratoCache.texto = novoTexto;
+
+    // Salva localmente
+    try {
+      const urlP = new URLSearchParams(window.location.search);
+      const osP = urlP.get('os') || (contratoCache && contratoCache.numero_os) || 'atual';
+      localStorage.setItem('sdv_contrato_editado_' + String(osP).replace(/\D/g, ''), novoTexto);
+    } catch(_) {}
+
+    box.removeAttribute('contenteditable');
+    box.style.border = '';
+    box.style.background = '';
+    if (barra) barra.style.display = 'none';
+    if (btn) btn.innerHTML = '✏️ Editar Contrato';
+    alert('✅ Contrato atualizado com sucesso! Ao clicar em "Baixar Contrato em PDF", o PDF sairá com suas alterações.');
   };
 
   function renderizarProposta(data) {
@@ -2854,7 +2942,13 @@ window.selecionarPagamento = function(metodo) {
     setTxt('display-numero', 'Orçamento ' + numOs);
     setTxt('display-cliente', cliNome);
     setTxt('subtitulo', 'Ordem de Serviço ' + numOs);
-    setTxt('contrato-texto', data.texto || '');
+    let textoExibir = data.texto || '';
+    try {
+      const numLimpo = String(numOs || '').replace(/\D/g, '');
+      const salvo = localStorage.getItem('sdv_contrato_editado_' + numLimpo);
+      if (salvo && salvo.trim()) textoExibir = salvo;
+    } catch(_) {}
+    setTxt('contrato-texto', textoExibir);
 
     // Link de ajuste via WhatsApp pré-configurado
     const btnAjustar = document.getElementById('btn-ajustar-zap');
