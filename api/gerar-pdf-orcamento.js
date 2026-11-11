@@ -917,12 +917,17 @@ module.exports = async (req, res) => {
       if (req.query && req.query.d) {
         try {
           let s = String(req.query.d).trim();
+          // Remove possíveis aspas ou pontuações ao redor da URL que o WhatsApp ou cliente de email possa ter colado
+          s = s.replace(/^[\"\'\<]+/, '').replace(/[\"\'\>\.\,\;]+$/, '');
           while (s.includes('%')) {
             try { s = decodeURIComponent(s); } catch(_) { break; }
           }
-          s = s.replace(/ /g, '+').replace(/-/g, '+').replace(/_/g, '/');
+          s = s.replace(/\s+/g, '+').replace(/-/g, '+').replace(/_/g, '/');
           while (s.length % 4 !== 0) s += '=';
-          const p = JSON.parse(Buffer.from(s, 'base64').toString('utf-8'));
+          let jsonTexto = Buffer.from(s, 'base64').toString('utf-8');
+          // Limpa possíveis caracteres invisíveis ou nulos
+          jsonTexto = jsonTexto.replace(/^[\uFEFF\0]+/, '').trim();
+          const p = JSON.parse(jsonTexto);
 
           if (p.emp && !queryEmpresa) queryEmpresa = p.emp;
           if (p.empresa && !queryEmpresa) queryEmpresa = p.empresa;
@@ -1029,7 +1034,8 @@ module.exports = async (req, res) => {
             formatoPdf: p.fpdf || p.formatoPdf || p.formato || 'ambiente'
           };
         } catch (e) {
-          return res.status(400).json({ error: 'Parâmetro de orçamento inválido' });
+          console.warn('Erro ao decodificar d na API:', e.message);
+          return res.status(400).json({ error: 'Parâmetro de orçamento inválido', detalhe: e.message });
         }
       } else if (req.query && req.query.id) {
         try {
