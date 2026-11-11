@@ -2138,7 +2138,7 @@
                       <div style="display:inline-flex;align-items:center;gap:5px;">
                         <span id="val-ambiente-top-servico" style="font-weight:900;color:#a5f3fc;">R$ 0,00</span>
                         <span style="display:inline-flex;align-items:center;background:rgba(6,182,212,0.2);border:1px solid rgba(6,182,212,0.6);border-radius:5px;padding:1px 4px;gap:2px;">
-                          <input type="text" id="inp-ambiente-top-taxa" class="inp-ambiente-taxa" inputmode="decimal" placeholder="0" value="0" oninput="aoDigitarTaxaNoBadge(this.value)" onfocus="this.select()" style="width:30px;background:transparent;border:none;color:#fff;font-weight:900;font-size:11px;text-align:right;padding:0;outline:none;" title="Digite a taxa de acréscimo (%)" />
+                          <input type="text" id="inp-ambiente-top-taxa" class="inp-ambiente-taxa" inputmode="decimal" placeholder="0" value="0" oninput="aoDigitarTaxaNoBadge(this.value, this)" onfocus="this.select()" style="width:30px;background:transparent;border:none;color:#fff;font-weight:900;font-size:11px;text-align:right;padding:0;outline:none;" title="Digite a taxa de acréscimo (%)" />
                           <span style="font-size:10.5px;font-weight:900;color:#67e8f9;">%</span>
                         </span>
                       </div>
@@ -2206,6 +2206,7 @@
         
 <input type="hidden" id="o-val-produtos" value="0,00">
         <input type="hidden" id="o-val-servico" value="0,00">
+        <input type="hidden" id="o-taxa-acrescimo" value="0,00">
 
         <div style="display:flex;flex-direction:column;gap:8px;">
 
@@ -7954,16 +7955,68 @@ function load(k, d=[]) {
   }
 }
 
+function sanitizarItemParaHistoricoStorage(item) {
+  if (!item || typeof item !== 'object') return item;
+  try {
+    const clone = JSON.parse(JSON.stringify(item));
+    // Remove imagens pesadas em base64 de dentro da ordem salva em localStorage
+    // (As fotos originais completas ficam seguras no IndexedDB e em sdv_galeria_OS)
+    if (Array.isArray(clone.fotos)) {
+      clone.fotos = clone.fotos.map(f => {
+        if (f && f.dataUrl && f.dataUrl.length > 500) {
+          return { id: f.id, ambiente: f.ambiente, origem: f.origem, data: f.data, dataUrl: '' };
+        }
+        return f;
+      });
+    }
+    if (clone.dados && Array.isArray(clone.dados.fotos)) {
+      clone.dados.fotos = clone.dados.fotos.map(f => {
+        if (f && f.dataUrl && f.dataUrl.length > 500) {
+          return { id: f.id, ambiente: f.ambiente, origem: f.origem, data: f.data, dataUrl: '' };
+        }
+        return f;
+      });
+    }
+    if (Array.isArray(clone.versoes_pdf)) {
+      clone.versoes_pdf.forEach(v => {
+        if (v && v.dados && Array.isArray(v.dados.fotos)) {
+          v.dados.fotos = [];
+        }
+      });
+    }
+    return clone;
+  } catch(_) {
+    return item;
+  }
+}
+
 function save(k, v) {
   try {
-    const key = getEmpresaStorageKey(k);
-    localStorage.setItem(key, JSON.stringify(v));
-    // Sincroniza retroativamente caso seja a sdvidros
-    if (key.endsWith('_sdvidros')) {
-      try { localStorage.setItem(k, JSON.stringify(v)); } catch(_) {}
+    let dadoParaSalvar = v;
+    if (k === K.orders && Array.isArray(v)) {
+      dadoParaSalvar = v.map(sanitizarItemParaHistoricoStorage);
     }
+    const key = getEmpresaStorageKey(k);
+    localStorage.setItem(key, JSON.stringify(dadoParaSalvar));
+    // Salva cópia na chave base para garantir que nunca se perca entre empresas
+    try { localStorage.setItem(k, JSON.stringify(dadoParaSalvar)); } catch(_) {}
   } catch (e) {
-    console.warn('Erro ao salvar no storage:', e);
+    console.warn('Erro ao salvar no storage (tentando limpeza de emergência):', e);
+    try {
+      if (k === K.orders && Array.isArray(v)) {
+        // Reduz ainda mais o tamanho mantendo os metadados de todas as O.S.
+        const superLeve = v.map(o => {
+          const c = sanitizarItemParaHistoricoStorage(o);
+          if (c.dados) { delete c.dados.fotos; }
+          return c;
+        });
+        const key = getEmpresaStorageKey(k);
+        localStorage.setItem(key, JSON.stringify(superLeve));
+        localStorage.setItem(k, JSON.stringify(superLeve));
+      }
+    } catch(err2) {
+      console.error('Falha crítica no storage:', err2);
+    }
   }
 }
 
@@ -14654,387 +14707,126 @@ function calcularTotaisPorAmbiente() {
 }
 
 
-function aoDigitarTaxaNoBadge(val) {
+function aoDigitarTaxaNoBadge(val, elOrigem) {
   const elTaxa = document.getElementById('o-taxa-acrescimo');
   const modalTaxa = document.getElementById('modal-o-taxa-acrescimo');
   if (elTaxa) elTaxa.value = val;
   if (modalTaxa) modalTaxa.value = val;
-  
-  document.querySelectorAll('.inp-ambiente-taxa').forEach(inp => {
-    if (document.activeElement !== inp) inp.value = val;
-  });
 
-  if (typeof aoModificarValoresResumoFinanceiro === 'function') {
-    aoModificarValoresResumoFinanceiro('taxa');
-  } else if (typeof calcTotal === 'function') {
-    calcTotal();
+  // Se a alteração veio de um input específico de ambiente (ou do badge)
+  if (elOrigem && elOrigem.classList && elOrigem.classList.contains('inp-ambiente-taxa')) {
+    elOrigem.value = val;
+  }
+
+  // Atualiza os subtotais de cada ambiente e recalcula o total geral
+  if (typeof atualizarSubtotaisAmbientes === 'function') {
+    atualizarSubtotaisAmbientes(true);
+  }
+  if (typeof recalcularTotaisGerais === 'function') {
+    recalcularTotaisGerais('taxa');
   }
 }
 window.aoDigitarTaxaNoBadge = aoDigitarTaxaNoBadge;
 
-function atualizarSubtotaisAmbientes() {
+function atualizarSubtotaisAmbientes(origemTaxa = false) {
   const ambientes = calcularTotaisPorAmbiente();
   const formatBRL = (val) => 'R$ ' + Number(val || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-  // Taxa de acréscimo (%) e valores de produtos e serviços do orçamento (Quinta Imagem)
   const elTaxa = document.getElementById('o-taxa-acrescimo');
   const elServ = document.getElementById('o-val-servico');
   const elProd = document.getElementById('o-val-produtos');
+  const elTot  = document.getElementById('total');
 
-  let taxaPercent = 0;
+  let taxaGeral = 0;
   if (elTaxa && elTaxa.value) {
-    taxaPercent = typeof parseNum === 'function' ? parseNum(elTaxa.value) : parseFloat(elTaxa.value) || 0;
+    taxaGeral = typeof parseNum === 'function' ? parseNum(elTaxa.value) : parseFloat(elTaxa.value) || 0;
   }
 
-  const somaTotalProdutos = ambientes.reduce((acc, a) => acc + (a.produtosVal || 0), 0);
   let somaGeralServico = 0;
-  if (elServ && elServ.value) {
-    somaGeralServico = typeof parseNum === 'function' ? parseNum(elServ.value) : parseFloat(elServ.value) || 0;
-  }
+  let somaTotalProdutos = 0;
 
-  // Se não digitou taxa mas há serviço e produtos, infere a porcentagem
-  if (taxaPercent <= 0 && somaTotalProdutos > 0 && somaGeralServico > 0) {
-    taxaPercent = (somaGeralServico / somaTotalProdutos) * 100;
-  }
-
-  const formatPct = (pct) => {
-    const num = Number(pct || 0);
-    return (num % 1 === 0 ? num.toFixed(0) : num.toFixed(1)) + '%';
-  };
-
-  // 1. Atualiza badges do topo (primeiro ambiente: Produto, Serviço e Total com %)
+  // 1. Atualiza badges do topo (primeiro ambiente: Quintal / Topo)
   const valTopProdEl = document.getElementById('val-ambiente-top-produtos');
   const valTopServEl = document.getElementById('val-ambiente-top-servico');
   const valTopTotalEl = document.getElementById('val-ambiente-top-total');
+  const inpTopTaxaEl = document.getElementById('inp-ambiente-top-taxa');
 
   if (ambientes[0]) {
     const a0 = ambientes[0];
     const prod0 = a0.produtosVal || 0;
+    somaTotalProdutos += prod0;
+
+    let taxa0 = taxaGeral;
+    if (inpTopTaxaEl && inpTopTaxaEl.value !== '') {
+      taxa0 = typeof parseNum === 'function' ? parseNum(inpTopTaxaEl.value) : parseFloat(inpTopTaxaEl.value) || 0;
+    }
+
     let serv0 = a0.servicosVal || 0;
-    if (taxaPercent > 0 && prod0 > 0) {
-      serv0 = prod0 * (taxaPercent / 100);
-    } else if (serv0 === 0 && somaTotalProdutos > 0 && somaGeralServico > 0) {
-      serv0 = somaGeralServico * (prod0 / somaTotalProdutos);
+    if (taxa0 > 0 && prod0 > 0) {
+      serv0 = prod0 * (taxa0 / 100);
     }
     const tot0 = prod0 + serv0;
-    const pct0Str = formatPct(taxaPercent);
+    somaGeralServico += serv0;
 
     if (valTopProdEl) valTopProdEl.textContent = formatBRL(prod0);
     if (valTopServEl) valTopServEl.textContent = formatBRL(serv0);
     if (valTopTotalEl) valTopTotalEl.textContent = formatBRL(tot0);
   }
 
-  // 2. Atualiza badges das seções subsequentes
-  ambientes.forEach(a => {
+  // 2. Atualiza badges das seções subsequentes (ex: Espaço / Cozinha / Banheiro)
+  for (let idx = 1; idx < ambientes.length; idx++) {
+    const a = ambientes[idx];
+    const prod = a.produtosVal || 0;
+    somaTotalProdutos += prod;
+
+    let taxaSec = taxaGeral;
     if (a.trSec) {
+      const inpSecTaxa = a.trSec.querySelector('.inp-secao-taxa') || a.trSec.querySelector('.inp-ambiente-taxa');
+      if (inpSecTaxa && inpSecTaxa.value !== '') {
+        taxaSec = typeof parseNum === 'function' ? parseNum(inpSecTaxa.value) : parseFloat(inpSecTaxa.value) || 0;
+      }
+
+      let serv = a.servicosVal || 0;
+      if (taxaSec > 0 && prod > 0) {
+        serv = prod * (taxaSec / 100);
+      }
+      const tot = prod + serv;
+      somaGeralServico += serv;
+
       const valProdEl = a.trSec.querySelector('.val-secao-produtos');
       const valServEl = a.trSec.querySelector('.val-secao-servico');
       const valTotalEl = a.trSec.querySelector('.val-secao-total');
-
-      const prod = a.produtosVal || 0;
-      let serv = a.servicosVal || 0;
-      if (taxaPercent > 0 && prod > 0) {
-        serv = prod * (taxaPercent / 100);
-      } else if (serv === 0 && somaTotalProdutos > 0 && somaGeralServico > 0) {
-        serv = somaGeralServico * (prod / somaTotalProdutos);
-      }
-      const tot = prod + serv;
 
       if (valProdEl) valProdEl.textContent = formatBRL(prod);
       if (valServEl) valServEl.textContent = formatBRL(serv);
       if (valTotalEl) valTotalEl.textContent = formatBRL(tot);
     }
-  });
-
-  // 2b. Sincroniza o valor digitado nos inputs de porcentagem dos badges
-  const pctNumStr = (taxaPercent != null && !isNaN(taxaPercent))
-    ? Number(taxaPercent).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
-    : '0';
-
-  document.querySelectorAll('.inp-ambiente-taxa').forEach(inp => {
-    if (document.activeElement !== inp) {
-      inp.value = pctNumStr;
-    }
-  });
-
-  // 3. Atualiza dados no Modal de Ambientes (Primeira Imagem)
-  const targetBtn = _btnAmbienteEmEdicao || document.querySelector('.btn-seletor-ambientes');
-  let ambAtual = ambientes.find(a => a.btn === targetBtn) || ambientes[0];
-
-  const nomeAtualEl = document.getElementById('modal-ambientes-nome-atual');
-  const subtotalValEl = document.getElementById('modal-ambientes-subtotal-val');
-  const itensContagemEl = document.getElementById('modal-ambientes-itens-contagem');
-  const listaTodosEl = document.getElementById('modal-ambientes-lista-todos');
-
-  if (nomeAtualEl && ambAtual) {
-    nomeAtualEl.textContent = 'Produtos de "' + ambAtual.nome + '":';
-  }
-  if (subtotalValEl && ambAtual) {
-    subtotalValEl.textContent = formatBRL(ambAtual.produtosVal);
-  }
-  if (itensContagemEl && ambAtual) {
-    itensContagemEl.textContent = ambAtual.qtdItens + ' item(ns) incluído(s) neste ambiente (' + formatBRL(ambAtual.produtosVal) + ' em produtos)';
   }
 
-  if (listaTodosEl) {
-    if (ambientes.length > 1) {
-      listaTodosEl.style.display = 'flex';
-      let htmlTodos = '<div style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:2px;">Subtotais de Produtos por Ambiente:</div>';
-      ambientes.forEach(a => {
-        const isSel = (a === ambAtual);
-        const selStyle = isSel ? 'border:1px solid rgba(59,130,246,0.4);background:rgba(59,130,246,0.08);' : '';
-        htmlTodos += '<div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.03);padding:4px 8px;border-radius:6px;font-size:11.5px;' + selStyle + '">' +
-          '<span style="color:#e2e8f0;">🛋️ ' + esc(a.nome) + ' (' + a.qtdItens + ' itens):</span>' +
-          '<strong style="color:#60a5fa;font-weight:800;">' + formatBRL(a.produtosVal) + '</strong>' +
-        '</div>';
-      });
-      listaTodosEl.innerHTML = htmlTodos;
-    } else {
-      listaTodosEl.style.display = 'none';
-      listaTodosEl.innerHTML = '';
-    }
+  // 3. Atualiza campos do Resumo Financeiro Geral
+  if (elProd) elProd.value = Number(somaTotalProdutos || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (elServ) elServ.value = Number(somaGeralServico || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  const elFrete = document.getElementById('o-val-frete');
+  const elDesc = document.getElementById('o-val-desconto');
+  const valFrete = typeof parseNum === 'function' ? parseNum(elFrete ? elFrete.value : 0) : 0;
+  const valDesc = typeof parseNum === 'function' ? parseNum(elDesc ? elDesc.value : 0) : 0;
+
+  const totalGeralCalculado = Math.max(0, somaTotalProdutos + somaGeralServico + valFrete - valDesc);
+  if (elTot) {
+    elTot.textContent = 'R$ ' + Number(totalGeralCalculado).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
-  // 4. Atualiza Resumo dos Produtos Separados por Ambiente (Na Página e no Modal de Ambientes)
-  const resumoBox = document.getElementById('resumo-produtos-por-ambiente');
-  const resumoCount = document.getElementById('resumo-produtos-ambientes-count');
-  const resumoChips = document.getElementById('resumo-produtos-ambientes-chips');
-
-  const modalResumoBox = document.getElementById('modal-resumo-produtos-por-ambiente');
-  const modalResumoCount = document.getElementById('modal-resumo-produtos-ambientes-count');
-  const modalResumoChips = document.getElementById('modal-resumo-produtos-ambientes-chips');
-
-  const temProdutos = ambientes.some(a => a.produtosVal > 0 || a.qtdItens > 0);
-  if (temProdutos || ambientes.length > 1) {
-    const countTxt = ambientes.length + (ambientes.length === 1 ? ' ambiente' : ' ambientes');
-    let htmlChips = '';
-    ambientes.forEach(a => {
-      htmlChips += '<div style="background:#0b0c14;border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:5px 10px;display:flex;align-items:center;gap:6px;font-size:11.5px;">' +
-        '<span style="color:#94a3b8;font-weight:600;">' + esc(a.nome) + ':</span>' +
-        '<strong style="color:var(--gold-light);font-weight:800;">' + formatBRL(a.produtosVal) + '</strong>' +
-        '<span style="font-size:10px;color:var(--muted);">(' + a.qtdItens + ' it)</span>' +
-      '</div>';
-    });
-
-    if (resumoBox && resumoChips) {
-      resumoBox.style.display = 'block';
-      if (resumoCount) resumoCount.textContent = countTxt;
-      resumoChips.innerHTML = htmlChips;
-    }
-    if (modalResumoBox && modalResumoChips) {
-      modalResumoBox.style.display = 'block';
-      if (modalResumoCount) modalResumoCount.textContent = countTxt;
-      modalResumoChips.innerHTML = htmlChips;
-    }
-  } else {
-    if (resumoBox && resumoChips) { resumoBox.style.display = 'none'; resumoChips.innerHTML = ''; }
-    if (modalResumoBox && modalResumoChips) { modalResumoBox.style.display = 'none'; modalResumoChips.innerHTML = ''; }
-  }
-}
-
-function abrirModalAmbientesOrc(btnElement) {
-  _btnAmbienteEmEdicao = btnElement || document.querySelector('.btn-seletor-ambientes');
-  const m = document.getElementById('modal-orc-ambientes');
-  if (m) {
-    // Sincroniza campos de produtos, serviço e taxa da página para o modal
-    const elProd = document.getElementById('o-val-produtos');
-    const elServ = document.getElementById('o-val-servico');
-    const elTaxa = document.getElementById('o-taxa-acrescimo');
-    const modalProd = document.getElementById('modal-o-val-produtos');
-    const modalServ = document.getElementById('modal-o-val-servico');
-    const modalTaxa = document.getElementById('modal-o-taxa-acrescimo');
-
-    if (modalProd && elProd) modalProd.value = elProd.value;
-    if (modalServ && elServ) modalServ.value = elServ.value;
-    if (modalTaxa && elTaxa) modalTaxa.value = elTaxa.value;
-
-    // Sincronizar badge do ambiente ativo no modal
-    const badgeAtivoTexto = document.getElementById('badge-ambiente-ativo-texto');
-    const badgeTopProd = document.getElementById('val-ambiente-top-produtos');
-    const modalBadgeAtivoTexto = document.getElementById('modal-badge-ambiente-ativo-texto');
-    const modalBadgeTopProd = document.getElementById('modal-val-ambiente-top-produtos');
-    if (modalBadgeAtivoTexto && badgeAtivoTexto) modalBadgeAtivoTexto.textContent = badgeAtivoTexto.textContent;
-    if (modalBadgeTopProd && badgeTopProd) modalBadgeTopProd.textContent = badgeTopProd.textContent;
-
-    const elTotal = document.getElementById('total');
-    const totalTxt = elTotal ? elTotal.textContent.trim() : 'R$ 0,00';
-    const modalDirTotal = document.getElementById('modal-dir-inline-val-total-orc');
-    if (modalDirTotal) modalDirTotal.textContent = totalTxt;
-
-    // Atualiza subtotais de ambientes e rateio visual
-    atualizarSubtotaisAmbientes();
-    if (typeof renderRateioInline === 'function') renderRateioInline();
-
-    m.style.display = 'flex';
-    const inp = document.getElementById('inp-custom-ambiente-orc');
-    if (inp) {
-      inp.value = '';
-      setTimeout(() => inp.focus(), 150);
-    }
-  }
-}
-
-function fecharModalAmbientesOrc(e) {
-  if (!e || e.target === document.getElementById('modal-orc-ambientes')) {
-    const m = document.getElementById('modal-orc-ambientes');
-    if (m) m.style.display = 'none';
-  }
-}
-
-function inserirAmbienteNoOrcamento(nomeAmbiente) {
-  if (!nomeAmbiente || !nomeAmbiente.trim()) return;
-  const nomeLimpo = nomeAmbiente.trim();
-
-  // ATUALIZA APENAS O BOTÃO DO AMBIENTE (NÃO CRIA ITEM NEM INSERE NA DESCRIÇÃO DO PRODUTO)
-  let targetInp = null;
-  if (_btnAmbienteEmEdicao) {
-    if (_btnAmbienteEmEdicao.classList && _btnAmbienteEmEdicao.classList.contains('inp-nome-ambiente')) {
-      targetInp = _btnAmbienteEmEdicao;
-    } else if (_btnAmbienteEmEdicao.querySelector) {
-      targetInp = _btnAmbienteEmEdicao.querySelector('.inp-nome-ambiente');
-    }
-  }
-  if (!targetInp) {
-    targetInp = document.getElementById('inp-orc-ambiente-top') || document.querySelector('.inp-nome-ambiente');
-  }
-  if (targetInp) {
-    targetInp.value = nomeLimpo;
-  }
-  const targetBtn = _btnAmbienteEmEdicao || document.querySelector('.btn-seletor-ambientes');
-  if (targetBtn && targetBtn.querySelector) {
-    const lbl = targetBtn.querySelector('.label-ambiente-texto') || targetBtn.querySelector('span:last-child');
-    if (lbl) {
-      lbl.textContent = nomeLimpo;
-    }
+  // Atualiza cálculo textual do acréscimo se existir
+  const elAcrescimoCalc = document.getElementById('o-taxa-acrescimo-calc');
+  if (elAcrescimoCalc) {
+    elAcrescimoCalc.innerHTML = '= R$ <strong>' + Number(somaGeralServico || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</strong> em serviço';
   }
 
-  atualizarSubtotaisAmbientes();
-  fecharModalAmbientesOrc();
-  if (typeof salvarOrcamentoLocal === 'function') salvarOrcamentoLocal();
-  if (typeof showToast === 'function') {
-    showToast('Ambiente definido como "' + nomeLimpo + '"! 🛋️');
-  }
-}
-
-function inserirAmbienteCustomizadoNoOrcamento() {
-  const inp = document.getElementById('inp-custom-ambiente-orc');
-  const val = inp ? inp.value.trim() : '';
-  if (!val) {
-    alert('Digite o nome do ambiente.');
-    return;
-  }
-  inserirAmbienteNoOrcamento(val);
-}
-
-// Cria uma nova seção de Ambiente com botão próprio e linha de item limpa (Idêntico à Imagem 2)
-function adicionarNovoAmbienteSecao(nomePadrao = '') {
-  const idAmb = ++_contadorAmbientes;
-  const tbody = document.getElementById('itens-lista');
-  if (!tbody) return;
-
-  const valNome = (nomePadrao && String(nomePadrao).trim()) ? String(nomePadrao).trim() : '';
-
-  // Linha do Ambiente com botão próprio
-  const trAmb = document.createElement('tr');
-  trAmb.className = 'tr-ambiente-secao';
-  trAmb.style.background = '#11121c';
-  trAmb.innerHTML = `
-    <td colspan="11" style="padding:10px 12px;text-align:left;border-top:2px solid rgba(245,158,11,0.35);border-bottom:1.5px solid rgba(245,158,11,0.25);background:rgba(245,158,11,0.06);">
-      <div class="card-ambiente-box" style="display:flex;flex-direction:column;gap:8px;width:100%;background:rgba(17,18,28,0.92);border:1.5px solid #f59e0b;border-radius:12px;padding:12px;box-shadow:0 4px 16px rgba(0,0,0,0.35);">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-          <div style="display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <div class="wrap-ambiente-nome" style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg, rgba(245,158,11,0.22), rgba(217,119,6,0.18));border:1.5px solid #f59e0b;border-radius:8px;padding:6px 12px;box-shadow:0 2px 8px rgba(245,158,11,0.2);">
-              <span style="font-size:15px;line-height:1;">🛋️</span>
-              <input type="text" class="inp-nome-ambiente label-ambiente-texto" placeholder="Nome do ambiente..." value="${esc(valNome)}" oninput="atualizarSubtotaisAmbientes(); if(typeof atualizarBadgeGaleriaOrcamento==='function') atualizarBadgeGaleriaOrcamento();" onfocus="secaoAmbienteAtivaTr=this.closest('.tr-ambiente-secao');this.select();" style="background:transparent;border:none;color:#fbbf24;font-weight:800;font-size:13px;outline:none;width:150px;min-width:120px;" title="Digite o nome do ambiente" />
-            </div>
-
-            <!-- BOTÃO GALERIA AO LADO DESTE AMBIENTE (ex: Cozinha) -->
-            <div class="galeria-secao-menu-container" style="position:relative;display:inline-block;">
-              <button type="button" class="btn btn-sm btn-galeria-secao" onclick="toggleMenuGaleriaSecao(event, this)" style="background:rgba(6,182,212,0.15);border:1.5px solid #06b6d4;color:#22d3ee;font-weight:800;display:inline-flex;align-items:center;gap:6px;cursor:pointer;border-radius:8px;padding:6px 12px;" title="Anexar fotos ou PDF a este ambiente">
-                <span>🖼️</span> <span class="label-galeria-secao">Galeria (0)</span> <span style="font-size:10px;opacity:0.8;">▼</span>
-              </button>
-              <!-- DROPDOWN MENU -->
-              <div class="galeria-secao-submenu" style="display:none;position:absolute;top:calc(100% + 6px);left:0;background:#0e1020;border:1.5px solid #06b6d4;border-radius:10px;min-width:215px;overflow:hidden;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,0.7);">
-                <button type="button" onclick="acionarUploadGaleriaAmbiente(this, 'camera')" style="width:100%;padding:11px 14px;background:none;border:none;border-bottom:1px solid rgba(6,182,212,0.18);color:#22d3ee;font-size:12.5px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:9px;transition:background 0.15s;" onmouseover="this.style.background='rgba(6,182,212,0.12)'" onmouseout="this.style.background='none'">
-                  📷 Abrir Câmera do Celular
-                </button>
-                <button type="button" onclick="acionarUploadGaleriaAmbiente(this, 'galeria')" style="width:100%;padding:11px 14px;background:none;border:none;border-bottom:1px solid rgba(6,182,212,0.18);color:#34d399;font-size:12.5px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:9px;transition:background 0.15s;" onmouseover="this.style.background='rgba(52,211,153,0.1)'" onmouseout="this.style.background='none'">
-                  🖼️ Buscar na Galeria
-                </button>
-                <button type="button" onclick="acionarUploadGaleriaAmbiente(this, 'pdf')" style="width:100%;padding:11px 14px;background:none;border:none;border-bottom:1px solid rgba(6,182,212,0.18);color:#f59e0b;font-size:12.5px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:9px;transition:background 0.15s;" onmouseover="this.style.background='rgba(245,158,11,0.1)'" onmouseout="this.style.background='none'">
-                  📄 Buscar PDF
-                </button>
-                <button type="button" onclick="abrirModalGaleriaDoAmbiente(this)" style="width:100%;padding:11px 14px;background:rgba(6,182,212,0.08);border:none;color:#38bdf8;font-size:12.5px;font-weight:800;cursor:pointer;text-align:left;display:flex;align-items:center;gap:9px;transition:background 0.15s;" onmouseover="this.style.background='rgba(6,182,212,0.2)'" onmouseout="this.style.background='rgba(6,182,212,0.08)'">
-                  👁️ Ver Fotos Salvas (<span class="menu-cont-galeria-secao">0</span>)
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <button type="button" onclick="removerAmbienteSecao(this)" style="background:none;border:none;color:#ef4444;font-size:11px;font-weight:700;cursor:pointer;opacity:0.85;padding:2px 6px;" title="Remover este ambiente">
-            ✕ Remover
-          </button>
-        </div>
-
-        <div style="display:flex;flex-direction:column;gap:5px;width:100%;max-width:240px;margin-top:2px;">
-          <div class="badge-secao-produtos-val" style="background:rgba(59,130,246,0.16);border:1.5px solid rgba(59,130,246,0.4);color:#93c5fd;font-size:11.5px;font-weight:800;padding:4px 10px;border-radius:7px;display:flex;align-items:center;justify-content:space-between;gap:8px;box-shadow:0 2px 6px rgba(0,0,0,0.2);" title="Valor dos produtos deste ambiente">
-            <span style="display:inline-flex;align-items:center;gap:5px;"><span>📦</span> <span>Valor Produtos:</span></span>
-            <span class="val-secao-produtos" style="font-weight:900;color:#bfdbfe;">R$ 0,00</span>
-          </div>
-          <div class="badge-secao-servico-val" style="background:rgba(6,182,212,0.16);border:1.5px solid rgba(6,182,212,0.4);color:#67e8f9;font-size:11.5px;font-weight:800;padding:4px 10px;border-radius:7px;display:flex;align-items:center;justify-content:space-between;gap:8px;box-shadow:0 2px 6px rgba(0,0,0,0.2);" title="Valor do serviço deste ambiente">
-            <span style="display:inline-flex;align-items:center;gap:5px;"><span>🛠️</span> <span>Valor Serviço:</span></span>
-            <div style="display:inline-flex;align-items:center;gap:5px;">
-              <span class="val-secao-servico" style="font-weight:900;color:#a5f3fc;">R$ 0,00</span>
-              <span style="display:inline-flex;align-items:center;background:rgba(6,182,212,0.2);border:1px solid rgba(6,182,212,0.6);border-radius:5px;padding:1px 4px;gap:2px;">
-                <input type="text" class="inp-secao-taxa inp-ambiente-taxa" inputmode="decimal" placeholder="0" value="0" oninput="aoDigitarTaxaNoBadge(this.value)" onfocus="this.select()" style="width:30px;background:transparent;border:none;color:#fff;font-weight:900;font-size:11px;text-align:right;padding:0;outline:none;" title="Digite a taxa de acréscimo (%)" />
-                <span style="font-size:10.5px;font-weight:900;color:#67e8f9;">%</span>
-              </span>
-            </div>
-          </div>
-          <div class="badge-secao-total-val" style="background:rgba(34,197,94,0.16);border:1.5px solid rgba(34,197,94,0.4);color:#86efac;font-size:11.5px;font-weight:800;padding:4px 10px;border-radius:7px;display:flex;align-items:center;justify-content:space-between;gap:8px;box-shadow:0 2px 6px rgba(0,0,0,0.2);" title="Valor total deste ambiente com a porcentagem">
-            <span style="display:inline-flex;align-items:center;gap:5px;"><span>💰</span> <span>Valor Total:</span></span>
-            <span class="val-secao-total" style="font-weight:900;color:#bbf7d0;">R$ 0,00</span>
-          </div>
-        </div>
-
-        <div class="wrap-ambiente-obs-box" style="margin-top:2px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-          <label style="font-size:11px;font-weight:800;color:#fcd34d;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;margin:0;cursor:pointer;">
-            <span>📝</span> Observações:
-          </label>
-          <input type="text" class="inp-ambiente-obs inp-secao-obs" placeholder="Observações deste ambiente (ex: Acabamento, puxadores, ferragens, medidas especiais...)" oninput="aoMudarObsAmbiente(this)" style="flex:1;min-width:200px;background:rgba(0,0,0,0.35);border:1px solid rgba(245,158,11,0.3);border-radius:6px;padding:6px 10px;color:#fff;font-size:11.5px;outline:none;box-sizing:border-box;" title="Digite observações deste ambiente" />
-        </div>
-      </div>
-    </td>
-  `;
-  tbody.appendChild(trAmb);
-  if (typeof atualizarBadgeGaleriaOrcamento === "function") atualizarBadgeGaleriaOrcamento();
-
-  // 1. Define este novo ambiente como a seção ativa
-  secaoAmbienteAtivaTr = trAmb;
-
-  // 2. Desmarca todos os produtos no catálogo para que o novo ambiente comece limpo
-  if (typeof desmarcarTodosProdutosCatalogo === 'function') {
-    desmarcarTodosProdutosCatalogo();
-  }
-
-  // 3. Adiciona imediatamente uma linha limpa de produto/serviço no novo ambiente
-  addItem('', '1', '', '', '', '', '', '', '');
-  if (typeof atualizarSubtotaisAmbientes === 'function') {
-    atualizarSubtotaisAmbientes();
-  }
-
-  if (typeof showToast === 'function') {
-    showToast('🛋️ Novo ambiente adicionado! Produtos no catálogo desmarcados para você escolher os novos itens.');
-  }
-}
-
-function removerAmbienteSecao(btn) {
-  const tr = btn.closest('.tr-ambiente-secao');
-  if (tr) {
-    tr.remove();
-    if (typeof calcTotal === 'function') calcTotal();
-    atualizarSubtotaisAmbientes();
+  // Atualiza rateio visual inline
+  if (typeof renderRateioInlineOrcamento === 'function') {
+    try { renderRateioInlineOrcamento(totalGeralCalculado); } catch(_) {}
   }
 }
 
@@ -21433,8 +21225,10 @@ async function enviarOrcamentoParaAssinaturaDigital() {
     } else {
       // Auto-preenche categoria Material com itens do orçamento
       const dirAutoAssin = gerarDirecionamentoAutoMaterial(d);
+      const licAtivaOrd = (typeof obterLicencaAtiva === 'function') ? obterLicencaAtiva() : { id: 'sdmoveis' };
       const ord = {
         id: Date.now(),
+        empresaId: licAtivaOrd.id || 'sdmoveis',
         numero: d.numero,
         nome: d.nome,
         total: d.total,
@@ -21592,13 +21386,11 @@ async function enviarOrcamentoParaAssinaturaDigital() {
     if (ehReenvio) {
       msg = `*${nomeEmpresaUpper} — REAJUSTE DE PROPOSTA & NOVA ASSINATURA DIGITAL* ✍️ ${iconeEmp}\n\n`
         + "Olá" + (d.nome ? ", " + d.nome : "") + "! Conforme solicitado, atualizamos sua Ordem de Serviço *" + d.numero + "* no valor de *" + d.total + "* com as novas modificações:\n\n"
-        + "📄 *Baixar Novo PDF com Modificações:*\n" + linkPdf + "\n\n"
         + "✍️ *Assinar Nova Versão Online:*\n" + linkAssinatura + "\n\n"
         + "💡 _A versão anterior assinada permanece arquivada em nosso sistema com total transparência e segurança._";
     } else {
       msg = `*${nomeEmpresaUpper} — PROPOSTA & ASSINATURA DIGITAL* ✍️ ${iconeEmp}\n\n`
         + "Olá" + (d.nome ? ", " + d.nome : "") + "! Segue o link com seu orçamento *" + d.numero + "* no valor de *" + d.total + "*:\n\n"
-        + "📄 *Baixar PDF Oficial:*\n" + linkPdf + "\n\n"
         + "✍️ *Assinar Orçamento Online:*\n" + linkAssinatura;
     }
 
