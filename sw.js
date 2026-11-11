@@ -1,5 +1,4 @@
-// Service Worker PWA – SD Móveis Projetados v9.5.2 (Fix: restaurar link Baixar PDF Oficial na mensagem WhatsApp)
-const CACHE_NAME = 'sdmoveisprojetados-v9.5.2';
+// Service Worker PWA – SD Móveis Projetados v9.5.3 (Fix: irParaAssinatura, totAmbientesNum, parseNumSafe unicode)'sdmoveisprojetados-v9.5.3 (Fix: irParaAssinatura, totAmbientesNum, parseNumSafe unicode)';
 const ASSETS = [
   '/',
   '/index.html',
