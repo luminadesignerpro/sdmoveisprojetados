@@ -1261,6 +1261,9 @@
       <button id="btn-baixar-pdf-sucesso" class="btn btn-outline" onclick="baixarPdfAtual()">
         📄 Baixar Cópia do Contrato (PDF)
       </button>
+      <button class="btn btn-gold" onclick="baixarPdfOsComercial()" style="background:rgba(201,168,76,0.18);border:1.5px solid var(--gold,#c9a84c);color:var(--gold-light,#e8d27a);font-weight:800;">
+        📑 Baixar Cópia da O.S. (PDF)
+      </button>
     </div>
   </div>
 
@@ -1280,10 +1283,13 @@
 
       <!-- Actions: Download PDF or Review -->
       <div style="display:flex;gap:8px;margin-top:14px;margin-bottom:16px;flex-wrap:wrap;">
-        <button type="button" class="btn btn-outline btn-sm" onclick="baixarPdfAtual()" style="flex:1;min-width:140px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-weight:700;padding:10px 14px;">
+        <button type="button" class="btn btn-outline btn-sm" onclick="baixarPdfAtual()" style="flex:1;min-width:130px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-weight:700;padding:10px 12px;" title="Baixar minuta do contrato com as cláusulas jurídicas">
           📄 Baixar Contrato em PDF
         </button>
-        <button type="button" class="btn btn-green btn-sm" onclick="irParaAssinatura()" style="flex:1.2;min-width:150px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-weight:800;padding:10px 14px;">
+        <button type="button" class="btn btn-gold btn-sm" onclick="baixarPdfOsComercial()" style="flex:1;min-width:130px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-weight:800;padding:10px 12px;background:rgba(201,168,76,0.18);border:1.5px solid var(--gold,#c9a84c);color:var(--gold-light,#e8d27a);" title="Baixar Ordem de Serviço / Proposta Comercial completa em PDF">
+          📑 Baixar O.S. em PDF
+        </button>
+        <button type="button" class="btn btn-green btn-sm" onclick="irParaAssinatura()" style="flex:1.2;min-width:140px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-weight:800;padding:10px 14px;">
           ✍️ Aprovar & Assinar
         </button>
       </div>
@@ -2799,6 +2805,52 @@ window.selecionarPagamento = function(metodo) {
 
     const url = 'https://wa.me/' + telEmpresa + '?text=' + encodeURIComponent(msg);
     window.open(url, '_blank');
+  };
+
+  
+  window.baixarPdfOsComercial = function() {
+    const pParam = extractParam('p');
+    const dParam = extractParam('d') || extractParam('data');
+    const contratoId = extractParam('id');
+    const numOs = (contratoCache && contratoCache.numero_os) || (typeof dParam !== 'undefined' && dParam ? '0028' : '0001');
+    const empParam = extractParam('empresa') || 'sdmoveis';
+
+    let urlApi = '';
+    if (pParam) {
+      urlApi = '/api/gerar-pdf-orcamento?p=' + encodeURIComponent(pParam) + '&num=' + encodeURIComponent(String(numOs).replace('#', '')) + '&empresa=' + encodeURIComponent(empParam);
+    } else if (contratoId) {
+      urlApi = '/api/gerar-pdf-orcamento?id=' + encodeURIComponent(contratoId) + '&empresa=' + encodeURIComponent(empParam);
+    } else if (dParam) {
+      urlApi = '/api/gerar-pdf-orcamento?d=' + encodeURIComponent(dParam) + '&empresa=' + encodeURIComponent(empParam);
+    } else {
+      urlApi = '/api/gerar-pdf-orcamento?num=' + encodeURIComponent(String(numOs).replace('#', '')) + '&empresa=' + encodeURIComponent(empParam);
+    }
+
+    const btn = document.querySelector('button[onclick="baixarPdfOsComercial()"]');
+    const txtOrig = btn ? btn.innerHTML : '';
+    if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Baixando O.S. em PDF...'; }
+
+    fetch(urlApi)
+      .then(r => {
+        if (!r.ok) throw new Error('Não foi possível gerar a O.S. em PDF.');
+        return r.blob();
+      })
+      .then(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'Ordem-de-Servico-' + String(numOs).replace('#', '') + '.pdf';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
+      })
+      .catch(err => {
+        window.open(urlApi, '_blank');
+      })
+      .finally(() => {
+        if (btn) { btn.disabled = false; btn.innerHTML = txtOrig; }
+      });
   };
 
   window.baixarPdfAtual = function() {

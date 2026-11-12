@@ -621,9 +621,12 @@ async function gerarPdfOrcamento(dados, fetchLogo, empInfo) {
     page.drawText(`R$ ${formatMoney(dados.valProdutos || total)}`, { x: rightCardX + rightCardW - 10 - fontBold.widthOfTextAtSize(`R$ ${formatMoney(dados.valProdutos || total)}`, 7.2), y: totY, size: 7.2, font: fontBold, color: DARK });
 
     totY -= 13;
-    const vServApi = dados.valServico ? ('R$ ' + formatMoney(dados.valServico)) : 'Inclusa';
+    const valServicoNum = parseNumSafe(dados.valServico);
+    const vServApi = valServicoNum > 0 ? ('R$ ' + formatMoney(valServicoNum)) : '';
     page.drawText('Mão de Obra e Instalação:', { x: rightCardX + 10, y: totY, size: 6.8, font: fontRegular, color: GRAY });
-    page.drawText(vServApi, { x: rightCardX + rightCardW - 10 - fontRegular.widthOfTextAtSize(vServApi, 7.2), y: totY, size: 7.2, font: fontRegular, color: DARK });
+    if (vServApi) {
+      page.drawText(vServApi, { x: rightCardX + rightCardW - 10 - fontRegular.widthOfTextAtSize(vServApi, 7.2), y: totY, size: 7.2, font: fontRegular, color: DARK });
+    }
 
     totY -= 13;
     const txtValFrete = valFreteNum > 0 ? ('R$ ' + valFreteNum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })) : '';
