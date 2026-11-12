@@ -18,7 +18,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js?v=9.5.8').then(r => { r.update(); })
+        navigator.serviceWorker.register('/sw.js?v=9.5.9').then(r => { r.update(); })
           .then(function(reg){ console.log('SW registrado com sucesso:', reg.scope); })
           .catch(function(err){ console.warn('Erro ao registrar SW:', err); });
       });
@@ -9503,7 +9503,9 @@ function cancelarSelecaoProduto() {
   itensSelecionadosCatalogoSessao = 0;
   atualizarBannerSelecaoProduto();
   fecharToastProdutoAdicionado();
-  goTab('orcamento');
+  if(typeof garantirLinhasEmTodosAmbientes==='function')garantirLinhasEmTodosAmbientes();
+    goTab('orcamento');
+    if(typeof garantirLinhasEmTodosAmbientes==='function')garantirLinhasEmTodosAmbientes();
 }
 
 function concluirSelecaoCatalogo() {
@@ -9511,7 +9513,9 @@ function concluirSelecaoCatalogo() {
   itensSelecionadosCatalogoSessao = 0;
   atualizarBannerSelecaoProduto();
   fecharToastProdutoAdicionado();
-  goTab('orcamento');
+  if(typeof garantirLinhasEmTodosAmbientes==='function')garantirLinhasEmTodosAmbientes();
+    goTab('orcamento');
+    if(typeof garantirLinhasEmTodosAmbientes==='function')garantirLinhasEmTodosAmbientes();
 }
 
 function fecharToastProdutoAdicionado() {
@@ -9642,6 +9646,50 @@ function desmarcarTodosProdutosCatalogo() {
   } catch(_) {}
 }
 
+
+function garantirLinhasEmTodosAmbientes() {
+  const tbody = document.getElementById('itens-lista');
+  if (!tbody) return;
+
+  const rows = Array.from(tbody.children);
+  const secoes = rows.filter(tr => tr.classList && tr.classList.contains('tr-ambiente-secao'));
+
+  // 1. Ambiente topo (antes da 1ª seção)
+  let temLinhaTopo = false;
+  for (const tr of rows) {
+    if (tr.classList && tr.classList.contains('tr-ambiente-secao')) break;
+    temLinhaTopo = true;
+    break;
+  }
+  if (!temLinhaTopo) {
+    const prevSec = secaoAmbienteAtivaTr;
+    secaoAmbienteAtivaTr = null;
+    addItem('', '1');
+    secaoAmbienteAtivaTr = prevSec;
+  }
+
+  // 2. Cada seção de ambiente adicional (ex: Cozinha, Quarto, etc.)
+  secoes.forEach((sec, idx) => {
+    const proxSec = secoes[idx + 1];
+    let temLinha = false;
+    let curr = sec.nextElementSibling;
+    while (curr && curr !== proxSec) {
+      if (!curr.classList.contains('tr-ambiente-secao')) {
+        temLinha = true;
+        break;
+      }
+      curr = curr.nextElementSibling;
+    }
+    if (!temLinha) {
+      const prevSec = secaoAmbienteAtivaTr;
+      secaoAmbienteAtivaTr = sec;
+      addItem('', '1');
+      secaoAmbienteAtivaTr = prevSec;
+    }
+  });
+}
+window.garantirLinhasEmTodosAmbientes = garantirLinhasEmTodosAmbientes;
+
 function voltarAoOrcamentoDoCatalogo(ev) {
   if (ev) {
     if (ev.preventDefault) try { ev.preventDefault(); } catch(_) {}
@@ -9656,7 +9704,9 @@ function voltarAoOrcamentoDoCatalogo(ev) {
   }
   modoSelecaoMenuProdutos = false;
   try {
+    if(typeof garantirLinhasEmTodosAmbientes==='function')garantirLinhasEmTodosAmbientes();
     goTab('orcamento');
+    if(typeof garantirLinhasEmTodosAmbientes==='function')garantirLinhasEmTodosAmbientes();
   } catch(e2) {
     console.error('Erro ao mudar de aba:', e2);
   }
@@ -9806,12 +9856,13 @@ function usarProdutoDoCatalogo(pId, nome) {
   // Se não veio de linha específica e o produto não está no orçamento:
   // Remove linha vazia/placeholder se existir, e SEMPRE cria nova linha exclusiva para este produto
   if (!targetTr) {
-    const allTrsUsar = Array.from(document.querySelectorAll('#itens-lista tr')).filter(tr => !tr.classList.contains('tr-ambiente-secao'));
+    const allTrsUsar = (typeof obterLinhasDoAmbienteAtivo === 'function') ? obterLinhasDoAmbienteAtivo() : Array.from(document.querySelectorAll('#itens-lista tr')).filter(tr => !tr.classList.contains('tr-ambiente-secao'));
     const emptyTrUsar = allTrsUsar.find(tr => {
       const inDesc = tr.querySelector('.inp-item-desc') || tr.querySelectorAll('input')[1];
       return !inDesc || !inDesc.value.trim();
     });
     if (emptyTrUsar) emptyTrUsar.remove();
+    if (typeof garantirLinhasEmTodosAmbientes === 'function') garantirLinhasEmTodosAmbientes();
     addItem(p.nome, String(qtdVal), '', '', '', vm2Val, vunitVal, '', fornSugerido);
   } else {
     // targetTr encontrado (linha específica ou produto já existente) → atualiza ela
@@ -12858,7 +12909,9 @@ function editarOs(id) {
     if (typeof atualizarBadgeBotaoDirecionamentoOrc === 'function') atualizarBadgeBotaoDirecionamentoOrc();
   } catch(_) {}
 
-  goTab('orcamento');
+  if(typeof garantirLinhasEmTodosAmbientes==='function')garantirLinhasEmTodosAmbientes();
+    goTab('orcamento');
+    if(typeof garantirLinhasEmTodosAmbientes==='function')garantirLinhasEmTodosAmbientes();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
@@ -17379,7 +17432,9 @@ function usarCliente(id) {
   if (document.getElementById('o-num') && c.num) document.getElementById('o-num').value = c.num;
   if (document.getElementById('o-apto') && c.apto) document.getElementById('o-apto').value = c.apto;
   if (document.getElementById('o-resp') && c.responsavel) document.getElementById('o-resp').value = c.responsavel;
-  goTab('orcamento');
+  if(typeof garantirLinhasEmTodosAmbientes==='function')garantirLinhasEmTodosAmbientes();
+    goTab('orcamento');
+    if(typeof garantirLinhasEmTodosAmbientes==='function')garantirLinhasEmTodosAmbientes();
 }
 
 // ─── PICKER DE CLIENTE PARA AGENDAMENTO ──────────────────────────────────────
@@ -22935,9 +22990,11 @@ async function gerarPdfOrcamentoDoc(dados) {
     page.drawText(txtValProdutos, { x: rightCardX + rightCardW - 10 - fontBold.widthOfTextAtSize(txtValProdutos, 7.2), y: totY, size: 7.2, font: fontBold, color: DARK });
 
     totY -= 13;
-    const txtValServico = valServicoFinal > 0 ? ('R$ ' + formatarValorPtBr(valServicoFinal)) : 'Inclusa';
+    const txtValServico = valServicoFinal > 0 ? ('R$ ' + formatarValorPtBr(valServicoFinal)) : '';
     page.drawText('Mão de Obra e Instalação:', { x: rightCardX + 10, y: totY, size: 6.8, font: fontRegular, color: GRAY });
-    page.drawText(txtValServico, { x: rightCardX + rightCardW - 10 - fontBold.widthOfTextAtSize(txtValServico, 7.2), y: totY, size: 7.2, font: fontBold, color: DARK });
+    if (txtValServico) {
+      page.drawText(txtValServico, { x: rightCardX + rightCardW - 10 - fontBold.widthOfTextAtSize(txtValServico, 7.2), y: totY, size: 7.2, font: fontBold, color: DARK });
+    }
 
     if (valFreteNum > 0) {
       totY -= 13;
@@ -24278,7 +24335,9 @@ function renderFinanceiro() {
 
     const acao = m.origem === 'manual'
       ? `<button class="item-del" onclick="excluirLancamentoFinanceiro('${m.id}')" title="Excluir lançamento" style="width:26px;height:26px;font-size:11px;">✕</button>`
-      : `<button class="btn btn-gold btn-xs" onclick="carregarOrcamento(${m.osId});goTab('orcamento');" title="Abrir esta O.S." style="padding:4px 8px;font-size:11px;">Ver O.S.</button>`;
+      : `<button class="btn btn-gold btn-xs" onclick="carregarOrcamento(${m.osId});if(typeof garantirLinhasEmTodosAmbientes==='function')garantirLinhasEmTodosAmbientes();
+    goTab('orcamento');
+    if(typeof garantirLinhasEmTodosAmbientes==='function')garantirLinhasEmTodosAmbientes();" title="Abrir esta O.S." style="padding:4px 8px;font-size:11px;">Ver O.S.</button>`;
 
     return `
       <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.05);gap:10px;flex-wrap:wrap;">
@@ -25670,7 +25729,9 @@ function iniciarOrcamentoDeAgendamento(id) {
   if (!ev) return;
 
   if (typeof goTab === 'function') {
+    if(typeof garantirLinhasEmTodosAmbientes==='function')garantirLinhasEmTodosAmbientes();
     goTab('orcamento');
+    if(typeof garantirLinhasEmTodosAmbientes==='function')garantirLinhasEmTodosAmbientes();
   }
 
   const elNome = document.getElementById('o-nome');
@@ -25993,7 +26054,9 @@ function direcionarAgendamentoParaOrcamento() {
   fecharModalNovoCompromissoAgenda();
 
   // Abre a aba de Orçamento
-  goTab('orcamento');
+  if(typeof garantirLinhasEmTodosAmbientes==='function')garantirLinhasEmTodosAmbientes();
+    goTab('orcamento');
+    if(typeof garantirLinhasEmTodosAmbientes==='function')garantirLinhasEmTodosAmbientes();
 
   // Preenche os campos do Orçamento com os dados que estavam no agendamento
   setTimeout(() => {
@@ -29549,7 +29612,9 @@ function sincronizarComparativoInstantaneo() {
 
 function sairComparativo() {
   if (typeof goTab === 'function') {
+    if(typeof garantirLinhasEmTodosAmbientes==='function')garantirLinhasEmTodosAmbientes();
     goTab('orcamento');
+    if(typeof garantirLinhasEmTodosAmbientes==='function')garantirLinhasEmTodosAmbientes();
   }
 }
 
@@ -40663,7 +40728,9 @@ function aplicarRetornoComparativo() {
       setTimeout(navegar, 1200);
     } else if (origem === 'orcamento' || hash === '#orcamento') {
       const navegar = () => {
-        if (typeof goTab === 'function') goTab('orcamento');
+        if (typeof goTab === 'function') if(typeof garantirLinhasEmTodosAmbientes==='function')garantirLinhasEmTodosAmbientes();
+    goTab('orcamento');
+    if(typeof garantirLinhasEmTodosAmbientes==='function')garantirLinhasEmTodosAmbientes();
       };
       navegar();
       setTimeout(navegar, 100);
