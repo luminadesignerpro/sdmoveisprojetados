@@ -23363,6 +23363,11 @@ async function enviarOuBaixarPdfOrcamento(orcObj = null) {
       endCompleto = endCompleto ? `${endCompleto}, Nº ${o.num}` : `Nº ${o.num}`;
     }
 
+    // Coletar fotos do orçamento para incluir no PDF
+    const fotosParaPdf = (typeof obterFotosOrcamentoParaPdf === 'function')
+      ? obterFotosOrcamentoParaPdf(o.numero)
+      : (o.fotos || []);
+
     const dadosPdf = {
       numero: o.numero,
       dataStr: o.data || new Date().toLocaleDateString('pt-BR'),
@@ -23383,6 +23388,7 @@ async function enviarOuBaixarPdfOrcamento(orcObj = null) {
       status: o.status || '',
       formatoPdf: o.formatoPdf || _modoPdfOrcamentoSelecionado || 'detalhado',
       ambientes: (o.ambientes && o.ambientes.length) ? o.ambientes : ((typeof obterResumoAmbientesParaPdf === 'function') ? obterResumoAmbientesParaPdf() : []),
+      fotos: (typeof desduplicarListaFotos === 'function') ? desduplicarListaFotos(fotosParaPdf) : fotosParaPdf,
       assinatura_base64: (o.assinatura_digital && o.assinatura_digital.rubrica) || o.assinatura_base64 || o.rubrica_base64 || ''
     };
 

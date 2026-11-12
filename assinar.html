@@ -2812,16 +2812,25 @@ window.selecionarPagamento = function(metodo) {
     const pParam = extractParam('p');
     const dParam = extractParam('d') || extractParam('data');
     const contratoId = extractParam('id');
-    const numOs = (contratoCache && contratoCache.numero_os) || (typeof dParam !== 'undefined' && dParam ? '0028' : '0001');
+    // numOs: usar contratoCache, ou URL param 'num', ou extrair do dParam decodificado
+    const numParam = extractParam('num');
+    let numOs = (contratoCache && contratoCache.numero_os) || numParam || '';
+    if (!numOs && dParam) {
+      try {
+        const dec = JSON.parse(atob(dParam));
+        numOs = dec.n || dec.numero_os || dec.numero || '';
+      } catch (_) {}
+    }
+    numOs = numOs || '0001';
     const empParam = extractParam('empresa') || 'sdmoveis';
 
     let urlApi = '';
     if (pParam) {
       urlApi = '/api/gerar-pdf-orcamento?p=' + encodeURIComponent(pParam) + '&num=' + encodeURIComponent(String(numOs).replace('#', '')) + '&empresa=' + encodeURIComponent(empParam);
     } else if (contratoId) {
-      urlApi = '/api/gerar-pdf-orcamento?id=' + encodeURIComponent(contratoId) + '&empresa=' + encodeURIComponent(empParam);
+      urlApi = '/api/gerar-pdf-orcamento?id=' + encodeURIComponent(contratoId) + '&num=' + encodeURIComponent(String(numOs).replace('#', '')) + '&empresa=' + encodeURIComponent(empParam);
     } else if (dParam) {
-      urlApi = '/api/gerar-pdf-orcamento?d=' + encodeURIComponent(dParam) + '&empresa=' + encodeURIComponent(empParam);
+      urlApi = '/api/gerar-pdf-orcamento?d=' + encodeURIComponent(dParam) + '&num=' + encodeURIComponent(String(numOs).replace('#', '')) + '&empresa=' + encodeURIComponent(empParam);
     } else {
       urlApi = '/api/gerar-pdf-orcamento?num=' + encodeURIComponent(String(numOs).replace('#', '')) + '&empresa=' + encodeURIComponent(empParam);
     }
