@@ -18,7 +18,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js?v=9.1.2').then(r => { r.update(); })
+        navigator.serviceWorker.register('/sw.js?v=9.5.6').then(r => { r.update(); })
           .then(function(reg){ console.log('SW registrado com sucesso:', reg.scope); })
           .catch(function(err){ console.warn('Erro ao registrar SW:', err); });
       });
@@ -11130,34 +11130,8 @@ function gerarParametroD(d) {
         ]);
       }
     }
-    payloadCompacto.fpdf = (typeof _modoPdfOrcamentoSelecionado !== 'undefined' ? _modoPdfOrcamentoSelecionado : (d.formatoPdf || 'ambiente'));
-    payloadCompacto.ambNome = (document.getElementById('inp-orc-ambiente-top') ? document.getElementById('inp-orc-ambiente-top').value.trim() : '') || 'Sala';
-    if (typeof obterResumoAmbientesParaPdf === 'function') {
-      const resAmb = obterResumoAmbientesParaPdf();
-      if (resAmb && resAmb.length) {
-        payloadCompacto.amb = resAmb.map(a => [
-          a.nome || '',
-          a.obs || '',
-          Math.round(a.produtosVal || 0),
-          Math.round(a.servicosVal || 0),
-          Math.round(a.totalVal || 0)
-        ]);
-      }
-    }
-    if (d.itens && d.itens.length) {
-      payloadCompacto.i = d.itens.map(it => [
-        it.desc || "",
-        it.qtd || 1,
-        it.larg || "",
-        it.alt || "",
-        it.m2 || "",
-        it.v_unit || "",
-        it.total || "",
-        it.cor || "",
-        it.bizt || "",
-        it.ambiente || ""
-      ]);
-    }
+    // NÃO incluímos itens no dParam para manter a URL curta.
+    // O PDF é obtido via ?p= (ntfy) ou ?id= (Supabase).
     const jsonStr = JSON.stringify(payloadCompacto);
     const u8 = new TextEncoder().encode(jsonStr);
     let binStr = "";
@@ -13451,9 +13425,10 @@ async function abrirVisualizadorPdfParaDados(dadosRaw, tituloModal, fileName) {
 
     if (tituloEl) tituloEl.textContent = tituloModal || '👁️ Visualizar PDF';
 
-    // 1. Renderiza com PDF.js para 100% de compatibilidade em celulares Android, iPhones e PCs
+    // 1. Renderiza com PDF.js — EXCETO no Android Chrome (mostra UUID do blob)
+    const isAndroidChrome = /Android/i.test(navigator.userAgent) && /Chrome/i.test(navigator.userAgent);
     let renderizouComSucesso = false;
-    if (typeof pdfjsLib !== 'undefined') {
+    if (!isAndroidChrome && typeof pdfjsLib !== 'undefined') {
       try {
         if (pdfjsLib.GlobalWorkerOptions) {
           pdfjsLib.GlobalWorkerOptions.workerSrc = 'pdf.worker.min.js';
@@ -14971,7 +14946,7 @@ function adicionarNovoAmbienteSecao(nomePadrao = '') {
         </div>
 
         <!-- BADGES DE VALORES -->
-        <div style="display:flex;flex-direction:column;gap:5px;width:100%;max-width:240px;margin-top:2px;">
+        <div style="display:flex;flex-direction:column;gap:5px;width:100%;max-width:240px;margin-top:2px;overflow:hidden;">
           <div class="badge-secao-produtos-val" style="background:rgba(59,130,246,0.16);border:1.5px solid rgba(59,130,246,0.4);color:#93c5fd;font-size:11.5px;font-weight:800;padding:4px 10px;border-radius:7px;display:flex;align-items:center;justify-content:space-between;gap:8px;box-shadow:0 2px 6px rgba(0,0,0,0.2);" title="Valor dos produtos deste ambiente">
             <span style="display:inline-flex;align-items:center;gap:5px;"><span>📦</span> <span>Valor Produtos:</span></span>
             <span class="val-secao-produtos" style="font-weight:900;color:#bfdbfe;white-space:nowrap;flex-shrink:0;">R$ 0,00</span>
@@ -21623,21 +21598,7 @@ async function enviarOrcamentoParaAssinaturaDigital() {
     if (d.valServico != null) payloadCompacto.vs = d.valServico;
     if (d.valFrete != null) payloadCompacto.vf = d.valFrete;
     if (d.valDesconto != null) payloadCompacto.vd = d.valDesconto;
-    if (d.itens && d.itens.length) {
-      payloadCompacto.i = d.itens.map(it => [
-        it.desc || '',
-        it.qtd || 1,
-        it.larg || '',
-        it.alt || '',
-        it.m2 || '',
-        it.v_unit || '',
-        it.total || '',
-        it.cor || '',
-        it.bizt || '',
-        it.ambiente || ''
-      ]);
-    }
-
+    // Não incluímos itens no dParam para manter URL curta (PDF via ?p= ou ?id=)
     const jsonStr = JSON.stringify(payloadCompacto);
     const u8 = new TextEncoder().encode(jsonStr);
     let binStr = '';
