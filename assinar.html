@@ -1253,18 +1253,42 @@
       </div>
     </div>
 
-    <!-- Ações Secundárias: WhatsApp e PDF -->
-    <!-- Download PDF or Review (Idêntico à Imagem 4) -->
-    <div style="display:flex;gap:8px;margin-top:14px;margin-bottom:16px;flex-wrap:wrap;">
-      <button type="button" class="btn btn-outline btn-sm" onclick="baixarPdfAtual()" style="flex:1;min-width:140px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-weight:700;padding:10px 14px;">
-        📄 Baixar Contrato em PDF
-      </button>
-      <button type="button" class="btn btn-green btn-sm" onclick="irParaAssinatura()" style="flex:1.2;min-width:150px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-weight:800;padding:10px 14px;">
-        ✍️ Aprovar & Assinar
+    <!-- Ações Secundárias na Tela de Sucesso -->
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:14px;">
+      <a id="btn-notificar-sdv" href="#" target="_blank" class="btn btn-whats" style="display:none;">
+        📱 Enviar Confirmação & Link no WhatsApp
+      </a>
+      <button id="btn-baixar-pdf-sucesso" class="btn btn-outline" onclick="baixarPdfAtual()">
+        📄 Baixar Cópia do Contrato (PDF)
       </button>
     </div>
+  </div>
 
-    <!-- Scrollable Contract / Proposal text -->
+  <!-- Main Proposal & Signing View (Primeira Imagem) -->
+  <div id="tela-form" class="hidden">
+    <!-- Document Card -->
+    <div class="card">
+      <div class="doc-info-bar">
+        <div class="doc-num" id="display-numero">Orçamento</div>
+        <div id="display-status" class="status-pill status-pendente">Aguardando Aprovação</div>
+      </div>
+
+      <div class="client-row">
+        <div>Cliente: <strong id="display-cliente">-</strong></div>
+        <div style="margin-top:4px;">Documento: <strong id="subtitulo">SD Móveis Projetados</strong></div>
+      </div>
+
+      <!-- Actions: Download PDF or Review -->
+      <div style="display:flex;gap:8px;margin-top:14px;margin-bottom:16px;flex-wrap:wrap;">
+        <button type="button" class="btn btn-outline btn-sm" onclick="baixarPdfAtual()" style="flex:1;min-width:140px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-weight:700;padding:10px 14px;">
+          📄 Baixar Contrato em PDF
+        </button>
+        <button type="button" class="btn btn-green btn-sm" onclick="irParaAssinatura()" style="flex:1.2;min-width:150px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-weight:800;padding:10px 14px;">
+          ✍️ Aprovar & Assinar
+        </button>
+      </div>
+
+      <!-- Cláusulas do Contrato de Prestação de Serviços -->
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
         <span style="font-size:12px;font-weight:800;color:var(--gold-light,#c9a84c);display:flex;align-items:center;gap:6px;">
           📋 Cláusulas do Contrato de Prestação de Serviços
@@ -1303,8 +1327,6 @@
       </div>
     </div>
 
-    <!-- Signature Pad Card -->
-    <!-- Payment Selection Card -->
     <div class="pay-card hidden" id="card-pagamento">
       <div class="pay-card-title">💳 Forma de Pagamento</div>
       <p class="pay-card-sub">Selecione como deseja realizar o pagamento antes de assinar o contrato.</p>
@@ -2006,17 +2028,28 @@
   };
 
   window.irParaAssinatura = function() {
-    const cardPagamento = document.getElementById('card-pagamento');
-    if (cardPagamento) cardPagamento.classList.add('hidden');
+    // Esconde card de decisão e MOSTRA card de pagamento (Segunda Imagem)
     const cardDecisao = document.getElementById('card-decisao');
-    if (cardDecisao) cardDecisao.classList.add('hidden');
+    const cardPagamento = document.getElementById('card-pagamento');
     const cardAssinatura = document.getElementById('card-assinatura');
-    if (cardAssinatura) {
-      cardAssinatura.classList.remove('hidden');
-      cardAssinatura.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      const inp = document.getElementById('nome-input');
-      if (inp) { setTimeout(() => inp.focus(), 250); }
+    if (cardDecisao) cardDecisao.classList.add('hidden');
+    if (cardAssinatura) cardAssinatura.classList.add('hidden');
+    if (cardPagamento) {
+      cardPagamento.classList.remove('hidden');
+      setTimeout(function() {
+        cardPagamento.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
     }
+    if (typeof renderizarDadosRecebedor === 'function') {
+      try { renderizarDadosRecebedor(); } catch(e) {}
+    }
+    try {
+      const lic = (typeof obterLicencaAtiva === 'function') ? obterLicencaAtiva() : { telefone: '85996119824' };
+      const zapLimpo = String(lic.telefone || '85996119824').replace(/\D/g, '');
+      const zapHref = 'https://wa.me/' + (zapLimpo.startsWith('55') ? zapLimpo : '55' + zapLimpo);
+      const btnZapCard = document.getElementById('pay-btn-zap-card');
+      if (btnZapCard) btnZapCard.href = zapHref;
+    } catch (_) {}
   };
 
   let tempQrCustomEmpresa = '';
@@ -2435,17 +2468,28 @@
   }
 
   window.irParaAssinatura = function() {
-    const cardPagamento = document.getElementById('card-pagamento');
-    if (cardPagamento) cardPagamento.classList.add('hidden');
+    // Esconde card de decisão e MOSTRA card de pagamento (Segunda Imagem)
     const cardDecisao = document.getElementById('card-decisao');
-    if (cardDecisao) cardDecisao.classList.add('hidden');
+    const cardPagamento = document.getElementById('card-pagamento');
     const cardAssinatura = document.getElementById('card-assinatura');
-    if (cardAssinatura) {
-      cardAssinatura.classList.remove('hidden');
-      cardAssinatura.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      const inp = document.getElementById('nome-input');
-      if (inp) { setTimeout(() => inp.focus(), 250); }
+    if (cardDecisao) cardDecisao.classList.add('hidden');
+    if (cardAssinatura) cardAssinatura.classList.add('hidden');
+    if (cardPagamento) {
+      cardPagamento.classList.remove('hidden');
+      setTimeout(function() {
+        cardPagamento.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
     }
+    if (typeof renderizarDadosRecebedor === 'function') {
+      try { renderizarDadosRecebedor(); } catch(e) {}
+    }
+    try {
+      const lic = (typeof obterLicencaAtiva === 'function') ? obterLicencaAtiva() : { telefone: '85996119824' };
+      const zapLimpo = String(lic.telefone || '85996119824').replace(/\D/g, '');
+      const zapHref = 'https://wa.me/' + (zapLimpo.startsWith('55') ? zapLimpo : '55' + zapLimpo);
+      const btnZapCard = document.getElementById('pay-btn-zap-card');
+      if (btnZapCard) btnZapCard.href = zapHref;
+    } catch (_) {}
   };
 
   let formaPagamentoEscolhida = '';
@@ -3483,21 +3527,30 @@ WhatsApp: ${d.tel || d.t || '_________________________________'}`;
   }
 })();
 
-function irParaAssinatura() {
-  // Esconde card de decisão e card de pagamento — vai direto para assinatura
-  const cardDecisao = document.getElementById('card-decisao');
-  const cardPagamento = document.getElementById('card-pagamento');
-  const cardAssinatura = document.getElementById('card-assinatura');
-  if (cardDecisao) cardDecisao.classList.add('hidden');
-  if (cardPagamento) cardPagamento.classList.add('hidden');
-  if (cardAssinatura) {
-    cardAssinatura.classList.remove('hidden');
-    setTimeout(function() {
-      cardAssinatura.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
-  }
-}
-window.irParaAssinatura = irParaAssinatura;
+window.irParaAssinatura = function() {
+    // Esconde card de decisão e MOSTRA card de pagamento (Segunda Imagem)
+    const cardDecisao = document.getElementById('card-decisao');
+    const cardPagamento = document.getElementById('card-pagamento');
+    const cardAssinatura = document.getElementById('card-assinatura');
+    if (cardDecisao) cardDecisao.classList.add('hidden');
+    if (cardAssinatura) cardAssinatura.classList.add('hidden');
+    if (cardPagamento) {
+      cardPagamento.classList.remove('hidden');
+      setTimeout(function() {
+        cardPagamento.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+    if (typeof renderizarDadosRecebedor === 'function') {
+      try { renderizarDadosRecebedor(); } catch(e) {}
+    }
+    try {
+      const lic = (typeof obterLicencaAtiva === 'function') ? obterLicencaAtiva() : { telefone: '85996119824' };
+      const zapLimpo = String(lic.telefone || '85996119824').replace(/\D/g, '');
+      const zapHref = 'https://wa.me/' + (zapLimpo.startsWith('55') ? zapLimpo : '55' + zapLimpo);
+      const btnZapCard = document.getElementById('pay-btn-zap-card');
+      if (btnZapCard) btnZapCard.href = zapHref;
+    } catch (_) {}
+  };
 
 </script>
 </body>
