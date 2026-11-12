@@ -1,4 +1,5 @@
-// Service Worker PWA – SD Móveis Projetados v9.5.5 (Fix: badges ambientes alinhados, visualizador PDF Android, links WhatsApp e API)'sdmoveisprojetados-v9.5.6 (Fix: link WhatsApp curto, PDF viewer Android, badges ambientes)';
+// Service Worker PWA – SD Móveis Projetados v9.5.6 (Fix: link WhatsApp curto, PDF viewer Android, badges ambientes)
+const CACHE_NAME = 'sdmoveisprojetados-v9.5.6';
 const ASSETS = [
   '/',
   '/index.html',
@@ -48,6 +49,11 @@ self.addEventListener('activate', (event) => {
 // ══════════════════════════════════════════════
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+
+  // Não intercepta rotas de API externas
+  const url = new URL(event.request.url);
+  if (url.origin !== self.location.origin) return;
+
   event.respondWith(
     fetch(event.request)
       .then((response) => {
