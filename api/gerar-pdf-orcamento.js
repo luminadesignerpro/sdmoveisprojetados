@@ -628,10 +628,10 @@ async function gerarPdfOrcamento(dados, fetchLogo, empInfo) {
       page.drawText(vServApi, { x: rightCardX + rightCardW - 10 - fontRegular.widthOfTextAtSize(vServApi, 7.2), y: totY, size: 7.2, font: fontRegular, color: DARK });
     }
 
-    totY -= 13;
-    const txtValFrete = valFreteNum > 0 ? ('R$ ' + valFreteNum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })) : '';
-    page.drawText('Frete:', { x: rightCardX + 10, y: totY, size: 6.8, font: fontRegular, color: GRAY });
-    if (txtValFrete) {
+    if (valFreteNum > 0) {
+      totY -= 13;
+      const txtValFrete = 'R$ ' + valFreteNum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      page.drawText('Frete:', { x: rightCardX + 10, y: totY, size: 6.8, font: fontRegular, color: GRAY });
       page.drawText(txtValFrete, { x: rightCardX + rightCardW - 10 - fontBold.widthOfTextAtSize(txtValFrete, 7.2), y: totY, size: 7.2, font: fontBold, color: DARK });
     }
   }
