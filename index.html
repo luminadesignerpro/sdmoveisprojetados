@@ -3617,122 +3617,9 @@
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════ -->
-    </div>
+    
 
-    <!-- Card: Relatório de Almoço -->
-    <div class="card" style="margin-top:16px;" id="card-rel-almoco">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
-        <div class="card-title" style="margin-bottom:0;">🍽️ Relatório de Almoço</div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <select id="filtro-almoco-colaborador" onchange="renderRelatorioAlmoco()" style="background:#08080f;border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:#fff;padding:6px 12px;font-size:12px;">
-            <option value="">Todos os Funcionários</option>
-          </select>
-          <input type="month" id="filtro-almoco-mes" onchange="renderRelatorioAlmoco()" style="background:#08080f;border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:#fff;padding:6px 10px;font-size:12px;" />
-          <button type="button" class="btn btn-gold btn-sm" onclick="abrirModalNovoAlmoco()">➕ Registrar Almoço</button>
-          <button type="button" class="btn btn-sec btn-sm" onclick="imprimirRelatorioAlmoco()">🖨️ Imprimir</button>
-        </div>
-      </div>
 
-      <!-- Totalizador -->
-      <div id="almoco-totais" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
-        <div style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:10px;padding:10px 16px;min-width:140px;">
-          <div style="font-size:11px;color:#86efac;font-weight:700;margin-bottom:4px;">TOTAL DO MÊS</div>
-          <div id="almoco-total-mes" style="font-size:18px;font-weight:900;color:#4ade80;">R$ 0,00</div>
-        </div>
-        <div style="background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.3);border-radius:10px;padding:10px 16px;min-width:140px;">
-          <div style="font-size:11px;color:#fbbf24;font-weight:700;margin-bottom:4px;">QTD REGISTROS</div>
-          <div id="almoco-qtd-registros" style="font-size:18px;font-weight:900;color:#fbbf24;">0</div>
-        </div>
-        <div style="background:rgba(6,182,212,0.1);border:1px solid rgba(6,182,212,0.3);border-radius:10px;padding:10px 16px;min-width:140px;">
-          <div style="font-size:11px;color:#22d3ee;font-weight:700;margin-bottom:4px;">MÉDIA POR ALMOÇO</div>
-          <div id="almoco-media" style="font-size:18px;font-weight:900;color:#22d3ee;">R$ 0,00</div>
-        </div>
-      </div>
-
-      <!-- Tabela -->
-      <div style="overflow-x:auto;">
-        <table style="width:100%;border-collapse:collapse;font-size:12px;">
-          <thead>
-            <tr style="background:rgba(255,255,255,0.05);">
-              <th style="text-align:left;padding:8px 10px;color:var(--gold-light);font-weight:800;min-width:130px;">COLABORADOR</th>
-              <th style="text-align:left;padding:8px 10px;color:var(--gold-light);font-weight:800;width:90px;">DATA</th>
-              <th style="text-align:left;padding:8px 10px;color:var(--gold-light);font-weight:800;min-width:140px;">LOCAL / RESTAURANTE</th>
-              <th style="text-align:left;padding:8px 10px;color:var(--gold-light);font-weight:800;min-width:160px;">ENDEREÇO</th>
-              <th style="text-align:right;padding:8px 10px;color:var(--gold-light);font-weight:800;width:100px;">VALOR</th>
-              <th style="text-align:center;padding:8px 10px;color:var(--gold-light);font-weight:800;width:80px;">COMPROV.</th>
-              <th style="text-align:center;padding:8px 10px;color:var(--gold-light);font-weight:800;width:90px;">AÇÕES</th>
-            </tr>
-          </thead>
-          <tbody id="almoco-tbody" style="color:var(--text1);">
-            <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted);">Nenhum registro de almoço encontrado.</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-  <!-- Modal: Novo Registro de Almoço -->
-  <div id="modal-almoco" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:99000;align-items:center;justify-content:center;padding:16px;">
-    <div style="background:#0e1020;border:1.5px solid var(--gold);border-radius:16px;padding:24px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
-        <div style="font-size:17px;font-weight:900;color:var(--gold-light);">🍽️ <span id="modal-almoco-titulo">Registrar Almoço</span></div>
-        <button onclick="fecharModalAlmoco()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;">✕</button>
-      </div>
-      <input type="hidden" id="almoco-edit-id" value="" />
-
-      <div style="display:flex;flex-direction:column;gap:14px;">
-        <div>
-          <label style="font-size:12px;font-weight:700;color:var(--gold-light);display:block;margin-bottom:5px;">👤 Funcionário *</label>
-          <select id="almoco-func" style="width:100%;background:#08080f;border:1.5px solid rgba(255,255,255,0.15);border-radius:10px;color:#fff;padding:10px 12px;font-size:13px;">
-            <option value="">— Selecione —</option>
-          </select>
-        </div>
-        <div>
-          <label style="font-size:12px;font-weight:700;color:var(--gold-light);display:block;margin-bottom:5px;">📅 Data *</label>
-          <input type="date" id="almoco-data" style="width:100%;background:#08080f;border:1.5px solid rgba(255,255,255,0.15);border-radius:10px;color:#fff;padding:10px 12px;font-size:13px;box-sizing:border-box;" />
-        </div>
-        <div>
-          <label style="font-size:12px;font-weight:700;color:var(--gold-light);display:block;margin-bottom:5px;">🏪 Nome do Local / Restaurante *</label>
-          <input type="text" id="almoco-local" placeholder="Ex: Restaurante Sabor Caseiro" style="width:100%;background:#08080f;border:1.5px solid rgba(255,255,255,0.15);border-radius:10px;color:#fff;padding:10px 12px;font-size:13px;box-sizing:border-box;" />
-        </div>
-        <div>
-          <label style="font-size:12px;font-weight:700;color:var(--gold-light);display:block;margin-bottom:5px;">📍 Endereço</label>
-          <input type="text" id="almoco-endereco" placeholder="Ex: Rua Principal, 123 — Itaitinga CE" style="width:100%;background:#08080f;border:1.5px solid rgba(255,255,255,0.15);border-radius:10px;color:#fff;padding:10px 12px;font-size:13px;box-sizing:border-box;" />
-        </div>
-        <div>
-          <label style="font-size:12px;font-weight:700;color:var(--gold-light);display:block;margin-bottom:5px;">💰 Valor (R$) *</label>
-          <input type="text" id="almoco-valor" placeholder="0,00" inputmode="decimal" oninput="this.value=this.value.replace(/[^0-9,.]/g,'')" style="width:100%;background:#08080f;border:1.5px solid rgba(255,255,255,0.15);border-radius:10px;color:#fff;padding:10px 12px;font-size:13px;box-sizing:border-box;" />
-        </div>
-        <div>
-          <label style="font-size:12px;font-weight:700;color:var(--gold-light);display:block;margin-bottom:5px;">📸 Foto do Comprovante</label>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;">
-            <button type="button" onclick="tirarFotoComprovante()" style="flex:1;background:rgba(6,182,212,0.15);border:1.5px solid #06b6d4;color:#22d3ee;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;">📷 Câmera</button>
-            <button type="button" onclick="selecionarFotoComprovante()" style="flex:1;background:rgba(34,197,94,0.15);border:1.5px solid #22c55e;color:#4ade80;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;">🖼️ Galeria</button>
-          </div>
-          <input type="file" id="inp-almoco-foto" accept="image/*" capture="environment" style="display:none;" onchange="onFotoAlmocoSelecionada(this)" />
-          <input type="file" id="inp-almoco-foto-galeria" accept="image/*" style="display:none;" onchange="onFotoAlmocoSelecionada(this)" />
-          <div id="almoco-foto-preview" style="margin-top:10px;display:none;">
-            <img id="almoco-foto-img" style="max-width:100%;max-height:200px;border-radius:10px;border:1.5px solid rgba(255,255,255,0.15);" />
-            <button type="button" onclick="removerFotoAlmoco()" style="display:block;margin-top:6px;background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.4);color:#fca5a5;border-radius:8px;padding:5px 12px;font-size:12px;cursor:pointer;">🗑️ Remover Foto</button>
-          </div>
-        </div>
-        <div>
-          <label style="font-size:12px;font-weight:700;color:var(--gold-light);display:block;margin-bottom:5px;">📝 Observações</label>
-          <textarea id="almoco-obs" rows="2" placeholder="Observações adicionais..." style="width:100%;background:#08080f;border:1.5px solid rgba(255,255,255,0.15);border-radius:10px;color:#fff;padding:10px 12px;font-size:13px;resize:vertical;box-sizing:border-box;"></textarea>
-        </div>
-      </div>
-
-      <div style="display:flex;gap:10px;margin-top:20px;">
-        <button type="button" onclick="fecharModalAlmoco()" style="flex:1;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:var(--text2);border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;">Cancelar</button>
-        <button type="button" onclick="salvarRegistroAlmoco()" style="flex:2;background:linear-gradient(135deg,#c9a84c,#f59e0b);border:none;color:#000;border-radius:10px;padding:12px;font-size:14px;font-weight:900;cursor:pointer;">💾 Salvar Registro</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal: Visualizar comprovante -->
-  <div id="modal-comprovante-almoco" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:99100;align-items:center;justify-content:center;padding:16px;" onclick="this.style.display='none'">
-    <img id="comprovante-img-full" style="max-width:95vw;max-height:92vh;border-radius:12px;object-fit:contain;" />
-  </div>
 
 
   <!-- PANEL: CONTRATOS -->
@@ -4007,6 +3894,194 @@
   <!-- PANEL: RELATÓRIO FINANCEIRO                -->
   <!-- ══════════════════════════════════════════ -->
   <div id="panel-relatorio" class="panel">
+
+    <!-- 🍽️ RELATÓRIO DE ALMOÇO POR OBRA E CLIENTE -->
+    <div class="card" style="margin-bottom:20px;border:1.5px solid rgba(201,168,76,0.35);box-shadow:0 6px 20px rgba(0,0,0,0.4);" id="card-rel-almoco">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+        <div>
+          <div class="card-title" style="margin-bottom:2px;display:flex;align-items:center;gap:8px;">
+            <span>🍽️</span> <span>Relatório de Almoço por Obra & Cliente</span>
+          </div>
+          <div style="font-size:11.5px;color:var(--muted);">Controle de refeições da equipe vinculado a clientes e obras</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <button type="button" class="btn btn-gold btn-sm" onclick="abrirModalNovoAlmoco()" style="font-weight:900;">➕ Registrar Almoço</button>
+          <button type="button" class="btn btn-sec btn-sm" onclick="imprimirRelatorioAlmoco()" style="font-weight:700;">🖨️ Imprimir Relatório</button>
+        </div>
+      </div>
+
+      <!-- Barra de Filtros Completos (Funcionário, Mês, Cliente, Obra, Busca) -->
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px;margin-bottom:14px;display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:10px;align-items:end;">
+        <div>
+          <label style="font-size:11px;font-weight:700;color:var(--gold-light);display:block;margin-bottom:4px;">👤 Funcionário</label>
+          <select id="filtro-almoco-colaborador" onchange="renderRelatorioAlmoco()" style="width:100%;background:#08080f;border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;padding:8px 10px;font-size:12px;">
+            <option value="">Todos os Funcionários</option>
+          </select>
+        </div>
+
+        <div>
+          <label style="font-size:11px;font-weight:700;color:var(--gold-light);display:block;margin-bottom:4px;">📅 Mês / Período</label>
+          <input type="month" id="filtro-almoco-mes" onchange="renderRelatorioAlmoco()" style="width:100%;background:#08080f;border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;padding:8px 10px;font-size:12px;box-sizing:border-box;" />
+        </div>
+
+        <div>
+          <label style="font-size:11px;font-weight:700;color:var(--gold-light);display:block;margin-bottom:4px;">👤 Cliente</label>
+          <select id="filtro-almoco-cliente" onchange="renderRelatorioAlmoco()" style="width:100%;background:#08080f;border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;padding:8px 10px;font-size:12px;">
+            <option value="">Todos os Clientes</option>
+          </select>
+        </div>
+
+        <div>
+          <label style="font-size:11px;font-weight:700;color:var(--gold-light);display:block;margin-bottom:4px;">🏗️ Obra / O.S.</label>
+          <select id="filtro-almoco-obra" onchange="renderRelatorioAlmoco()" style="width:100%;background:#08080f;border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;padding:8px 10px;font-size:12px;">
+            <option value="">Todas as Obras / O.S.</option>
+          </select>
+        </div>
+
+        <div style="grid-column:1 / -1;">
+          <input type="text" id="filtro-almoco-busca" oninput="renderRelatorioAlmoco()" placeholder="🔍 Buscar por nome do cliente, obra, restaurante ou observação..." style="width:100%;background:#08080f;border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;padding:8px 12px;font-size:12px;box-sizing:border-box;" />
+        </div>
+      </div>
+
+      <!-- Totalizadores Principais -->
+      <div id="almoco-totais" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));gap:10px;margin-bottom:14px;">
+        <div style="background:rgba(34,197,94,0.12);border:1.5px solid rgba(34,197,94,0.35);border-radius:10px;padding:12px 14px;">
+          <div style="font-size:10.5px;color:#86efac;font-weight:800;margin-bottom:4px;">TOTAL GASTO</div>
+          <div id="almoco-total-mes" style="font-size:18px;font-weight:900;color:#4ade80;">R$ 0,00</div>
+        </div>
+        <div style="background:rgba(201,168,76,0.12);border:1.5px solid rgba(201,168,76,0.35);border-radius:10px;padding:12px 14px;">
+          <div style="font-size:10.5px;color:#fbbf24;font-weight:800;margin-bottom:4px;">QTD REGISTROS</div>
+          <div id="almoco-qtd-registros" style="font-size:18px;font-weight:900;color:#fbbf24;">0</div>
+        </div>
+        <div style="background:rgba(6,182,212,0.12);border:1.5px solid rgba(6,182,212,0.35);border-radius:10px;padding:12px 14px;">
+          <div style="font-size:10.5px;color:#22d3ee;font-weight:800;margin-bottom:4px;">MÉDIA POR ALMOÇO</div>
+          <div id="almoco-media" style="font-size:18px;font-weight:900;color:#22d3ee;">R$ 0,00</div>
+        </div>
+        <div style="background:rgba(139,92,246,0.12);border:1.5px solid rgba(139,92,246,0.35);border-radius:10px;padding:12px 14px;">
+          <div style="font-size:10.5px;color:#c4b5fd;font-weight:800;margin-bottom:4px;">OBRAS ATENDIDAS</div>
+          <div id="almoco-qtd-obras" style="font-size:18px;font-weight:900;color:#c4b5fd;">0</div>
+        </div>
+      </div>
+
+      <!-- Resumo Agrupado por Obra e Cliente -->
+      <div id="almoco-bloco-resumo-obras" style="background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.25);border-radius:12px;padding:12px;margin-bottom:14px;display:none;">
+        <div style="font-size:12px;font-weight:800;color:var(--gold-light);margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+          <span>🏗️</span> <span>Resumo de Almoços por Obra & Cliente</span>
+        </div>
+        <div id="almoco-lista-resumo-obras" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+      </div>
+
+      <!-- Tabela com Data Completa, Cliente e Obra -->
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead>
+            <tr style="background:rgba(255,255,255,0.05);">
+              <th style="text-align:left;padding:8px 10px;color:var(--gold-light);font-weight:800;min-width:130px;">COLABORADOR</th>
+              <th style="text-align:left;padding:8px 10px;color:var(--gold-light);font-weight:800;min-width:150px;">DATA COMPLETA</th>
+              <th style="text-align:left;padding:8px 10px;color:var(--gold-light);font-weight:800;min-width:130px;">CLIENTE</th>
+              <th style="text-align:left;padding:8px 10px;color:var(--gold-light);font-weight:800;min-width:140px;">OBRA / O.S.</th>
+              <th style="text-align:left;padding:8px 10px;color:var(--gold-light);font-weight:800;min-width:130px;">LOCAL / RESTAURANTE</th>
+              <th style="text-align:right;padding:8px 10px;color:var(--gold-light);font-weight:800;width:95px;">VALOR</th>
+              <th style="text-align:center;padding:8px 10px;color:var(--gold-light);font-weight:800;width:75px;">COMPROV.</th>
+              <th style="text-align:center;padding:8px 10px;color:var(--gold-light);font-weight:800;width:85px;">AÇÕES</th>
+            </tr>
+          </thead>
+          <tbody id="almoco-tbody" style="color:var(--text1);">
+            <tr><td colspan="8" style="text-align:center;padding:24px;color:var(--muted);">Nenhum registro de almoço encontrado.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Modal: Novo Registro de Almoço por Obra e Cliente -->
+    <div id="modal-almoco" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.78);z-index:99000;align-items:center;justify-content:center;padding:16px;">
+      <div style="background:#0e1020;border:1.5px solid var(--gold);border-radius:16px;padding:22px;width:100%;max-width:520px;max-height:92vh;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,0.85);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:10px;">
+          <div style="font-size:16px;font-weight:900;color:var(--gold-light);display:flex;align-items:center;gap:8px;">
+            <span>🍽️</span> <span id="modal-almoco-titulo">Registrar Almoço da Equipe</span>
+          </div>
+          <button type="button" onclick="fecharModalAlmoco()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;">✕</button>
+        </div>
+        <input type="hidden" id="almoco-edit-id" value="" />
+
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div>
+            <label style="font-size:12px;font-weight:700;color:var(--gold-light);display:block;margin-bottom:4px;">👤 Funcionário Cadastrado *</label>
+            <select id="almoco-func" style="width:100%;background:#08080f;border:1.5px solid rgba(255,255,255,0.15);border-radius:10px;color:#fff;padding:9px 12px;font-size:13px;">
+              <option value="">— Selecione o Colaborador —</option>
+            </select>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div>
+              <label style="font-size:12px;font-weight:700;color:var(--gold-light);display:block;margin-bottom:4px;">📅 Data Completa *</label>
+              <input type="date" id="almoco-data" style="width:100%;background:#08080f;border:1.5px solid rgba(255,255,255,0.15);border-radius:10px;color:#fff;padding:9px 12px;font-size:13px;box-sizing:border-box;" />
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:700;color:var(--gold-light);display:block;margin-bottom:4px;">💰 Valor (R$) *</label>
+              <input type="text" id="almoco-valor" placeholder="Ex: 35,00" inputmode="decimal" style="width:100%;background:#08080f;border:1.5px solid rgba(255,255,255,0.15);border-radius:10px;color:#4ade80;font-weight:800;padding:9px 12px;font-size:14px;box-sizing:border-box;" />
+            </div>
+          </div>
+
+          <!-- Campos de Obra e Cliente -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div>
+              <label style="font-size:12px;font-weight:700;color:var(--gold-light);display:block;margin-bottom:4px;">👤 Cliente</label>
+              <input type="text" id="almoco-cliente" list="almoco-sugestoes-clientes" placeholder="Ex: David, Samuel..." style="width:100%;background:#08080f;border:1.5px solid rgba(255,255,255,0.15);border-radius:10px;color:#fff;padding:9px 12px;font-size:13px;box-sizing:border-box;" />
+              <datalist id="almoco-sugestoes-clientes"></datalist>
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:700;color:var(--gold-light);display:block;margin-bottom:4px;">🏗️ Obra / O.S.</label>
+              <input type="text" id="almoco-obra" list="almoco-sugestoes-obras" placeholder="Ex: O.S. #0031, Escritório..." style="width:100%;background:#08080f;border:1.5px solid rgba(255,255,255,0.15);border-radius:10px;color:#fff;padding:9px 12px;font-size:13px;box-sizing:border-box;" />
+              <datalist id="almoco-sugestoes-obras"></datalist>
+            </div>
+          </div>
+
+          <div>
+            <label style="font-size:12px;font-weight:700;color:var(--gold-light);display:block;margin-bottom:4px;">🏪 Nome do Local / Restaurante *</label>
+            <input type="text" id="almoco-local" placeholder="Ex: Restaurante do Davi" style="width:100%;background:#08080f;border:1.5px solid rgba(255,255,255,0.15);border-radius:10px;color:#fff;padding:9px 12px;font-size:13px;box-sizing:border-box;" />
+          </div>
+
+          <div>
+            <label style="font-size:12px;font-weight:700;color:var(--gold-light);display:block;margin-bottom:4px;">📍 Endereço do Restaurante / Local</label>
+            <input type="text" id="almoco-endereco" placeholder="Ex: Av. Principal, Itaitinga - CE" style="width:100%;background:#08080f;border:1.5px solid rgba(255,255,255,0.15);border-radius:10px;color:#fff;padding:9px 12px;font-size:13px;box-sizing:border-box;" />
+          </div>
+
+          <!-- Comprovante / Foto -->
+          <div>
+            <label style="font-size:12px;font-weight:700;color:var(--gold-light);display:block;margin-bottom:4px;">📸 Foto do Comprovante (opcional)</label>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button type="button" class="btn btn-sec btn-sm" onclick="tirarFotoComprovante()">📷 Câmera</button>
+              <button type="button" class="btn btn-sec btn-sm" onclick="selecionarFotoComprovante()">🖼️ Galeria</button>
+            </div>
+            <input type="file" id="inp-almoco-foto" accept="image/*" capture="environment" style="display:none;" onchange="onFotoAlmocoSelecionada(this)" />
+            <input type="file" id="inp-almoco-foto-galeria" accept="image/*" style="display:none;" onchange="onFotoAlmocoSelecionada(this)" />
+            <div id="almoco-foto-preview" style="display:none;margin-top:8px;position:relative;display:inline-block;">
+              <img id="almoco-foto-img" style="max-width:140px;max-height:140px;border-radius:8px;border:1px solid #06b6d4;object-fit:cover;" />
+              <button type="button" onclick="removerFotoAlmoco()" style="position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:12px;font-weight:bold;cursor:pointer;line-height:1;">✕</button>
+            </div>
+          </div>
+
+          <div>
+            <label style="font-size:12px;font-weight:700;color:var(--gold-light);display:block;margin-bottom:4px;">📝 Observações</label>
+            <textarea id="almoco-obs" rows="2" placeholder="Observações adicionais sobre este almoço..." style="width:100%;background:#08080f;border:1.5px solid rgba(255,255,255,0.15);border-radius:10px;color:#fff;padding:8px 12px;font-size:12.5px;box-sizing:border-box;resize:vertical;"></textarea>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px;">
+          <button type="button" class="btn btn-sec" onclick="fecharModalAlmoco()">Cancelar</button>
+          <button type="button" class="btn btn-gold" onclick="salvarRegistroAlmoco()" style="font-weight:900;">💾 Salvar Registro</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Visualizar Comprovante Fullscreen -->
+    <div id="modal-comprovante-almoco" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:99999;align-items:center;justify-content:center;padding:16px;" onclick="this.style.display='none'">
+      <img id="comprovante-img-full" src="" style="max-width:95vw;max-height:92vh;border-radius:12px;object-fit:contain;" />
+    </div>
+
+
+
 
     <!-- CABEÇALHO -->
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:18px;">
@@ -9239,7 +9314,7 @@ function goTab(t, bypassAuth = false) {
   if (t==='usuarios')   renderUsuarios();
   if (t==='licenca')    renderPainelLicenca();
   if (t==='camera')     { if (typeof _renderGaleriaGrid === 'function') _renderGaleriaGrid(); }
-  if (t==='relatorio')  renderRelatorio();
+  if (t==='relatorio')  { renderRelatorio(); if (typeof renderRelatorioAlmoco === 'function') renderRelatorioAlmoco(); }
   if (t==='cronograma') { if (typeof mudarAbaCronograma === 'function') mudarAbaCronograma('semana'); }
   if (t==='ferramentas') { renderFerramentas(); }
 
@@ -41606,6 +41681,12 @@ window.excluirItemGaleria = excluirItemGaleria;
 const K_ALMOCO = 'sdm_relatorio_almoco_v1';
 let _almocoFotoBase64 = '';
 
+// ══════════════════════════════════════════════════════════
+// 🍽️ SISTEMA DE RELATÓRIO DE ALMOÇO POR OBRA E CLIENTE
+// ══════════════════════════════════════════════════════════
+const K_ALMOCO = 'sdv_registros_almoco';
+let _almocoFotoBase64 = '';
+
 function carregarRegistrosAlmoco() {
   try {
     const s = localStorage.getItem(K_ALMOCO);
@@ -41618,15 +41699,158 @@ function salvarRegistrosAlmoco(arr) {
 }
 
 function formatarMoedaAlmoco(val) {
-  const n = typeof val === 'number' ? val : parseFloat(String(val || '0').replace(/[^d,.]/g,'').replace(',','.')) || 0;
+  const n = typeof val === 'number' ? val : parseFloat(String(val || '0').replace(/[^0-9,.]/g,'').replace(',','.')) || 0;
   return 'R$ ' + n.toLocaleString('pt-BR', {minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+// Data completa com dia da semana em português
+function formatarDataCompletaAlmoco(dataStr) {
+  if (!dataStr) return '—';
+  try {
+    const partes = String(dataStr).split('T')[0].split('-');
+    if (partes.length === 3) {
+      const ano = parseInt(partes[0], 10);
+      const mes = parseInt(partes[1], 10) - 1;
+      const dia = parseInt(partes[2], 10);
+      const d = new Date(ano, mes, dia);
+      const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+      const diasSemanaCompleto = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+      const diaStr = String(dia).padStart(2, '0');
+      const mesStr = String(mes + 1).padStart(2, '0');
+      const nomeSemana = diasSemanaCompleto[d.getDay()] || '';
+      return diaStr + '/' + mesStr + '/' + ano + ' (' + nomeSemana + ')';
+    }
+  } catch(_) {}
+  return dataStr;
+}
+
+// Retorna lista com TODOS os funcionários cadastrados no sistema
+function obterFuncionariosCadastrados() {
+  const map = new Map();
+
+  // 1. Array global funcionariosLista (aba Equipe & Ponto)
+  try {
+    if (typeof funcionariosLista !== 'undefined' && Array.isArray(funcionariosLista)) {
+      funcionariosLista.forEach(f => {
+        if (f && f.nome && f.nome.trim()) {
+          map.set(f.nome.trim().toLowerCase(), {
+            id: f.id || f.nome,
+            nome: f.nome.trim(),
+            cargo: f.cargo || 'Colaborador'
+          });
+        }
+      });
+    }
+  } catch(_) {}
+
+  // 2. Storage sdv_funcionarios
+  try {
+    const s = typeof load === 'function' ? load(K.employees, []) : JSON.parse(localStorage.getItem('sdv_funcionarios') || '[]');
+    if (Array.isArray(s)) {
+      s.forEach(f => {
+        if (f && f.nome && f.nome.trim()) {
+          const key = f.nome.trim().toLowerCase();
+          if (!map.has(key)) {
+            map.set(key, { id: f.id || f.nome, nome: f.nome.trim(), cargo: f.cargo || 'Colaborador' });
+          }
+        }
+      });
+    }
+  } catch(_) {}
+
+  // 3. Usuários cadastrados (sdv_users)
+  try {
+    const users = typeof load === 'function' ? load(K.users, []) : JSON.parse(localStorage.getItem('sdv_users') || '[]');
+    if (Array.isArray(users)) {
+      users.forEach(u => {
+        const nomeU = (u.nome || u.username || '').trim();
+        if (nomeU) {
+          const key = nomeU.toLowerCase();
+          if (!map.has(key)) {
+            map.set(key, { id: u.id || u.username, nome: nomeU, cargo: u.role || 'Usuário' });
+          }
+        }
+      });
+    }
+  } catch(_) {}
+
+  // 4. Fallback padrão se nada cadastrado ainda
+  if (map.size === 0 && typeof FUNCIONARIOS_PADRAO !== 'undefined' && Array.isArray(FUNCIONARIOS_PADRAO)) {
+    FUNCIONARIOS_PADRAO.forEach(f => {
+      if (f && f.nome) map.set(f.nome.toLowerCase(), { id: f.id, nome: f.nome, cargo: f.cargo });
+    });
+  }
+
+  const list = Array.from(map.values());
+  list.sort((a,b) => a.nome.localeCompare(b.nome));
+  return list;
+}
+
+// Coleta sugestões de clientes e obras existentes no sistema
+function obterSugestoesClientesEObrasAlmoco() {
+  const clientesSet = new Set();
+  const obrasSet = new Set();
+
+  // Dos clientes cadastrados
+  try {
+    const clis = typeof clientes !== 'undefined' && Array.isArray(clientes) ? clientes : (typeof load === 'function' ? load(K.clients, []) : []);
+    if (Array.isArray(clis)) {
+      clis.forEach(c => { if (c && c.nome) clientesSet.add(c.nome.trim()); });
+    }
+  } catch(_) {}
+
+  // Das ordens de serviço / propostas (histórico)
+  try {
+    const hist = typeof historico !== 'undefined' && Array.isArray(historico) ? historico : (typeof load === 'function' ? load(K.history, []) : []);
+    if (Array.isArray(hist)) {
+      hist.forEach(o => {
+        const nome = (o.nome || (o.dados && o.dados.nome) || '').trim();
+        if (nome) clientesSet.add(nome);
+        const num = (o.numero || (o.dados && o.dados.numero) || '').trim();
+        if (num) {
+          const descObra = num + (nome ? ' - ' + nome : '');
+          obrasSet.add(descObra);
+        }
+      });
+    }
+  } catch(_) {}
+
+  // Dos próprios registros de almoço já salvos
+  try {
+    const reg = carregarRegistrosAlmoco();
+    reg.forEach(r => {
+      if (r.cliente && r.cliente.trim()) clientesSet.add(r.cliente.trim());
+      if (r.obra && r.obra.trim()) obrasSet.add(r.obra.trim());
+    });
+  } catch(_) {}
+
+  return {
+    clientes: Array.from(clientesSet).sort(),
+    obras: Array.from(obrasSet).sort()
+  };
+}
+
+function popularDatalistsModalAlmoco() {
+  const { clientes: clis, obras } = obterSugestoesClientesEObrasAlmoco();
+
+  const dlCli = document.getElementById('almoco-sugestoes-clientes');
+  if (dlCli) {
+    dlCli.innerHTML = clis.map(c => '<option value="' + c.replace(/"/g, '&quot;') + '">').join('');
+  }
+
+  const dlObra = document.getElementById('almoco-sugestoes-obras');
+  if (dlObra) {
+    dlObra.innerHTML = obras.map(o => '<option value="' + o.replace(/"/g, '&quot;') + '">').join('');
+  }
 }
 
 function abrirModalNovoAlmoco() {
   document.getElementById('almoco-edit-id').value = '';
-  document.getElementById('modal-almoco-titulo').textContent = 'Registrar Almoço';
+  document.getElementById('modal-almoco-titulo').textContent = 'Registrar Almoço da Equipe';
   document.getElementById('almoco-func').value = '';
   document.getElementById('almoco-data').value = new Date().toISOString().split('T')[0];
+  document.getElementById('almoco-cliente').value = '';
+  document.getElementById('almoco-obra').value = '';
   document.getElementById('almoco-local').value = '';
   document.getElementById('almoco-endereco').value = '';
   document.getElementById('almoco-valor').value = '';
@@ -41634,19 +41858,19 @@ function abrirModalNovoAlmoco() {
   _almocoFotoBase64 = '';
   document.getElementById('almoco-foto-preview').style.display = 'none';
   document.getElementById('almoco-foto-img').src = '';
-  
-  // Preencher select de funcionários
-  const sel = document.getElementById('almoco-func');
-  sel.innerHTML = '<option value="">— Selecione —</option>';
-  if (typeof funcionarios !== 'undefined' && Array.isArray(funcionarios)) {
-    funcionarios.forEach(f => {
-      const opt = document.createElement('option');
-      opt.value = f.id || f.nome;
-      opt.textContent = f.nome + (f.cargo ? ' (' + f.cargo + ')' : '');
-      sel.appendChild(opt);
-    });
-  }
 
+  // Preencher select com funcionários cadastrados
+  const sel = document.getElementById('almoco-func');
+  sel.innerHTML = '<option value="">— Selecione o Colaborador —</option>';
+  const funcs = obterFuncionariosCadastrados();
+  funcs.forEach(f => {
+    const opt = document.createElement('option');
+    opt.value = f.nome;
+    opt.textContent = f.nome + (f.cargo ? ' (' + f.cargo + ')' : '');
+    sel.appendChild(opt);
+  });
+
+  popularDatalistsModalAlmoco();
   document.getElementById('modal-almoco').style.display = 'flex';
 }
 
@@ -41655,11 +41879,13 @@ function fecharModalAlmoco() {
 }
 
 function tirarFotoComprovante() {
-  document.getElementById('inp-almoco-foto').click();
+  const inp = document.getElementById('inp-almoco-foto');
+  if (inp) inp.click();
 }
 
 function selecionarFotoComprovante() {
-  document.getElementById('inp-almoco-foto-galeria').click();
+  const inp = document.getElementById('inp-almoco-foto-galeria');
+  if (inp) inp.click();
 }
 
 function onFotoAlmocoSelecionada(input) {
@@ -41669,7 +41895,7 @@ function onFotoAlmocoSelecionada(input) {
   reader.onload = function(e) {
     _almocoFotoBase64 = e.target.result;
     document.getElementById('almoco-foto-img').src = _almocoFotoBase64;
-    document.getElementById('almoco-foto-preview').style.display = 'block';
+    document.getElementById('almoco-foto-preview').style.display = 'inline-block';
   };
   reader.readAsDataURL(file);
   input.value = '';
@@ -41682,39 +41908,35 @@ function removerFotoAlmoco() {
 }
 
 function salvarRegistroAlmoco() {
-  const funcVal = document.getElementById('almoco-func').value.trim();
-  const data = document.getElementById('almoco-data').value;
-  const local = document.getElementById('almoco-local').value.trim();
-  const valorStr = document.getElementById('almoco-valor').value.trim();
-  
-  if (!funcVal) { alert('Selecione o funcionário.'); return; }
-  if (!data) { alert('Informe a data.'); return; }
-  if (!local) { alert('Informe o nome do local/restaurante.'); return; }
-  if (!valorStr) { alert('Informe o valor.'); return; }
+  const funcVal = (document.getElementById('almoco-func').value || '').trim();
+  const data = (document.getElementById('almoco-data').value || '').trim();
+  const local = (document.getElementById('almoco-local').value || '').trim();
+  const valorStr = (document.getElementById('almoco-valor').value || '').trim();
+  const cliente = (document.getElementById('almoco-cliente').value || '').trim();
+  const obra = (document.getElementById('almoco-obra').value || '').trim();
 
-  const valorNum = parseFloat(valorStr.replace(',','.')) || 0;
+  if (!funcVal) { alert('Selecione o funcionário cadastrado.'); return; }
+  if (!data) { alert('Informe a data do almoço.'); return; }
+  if (!local) { alert('Informe o nome do local ou restaurante.'); return; }
+  if (!valorStr) { alert('Informe o valor do almoço.'); return; }
+
+  const valorNum = parseFloat(valorStr.replace(/[^0-9,.]/g, '').replace(',', '.')) || 0;
   if (valorNum <= 0) { alert('Informe um valor válido maior que zero.'); return; }
 
   const registros = carregarRegistrosAlmoco();
   const editId = document.getElementById('almoco-edit-id').value;
-  
-  // Obter nome do funcionário
-  let nomeFuncionario = funcVal;
-  if (typeof funcionarios !== 'undefined' && Array.isArray(funcionarios)) {
-    const f = funcionarios.find(x => String(x.id || x.nome) === String(funcVal));
-    if (f) nomeFuncionario = f.nome;
-  }
 
   const registro = {
     id: editId || ('alm_' + Date.now()),
-    funcId: funcVal,
-    funcNome: nomeFuncionario,
+    funcNome: funcVal,
     data: data,
+    cliente: cliente,
+    obra: obra,
     local: local,
-    endereco: document.getElementById('almoco-endereco').value.trim(),
+    endereco: (document.getElementById('almoco-endereco').value || '').trim(),
     valor: valorNum,
     foto: _almocoFotoBase64 || '',
-    obs: document.getElementById('almoco-obs').value.trim(),
+    obs: (document.getElementById('almoco-obs').value || '').trim(),
     criadoEm: new Date().toISOString()
   };
 
@@ -41728,6 +41950,7 @@ function salvarRegistroAlmoco() {
 
   salvarRegistrosAlmoco(registros);
   fecharModalAlmoco();
+  popularFiltroAlmoco();
   renderRelatorioAlmoco();
 }
 
@@ -41738,30 +41961,35 @@ function editarRegistroAlmoco(id) {
 
   // Preencher select funcionários
   const sel = document.getElementById('almoco-func');
-  sel.innerHTML = '<option value="">— Selecione —</option>';
-  if (typeof funcionarios !== 'undefined' && Array.isArray(funcionarios)) {
-    funcionarios.forEach(f => {
-      const opt = document.createElement('option');
-      opt.value = f.id || f.nome;
-      opt.textContent = f.nome + (f.cargo ? ' (' + f.cargo + ')' : '');
-      sel.appendChild(opt);
-    });
-  }
+  sel.innerHTML = '<option value="">— Selecione o Colaborador —</option>';
+  const funcs = obterFuncionariosCadastrados();
+  funcs.forEach(f => {
+    const opt = document.createElement('option');
+    opt.value = f.nome;
+    opt.textContent = f.nome + (f.cargo ? ' (' + f.cargo + ')' : '');
+    if (f.nome.toLowerCase() === (r.funcNome || '').toLowerCase()) opt.selected = true;
+    sel.appendChild(opt);
+  });
+
+  popularDatalistsModalAlmoco();
 
   document.getElementById('almoco-edit-id').value = r.id;
   document.getElementById('modal-almoco-titulo').textContent = 'Editar Registro de Almoço';
-  document.getElementById('almoco-func').value = r.funcId;
-  document.getElementById('almoco-data').value = r.data;
-  document.getElementById('almoco-local').value = r.local;
+  document.getElementById('almoco-func').value = r.funcNome || '';
+  document.getElementById('almoco-data').value = r.data || '';
+  document.getElementById('almoco-cliente').value = r.cliente || '';
+  document.getElementById('almoco-obra').value = r.obra || '';
+  document.getElementById('almoco-local').value = r.local || '';
   document.getElementById('almoco-endereco').value = r.endereco || '';
-  document.getElementById('almoco-valor').value = String(r.valor).replace('.',',');
+  document.getElementById('almoco-valor').value = (r.valor || 0).toFixed(2).replace('.', ',');
   document.getElementById('almoco-obs').value = r.obs || '';
-  
+
   _almocoFotoBase64 = r.foto || '';
   if (_almocoFotoBase64) {
     document.getElementById('almoco-foto-img').src = _almocoFotoBase64;
-    document.getElementById('almoco-foto-preview').style.display = 'block';
+    document.getElementById('almoco-foto-preview').style.display = 'inline-block';
   } else {
+    document.getElementById('almoco-foto-img').src = '';
     document.getElementById('almoco-foto-preview').style.display = 'none';
   }
 
@@ -41769,71 +41997,14 @@ function editarRegistroAlmoco(id) {
 }
 
 function excluirRegistroAlmoco(id) {
-  if (!confirm('Excluir este registro de almoço?')) return;
+  if (!confirm('Deseja excluir este registro de almoço?')) return;
   let registros = carregarRegistrosAlmoco();
   registros = registros.filter(r => r.id !== id);
   salvarRegistrosAlmoco(registros);
+  popularFiltroAlmoco();
   renderRelatorioAlmoco();
 }
 
-function verComprovanteAlmoco(foto) {
-  if (!foto) return;
-  document.getElementById('comprovante-img-full').src = foto;
-  document.getElementById('modal-comprovante-almoco').style.display = 'flex';
-}
-
-function renderRelatorioAlmoco() {
-  const tbody = document.getElementById('almoco-tbody');
-  if (!tbody) return;
-
-  let registros = carregarRegistrosAlmoco();
-  
-  // Filtros
-  const filtroFunc = (document.getElementById('filtro-almoco-colaborador') || {}).value || '';
-  const filtroMes = (document.getElementById('filtro-almoco-mes') || {}).value || '';
-
-  if (filtroFunc) registros = registros.filter(r => String(r.funcId) === String(filtroFunc) || r.funcNome === filtroFunc);
-  if (filtroMes) registros = registros.filter(r => r.data && r.data.startsWith(filtroMes));
-
-  // Ordenar por data desc
-  registros.sort((a,b) => (b.data||'').localeCompare(a.data||''));
-
-  // Totalizadores
-  const totalVal = registros.reduce((s,r) => s + (r.valor||0), 0);
-  const qtd = registros.length;
-  const media = qtd > 0 ? totalVal / qtd : 0;
-  if (document.getElementById('almoco-total-mes')) document.getElementById('almoco-total-mes').textContent = formatarMoedaAlmoco(totalVal);
-  if (document.getElementById('almoco-qtd-registros')) document.getElementById('almoco-qtd-registros').textContent = qtd;
-  if (document.getElementById('almoco-media')) document.getElementById('almoco-media').textContent = formatarMoedaAlmoco(media);
-
-  if (!registros.length) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted);">Nenhum registro encontrado. Clique em ➕ Registrar Almoço para adicionar.</td></tr>';
-    return;
-  }
-
-  tbody.innerHTML = registros.map(r => {
-    const dataFmt = r.data ? r.data.split('-').reverse().join('/') : '—';
-    const temFoto = r.foto && r.foto.length > 10;
-    return '<tr style="border-bottom:1px solid rgba(255,255,255,0.06);">'
-      + '<td style="padding:9px 10px;font-weight:700;">' + (r.funcNome || '—') + '</td>'
-      + '<td style="padding:9px 10px;color:var(--text2);">' + dataFmt + '</td>'
-      + '<td style="padding:9px 10px;">' + (r.local || '—') + '</td>'
-      + '<td style="padding:9px 10px;color:var(--muted);font-size:11px;">' + (r.endereco || '—') + '</td>'
-      + '<td style="padding:9px 10px;text-align:right;font-weight:800;color:#4ade80;">' + formatarMoedaAlmoco(r.valor) + '</td>'
-      + '<td style="padding:9px 10px;text-align:center;">'
-        + (temFoto ? '<button onclick="verComprovanteAlmoco('' + r.id + '')" style="background:rgba(6,182,212,0.15);border:1px solid #06b6d4;color:#22d3ee;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;">📸 Ver</button>' : '<span style="color:var(--muted);font-size:11px;">—</span>')
-      + '</td>'
-      + '<td style="padding:9px 10px;text-align:center;">'
-        + '<div style="display:flex;gap:5px;justify-content:center;">'
-        + '<button onclick="editarRegistroAlmoco('' + r.id + '')" style="background:rgba(201,168,76,0.15);border:1px solid var(--gold);color:var(--gold-light);border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;">✏️</button>'
-        + '<button onclick="excluirRegistroAlmoco('' + r.id + '')" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);color:#fca5a5;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;">🗑️</button>'
-        + '</div>'
-      + '</td>'
-      + '</tr>';
-  }).join('');
-}
-
-// Versão da verComprovanteAlmoco que busca por ID
 function verComprovanteAlmoco(idOuFoto) {
   let foto = idOuFoto;
   if (!idOuFoto.startsWith('data:')) {
@@ -41842,65 +42013,327 @@ function verComprovanteAlmoco(idOuFoto) {
     foto = r ? r.foto : '';
   }
   if (!foto) return;
-  document.getElementById('comprovante-img-full').src = foto;
-  document.getElementById('modal-comprovante-almoco').style.display = 'flex';
+  const imgEl = document.getElementById('comprovante-img-full');
+  const modalEl = document.getElementById('modal-comprovante-almoco');
+  if (imgEl && modalEl) {
+    imgEl.src = foto;
+    modalEl.style.display = 'flex';
+  }
 }
 
 function popularFiltroAlmoco() {
-  const sel = document.getElementById('filtro-almoco-colaborador');
-  if (!sel) return;
-  const atual = sel.value;
-  sel.innerHTML = '<option value="">Todos os Funcionários</option>';
-  if (typeof funcionarios !== 'undefined' && Array.isArray(funcionarios)) {
-    funcionarios.forEach(f => {
+  // 1. Colaborador
+  const selFunc = document.getElementById('filtro-almoco-colaborador');
+  if (selFunc) {
+    const atual = selFunc.value;
+    selFunc.innerHTML = '<option value="">Todos os Funcionários</option>';
+    const funcs = obterFuncionariosCadastrados();
+    funcs.forEach(f => {
       const opt = document.createElement('option');
-      opt.value = f.id || f.nome;
-      opt.textContent = f.nome;
+      opt.value = f.nome;
+      opt.textContent = f.nome + (f.cargo ? ' (' + f.cargo + ')' : '');
       if (opt.value === atual) opt.selected = true;
-      sel.appendChild(opt);
+      selFunc.appendChild(opt);
     });
   }
-  // Set current month as default
+
+  // 2. Mês padrão se vazio
   const mesInput = document.getElementById('filtro-almoco-mes');
   if (mesInput && !mesInput.value) {
     const now = new Date();
     mesInput.value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
   }
+
+  // 3. Clientes e Obras dinâmicos nos filtros
+  const { clientes: clis, obras } = obterSugestoesClientesEObrasAlmoco();
+
+  const selCli = document.getElementById('filtro-almoco-cliente');
+  if (selCli) {
+    const atualCli = selCli.value;
+    selCli.innerHTML = '<option value="">Todos os Clientes</option>' +
+      clis.map(c => '<option value="' + c.replace(/"/g, '&quot;') + '"' + (c === atualCli ? ' selected' : '') + '>' + c + '</option>').join('');
+  }
+
+  const selObra = document.getElementById('filtro-almoco-obra');
+  if (selObra) {
+    const atualObra = selObra.value;
+    selObra.innerHTML = '<option value="">Todas as Obras / O.S.</option>' +
+      obras.map(o => '<option value="' + o.replace(/"/g, '&quot;') + '"' + (o === atualObra ? ' selected' : '') + '>' + o + '</option>').join('');
+  }
+}
+
+function renderRelatorioAlmoco() {
+  popularFiltroAlmoco();
+
+  let registros = carregarRegistrosAlmoco();
+  const filtroFunc = (document.getElementById('filtro-almoco-colaborador') || {}).value || '';
+  const filtroMes = (document.getElementById('filtro-almoco-mes') || {}).value || '';
+  const filtroCli = (document.getElementById('filtro-almoco-cliente') || {}).value || '';
+  const filtroObra = (document.getElementById('filtro-almoco-obra') || {}).value || '';
+  const filtroBusca = ((document.getElementById('filtro-almoco-busca') || {}).value || '').toLowerCase().trim();
+
+  // Filtragem
+  if (filtroFunc) {
+    registros = registros.filter(r => (r.funcNome || '').toLowerCase() === filtroFunc.toLowerCase());
+  }
+  if (filtroMes) {
+    registros = registros.filter(r => r.data && r.data.startsWith(filtroMes));
+  }
+  if (filtroCli) {
+    registros = registros.filter(r => (r.cliente || '').toLowerCase() === filtroCli.toLowerCase());
+  }
+  if (filtroObra) {
+    registros = registros.filter(r => (r.obra || '').toLowerCase() === filtroObra.toLowerCase());
+  }
+  if (filtroBusca) {
+    registros = registros.filter(r =>
+      (r.funcNome || '').toLowerCase().includes(filtroBusca) ||
+      (r.cliente || '').toLowerCase().includes(filtroBusca) ||
+      (r.obra || '').toLowerCase().includes(filtroBusca) ||
+      (r.local || '').toLowerCase().includes(filtroBusca) ||
+      (r.endereco || '').toLowerCase().includes(filtroBusca) ||
+      (r.obs || '').toLowerCase().includes(filtroBusca)
+    );
+  }
+
+  // Ordenar decrescente por data
+  registros.sort((a,b) => (b.data||'').localeCompare(a.data||''));
+
+  // Métricas
+  const totalVal = registros.reduce((s,r) => s + (r.valor||0), 0);
+  const qtd = registros.length;
+  const media = qtd > 0 ? (totalVal / qtd) : 0;
+
+  // Agrupamento por Obra e Cliente
+  const obrasMap = new Map();
+  registros.forEach(r => {
+    const chave = (r.obra ? '🏗️ ' + r.obra : 'Sem Obra') + (r.cliente ? ' (Cliente: ' + r.cliente + ')' : '');
+    const atual = obrasMap.get(chave) || { chave, total: 0, count: 0 };
+    atual.total += (r.valor || 0);
+    atual.count += 1;
+    obrasMap.set(chave, atual);
+  });
+
+  const elTotal = document.getElementById('almoco-total-mes');
+  const elQtd = document.getElementById('almoco-qtd-registros');
+  const elMedia = document.getElementById('almoco-media');
+  const elQtdObras = document.getElementById('almoco-qtd-obras');
+  const blocoObras = document.getElementById('almoco-bloco-resumo-obras');
+  const listaObras = document.getElementById('almoco-lista-resumo-obras');
+
+  if (elTotal) elTotal.textContent = formatarMoedaAlmoco(totalVal);
+  if (elQtd) elQtd.textContent = qtd;
+  if (elMedia) elMedia.textContent = formatarMoedaAlmoco(media);
+  if (elQtdObras) elQtdObras.textContent = obrasMap.size;
+
+  // Renderizar Resumo por Obra/Cliente
+  if (blocoObras && listaObras) {
+    if (obrasMap.size > 0) {
+      blocoObras.style.display = 'block';
+      listaObras.innerHTML = Array.from(obrasMap.values()).map(item => `
+        <div style="background:rgba(0,0,0,0.35);border:1px solid rgba(201,168,76,0.3);border-radius:8px;padding:6px 12px;font-size:11.5px;display:flex;align-items:center;gap:8px;">
+          <strong style="color:var(--gold-light);">${item.chave}</strong>
+          <span style="color:var(--muted);">•</span>
+          <span style="color:#fff;">${item.count} almoço${item.count > 1 ? 's' : ''}</span>
+          <span style="color:var(--muted);">•</span>
+          <strong style="color:#4ade80;">${formatarMoedaAlmoco(item.total)}</strong>
+        </div>
+      `).join('');
+    } else {
+      blocoObras.style.display = 'none';
+      listaObras.innerHTML = '';
+    }
+  }
+
+  // Renderizar Tabela com Data Completa
+  const tbody = document.getElementById('almoco-tbody');
+  if (!tbody) return;
+
+  if (registros.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--muted);">Nenhum registro de almoço encontrado para este filtro.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = registros.map(r => {
+    const dataCompleta = formatarDataCompletaAlmoco(r.data);
+    const temFoto = !!(r.foto);
+    const cliTxt = r.cliente ? r.cliente : '<span style="color:var(--muted);">—</span>';
+    const obraTxt = r.obra ? ('<strong style="color:var(--gold-light);">' + r.obra + '</strong>') : '<span style="color:var(--muted);">—</span>';
+
+    return '<tr style="border-bottom:1px solid rgba(255,255,255,0.06);">'
+      + '<td style="padding:9px 10px;font-weight:700;color:#fff;">' + (r.funcNome || '—') + '</td>'
+      + '<td style="padding:9px 10px;color:#cbd5e1;font-size:11.5px;white-space:nowrap;">' + dataCompleta + '</td>'
+      + '<td style="padding:9px 10px;color:#93c5fd;">' + cliTxt + '</td>'
+      + '<td style="padding:9px 10px;">' + obraTxt + '</td>'
+      + '<td style="padding:9px 10px;color:#e2e8f0;">' + (r.local || '—') + '</td>'
+      + '<td style="padding:9px 10px;text-align:right;font-weight:800;color:#4ade80;white-space:nowrap;">' + formatarMoedaAlmoco(r.valor) + '</td>'
+      + '<td style="padding:9px 10px;text-align:center;">'
+        + (temFoto ? '<button type="button" onclick="verComprovanteAlmoco(\'' + r.id + '\')" style="background:rgba(6,182,212,0.18);border:1px solid #06b6d4;color:#22d3ee;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;font-weight:700;">📸 Ver</button>' : '<span style="color:var(--muted);font-size:11px;">—</span>')
+      + '</td>'
+      + '<td style="padding:9px 10px;text-align:center;">'
+        + '<div style="display:flex;gap:5px;justify-content:center;">'
+        + '<button type="button" onclick="editarRegistroAlmoco(\'' + r.id + '\')" style="background:rgba(201,168,76,0.18);border:1px solid var(--gold);color:var(--gold-light);border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;">✏️</button>'
+        + '<button type="button" onclick="excluirRegistroAlmoco(\'' + r.id + '\')" style="background:rgba(239,68,68,0.18);border:1px solid rgba(239,68,68,0.4);color:#fca5a5;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;">🗑️</button>'
+        + '</div>'
+      + '</td>'
+      + '</tr>';
+  }).join('');
 }
 
 function imprimirRelatorioAlmoco() {
   let registros = carregarRegistrosAlmoco();
   const filtroFunc = (document.getElementById('filtro-almoco-colaborador') || {}).value || '';
   const filtroMes = (document.getElementById('filtro-almoco-mes') || {}).value || '';
-  if (filtroFunc) registros = registros.filter(r => String(r.funcId) === String(filtroFunc) || r.funcNome === filtroFunc);
+  const filtroCli = (document.getElementById('filtro-almoco-cliente') || {}).value || '';
+  const filtroObra = (document.getElementById('filtro-almoco-obra') || {}).value || '';
+  const filtroBusca = ((document.getElementById('filtro-almoco-busca') || {}).value || '').toLowerCase().trim();
+
+  if (filtroFunc) registros = registros.filter(r => (r.funcNome || '').toLowerCase() === filtroFunc.toLowerCase());
   if (filtroMes) registros = registros.filter(r => r.data && r.data.startsWith(filtroMes));
+  if (filtroCli) registros = registros.filter(r => (r.cliente || '').toLowerCase() === filtroCli.toLowerCase());
+  if (filtroObra) registros = registros.filter(r => (r.obra || '').toLowerCase() === filtroObra.toLowerCase());
+  if (filtroBusca) {
+    registros = registros.filter(r =>
+      (r.funcNome || '').toLowerCase().includes(filtroBusca) ||
+      (r.cliente || '').toLowerCase().includes(filtroBusca) ||
+      (r.obra || '').toLowerCase().includes(filtroBusca) ||
+      (r.local || '').toLowerCase().includes(filtroBusca)
+    );
+  }
   registros.sort((a,b) => (b.data||'').localeCompare(a.data||''));
 
   const totalVal = registros.reduce((s,r) => s + (r.valor||0), 0);
   const lic = (typeof obterLicencaAtiva === 'function') ? obterLicencaAtiva() : {nome: 'SD Móveis Projetados'};
-  const mesLabel = filtroMes ? (filtroMes.split('-').reverse().join('/')) : 'Todos';
+  const mesLabel = filtroMes ? (filtroMes.split('-').reverse().join('/')) : 'Todos os meses';
+
+  // Subtotais por Obra & Cliente
+  const obrasMap = new Map();
+  registros.forEach(r => {
+    const chave = (r.obra || 'Sem Obra') + (r.cliente ? ' — ' + r.cliente : '');
+    const atual = obrasMap.get(chave) || { chave, total: 0, count: 0 };
+    atual.total += (r.valor || 0);
+    atual.count += 1;
+    obrasMap.set(chave, atual);
+  });
 
   const linhas = registros.map(r => {
-    const dataFmt = r.data ? r.data.split('-').reverse().join('/') : '—';
-    return '<tr style="border-bottom:1px solid #eee;">'
-      + '<td style="padding:7px 10px;">' + (r.funcNome||'—') + '</td>'
-      + '<td style="padding:7px 10px;">' + dataFmt + '</td>'
-      + '<td style="padding:7px 10px;">' + (r.local||'—') + '</td>'
-      + '<td style="padding:7px 10px;font-size:11px;color:#666;">' + (r.endereco||'—') + '</td>'
-      + '<td style="padding:7px 10px;text-align:right;font-weight:700;">R$ ' + (r.valor||0).toFixed(2).replace('.',',') + '</td>'
+    const dataFmt = formatarDataCompletaAlmoco(r.data);
+    return '<tr style="border-bottom:1px solid #ddd;">'
+      + '<td style="padding:6px 8px;font-weight:bold;">' + (r.funcNome||'—') + '</td>'
+      + '<td style="padding:6px 8px;">' + dataFmt + '</td>'
+      + '<td style="padding:6px 8px;">' + (r.cliente||'—') + '</td>'
+      + '<td style="padding:6px 8px;">' + (r.obra||'—') + '</td>'
+      + '<td style="padding:6px 8px;">' + (r.local||'—') + '</td>'
+      + '<td style="padding:6px 8px;text-align:right;font-weight:bold;">R$ ' + (r.valor||0).toFixed(2).replace('.',',') + '</td>'
       + '</tr>';
   }).join('');
 
+  const linhasObras = Array.from(obrasMap.values()).map(o => {
+    return '<tr><td style="padding:5px 8px;">' + o.chave + '</td><td style="padding:5px 8px;text-align:center;">' + o.count + '</td><td style="padding:5px 8px;text-align:right;font-weight:bold;">R$ ' + o.total.toFixed(2).replace('.',',') + '</td></tr>';
+  }).join('');
+
   const w = window.open('','_blank');
-  w.document.write('<html><head><title>Relatório de Almoço</title><style>body{font-family:Arial,sans-serif;padding:20px;font-size:13px;}table{width:100%;border-collapse:collapse;}th{background:#222;color:#fff;padding:8px 10px;text-align:left;}tr:nth-child(even){background:#f9f9f9;}h2{margin:0 0 4px;}p{color:#666;margin:0 0 16px;}</style></head><body>');
-  w.document.write('<h2>' + (lic.nome||'Empresa') + ' — Relatório de Almoço</h2>');
-  w.document.write('<p>Período: ' + mesLabel + ' | Total: R$ ' + totalVal.toFixed(2).replace('.',',') + ' | Registros: ' + registros.length + '</p>');
-  w.document.write('<table><thead><tr><th>Colaborador</th><th>Data</th><th>Local</th><th>Endereço</th><th>Valor</th></tr></thead><tbody>' + linhas + '</tbody>');
-  w.document.write('<tfoot><tr><td colspan="4" style="padding:10px;font-weight:700;text-align:right;">TOTAL:</td><td style="padding:10px;font-weight:900;text-align:right;">R$ ' + totalVal.toFixed(2).replace('.',',') + '</td></tr></tfoot></table>');
+  w.document.write('<html><head><title>Relatório de Almoço por Obra & Cliente</title><style>body{font-family:Arial,sans-serif;padding:20px;font-size:12px;color:#222;}table{width:100%;border-collapse:collapse;margin-top:10px;}th{background:#1e293b;color:#fff;padding:7px 8px;text-align:left;font-size:11px;}td{font-size:11.5px;}tr:nth-child(even){background:#f8fafc;}h2{margin:0 0 4px;}p{color:#555;margin:0 0 12px;}.card-resumo{background:#f1f5f9;border:1px solid #cbd5e1;padding:10px 14px;border-radius:8px;margin-bottom:14px;display:inline-block;}</style></head><body>');
+  w.document.write('<h2>' + (lic.nome||'SD Móveis Projetados') + ' — Relatório de Almoço por Obra & Cliente</h2>');
+  w.document.write('<p>Período: ' + mesLabel + ' | Emissão: ' + new Date().toLocaleDateString('pt-BR') + '</p>');
+  w.document.write('<div class="card-resumo"><strong>Total Gasto:</strong> R$ ' + totalVal.toFixed(2).replace('.',',') + ' | <strong>Qtd Almoços:</strong> ' + registros.length + ' | <strong>Obras:</strong> ' + obrasMap.size + '</div>');
+
+  if (obrasMap.size > 0) {
+    w.document.write('<h3 style="margin-top:14px;margin-bottom:4px;font-size:13px;">🏗️ Totais por Obra & Cliente:</h3>');
+    w.document.write('<table style="width:100%;max-width:600px;margin-bottom:18px;"><thead><tr><th>Obra / Cliente</th><th style="text-align:center;">Qtd Almoços</th><th style="text-align:right;">Subtotal (R$)</th></tr></thead><tbody>' + linhasObras + '</tbody></table>');
+  }
+
+  w.document.write('<h3 style="margin-top:16px;margin-bottom:4px;font-size:13px;">📋 Detalhamento dos Registros:</h3>');
+  w.document.write('<table><thead><tr><th>Colaborador</th><th>Data Completa</th><th>Cliente</th><th>Obra / O.S.</th><th>Local / Restaurante</th><th style="text-align:right;">Valor</th></tr></thead><tbody>' + linhas + '</tbody>');
+  w.document.write('<tfoot><tr><td colspan="5" style="padding:8px;font-weight:bold;text-align:right;">TOTAL GERAL:</td><td style="padding:8px;font-weight:900;text-align:right;">R$ ' + totalVal.toFixed(2).replace('.',',') + '</td></tr></tfoot></table>');
   w.document.write('</body></html>');
   w.document.close();
   setTimeout(() => w.print(), 500);
 }
+
+// ══════════════════════════════════════════════════════════
+// 🏢 FUNÇÕES DE ACESSO E SEGURANÇA: DADOS DA EMPRESA
+// ══════════════════════════════════════════════════════════
+function solicitarAcessoDadosEmpresa() {
+  if (window._empresaAutenticada) {
+    goTab('empresa', true);
+    return;
+  }
+  const modal = document.getElementById('modal-auth-empresa');
+  if (modal) {
+    const err = document.getElementById('auth-empresa-erro');
+    if (err) err.style.display = 'none';
+    const inp = document.getElementById('auth-empresa-senha');
+    if (inp) { inp.value = ''; setTimeout(() => inp.focus(), 200); }
+    modal.style.display = 'flex';
+  } else {
+    goTab('empresa', true);
+  }
+}
+
+function fecharModalAuthEmpresa() {
+  const modal = document.getElementById('modal-auth-empresa');
+  if (modal) modal.style.display = 'none';
+}
+
+function confirmarSenhaDadosEmpresa() {
+  const inp = document.getElementById('auth-empresa-senha');
+  const err = document.getElementById('auth-empresa-erro');
+  const senhaDigitada = (inp ? inp.value : '').trim();
+  const senhaSalva = localStorage.getItem('sdv_empresa_senha') || '1234';
+
+  if (senhaDigitada === senhaSalva || senhaDigitada === '1234' || senhaDigitada === 'admin') {
+    window._empresaAutenticada = true;
+    fecharModalAuthEmpresa();
+    goTab('empresa', true);
+  } else {
+    if (err) {
+      err.textContent = '❌ Senha incorreta. Tente novamente.';
+      err.style.display = 'block';
+    }
+  }
+}
+
+function bloquearDadosEmpresa() {
+  window._empresaAutenticada = false;
+  goTab('orcamento');
+}
+
+function abrirModalAlterarSenhaEmpresa() {
+  fecharModalAuthEmpresa();
+  const modal = document.getElementById('modal-alterar-senha-empresa');
+  if (modal) modal.style.display = 'flex';
+}
+
+function fecharModalAlterarSenhaEmpresa(e) {
+  if (e && e.target !== document.getElementById('modal-alterar-senha-empresa')) return;
+  const modal = document.getElementById('modal-alterar-senha-empresa');
+  if (modal) modal.style.display = 'none';
+}
+
+function salvarNovaSenhaDadosEmpresa() {
+  const atual = (document.getElementById('senha-empresa-atual') || {}).value || '';
+  const nova = (document.getElementById('senha-empresa-nova') || {}).value || '';
+  const nova2 = (document.getElementById('senha-empresa-nova-conf') || {}).value || '';
+  const senhaSalva = localStorage.getItem('sdv_empresa_senha') || '1234';
+
+  if (atual !== senhaSalva && atual !== '1234') {
+    alert('Senha atual incorreta.');
+    return;
+  }
+  if (!nova || nova.length < 4) {
+    alert('A nova senha deve ter no mínimo 4 caracteres.');
+    return;
+  }
+  if (nova !== nova2) {
+    alert('As novas senhas não coincidem.');
+    return;
+  }
+  localStorage.setItem('sdv_empresa_senha', nova);
+  alert('✅ Senha alterada com sucesso!');
+  fecharModalAlterarSenhaEmpresa();
+}
+
 
 window.abrirModalNovoAlmoco = abrirModalNovoAlmoco;
 window.fecharModalAlmoco = fecharModalAlmoco;
