@@ -1,4 +1,4 @@
-// Service Worker PWA – SD Móveis Projetados v9.5.5 (Fix: badges ambientes alinhados, visualizador PDF Android, links WhatsApp e API)'sdmoveisprojetados-v9.5.5 (Fix: badges ambientes alinhados, visualizador PDF Android, links WhatsApp e API)';
+// Service Worker PWA – SD Móveis Projetados v9.5.5 (Fix: badges ambientes alinhados, visualizador PDF Android, links WhatsApp e API)'sdmoveisprojetados-v9.5.6 (Fix: link WhatsApp curto, PDF viewer Android, badges ambientes)';
 const ASSETS = [
   '/',
   '/index.html',
