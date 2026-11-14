@@ -446,6 +446,10 @@ async function gerarPdfOrcamento(dados, fetchLogo, empInfo) {
     });
   });
 
+  const rodapeCardH = 70;
+  const rodapeCardY = 26;
+  const rodapeTop = rodapeCardY + rodapeCardH;
+
   const cardBottomH = 146;
   let bottomY = curY - 12;
 
