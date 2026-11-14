@@ -455,7 +455,7 @@ async function gerarPdfOrcamento(dados, fetchLogo, empInfo) {
 
   let cardBottomY = bottomY - cardBottomH;
   let spaceBelowCards = cardBottomY - rodapeTop;
-// Se apertar o rodapé por excesso de itens, ajusta bottomY
+  // Se apertar o rodapé por excesso de itens, ajusta bottomY
   if (spaceBelowCards < 12) {
     bottomY = rodapeTop + 12 + cardBottomH;
     cardBottomY = bottomY - cardBottomH;
@@ -764,12 +764,12 @@ async function gerarPdfOrcamento(dados, fetchLogo, empInfo) {
 
             let embedded = null;
             if (isPng) {
-              try { embedded = await pdfDoc.embedPng(binBuffer); } catch(_) {
-                try { embedded = await pdfDoc.embedJpg(binBuffer); } catch(_) {}
+              try { embedded = await pdfDoc.embedPng(binBuffer); } catch (_) {
+                try { embedded = await pdfDoc.embedJpg(binBuffer); } catch (_) { }
               }
             } else {
-              try { embedded = await pdfDoc.embedJpg(binBuffer); } catch(_) {
-                try { embedded = await pdfDoc.embedPng(binBuffer); } catch(_) {}
+              try { embedded = await pdfDoc.embedJpg(binBuffer); } catch (_) {
+                try { embedded = await pdfDoc.embedPng(binBuffer); } catch (_) { }
               }
             }
 
@@ -790,7 +790,7 @@ async function gerarPdfOrcamento(dados, fetchLogo, empInfo) {
               });
             }
           }
-        } catch(errEmbed) {
+        } catch (errEmbed) {
           console.warn('Erro ao embutir foto única no PDF:', errEmbed);
         }
       } else {
@@ -846,12 +846,12 @@ async function gerarPdfOrcamento(dados, fetchLogo, empInfo) {
 
               let embedded = null;
               if (isPng) {
-                try { embedded = await pdfDoc.embedPng(binBuffer); } catch(_) {
-                  try { embedded = await pdfDoc.embedJpg(binBuffer); } catch(_) {}
+                try { embedded = await pdfDoc.embedPng(binBuffer); } catch (_) {
+                  try { embedded = await pdfDoc.embedJpg(binBuffer); } catch (_) { }
                 }
               } else {
-                try { embedded = await pdfDoc.embedJpg(binBuffer); } catch(_) {
-                  try { embedded = await pdfDoc.embedPng(binBuffer); } catch(_) {}
+                try { embedded = await pdfDoc.embedJpg(binBuffer); } catch (_) {
+                  try { embedded = await pdfDoc.embedPng(binBuffer); } catch (_) { }
                 }
               }
 
@@ -872,7 +872,7 @@ async function gerarPdfOrcamento(dados, fetchLogo, empInfo) {
                 });
               }
             }
-          } catch(errEmbed) {
+          } catch (errEmbed) {
             console.warn('Erro ao embutir foto ' + numFotoGlobal + ' no PDF:', errEmbed);
           }
         }
@@ -943,7 +943,7 @@ module.exports = async (req, res) => {
           // Remove possíveis aspas ou pontuações ao redor da URL que o WhatsApp ou cliente de email possa ter colado
           s = s.replace(/^[\"\'\<]+/, '').replace(/[\"\'\>\.\,\;]+$/, '');
           while (s.includes('%')) {
-            try { s = decodeURIComponent(s); } catch(_) { break; }
+            try { s = decodeURIComponent(s); } catch (_) { break; }
           }
           s = s.replace(/\s+/g, '+').replace(/-/g, '+').replace(/_/g, '/');
           while (s.length % 4 !== 0) s += '=';
@@ -1090,7 +1090,7 @@ module.exports = async (req, res) => {
                 if (match) {
                   try {
                     dados = JSON.parse(match[1]);
-                  } catch (_) {}
+                  } catch (_) { }
                 }
               }
               // 3. Fallback com dados básicos
@@ -1111,90 +1111,90 @@ module.exports = async (req, res) => {
       }
     }
 
-    
-      // Enriquecimento automático via Supabase caso fotos ou itens estejam ausentes
-      if (dados && (!dados.fotos || !dados.fotos.length || !dados.itens || !dados.itens.length)) {
-        try {
-          const { getClient } = require('./_supabase');
-          const supabase = getClient();
-          if (supabase) {
-            const numBusc = String(dados.numero || (req.query && (req.query.num || req.query.os)) || '').replace(/\D/g, '');
-            if (numBusc) {
-              const numHash = '#' + numBusc.padStart(4, '0');
-              const { data: records } = await supabase
-                .from('contratos')
-                .select('*')
-                .or(`numero_os.eq.${numHash},numero_os.eq.${numBusc},numero_os.ilike.%${numBusc}%`)
-                .order('id', { ascending: false })
-                .limit(1);
-              const data = (records && records[0]) || null;
-              if (data) {
-                let dbDados = null;
-                if (data.dados && typeof data.dados === 'object' && Object.keys(data.dados).length) {
-                  dbDados = data.dados;
-                } else if (data.texto && data.texto.includes('<!-- SDM_DADOS_OS_JSON:')) {
-                  const m = data.texto.match(/<!-- SDM_DADOS_OS_JSON:([\s\S]+?)-->/);
-                  if (m) {
-                    try { dbDados = JSON.parse(m[1]); } catch (_) {}
-                  }
-                }
-                if (dbDados) {
-                  if ((!dados.fotos || !dados.fotos.length) && Array.isArray(dbDados.fotos) && dbDados.fotos.length) {
-                    dados.fotos = dbDados.fotos;
-                  }
-                  if ((!dados.itens || !dados.itens.length) && Array.isArray(dbDados.itens) && dbDados.itens.length) {
-                    dados.itens = dbDados.itens;
-                  }
-                  if (!dados.ambientes || !dados.ambientes.length) {
-                    if (Array.isArray(dbDados.ambientes) && dbDados.ambientes.length) dados.ambientes = dbDados.ambientes;
-                  }
-                }
-              }
-            }
-          }
-        } catch (e) {
-          console.warn('Erro ao enriquecer dados com fotos/itens do Supabase:', e.message);
-        }
-      }
 
-      // 🚀 ENRIQUECIMENTO AUTÔNOMO DE ALTA VELOCIDADE VIA NTFY (FOTOS E ITENS)
-      if (dados && (!dados.fotos || !dados.fotos.length || !dados.itens || !dados.itens.length)) {
-        try {
+    // Enriquecimento automático via Supabase caso fotos ou itens estejam ausentes
+    if (dados && (!dados.fotos || !dados.fotos.length || !dados.itens || !dados.itens.length)) {
+      try {
+        const { getClient } = require('./_supabase');
+        const supabase = getClient();
+        if (supabase) {
           const numBusc = String(dados.numero || (req.query && (req.query.num || req.query.os)) || '').replace(/\D/g, '');
           if (numBusc) {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 3500);
-            const rSync = await fetch(`https://ntfy.sh/sdm_os_${numBusc}_data/raw?poll=1`, {
-              signal: controller.signal
-            });
-            clearTimeout(timeoutId);
-            if (rSync.ok) {
-              const textSync = await rSync.text();
-              const lines = textSync.trim().split('\n').filter(Boolean);
-              if (lines.length > 0) {
-                const lastLine = lines[lines.length - 1];
-                const ntfyData = JSON.parse(lastLine);
-                if ((!dados.fotos || !dados.fotos.length) && Array.isArray(ntfyData.fotos) && ntfyData.fotos.length) {
-                  dados.fotos = ntfyData.fotos;
+            const numHash = '#' + numBusc.padStart(4, '0');
+            const { data: records } = await supabase
+              .from('contratos')
+              .select('*')
+              .or(`numero_os.eq.${numHash},numero_os.eq.${numBusc},numero_os.ilike.%${numBusc}%`)
+              .order('id', { ascending: false })
+              .limit(1);
+            const data = (records && records[0]) || null;
+            if (data) {
+              let dbDados = null;
+              if (data.dados && typeof data.dados === 'object' && Object.keys(data.dados).length) {
+                dbDados = data.dados;
+              } else if (data.texto && data.texto.includes('<!-- SDM_DADOS_OS_JSON:')) {
+                const m = data.texto.match(/<!-- SDM_DADOS_OS_JSON:([\s\S]+?)-->/);
+                if (m) {
+                  try { dbDados = JSON.parse(m[1]); } catch (_) { }
                 }
-                if ((!dados.itens || !dados.itens.length) && Array.isArray(ntfyData.itens) && ntfyData.itens.length) {
-                  dados.itens = ntfyData.itens;
+              }
+              if (dbDados) {
+                if ((!dados.fotos || !dados.fotos.length) && Array.isArray(dbDados.fotos) && dbDados.fotos.length) {
+                  dados.fotos = dbDados.fotos;
                 }
-                if ((!dados.ambientes || !dados.ambientes.length) && Array.isArray(ntfyData.ambientes) && ntfyData.ambientes.length) {
-                  dados.ambientes = ntfyData.ambientes;
+                if ((!dados.itens || !dados.itens.length) && Array.isArray(dbDados.itens) && dbDados.itens.length) {
+                  dados.itens = dbDados.itens;
                 }
-                if (!dados.valProdutos && ntfyData.valProdutos) dados.valProdutos = ntfyData.valProdutos;
-                if (!dados.valServico && ntfyData.valServico) dados.valServico = ntfyData.valServico;
-                if (!dados.total && ntfyData.total) dados.total = ntfyData.total;
-                if (!dados.nome && ntfyData.nome) dados.nome = ntfyData.nome;
+                if (!dados.ambientes || !dados.ambientes.length) {
+                  if (Array.isArray(dbDados.ambientes) && dbDados.ambientes.length) dados.ambientes = dbDados.ambientes;
+                }
               }
             }
           }
-        } catch (errSync) {
-          // fallback silencioso
         }
+      } catch (e) {
+        console.warn('Erro ao enriquecer dados com fotos/itens do Supabase:', e.message);
       }
-// Identificação precisa da empresa ativa (SD Vidros vs SD Móveis vs Custom)
+    }
+
+    // 🚀 ENRIQUECIMENTO AUTÔNOMO DE ALTA VELOCIDADE VIA NTFY (FOTOS E ITENS)
+    if (dados && (!dados.fotos || !dados.fotos.length || !dados.itens || !dados.itens.length)) {
+      try {
+        const numBusc = String(dados.numero || (req.query && (req.query.num || req.query.os)) || '').replace(/\D/g, '');
+        if (numBusc) {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 3500);
+          const rSync = await fetch(`https://ntfy.sh/sdm_os_${numBusc}_data/raw?poll=1`, {
+            signal: controller.signal
+          });
+          clearTimeout(timeoutId);
+          if (rSync.ok) {
+            const textSync = await rSync.text();
+            const lines = textSync.trim().split('\n').filter(Boolean);
+            if (lines.length > 0) {
+              const lastLine = lines[lines.length - 1];
+              const ntfyData = JSON.parse(lastLine);
+              if ((!dados.fotos || !dados.fotos.length) && Array.isArray(ntfyData.fotos) && ntfyData.fotos.length) {
+                dados.fotos = ntfyData.fotos;
+              }
+              if ((!dados.itens || !dados.itens.length) && Array.isArray(ntfyData.itens) && ntfyData.itens.length) {
+                dados.itens = ntfyData.itens;
+              }
+              if ((!dados.ambientes || !dados.ambientes.length) && Array.isArray(ntfyData.ambientes) && ntfyData.ambientes.length) {
+                dados.ambientes = ntfyData.ambientes;
+              }
+              if (!dados.valProdutos && ntfyData.valProdutos) dados.valProdutos = ntfyData.valProdutos;
+              if (!dados.valServico && ntfyData.valServico) dados.valServico = ntfyData.valServico;
+              if (!dados.total && ntfyData.total) dados.total = ntfyData.total;
+              if (!dados.nome && ntfyData.nome) dados.nome = ntfyData.nome;
+            }
+          }
+        }
+      } catch (errSync) {
+        // fallback silencioso
+      }
+    }
+    // Identificação precisa da empresa ativa (SD Vidros vs SD Móveis vs Custom)
     const empParamLower = String(queryEmpresa || (dados && (dados.empresa || dados.emp)) || '').toLowerCase().trim();
     const empNomeLower = String(queryEmpNome || (dados && (dados.empNome || dados.nomeEmpresa)) || '').toLowerCase().trim();
     const empTipoLower = String(queryEmpTipo || (dados && (dados.empTipo || dados.tipoContrato)) || '').toLowerCase().trim();
@@ -1257,7 +1257,7 @@ module.exports = async (req, res) => {
         if (fs.existsSync(fallbackPath)) {
           return fs.readFileSync(fallbackPath);
         }
-      } catch (_) {}
+      } catch (_) { }
       try {
         const host = req.headers.host;
         if (!host) return null;
