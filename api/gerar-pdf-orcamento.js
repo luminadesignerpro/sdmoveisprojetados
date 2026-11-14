@@ -756,7 +756,7 @@ async function gerarPdfOrcamento(dados, fetchLogo, empInfo) {
         });
 
         try {
-          const rawUrl = itemFoto.dataUrl || itemFoto.url || (typeof itemFoto === 'string' ? itemFoto : '');
+          const rawUrl = itemFoto.src || itemFoto.dataUrl || itemFoto.url || itemFoto.data || (typeof itemFoto === 'string' ? itemFoto : '');
           if (rawUrl && rawUrl.includes(',')) {
             const isPng = rawUrl.startsWith('data:image/png');
             const b64 = rawUrl.split(',')[1];
@@ -838,7 +838,7 @@ async function gerarPdfOrcamento(dados, fetchLogo, empInfo) {
           });
 
           try {
-            const rawUrl = itemFoto.dataUrl || itemFoto.url || (typeof itemFoto === 'string' ? itemFoto : '');
+            const rawUrl = itemFoto.src || itemFoto.dataUrl || itemFoto.url || itemFoto.data || (typeof itemFoto === 'string' ? itemFoto : '');
             if (rawUrl && rawUrl.includes(',')) {
               const isPng = rawUrl.startsWith('data:image/png');
               const b64 = rawUrl.split(',')[1];
@@ -902,7 +902,10 @@ module.exports = async (req, res) => {
       const numOs = String(req.query.num || '0001').replace('#', '');
       if (fileId) {
         try {
-          const respNtfy = await fetch(`https://ntfy.sh/file/${fileId}.pdf`);
+          let respNtfy = await fetch(`https://ntfy.sh/file/${fileId}`);
+          if (!respNtfy.ok) {
+            respNtfy = await fetch(`https://ntfy.sh/file/${fileId}.pdf`);
+          }
           if (respNtfy.ok) {
             const pdfBytes = Buffer.from(await respNtfy.arrayBuffer());
             res.setHeader('Content-Type', 'application/pdf');
@@ -1151,6 +1154,44 @@ module.exports = async (req, res) => {
           }
         } catch (e) {
           console.warn('Erro ao enriquecer dados com fotos/itens do Supabase:', e.message);
+        }
+      }
+
+      // 🚀 ENRIQUECIMENTO AUTÔNOMO DE ALTA VELOCIDADE VIA NTFY (FOTOS E ITENS)
+      if (dados && (!dados.fotos || !dados.fotos.length || !dados.itens || !dados.itens.length)) {
+        try {
+          const numBusc = String(dados.numero || (req.query && (req.query.num || req.query.os)) || '').replace(/\D/g, '');
+          if (numBusc) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 3500);
+            const rSync = await fetch(`https://ntfy.sh/sdm_os_${numBusc}_data/raw?poll=1`, {
+              signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+            if (rSync.ok) {
+              const textSync = await rSync.text();
+              const lines = textSync.trim().split('\n').filter(Boolean);
+              if (lines.length > 0) {
+                const lastLine = lines[lines.length - 1];
+                const ntfyData = JSON.parse(lastLine);
+                if ((!dados.fotos || !dados.fotos.length) && Array.isArray(ntfyData.fotos) && ntfyData.fotos.length) {
+                  dados.fotos = ntfyData.fotos;
+                }
+                if ((!dados.itens || !dados.itens.length) && Array.isArray(ntfyData.itens) && ntfyData.itens.length) {
+                  dados.itens = ntfyData.itens;
+                }
+                if ((!dados.ambientes || !dados.ambientes.length) && Array.isArray(ntfyData.ambientes) && ntfyData.ambientes.length) {
+                  dados.ambientes = ntfyData.ambientes;
+                }
+                if (!dados.valProdutos && ntfyData.valProdutos) dados.valProdutos = ntfyData.valProdutos;
+                if (!dados.valServico && ntfyData.valServico) dados.valServico = ntfyData.valServico;
+                if (!dados.total && ntfyData.total) dados.total = ntfyData.total;
+                if (!dados.nome && ntfyData.nome) dados.nome = ntfyData.nome;
+              }
+            }
+          }
+        } catch (errSync) {
+          // fallback silencioso
         }
       }
 // Identificação precisa da empresa ativa (SD Vidros vs SD Móveis vs Custom)
