@@ -18,7 +18,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js?v=9.5.9').then(r => { r.update(); })
+        navigator.serviceWorker.register('/sw.js?v=9.5.14').then(r => { r.update(); })
           .then(function(reg){ console.log('SW registrado com sucesso:', reg.scope); })
           .catch(function(err){ console.warn('Erro ao registrar SW:', err); });
       });
@@ -1839,6 +1839,7 @@
       document.head.appendChild(s2);
     }
   </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 
@@ -2105,17 +2106,23 @@
                         <span>🖼️</span> <span id="label-galeria-orc-linha">Galeria (0)</span> <span style="font-size:10px;opacity:0.8;">▼</span>
                       </button>
                       <!-- DROPDOWN MENU -->
-                      <div id="galeria-orc-submenu" style="display:none;position:absolute;top:calc(100% + 6px);left:0;background:#0e1020;border:1.5px solid #06b6d4;border-radius:10px;min-width:215px;overflow:hidden;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,0.7);">
-                        <button type="button" onclick="acionarUploadGaleriaAmbiente(this, 'camera')" style="width:100%;padding:11px 14px;background:none;border:none;border-bottom:1px solid rgba(6,182,212,0.18);color:#22d3ee;font-size:12.5px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:9px;transition:background 0.15s;" onmouseover="this.style.background='rgba(6,182,212,0.12)'" onmouseout="this.style.background='none'">
+                      <div id="galeria-orc-submenu" style="display:none;position:absolute;top:calc(100% + 6px);left:0;background:#0e1020;border:1.5px solid #06b6d4;border-radius:10px;min-width:225px;overflow:hidden;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,0.85);">
+                        <button type="button" onclick="acionarUploadGaleriaAmbiente(this, 'camera')" style="width:100%;padding:11px 14px;background:none;border:none;border-bottom:1px solid rgba(6,182,212,0.15);color:#22d3ee;font-size:12.5px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:9px;">
                           📷 Abrir Câmera do Celular
                         </button>
-                        <button type="button" onclick="acionarUploadGaleriaAmbiente(this, 'galeria')" style="width:100%;padding:11px 14px;background:none;border:none;border-bottom:1px solid rgba(6,182,212,0.18);color:#34d399;font-size:12.5px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:9px;transition:background 0.15s;" onmouseover="this.style.background='rgba(52,211,153,0.1)'" onmouseout="this.style.background='none'">
+                        <button type="button" onclick="acionarUploadGaleriaAmbiente(this, 'galeria')" style="width:100%;padding:11px 14px;background:none;border:none;border-bottom:1px solid rgba(6,182,212,0.15);color:#34d399;font-size:12.5px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:9px;">
                           🖼️ Buscar na Galeria
                         </button>
-                        <button type="button" onclick="acionarUploadGaleriaAmbiente(this, 'pdf')" style="width:100%;padding:11px 14px;background:none;border:none;border-bottom:1px solid rgba(6,182,212,0.18);color:#f59e0b;font-size:12.5px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:9px;transition:background 0.15s;" onmouseover="this.style.background='rgba(245,158,11,0.1)'" onmouseout="this.style.background='none'">
+                        <button type="button" onclick="tirarPrintTelaOrc()" style="width:100%;padding:11px 14px;background:none;border:none;border-bottom:1px solid rgba(6,182,212,0.15);color:#c084fc;font-size:12.5px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:9px;">
+                          📸 Tirar Print da Tela
+                        </button>
+                        <button type="button" onclick="acionarUploadGaleriaAmbiente(this, 'prints')" style="width:100%;padding:11px 14px;background:none;border:none;border-bottom:1px solid rgba(6,182,212,0.15);color:#a855f7;font-size:12.5px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:9px;">
+                          📱 Buscar Prints / Capturas
+                        </button>
+                        <button type="button" onclick="acionarUploadGaleriaAmbiente(this, 'pdf')" style="width:100%;padding:11px 14px;background:none;border:none;border-bottom:1px solid rgba(6,182,212,0.15);color:#f59e0b;font-size:12.5px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:9px;">
                           📄 Buscar PDF
                         </button>
-                        <button type="button" onclick="abrirModalGaleriaDoAmbiente(this)" style="width:100%;padding:11px 14px;background:rgba(6,182,212,0.08);border:none;color:#38bdf8;font-size:12.5px;font-weight:800;cursor:pointer;text-align:left;display:flex;align-items:center;gap:9px;transition:background 0.15s;" onmouseover="this.style.background='rgba(6,182,212,0.2)'" onmouseout="this.style.background='rgba(6,182,212,0.08)'">
+                        <button type="button" onclick="abrirModalGaleriaDoAmbiente(this)" style="width:100%;padding:11px 14px;background:rgba(6,182,212,0.12);border:none;color:#38bdf8;font-size:12.5px;font-weight:800;cursor:pointer;text-align:left;display:flex;align-items:center;gap:9px;">
                           👁️ Ver Fotos Salvas (<span id="menu-cont-galeria-orc">0</span>)
                         </button>
                       </div>
@@ -2167,9 +2174,10 @@
       </div>
 
       <!-- Inputs ocultos para câmera, galeria e PDF do orçamento -->
-      <input type="file" id="orc-input-camera" accept="image/*" capture="environment" style="display:none;" onchange="aoAnexarArquivoOrcamento(event,'camera')">
-      <input type="file" id="orc-input-galeria" accept="image/*,video/*" style="display:none;" multiple onchange="aoAnexarArquivoOrcamento(event,'galeria')">
-      <input type="file" id="orc-input-pdf" accept="application/pdf,.pdf" style="display:none;" multiple onchange="aoAnexarArquivoOrcamento(event,'pdf')">
+      <input type="file" id="orc-input-camera" accept="image/*" capture="environment" style="position:fixed;bottom:-9999px;left:-9999px;opacity:0.001;width:1px;height:1px;pointer-events:none;" onchange="aoAnexarArquivoOrcamento(event,'camera')">
+      <input type="file" id="orc-input-galeria" accept="image/*,video/*" style="position:fixed;bottom:-9999px;left:-9999px;opacity:0.001;width:1px;height:1px;pointer-events:none;" multiple onchange="aoAnexarArquivoOrcamento(event,'galeria')">
+      <input type="file" id="orc-input-prints" accept="image/*" style="position:fixed;bottom:-9999px;left:-9999px;opacity:0.001;width:1px;height:1px;pointer-events:none;" multiple onchange="aoAnexarArquivoOrcamento(event,'prints')">
+      <input type="file" id="orc-input-pdf" accept="application/pdf,.pdf" style="position:fixed;bottom:-9999px;left:-9999px;opacity:0.001;width:1px;height:1px;pointer-events:none;" multiple onchange="aoAnexarArquivoOrcamento(event,'pdf')">
 
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;">
         <button type="button" class="btn btn-sec btn-sm" onclick="addItem()">+ Adicionar linha</button>
@@ -11446,16 +11454,40 @@ function salvarOrdemInterna(silencioso = false, navegarParaHistorico = true) {
 
       const dirAtualizado = dirOrcamentoTemp || ordAntiga.direcionamento || (typeof gerarDirecionamentoAutoMaterial === 'function' ? gerarDirecionamentoAutoMaterial(o) : null);
 
+      // Garante persistência das fotos na edição
+      const _fotosMem = window._fotosOrcamentoMemoria || [];
+      let _fotosParaSalvar = _fotosMem.length > 0 ? _fotosMem : [];
+      if (!_fotosParaSalvar.length) {
+        try {
+          const _gk = typeof getGaleriaKey === 'function' ? getGaleriaKey(o.numero) : null;
+          if (_gk) {
+            const _salv = localStorage.getItem(_gk);
+            if (_salv) _fotosParaSalvar = JSON.parse(_salv) || [];
+          }
+        } catch(_) {}
+      }
+      if (!_fotosParaSalvar.length && ordAntiga.fotos && ordAntiga.fotos.length) {
+        _fotosParaSalvar = ordAntiga.fotos;
+      }
+
       historico[idx] = {
         ...ordAntiga,
         nome: o.nome,
         total: o.total,
         data_orc: o.data,
-        dados: o,
+        dados: { ...o, fotos: _fotosParaSalvar },
         status: novoStatus,
         direcionamento: dirAtualizado,
-        versoes_pdf: ordAntiga.versoes_pdf
+        versoes_pdf: ordAntiga.versoes_pdf,
+        fotos: _fotosParaSalvar
       };
+
+      if (_fotosParaSalvar.length > 0) {
+        try {
+          const _gk = typeof getGaleriaKey === 'function' ? getGaleriaKey(o.numero) : null;
+          if (_gk) localStorage.setItem(_gk, JSON.stringify(_fotosParaSalvar));
+        } catch(_) {}
+      }
       ordRetorno = historico[idx];
       notificarNovaOrdemGerada(historico[idx]);
     }
@@ -15460,40 +15492,60 @@ function renderRateioInline() {
     }
   });
 
-  // Renderiza linhas de categorias elegantes e compactas (Idênticas à Primeira Imagem)
+  // Renderiza linhas de categorias como BOTÕES elegantes e clicáveis
   containerList.innerHTML = cats.map((c, idx) => {
     const pct = Number(c.porcentagem) || 0;
     const val = Number(c.valor) || 0;
     const valFmt = typeof formatarValorPtBr === 'function' ? formatarValorPtBr(val) : val.toFixed(2).replace('.', ',');
 
+    const temDetalhes = c.detalhes && (
+      (c.detalhes.itens && c.detalhes.itens.length > 0) ||
+      (c.detalhes.funcionarios && c.detalhes.funcionarios.length > 0)
+    );
+
+    let resumoBadge = '';
+    if (c.detalhes && c.detalhes.funcionarios && c.detalhes.funcionarios.length > 0) {
+      resumoBadge = '<span style="font-size:10px;color:#34d399;font-weight:700;background:rgba(16,185,129,0.15);padding:1px 5px;border-radius:4px;">👥 ' + c.detalhes.funcionarios.length + ' func.</span>';
+    } else if (c.detalhes && c.detalhes.itens && c.detalhes.itens.length > 0) {
+      resumoBadge = '<span style="font-size:10px;color:#a78bfa;font-weight:700;background:rgba(139,92,246,0.15);padding:1px 5px;border-radius:4px;">📋 ' + c.detalhes.itens.length + ' itens</span>';
+    }
+
     return `
-      <div class="dir-inline-cat-row" data-idx="${idx}" style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:12.5px;gap:6px;">
-        <!-- Lado esquerdo: Bolinha colorida + Nome da Categoria -->
-        <div style="display:flex;align-items:center;gap:7px;min-width:0;flex:1;">
-          <span style="width:10px;height:10px;border-radius:50%;background:${c.cor || '#8b5cf6'};flex-shrink:0;"></span>
-          <span style="color:#e2e8f0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${esc(c.nome)}">${esc(c.nome)}:</span>
-        </div>
+      <div class="dir-inline-cat-row" data-idx="${idx}" style="display:flex;flex-direction:column;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:12.5px;gap:5px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
+          <!-- Lado esquerdo: BOTÃO DA CATEGORIA CLICÁVEL -->
+          <div style="display:flex;align-items:center;gap:6px;min-width:0;flex:1;">
+            <button type="button" onclick="abrirDetalheCategoriaDirecionamento(${idx})" title="Clique para abrir detalhes de ${esc(c.nome)}"
+              style="background:rgba(255,255,255,0.05);border:1.5px solid ${c.cor || '#8b5cf6'};border-radius:8px;padding:4px 8px;color:#fff;font-weight:800;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.15s;max-width:130px;"
+              onmouseover="this.style.background='rgba(255,255,255,0.12)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+              <span style="width:9px;height:9px;border-radius:50%;background:${c.cor || '#8b5cf6'};flex-shrink:0;"></span>
+              <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(c.nome)}</span>
+              <span style="font-size:11px;opacity:0.8;">⚙️</span>
+            </button>
+            ${resumoBadge}
+          </div>
 
-        <!-- Lado direito: R$ [valor] ( [%] % ) + Botão Excluir -->
-        <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
-          <span style="color:#cbd5e1;font-weight:700;font-size:11px;">R$</span>
-          <input type="text" class="inp-dir-cat-val" data-idx="${idx}" value="${valFmt}" inputmode="decimal"
-            onfocus="if(!this.dataset.oldVal) this.dataset.oldVal = this.value; this.value = '';"
-            onblur="if(!this.value.trim()){ this.value = this.dataset.oldVal || '0,00'; aoDigitarValorCategoriaInline(${idx}, this.value); } else { aoDigitarValorCategoriaInline(${idx}, this.value); }"
-            oninput="aoDigitarValorCategoriaInline(${idx}, this.value)"
-            style="width:72px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);border-radius:6px;color:#fff;font-size:12px;font-weight:800;text-align:right;padding:3px 6px;outline:none;" />
+          <!-- Lado direito: R$ [valor] ( [%] % ) + Botão Excluir -->
+          <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
+            <span style="color:#cbd5e1;font-weight:700;font-size:11px;">R$</span>
+            <input type="text" class="inp-dir-cat-val" data-idx="${idx}" value="${valFmt}" inputmode="decimal"
+              onfocus="if(!this.dataset.oldVal) this.dataset.oldVal = this.value; this.value = '';"
+              onblur="if(!this.value.trim()){ this.value = this.dataset.oldVal || '0,00'; aoDigitarValorCategoriaInline(${idx}, this.value); } else { aoDigitarValorCategoriaInline(${idx}, this.value); }"
+              oninput="aoDigitarValorCategoriaInline(${idx}, this.value)"
+              style="width:72px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);border-radius:6px;color:#fff;font-size:12px;font-weight:800;text-align:right;padding:3px 6px;outline:none;" />
 
-          <span style="color:#94a3b8;font-weight:600;font-size:11px;margin-left:2px;">(</span>
-          <input type="number" step="0.1" min="0" max="100" class="inp-dir-cat-pct" data-idx="${idx}" value="${pct.toFixed(1).replace('.0','')}"
-            onfocus="if(!this.dataset.oldVal) this.dataset.oldVal = this.value; this.value = '';"
-            onblur="if(!this.value.trim()){ this.value = this.dataset.oldVal || '0'; aoDigitarPctCategoriaInline(${idx}, this.value); } else { aoDigitarPctCategoriaInline(${idx}, this.value); }"
-            oninput="aoDigitarPctCategoriaInline(${idx}, this.value)"
-            style="width:46px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);border-radius:6px;color:#c4b5fd;font-size:12px;font-weight:800;text-align:right;padding:3px 5px;outline:none;" />
-          <span style="color:#94a3b8;font-weight:600;font-size:11px;">%)</span>
+            <span style="color:#94a3b8;font-weight:600;font-size:11px;margin-left:2px;">(</span>
+            <input type="number" step="0.1" min="0" max="100" class="inp-dir-cat-pct" data-idx="${idx}" value="${pct.toFixed(1).replace('.0','')}"
+              onfocus="if(!this.dataset.oldVal) this.dataset.oldVal = this.value; this.value = '';"
+              onblur="if(!this.value.trim()){ this.value = this.dataset.oldVal || '0'; aoDigitarPctCategoriaInline(${idx}, this.value); } else { aoDigitarPctCategoriaInline(${idx}, this.value); }"
+              oninput="aoDigitarPctCategoriaInline(${idx}, this.value)"
+              style="width:46px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);border-radius:6px;color:#c4b5fd;font-size:12px;font-weight:800;text-align:right;padding:3px 5px;outline:none;" />
+            <span style="color:#94a3b8;font-weight:600;font-size:11px;">%)</span>
 
-          <button type="button" onclick="removerCategoriaInline(${idx})"
-            style="background:none;border:none;color:#ef4444;font-size:11px;cursor:pointer;padding:2px 3px;opacity:0.6;line-height:1;"
-            title="Remover Categoria" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">✕</button>
+            <button type="button" onclick="removerCategoriaInline(${idx})"
+              style="background:none;border:none;color:#ef4444;font-size:12px;cursor:pointer;padding:2px 4px;opacity:0.6;line-height:1;"
+              title="Remover Categoria" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">✕</button>
+          </div>
         </div>
       </div>`;
   }).join('');
@@ -26844,19 +26896,30 @@ function toggleMenuGaleriaSecao(e, btn) {
 }
 
 function acionarUploadGaleriaAmbiente(btn, tipo) {
-  _ambienteGaleriaAtivo = obterNomeAmbienteDoElemento(btn);
-  // Persistir no sessionStorage para sobreviver a recargas de pagina no mobile
-  try { sessionStorage.setItem('sdm_amb_galeria_ativo', _ambienteGaleriaAtivo); sessionStorage.setItem('sdm_amb_galeria_ts', String(Date.now())); } catch(_) {}
-  fecharTodosMenusGaleria();
-  if (tipo === 'camera') {
-    const el = document.getElementById('orc-input-camera');
-    if (el) el.click();
-  } else if (tipo === 'galeria') {
-    const el = document.getElementById('orc-input-galeria');
-    if (el) el.click();
-  } else if (tipo === 'pdf') {
-    const el = document.getElementById('orc-input-pdf');
-    if (el) el.click();
+  try {
+    _ambienteGaleriaAtivo = obterNomeAmbienteDoElemento(btn);
+    sessionStorage.setItem('sdm_amb_galeria_ativo', _ambienteGaleriaAtivo);
+    sessionStorage.setItem('sdm_amb_galeria_ts', String(Date.now()));
+  } catch(_) {}
+
+  // Fechar menus com leve delay para não quebrar o evento de ativação no Android
+  setTimeout(() => { fecharTodosMenusGaleria(); }, 120);
+
+  let targetId = 'orc-input-galeria';
+  if (tipo === 'camera') targetId = 'orc-input-camera';
+  else if (tipo === 'pdf') targetId = 'orc-input-pdf';
+  else if (tipo === 'prints') targetId = 'orc-input-prints';
+
+  const el = document.getElementById(targetId);
+  if (el) {
+    try { el.value = ''; } catch(_) {}
+    try {
+      el.click();
+    } catch(err) {
+      console.warn('Erro ao disparar clique no input:', err);
+    }
+  } else {
+    console.warn('Input não encontrado:', targetId);
   }
 }
 
@@ -41675,11 +41738,7 @@ function excluirItemGaleria(idx) {
 }
 window.excluirItemGaleria = excluirItemGaleria;
 
-// ══════════════════════════════════════════════════════════
-// RELATÓRIO DE ALMOÇO
-// ══════════════════════════════════════════════════════════
-const K_ALMOCO = 'sdm_relatorio_almoco_v1';
-let _almocoFotoBase64 = '';
+// (Declaracao anterior removida para evitar duplicidade)
 
 // ══════════════════════════════════════════════════════════
 // 🍽️ SISTEMA DE RELATÓRIO DE ALMOÇO POR OBRA E CLIENTE
@@ -42349,6 +42408,408 @@ window.onFotoAlmocoSelecionada = onFotoAlmocoSelecionada;
 window.removerFotoAlmoco = removerFotoAlmoco;
 window.popularFiltroAlmoco = popularFiltroAlmoco;
 
+</script>
+
+
+<!-- ══ MODAL DETALHE CATEGORIA RATEIO / DIRECIONAMENTO ══ -->
+<div id="modal-detalhe-cat-dir" class="modal-overlay" style="display:none;z-index:1001000;" onclick="fecharDetalheCatDir(event)">
+  <div class="modal-content" style="max-width:440px;width:95%;max-height:88vh;overflow-y:auto;border-radius:16px;background:#0e1020;border:1.5px solid #8b5cf6;padding:0;box-shadow:0 12px 40px rgba(0,0,0,0.85);" onclick="event.stopPropagation()">
+    <!-- Header -->
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid rgba(139,92,246,0.3);background:linear-gradient(135deg, rgba(139,92,246,0.15), rgba(99,102,241,0.05));">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span id="modal-det-cat-icone" style="font-size:22px;">📋</span>
+        <div>
+          <div style="font-size:15px;font-weight:900;color:#fff;" id="modal-det-cat-titulo">Detalhes da Categoria</div>
+          <div style="font-size:11.5px;color:#cbd5e1;" id="modal-det-cat-subtitulo">Valor Planejado: R$ 0,00</div>
+        </div>
+      </div>
+      <button type="button" onclick="fecharDetalheCatDir()" style="background:rgba(255,255,255,0.08);border:none;border-radius:50%;width:30px;height:30px;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+    </div>
+
+    <!-- Body -->
+    <div style="padding:16px 18px;" id="modal-det-cat-body"></div>
+
+    <!-- Footer -->
+    <div style="padding:12px 18px;border-top:1px solid rgba(139,92,246,0.2);display:flex;gap:10px;justify-content:flex-end;background:#0a0c16;">
+      <button type="button" onclick="fecharDetalheCatDir()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);color:#94a3b8;font-size:13px;font-weight:700;padding:9px 16px;border-radius:10px;cursor:pointer;">Cancelar</button>
+      <button type="button" onclick="salvarDetalheCatDir()" style="background:linear-gradient(135deg,#7c3aed,#6366f1);border:none;color:#fff;font-size:13px;font-weight:800;padding:9px 20px;border-radius:10px;cursor:pointer;box-shadow:0 4px 14px rgba(124,58,237,0.4);">✅ Salvar Detalhes</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// SISTEMA DE DETALHAMENTO DE CATEGORIAS DO RATEIO (Funcionários, Materiais, etc.)
+// ═══════════════════════════════════════════════════════════════════════════
+var _detCatDirIdx = -1;
+
+function abrirDetalheCategoriaDirecionamento(idx) {
+  const cats = obterCategoriasRateioInline();
+  if (!cats || !cats[idx]) return;
+  _detCatDirIdx = idx;
+  const c = cats[idx];
+  const nome = c.nome || '';
+  const val = Number(c.valor) || 0;
+  const valFmt = typeof formatarValorPtBr === 'function' ? formatarValorPtBr(val) : val.toFixed(2).replace('.', ',');
+  const icone = typeof obterIconeCategoriaDir === 'function' ? obterIconeCategoriaDir(nome) : '📋';
+
+  const modal = document.getElementById('modal-detalhe-cat-dir');
+  if (!modal) return;
+
+  document.getElementById('modal-det-cat-icone').textContent = icone;
+  document.getElementById('modal-det-cat-titulo').textContent = 'Detalhes: ' + nome;
+  document.getElementById('modal-det-cat-subtitulo').textContent = 'Valor Previsto nesta O.S.: R$ ' + valFmt + ' (' + (Number(c.porcentagem)||0).toFixed(1) + '%)';
+
+  document.getElementById('modal-det-cat-body').innerHTML = _renderConteudoModalDetalhe(c, val);
+  modal.style.display = 'flex';
+}
+
+function _renderConteudoModalDetalhe(c, totalVal) {
+  const nome = (c.nome || '').toLowerCase();
+  const d = c.detalhes || {};
+  const valFmt = typeof formatarValorPtBr === 'function' ? formatarValorPtBr(totalVal) : totalVal.toFixed(2).replace('.', ',');
+
+  if (nome.includes('func') || nome.includes('colab')) {
+    // ── MODO FUNCIONÁRIOS (Funcionário cadastrado, Dias trabalhados, Valor)
+    const funcs = d.funcionarios || [];
+    
+    // Obter lista de funcionários cadastrados na empresa
+    let nomesCadastrados = [];
+    try {
+      if (typeof funcionariosLista !== 'undefined' && Array.isArray(funcionariosLista) && funcionariosLista.length) {
+        nomesCadastrados = funcionariosLista.map(f => typeof f === 'string' ? f : (f.nome || f.name || '')).filter(Boolean);
+      }
+      if (!nomesCadastrados.length) {
+        const salv = localStorage.getItem('sdv_funcionarios');
+        if (salv) {
+          const arr = JSON.parse(salv);
+          nomesCadastrados = arr.map(f => typeof f === 'string' ? f : (f.nome || f.name || '')).filter(Boolean);
+        }
+      }
+    } catch(_) {}
+    if (!nomesCadastrados.length) nomesCadastrados = ['Samuel', 'David', 'Marceneiro 1', 'Ajudante 1'];
+
+    let rowsHtml = '';
+    funcs.forEach((f, fi) => {
+      let opts = nomesCadastrados.map(n => '<option value="' + n + '"' + (n === f.nome ? ' selected' : '') + '>' + n + '</option>').join('');
+      if (f.nome && !nomesCadastrados.includes(f.nome)) {
+        opts = '<option value="' + f.nome + '" selected>' + f.nome + '</option>' + opts;
+      }
+      rowsHtml += `
+        <div class="det-func-row" data-fi="${fi}" style="display:grid;grid-template-columns:1fr 70px 95px 28px;gap:6px;align-items:center;margin-bottom:8px;">
+          <select class="det-func-nome" onchange="aoAtualizarLinhasFunc()" style="background:#13182e;border:1px solid rgba(139,92,246,0.35);border-radius:8px;color:#fff;font-size:12px;padding:6px;width:100%;">
+            <option value="">-- Funcionário --</option>
+            ${opts}
+            <option value="__custom">+ Digitar outro...</option>
+          </select>
+          <input type="number" class="det-func-dias" min="0" max="60" placeholder="Dias" value="${f.dias || ''}" oninput="aoAtualizarLinhasFunc()" style="background:#13182e;border:1px solid rgba(139,92,246,0.35);border-radius:8px;color:#fcd34d;font-size:12px;padding:6px;text-align:center;width:100%;font-weight:700;" title="Dias trabalhados" />
+          <input type="text" class="det-func-val" inputmode="decimal" placeholder="R$ 0,00" value="${f.valor ? String(f.valor).replace('.',',') : ''}" oninput="aoAtualizarLinhasFunc()" style="background:#13182e;border:1px solid rgba(139,92,246,0.35);border-radius:8px;color:#4ade80;font-size:12px;padding:6px;text-align:right;width:100%;font-weight:800;" title="Valor a receber" />
+          <button type="button" onclick="removerLinhaFuncDetalhe(${fi})" style="background:none;border:none;color:#ef4444;font-size:15px;cursor:pointer;padding:2px;display:flex;align-items:center;justify-content:center;">✕</button>
+        </div>`;
+    });
+
+    const somaInicial = funcs.reduce((s, f) => s + (parseFloat(String(f.valor||'0').replace(',','.')) || 0), 0);
+    const somaFmt = typeof formatarValorPtBr === 'function' ? formatarValorPtBr(somaInicial) : somaInicial.toFixed(2).replace('.', ',');
+
+    return `
+      <div>
+        <div style="font-size:12px;color:#94a3b8;margin-bottom:10px;">Informe os <b>funcionários</b>, a quantidade de <b>dias trabalhados</b> e o <b>valor de cada um</b> nesta O.S.:</div>
+        
+        <div style="display:grid;grid-template-columns:1fr 70px 95px 28px;gap:6px;margin-bottom:6px;padding:0 2px;">
+          <span style="font-size:10.5px;color:#64748b;font-weight:800;">COLABORADOR</span>
+          <span style="font-size:10.5px;color:#64748b;font-weight:800;text-align:center;">DIAS</span>
+          <span style="font-size:10.5px;color:#64748b;font-weight:800;text-align:right;">VALOR (R$)</span>
+          <span></span>
+        </div>
+
+        <div id="det-func-container">${rowsHtml}</div>
+
+        <button type="button" onclick="adicionarLinhaFuncDetalhe()" style="background:rgba(16,185,129,0.15);border:1.5px solid #10b981;color:#34d399;font-size:12px;font-weight:800;padding:8px 14px;border-radius:8px;cursor:pointer;width:100%;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:6px;">
+          <span>+</span> Adicionar Funcionário
+        </button>
+
+        <!-- Card de Resumo de Totais -->
+        <div style="margin-top:14px;padding:12px;background:rgba(139,92,246,0.08);border-radius:10px;border:1px solid rgba(139,92,246,0.3);display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-size:11px;color:#94a3b8;">Total Funcionários:</div>
+            <div id="det-func-total-soma" style="font-size:16px;color:#4ade80;font-weight:900;">R$ ${somaFmt}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:11px;color:#94a3b8;">Previsto Categoria:</div>
+            <div style="font-size:13px;color:#fcd34d;font-weight:800;">R$ ${valFmt}</div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // ── MODO DEMAIS CATEGORIAS (Material, Escritório, Almoço, Frete, Lucro)
+  const itens = d.itens || [];
+  let rowsHtml = '';
+  itens.forEach((it, ii) => {
+    rowsHtml += `
+      <div class="det-item-row" data-ii="${ii}" style="display:grid;grid-template-columns:1fr 105px 28px;gap:6px;align-items:center;margin-bottom:8px;">
+        <input type="text" class="det-item-desc" placeholder="Ex: Chapa MDF, Fita borda..." value="${it.desc || ''}" oninput="aoAtualizarLinhasItens()" style="background:#13182e;border:1px solid rgba(139,92,246,0.35);border-radius:8px;color:#fff;font-size:12px;padding:6px;width:100%;" />
+        <input type="text" class="det-item-val" inputmode="decimal" placeholder="R$ 0,00" value="${it.valor ? String(it.valor).replace('.',',') : ''}" oninput="aoAtualizarLinhasItens()" style="background:#13182e;border:1px solid rgba(139,92,246,0.35);border-radius:8px;color:#4ade80;font-size:12px;padding:6px;text-align:right;width:100%;font-weight:800;" />
+        <button type="button" onclick="removerLinhaItemDetalhe(${ii})" style="background:none;border:none;color:#ef4444;font-size:15px;cursor:pointer;padding:2px;display:flex;align-items:center;justify-content:center;">✕</button>
+      </div>`;
+  });
+
+  const somaInicial = itens.reduce((s, i) => s + (parseFloat(String(i.valor||'0').replace(',','.')) || 0), 0);
+  const somaFmt = typeof formatarValorPtBr === 'function' ? formatarValorPtBr(somaInicial) : somaInicial.toFixed(2).replace('.', ',');
+
+  return `
+    <div>
+      <div style="font-size:12px;color:#94a3b8;margin-bottom:10px;">Descreva os gastos e itens detalhados desta categoria:</div>
+      
+      <div style="display:grid;grid-template-columns:1fr 105px 28px;gap:6px;margin-bottom:6px;padding:0 2px;">
+        <span style="font-size:10.5px;color:#64748b;font-weight:800;">DESCRIÇÃO DO ITEM</span>
+        <span style="font-size:10.5px;color:#64748b;font-weight:800;text-align:right;">VALOR (R$)</span>
+        <span></span>
+      </div>
+
+      <div id="det-item-container">${rowsHtml}</div>
+
+      <button type="button" onclick="adicionarLinhaItemDetalhe()" style="background:rgba(16,185,129,0.15);border:1.5px solid #10b981;color:#34d399;font-size:12px;font-weight:800;padding:8px 14px;border-radius:8px;cursor:pointer;width:100%;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:6px;">
+        <span>+</span> Adicionar Item
+      </button>
+
+      <!-- Card de Resumo de Totais -->
+      <div style="margin-top:14px;padding:12px;background:rgba(139,92,246,0.08);border-radius:10px;border:1px solid rgba(139,92,246,0.3);display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:11px;color:#94a3b8;">Total dos Itens:</div>
+          <div id="det-item-total-soma" style="font-size:16px;color:#4ade80;font-weight:900;">R$ ${somaFmt}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:11px;color:#94a3b8;">Previsto Categoria:</div>
+          <div style="font-size:13px;color:#fcd34d;font-weight:800;">R$ ${valFmt}</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function adicionarLinhaFuncDetalhe() {
+  const container = document.getElementById('det-func-container');
+  if (!container) return;
+  const fi = container.querySelectorAll('.det-func-row').length;
+
+  let nomesCadastrados = [];
+  try {
+    const salv = localStorage.getItem('sdv_funcionarios');
+    if (salv) nomesCadastrados = JSON.parse(salv).map(f => typeof f === 'string' ? f : (f.nome || f.name || '')).filter(Boolean);
+  } catch(_) {}
+  if (!nomesCadastrados.length) nomesCadastrados = ['Samuel', 'David', 'Marceneiro 1', 'Ajudante 1'];
+  const opts = nomesCadastrados.map(n => '<option value="' + n + '">' + n + '</option>').join('');
+
+  const div = document.createElement('div');
+  div.className = 'det-func-row';
+  div.setAttribute('data-fi', fi);
+  div.style.cssText = 'display:grid;grid-template-columns:1fr 70px 95px 28px;gap:6px;align-items:center;margin-bottom:8px;';
+  div.innerHTML = `
+    <select class="det-func-nome" onchange="aoAtualizarLinhasFunc()" style="background:#13182e;border:1px solid rgba(139,92,246,0.35);border-radius:8px;color:#fff;font-size:12px;padding:6px;width:100%;">
+      <option value="">-- Funcionário --</option>
+      ${opts}
+      <option value="__custom">+ Digitar outro...</option>
+    </select>
+    <input type="number" class="det-func-dias" min="0" max="60" placeholder="Dias" oninput="aoAtualizarLinhasFunc()" style="background:#13182e;border:1px solid rgba(139,92,246,0.35);border-radius:8px;color:#fcd34d;font-size:12px;padding:6px;text-align:center;width:100%;font-weight:700;" title="Dias trabalhados" />
+    <input type="text" class="det-func-val" inputmode="decimal" placeholder="R$ 0,00" oninput="aoAtualizarLinhasFunc()" style="background:#13182e;border:1px solid rgba(139,92,246,0.35);border-radius:8px;color:#4ade80;font-size:12px;padding:6px;text-align:right;width:100%;font-weight:800;" title="Valor a receber" />
+    <button type="button" onclick="this.closest('.det-func-row').remove(); aoAtualizarLinhasFunc();" style="background:none;border:none;color:#ef4444;font-size:15px;cursor:pointer;padding:2px;display:flex;align-items:center;justify-content:center;">✕</button>`;
+  container.appendChild(div);
+}
+
+function adicionarLinhaItemDetalhe() {
+  const container = document.getElementById('det-item-container');
+  if (!container) return;
+  const ii = container.querySelectorAll('.det-item-row').length;
+
+  const div = document.createElement('div');
+  div.className = 'det-item-row';
+  div.setAttribute('data-ii', ii);
+  div.style.cssText = 'display:grid;grid-template-columns:1fr 105px 28px;gap:6px;align-items:center;margin-bottom:8px;';
+  div.innerHTML = `
+    <input type="text" class="det-item-desc" placeholder="Ex: Item ou despesa..." oninput="aoAtualizarLinhasItens()" style="background:#13182e;border:1px solid rgba(139,92,246,0.35);border-radius:8px;color:#fff;font-size:12px;padding:6px;width:100%;" />
+    <input type="text" class="det-item-val" inputmode="decimal" placeholder="R$ 0,00" oninput="aoAtualizarLinhasItens()" style="background:#13182e;border:1px solid rgba(139,92,246,0.35);border-radius:8px;color:#4ade80;font-size:12px;padding:6px;text-align:right;width:100%;font-weight:800;" />
+    <button type="button" onclick="this.closest('.det-item-row').remove(); aoAtualizarLinhasItens();" style="background:none;border:none;color:#ef4444;font-size:15px;cursor:pointer;padding:2px;display:flex;align-items:center;justify-content:center;">✕</button>`;
+  container.appendChild(div);
+}
+
+function removerLinhaFuncDetalhe(fi) {
+  const rows = document.querySelectorAll('#det-func-container .det-func-row');
+  if (rows[fi]) rows[fi].remove();
+  aoAtualizarLinhasFunc();
+}
+
+function removerLinhaItemDetalhe(ii) {
+  const rows = document.querySelectorAll('#det-item-container .det-item-row');
+  if (rows[ii]) rows[ii].remove();
+  aoAtualizarLinhasItens();
+}
+
+function aoAtualizarLinhasFunc() {
+  const rows = document.querySelectorAll('#det-func-container .det-func-row');
+  let soma = 0;
+  rows.forEach(r => {
+    const sel = r.querySelector('.det-func-nome');
+    if (sel && sel.value === '__custom') {
+      const nomeDigitado = prompt('Digite o nome do funcionário:');
+      if (nomeDigitado && nomeDigitado.trim()) {
+        const opt = document.createElement('option');
+        opt.value = nomeDigitado.trim();
+        opt.textContent = nomeDigitado.trim();
+        opt.selected = true;
+        sel.insertBefore(opt, sel.lastElementChild);
+      } else {
+        sel.value = '';
+      }
+    }
+    const inpVal = r.querySelector('.det-func-val');
+    if (inpVal) {
+      const v = parseFloat(String(inpVal.value || '0').replace(/[^0-9,.]/g,'').replace(',','.')) || 0;
+      soma += v;
+    }
+  });
+  const elSoma = document.getElementById('det-func-total-soma');
+  if (elSoma) {
+    elSoma.textContent = 'R$ ' + (typeof formatarValorPtBr === 'function' ? formatarValorPtBr(soma) : soma.toFixed(2).replace('.', ','));
+  }
+}
+
+function aoAtualizarLinhasItens() {
+  const rows = document.querySelectorAll('#det-item-container .det-item-row');
+  let soma = 0;
+  rows.forEach(r => {
+    const inpVal = r.querySelector('.det-item-val');
+    if (inpVal) {
+      const v = parseFloat(String(inpVal.value || '0').replace(/[^0-9,.]/g,'').replace(',','.')) || 0;
+      soma += v;
+    }
+  });
+  const elSoma = document.getElementById('det-item-total-soma');
+  if (elSoma) {
+    elSoma.textContent = 'R$ ' + (typeof formatarValorPtBr === 'function' ? formatarValorPtBr(soma) : soma.toFixed(2).replace('.', ','));
+  }
+}
+
+function salvarDetalheCatDir() {
+  if (_detCatDirIdx < 0) return;
+  const cats = obterCategoriasRateioInline();
+  if (!cats || !cats[_detCatDirIdx]) return;
+  const c = cats[_detCatDirIdx];
+  const nome = (c.nome || '').toLowerCase();
+
+  if (nome.includes('func') || nome.includes('colab')) {
+    const rows = document.querySelectorAll('#det-func-container .det-func-row');
+    const funcs = [];
+    rows.forEach(r => {
+      const fNome = (r.querySelector('.det-func-nome') || {}).value || '';
+      const fDias = parseInt((r.querySelector('.det-func-dias') || {}).value || '0', 10);
+      const fVal = parseFloat(String((r.querySelector('.det-func-val') || {}).value || '0').replace(/[^0-9,.]/g,'').replace(',','.')) || 0;
+      if (fNome || fVal > 0) funcs.push({ nome: fNome, dias: fDias, valor: fVal });
+    });
+    if (!c.detalhes) c.detalhes = {};
+    c.detalhes.funcionarios = funcs;
+  } else {
+    const rows = document.querySelectorAll('#det-item-container .det-item-row');
+    const itens = [];
+    rows.forEach(r => {
+      const desc = ((r.querySelector('.det-item-desc') || {}).value || '').trim();
+      const val = parseFloat(String((r.querySelector('.det-item-val') || {}).value || '0').replace(/[^0-9,.]/g,'').replace(',','.')) || 0;
+      if (desc || val > 0) itens.push({ desc, valor: val });
+    });
+    if (!c.detalhes) c.detalhes = {};
+    c.detalhes.itens = itens;
+  }
+
+  // Persistir no storage
+  try {
+    const salv = localStorage.getItem('sdm_rateio_inline');
+    if (salv) {
+      const arr = JSON.parse(salv);
+      if (arr[_detCatDirIdx]) {
+        arr[_detCatDirIdx].detalhes = c.detalhes;
+        localStorage.setItem('sdm_rateio_inline', JSON.stringify(arr));
+      }
+    }
+  } catch(_) {}
+
+  if (typeof salvarRateioInlineParaOrcamento === 'function') salvarRateioInlineParaOrcamento();
+  if (typeof renderRateioInline === 'function') renderRateioInline();
+
+  fecharDetalheCatDir();
+  if (typeof mostrarToastAprovacao === 'function') mostrarToastAprovacao('✅ Detalhes salvos para ' + (c.nome || 'categoria') + '!');
+}
+
+function fecharDetalheCatDir(e) {
+  if (e && e.target !== document.getElementById('modal-detalhe-cat-dir')) return;
+  const modal = document.getElementById('modal-detalhe-cat-dir');
+  if (modal) modal.style.display = 'none';
+  _detCatDirIdx = -1;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TIRAR PRINT DA TELA E ADICIONAR DIRETAMENTE À GALERIA DA O.S.
+// ═══════════════════════════════════════════════════════════════════════════
+function tirarPrintTelaOrc() {
+  fecharTodosMenusGaleria();
+
+  if (typeof html2canvas === 'undefined') {
+    if (typeof mostrarToastAprovacao === 'function') mostrarToastAprovacao('Carregando módulo de captura...');
+    const sc = document.createElement('script');
+    sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    sc.onload = () => { _executarCapturaCanvas(); };
+    sc.onerror = () => { alert('Não foi possível carregar a ferramenta de captura de tela.'); };
+    document.head.appendChild(sc);
+  } else {
+    _executarCapturaCanvas();
+  }
+}
+
+function _executarCapturaCanvas() {
+  const alvo = document.getElementById('card-orcamento') || document.getElementById('panel-orcamento') || document.body;
+  if (typeof mostrarToastAprovacao === 'function') mostrarToastAprovacao('📸 Capturando tela da O.S...');
+
+  html2canvas(alvo, {
+    scale: 1.5,
+    useCORS: true,
+    allowTaint: true,
+    backgroundColor: '#0e1020',
+    logging: false
+  }).then(canvas => {
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+    const ambAtivo = window._ambienteGaleriaAtivo || 'Sala';
+    const foto = {
+      id: Date.now(),
+      src: dataUrl,
+      nome: 'print_' + ambAtivo.toLowerCase().replace(/\s+/g,'_') + '_' + Date.now() + '.jpg',
+      ambiente: ambAtivo,
+      tipo: 'print'
+    };
+
+    if (!window._fotosOrcamentoMemoria) window._fotosOrcamentoMemoria = [];
+    window._fotosOrcamentoMemoria.push(foto);
+
+    if (typeof salvarFotoStorageSeguro === 'function') salvarFotoStorageSeguro(foto);
+    if (typeof atualizarBadgeGaleriaOrcamento === 'function') atualizarBadgeGaleriaOrcamento();
+
+    if (typeof mostrarToastAprovacao === 'function') {
+      mostrarToastAprovacao('✅ Print capturado e salvo na galeria de ' + ambAtivo + '!');
+    }
+  }).catch(err => {
+    console.error('Erro no html2canvas:', err);
+    alert('Erro ao capturar print: ' + (err.message || 'Desconhecido'));
+  });
+}
+
+// Tornar funções globais
+window.abrirDetalheCategoriaDirecionamento = abrirDetalheCategoriaDirecionamento;
+window.fecharDetalheCatDir = fecharDetalheCatDir;
+window.salvarDetalheCatDir = salvarDetalheCatDir;
+window.adicionarLinhaFuncDetalhe = adicionarLinhaFuncDetalhe;
+window.adicionarLinhaItemDetalhe = adicionarLinhaItemDetalhe;
+window.removerLinhaFuncDetalhe = removerLinhaFuncDetalhe;
+window.removerLinhaItemDetalhe = removerLinhaItemDetalhe;
+window.aoAtualizarLinhasFunc = aoAtualizarLinhasFunc;
+window.aoAtualizarLinhasItens = aoAtualizarLinhasItens;
+window.tirarPrintTelaOrc = tirarPrintTelaOrc;
 </script>
 
 </body>
