@@ -2826,10 +2826,11 @@ window.selecionarPagamento = function(metodo) {
     let urlApi = '';
     if (pParam) {
       urlApi = '/api/gerar-pdf-orcamento?p=' + encodeURIComponent(pParam) + '&num=' + encodeURIComponent(numOs) + '&empresa=' + encodeURIComponent(empParam);
-    } else if (dParam) {
-      urlApi = '/api/gerar-pdf-orcamento?d=' + encodeURIComponent(dParam) + '&num=' + encodeURIComponent(numOs) + '&empresa=' + encodeURIComponent(empParam);
     } else if (contratoId) {
       urlApi = '/api/gerar-pdf-orcamento?id=' + encodeURIComponent(contratoId) + '&num=' + encodeURIComponent(numOs) + '&empresa=' + encodeURIComponent(empParam);
+      if (dParam) urlApi += '&d=' + encodeURIComponent(dParam);
+    } else if (dParam) {
+      urlApi = '/api/gerar-pdf-orcamento?d=' + encodeURIComponent(dParam) + '&num=' + encodeURIComponent(numOs) + '&empresa=' + encodeURIComponent(empParam);
     } else {
       urlApi = '/api/gerar-pdf-orcamento?num=' + encodeURIComponent(numOs) + '&empresa=' + encodeURIComponent(empParam);
     }
@@ -3066,7 +3067,7 @@ window.selecionarPagamento = function(metodo) {
       const salvo = localStorage.getItem('sdv_contrato_editado_' + numLimpo);
       if (salvo && salvo.trim()) textoExibir = salvo;
     } catch(_) {}
-    setTxt('contrato-texto', textoExibir);
+    setTxt('contrato-texto', String(textoExibir || '').replace(/\n?<!-- SDM_DADOS_OS_JSON:[\s\S]*?-->/, ''));
 
     // Link de ajuste via WhatsApp pré-configurado
     const btnAjustar = document.getElementById('btn-ajustar-zap');
