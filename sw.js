@@ -1,5 +1,5 @@
-// Service Worker PWA – SD Móveis Projetados v9.5.18 (Fix: sincronização imediata de fotos salvas no botão Galeria e Ver Fotos Salvas)
-const CACHE_NAME = 'sdmoveisprojetados-v9.5.18';
+// Service Worker PWA – SD Móveis Projetados v9.5.19 (Fix: Stale-While-Revalidate para 0ms de tela preta e cache ultrarrápido)
+const CACHE_NAME = 'sdmoveisprojetados-v9.5.19';
 const ASSETS = [
   '/',
   '/index.html',
@@ -13,7 +13,9 @@ const ASSETS = [
   '/alarme.wav',
   '/manifest.json',
   '/icon-192.png',
-  '/icon-512.png'
+  '/icon-512.png',
+  '/pdf-lib.min.js',
+  '/pdf.min.js'
 ];
 
 // ── Variáveis de controle do alarme de ponto ──
@@ -45,25 +47,67 @@ self.addEventListener('activate', (event) => {
 });
 
 // ══════════════════════════════════════════════
-//  FETCH – Network First
+//  FETCH – Stale-While-Revalidate & Cache-First
+//  Garante 0ms de tela preta no celular (offline & 4G lento)
 // ══════════════════════════════════════════════
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
-  // Não intercepta rotas de API externas
   const url = new URL(event.request.url);
-  if (url.origin !== self.location.origin) return;
 
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        if (response && response.status === 200) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+  // 1. Não intercepta rotas de API do backend / Vercel
+  if (url.origin !== self.location.origin || url.pathname.startsWith('/api/')) {
+    return;
+  }
+
+  // 2. DOCUMENTOS & NAVEGAÇÃO HTML: Stale-While-Revalidate
+  // Retorna imediatamente o HTML do cache (0ms tela preta) e atualiza em background
+  const isDoc = event.request.mode === 'navigate' ||
+                event.request.destination === 'document' ||
+                url.pathname === '/' ||
+                url.pathname.endsWith('.html');
+
+  if (isDoc) {
+    event.respondWith(
+      caches.match(event.request).then((cached) => {
+        const fetchPromise = fetch(event.request)
+          .then((networkResponse) => {
+            if (networkResponse && networkResponse.status === 200) {
+              const clone = networkResponse.clone();
+              caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+            }
+            return networkResponse;
+          })
+          .catch(() => null);
+
+        if (cached) {
+          // Atualiza o cache silenciosamente em background
+          event.waitUntil(fetchPromise);
+          return cached;
         }
-        return response;
+
+        // Se ainda não estava no cache, aguarda a rede (ou fallback do index.html)
+        return fetchPromise.then((netRes) => netRes || caches.match('/index.html') || caches.match('/'));
       })
-      .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // 3. ARQUIVOS ESTÁTICOS (JS, CSS, Imagens, Fontes, Áudio, Ícones): Cache-First
+  event.respondWith(
+    caches.match(event.request).then((cached) => {
+      if (cached) return cached;
+
+      return fetch(event.request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() => null);
+    })
   );
 });
 
