@@ -13052,30 +13052,46 @@ function atualizarBadgeGaleriaOrcamento() {
       } catch(_) {}
     }
 
-    // Total geral (todos os ambientes) para o badge principal "Ver Fotos Salvas"
+    // Total geral de anexos desta O.S. (fotos + pdfs)
     const totalGeral = fotos.length + pdfs.length;
 
-    // 1. Atualiza badge do topo (primeiro ambiente: Banheiro, Sala, etc.)
+    // "Ver Fotos Salvas (N)" no menu dropdown DEVE SEMPRE refletir o TOTAL GERAL de fotos desta O.S.
+    const menuContTop = document.getElementById('menu-cont-galeria-orc');
+    if (menuContTop) menuContTop.textContent = totalGeral;
+
     const topInp = document.getElementById('inp-orc-ambiente-top');
-    const topNome = (topInp && topInp.value && topInp.value.trim()) ? topInp.value.trim() : 'Sala';
-    const topNomeLower = topNome.toLowerCase();
+    const temOutrasSecoes = document.querySelectorAll('.tr-ambiente-secao').length > 0;
 
-    const fotosTop = fotos.filter(f => {
-      const amb = (f.ambiente || '').trim().toLowerCase();
-      return !amb || amb === topNomeLower;
-    });
-    const pdfsTop = pdfs.filter(p => {
-      const amb = (p.ambiente || '').trim().toLowerCase();
-      return !amb || amb === topNomeLower;
-    });
-    const countTop = fotosTop.length + pdfsTop.length;
+    // Se o campo do ambiente estiver em branco e houver fotos anexadas com ambiente definido, preenche automaticamente
+    if (topInp && !topInp.value.trim() && fotos.length > 0 && fotos[0].ambiente) {
+      topInp.value = fotos[0].ambiente;
+      if (typeof _ambienteGaleriaAtivo !== 'undefined' && !_ambienteGaleriaAtivo) {
+        _ambienteGaleriaAtivo = fotos[0].ambiente;
+      }
+    }
 
-    // Label "Galeria (N)" mostra count do ambiente atual
+    let topNome = (topInp && topInp.value && topInp.value.trim()) ? topInp.value.trim() : '';
+    let topNomeLower = topNome.toLowerCase();
+
+    // Se não há outras seções de ambiente adicionadas no orçamento, todos os anexos desta O.S. pertencem a esta linha
+    let countTop = 0;
+    if (!temOutrasSecoes) {
+      countTop = totalGeral;
+    } else {
+      const fotosTop = fotos.filter(f => {
+        const amb = (f.ambiente || '').trim().toLowerCase();
+        return !amb || !topNomeLower || amb === topNomeLower;
+      });
+      const pdfsTop = pdfs.filter(p => {
+        const amb = (p.ambiente || '').trim().toLowerCase();
+        return !amb || !topNomeLower || amb === topNomeLower;
+      });
+      countTop = fotosTop.length + pdfsTop.length;
+    }
+
+    // Label "Galeria (N)" da linha principal
     const lblTop = document.getElementById('label-galeria-orc-linha');
     if (lblTop) lblTop.textContent = 'Galeria (' + countTop + ')';
-    // "Ver Fotos Salvas (N)" mostra total geral de TODOS os ambientes
-    const menuContTop = document.getElementById('menu-cont-galeria-orc');
-    if (menuContTop) menuContTop.textContent = countTop;
 
     // 2. Atualiza badge de cada ambiente subsequente (ex: Quarto, Cozinha, etc.)
     document.querySelectorAll('.tr-ambiente-secao').forEach(tr => {
@@ -27012,10 +27028,17 @@ function acionarUploadDoModalGaleria(tipo) {
 function aoMudarAmbienteDestinoModal(novoAmb) {
   if (!novoAmb) return;
   _ambienteGaleriaAtivo = novoAmb;
+  const topInp = document.getElementById('inp-orc-ambiente-top');
+  const temOutrasSecoes = document.querySelectorAll('.tr-ambiente-secao').length > 0;
+  if (topInp && (!topInp.value.trim() || !temOutrasSecoes)) {
+    topInp.value = novoAmb;
+    if (typeof atualizarSubtotaisAmbientes === 'function') atualizarSubtotaisAmbientes();
+  }
   if (_modalGaleriaFiltroAmbiente !== 'todos') {
     _modalGaleriaFiltroAmbiente = novoAmb;
-    renderizarModalGaleriaOrc();
   }
+  renderizarModalGaleriaOrc();
+  if (typeof atualizarBadgeGaleriaOrcamento === 'function') atualizarBadgeGaleriaOrcamento();
 }
 
 function alterarAmbienteItemGaleria(identificador, tipo, novoAmbiente) {
@@ -27824,9 +27847,23 @@ function filtrarModalGaleriaAmbiente(nomeAmbiente) {
 }
 
 function fecharModalGaleriaOrcamento(e) {
-  if (e && e.target !== document.getElementById('modal-galeria-orcamento')) return;
+  if (e && e.target && e.target !== document.getElementById('modal-galeria-orcamento')) return;
   const modal = document.getElementById('modal-galeria-orcamento');
   if (modal) modal.style.display = 'none';
+
+  // Sincroniza ambiente se o topo estiver sem nome ou for o único ambiente
+  const topInp = document.getElementById('inp-orc-ambiente-top');
+  const temOutrasSecoes = document.querySelectorAll('.tr-ambiente-secao').length > 0;
+  if (topInp && (!topInp.value.trim() || !temOutrasSecoes) && typeof _ambienteGaleriaAtivo !== 'undefined' && _ambienteGaleriaAtivo) {
+    if (!topInp.value.trim()) {
+      topInp.value = _ambienteGaleriaAtivo;
+      if (typeof atualizarSubtotaisAmbientes === 'function') atualizarSubtotaisAmbientes();
+    }
+  }
+
+  // Atualiza imediatamente o badge Galeria (N) e Ver Fotos Salvas (N) na tela
+  if (typeof atualizarBadgeGaleriaOrcamento === 'function') atualizarBadgeGaleriaOrcamento();
+  if (typeof renderMiniaturasGaleriaOrcamento === 'function') renderMiniaturasGaleriaOrcamento();
 }
 
 function renderizarModalGaleriaOrc() {

@@ -1,5 +1,5 @@
-// Service Worker PWA – SD Móveis Projetados v9.5.17 (Fix: registro fotográfico no PDF da OS baixado via WhatsApp e assinar.html)
-const CACHE_NAME = 'sdmoveisprojetados-v9.5.17';
+// Service Worker PWA – SD Móveis Projetados v9.5.18 (Fix: sincronização imediata de fotos salvas no botão Galeria e Ver Fotos Salvas)
+const CACHE_NAME = 'sdmoveisprojetados-v9.5.18';
 const ASSETS = [
   '/',
   '/index.html',
