@@ -286,156 +286,89 @@ async function gerarPdfOrcamento(dados, fetchLogo, empInfo) {
 
   let curY = tableHeaderY - tableHeaderH;
   const itensList = Array.isArray(itens) && itens.length ? itens : [];
-  const formatoAmbiente = (dados.formatoPdf === 'ambiente' || dados.formato === 'ambiente' || dados.fpdf === 'ambiente' || (empInfo.ehMoveis && dados.formatoPdf !== 'detalhado'));
 
-  let ambientesParaPdf = (Array.isArray(dados.ambientes) && dados.ambientes.length) ? dados.ambientes : [];
-  if (formatoAmbiente && (!ambientesParaPdf || !ambientesParaPdf.length) && itensList.length) {
-    const mapAmb = {};
+  // Agrupar itens por ambiente para visualização idêntica à Imagem 3 de referência
+  const gruposAmbientes = [];
+  if (itensList.length > 0) {
+    const map = new Map();
     itensList.forEach(it => {
-      const aNome = (it.ambiente || dados.ambNome || 'Sala').trim();
-      if (!mapAmb[aNome]) mapAmb[aNome] = { nome: aNome, obs: (dados.obs || ''), produtosVal: 0, servicosVal: 0, totalVal: 0, qtdItens: 0 };
-      const val = parseNumSafe(it.total);
-      mapAmb[aNome].produtosVal += val;
-      mapAmb[aNome].totalVal += val;
-      mapAmb[aNome].qtdItens++;
-    });
-    ambientesParaPdf = Object.values(mapAmb);
-  }
-  if (formatoAmbiente && (!ambientesParaPdf || !ambientesParaPdf.length)) {
-    const totNum = parseNumSafe(total);
-    ambientesParaPdf = [{
-      nome: dados.ambNome || 'Sala',
-      obs: dados.obs || '',
-      produtosVal: totNum,
-      servicosVal: 0,
-      totalVal: totNum,
-      qtdItens: 1
-    }];
-  }
-
-  if (formatoAmbiente && ambientesParaPdf.length) {
-    ambientesParaPdf.forEach((amb, idx) => {
-      const rowH = 26;
-      curY -= rowH;
-
-      page.drawRectangle({
-        x: MARGIN_X,
-        y: curY,
-        width: CONTENT_W,
-        height: rowH,
-        color: idx % 2 === 0 ? WHITE : ROW_ALT,
-        borderColor: BORDER,
-        borderWidth: 0.6
-      });
-
-      const obsTexto = (amb.obs && String(amb.obs).trim()) || (dados.obs ? String(dados.obs).trim() : '');
-      const temObs = !!obsTexto;
-      const altLinha = temObs ? 26 : 22;
-      curY = curY + rowH - altLinha;
-
-      // Nome do Ambiente em destaque (só o valor total do ambiente, sem subtítulo de produtos/serviço)
-      const titAmb = `AMBIENTE: ${String(amb.nome || '').toUpperCase()}`;
-      const posYTit = temObs ? (curY + altLinha - 12) : (curY + (altLinha / 2) - 3.5);
-      page.drawText(sanitizePdf(titAmb), {
-        x: MARGIN_X + 10,
-        y: posYTit,
-        size: 8.5,
-        font: fontBold,
-        color: DARK
-      });
-
-      // Se houver observações deste ambiente ou do orçamento, exibe abaixo do nome
-      if (temObs) {
-        page.drawText(sanitizePdf(`Obs: ${obsTexto}`), {
-          x: MARGIN_X + 10,
-          y: curY + 5,
-          size: 6.8,
-          font: fontRegular,
-          color: GRAY
-        });
+      const ambNome = (it.ambiente || dados.ambNome || 'Salão').trim();
+      if (!map.has(ambNome)) {
+        map.set(ambNome, { nome: ambNome, itens: [], subtotal: 0 });
       }
-
-      const posYValores = temObs ? (curY + altLinha - 14) : (curY + (altLinha / 2) - 3.5);
-
-      // Medidas
-      page.drawText('Sob Medida', {
-        x: MARGIN_X + 250,
-        y: posYValores,
-        size: 7.5,
-        font: fontRegular,
-        color: GRAY
-      });
-
-      // Área
-      page.drawText('-', {
-        x: MARGIN_X + 345,
-        y: posYValores,
-        size: 7.5,
-        font: fontRegular,
-        color: GRAY
-      });
-
-      // QTD: 1 AMB
-      page.drawText('1 AMB', {
-        x: MARGIN_X + 395,
-        y: posYValores,
-        size: 7.5,
-        font: fontRegular,
-        color: DARK
-      });
-
-      const totAmbNum = amb.totalVal || (amb.produtosVal + (amb.servicosVal || 0));
-      const vTotTxt = Number(totAmbNum || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-      // VL. UNIT: R$ Total do Ambiente
-      page.drawText(vTotTxt, {
-        x: MARGIN_X + 438,
-        y: posYValores,
-        size: 7.5,
-        font: fontRegular,
-        color: DARK
-      });
-
-      // TOTAL: R$ Total do Ambiente em negrito
-      page.drawText(vTotTxt, {
-        x: MARGIN_X + 488,
-        y: posYValores,
-        size: 8,
-        font: fontBold,
-        color: DARK
+      const g = map.get(ambNome);
+      g.itens.push(it);
+      g.subtotal += parseNumSafe(it.total);
+    });
+    map.forEach(v => gruposAmbientes.push(v));
+  } else if (Array.isArray(dados.ambientes) && dados.ambientes.length) {
+    dados.ambientes.forEach(amb => {
+      gruposAmbientes.push({
+        nome: amb.nome || dados.ambNome || 'Salão',
+        itens: [{
+          desc: 'PROJETO SOB MEDIDA',
+          qtd: 1,
+          larg: '-',
+          alt: '-',
+          m2: '0,00',
+          v_unit: amb.totalVal || dados.total,
+          total: amb.totalVal || dados.total
+        }],
+        subtotal: parseNumSafe(amb.totalVal || dados.total)
       });
     });
-  } else if (!itensList.length) {
-    const rowH = 26;
-    curY -= rowH;
+  } else {
+    gruposAmbientes.push({
+      nome: dados.ambNome || 'Salão',
+      itens: [{
+        desc: 'PROJETO SOB MEDIDA',
+        qtd: 1,
+        larg: '-',
+        alt: '-',
+        m2: '0,00',
+        v_unit: dados.total,
+        total: dados.total
+      }],
+      subtotal: parseNumSafe(dados.total)
+    });
+  }
+
+  // Renderizar cada ambiente com banner escuro e itens detalhados (exatamente como Imagem 3)
+  gruposAmbientes.forEach(grupo => {
+    // 1. Barra de Ambiente & Subtotal
+    const bannerH = 18;
+    curY -= bannerH;
     page.drawRectangle({
       x: MARGIN_X,
       y: curY,
       width: CONTENT_W,
-      height: rowH,
-      color: WHITE,
-      borderColor: BORDER,
-      borderWidth: 0.6
+      height: bannerH,
+      color: DARK
     });
-    const itemPadrao = empInfo.ehMoveis ? 'MÓVEIS PLANEJADOS & MARCENARIA SOB MEDIDA' : 'SERVIÇOS DE VIDRAÇARIA E ESQUADRIAS DE ALUMÍNIO';
-    page.drawText(itemPadrao, { x: MARGIN_X + 8, y: curY + 9, size: 7.5, font: fontBold, color: DARK });
-    page.drawText('Sob Medida', { x: MARGIN_X + 250, y: curY + 9, size: 7.5, font: fontRegular, color: GRAY });
-    page.drawText('-', { x: MARGIN_X + 345, y: curY + 9, size: 7.5, font: fontRegular, color: GRAY });
-    page.drawText('1 UND', { x: MARGIN_X + 395, y: curY + 9, size: 7.5, font: fontRegular, color: DARK });
 
-    const valTot = formatMoney(total);
-    page.drawText(valTot, { x: MARGIN_X + 438, y: curY + 9, size: 7.5, font: fontRegular, color: DARK });
-    page.drawText(valTot, { x: MARGIN_X + 488, y: curY + 8, size: 8, font: fontBold, color: DARK });
-  } else {
-    itensList.forEach((it, idx) => {
-      let descTxt = String(it.desc || '').toUpperCase();
-      if (it.cor) descTxt += ` (${String(it.cor).toUpperCase()})`;
+    const titAmb = `AMBIENTE: ${String(grupo.nome || 'SALÃO').toUpperCase()}`;
+    page.drawText(sanitizePdf(titAmb), {
+      x: MARGIN_X + 8,
+      y: curY + 5.5,
+      size: 7.5,
+      font: fontBold,
+      color: WHITE
+    });
 
-      const descLines = wrapText(descTxt, fontRegular, 7.5, 210);
-      const rowH = Math.max(24, descLines.length * 11 + 10);
+    const subtotalTxt = 'SUBTOTAL: R$ ' + grupo.subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    page.drawText(sanitizePdf(subtotalTxt), {
+      x: MARGIN_X + CONTENT_W - 8 - fontBold.widthOfTextAtSize(subtotalTxt, 7.5),
+      y: curY + 5.5,
+      size: 7.5,
+      font: fontBold,
+      color: WHITE
+    });
+
+    // 2. Linhas de itens deste ambiente
+    grupo.itens.forEach((it, idx) => {
+      const rowH = 19;
       curY -= rowH;
 
-      // Fundo alternado
       page.drawRectangle({
         x: MARGIN_X,
         y: curY,
@@ -446,58 +379,79 @@ async function gerarPdfOrcamento(dados, fetchLogo, empInfo) {
         borderWidth: 0.5
       });
 
-      // Item #
-      const numItemStr = String(idx + 1).padStart(2, '0');
-      page.drawText(numItemStr, { x: MARGIN_X + 8, y: curY + rowH - 13, size: 7.5, font: fontBold, color: GRAY });
-
-      // Descrição do item
-      descLines.forEach((l, lIdx) => {
-        page.drawText(l, { x: MARGIN_X + 30, y: curY + rowH - 13 - (lIdx * 10), size: 7.5, font: lIdx === 0 ? fontBold : fontRegular, color: DARK });
+      // Descrição
+      let descTxt = String(it.desc || '').toUpperCase();
+      if (it.cor) descTxt += ' (' + String(it.cor).toUpperCase() + ')';
+      page.drawText(sanitizePdf(descTxt.slice(0, 48)), {
+        x: MARGIN_X + 8,
+        y: curY + 6,
+        size: 7,
+        font: fontBold,
+        color: DARK
       });
 
       // Medidas
       let medTxt = '-';
-      if (it.larg && it.alt) {
-        medTxt = `${it.larg} x ${it.alt} m`;
-      }
-      page.drawText(medTxt, { x: MARGIN_X + 248, y: curY + rowH - 13, size: 7.5, font: fontRegular, color: DARK });
+      if (it.larg && it.alt) medTxt = it.larg + ' x ' + it.alt;
+      page.drawText(sanitizePdf(medTxt), {
+        x: MARGIN_X + 250,
+        y: curY + 6,
+        size: 7,
+        font: fontRegular,
+        color: DARK
+      });
 
       // Área m²
-      let m2Txt = '-';
+      let m2Txt = '0,00 m²';
       if (it.m2) {
-        const numM2 = parseFloat(String(it.m2).replace(',', '.'));
-        if (!isNaN(numM2) && numM2 > 0) {
-          m2Txt = String(it.m2).replace('m²', '').trim() + ' m²';
-        }
+        const n = parseFloat(String(it.m2).replace(',', '.'));
+        if (!isNaN(n)) m2Txt = n.toFixed(2).replace('.', ',') + ' m²';
       }
-      page.drawText(m2Txt, { x: MARGIN_X + 322, y: curY + rowH - 13, size: 7.5, font: fontRegular, color: DARK });
+      page.drawText(sanitizePdf(m2Txt), {
+        x: MARGIN_X + 338,
+        y: curY + 6,
+        size: 7,
+        font: fontRegular,
+        color: DARK
+      });
 
-      // Quantidade
-      page.drawText(`${it.qtd || 1} UND`, { x: MARGIN_X + 374, y: curY + rowH - 13, size: 7.5, font: fontRegular, color: DARK });
+      // Qtd
+      page.drawText((it.qtd || 1) + ' UND', {
+        x: MARGIN_X + 395,
+        y: curY + 6,
+        size: 7,
+        font: fontRegular,
+        color: DARK
+      });
 
-      // Valor unitário
-      const vUnitTxt = formatMoney(it.v_unit);
-      page.drawText(vUnitTxt, { x: MARGIN_X + 418, y: curY + rowH - 13, size: 7.5, font: fontRegular, color: DARK });
+      // Vl. Unit
+      const vUnitTxt = formatMoney(it.v_unit || it.total);
+      page.drawText(vUnitTxt, {
+        x: MARGIN_X + 434,
+        y: curY + 6,
+        size: 7,
+        font: fontRegular,
+        color: DARK
+      });
 
-      // Valor total do item
-      const vTotTxt = formatMoney(it.total);
-      page.drawText(vTotTxt, { x: MARGIN_X + 478, y: curY + rowH - 13, size: 7.8, font: fontBold, color: DARK });
+      // Total
+      const totTxt = formatMoney(it.total);
+      page.drawText(totTxt, {
+        x: MARGIN_X + 486,
+        y: curY + 6,
+        size: 7,
+        font: fontBold,
+        color: DARK
+      });
     });
-  }
+  });
 
-  // ---------------- 5. CARDS INFERIORES (CONDIÇÕES & TOTAIS) ----------------
-  const rodapeCardH = 70;
-  const rodapeCardY = 26;
-  const rodapeTop = rodapeCardY + rodapeCardH;
-
-  // Altura dos cards comerciais
   const cardBottomH = 146;
   let bottomY = curY - 12;
 
   let cardBottomY = bottomY - cardBottomH;
   let spaceBelowCards = cardBottomY - rodapeTop;
-
-  // Se apertar o rodapé por excesso de itens, ajusta bottomY
+// Se apertar o rodapé por excesso de itens, ajusta bottomY
   if (spaceBelowCards < 12) {
     bottomY = rodapeTop + 12 + cardBottomH;
     cardBottomY = bottomY - cardBottomH;
@@ -595,52 +549,39 @@ async function gerarPdfOrcamento(dados, fetchLogo, empInfo) {
   let totY = bottomY - 32;
   const valorTotalFormatado = formatMoney(total);
 
-  const valProdNum = parseNumSafe(dados.valProdutos);
-  const valServNum = parseNumSafe(dados.valServico);
+  let valProdNum = parseNumSafe(dados.valProdutos);
+  let valServNum = parseNumSafe(dados.valServico);
   const valFreteNum = parseNumSafe(dados.valFrete);
   const valDescNum = parseNumSafe(dados.valDesconto);
   const totalGeralNum = parseNumSafe(total);
 
-  if (formatoAmbiente) {
-    page.drawText('Valor Total dos Ambientes:', { x: rightCardX + 10, y: totY, size: 6.8, font: fontRegular, color: GRAY });
-    // Somar os totais de cada ambiente (mais preciso que totalGeralNum - frete + desconto)
-    const totAmbientesNum = ambientesParaPdf && ambientesParaPdf.length
-      ? ambientesParaPdf.reduce((acc, a) => acc + (parseNumSafe(a.totalVal) || 0), 0)
-      : Math.max(0, totalGeralNum - valFreteNum + valDescNum);
-    const txtTotAmbResumo = 'R$ ' + (totAmbientesNum > 0 ? totAmbientesNum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : valorTotalFormatado);
-    page.drawText(txtTotAmbResumo, { x: rightCardX + rightCardW - 10 - fontBold.widthOfTextAtSize(txtTotAmbResumo, 7.2), y: totY, size: 7.2, font: fontBold, color: DARK });
-
-    if (valFreteNum > 0) {
-      totY -= 13;
-      const txtValFrete = 'R$ ' + valFreteNum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      page.drawText('Frete:', { x: rightCardX + 10, y: totY, size: 6.8, font: fontRegular, color: GRAY });
-      page.drawText(txtValFrete, { x: rightCardX + rightCardW - 10 - fontBold.widthOfTextAtSize(txtValFrete, 7.2), y: totY, size: 7.2, font: fontBold, color: DARK });
-    }
-  } else {
-    page.drawText('Valor dos Produtos / Materiais:', { x: rightCardX + 10, y: totY, size: 6.8, font: fontRegular, color: GRAY });
-    page.drawText(`R$ ${formatMoney(dados.valProdutos || total)}`, { x: rightCardX + rightCardW - 10 - fontBold.widthOfTextAtSize(`R$ ${formatMoney(dados.valProdutos || total)}`, 7.2), y: totY, size: 7.2, font: fontBold, color: DARK });
-
-    totY -= 13;
-    const valServicoNum = parseNumSafe(dados.valServico);
-    const vServApi = valServicoNum > 0 ? ('R$ ' + formatMoney(valServicoNum)) : '';
-    page.drawText('Mão de Obra e Instalação:', { x: rightCardX + 10, y: totY, size: 6.8, font: fontRegular, color: GRAY });
-    if (vServApi) {
-      page.drawText(vServApi, { x: rightCardX + rightCardW - 10 - fontRegular.widthOfTextAtSize(vServApi, 7.2), y: totY, size: 7.2, font: fontRegular, color: DARK });
-    }
-
-    if (valFreteNum > 0) {
-      totY -= 13;
-      const txtValFrete = 'R$ ' + valFreteNum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      page.drawText('Frete:', { x: rightCardX + 10, y: totY, size: 6.8, font: fontRegular, color: GRAY });
-      page.drawText(txtValFrete, { x: rightCardX + rightCardW - 10 - fontBold.widthOfTextAtSize(txtValFrete, 7.2), y: totY, size: 7.2, font: fontBold, color: DARK });
-    }
+  if (valProdNum === 0 && typeof gruposAmbientes !== 'undefined' && gruposAmbientes.length > 0) {
+    valProdNum = gruposAmbientes.reduce((acc, g) => acc + g.subtotal, 0);
+  }
+  if (valServNum === 0 && totalGeralNum > valProdNum) {
+    valServNum = Math.max(0, totalGeralNum - valProdNum - valFreteNum + valDescNum);
   }
 
+  page.drawText('Valor dos Produtos / Materiais:', { x: rightCardX + 10, y: totY, size: 6.8, font: fontRegular, color: GRAY });
+  const txtValProd = 'R$ ' + valProdNum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  page.drawText(txtValProd, { x: rightCardX + rightCardW - 10 - fontBold.widthOfTextAtSize(txtValProd, 7.2), y: totY, size: 7.2, font: fontBold, color: DARK });
+
+  totY -= 13;
+  page.drawText('Mão de Obra e Instalação:', { x: rightCardX + 10, y: totY, size: 6.8, font: fontRegular, color: GRAY });
+  const txtValServ = 'R$ ' + valServNum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  page.drawText(txtValServ, { x: rightCardX + rightCardW - 10 - fontBold.widthOfTextAtSize(txtValServ, 7.2), y: totY, size: 7.2, font: fontBold, color: DARK });
+
+  if (valFreteNum > 0) {
+    totY -= 13;
+    const txtValFrete = 'R$ ' + valFreteNum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    page.drawText('Frete:', { x: rightCardX + 10, y: totY, size: 6.8, font: fontRegular, color: GRAY });
+    page.drawText(txtValFrete, { x: rightCardX + rightCardW - 10 - fontBold.widthOfTextAtSize(txtValFrete, 7.2), y: totY, size: 7.2, font: fontBold, color: DARK });
+  }
   if (valDescNum > 0) {
     totY -= 13;
-    const txtDesc = '- R$ ' + valDescNum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    page.drawText('Desconto Especial:', { x: rightCardX + 10, y: totY, size: 6.8, font: fontRegular, color: rgb(0.8, 0.2, 0.2) });
-    page.drawText(txtDesc, { x: rightCardX + rightCardW - 10 - fontBold.widthOfTextAtSize(txtDesc, 7.2), y: totY, size: 7.2, font: fontBold, color: rgb(0.8, 0.2, 0.2) });
+    const txtValDesc = '- R$ ' + valDescNum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    page.drawText('Desconto:', { x: rightCardX + 10, y: totY, size: 6.8, font: fontRegular, color: GRAY });
+    page.drawText(txtValDesc, { x: rightCardX + rightCardW - 10 - fontBold.widthOfTextAtSize(txtValDesc, 7.2), y: totY, size: 7.2, font: fontBold, color: DARK });
   }
 
   // Bloco de destaque do VALOR TOTAL
@@ -733,7 +674,8 @@ async function gerarPdfOrcamento(dados, fetchLogo, empInfo) {
   // ── INCLUSÃO DAS FOTOS ANEXADAS NA GALERIA NO PDF ──
   const fotosParaEmbed = Array.isArray(dados.fotos) ? dados.fotos : [];
   if (fotosParaEmbed && fotosParaEmbed.length > 0) {
-    const fotosPorPagina = 4;
+    const isSingle = fotosParaEmbed.length === 1;
+    const fotosPorPagina = isSingle ? 1 : (fotosParaEmbed.length === 2 ? 2 : 4);
     const totalPagsFotos = Math.ceil(fotosParaEmbed.length / fotosPorPagina);
 
     for (let pIdx = 0; pIdx < totalPagsFotos; pIdx++) {
@@ -760,8 +702,8 @@ async function gerarPdfOrcamento(dados, fetchLogo, empInfo) {
 
       const numOsSan = sanitizePdf(dados.numero || '');
       const cliSan = sanitizePdf(dados.nome || '');
-      const dtSan = sanitizePdf(dados.data || new Date().toLocaleDateString('pt-BR'));
-      fotoPage.drawText(`O.S. ${numOsSan} • Cliente: ${cliSan} • Emissão: ${dtSan} • (Anexos Fotográficos - Pág. ${pIdx + 2} de ${totalPagsFotos + 1})`, {
+      const dtSan = sanitizePdf(dados.dataStr || dados.data || new Date().toLocaleDateString('pt-BR'));
+      fotoPage.drawText(`O.S. ${numOsSan} • Cliente: ${cliSan} • Emissão: ${dtSan} • (Anexo Fotográfico - Pág. ${pIdx + 2} de ${totalPagsFotos + 1})`, {
         x: MARGIN_X + 14,
         y: PAGE_H - 60,
         size: 7.5,
@@ -771,17 +713,13 @@ async function gerarPdfOrcamento(dados, fetchLogo, empInfo) {
 
       const gridStartX = MARGIN_X;
       const gridStartY = PAGE_H - 86;
-      const boxW = (CONTENT_W - 14) / 2;
-      const boxH = 340;
 
-      for (let i = 0; i < fotosDoLote.length; i++) {
-        const itemFoto = fotosDoLote[i];
-        if (!itemFoto) continue;
-
-        const col = i % 2;
-        const row = Math.floor(i / 2);
-        const cardX = gridStartX + (col * (boxW + 14));
-        const cardY = gridStartY - ((row + 1) * (boxH + 12));
+      if (isSingle) {
+        const itemFoto = fotosDoLote[0];
+        const boxW = CONTENT_W;
+        const boxH = PAGE_H - 140;
+        const cardX = gridStartX;
+        const cardY = gridStartY - boxH;
 
         fotoPage.drawRectangle({
           x: cardX,
@@ -801,10 +739,9 @@ async function gerarPdfOrcamento(dados, fetchLogo, empInfo) {
           color: HEADER_BG
         });
 
-        const numFotoGlobal = pIdx * fotosPorPagina + i + 1;
         const ambNome = sanitizePdf(itemFoto.ambiente || '');
         const origemFoto = sanitizePdf(itemFoto.origem || 'Câmera');
-        const titCard = ambNome ? `Foto ${numFotoGlobal} • ${origemFoto} (${ambNome})` : `Foto ${numFotoGlobal} • ${origemFoto}`;
+        const titCard = ambNome ? `Foto 1 • ${origemFoto} (${ambNome})` : `Foto 1 • ${origemFoto}`;
 
         fotoPage.drawText(titCard, {
           x: cardX + 10,
@@ -833,7 +770,7 @@ async function gerarPdfOrcamento(dados, fetchLogo, empInfo) {
             }
 
             if (embedded) {
-              const maxImgW = boxW - 16;
+              const maxImgW = boxW - 20;
               const maxImgH = boxH - 36;
               const scale = Math.min(maxImgW / embedded.width, maxImgH / embedded.height);
               const wFinal = embedded.width * scale;
@@ -850,20 +787,96 @@ async function gerarPdfOrcamento(dados, fetchLogo, empInfo) {
             }
           }
         } catch(errEmbed) {
-          console.warn('Erro ao embutir foto ' + numFotoGlobal + ' no PDF:', errEmbed);
+          console.warn('Erro ao embutir foto única no PDF:', errEmbed);
+        }
+      } else {
+        const boxW = (CONTENT_W - 14) / 2;
+        const boxH = 340;
+
+        for (let i = 0; i < fotosDoLote.length; i++) {
+          const itemFoto = fotosDoLote[i];
+          if (!itemFoto) continue;
+
+          const col = i % 2;
+          const row = Math.floor(i / 2);
+          const cardX = gridStartX + (col * (boxW + 14));
+          const cardY = gridStartY - ((row + 1) * (boxH + 12));
+
+          fotoPage.drawRectangle({
+            x: cardX,
+            y: cardY,
+            width: boxW,
+            height: boxH,
+            color: WHITE,
+            borderColor: BORDER,
+            borderWidth: 1
+          });
+
+          fotoPage.drawRectangle({
+            x: cardX,
+            y: cardY + boxH - 24,
+            width: boxW,
+            height: 24,
+            color: HEADER_BG
+          });
+
+          const numFotoGlobal = pIdx * fotosPorPagina + i + 1;
+          const ambNome = sanitizePdf(itemFoto.ambiente || '');
+          const origemFoto = sanitizePdf(itemFoto.origem || 'Câmera');
+          const titCard = ambNome ? `Foto ${numFotoGlobal} • ${origemFoto} (${ambNome})` : `Foto ${numFotoGlobal} • ${origemFoto}`;
+
+          fotoPage.drawText(titCard, {
+            x: cardX + 10,
+            y: cardY + boxH - 17,
+            size: 8.5,
+            font: fontBold,
+            color: DARK
+          });
+
+          try {
+            const rawUrl = itemFoto.dataUrl || itemFoto.url || (typeof itemFoto === 'string' ? itemFoto : '');
+            if (rawUrl && rawUrl.includes(',')) {
+              const isPng = rawUrl.startsWith('data:image/png');
+              const b64 = rawUrl.split(',')[1];
+              const binBuffer = Buffer.from(b64, 'base64');
+
+              let embedded = null;
+              if (isPng) {
+                try { embedded = await pdfDoc.embedPng(binBuffer); } catch(_) {
+                  try { embedded = await pdfDoc.embedJpg(binBuffer); } catch(_) {}
+                }
+              } else {
+                try { embedded = await pdfDoc.embedJpg(binBuffer); } catch(_) {
+                  try { embedded = await pdfDoc.embedPng(binBuffer); } catch(_) {}
+                }
+              }
+
+              if (embedded) {
+                const maxImgW = boxW - 16;
+                const maxImgH = boxH - 36;
+                const scale = Math.min(maxImgW / embedded.width, maxImgH / embedded.height);
+                const wFinal = embedded.width * scale;
+                const hFinal = embedded.height * scale;
+                const xFinal = cardX + (boxW - wFinal) / 2;
+                const yFinal = cardY + 6 + (maxImgH - hFinal) / 2;
+
+                fotoPage.drawImage(embedded, {
+                  x: xFinal,
+                  y: yFinal,
+                  width: wFinal,
+                  height: hFinal
+                });
+              }
+            }
+          } catch(errEmbed) {
+            console.warn('Erro ao embutir foto ' + numFotoGlobal + ' no PDF:', errEmbed);
+          }
         }
       }
 
-      fotoPage.drawText(sanitizePdf(`SD Móveis Projetados • (85) 99611-9824`), {
+      fotoPage.drawText(sanitizePdf(`SD Móveis Projetados • Proposta Comercial #${dados.numero || ''} • Registro Fotográfico`), {
         x: MARGIN_X + 10,
-        y: 18,
-        size: 7,
-        font: fontRegular,
-        color: GRAY
-      });
-      fotoPage.drawText(sanitizePdf(`Documento gerado eletronicamente em ${new Date().toLocaleDateString('pt-BR')}`), {
-        x: MARGIN_X + CONTENT_W - 190,
-        y: 18,
+        y: 20,
         size: 7,
         font: fontRegular,
         color: GRAY
@@ -1040,35 +1053,103 @@ module.exports = async (req, res) => {
           console.warn('Erro ao decodificar d na API:', e.message);
           return res.status(400).json({ error: 'Parâmetro de orçamento inválido', detalhe: e.message });
         }
-      } else if (req.query && req.query.id) {
+      } else if (req.query && (req.query.id || req.query.num || req.query.os)) {
         try {
           const { getClient } = require('./_supabase');
           const supabase = getClient();
           if (supabase) {
-            const { data, error } = await supabase.from('contratos').select('*').eq('id', req.query.id).single();
+            let query = supabase.from('contratos').select('*');
+            if (req.query.id) {
+              query = query.eq('id', req.query.id);
+            } else {
+              const numBusc = String(req.query.num || req.query.os || '').replace(/\D/g, '');
+              const numHash = '#' + numBusc.padStart(4, '0');
+              query = query.or(`numero_os.eq.${numHash},numero_os.eq.${numBusc},numero_os.ilike.%${numBusc}%`);
+            }
+            const { data: records, error } = await query.order('id', { ascending: false }).limit(1);
+            const data = (records && records[0]) || null;
             if (!error && data) {
               if (data.empresa && !queryEmpresa) queryEmpresa = data.empresa;
               if (data.texto && (data.texto.includes('Móveis') || data.texto.includes('marcenaria') || data.texto.includes('moveis'))) {
                 queryEmpTipo = 'moveis';
               }
-              if (data.dados) {
+              // 1. Tenta extrair dados da coluna dados
+              if (data.dados && typeof data.dados === 'object' && Object.keys(data.dados).length) {
                 dados = data.dados;
-              } else {
+              }
+              // 2. Tenta extrair dados embutidos no texto
+              else if (data.texto && data.texto.includes('<!-- SDM_DADOS_OS_JSON:')) {
+                const match = data.texto.match(/<!-- SDM_DADOS_OS_JSON:([\s\S]+?)-->/);
+                if (match) {
+                  try {
+                    dados = JSON.parse(match[1]);
+                  } catch (_) {}
+                }
+              }
+              // 3. Fallback com dados básicos
+              if (!dados || !dados.numero) {
                 dados = {
                   numero: data.numero_os || '0001',
                   nome: data.cliente_nome || '',
                   tel: data.cliente_tel || '',
                   total: data.valor_total || '',
-                  obs: data.texto || ''
+                  obs: (data.texto || '').replace(/\n?<!-- SDM_DADOS_OS_JSON:[\s\S]*?-->/, '')
                 };
               }
             }
           }
-        } catch (e) {}
+        } catch (e) {
+          console.warn('Erro ao carregar dados do Supabase para PDF:', e.message);
+        }
       }
     }
 
-    // Identificação precisa da empresa ativa (SD Vidros vs SD Móveis vs Custom)
+    
+      // Enriquecimento automático via Supabase caso fotos ou itens estejam ausentes
+      if (dados && (!dados.fotos || !dados.fotos.length || !dados.itens || !dados.itens.length)) {
+        try {
+          const { getClient } = require('./_supabase');
+          const supabase = getClient();
+          if (supabase) {
+            const numBusc = String(dados.numero || (req.query && (req.query.num || req.query.os)) || '').replace(/\D/g, '');
+            if (numBusc) {
+              const numHash = '#' + numBusc.padStart(4, '0');
+              const { data: records } = await supabase
+                .from('contratos')
+                .select('*')
+                .or(`numero_os.eq.${numHash},numero_os.eq.${numBusc},numero_os.ilike.%${numBusc}%`)
+                .order('id', { ascending: false })
+                .limit(1);
+              const data = (records && records[0]) || null;
+              if (data) {
+                let dbDados = null;
+                if (data.dados && typeof data.dados === 'object' && Object.keys(data.dados).length) {
+                  dbDados = data.dados;
+                } else if (data.texto && data.texto.includes('<!-- SDM_DADOS_OS_JSON:')) {
+                  const m = data.texto.match(/<!-- SDM_DADOS_OS_JSON:([\s\S]+?)-->/);
+                  if (m) {
+                    try { dbDados = JSON.parse(m[1]); } catch (_) {}
+                  }
+                }
+                if (dbDados) {
+                  if ((!dados.fotos || !dados.fotos.length) && Array.isArray(dbDados.fotos) && dbDados.fotos.length) {
+                    dados.fotos = dbDados.fotos;
+                  }
+                  if ((!dados.itens || !dados.itens.length) && Array.isArray(dbDados.itens) && dbDados.itens.length) {
+                    dados.itens = dbDados.itens;
+                  }
+                  if (!dados.ambientes || !dados.ambientes.length) {
+                    if (Array.isArray(dbDados.ambientes) && dbDados.ambientes.length) dados.ambientes = dbDados.ambientes;
+                  }
+                }
+              }
+            }
+          }
+        } catch (e) {
+          console.warn('Erro ao enriquecer dados com fotos/itens do Supabase:', e.message);
+        }
+      }
+// Identificação precisa da empresa ativa (SD Vidros vs SD Móveis vs Custom)
     const empParamLower = String(queryEmpresa || (dados && (dados.empresa || dados.emp)) || '').toLowerCase().trim();
     const empNomeLower = String(queryEmpNome || (dados && (dados.empNome || dados.nomeEmpresa)) || '').toLowerCase().trim();
     const empTipoLower = String(queryEmpTipo || (dados && (dados.empTipo || dados.tipoContrato)) || '').toLowerCase().trim();

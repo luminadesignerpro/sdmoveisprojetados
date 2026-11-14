@@ -18,7 +18,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js?v=9.5.15').then(r => { r.update(); })
+        navigator.serviceWorker.register('/sw.js?v=9.5.16').then(r => { r.update(); })
           .then(function(reg){ console.log('SW registrado com sucesso:', reg.scope); })
           .catch(function(err){ console.warn('Erro ao registrar SW:', err); });
       });
@@ -11197,8 +11197,21 @@ function gerarParametroD(d) {
         ]);
       }
     }
-    // NÃO incluímos itens no dParam para manter a URL curta.
-    // O PDF é obtido via ?p= (ntfy) ou ?id= (Supabase).
+    // Inclui itens de forma compacta para visualização detalhada no PDF
+    if (d.itens && Array.isArray(d.itens) && d.itens.length) {
+      payloadCompacto.i = d.itens.map(it => [
+        it.desc || '',
+        it.qtd || 1,
+        it.larg || '',
+        it.alt || '',
+        it.m2 || '',
+        it.v_unit || '',
+        it.total || '',
+        it.cor || '',
+        it.bizt || '',
+        it.ambiente || (payloadCompacto.ambNome || 'Salão')
+      ]);
+    }
     const jsonStr = JSON.stringify(payloadCompacto);
     const u8 = new TextEncoder().encode(jsonStr);
     let binStr = "";
@@ -21906,10 +21919,18 @@ async function enviarOrcamentoParaAssinaturaDigital() {
     const pParam = pdfFileId ? ('&p=' + encodeURIComponent(pdfFileId) + '&num=' + encodeURIComponent(String(d.numero || '0001').replace('#', ''))) : '';
     let linkAssinatura = window.location.origin + "/assinar.html?d=" + dParam + pParam + empParamUrl;
     // O link do PDF deve priorizar o arquivo pré-renderizado pParam se existir, ou o id do contrato
-    let linkPdf = pdfFileId ? (window.location.origin + "/api/gerar-pdf-orcamento?p=" + encodeURIComponent(pdfFileId) + "&num=" + encodeURIComponent(String(d.numero || '0001').replace('#', '')) + empParamUrl) : (window.location.origin + "/api/gerar-pdf-orcamento?d=" + dParam + empParamUrl);
+    let linkPdf = pdfFileId ? (window.location.origin + "/api/gerar-pdf-orcamento?p=" + encodeURIComponent(pdfFileId) + "&num=" + encodeURIComponent(String(d.numero || '0001').replace('#', '')) + empParamUrl) : (window.location.origin + "/api/gerar-pdf-orcamento?d=" + dParam + "&num=" + encodeURIComponent(String(d.numero || "0001").replace("#", "")) + empParamUrl);
 
     // 3. Tentar criar registro no Supabase
     try {
+      // Coleta fotos anexadas na galeria/câmera desta O.S.
+      const fotosParaSalvar = (d.fotos && d.fotos.length) ? d.fotos : (typeof obterFotosOrcamentoParaPdf === 'function' ? obterFotosOrcamentoParaPdf(d.numero) : []);
+      const dadosCompletosOs = {
+        ...d,
+        fotos: fotosParaSalvar
+      };
+      const textoComDadosEmbutidos = textoContrato + "\n<!-- SDM_DADOS_OS_JSON:" + JSON.stringify(dadosCompletosOs) + "-->";
+
       const res = await fetch("/api/criar-contrato", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -21918,13 +21939,15 @@ async function enviarOrcamentoParaAssinaturaDigital() {
           cliente_nome: d.nome || "",
           cliente_tel: d.tel || "",
           empresa: lic.id || "sdmoveis",
-          texto: textoContrato
+          texto: textoComDadosEmbutidos,
+          dados: dadosCompletosOs
         })
       });
       const resData = await res.json().catch(() => ({}));
       if (res.ok && resData.id) {
+        const numOsLimpo = String(d.numero || '0001').replace('#', '');
         linkAssinatura = window.location.origin + "/assinar.html?id=" + resData.id + empParamUrl;
-        linkPdf = window.location.origin + "/api/gerar-pdf-orcamento?id=" + resData.id + empParamUrl;
+        linkPdf = window.location.origin + "/api/gerar-pdf-orcamento?id=" + resData.id + "&num=" + encodeURIComponent(numOsLimpo) + empParamUrl;
       }
     } catch (e) {
       console.warn("Supabase offline ou inacessível, gerando link autônomo:", e);
