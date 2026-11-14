@@ -1,5 +1,5 @@
-// Service Worker PWA – SD Móveis Projetados v9.5.9 (Fix: link WhatsApp curto, PDF viewer Android, badges ambientes)
-const CACHE_NAME = 'sdmoveisprojetados-v9.5.9';
+// Service Worker PWA – SD Móveis Projetados v9.5.14 (Fix: link WhatsApp curto, PDF viewer Android, badges ambientes)
+const CACHE_NAME = 'sdmoveisprojetados-v9.5.14';
 const ASSETS = [
   '/',
   '/index.html',
