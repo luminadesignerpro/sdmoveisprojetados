@@ -1,5 +1,5 @@
-// Service Worker PWA – SD Móveis Projetados v9.5.26 (Fix: Preservação de Fotos e Galeria)
-const CACHE_NAME = 'sdmoveisprojetados-v9.5.26';
+// Service Worker PWA – SD Móveis Projetados v9.5.27 (Fix: Salvamento de Novas O.S. e Fotos Completas)
+const CACHE_NAME = 'sdmoveisprojetados-v9.5.27';
 const ASSETS = [
   '/',
   '/index.html',

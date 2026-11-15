@@ -11364,6 +11364,13 @@ function salvarOrdemInterna(silencioso = false, navegarParaHistorico = true) {
   let ordRetorno = null;
 
   // 3. Atualiza ou cria a Ordem de Serviço
+  const btnCancEl = document.getElementById('btn-cancelar-os');
+  const statusBoxEl = document.getElementById('edicao-status-box');
+  const emModoEdicaoVisual = (btnCancEl && btnCancEl.style.display !== 'none') || (statusBoxEl && statusBoxEl.style.display !== 'none');
+  if (editandoOsId && !emModoEdicaoVisual) {
+    editandoOsId = null;
+  }
+
   if (editandoOsId) {
     const idx = historico.findIndex(x => 
       String(x.id) === String(editandoOsId) || 
@@ -11515,8 +11522,8 @@ function salvarOrdemInterna(silencioso = false, navegarParaHistorico = true) {
     notificarNovaOrdemGerada(ord);
     ordRetorno = ord;
 
-    // Define editandoOsId para que envios sucessivos usem a mesma OS sem duplicar
-    editandoOsId = ord.id;
+    // Reseta editandoOsId para que novas ordens sejam sempre independentes e nunca sobrescrevam esta
+    editandoOsId = null;
 
     proxNumero++;
     save(K.nextNum, proxNumero);
@@ -11530,6 +11537,7 @@ function salvarOrdemInterna(silencioso = false, navegarParaHistorico = true) {
       if (typeof mostrarToastAprovacao === 'function') {
         mostrarToastAprovacao('✅ Ordem de Serviço ' + o.numero + ' salva automaticamente!');
       }
+      limparFormularioOrcamentoAposEnvio();
     }
   }
 
@@ -12919,9 +12927,27 @@ function editarOs(id) {
     btnAssinaturaTxt.textContent = foiAprovadoOuReajuste ? '✍️ Reenviar Assinatura Digital' : '✍️ Enviar para Assinatura Digital';
   }
 
-  // Carrega a galeria salva desta O.S.
+  // Carrega a galeria salva desta O.S. (priorizando chave dedicada com dataUrl completo)
   try {
-    const fotosOs = o.fotos || (Array.isArray((o.dados||{}).fotos)&&(o.dados||{}).fotos.length?(o.dados||{}).fotos:[]) || JSON.parse(localStorage.getItem(getGaleriaKey(o.numero)) || '[]');
+    let fotosOs = [];
+    try {
+      const k = typeof getGaleriaKey === 'function' ? getGaleriaKey(o.numero) : ('sdv_galeria_' + String(o.numero || '').replace(/\D/g, ''));
+      const salv = localStorage.getItem(k);
+      if (salv) {
+        const parsed = JSON.parse(salv);
+        if (Array.isArray(parsed) && parsed.some(f => f && (f.dataUrl || f.src || f.url || '').length > 50)) {
+          fotosOs = parsed;
+        }
+      }
+    } catch(_) {}
+    if (!fotosOs.length && Array.isArray(o.fotos) && o.fotos.some(f => f && (f.dataUrl || f.src || f.url || '').length > 50)) {
+      fotosOs = o.fotos;
+    } else if (!fotosOs.length && o.dados && Array.isArray(o.dados.fotos) && o.dados.fotos.some(f => f && (f.dataUrl || f.src || f.url || '').length > 50)) {
+      fotosOs = o.dados.fotos;
+    }
+    if (!fotosOs.length && Array.isArray(o.fotos) && o.fotos.length > 0) {
+      fotosOs = o.fotos;
+    }
     // Sempre definir _fotosOrcamentoMemoria para garantir que o PDF inclua fotos
     window._fotosOrcamentoMemoria = Array.isArray(fotosOs) ? [...fotosOs] : [];
     if (Array.isArray(fotosOs) && fotosOs.length > 0) {
@@ -13000,20 +13026,34 @@ function obterFotosOrcamentoParaPdf(osNum) {
     if (ord) {
       // Se estamos editando esta mesma OS no painel, a memória RAM pode ter anexos recentes
       if (typeof editandoOsId !== 'undefined' && editandoOsId && String(ord.id) === String(editandoOsId)) {
-        if (window._fotosOrcamentoMemoria && Array.isArray(window._fotosOrcamentoMemoria)) {
+        if (window._fotosOrcamentoMemoria && Array.isArray(window._fotosOrcamentoMemoria) && window._fotosOrcamentoMemoria.some(f => f && (f.dataUrl || f.src || f.url || '').length > 50)) {
           return (typeof desduplicarListaFotos === 'function') ? desduplicarListaFotos(window._fotosOrcamentoMemoria) : window._fotosOrcamentoMemoria;
         }
       }
       let fotosSalvas = [];
-      if (Array.isArray(ord.fotos) && ord.fotos.length > 0) fotosSalvas = ord.fotos;
-      else if (ord.dados && Array.isArray(ord.dados.fotos) && ord.dados.fotos.length > 0) fotosSalvas = ord.dados.fotos;
-      else {
-        // Tenta chave dedicada da OS no storage
-        try {
-          const k = typeof getGaleriaKey === 'function' ? getGaleriaKey(osNum) : ('sdv_galeria_' + numLimpo);
-          const salv = localStorage.getItem(k);
-          if (salv) fotosSalvas = JSON.parse(salv) || [];
-        } catch(_) {}
+      // 1. Tenta PRIMEIRO a chave dedicada da OS no storage (onde as fotos completas com dataUrl ficam salvas)
+      try {
+        const k = typeof getGaleriaKey === 'function' ? getGaleriaKey(osNum) : ('sdv_galeria_' + numLimpo);
+        const salv = localStorage.getItem(k);
+        if (salv) {
+          const parsed = JSON.parse(salv);
+          if (Array.isArray(parsed) && parsed.some(f => f && (f.dataUrl || f.src || f.url || '').length > 50)) {
+            fotosSalvas = parsed;
+          }
+        }
+      } catch(_) {}
+
+      // 2. Se não achou na chave dedicada com dataUrl válida, tenta ord.fotos que tenham imagem válida
+      if (!fotosSalvas.length && Array.isArray(ord.fotos) && ord.fotos.some(f => f && (f.dataUrl || f.src || f.url || '').length > 50)) {
+        fotosSalvas = ord.fotos;
+      } else if (!fotosSalvas.length && ord.dados && Array.isArray(ord.dados.fotos) && ord.dados.fotos.some(f => f && (f.dataUrl || f.src || f.url || '').length > 50)) {
+        fotosSalvas = ord.dados.fotos;
+      }
+
+      // 3. Fallback
+      if (!fotosSalvas.length) {
+        if (Array.isArray(ord.fotos) && ord.fotos.length > 0) fotosSalvas = ord.fotos;
+        else if (ord.dados && Array.isArray(ord.dados.fotos) && ord.dados.fotos.length > 0) fotosSalvas = ord.dados.fotos;
       }
       return (typeof desduplicarListaFotos === 'function') ? desduplicarListaFotos(fotosSalvas) : fotosSalvas;
     }
@@ -13835,13 +13875,12 @@ async function visualizarPdfOs(id, versaoNum = null) {
     return;
   }
 
-  let dadosRaw = o.dados || o;
-  if (!dadosRaw.fotos || !dadosRaw.fotos.length) {
-    if (o.fotos && o.fotos.length) {
-      dadosRaw.fotos = o.fotos;
-    } else if (typeof obterFotosOrcamentoParaPdf === 'function') {
-      dadosRaw.fotos = obterFotosOrcamentoParaPdf(o.numero);
-    }
+  let dadosRaw = JSON.parse(JSON.stringify(o.dados || o));
+  const fotosValidas = (typeof obterFotosOrcamentoParaPdf === 'function') ? obterFotosOrcamentoParaPdf(o.numero) : [];
+  if (Array.isArray(fotosValidas) && fotosValidas.length > 0) {
+    dadosRaw.fotos = fotosValidas;
+  } else if (!dadosRaw.fotos || !dadosRaw.fotos.length) {
+    if (o.fotos && o.fotos.length) dadosRaw.fotos = o.fotos;
   }
   if (Array.isArray(dadosRaw.fotos) && typeof desduplicarListaFotos === 'function') {
     dadosRaw.fotos = desduplicarListaFotos(dadosRaw.fotos);
@@ -21701,7 +21740,14 @@ async function enviarOrcamentoParaAssinaturaDigital() {
   const btn = document.getElementById('btn-orc-assinatura');
   const spinner = document.getElementById('orc-assinatura-spinner');
   const btnTxt = document.getElementById('orc-assinatura-btn-text');
-  const ehReenvio = !!editandoOsId;
+
+  const btnCancEl = document.getElementById('btn-cancelar-os');
+  const statusBoxEl = document.getElementById('edicao-status-box');
+  const emModoEdicaoVisual = (btnCancEl && btnCancEl.style.display !== 'none') || (statusBoxEl && statusBoxEl.style.display !== 'none');
+  if (editandoOsId && !emModoEdicaoVisual) {
+    editandoOsId = null;
+  }
+  const ehReenvio = !!(editandoOsId && emModoEdicaoVisual);
 
   if (btn) btn.disabled = true;
   if (spinner) spinner.style.display = 'inline-block';
@@ -21860,12 +21906,11 @@ async function enviarOrcamentoParaAssinaturaDigital() {
       };
       historico.push(ord);
       notificarNovaOrdemGerada(ord);
-      editandoOsId = ord.id;
+      editandoOsId = null; // Garante que a próxima ordem gerada seja nova e nunca sobrescreva esta
       proxNumero++;
       save(K.nextNum, proxNumero);
-      // Mantém a O.S. atual em tela e no visor para que o formulário e a galeria de fotos permaneçam intactos
       const dispEl = document.getElementById('orc-numero-display');
-      if (dispEl) dispEl.textContent = ord.numero;
+      if (dispEl) dispEl.textContent = formatNum(proxNumero);
     }
     save(K.orders, historico);
     renderHist();
@@ -22147,7 +22192,13 @@ async function enviarOrcamentoParaAssinaturaDigital() {
     carregarListaContratos();
     sincronizarStatusContratos();
 
-    // Mantém as fotos e dados salvos intactos no formulário e na galeria
+    // Se foi uma nova ordem enviada, limpa os campos e prepara o formulário para a próxima nova O.S.,
+    // mantendo as fotos da ordem enviada 100% salvas na chave permanente (sdv_galeria_NUM)
+    if (!ehReenvio) {
+      limparFormularioOrcamentoAposEnvio();
+      atualizarNumeroDisplay();
+    }
+
     setTimeout(() => {
       try {
         if (typeof renderizarModalGaleriaOrc === 'function') renderizarModalGaleriaOrc();
@@ -23449,11 +23500,16 @@ async function gerarPdfOrcamentoDoc(dados) {
 
   // ── INCLUSÃO DAS FOTOS ANEXADAS NA GALERIA DA O.S. NO PDF ──────────────────
   let fotosParaEmbed = [];
-  if (Array.isArray(dados.fotos) && dados.fotos.length > 0) {
+  if (Array.isArray(dados.fotos) && dados.fotos.some(f => f && (f.dataUrl || f.src || f.url || '').length > 50)) {
     fotosParaEmbed = dados.fotos;
   } else if (typeof obterFotosOrcamentoParaPdf === 'function') {
     fotosParaEmbed = obterFotosOrcamentoParaPdf(dados.numero);
   }
+  if (!fotosParaEmbed || !fotosParaEmbed.length) {
+    if (dados.fotos && Array.isArray(dados.fotos)) fotosParaEmbed = dados.fotos;
+  }
+  // Filtra estritamente fotos que tenham dados de imagem válidos (> 50 chars)
+  fotosParaEmbed = (fotosParaEmbed || []).filter(f => f && (f.dataUrl || f.src || f.url || f.data || '').length > 50);
   // GARANTIA ABSOLUTA CONTRA DUPLICAÇÃO NO PDF
   if (typeof desduplicarListaFotos === 'function') {
     fotosParaEmbed = desduplicarListaFotos(fotosParaEmbed);
@@ -23537,8 +23593,13 @@ async function gerarPdfOrcamentoDoc(dados) {
         });
 
         const numFotoGlobal = pIdx * fotosPorPagina + i + 1;
-        const origemFoto = sanitizePdf(itemFoto.origem || 'Foto Anexada');
-        fotoPage.drawText(`Foto ${numFotoGlobal} • ${origemFoto}`, {
+        let ambNome = sanitizePdf(itemFoto.ambiente || '').trim();
+        let origemFoto = sanitizePdf(itemFoto.origem || 'Câmera').trim();
+        if (ambNome && origemFoto.toLowerCase().includes(ambNome.toLowerCase())) {
+          origemFoto = origemFoto.replace(new RegExp(`\\s*\\(${ambNome}\\)\\s*`, 'gi'), '').trim();
+        }
+        const titCard = ambNome ? `Foto ${numFotoGlobal} • ${origemFoto} (${ambNome})` : `Foto ${numFotoGlobal} • ${origemFoto}`;
+        fotoPage.drawText(titCard, {
           x: cardX + 10,
           y: cardY + boxH - 17,
           size: 8.5,
