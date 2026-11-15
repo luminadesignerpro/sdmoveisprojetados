@@ -8075,8 +8075,17 @@ function load(k, d=[]) {
 
     if (k === K.orders) {
       // 🛡️ Recuperação inteligente e unificada de ordens de serviço
-      // Busca ordens em todas as chaves possíveis para NUNCA perder nenhuma O.S. criada
-      const chavesOrdens = [key, 'sdv_ordens_sdmoveis', 'sdv_ordens', 'sdv_ordens_sdvidros', 'sdm_orders', 'sdv_orders'];
+      // Busca ordens em TODAS as chaves do localStorage que contenham ordens (incluindo chaves dinâmicas de empresa)
+      const chavesOrdens = new Set([key, 'sdv_ordens_sdmoveis', 'sdv_ordens', 'sdv_ordens_sdvidros', 'sdm_orders', 'sdv_orders']);
+      // Varre TODAS as chaves do localStorage para achar qualquer chave sdv_ordens_* dinamicamente
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const lk = localStorage.key(i);
+          if (lk && (lk.startsWith('sdv_ordens') || lk.startsWith('sdm_orders') || lk === 'sdv_orders')) {
+            chavesOrdens.add(lk);
+          }
+        }
+      } catch(_) {}
       const mapaOrdens = new Map();
 
       chavesOrdens.forEach(chk => {

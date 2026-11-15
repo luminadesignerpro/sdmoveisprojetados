@@ -1,5 +1,5 @@
-// Service Worker PWA – SD Móveis Projetados v9.5.29 (Fix: O.S. salvas em chave sdmoveis, unificação de ordens, proteção de número de OS)
-const CACHE_NAME = 'sdmoveisprojetados-v9.5.29';
+// Service Worker PWA – SD Móveis Projetados v9.5.30 (Fix: varredura dinâmica de todas chaves sdv_ordens_* no localStorage para recuperação total de O.S.)
+const CACHE_NAME = 'sdmoveisprojetados-v9.5.30';
 const ASSETS = [
   '/',
   '/index.html',
