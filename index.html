@@ -21708,6 +21708,38 @@ async function enviarOrcamentoParaAssinaturaDigital() {
   if (btnTxt) btnTxt.textContent = ehReenvio ? ' Preparando reenvio...' : ' Preparando assinatura...';
 
   try {
+    // 0. 📸 Garante captura IMEDIATA das fotos da O.S. antes de qualquer mutação de número ou histórico
+    let fotosAtuaisOs = (Array.isArray(d.fotos) && d.fotos.length > 0) ? [...d.fotos] : [];
+    if (!fotosAtuaisOs.length && window._fotosOrcamentoMemoria && Array.isArray(window._fotosOrcamentoMemoria) && window._fotosOrcamentoMemoria.length > 0) {
+      fotosAtuaisOs = [...window._fotosOrcamentoMemoria];
+    }
+    if (!fotosAtuaisOs.length && typeof obterFotosOrcamentoParaPdf === 'function') {
+      const fTemp = obterFotosOrcamentoParaPdf(d.numero);
+      if (Array.isArray(fTemp) && fTemp.length > 0) fotosAtuaisOs = [...fTemp];
+    }
+    if (!fotosAtuaisOs.length) {
+      try {
+        const salvTemp = localStorage.getItem('sdm_orc_fotos_temp') || localStorage.getItem('sdm_cam_capturas');
+        if (salvTemp) {
+          const arrTemp = JSON.parse(salvTemp);
+          if (Array.isArray(arrTemp) && arrTemp.length > 0) fotosAtuaisOs = arrTemp;
+        }
+      } catch(_) {}
+    }
+    if (typeof desduplicarListaFotos === 'function') {
+      fotosAtuaisOs = desduplicarListaFotos(fotosAtuaisOs);
+    }
+    d.fotos = fotosAtuaisOs;
+
+    // Salva na galeria local persistente da OS
+    const numLimpoOs = String(d.numero || '').replace(/\D/g, '');
+    if (Array.isArray(fotosAtuaisOs) && fotosAtuaisOs.length > 0) {
+      try {
+        const kGal = typeof getGaleriaKey === 'function' ? getGaleriaKey(d.numero) : ('sdv_galeria_' + numLimpoOs);
+        localStorage.setItem(kGal, JSON.stringify(fotosAtuaisOs));
+      } catch(_) {}
+    }
+
     // 1. Automaticamente salva/atualiza a Ordem de Serviço em historico
     (d.itens || []).forEach(it => {
       if (it.desc && !produtos.some(p => p.nome.toLowerCase() === it.desc.toLowerCase())) {
@@ -21758,7 +21790,7 @@ async function enviarOrcamentoParaAssinaturaDigital() {
             data: d.data,
             total: d.total,
             status: novoStatus,
-            dados: JSON.parse(JSON.stringify(d))
+            dados: JSON.parse(JSON.stringify({ ...d, fotos: fotosAtuaisOs }))
           });
         } else {
           // Ordem pendente ou com assinatura fantasma → mantém apenas v1 atualizado
@@ -21768,7 +21800,7 @@ async function enviarOrcamentoParaAssinaturaDigital() {
             data: d.data,
             total: d.total,
             status: 'pendente',
-            dados: JSON.parse(JSON.stringify(d))
+            dados: JSON.parse(JSON.stringify({ ...d, fotos: fotosAtuaisOs }))
           }];
           // Limpa assinatura fantasma
           ordAntiga.assinado_por = '';
@@ -21788,7 +21820,8 @@ async function enviarOrcamentoParaAssinaturaDigital() {
           nome: d.nome,
           total: d.total,
           data_orc: d.data,
-          dados: d,
+          fotos: fotosAtuaisOs,
+          dados: { ...d, fotos: fotosAtuaisOs },
           status: jaFoiAssinada ? novoStatus : 'pendente',
           versoes_pdf: ordAntiga.versoes_pdf,
           enviado_assinatura: true,
@@ -21810,7 +21843,8 @@ async function enviarOrcamentoParaAssinaturaDigital() {
         nome: d.nome,
         total: d.total,
         data_orc: d.data,
-        dados: d,
+        fotos: fotosAtuaisOs,
+        dados: { ...d, fotos: fotosAtuaisOs },
         status: 'pendente',
         enviado_assinatura: true,
         enviado_assinatura_em: new Date().toISOString(),
@@ -21821,7 +21855,7 @@ async function enviarOrcamentoParaAssinaturaDigital() {
           data: d.data,
           total: d.total,
           status: 'pendente',
-          dados: JSON.parse(JSON.stringify(d))
+          dados: JSON.parse(JSON.stringify({ ...d, fotos: fotosAtuaisOs }))
         }]
       };
       historico.push(ord);
@@ -21834,25 +21868,8 @@ async function enviarOrcamentoParaAssinaturaDigital() {
     renderHist();
     renderSelectContratos();
 
-    // Garante que as fotos anexadas na O.S. sejam gravadas no histórico e no PDF
-    let fotosAtuaisOs = (typeof obterFotosOrcamentoParaPdf === 'function') ? obterFotosOrcamentoParaPdf(d.numero) : [];
-    if (!fotosAtuaisOs || !fotosAtuaisOs.length) {
-      fotosAtuaisOs = window._fotosOrcamentoMemoria || [];
-    }
-    if (typeof desduplicarListaFotos === 'function') {
-      fotosAtuaisOs = desduplicarListaFotos(fotosAtuaisOs);
-    }
-    d.fotos = fotosAtuaisOs;
-    if (Array.isArray(fotosAtuaisOs) && fotosAtuaisOs.length > 0) {
-      try {
-        const kGal = typeof getGaleriaKey === 'function' ? getGaleriaKey(d.numero) : ('sdv_galeria_' + String(d.numero || '').replace(/\D/g, ''));
-        localStorage.setItem(kGal, JSON.stringify(fotosAtuaisOs));
-      } catch(_) {}
-    }
-
     // 2. Gerar texto do contrato e links
     let textoContrato = '';
-    const numLimpoOs = String(d.numero || '').replace(/\D/g, '');
     try {
       const salvo = localStorage.getItem('sdv_contrato_editado_' + numLimpoOs);
       if (salvo && salvo.trim()) textoContrato = salvo.trim();
@@ -21944,6 +21961,7 @@ async function enviarOrcamentoParaAssinaturaDigital() {
       + "&empTipo=" + encodeURIComponent(ehMoveisUrl ? "moveis" : "vidros");
 
     const numOsLimpo = String(d.numero || '0001').replace(/\D/g, '') || '0001';
+    const numOsPuro = numOsLimpo.replace(/^0+/, '') || '1';
 
     // 🚀 SINCRONIZAÇÃO AUTÔNOMA INSTANTÂNEA DE DADOS + FOTOS DA OS VIA NTFY (TÓPICO DEDICADO)
     try {
@@ -21953,8 +21971,10 @@ async function enviarOrcamentoParaAssinaturaDigital() {
           const rawUrl = f.src || f.dataUrl || f.url || f.data || (typeof f === 'string' ? f : '');
           if (!rawUrl || typeof rawUrl !== 'string' || !rawUrl.startsWith('data:image')) return f;
           return new Promise(res => {
+            const safetyTimeout = setTimeout(() => res(f), 3500);
             const img = new Image();
             img.onload = () => {
+              clearTimeout(safetyTimeout);
               const maxDim = 800;
               let w = img.width, h = img.height;
               if (w > maxDim || h > maxDim) {
@@ -21976,10 +21996,17 @@ async function enviarOrcamentoParaAssinaturaDigital() {
                 origem: f.origem || 'Câmera'
               });
             };
-            img.onerror = () => res(f);
+            img.onerror = () => {
+              clearTimeout(safetyTimeout);
+              res(f);
+            };
             img.src = rawUrl;
           });
         }));
+      }
+
+      if (fotosComprimidasParaSync && fotosComprimidasParaSync.length > 0) {
+        d.fotos = fotosComprimidasParaSync;
       }
 
       const syncPayload = {
@@ -21991,15 +22018,21 @@ async function enviarOrcamentoParaAssinaturaDigital() {
         valServico: d.valServico,
         itens: d.itens,
         ambientes: d.ambientes || (typeof obterResumoAmbientesParaPdf === 'function' ? obterResumoAmbientesParaPdf() : []),
-        fotos: fotosComprimidasParaSync
+        fotos: d.fotos || []
       };
 
-      await fetch(`https://ntfy.sh/sdm_os_${numOsLimpo}_data`, {
+      const syncJson = JSON.stringify(syncPayload);
+      const postSync = (topico) => fetch(`https://ntfy.sh/${topico}`, {
         method: 'POST',
-        body: JSON.stringify(syncPayload),
-        headers: { 'Title': `OS_${numOsLimpo}_DATA`, 'Filename': `os_${numOsLimpo}_data.json` },
+        body: syncJson,
+        headers: { 'Title': `${topico.toUpperCase()}`, 'Filename': `${topico}.json` },
         keepalive: true
       }).catch(e => console.warn('Sync ntfy data warning:', e));
+
+      await postSync(`sdm_os_${numOsLimpo}_data`);
+      if (numOsPuro !== numOsLimpo) {
+        postSync(`sdm_os_${numOsPuro}_data`);
+      }
     } catch (errSyncDados) {
       console.warn('Erro ao preparar sincronização autônoma de dados:', errSyncDados);
     }
@@ -22025,6 +22058,14 @@ async function enviarOrcamentoParaAssinaturaDigital() {
             } else if (dataNtfy.id) {
               pdfFileId = dataNtfy.id;
             }
+          }
+          if (numOsPuro !== numOsLimpo) {
+            fetch(`https://ntfy.sh/sdm_os_${numOsPuro}_pdf`, {
+              method: 'POST',
+              body: pdfBlobCompleto,
+              headers: { 'Filename': `Orcamento-${numOsPuro}.pdf` },
+              keepalive: true
+            }).catch(() => {});
           }
         }
       }
