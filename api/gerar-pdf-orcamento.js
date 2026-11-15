@@ -1250,6 +1250,15 @@ module.exports = async (req, res) => {
                 if (!dados.valServico && ntfyData.valServico) dados.valServico = ntfyData.valServico;
                 if (!dados.total && ntfyData.total) dados.total = ntfyData.total;
                 if (!dados.nome && ntfyData.nome) dados.nome = ntfyData.nome;
+                if (!dados.numero && ntfyData.numero) dados.numero = ntfyData.numero;
+                if (!dados.tel && ntfyData.tel) dados.tel = ntfyData.tel;
+                if (!dados.endereco && ntfyData.endereco) dados.endereco = ntfyData.endereco;
+                if (!dados.bairro && ntfyData.bairro) dados.bairro = ntfyData.bairro;
+                if (!dados.cidade && ntfyData.cidade) dados.cidade = ntfyData.cidade;
+                if (!dados.forma && ntfyData.forma) dados.forma = ntfyData.forma;
+                if (!dados.obs && ntfyData.obs) dados.obs = ntfyData.obs;
+                if (!dados.prazo && ntfyData.prazo) dados.prazo = ntfyData.prazo;
+                if (!dados.garantia && ntfyData.garantia) dados.garantia = ntfyData.garantia;
               }
             }
           }
@@ -1257,6 +1266,9 @@ module.exports = async (req, res) => {
       } catch (errSync) {
         console.warn('Erro sync ntfy data:', errSync);
       }
+    }
+    if (!dados.numero && numBusc) {
+      dados.numero = '#' + numBusc;
     }
     // Identificação precisa da empresa ativa (SD Vidros vs SD Móveis vs Custom)
     const empParamLower = String(queryEmpresa || (dados && (dados.empresa || dados.emp)) || '').toLowerCase().trim();
