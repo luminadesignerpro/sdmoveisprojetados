@@ -974,7 +974,7 @@ module.exports = async (req, res) => {
                 }
               }
             }
-          } catch (_) {}
+          } catch (_) { }
         }
       } catch (_) { }
     }
@@ -1284,7 +1284,7 @@ module.exports = async (req, res) => {
                   }
                 }
               }
-            } catch (_) {}
+            } catch (_) { }
           }
         }
       } catch (e) {
