@@ -1,5 +1,5 @@
-// Service Worker PWA – SD Móveis Projetados v9.5.20 (Fix: Stale-While-Revalidate para 0ms de tela preta e cache ultrarrápido)
-const CACHE_NAME = 'sdmoveisprojetados-v9.5.20';
+// Service Worker PWA – SD Móveis Projetados v9.5.21 (Fix: Sincronização e Renderização Fotográfica HD no PDF)
+const CACHE_NAME = 'sdmoveisprojetados-v9.5.21';
 const ASSETS = [
   '/',
   '/index.html',

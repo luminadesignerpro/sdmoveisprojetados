@@ -2857,18 +2857,29 @@ window.selecionarPagamento = function(metodo) {
         } catch(_) {}
       }
 
+      const temFotoComImg = (arr) => Array.isArray(arr) && arr.some(f => f && (f.dataUrl || f.src || f.url || f.data) && String(f.dataUrl || f.src || f.url || f.data).length > 50);
+
       const dadosBase = (ordStorage && ordStorage.dados) ? ordStorage.dados : ((contratoCache && contratoCache.dados) ? contratoCache.dados : null);
 
       if (dadosBase) {
+        let fotosFinais = [];
+        if (temFotoComImg(fotosStorage)) {
+          fotosFinais = fotosStorage;
+        } else if (dadosBase.fotos && temFotoComImg(dadosBase.fotos)) {
+          fotosFinais = dadosBase.fotos;
+        } else if (ordStorage && ordStorage.fotos && temFotoComImg(ordStorage.fotos)) {
+          fotosFinais = ordStorage.fotos;
+        }
+
         const dadosCompletos = {
           ...dadosBase,
           numero: (ordStorage && ordStorage.numero) || dadosBase.n || dadosBase.numero || ('#' + numLimpo),
           nome: (ordStorage && ordStorage.nome) || dadosBase.c || dadosBase.nome || (contratoCache && contratoCache.cliente_nome) || '',
           total: (ordStorage && ordStorage.total) || dadosBase.v || dadosBase.total || '',
-          fotos: (fotosStorage && fotosStorage.length) ? fotosStorage : (dadosBase.fotos || (ordStorage && ordStorage.fotos) || [])
+          fotos: fotosFinais
         };
 
-        const respPdf = await fetch('/api/gerar-pdf-orcamento?empresa=' + encodeURIComponent(empParam), {
+        const respPdf = await fetch('/api/gerar-pdf-orcamento?num=' + encodeURIComponent(numLimpo) + '&empresa=' + encodeURIComponent(empParam) + (pParam ? '&p=' + encodeURIComponent(pParam) : ''), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(dadosCompletos)
