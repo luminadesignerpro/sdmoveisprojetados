@@ -2321,14 +2321,19 @@
         <!-- Lista de Categorias com % e R$ Editáveis -->
         <div id="dir-inline-lista-categorias" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;"></div>
 
-        <!-- Botões do Rateio (Adicionar Categoria e Modal Completo) -->
+        <!-- Botões do Rateio (Adicionar Categoria, Salvar Direcionamento e Modal Completo) -->
         <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px dashed rgba(255,255,255,0.08);flex-wrap:wrap;gap:8px;">
           <button type="button" onclick="adicionarCategoriaDirecionamentoInline()" style="background:rgba(16,185,129,0.18);border:1.5px solid #10b981;color:#6ee7b7;font-size:12px;font-weight:800;padding:6px 12px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;">
             <span>➕</span> <span>Adicionar Categoria</span>
           </button>
-          <button type="button" onclick="abrirModalDirecionamentoDoOrcamento()" style="background:rgba(99,102,241,0.18);border:1.5px solid #6366f1;color:#a5b4fc;font-size:12px;font-weight:800;padding:6px 12px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;">
-            <span>🔍</span> <span>Modal Completo</span>
-          </button>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <button type="button" onclick="salvarDirecionamentoInlineDoOrcamento()" style="background:linear-gradient(135deg,#7c3aed,#6366f1);border:none;color:#fff;font-size:12px;font-weight:800;padding:7px 15px;border-radius:8px;cursor:pointer;box-shadow:0 4px 14px rgba(124,58,237,0.4);display:inline-flex;align-items:center;gap:6px;">
+              <span>💾</span> <span>Salvar Direcionamento</span>
+            </button>
+            <button type="button" onclick="abrirModalDirecionamentoDoOrcamento()" style="background:rgba(99,102,241,0.18);border:1.5px solid #6366f1;color:#a5b4fc;font-size:12px;font-weight:800;padding:6px 12px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;">
+              <span>🔍</span> <span>Modal Completo</span>
+            </button>
+          </div>
         </div>
         <div style="font-size:9.5px;color:var(--muted);margin-top:8px;text-align:left;">
           🚫 Oculto ao cliente no PDF
@@ -5752,7 +5757,7 @@
         <span style="font-size:12.5px; color:#94a3b8; font-weight:700;">💰 Total do Orçamento:</span>
         <div style="display:flex; align-items:center; gap:6px;">
           <span style="font-size:14px; font-weight:800; color:#cbd5e1;">R$</span>
-          <input type="text" id="dir-os-input-total" inputmode="decimal" onchange="aoMudarTotalDirOs(this.value)" style="font-size:16px; font-weight:900; color:#fcd34d; background:transparent; border:none; border-bottom:1.5px dashed rgba(201,168,76,0.6); padding:2px 4px; width:110px; text-align:right; outline:none;" placeholder="0,00" />
+          <input type="text" id="dir-os-input-total" inputmode="decimal" oninput="aoMudarTotalDirOs(this.value)" onchange="aoMudarTotalDirOs(this.value)" style="font-size:16px; font-weight:900; color:#fcd34d; background:transparent; border:none; border-bottom:1.5px dashed rgba(201,168,76,0.6); padding:2px 4px; width:110px; text-align:right; outline:none;" placeholder="0,00" />
         </div>
       </div>
 
@@ -9384,6 +9389,74 @@ function isDescricaoServico(desc) {
   return d.includes('serviço') || d.includes('servico') || d.includes('instalação') ||
          d.includes('instalacao') || d.includes('montagem') || d.includes('mão de obra') ||
          d.includes('mao de obra') || d.includes('manutenção') || d.includes('manutencao');
+}
+
+function obterTotalOsReal(o) {
+  if (!o) return 0;
+  let t = parseNum(o.total);
+  if (t > 0) return t;
+  if (o.dados && o.dados.total) {
+    t = parseNum(o.dados.total);
+    if (t > 0) return t;
+  }
+  if (o.direcionamento && typeof o.direcionamento.valorTotal === 'number' && o.direcionamento.valorTotal > 0) {
+    return o.direcionamento.valorTotal;
+  }
+  if (Array.isArray(o.versoes_pdf) && o.versoes_pdf.length > 0) {
+    for (let i = o.versoes_pdf.length - 1; i >= 0; i--) {
+      const v = o.versoes_pdf[i];
+      if (v) {
+        const vt = parseNum(v.total || (v.dados && v.dados.total));
+        if (vt > 0) return vt;
+      }
+    }
+  }
+  const itens = (o.dados && Array.isArray(o.dados.itens) && o.dados.itens.length) ? o.dados.itens : (Array.isArray(o.itens) ? o.itens : []);
+  if (itens.length > 0) {
+    let somaItens = 0;
+    itens.forEach(it => {
+      let v = parseNum(it.total);
+      if (!v && it.qtd && it.v_unit) v = parseNum(it.qtd) * parseNum(it.v_unit);
+      if (!v && it.m2 && it.v_m2) v = parseNum(it.m2) * parseNum(it.v_m2);
+      somaItens += v || 0;
+    });
+    const d = o.dados || o;
+    const frete = parseNum(d.valFrete || d.frete || 0);
+    const servico = parseNum(d.valServico || d.servico || 0);
+    const desc = parseNum(d.valDesconto || d.desconto || 0);
+    const totCalculado = Math.max(0, somaItens + frete + servico - desc);
+    if (totCalculado > 0) return totCalculado;
+  }
+  const d = o.dados || o;
+  const p = parseNum(d.valProdutos || d.produtos || 0);
+  const s = parseNum(d.valServico || d.servico || 0);
+  const f = parseNum(d.valFrete || d.frete || 0);
+  const desc = parseNum(d.valDesconto || d.desconto || 0);
+  const totPs = Math.max(0, p + s + f - desc);
+  if (totPs > 0) return totPs;
+
+  try {
+    const numLimpo = String(o.numero || o.id || '').replace(/\D/g, '');
+    if (numLimpo) {
+      for (let ki = 0; ki < localStorage.length; ki++) {
+        const k = localStorage.key(ki);
+        if (k && (k.startsWith('sdv_ordens') || k.startsWith('sdm_orders'))) {
+          try {
+            const arr = JSON.parse(localStorage.getItem(k) || '[]');
+            if (Array.isArray(arr)) {
+              const achou = arr.find(x => String(x.numero || x.id || '').replace(/\D/g, '') === numLimpo);
+              if (achou) {
+                const tAchou = parseNum(achou.total || (achou.dados && achou.dados.total));
+                if (tAchou > 0) return tAchou;
+              }
+            }
+          } catch(_) {}
+        }
+      }
+    }
+  } catch(_) {}
+
+  return 0;
 }
 
 function updateDatalistProdutos() {
@@ -14973,7 +15046,10 @@ function renderHistFiltrado() {
           <span class="hist-num">${esc(o.numero)}</span>
           <span class="status-pill ${st} status-bloqueada" style="cursor:default;opacity:0.95;user-select:none;">${statusLabels[st] || '🟡 Aguardando'}</span>
         </div>
-        <span class="hist-date">${esc(o.data_orc || '')}</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="hist-date">${esc(o.data_orc || '')}</span>
+          <strong style="font-size:13.5px;color:var(--gold);font-weight:900;">${esc(typeof obterTotalOsReal === 'function' && obterTotalOsReal(o) > 0 ? ('R$ ' + (typeof formatarValorPtBr === 'function' ? formatarValorPtBr(obterTotalOsReal(o)) : obterTotalOsReal(o).toFixed(2).replace('.', ','))) : (o.total || 'R$ 0,00'))}</strong>
+        </div>
       </div>
       <!-- Botão Direcionamento abaixo do status Aguardando Resposta -->
       <div style="margin-top:8px;">
@@ -15633,6 +15709,61 @@ function salvarRateioInlineParaOrcamento() {
   dirOrcamentoTemp.categorias = JSON.parse(JSON.stringify(cats));
   dirOrcamentoTemp.valorTotal = totalNum;
   dirCategoriasEdicao = JSON.parse(JSON.stringify(cats));
+}
+
+function salvarDirecionamentoInlineDoOrcamento() {
+  const cats = obterCategoriasRateioInline();
+  const elTotal = document.getElementById('total');
+  const totalNum = elTotal ? (typeof parseNum === 'function' ? parseNum(elTotal.textContent) : 0) : 0;
+
+  cats.forEach(c => {
+    const pct = Number(c.porcentagem) || 0;
+    if (totalNum > 0) {
+      c.valor = (totalNum * pct) / 100;
+    }
+  });
+
+  const dirObj = {
+    categorias: JSON.parse(JSON.stringify(cats)),
+    valorTotal: totalNum,
+    atualizado_em: new Date().toISOString()
+  };
+
+  dirOrcamentoTemp = dirObj;
+  _dirInlineCategorias = JSON.parse(JSON.stringify(cats));
+
+  try {
+    localStorage.setItem('sdm_dir_padrao_usuario', JSON.stringify({ categorias: cats }));
+  } catch(_) {}
+
+  if (typeof editandoOsId !== 'undefined' && editandoOsId) {
+    const idx = (historico || []).findIndex(x => String(x.id) === String(editandoOsId) || String(x.numero) === String(editandoOsId));
+    if (idx !== -1) {
+      historico[idx].direcionamento = dirObj;
+      if (totalNum > 0) {
+        const totalFmt = 'R$ ' + (typeof formatarValorPtBr === 'function' ? formatarValorPtBr(totalNum) : totalNum.toFixed(2).replace('.', ','));
+        historico[idx].total = totalFmt;
+        if (historico[idx].dados) historico[idx].dados.total = totalFmt;
+      }
+      if (typeof save === 'function' && typeof K !== 'undefined' && K.orders) {
+        save(K.orders, historico);
+      }
+    }
+  }
+
+  if (typeof atualizarBadgeBotaoDirecionamentoOrc === 'function') {
+    try { atualizarBadgeBotaoDirecionamentoOrc(); } catch(_) {}
+  }
+
+  if (typeof renderHist === 'function') {
+    try { renderHist(); } catch(_) {}
+  }
+
+  if (typeof mostrarToastAprovacao === 'function') {
+    mostrarToastAprovacao('💾 Direcionamento salvo com sucesso no orçamento!');
+  } else {
+    alert('💾 Direcionamento salvo com sucesso!');
+  }
 }
 
 function sincronizarModalParaFinanceiro(campo, valor) {
@@ -43268,16 +43399,20 @@ var dirOsCategorias = [];
 var dirOsValorTotal = 0;
 
 function abrirModalDirecionamentoOs(id) {
-  const o = (historico || []).find(x => String(x.id) === String(id) || String(x.numero) === String(id));
+  const o = (historico || []).find(x => String(x.id) === String(id) || String(x.numero) === String(id)) ||
+            (historico || []).find(x => {
+              const n1 = String(id).replace(/\D/g, '');
+              const n2 = String(x.numero || x.id || '').replace(/\D/g, '');
+              return n1 && n2 && n1 === n2;
+            });
   if (!o) {
     alert('Ordem de serviço não encontrada.');
     return;
   }
   dirOsAtiva = o;
 
-  // Valor total da O.S.
-  const totalRaw = o.total || (o.dados && o.dados.total) || 0;
-  dirOsValorTotal = typeof parseNum === 'function' ? parseNum(totalRaw) : parseFloat(String(totalRaw).replace(/[^0-9,.]/g,'').replace(',','.')) || 0;
+  // Valor total da O.S. com resolução inteligente
+  dirOsValorTotal = typeof obterTotalOsReal === 'function' ? obterTotalOsReal(o) : parseNum(o.total || (o.dados && o.dados.total) || 0);
 
   // Inicializa categorias
   if (o.direcionamento && Array.isArray(o.direcionamento.categorias) && o.direcionamento.categorias.length > 0) {
@@ -43456,7 +43591,7 @@ function aoDigitarValorCategoriaDirOs(idx, valStr) {
 }
 
 function aoMudarTotalDirOs(valStr) {
-  const num = parseFloat(String(valStr).replace(/[^0-9,.]/g, '').replace(',', '.')) || 0;
+  const num = typeof parseNum === 'function' ? parseNum(valStr) : parseFloat(String(valStr).replace(/[^0-9,.]/g, '').replace(',', '.')) || 0;
   dirOsValorTotal = num;
   renderizarRateioVisualOs();
 }
@@ -43517,13 +43652,37 @@ function salvarDirecionamentoDaOsAtiva() {
 
   dirOsAtiva.direcionamento = direcionamentoObj;
 
+  if (dirOsValorTotal > 0 && (!dirOsAtiva.total || parseNum(dirOsAtiva.total) === 0)) {
+    const totalFmt = 'R$ ' + (typeof formatarValorPtBr === 'function' ? formatarValorPtBr(dirOsValorTotal) : dirOsValorTotal.toFixed(2).replace('.', ','));
+    dirOsAtiva.total = totalFmt;
+    if (dirOsAtiva.dados) dirOsAtiva.dados.total = totalFmt;
+  }
+
   const idx = (historico || []).findIndex(x => String(x.id) === String(dirOsAtiva.id) || String(x.numero) === String(dirOsAtiva.numero));
   if (idx !== -1) {
     historico[idx].direcionamento = direcionamentoObj;
+    if (dirOsValorTotal > 0 && (!historico[idx].total || parseNum(historico[idx].total) === 0)) {
+      historico[idx].total = dirOsAtiva.total;
+      if (historico[idx].dados) historico[idx].dados.total = dirOsAtiva.total;
+    }
     if (typeof save === 'function' && typeof K !== 'undefined' && K.orders) {
       save(K.orders, historico);
     }
   }
+
+  try {
+    fetch('/api/portal-cliente', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'atualizar_financeiro',
+        os: dirOsAtiva.numero,
+        cliente_nome: dirOsAtiva.nome,
+        total: dirOsAtiva.total || ('R$ ' + dirOsValorTotal.toFixed(2).replace('.', ',')),
+        status_pagamento: dirOsAtiva.status === 'aprovado' ? 'Aprovado' : 'Em andamento'
+      })
+    }).catch(() => {});
+  } catch(_) {}
 
   fecharModalDirecionamentoOs();
 

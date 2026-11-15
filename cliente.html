@@ -3866,20 +3866,37 @@
       try {
         const lic = (typeof obterLicencaAtivaCliente === 'function' ? obterLicencaAtivaCliente() : { id: 'sdmoveis' });
         const empId = lic.id || 'sdmoveis';
-        let v = localStorage.getItem('sdv_ordens_' + empId);
-        if (!v || v === '[]') v = localStorage.getItem('sdv_ordens');
-        let lista = v ? JSON.parse(v) : [];
-        if (!Array.isArray(lista) || !lista.length) {
-          ['sdv_ordens_sdmoveis', 'sdv_ordens_sdvidros', 'sdv_ordens'].forEach(k => {
-            if ((!lista || !lista.length) && localStorage.getItem(k)) {
-              try {
-                const arr = JSON.parse(localStorage.getItem(k));
-                if (Array.isArray(arr) && arr.length) lista = arr;
-              } catch(_) {}
-            }
-          });
+        const chaves = new Set(['sdv_ordens_' + empId, 'sdv_ordens', 'sdv_ordens_sdmoveis', 'sdv_ordens_sdvidros', 'sdm_orders', 'sdv_orders']);
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && (k.startsWith('sdv_ordens') || k.startsWith('sdm_orders') || k === 'sdv_orders')) {
+            chaves.add(k);
+          }
         }
-        return Array.isArray(lista) ? lista : [];
+        const mapa = new Map();
+        chaves.forEach(k => {
+          try {
+            const raw = localStorage.getItem(k);
+            if (raw) {
+              const arr = JSON.parse(raw);
+              if (Array.isArray(arr)) {
+                arr.forEach(o => {
+                  if (o && (o.id || o.numero)) {
+                    const ch = String(o.numero || o.id).replace(/\D/g, '') || String(o.id);
+                    if (!mapa.has(ch)) {
+                      mapa.set(ch, o);
+                    } else {
+                      const ex = mapa.get(ch);
+                      if (o.status === 'aprovado' && ex.status !== 'aprovado') mapa.set(ch, o);
+                      if ((!ex.total || ex.total === 'R$ 0,00') && o.total && o.total !== 'R$ 0,00') mapa.set(ch, o);
+                    }
+                  }
+                });
+              }
+            }
+          } catch(_) {}
+        });
+        return Array.from(mapa.values());
       } catch { return []; }
     }
 
@@ -7940,6 +7957,20 @@ function mudarAba(tab) {
 
       // 4. Atualização Financeira em Tempo Real
       if (ev.tipo === 'financeiro_atualizado' && mesmaOs) {
+        if (ev.total && clienteSessao.ordem) {
+          clienteSessao.ordem.total = ev.total;
+          if (clienteSessao.ordem.dados) clienteSessao.ordem.dados.total = ev.total;
+        }
+        if (ev.valor_pago && clienteSessao.ordem) {
+          clienteSessao.ordem.valor_pago = ev.valor_pago;
+        }
+        if (ev.total) {
+          try {
+            const osD = String(clienteSessao.os || '').replace(/\D/g, '');
+            if (osD) localStorage.setItem('sdv_fin_total_' + osD, String(ev.total));
+          } catch(_) {}
+        }
+        try { localStorage.setItem('sdv_cliente_sessao', JSON.stringify(clienteSessao)); } catch(_) {}
         carregarDadosFinanceiros(clienteSessao);
         mostrarToastNotificacao('💰 Financeiro Atualizado', `Status de pagamento: ${ev.status_pagamento || 'Atualizado'}`, '💰');
       }
@@ -8241,13 +8272,31 @@ function mudarAba(tab) {
     // ══════════════════════════════════════════════
     //  SETOR FINANCEIRO DO CLIENTE
     // ══════════════════════════════════════════════
+    function parseMoneyCliente(val) {
+      if (!val && val !== 0) return 0;
+      if (typeof val === 'number') return isNaN(val) ? 0 : val;
+      let str = String(val).replace(/R\$/g, '').replace(/\s/g, '').trim();
+      if (!str) return 0;
+      if (str.includes(',') && str.includes('.')) {
+        if (str.indexOf('.') < str.indexOf(',')) {
+          str = str.replace(/\./g, '').replace(',', '.');
+        } else {
+          str = str.replace(/,/g, '');
+        }
+      } else if (str.includes(',')) {
+        str = str.replace(',', '.');
+      }
+      const n = parseFloat(str);
+      return isNaN(n) ? 0 : n;
+    }
+
     function carregarDadosFinanceiros(sessao) {
       if (!sessao) return;
       const ordens = carregarOrdensDoStorage();
-      const numOsSessao = String(sessao.os || '').toLowerCase().replace('#', '');
+      const osDigitos = String(sessao.os || '').replace(/\D/g, '');
       const osData = ordens.find(o => {
-        const oNum = String(o.numero || '').toLowerCase().replace('#', '');
-        return oNum === numOsSessao || String(o.numero) === String(sessao.os);
+        const oDig = String(o.numero || o.id || '').replace(/\D/g, '');
+        return osDigitos && oDig && (osDigitos === oDig || oDig.endsWith(osDigitos) || osDigitos.endsWith(oDig));
       }) || sessao.ordem;
 
       const lic = (typeof obterLicencaAtivaCliente === 'function' ? obterLicencaAtivaCliente() : {});
@@ -8281,18 +8330,64 @@ function mudarAba(tab) {
         btnZap.href = `https://wa.me/55${telLimpo}?text=${encodeURIComponent('Olá, estou enviando o comprovante de pagamento da minha O.S. ' + sessao.os)}`;
       }
 
-            // Extrai valor total real - fix: parse correto do formato BRL (ex: R$ 4.500,00)
+      // Extrai valor total real - fix: resolução robusta de total
       let totalNum = 0;
-      let totalStr = (osData && (osData.total || (osData.dados && osData.dados.total))) || '';
-      if (totalStr) {
-        const numSemSimbolo = String(totalStr).replace(/R\$\s*/gi, '').trim();
-        let numLimpo;
-        if (numSemSimbolo.includes(',')) {
-          numLimpo = numSemSimbolo.replace(/\.(?=\d{3})/g, '').replace(',', '.');
-        } else {
-          numLimpo = numSemSimbolo.replace(/[^\d.]/g, '');
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlTotal = urlParams.get('total') || urlParams.get('valor');
+      if (urlTotal) {
+        totalNum = parseMoneyCliente(urlTotal);
+      }
+
+      if (totalNum === 0 && osData) {
+        totalNum = parseMoneyCliente(osData.total);
+        if (totalNum === 0 && osData.dados && osData.dados.total) {
+          totalNum = parseMoneyCliente(osData.dados.total);
         }
-        totalNum = parseFloat(numLimpo) || 0;
+        if (totalNum === 0 && osData.direcionamento && typeof osData.direcionamento.valorTotal === 'number') {
+          totalNum = osData.direcionamento.valorTotal;
+        }
+        if (totalNum === 0 && Array.isArray(osData.versoes_pdf) && osData.versoes_pdf.length > 0) {
+          for (let i = osData.versoes_pdf.length - 1; i >= 0; i--) {
+            const v = osData.versoes_pdf[i];
+            const vt = parseMoneyCliente(v.total || (v.dados && v.dados.total));
+            if (vt > 0) { totalNum = vt; break; }
+          }
+        }
+        const itensList = (osData.dados && Array.isArray(osData.dados.itens) && osData.dados.itens.length) ? osData.dados.itens : (Array.isArray(osData.itens) ? osData.itens : []);
+        if (totalNum === 0 && itensList.length > 0) {
+          let sItens = 0;
+          itensList.forEach(it => {
+            let v = parseMoneyCliente(it.total);
+            if (!v && it.qtd && it.v_unit) v = parseMoneyCliente(it.qtd) * parseMoneyCliente(it.v_unit);
+            if (!v && it.m2 && it.v_m2) v = parseMoneyCliente(it.m2) * parseMoneyCliente(it.v_m2);
+            sItens += v || 0;
+          });
+          const d = osData.dados || osData;
+          const frete = parseMoneyCliente(d.valFrete || d.frete || 0);
+          const serv = parseMoneyCliente(d.valServico || d.servico || 0);
+          const desc = parseMoneyCliente(d.valDesconto || d.desconto || 0);
+          totalNum = Math.max(0, sItens + frete + serv - desc);
+        }
+        if (totalNum === 0) {
+          const d = osData.dados || osData;
+          const p = parseMoneyCliente(d.valProdutos || d.produtos || 0);
+          const s = parseMoneyCliente(d.valServico || d.servico || 0);
+          const f = parseMoneyCliente(d.valFrete || d.frete || 0);
+          const desc = parseMoneyCliente(d.valDesconto || d.desconto || 0);
+          const totPs = Math.max(0, p + s + f - desc);
+          if (totPs > 0) totalNum = totPs;
+        }
+        if (totalNum === 0 && (osData.status_obs || osData.texto)) {
+          const mTxt = String(osData.status_obs || osData.texto).match(/Valor Total:\s*(R\$\s*[\d.,]+)/i) || String(osData.status_obs || osData.texto).match(/VALOR.*:\s*(R\$\s*[\d.,]+)/i);
+          if (mTxt && mTxt[1]) totalNum = parseMoneyCliente(mTxt[1]);
+        }
+      }
+
+      if (totalNum === 0 && osDigitos) {
+        try {
+          const savedFin = localStorage.getItem('sdv_fin_total_' + osDigitos);
+          if (savedFin) totalNum = parseMoneyCliente(savedFin);
+        } catch(_) {}
       }
 
       // Extrai condição de pagamento

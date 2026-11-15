@@ -1,5 +1,5 @@
 // Service Worker PWA – SD Móveis Projetados v9.5.32 (Fix: exibição de rubrica da assinatura digital via attachments NTFY e bloqueio definitivo contra re-assinatura de O.S. aprovadas)
-const CACHE_NAME = 'sdmoveisprojetados-v9.5.33';
+const CACHE_NAME = 'sdmoveisprojetados-v9.5.34';
 const ASSETS = [
   '/',
   '/index.html',
