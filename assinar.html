@@ -3311,6 +3311,8 @@ WhatsApp: ${d.tel || d.t || '_________________________________'}`;
       }
     } catch (e) {
       console.warn('Falha ao decodificar link direto:', e);
+      mostrarErro('Erro ao carregar proposta. Solicite um novo link via WhatsApp.');
+      return;
     }
   }
 
@@ -3319,13 +3321,22 @@ WhatsApp: ${d.tel || d.t || '_________________________________'}`;
     return;
   }
 
+  // Timeout de segurança: se após 15s ainda mostrar "Carregando...", exibe erro
+  const timeoutSeguranca = setTimeout(function() {
+    if (telaLoading && !telaLoading.classList.contains('hidden')) {
+      mostrarErro('Tempo esgotado ao carregar proposta. Verifique sua conexão e solicite um novo link via WhatsApp.');
+    }
+  }, 15000);
+
   fetch('/api/contrato?id=' + encodeURIComponent(contratoId))
     .then(r => r.json().then(data => ({ ok: r.ok, data })))
     .then(({ ok, data }) => {
+      clearTimeout(timeoutSeguranca);
       if (!ok) throw new Error(data.error || 'Erro ao carregar proposta.');
       renderizarProposta(data);
     })
     .catch(err => {
+      clearTimeout(timeoutSeguranca);
       let msg = err.message || 'Erro ao carregar proposta.';
       if (msg.includes('fetch failed')) {
         msg = 'Servidor temporariamente indisponível. Entre em contato via WhatsApp com SD Móveis Projetados.';
