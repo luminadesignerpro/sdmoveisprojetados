@@ -13451,8 +13451,8 @@ async function reenviarAssinaturaOs(id) {
   if (idx !== -1) {
     historico[idx].enviado_assinatura = true;
     historico[idx].enviado_assinatura_em = new Date().toISOString();
-    if (typeof save === 'function') save(K.hist, historico);
-    if (typeof renderHistorico === 'function') renderHistorico();
+    if (typeof save === 'function') save(K.orders, historico);
+    if (typeof renderHist === 'function') renderHist();
   }
 }
 
@@ -13461,20 +13461,69 @@ function deletarOs(id) {
 
   const osAlvo = historico.find(x => String(x.id) === String(id) || String(x.numero) === String(id)) ||
                  historico.find(x => {
-                   const numLimpo = String(id).replace(/\\D/g, '');
-                   return numLimpo && String(x.numero || '').replace(/\\D/g, '') === numLimpo;
+                   const numLimpo = String(id).replace(/\D/g, '');
+                   return numLimpo && String(x.numero || '').replace(/\D/g, '') === numLimpo;
                  });
 
   const numOs = (osAlvo && osAlvo.numero) ? String(osAlvo.numero).trim() : (String(id).startsWith('#') ? String(id).trim() : '');
-  const numPuro = numOs ? numOs.replace(/\\D/g, '') : String(id).replace(/\\D/g, '');
+  const numPuro = numOs ? numOs.replace(/\D/g, '') : String(id).replace(/\D/g, '');
   const nomeCliente = (osAlvo && (osAlvo.nome || osAlvo.cliente || (osAlvo.dados && (osAlvo.dados.nome || osAlvo.dados.cliente))))
     ? String(osAlvo.nome || osAlvo.cliente || (osAlvo.dados && (osAlvo.dados.nome || osAlvo.dados.cliente))).trim()
     : '';
   const nomeClienteLower = nomeCliente.toLowerCase();
 
+  // Registra na blacklist de excluídas (nunca mais ressurge de chaves legadas)
+  try {
+    const BL_KEY = 'sdv_ordens_excluidas';
+    const blRaw = localStorage.getItem(BL_KEY);
+    const bl = blRaw ? JSON.parse(blRaw) : [];
+    const idStr = String(id);
+    const variants = [idStr];
+    if (numPuro) {
+      variants.push(numPuro);
+      variants.push('#' + numPuro.padStart(4, '0'));
+      variants.push(String(parseInt(numPuro, 10)));
+    }
+    for (const v of variants) { if (!bl.includes(v)) bl.push(v); }
+    localStorage.setItem(BL_KEY, JSON.stringify(bl));
+  } catch (_) {}
+
   // Remove do histórico de ordens
-  historico = historico.filter(x => String(x.id) !== String(id) && (!numPuro || String(x.numero || '').replace(/\\D/g, '') !== numPuro));
+  historico = historico.filter(x => String(x.id) !== String(id) && (!numPuro || String(x.numero || '').replace(/\D/g, '') !== numPuro));
   save(K.orders, historico);
+
+  // Limpa esta OS de TODAS as chaves legadas do localStorage
+  try {
+    const keysToClean = [];
+    for (let ki = 0; ki < localStorage.length; ki++) {
+      const k = localStorage.key(ki);
+      if (k && (k.startsWith('sdv_ordens') || k.startsWith('sdm_orders') || k.startsWith('sdv_orders'))) {
+        keysToClean.push(k);
+      }
+    }
+    for (const k of keysToClean) {
+      try {
+        const raw = localStorage.getItem(k);
+        if (!raw) continue;
+        const arr = JSON.parse(raw);
+        if (!Array.isArray(arr)) continue;
+        const filtered = arr.filter(x => {
+          if (String(x.id) === String(id)) return false;
+          if (numPuro && String(x.numero || '').replace(/\D/g, '') === numPuro) return false;
+          return true;
+        });
+        if (filtered.length !== arr.length) localStorage.setItem(k, JSON.stringify(filtered));
+      } catch (_) {}
+    }
+  } catch (_) {}
+
+  // Remove chaves de assinatura e galeria desta OS
+  try {
+    if (numPuro) {
+      localStorage.removeItem('sdv_assinatura_' + numPuro);
+      localStorage.removeItem('sdv_assinatura_os_' + numPuro);
+    }
+  } catch (_) {}
 
   const temOutraOsMesmoCliente = nomeClienteLower && historico.some(h => (h.nome || h.cliente || '').trim().toLowerCase() === nomeClienteLower);
 
@@ -13484,7 +13533,7 @@ function deletarOs(id) {
     if (Array.isArray(mats) && mats.length > 0) {
       mats = mats.filter(m => {
         const mOs = (m.os || '').trim();
-        const mOsPuro = mOs.replace(/\\D/g, '');
+        const mOsPuro = mOs.replace(/\D/g, '');
         if (numPuro && mOsPuro && mOsPuro === numPuro) return false;
         if (numOs && mOs && mOs.toLowerCase() === numOs.toLowerCase()) return false;
 
@@ -13529,7 +13578,7 @@ function deletarOs(id) {
       let compList = JSON.parse(rawComp);
       if (Array.isArray(compList) && compList.length > 0) {
         compList = compList.filter(c => {
-          const cOsPuro = (c.os || c.osNum || '').replace(/\\D/g, '');
+          const cOsPuro = (c.os || c.osNum || '').replace(/\D/g, '');
           if (numPuro && cOsPuro && cOsPuro === numPuro) return false;
           if (nomeClienteLower && !temOutraOsMesmoCliente && c.clientName && String(c.clientName).trim().toLowerCase() === nomeClienteLower) return false;
           return true;
@@ -13544,7 +13593,7 @@ function deletarOs(id) {
     let evs = typeof carregarEventosCrono === 'function' ? carregarEventosCrono() : JSON.parse(localStorage.getItem('sdv_cronograma_eventos') || '[]');
     if (Array.isArray(evs) && evs.length > 0) {
       evs = evs.filter(e => {
-        const eOsPuro = (e.os || '').replace(/\\D/g, '');
+        const eOsPuro = (e.os || '').replace(/\D/g, '');
         if (numPuro && eOsPuro && eOsPuro === numPuro) return false;
         if (numOs && e.os && String(e.os).trim().toLowerCase() === numOs.toLowerCase()) return false;
         if (nomeClienteLower && !temOutraOsMesmoCliente && e.cliente && String(e.cliente).trim().toLowerCase() === nomeClienteLower) return false;
@@ -13568,13 +13617,13 @@ function deletarOs(id) {
       localStorage.removeItem('sdv_chat_' + numPuro);
     }
     if (numOs) {
-      localStorage.removeItem('sdv_galeria_' + numOs.replace(/\\D/g, ''));
-      localStorage.removeItem('sdv_chat_' + numOs.replace(/\\D/g, ''));
+      localStorage.removeItem('sdv_galeria_' + numOs.replace(/\D/g, ''));
+      localStorage.removeItem('sdv_chat_' + numOs.replace(/\D/g, ''));
     }
   } catch (_) {}
 
   // 7. Se estava em edição dessa OS no formulário principal, cancela a edição
-  if (typeof editandoOsId !== 'undefined' && (String(editandoOsId) === String(id) || (numPuro && String(editandoOsId).replace(/\\D/g, '') === numPuro))) {
+  if (typeof editandoOsId !== 'undefined' && (String(editandoOsId) === String(id) || (numPuro && String(editandoOsId).replace(/\D/g, '') === numPuro))) {
     if (typeof cancelarEdicaoOs === 'function') {
       try { cancelarEdicaoOs(); } catch (_) {}
     }
@@ -14890,10 +14939,13 @@ function renderHistFiltrado() {
     let btnVerAssinatura = (st === 'aprovado' || temAssinatura || o.assinado_por)
       ? `<button class="btn btn-sm" onclick="abrirModalAssinaturaOs('${o.id}')" style="background:rgba(52,211,153,0.2);border:1.5px solid #10b981;color:#34d399;font-weight:800;">✍️ Ver Assinatura</button>`
       : `<button class="btn btn-sec btn-sm" onclick="abrirModalAssinaturaOs('${o.id}')">✍️ Assinatura</button>`;
-    const foiEnviadoAssinatura = !!(o.enviado_assinatura || o.enviado_assinatura_em);
-    const dataHoraEnvioStr = o.enviado_assinatura_em ? new Date(o.enviado_assinatura_em).toLocaleDateString('pt-BR') : '';
-    const btnStatusEnvio = foiEnviadoAssinatura
-      ? `<button type="button" class="btn btn-sm" onclick="abrirModalStatusEnvio('${o.id}')" style="background:rgba(6,182,212,0.16);border:1.5px solid #06b6d4;color:#22d3ee;font-weight:800;border-radius:10px;padding:6px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">📤 Enviado p/ Assinatura ${dataHoraEnvioStr ? '('+dataHoraEnvioStr+')' : ''}</button>`
+    const jaAssinado = (st === 'aprovado' || st === 'modificacao_aprovada' || !!o.assinado_por || !!o.assinatura_digital);
+    const foiEnviadoAssinatura = jaAssinado || !!(o.enviado_assinatura || o.enviado_assinatura_em);
+    const dataHoraEnvioStr = o.enviado_assinatura_em ? new Date(o.enviado_assinatura_em).toLocaleDateString('pt-BR') : (o.assinado_em ? new Date(o.assinado_em).toLocaleDateString('pt-BR') : '');
+    const btnStatusEnvio = jaAssinado
+      ? `<button type="button" class="btn btn-sm" onclick="abrirModalStatusEnvio('${o.id}')" style="background:rgba(16,185,129,0.18);border:1.5px solid #10b981;color:#34d399;font-weight:800;border-radius:10px;padding:6px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">✅ Assinado pelo Cliente${dataHoraEnvioStr ? ' ('+dataHoraEnvioStr+')' : ''}</button>`
+      : foiEnviadoAssinatura
+      ? `<button type="button" class="btn btn-sm" onclick="abrirModalStatusEnvio('${o.id}')" style="background:rgba(6,182,212,0.16);border:1.5px solid #06b6d4;color:#22d3ee;font-weight:800;border-radius:10px;padding:6px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">📤 Enviado p/ Assinatura${dataHoraEnvioStr ? ' ('+dataHoraEnvioStr+')' : ''}</button>`
       : `<button type="button" class="btn btn-sm" onclick="abrirModalStatusEnvio('${o.id}')" style="background:rgba(234,179,8,0.12);border:1.5px solid rgba(234,179,8,0.6);color:#fbbf24;font-weight:800;border-radius:10px;padding:6px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">⏳ Não Enviado p/ Assinatura</button>`;
 
     // Localiza Número Único do Cliente
@@ -15039,11 +15091,16 @@ function renderHist() {
     }
 
     // Botão com Status de Envio para Assinatura Digital (Identifica se foi enviado ou não)
-    const foiEnviadoAssinatura = !!(o.enviado_assinatura || o.enviado_assinatura_em);
-    const dataHoraEnvioStr = o.enviado_assinatura_em ? new Date(o.enviado_assinatura_em).toLocaleDateString('pt-BR') : '';
-    const btnStatusEnvio = foiEnviadoAssinatura
+    const jaAssinado = (st === 'aprovado' || st === 'modificacao_aprovada' || !!o.assinado_por || !!o.assinatura_digital);
+    const foiEnviadoAssinatura = jaAssinado || !!(o.enviado_assinatura || o.enviado_assinatura_em);
+    const dataHoraEnvioStr = o.enviado_assinatura_em ? new Date(o.enviado_assinatura_em).toLocaleDateString('pt-BR') : (o.assinado_em ? new Date(o.assinado_em).toLocaleDateString('pt-BR') : '');
+    const btnStatusEnvio = jaAssinado
+      ? `<button type="button" class="btn btn-sm btn-status-envio" onclick="abrirModalStatusEnvio('${o.id}')" style="background:rgba(16,185,129,0.18);border:1.5px solid #10b981;color:#34d399;font-weight:800;border-radius:10px;padding:6px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;" title="Assinado pelo Cliente">
+           <span style="font-size:13px;">✅</span> Assinado pelo Cliente${dataHoraEnvioStr ? ' ('+dataHoraEnvioStr+')' : ''}
+         </button>`
+      : foiEnviadoAssinatura
       ? `<button type="button" class="btn btn-sm btn-status-envio" onclick="abrirModalStatusEnvio('${o.id}')" style="background:rgba(6,182,212,0.16);border:1.5px solid #06b6d4;color:#22d3ee;font-weight:800;border-radius:10px;padding:6px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;" title="Identificação de Envio: ENVIADO para Assinatura Digital (${dataHoraEnvioStr || 'Registrado'}). Toque para gerenciar ou reenviar.">
-           <span style="font-size:13px;">📤</span> Enviado p/ Assinatura Digital ${dataHoraEnvioStr ? `(${dataHoraEnvioStr})` : ''}
+           <span style="font-size:13px;">📤</span> Enviado p/ Assinatura Digital${dataHoraEnvioStr ? ` (${dataHoraEnvioStr})` : ''}
          </button>`
       : `<button type="button" class="btn btn-sm btn-status-envio" onclick="abrirModalStatusEnvio('${o.id}')" style="background:rgba(234,179,8,0.12);border:1.5px solid rgba(234,179,8,0.6);color:#fbbf24;font-weight:800;border-radius:10px;padding:6px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;" title="Identificação de Envio: NÃO ENVIADO para Assinatura Digital ainda. Toque para enviar ou alterar status.">
            <span style="font-size:13px;">⏳</span> Não Enviado p/ Assinatura
