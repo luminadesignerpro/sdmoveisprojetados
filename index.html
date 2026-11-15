@@ -21860,9 +21860,12 @@ async function enviarOrcamentoParaAssinaturaDigital() {
       };
       historico.push(ord);
       notificarNovaOrdemGerada(ord);
+      editandoOsId = ord.id;
       proxNumero++;
       save(K.nextNum, proxNumero);
-      atualizarNumeroDisplay();
+      // Mantém a O.S. atual em tela e no visor para que o formulário e a galeria de fotos permaneçam intactos
+      const dispEl = document.getElementById('orc-numero-display');
+      if (dispEl) dispEl.textContent = ord.numero;
     }
     save(K.orders, historico);
     renderHist();
@@ -22025,8 +22028,7 @@ async function enviarOrcamentoParaAssinaturaDigital() {
       const postSync = (topico) => fetch(`https://ntfy.sh/${topico}`, {
         method: 'POST',
         body: syncJson,
-        headers: { 'Title': `${topico.toUpperCase()}`, 'Filename': `${topico}.json` },
-        keepalive: true
+        headers: { 'Title': `${topico.toUpperCase()}`, 'Filename': `${topico}.json` }
       }).catch(e => console.warn('Sync ntfy data warning:', e));
 
       await postSync(`sdm_os_${numOsLimpo}_data`);
@@ -22046,8 +22048,7 @@ async function enviarOrcamentoParaAssinaturaDigital() {
           const resNtfy = await fetch(`https://ntfy.sh/sdm_os_${numOsLimpo}_pdf`, {
             method: 'POST',
             body: pdfBlobCompleto,
-            headers: { 'Filename': `Orcamento-${numOsLimpo}.pdf` },
-            keepalive: true
+            headers: { 'Filename': `Orcamento-${numOsLimpo}.pdf` }
           });
           if (resNtfy.ok) {
             const dataNtfy = await resNtfy.json().catch(() => ({}));
@@ -22059,12 +22060,17 @@ async function enviarOrcamentoParaAssinaturaDigital() {
               pdfFileId = dataNtfy.id;
             }
           }
+          if (pdfFileId) {
+            try {
+              localStorage.setItem('sdv_pdf_id_' + numOsLimpo, pdfFileId);
+              if (numOsPuro !== numOsLimpo) localStorage.setItem('sdv_pdf_id_' + numOsPuro, pdfFileId);
+            } catch (_) {}
+          }
           if (numOsPuro !== numOsLimpo) {
             fetch(`https://ntfy.sh/sdm_os_${numOsPuro}_pdf`, {
               method: 'POST',
               body: pdfBlobCompleto,
-              headers: { 'Filename': `Orcamento-${numOsPuro}.pdf` },
-              keepalive: true
+              headers: { 'Filename': `Orcamento-${numOsPuro}.pdf` }
             }).catch(() => {});
           }
         }
@@ -22100,8 +22106,10 @@ async function enviarOrcamentoParaAssinaturaDigital() {
       });
       const resData = await res.json().catch(() => ({}));
       if (res.ok && resData.id) {
-        linkAssinatura = window.location.origin + "/assinar.html?id=" + resData.id + empParamUrl;
-        linkPdf = window.location.origin + "/api/gerar-pdf-orcamento?id=" + resData.id + "&num=" + encodeURIComponent(numOsLimpo) + empParamUrl;
+        linkAssinatura = window.location.origin + "/assinar.html?id=" + resData.id + "&num=" + encodeURIComponent(numOsLimpo) + pParam + "&d=" + dParam + empParamUrl;
+        linkPdf = pdfFileId
+          ? (window.location.origin + "/api/gerar-pdf-orcamento?p=" + encodeURIComponent(pdfFileId) + "&id=" + resData.id + "&num=" + encodeURIComponent(numOsLimpo) + empParamUrl)
+          : (window.location.origin + "/api/gerar-pdf-orcamento?id=" + resData.id + "&num=" + encodeURIComponent(numOsLimpo) + "&d=" + dParam + empParamUrl);
       }
     } catch (e) {
       console.warn("Supabase offline ou inacessível, gerando link autônomo:", e);
@@ -22139,12 +22147,14 @@ async function enviarOrcamentoParaAssinaturaDigital() {
     carregarListaContratos();
     sincronizarStatusContratos();
 
-    // ✅ LIMPA COMPLETAMENTE O FORMULÁRIO DO ORÇAMENTO (AMBIENTE + GALERIA + ITENS) PARA NOVA O.S.
+    // Mantém as fotos e dados salvos intactos no formulário e na galeria
     setTimeout(() => {
       try {
-        limparFormularioOrcamentoAposEnvio();
+        if (typeof renderizarModalGaleriaOrc === 'function') renderizarModalGaleriaOrc();
+        if (typeof renderMiniaturasGaleriaOrcamento === 'function') renderMiniaturasGaleriaOrcamento();
+        if (typeof atualizarBadgeGaleriaOrcamento === 'function') atualizarBadgeGaleriaOrcamento();
         if (typeof mostrarToastAprovacao === 'function') {
-          mostrarToastAprovacao('✅ Ordem ' + d.numero + ' salva e link enviado! Ambiente e Galeria limpos para nova O.S.');
+          mostrarToastAprovacao('✅ Ordem ' + d.numero + ' salva e enviada para assinatura digital!');
         }
       } catch (_) {}
     }, 300);

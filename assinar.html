@@ -2832,13 +2832,21 @@ window.selecionarPagamento = function(metodo) {
     }
 
     // Monta a URL direta da API que abre nativamente no leitor de PDF do navegador (com barra superior e botão X)
+    let pFinal = pParam || '';
+    if (!pFinal) {
+      try {
+        pFinal = localStorage.getItem('sdv_pdf_id_' + numLimpo) || localStorage.getItem('sdv_pdf_id_' + numLimpo.replace(/^0+/, '')) || '';
+      } catch (_) {}
+    }
+
     let urlApi = '/api/gerar-pdf-orcamento?num=' + encodeURIComponent(numLimpo) + '&empresa=' + encodeURIComponent(empParam);
-    if (pParam) {
-      urlApi += '&p=' + encodeURIComponent(pParam);
-    } else if (contratoId) {
+    if (pFinal) {
+      urlApi += '&p=' + encodeURIComponent(pFinal);
+    }
+    if (contratoId) {
       urlApi += '&id=' + encodeURIComponent(contratoId);
-      if (dParam) urlApi += '&d=' + encodeURIComponent(dParam);
-    } else if (dParam) {
+    }
+    if (dParam) {
       urlApi += '&d=' + encodeURIComponent(dParam);
     } else {
       // Se não veio d na URL, verifica se os dados estão no storage local para codificar no d
