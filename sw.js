@@ -1,5 +1,5 @@
-// Service Worker PWA – SD Móveis Projetados v9.5.22 (Fix: Abertura Direta do PDF no Leitor do Chrome)
-const CACHE_NAME = 'sdmoveisprojetados-v9.5.22';
+// Service Worker PWA – SD Móveis Projetados v9.5.23 (Fix: Carregamento Instantâneo da Proposta)
+const CACHE_NAME = 'sdmoveisprojetados-v9.5.23';
 const ASSETS = [
   '/',
   '/index.html',
