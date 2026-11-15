@@ -2988,33 +2988,40 @@ window.selecionarPagamento = function(metodo) {
     contratoCache = data;
     try { aplicarBrandingLicenca(); } catch (_) {}
 
-    // ── VERIFICAÇÃO DE ASSINATURA: só bloqueia se realmente assinado no servidor ──
-    // Não usa localStorage para bloquear - evita "fantasmas" de assinaturas antigas
+    // ── VERIFICAÇÃO DE ASSINATURA: bloqueia re-assinatura se já estiver assinado ──
     const numLimpoOs = String(data.numero_os || "").replace(/\D/g, "");
     if (!data.assinado && numLimpoOs) {
       try {
-        // Limpa qualquer resíduo de outubro/setembro que possa contaminar
         const regLocal = localStorage.getItem("sdv_assinatura_" + numLimpoOs);
         if (regLocal) {
           const regObj = JSON.parse(regLocal);
-          const dataAss = regObj.data || '';
-          // Só usa se for assinatura recente (não de períodos de teste)
-          if (dataAss && (dataAss.includes('2026-09') || dataAss.includes('2026-10'))) {
-            // Assinatura fantasma de período de teste — limpa e ignora
-            localStorage.removeItem("sdv_assinatura_" + numLimpoOs);
+          if (regObj && regObj.nome && regObj.rubrica) {
+            data.assinado = true;
+            data.assinante_nome = regObj.nome;
+            data.assinado_em = regObj.data || new Date().toISOString();
           }
         }
-        const mapLocal = JSON.parse(localStorage.getItem("sdv_assinaturas_map") || "{}");
-        if (mapLocal[numLimpoOs]) {
-          const dataAssMap = (mapLocal[numLimpoOs] && mapLocal[numLimpoOs].data) || '';
-          if (dataAssMap && (dataAssMap.includes('2026-09') || dataAssMap.includes('2026-10'))) {
-            delete mapLocal[numLimpoOs];
-            localStorage.setItem("sdv_assinaturas_map", JSON.stringify(mapLocal));
-          }
-        }
-        // NÃO marca como assinado baseado em localStorage — o servidor é a fonte de verdade
-        // data.assinado só é true se a API /contrato retornou assinado=true
       } catch (_) {}
+    }
+
+    // Consulta em segundo plano o status na nuvem e bloqueia imediatamente se já assinado
+    if (!data.assinado && numLimpoOs) {
+      fetch('/api/listar-contratos?t=' + Date.now(), { cache: 'no-store' })
+        .then(r => r.json())
+        .then(lista => {
+          if (Array.isArray(lista)) {
+            const achado = lista.find(c => {
+              const cNum = String(c.numero_os || '').replace(/\D/g, '');
+              return cNum === numLimpoOs && (c.assinado || c.status === 'aprovado');
+            });
+            if (achado) {
+              data.assinado = true;
+              data.assinante_nome = achado.assinante_nome || achado.cliente_nome || 'Cliente';
+              data.assinado_em = achado.assinado_em || new Date().toISOString();
+              renderizarProposta(data);
+            }
+          }
+        }).catch(() => {});
     }
 
     if (data.assinado) {
@@ -3468,20 +3475,44 @@ WhatsApp: ${d.tel || d.t || '_________________________________'}`;
             assinado_em: new Date().toISOString(),
             origem: 'assinatura_digital'
           };
-          fetch('https://ntfy.sh/sdvidros_aprovacoes_85996119824', {
-            method: 'POST',
-            headers: {
-              'Title': `Orçamento ${osFormatada} Assinado Digitalmente`,
-              'Tags': 'white_check_mark'
-            },
-            body: JSON.stringify(eventoAprovRealtime)
-          }).catch(() => {});
 
           if (numLimpo && assinaturaBase64) {
             fetch(`https://ntfy.sh/sdm_os_${numLimpo}_sig`, {
               method: 'POST',
               headers: { 'Title': `Assinatura ${osFormatada}` },
               body: String(assinaturaBase64)
+            })
+            .then(r => r.json().catch(() => ({})))
+            .then(sigData => {
+              const rUrl = (sigData && sigData.attachment && sigData.attachment.url) ? sigData.attachment.url : (sigData && sigData.id ? `https://ntfy.sh/file/${sigData.id}.txt` : '');
+              if (rUrl) eventoAprovRealtime.rubrica_url = rUrl;
+              fetch('https://ntfy.sh/sdvidros_aprovacoes_85996119824', {
+                method: 'POST',
+                headers: {
+                  'Title': `Orçamento ${osFormatada} Assinado Digitalmente`,
+                  'Tags': 'white_check_mark'
+                },
+                body: JSON.stringify(eventoAprovRealtime)
+              }).catch(() => {});
+            })
+            .catch(() => {
+              fetch('https://ntfy.sh/sdvidros_aprovacoes_85996119824', {
+                method: 'POST',
+                headers: {
+                  'Title': `Orçamento ${osFormatada} Assinado Digitalmente`,
+                  'Tags': 'white_check_mark'
+                },
+                body: JSON.stringify(eventoAprovRealtime)
+              }).catch(() => {});
+            });
+          } else {
+            fetch('https://ntfy.sh/sdvidros_aprovacoes_85996119824', {
+              method: 'POST',
+              headers: {
+                'Title': `Orçamento ${osFormatada} Assinado Digitalmente`,
+                'Tags': 'white_check_mark'
+              },
+              body: JSON.stringify(eventoAprovRealtime)
             }).catch(() => {});
           }
 
