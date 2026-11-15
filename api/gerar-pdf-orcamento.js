@@ -26,6 +26,17 @@ function sanitizePdf(text) {
     .trim();
 }
 
+function fotoTemImagemValida(f) {
+  if (!f) return false;
+  const raw = f.src || f.dataUrl || f.url || f.data || (typeof f === 'string' ? f : '');
+  return typeof raw === 'string' && raw.length > 50 && raw.includes(',');
+}
+
+function temFotosCompletas(fotos) {
+  if (!Array.isArray(fotos) || fotos.length === 0) return false;
+  return fotos.some(f => fotoTemImagemValida(f));
+}
+
 function wrapText(text, font, size, maxWidth) {
   const words = sanitizePdf(text).split(/\s+/).filter(Boolean);
   const lines = [];
@@ -676,7 +687,7 @@ async function gerarPdfOrcamento(dados, fetchLogo, empInfo) {
   });
 
   // ── INCLUSÃO DAS FOTOS ANEXADAS NA GALERIA NO PDF ──
-  const fotosParaEmbed = Array.isArray(dados.fotos) ? dados.fotos : [];
+  const fotosParaEmbed = (Array.isArray(dados.fotos) ? dados.fotos : []).filter(f => fotoTemImagemValida(f));
   if (fotosParaEmbed && fotosParaEmbed.length > 0) {
     const isSingle = fotosParaEmbed.length === 1;
     const fotosPorPagina = isSingle ? 1 : (fotosParaEmbed.length === 2 ? 2 : 4);
@@ -743,8 +754,11 @@ async function gerarPdfOrcamento(dados, fetchLogo, empInfo) {
           color: HEADER_BG
         });
 
-        const ambNome = sanitizePdf(itemFoto.ambiente || '');
-        const origemFoto = sanitizePdf(itemFoto.origem || 'Câmera');
+        let ambNome = sanitizePdf(itemFoto.ambiente || '').trim();
+        let origemFoto = sanitizePdf(itemFoto.origem || 'Câmera').trim();
+        if (ambNome && origemFoto.toLowerCase().includes(ambNome.toLowerCase())) {
+          origemFoto = origemFoto.replace(new RegExp(`\\s*\\(${ambNome}\\)\\s*`, 'gi'), '').trim();
+        }
         const titCard = ambNome ? `Foto 1 • ${origemFoto} (${ambNome})` : `Foto 1 • ${origemFoto}`;
 
         fotoPage.drawText(titCard, {
@@ -759,7 +773,8 @@ async function gerarPdfOrcamento(dados, fetchLogo, empInfo) {
           const rawUrl = itemFoto.src || itemFoto.dataUrl || itemFoto.url || itemFoto.data || (typeof itemFoto === 'string' ? itemFoto : '');
           if (rawUrl && rawUrl.includes(',')) {
             const isPng = rawUrl.startsWith('data:image/png');
-            const b64 = rawUrl.split(',')[1];
+            let b64 = rawUrl.split(',')[1] || '';
+            b64 = b64.replace(/\s+/g, '');
             const binBuffer = Buffer.from(b64, 'base64');
 
             let embedded = null;
@@ -825,8 +840,11 @@ async function gerarPdfOrcamento(dados, fetchLogo, empInfo) {
           });
 
           const numFotoGlobal = pIdx * fotosPorPagina + i + 1;
-          const ambNome = sanitizePdf(itemFoto.ambiente || '');
-          const origemFoto = sanitizePdf(itemFoto.origem || 'Câmera');
+          let ambNome = sanitizePdf(itemFoto.ambiente || '').trim();
+          let origemFoto = sanitizePdf(itemFoto.origem || 'Câmera').trim();
+          if (ambNome && origemFoto.toLowerCase().includes(ambNome.toLowerCase())) {
+            origemFoto = origemFoto.replace(new RegExp(`\\s*\\(${ambNome}\\)\\s*`, 'gi'), '').trim();
+          }
           const titCard = ambNome ? `Foto ${numFotoGlobal} • ${origemFoto} (${ambNome})` : `Foto ${numFotoGlobal} • ${origemFoto}`;
 
           fotoPage.drawText(titCard, {
@@ -841,7 +859,8 @@ async function gerarPdfOrcamento(dados, fetchLogo, empInfo) {
             const rawUrl = itemFoto.src || itemFoto.dataUrl || itemFoto.url || itemFoto.data || (typeof itemFoto === 'string' ? itemFoto : '');
             if (rawUrl && rawUrl.includes(',')) {
               const isPng = rawUrl.startsWith('data:image/png');
-              const b64 = rawUrl.split(',')[1];
+              let b64 = rawUrl.split(',')[1] || '';
+              b64 = b64.replace(/\s+/g, '');
               const binBuffer = Buffer.from(b64, 'base64');
 
               let embedded = null;
@@ -943,7 +962,7 @@ module.exports = async (req, res) => {
             }
           }
         }
-      } catch (_) {}
+      } catch (_) { }
     }
     let dados = req.body || {};
     let queryEmpresa = '';
@@ -1141,7 +1160,8 @@ module.exports = async (req, res) => {
 
 
     // Enriquecimento automático via Supabase caso fotos ou itens estejam ausentes
-    if (dados && (!dados.fotos || !dados.fotos.length || !dados.itens || !dados.itens.length)) {
+    const fotosIncompletas = !temFotosCompletas(dados.fotos);
+    if (dados && (fotosIncompletas || !dados.itens || !dados.itens.length)) {
       try {
         const { getClient } = require('./_supabase');
         const supabase = getClient();
@@ -1167,7 +1187,7 @@ module.exports = async (req, res) => {
                 }
               }
               if (dbDados) {
-                if ((!dados.fotos || !dados.fotos.length) && Array.isArray(dbDados.fotos) && dbDados.fotos.length) {
+                if (fotosIncompletas && temFotosCompletas(dbDados.fotos)) {
                   dados.fotos = dbDados.fotos;
                 }
                 if ((!dados.itens || !dados.itens.length) && Array.isArray(dbDados.itens) && dbDados.itens.length) {
@@ -1186,7 +1206,8 @@ module.exports = async (req, res) => {
     }
 
     // 🚀 ENRIQUECIMENTO AUTÔNOMO DE ALTA VELOCIDADE VIA NTFY (FOTOS E ITENS)
-    if (dados && (!dados.fotos || !dados.fotos.length || !dados.itens || !dados.itens.length)) {
+    const aindaSemFotos = !temFotosCompletas(dados.fotos);
+    if (dados && (aindaSemFotos || !dados.itens || !dados.itens.length)) {
       try {
         const numBusc = String(dados.numero || (req.query && (req.query.num || req.query.os)) || '').replace(/\D/g, '');
         if (numBusc) {
@@ -1202,21 +1223,21 @@ module.exports = async (req, res) => {
             if (lines.length > 0) {
               const lastLine = lines[lines.length - 1];
               let ntfyMsg = null;
-              try { ntfyMsg = JSON.parse(lastLine); } catch(_) {}
+              try { ntfyMsg = JSON.parse(lastLine); } catch (_) { }
               let ntfyData = null;
               if (ntfyMsg) {
                 if (ntfyMsg.attachment && ntfyMsg.attachment.url) {
                   try {
                     const rAttach = await fetch(ntfyMsg.attachment.url);
                     if (rAttach.ok) ntfyData = await rAttach.json();
-                  } catch(_) {}
+                  } catch (_) { }
                 }
                 if (!ntfyData && ntfyMsg.message) {
-                  try { ntfyData = JSON.parse(ntfyMsg.message); } catch(_) {}
+                  try { ntfyData = JSON.parse(ntfyMsg.message); } catch (_) { }
                 }
               }
               if (ntfyData) {
-                if ((!dados.fotos || !dados.fotos.length) && Array.isArray(ntfyData.fotos) && ntfyData.fotos.length) {
+                if (aindaSemFotos && temFotosCompletas(ntfyData.fotos)) {
                   dados.fotos = ntfyData.fotos;
                 }
                 if ((!dados.itens || !dados.itens.length) && Array.isArray(ntfyData.itens) && ntfyData.itens.length) {
