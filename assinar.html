@@ -2808,7 +2808,7 @@ window.selecionarPagamento = function(metodo) {
   };
 
   
-  window.baixarPdfOsComercial = async function() {
+  window.baixarPdfOsComercial = function() {
     const pParam = extractParam('p');
     const dParam = extractParam('d') || extractParam('data');
     const contratoId = extractParam('id');
@@ -2831,99 +2831,43 @@ window.selecionarPagamento = function(metodo) {
       btn.innerHTML = '⏳ Abrindo PDF da O.S....';
     }
 
-    // 1. TENTA PRIMEIRO RESGATAR DADOS COMPLETOS E FOTOS DO STORAGE LOCAL DESTE DISPOSITIVO
-    try {
-      let ordStorage = null;
-      let fotosStorage = [];
-
-      // Verifica histórico local (sdv_ordens é a chave oficial salva pelo app)
-      const histStr = localStorage.getItem('sdv_ordens') || localStorage.getItem('sdv_orders') || localStorage.getItem('sdm_orders');
-      if (histStr) {
-        try {
-          const histArr = JSON.parse(histStr);
-          if (Array.isArray(histArr)) {
-            ordStorage = histArr.find(x => String(x.numero || '').replace(/\D/g, '') === numLimpo || String(x.id) === numLimpo);
-          }
-        } catch(_) {}
-      }
-
-      // Verifica fotos na galeria da OS
-      const kGal = 'sdv_galeria_' + numLimpo;
-      const galStr = localStorage.getItem(kGal) || localStorage.getItem('sdm_orc_fotos_temp') || localStorage.getItem('sdm_cam_capturas');
-      if (galStr) {
-        try {
-          const galArr = JSON.parse(galStr);
-          if (Array.isArray(galArr) && galArr.length) fotosStorage = galArr;
-        } catch(_) {}
-      }
-
-      const temFotoComImg = (arr) => Array.isArray(arr) && arr.some(f => f && (f.dataUrl || f.src || f.url || f.data) && String(f.dataUrl || f.src || f.url || f.data).length > 50);
-
-      const dadosBase = (ordStorage && ordStorage.dados) ? ordStorage.dados : ((contratoCache && contratoCache.dados) ? contratoCache.dados : null);
-
-      if (dadosBase) {
-        let fotosFinais = [];
-        if (temFotoComImg(fotosStorage)) {
-          fotosFinais = fotosStorage;
-        } else if (dadosBase.fotos && temFotoComImg(dadosBase.fotos)) {
-          fotosFinais = dadosBase.fotos;
-        } else if (ordStorage && ordStorage.fotos && temFotoComImg(ordStorage.fotos)) {
-          fotosFinais = ordStorage.fotos;
-        }
-
-        const dadosCompletos = {
-          ...dadosBase,
-          numero: (ordStorage && ordStorage.numero) || dadosBase.n || dadosBase.numero || ('#' + numLimpo),
-          nome: (ordStorage && ordStorage.nome) || dadosBase.c || dadosBase.nome || (contratoCache && contratoCache.cliente_nome) || '',
-          total: (ordStorage && ordStorage.total) || dadosBase.v || dadosBase.total || '',
-          fotos: fotosFinais
-        };
-
-        const respPdf = await fetch('/api/gerar-pdf-orcamento?num=' + encodeURIComponent(numLimpo) + '&empresa=' + encodeURIComponent(empParam) + (pParam ? '&p=' + encodeURIComponent(pParam) : ''), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(dadosCompletos)
-        });
-
-        if (respPdf.ok) {
-          const blob = await respPdf.blob();
-          const blobUrl = URL.createObjectURL(blob);
-          // Abre o PDF diretamente na tela em nova aba (ou mesma aba), exatamente como a segunda imagem
-          const win = window.open(blobUrl, '_blank');
-          if (!win || win.closed || typeof win.closed === 'undefined') {
-            window.location.href = blobUrl;
-          }
-          if (btn) btn.innerHTML = txtOrig;
-          return;
-        }
-      }
-    } catch (errLocalPdf) {
-      console.warn('Fallback para URL pública da API:', errLocalPdf);
-    }
-
-    // 2. FALLBACK PARA URL PÚBLICA (COM SINCRONIZAÇÃO AUTÔNOMA DE FOTOS VIA NTFY)
-    let urlApi = '';
+    // Monta a URL direta da API que abre nativamente no leitor de PDF do navegador (com barra superior e botão X)
+    let urlApi = '/api/gerar-pdf-orcamento?num=' + encodeURIComponent(numLimpo) + '&empresa=' + encodeURIComponent(empParam);
     if (pParam) {
-      urlApi = '/api/gerar-pdf-orcamento?p=' + encodeURIComponent(pParam) + '&num=' + encodeURIComponent(numLimpo) + '&empresa=' + encodeURIComponent(empParam);
+      urlApi += '&p=' + encodeURIComponent(pParam);
     } else if (contratoId) {
-      urlApi = '/api/gerar-pdf-orcamento?id=' + encodeURIComponent(contratoId) + '&num=' + encodeURIComponent(numLimpo) + '&empresa=' + encodeURIComponent(empParam);
+      urlApi += '&id=' + encodeURIComponent(contratoId);
       if (dParam) urlApi += '&d=' + encodeURIComponent(dParam);
     } else if (dParam) {
-      urlApi = '/api/gerar-pdf-orcamento?d=' + encodeURIComponent(dParam) + '&num=' + encodeURIComponent(numLimpo) + '&empresa=' + encodeURIComponent(empParam);
+      urlApi += '&d=' + encodeURIComponent(dParam);
     } else {
-      urlApi = '/api/gerar-pdf-orcamento?num=' + encodeURIComponent(numLimpo) + '&empresa=' + encodeURIComponent(empParam);
+      // Se não veio d na URL, verifica se os dados estão no storage local para codificar no d
+      try {
+        const histStr = localStorage.getItem('sdv_ordens') || localStorage.getItem('sdv_orders') || localStorage.getItem('sdm_orders');
+        if (histStr) {
+          const histArr = JSON.parse(histStr);
+          const ord = Array.isArray(histArr) && histArr.find(x => String(x.numero || '').replace(/\D/g, '') === numLimpo || String(x.id) === numLimpo);
+          if (ord && ord.dados) {
+            const strJson = JSON.stringify(ord.dados);
+            const dCodificado = btoa(unescape(encodeURIComponent(strJson)));
+            urlApi += '&d=' + encodeURIComponent(dCodificado);
+          }
+        }
+      } catch (_) {}
     }
 
+    // Abre diretamente no leitor oficial do navegador (exatamente como a segunda imagem)
     try {
       const win = window.open(urlApi, '_blank');
       if (!win || win.closed || typeof win.closed === 'undefined') {
         window.location.href = urlApi;
       }
-    } catch(err) {
+    } catch (_) {
       window.location.href = urlApi;
     } finally {
-      setTimeout(() => { if (btn) btn.innerHTML = txtOrig; }, 3000);
+      setTimeout(() => { if (btn) btn.innerHTML = txtOrig; }, 2500);
     }
+  };
   };
 
   window.baixarPdfAtual = function() {
