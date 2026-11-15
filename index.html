@@ -8064,7 +8064,7 @@ function getEmpresaStorageKey(baseKey) {
       baseKey === 'sdv_token' || baseKey === 'sdv_user' || baseKey === 'sdv_bio_user' || baseKey === 'sdv_bio_cred_id') {
     return baseKey;
   }
-  const empId = localStorage.getItem('sdv_licenca_ativa') || 'sdvidros';
+  const empId = localStorage.getItem('sdv_licenca_ativa') || 'sdmoveis';
   return `${baseKey}_${empId}`;
 }
 
@@ -8073,8 +8073,43 @@ function load(k, d=[]) {
     const key = getEmpresaStorageKey(k);
     let val = localStorage.getItem(key);
 
-    // Migração para SD Vidros na primeira vez: recupera da chave legado sem prefixo
-    if (val === null && key.endsWith('_sdvidros')) {
+    if (k === K.orders) {
+      // 🛡️ Recuperação inteligente e unificada de ordens de serviço
+      // Busca ordens em todas as chaves possíveis para NUNCA perder nenhuma O.S. criada
+      const chavesOrdens = [key, 'sdv_ordens_sdmoveis', 'sdv_ordens', 'sdv_ordens_sdvidros', 'sdm_orders', 'sdv_orders'];
+      const mapaOrdens = new Map();
+
+      chavesOrdens.forEach(chk => {
+        try {
+          const raw = localStorage.getItem(chk);
+          if (raw) {
+            const arr = JSON.parse(raw);
+            if (Array.isArray(arr)) {
+              arr.forEach(ord => {
+                if (ord && (ord.id || ord.numero)) {
+                  const chaveUnica = String(ord.numero || ord.id).replace(/\D/g, '') || String(ord.id);
+                  if (!mapaOrdens.has(chaveUnica)) {
+                    mapaOrdens.set(chaveUnica, ord);
+                  } else {
+                    const existente = mapaOrdens.get(chaveUnica);
+                    if (ord.status === 'aprovado' && existente.status !== 'aprovado') {
+                      mapaOrdens.set(chaveUnica, ord);
+                    }
+                  }
+                }
+              });
+            }
+          }
+        } catch (_) {}
+      });
+
+      if (mapaOrdens.size > 0) {
+        return Array.from(mapaOrdens.values());
+      }
+    }
+
+    // Migração para SD Móveis na primeira vez: recupera da chave legado sem prefixo
+    if (val === null) {
       const legacy = localStorage.getItem(k);
       if (legacy !== null) {
         val = legacy;
@@ -8092,30 +8127,38 @@ function sanitizarItemParaHistoricoStorage(item) {
   if (!item || typeof item !== 'object') return item;
   try {
     const clone = JSON.parse(JSON.stringify(item));
-    // Remove imagens pesadas em base64 de dentro da ordem salva em localStorage
-    // (As fotos originais completas ficam seguras no IndexedDB e em sdv_galeria_OS)
+    const limparFoto = (f, idx) => {
+      if (!f) return { id: idx || Date.now(), dataUrl: '' };
+      if (typeof f === 'string') {
+        return { id: idx || Date.now(), ambiente: 'Geral', origem: 'Galeria', dataUrl: '' };
+      }
+      return {
+        id: f.id || idx || Date.now(),
+        ambiente: f.ambiente || 'Geral',
+        origem: f.origem || 'Galeria',
+        data: f.data || '',
+        dataCaptura: f.dataCaptura || '',
+        dataUrl: '',
+        src: '',
+        url: ''
+      };
+    };
+
     if (Array.isArray(clone.fotos)) {
-      clone.fotos = clone.fotos.map(f => {
-        if (f && f.dataUrl && f.dataUrl.length > 500) {
-          return { id: f.id, ambiente: f.ambiente, origem: f.origem, data: f.data, dataUrl: '' };
-        }
-        return f;
-      });
+      clone.fotos = clone.fotos.map(limparFoto);
     }
     if (clone.dados && Array.isArray(clone.dados.fotos)) {
-      clone.dados.fotos = clone.dados.fotos.map(f => {
-        if (f && f.dataUrl && f.dataUrl.length > 500) {
-          return { id: f.id, ambiente: f.ambiente, origem: f.origem, data: f.data, dataUrl: '' };
-        }
-        return f;
-      });
+      clone.dados.fotos = clone.dados.fotos.map(limparFoto);
     }
     if (Array.isArray(clone.versoes_pdf)) {
       clone.versoes_pdf.forEach(v => {
         if (v && v.dados && Array.isArray(v.dados.fotos)) {
-          v.dados.fotos = [];
+          v.dados.fotos = v.dados.fotos.map(limparFoto);
         }
       });
+    }
+    if (clone.dados && typeof clone.dados === 'object') {
+      delete clone.dados._fotosCompletas;
     }
     return clone;
   } catch(_) {
@@ -8130,9 +8173,12 @@ function save(k, v) {
       dadoParaSalvar = v.map(sanitizarItemParaHistoricoStorage);
     }
     const key = getEmpresaStorageKey(k);
-    localStorage.setItem(key, JSON.stringify(dadoParaSalvar));
-    // Salva cópia na chave base para garantir que nunca se perca entre empresas
-    try { localStorage.setItem(k, JSON.stringify(dadoParaSalvar)); } catch(_) {}
+    const jsonStr = JSON.stringify(dadoParaSalvar);
+    localStorage.setItem(key, jsonStr);
+    try { localStorage.setItem(k, jsonStr); } catch(_) {}
+    if (k === K.orders) {
+      try { localStorage.setItem('sdv_ordens_sdmoveis', jsonStr); } catch(_) {}
+    }
   } catch (e) {
     console.warn('Erro ao salvar no storage (tentando limpeza de emergência):', e);
     try {
@@ -8141,11 +8187,14 @@ function save(k, v) {
         const superLeve = v.map(o => {
           const c = sanitizarItemParaHistoricoStorage(o);
           if (c.dados) { delete c.dados.fotos; }
+          delete c.fotos;
           return c;
         });
         const key = getEmpresaStorageKey(k);
-        localStorage.setItem(key, JSON.stringify(superLeve));
-        localStorage.setItem(k, JSON.stringify(superLeve));
+        const jsonLeve = JSON.stringify(superLeve);
+        localStorage.setItem(key, jsonLeve);
+        localStorage.setItem(k, jsonLeve);
+        try { localStorage.setItem('sdv_ordens_sdmoveis', jsonLeve); } catch(_) {}
       }
     } catch(err2) {
       console.error('Falha crítica no storage:', err2);
@@ -8717,29 +8766,12 @@ function recarregarDadosEmpresaAtiva() {
   clientes = load(K.clients, []);
   if (typeof garantirNumerosUnicosClientes === 'function') garantirNumerosUnicosClientes();
 
-  // 3. Orçamentos e Ordens de Serviço da empresa (Isolamento total por empresa)
+  // 3. Orçamentos e Ordens de Serviço da empresa (Isolamento seguro e preservação total)
   historico = load(K.orders, []);
-
-  // Se estiver em 'sdvidros', garante que ordens criadas para outras empresas não apareçam aqui
-  if (licAtiva.id === 'sdvidros') {
-    const ordensOutras = historico.filter(o => o.empresaId && o.empresaId !== 'sdvidros');
-    if (ordensOutras.length) {
-      ordensOutras.forEach(outra => {
-        try {
-          const kOutra = `sdv_ordens_${outra.empresaId}`;
-          const listOutra = JSON.parse(localStorage.getItem(kOutra) || '[]');
-          if (!listOutra.some(x => String(x.id) === String(outra.id))) {
-            listOutra.push(outra);
-            localStorage.setItem(kOutra, JSON.stringify(listOutra));
-          }
-        } catch(_) {}
-      });
-      historico = historico.filter(o => !o.empresaId || o.empresaId === 'sdvidros');
-      save(K.orders, historico);
-    }
-  } else {
-    // Se for outra empresa, mantém estritamente as ordens desta empresa
-    historico = historico.filter(o => !o.empresaId || o.empresaId === licAtiva.id);
+  if (Array.isArray(historico)) {
+    historico.forEach(o => {
+      if (!o.empresaId) o.empresaId = licAtiva.id;
+    });
   }
 
   // 4. Numeração de OS da empresa
@@ -11359,7 +11391,7 @@ function salvarOrdemInterna(silencioso = false, navegarParaHistorico = true) {
     renderCli();
   }
 
-  const licAtiva = (typeof obterLicencaAtiva === 'function' && obterLicencaAtiva()) ? obterLicencaAtiva() : { id: 'sdvidros', nome: 'SD Vidros' };
+  const licAtiva = (typeof obterLicencaAtiva === 'function' && obterLicencaAtiva()) ? obterLicencaAtiva() : { id: 'sdmoveis', nome: 'SD Móveis Projetados' };
 
   let ordRetorno = null;
 
@@ -11369,6 +11401,14 @@ function salvarOrdemInterna(silencioso = false, navegarParaHistorico = true) {
   const emModoEdicaoVisual = (btnCancEl && btnCancEl.style.display !== 'none') || (statusBoxEl && statusBoxEl.style.display !== 'none');
   if (editandoOsId && !emModoEdicaoVisual) {
     editandoOsId = null;
+  }
+  if (editandoOsId) {
+    const ordEmEdicao = historico.find(x => String(x.id) === String(editandoOsId));
+    const numEdicao = ordEmEdicao ? String(ordEmEdicao.numero || '').replace(/\D/g, '') : '';
+    const numAtual = String(o.numero || '').replace(/\D/g, '');
+    if (numEdicao && numAtual && numEdicao !== numAtual) {
+      editandoOsId = null;
+    }
   }
 
   if (editandoOsId) {

@@ -1,5 +1,5 @@
-// Service Worker PWA – SD Móveis Projetados v9.5.28 (Fix: Abrir PDF em tela cheia no Android + Fix assinar.html loading travado)
-const CACHE_NAME = 'sdmoveisprojetados-v9.5.28';
+// Service Worker PWA – SD Móveis Projetados v9.5.29 (Fix: O.S. salvas em chave sdmoveis, unificação de ordens, proteção de número de OS)
+const CACHE_NAME = 'sdmoveisprojetados-v9.5.29';
 const ASSETS = [
   '/',
   '/index.html',
