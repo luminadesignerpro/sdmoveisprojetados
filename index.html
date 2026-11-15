@@ -13622,6 +13622,7 @@ function fecharModalVersoesPdf(e) {
 // ══════════════════════════════════════════════
 let currentPdfBlobUrl = null;
 let currentPdfFileName = 'Orcamento.pdf';
+let currentPdfApiUrl = '';
 
 function normalizarDadosParaPdf(orig) {
   if (!orig) return {};
@@ -13679,7 +13680,18 @@ function normalizarDadosParaPdf(orig) {
 }
 
 function abrirPdfNovaAba() {
-  if (currentPdfBlobUrl) {
+  const isAndroid = /Android/i.test(navigator.userAgent);
+  if (isAndroid && currentPdfApiUrl) {
+    // Android: usa a URL da API para abrir no leitor nativo de PDF do navegador
+    try {
+      const win = window.open(currentPdfApiUrl, '_blank');
+      if (!win || win.closed || typeof win.closed === 'undefined') {
+        window.location.href = currentPdfApiUrl;
+      }
+    } catch(_) {
+      window.location.href = currentPdfApiUrl;
+    }
+  } else if (currentPdfBlobUrl) {
     const a = document.createElement('a');
     a.href = currentPdfBlobUrl;
     a.target = '_blank';
@@ -13899,6 +13911,23 @@ async function visualizarPdfOs(id, versaoNum = null) {
       fileName = `Orcamento-${(o.numero || '0001').replace('#', '')}-v${versaoNum}.pdf`;
     }
   }
+
+  // Popula currentPdfApiUrl para uso no Android Chrome (abrirPdfNovaAba)
+  try {
+    const numLimpoForApi = String(o.numero || '').replace(/\D/g, '');
+    const pdfFileId = (() => {
+      try {
+        return localStorage.getItem('sdv_pdf_id_' + numLimpoForApi)
+          || localStorage.getItem('sdv_pdf_id_' + numLimpoForApi.replace(/^0+/, ''))
+          || '';
+      } catch(_) { return ''; }
+    })();
+    const licForApi = (typeof obterLicencaAtiva === 'function') ? obterLicencaAtiva() : null;
+    const empIdForApi = (licForApi && licForApi.id) ? licForApi.id : 'sdmoveis';
+    currentPdfApiUrl = '/api/gerar-pdf-orcamento?num=' + encodeURIComponent(numLimpoForApi)
+      + '&empresa=' + encodeURIComponent(empIdForApi)
+      + (pdfFileId ? ('&p=' + encodeURIComponent(pdfFileId)) : '');
+  } catch(_) { currentPdfApiUrl = ''; }
 
   await abrirVisualizadorPdfParaDados(dadosRaw, titulo, fileName);
 }
