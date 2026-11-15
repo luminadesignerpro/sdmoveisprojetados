@@ -922,10 +922,13 @@ module.exports = async (req, res) => {
     // A. Se veio p=<fileId> direto
     if (fileId) {
       try {
-        let respNtfy = await fetch(`https://ntfy.sh/file/${fileId}`);
+        const ctrlFile = new AbortController();
+        const toFile = setTimeout(() => ctrlFile.abort(), 4000);
+        let respNtfy = await fetch(`https://ntfy.sh/file/${fileId}`, { signal: ctrlFile.signal });
         if (!respNtfy.ok) {
-          respNtfy = await fetch(`https://ntfy.sh/file/${fileId}.pdf`);
+          respNtfy = await fetch(`https://ntfy.sh/file/${fileId}.pdf`, { signal: ctrlFile.signal });
         }
+        clearTimeout(toFile);
         if (respNtfy.ok) {
           const pdfBytes = Buffer.from(await respNtfy.arrayBuffer());
           res.setHeader('Content-Type', 'application/pdf');
@@ -940,27 +943,38 @@ module.exports = async (req, res) => {
     // B. Se não veio fileId direto, busca se há PDF pré-renderizado no tópico dedicado sdm_os_<num>_pdf
     if (numBuscPre) {
       try {
-        const controllerP = new AbortController();
-        const timeoutP = setTimeout(() => controllerP.abort(), 3500);
-        const rPollP = await fetch(`https://ntfy.sh/sdm_os_${numBuscPre}_pdf/json?poll=1&since=all`, {
-          signal: controllerP.signal
-        });
-        clearTimeout(timeoutP);
-        if (rPollP.ok) {
-          const textP = await rPollP.text();
-          const linesP = textP.trim().split('\n').filter(Boolean);
-          if (linesP.length > 0) {
-            const lastP = JSON.parse(linesP[linesP.length - 1]);
-            if (lastP.attachment && lastP.attachment.url) {
-              const respDirect = await fetch(lastP.attachment.url);
-              if (respDirect.ok) {
-                const pdfBytes = Buffer.from(await respDirect.arrayBuffer());
-                res.setHeader('Content-Type', 'application/pdf');
-                res.setHeader('Content-Disposition', `inline; filename="Orcamento-${numBuscPre}.pdf"`);
-                return res.status(200).send(pdfBytes);
+        const numPuroPre = numBuscPre.replace(/^0+/, '') || numBuscPre;
+        const topicosPre = [numBuscPre];
+        if (numPuroPre !== numBuscPre) topicosPre.push(numPuroPre);
+
+        for (const tNum of topicosPre) {
+          try {
+            const controllerP = new AbortController();
+            const timeoutP = setTimeout(() => controllerP.abort(), 3000);
+            const rPollP = await fetch(`https://ntfy.sh/sdm_os_${tNum}_pdf/json?poll=1&since=all`, {
+              signal: controllerP.signal
+            });
+            clearTimeout(timeoutP);
+            if (rPollP.ok) {
+              const textP = await rPollP.text();
+              const linesP = textP.trim().split('\n').filter(Boolean);
+              if (linesP.length > 0) {
+                const lastP = JSON.parse(linesP[linesP.length - 1]);
+                if (lastP.attachment && lastP.attachment.url) {
+                  const ctrlD = new AbortController();
+                  const toD = setTimeout(() => ctrlD.abort(), 4000);
+                  const respDirect = await fetch(lastP.attachment.url, { signal: ctrlD.signal });
+                  clearTimeout(toD);
+                  if (respDirect.ok) {
+                    const pdfBytes = Buffer.from(await respDirect.arrayBuffer());
+                    res.setHeader('Content-Type', 'application/pdf');
+                    res.setHeader('Content-Disposition', `inline; filename="Orcamento-${numBuscPre}.pdf"`);
+                    return res.status(200).send(pdfBytes);
+                  }
+                }
               }
             }
-          }
+          } catch (_) {}
         }
       } catch (_) { }
     }
@@ -1169,36 +1183,36 @@ module.exports = async (req, res) => {
         const supabase = getClient();
         if (supabase && numBusc) {
           const numHash = '#' + numBusc.padStart(4, '0');
-            const { data: records } = await supabase
-              .from('contratos')
-              .select('*')
-              .or(`numero_os.eq.${numHash},numero_os.eq.${numBusc},numero_os.ilike.%${numBusc}%`)
-              .order('id', { ascending: false })
-              .limit(1);
-            const data = (records && records[0]) || null;
-            if (data) {
-              let dbDados = null;
-              if (data.dados && typeof data.dados === 'object' && Object.keys(data.dados).length) {
-                dbDados = data.dados;
-              } else if (data.texto && data.texto.includes('<!-- SDM_DADOS_OS_JSON:')) {
-                const m = data.texto.match(/<!-- SDM_DADOS_OS_JSON:([\s\S]+?)-->/);
-                if (m) {
-                  try { dbDados = JSON.parse(m[1]); } catch (_) { }
-                }
+          const { data: records } = await supabase
+            .from('contratos')
+            .select('*')
+            .or(`numero_os.eq.${numHash},numero_os.eq.${numBusc},numero_os.ilike.%${numBusc}%`)
+            .order('id', { ascending: false })
+            .limit(1);
+          const data = (records && records[0]) || null;
+          if (data) {
+            let dbDados = null;
+            if (data.dados && typeof data.dados === 'object' && Object.keys(data.dados).length) {
+              dbDados = data.dados;
+            } else if (data.texto && data.texto.includes('<!-- SDM_DADOS_OS_JSON:')) {
+              const m = data.texto.match(/<!-- SDM_DADOS_OS_JSON:([\s\S]+?)-->/);
+              if (m) {
+                try { dbDados = JSON.parse(m[1]); } catch (_) { }
               }
-              if (dbDados) {
-                if (fotosIncompletas && temFotosCompletas(dbDados.fotos)) {
-                  dados.fotos = dbDados.fotos;
-                }
-                if ((!dados.itens || !dados.itens.length) && Array.isArray(dbDados.itens) && dbDados.itens.length) {
-                  dados.itens = dbDados.itens;
-                }
-                if (!dados.ambientes || !dados.ambientes.length) {
-                  if (Array.isArray(dbDados.ambientes) && dbDados.ambientes.length) dados.ambientes = dbDados.ambientes;
-                }
+            }
+            if (dbDados) {
+              if (fotosIncompletas && temFotosCompletas(dbDados.fotos)) {
+                dados.fotos = dbDados.fotos;
+              }
+              if ((!dados.itens || !dados.itens.length) && Array.isArray(dbDados.itens) && dbDados.itens.length) {
+                dados.itens = dbDados.itens;
+              }
+              if (!dados.ambientes || !dados.ambientes.length) {
+                if (Array.isArray(dbDados.ambientes) && dbDados.ambientes.length) dados.ambientes = dbDados.ambientes;
               }
             }
           }
+        }
       } catch (e) {
         console.warn('Erro ao enriquecer dados com fotos/itens do Supabase:', e.message);
       }
@@ -1209,60 +1223,72 @@ module.exports = async (req, res) => {
     if (dados && (aindaSemFotos || !dados.itens || !dados.itens.length)) {
       try {
         if (numBusc) {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 4500);
-          const rSync = await fetch(`https://ntfy.sh/sdm_os_${numBusc}_data/json?poll=1&since=all`, {
-            signal: controller.signal
-          });
-          clearTimeout(timeoutId);
-          if (rSync.ok) {
-            const textSync = await rSync.text();
-            const lines = textSync.trim().split('\n').filter(Boolean);
-            if (lines.length > 0) {
-              const lastLine = lines[lines.length - 1];
-              let ntfyMsg = null;
-              try { ntfyMsg = JSON.parse(lastLine); } catch (_) { }
-              let ntfyData = null;
-              if (ntfyMsg) {
-                if (ntfyMsg.attachment && ntfyMsg.attachment.url) {
-                  try {
-                    const rAttach = await fetch(ntfyMsg.attachment.url);
-                    if (rAttach.ok) ntfyData = await rAttach.json();
-                  } catch (_) { }
-                }
-                if (!ntfyData && ntfyMsg.message) {
-                  try { ntfyData = JSON.parse(ntfyMsg.message); } catch (_) { }
+          const numPuro = numBusc.replace(/^0+/, '') || numBusc;
+          const topicosData = [numBusc];
+          if (numPuro !== numBusc) topicosData.push(numPuro);
+
+          for (const tNum of topicosData) {
+            try {
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), 3500);
+              const rSync = await fetch(`https://ntfy.sh/sdm_os_${tNum}_data/json?poll=1&since=all`, {
+                signal: controller.signal
+              });
+              clearTimeout(timeoutId);
+              if (rSync.ok) {
+                const textSync = await rSync.text();
+                const lines = textSync.trim().split('\n').filter(Boolean);
+                if (lines.length > 0) {
+                  const lastLine = lines[lines.length - 1];
+                  let ntfyMsg = null;
+                  try { ntfyMsg = JSON.parse(lastLine); } catch (_) { }
+                  let ntfyData = null;
+                  if (ntfyMsg) {
+                    if (ntfyMsg.attachment && ntfyMsg.attachment.url) {
+                      try {
+                        const ctrlAt = new AbortController();
+                        const toAt = setTimeout(() => ctrlAt.abort(), 3500);
+                        const rAttach = await fetch(ntfyMsg.attachment.url, { signal: ctrlAt.signal });
+                        clearTimeout(toAt);
+                        if (rAttach.ok) ntfyData = await rAttach.json();
+                      } catch (_) { }
+                    }
+                    if (!ntfyData && ntfyMsg.message) {
+                      try { ntfyData = JSON.parse(ntfyMsg.message); } catch (_) { }
+                    }
+                  }
+                  if (ntfyData) {
+                    if (aindaSemFotos && temFotosCompletas(ntfyData.fotos)) {
+                      dados.fotos = ntfyData.fotos;
+                    }
+                    if ((!dados.itens || !dados.itens.length) && Array.isArray(ntfyData.itens) && ntfyData.itens.length) {
+                      dados.itens = ntfyData.itens;
+                    }
+                    if ((!dados.ambientes || !dados.ambientes.length) && Array.isArray(ntfyData.ambientes) && ntfyData.ambientes.length) {
+                      dados.ambientes = ntfyData.ambientes;
+                    }
+                    if (!dados.valProdutos && ntfyData.valProdutos) dados.valProdutos = ntfyData.valProdutos;
+                    if (!dados.valServico && ntfyData.valServico) dados.valServico = ntfyData.valServico;
+                    if (!dados.total && ntfyData.total) dados.total = ntfyData.total;
+                    if (!dados.nome && ntfyData.nome) dados.nome = ntfyData.nome;
+                    if (!dados.numero && ntfyData.numero) dados.numero = ntfyData.numero;
+                    if (!dados.tel && ntfyData.tel) dados.tel = ntfyData.tel;
+                    if (!dados.endereco && ntfyData.endereco) dados.endereco = ntfyData.endereco;
+                    if (!dados.bairro && ntfyData.bairro) dados.bairro = ntfyData.bairro;
+                    if (!dados.cidade && ntfyData.cidade) dados.cidade = ntfyData.cidade;
+                    if (!dados.forma && ntfyData.forma) dados.forma = ntfyData.forma;
+                    if (!dados.obs && ntfyData.obs) dados.obs = ntfyData.obs;
+                    if (!dados.prazo && ntfyData.prazo) dados.prazo = ntfyData.prazo;
+                    if (!dados.garantia && ntfyData.garantia) dados.garantia = ntfyData.garantia;
+                    break;
+                  }
                 }
               }
-              if (ntfyData) {
-                if (aindaSemFotos && temFotosCompletas(ntfyData.fotos)) {
-                  dados.fotos = ntfyData.fotos;
-                }
-                if ((!dados.itens || !dados.itens.length) && Array.isArray(ntfyData.itens) && ntfyData.itens.length) {
-                  dados.itens = ntfyData.itens;
-                }
-                if ((!dados.ambientes || !dados.ambientes.length) && Array.isArray(ntfyData.ambientes) && ntfyData.ambientes.length) {
-                  dados.ambientes = ntfyData.ambientes;
-                }
-                if (!dados.valProdutos && ntfyData.valProdutos) dados.valProdutos = ntfyData.valProdutos;
-                if (!dados.valServico && ntfyData.valServico) dados.valServico = ntfyData.valServico;
-                if (!dados.total && ntfyData.total) dados.total = ntfyData.total;
-                if (!dados.nome && ntfyData.nome) dados.nome = ntfyData.nome;
-                if (!dados.numero && ntfyData.numero) dados.numero = ntfyData.numero;
-                if (!dados.tel && ntfyData.tel) dados.tel = ntfyData.tel;
-                if (!dados.endereco && ntfyData.endereco) dados.endereco = ntfyData.endereco;
-                if (!dados.bairro && ntfyData.bairro) dados.bairro = ntfyData.bairro;
-                if (!dados.cidade && ntfyData.cidade) dados.cidade = ntfyData.cidade;
-                if (!dados.forma && ntfyData.forma) dados.forma = ntfyData.forma;
-                if (!dados.obs && ntfyData.obs) dados.obs = ntfyData.obs;
-                if (!dados.prazo && ntfyData.prazo) dados.prazo = ntfyData.prazo;
-                if (!dados.garantia && ntfyData.garantia) dados.garantia = ntfyData.garantia;
-              }
-            }
+            } catch (_) {}
           }
         }
-      } catch (errSync) {
-        console.warn('Erro sync ntfy data:', errSync);
+      } catch (e) {
+        console.warn('Erro ao sincronizar dados via ntfy:', e.message);
       }
     }
     if (!dados.numero && numBusc) {
