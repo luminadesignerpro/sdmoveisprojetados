@@ -1,5 +1,5 @@
-// Service Worker PWA – SD Móveis Projetados v9.5.19 (Fix: Stale-While-Revalidate para 0ms de tela preta e cache ultrarrápido)
-const CACHE_NAME = 'sdmoveisprojetados-v9.5.19';
+// Service Worker PWA – SD Móveis Projetados v9.5.20 (Fix: Stale-While-Revalidate para 0ms de tela preta e cache ultrarrápido)
+const CACHE_NAME = 'sdmoveisprojetados-v9.5.20';
 const ASSETS = [
   '/',
   '/index.html',
@@ -63,9 +63,9 @@ self.addEventListener('fetch', (event) => {
   // 2. DOCUMENTOS & NAVEGAÇÃO HTML: Stale-While-Revalidate
   // Retorna imediatamente o HTML do cache (0ms tela preta) e atualiza em background
   const isDoc = event.request.mode === 'navigate' ||
-                event.request.destination === 'document' ||
-                url.pathname === '/' ||
-                url.pathname.endsWith('.html');
+    event.request.destination === 'document' ||
+    url.pathname === '/' ||
+    url.pathname.endsWith('.html');
 
   if (isDoc) {
     event.respondWith(

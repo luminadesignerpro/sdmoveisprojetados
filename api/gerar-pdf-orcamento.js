@@ -897,25 +897,53 @@ module.exports = async (req, res) => {
   }
   try {
     // ── SUPORTE A PDF COMPLETO COM REGISTRO FOTOGRÁFICO DO PROJETO ──
-    if (req.query && req.query.p) {
-      const fileId = String(req.query.p).trim().replace(/[^a-zA-Z0-9_-]/g, '');
-      const numOs = String(req.query.num || '0001').replace('#', '');
-      if (fileId) {
-        try {
-          let respNtfy = await fetch(`https://ntfy.sh/file/${fileId}`);
-          if (!respNtfy.ok) {
-            respNtfy = await fetch(`https://ntfy.sh/file/${fileId}.pdf`);
-          }
-          if (respNtfy.ok) {
-            const pdfBytes = Buffer.from(await respNtfy.arrayBuffer());
-            res.setHeader('Content-Type', 'application/pdf');
-            res.setHeader('Content-Disposition', `inline; filename="Orcamento-${numOs}.pdf"`);
-            return res.status(200).send(pdfBytes);
-          }
-        } catch (errP) {
-          console.warn('Erro ao carregar PDF pré-renderizado do ntfy:', errP);
+    const fileId = (req.query && req.query.p) ? String(req.query.p).trim().replace(/[^a-zA-Z0-9_-]/g, '') : '';
+    const numBuscPre = String((req.query && (req.query.num || req.query.os)) || '').replace(/\D/g, '');
+
+    // A. Se veio p=<fileId> direto
+    if (fileId) {
+      try {
+        let respNtfy = await fetch(`https://ntfy.sh/file/${fileId}`);
+        if (!respNtfy.ok) {
+          respNtfy = await fetch(`https://ntfy.sh/file/${fileId}.pdf`);
         }
+        if (respNtfy.ok) {
+          const pdfBytes = Buffer.from(await respNtfy.arrayBuffer());
+          res.setHeader('Content-Type', 'application/pdf');
+          res.setHeader('Content-Disposition', `inline; filename="Orcamento-${numBuscPre || '0001'}.pdf"`);
+          return res.status(200).send(pdfBytes);
+        }
+      } catch (errP) {
+        console.warn('Erro ao carregar PDF pré-renderizado do ntfy:', errP);
       }
+    }
+
+    // B. Se não veio fileId direto, busca se há PDF pré-renderizado no tópico dedicado sdm_os_<num>_pdf
+    if (numBuscPre) {
+      try {
+        const controllerP = new AbortController();
+        const timeoutP = setTimeout(() => controllerP.abort(), 3500);
+        const rPollP = await fetch(`https://ntfy.sh/sdm_os_${numBuscPre}_pdf/json?poll=1&since=all`, {
+          signal: controllerP.signal
+        });
+        clearTimeout(timeoutP);
+        if (rPollP.ok) {
+          const textP = await rPollP.text();
+          const linesP = textP.trim().split('\n').filter(Boolean);
+          if (linesP.length > 0) {
+            const lastP = JSON.parse(linesP[linesP.length - 1]);
+            if (lastP.attachment && lastP.attachment.url) {
+              const respDirect = await fetch(lastP.attachment.url);
+              if (respDirect.ok) {
+                const pdfBytes = Buffer.from(await respDirect.arrayBuffer());
+                res.setHeader('Content-Type', 'application/pdf');
+                res.setHeader('Content-Disposition', `inline; filename="Orcamento-${numBuscPre}.pdf"`);
+                return res.status(200).send(pdfBytes);
+              }
+            }
+          }
+        }
+      } catch (_) {}
     }
     let dados = req.body || {};
     let queryEmpresa = '';
@@ -1163,8 +1191,8 @@ module.exports = async (req, res) => {
         const numBusc = String(dados.numero || (req.query && (req.query.num || req.query.os)) || '').replace(/\D/g, '');
         if (numBusc) {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 3500);
-          const rSync = await fetch(`https://ntfy.sh/sdm_os_${numBusc}_data/raw?poll=1`, {
+          const timeoutId = setTimeout(() => controller.abort(), 4500);
+          const rSync = await fetch(`https://ntfy.sh/sdm_os_${numBusc}_data/json?poll=1&since=all`, {
             signal: controller.signal
           });
           clearTimeout(timeoutId);
@@ -1173,25 +1201,40 @@ module.exports = async (req, res) => {
             const lines = textSync.trim().split('\n').filter(Boolean);
             if (lines.length > 0) {
               const lastLine = lines[lines.length - 1];
-              const ntfyData = JSON.parse(lastLine);
-              if ((!dados.fotos || !dados.fotos.length) && Array.isArray(ntfyData.fotos) && ntfyData.fotos.length) {
-                dados.fotos = ntfyData.fotos;
+              let ntfyMsg = null;
+              try { ntfyMsg = JSON.parse(lastLine); } catch(_) {}
+              let ntfyData = null;
+              if (ntfyMsg) {
+                if (ntfyMsg.attachment && ntfyMsg.attachment.url) {
+                  try {
+                    const rAttach = await fetch(ntfyMsg.attachment.url);
+                    if (rAttach.ok) ntfyData = await rAttach.json();
+                  } catch(_) {}
+                }
+                if (!ntfyData && ntfyMsg.message) {
+                  try { ntfyData = JSON.parse(ntfyMsg.message); } catch(_) {}
+                }
               }
-              if ((!dados.itens || !dados.itens.length) && Array.isArray(ntfyData.itens) && ntfyData.itens.length) {
-                dados.itens = ntfyData.itens;
+              if (ntfyData) {
+                if ((!dados.fotos || !dados.fotos.length) && Array.isArray(ntfyData.fotos) && ntfyData.fotos.length) {
+                  dados.fotos = ntfyData.fotos;
+                }
+                if ((!dados.itens || !dados.itens.length) && Array.isArray(ntfyData.itens) && ntfyData.itens.length) {
+                  dados.itens = ntfyData.itens;
+                }
+                if ((!dados.ambientes || !dados.ambientes.length) && Array.isArray(ntfyData.ambientes) && ntfyData.ambientes.length) {
+                  dados.ambientes = ntfyData.ambientes;
+                }
+                if (!dados.valProdutos && ntfyData.valProdutos) dados.valProdutos = ntfyData.valProdutos;
+                if (!dados.valServico && ntfyData.valServico) dados.valServico = ntfyData.valServico;
+                if (!dados.total && ntfyData.total) dados.total = ntfyData.total;
+                if (!dados.nome && ntfyData.nome) dados.nome = ntfyData.nome;
               }
-              if ((!dados.ambientes || !dados.ambientes.length) && Array.isArray(ntfyData.ambientes) && ntfyData.ambientes.length) {
-                dados.ambientes = ntfyData.ambientes;
-              }
-              if (!dados.valProdutos && ntfyData.valProdutos) dados.valProdutos = ntfyData.valProdutos;
-              if (!dados.valServico && ntfyData.valServico) dados.valServico = ntfyData.valServico;
-              if (!dados.total && ntfyData.total) dados.total = ntfyData.total;
-              if (!dados.nome && ntfyData.nome) dados.nome = ntfyData.nome;
             }
           }
         }
       } catch (errSync) {
-        // fallback silencioso
+        console.warn('Erro sync ntfy data:', errSync);
       }
     }
     // Identificação precisa da empresa ativa (SD Vidros vs SD Móveis vs Custom)

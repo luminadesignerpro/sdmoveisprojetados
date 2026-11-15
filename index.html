@@ -18,7 +18,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js?v=9.5.19').then(r => { r.update(); })
+        navigator.serviceWorker.register('/sw.js?v=9.5.20').then(r => { r.update(); })
           .then(function(reg){ console.log('SW registrado com sucesso:', reg.scope); })
           .catch(function(err){ console.warn('Erro ao registrar SW:', err); });
       });
@@ -21994,10 +21994,11 @@ async function enviarOrcamentoParaAssinaturaDigital() {
         fotos: fotosComprimidasParaSync
       };
 
-      fetch(`https://ntfy.sh/sdm_os_${numOsLimpo}_data`, {
+      await fetch(`https://ntfy.sh/sdm_os_${numOsLimpo}_data`, {
         method: 'POST',
         body: JSON.stringify(syncPayload),
-        headers: { 'Title': `OS_${numOsLimpo}_DATA` }
+        headers: { 'Title': `OS_${numOsLimpo}_DATA`, 'Filename': `os_${numOsLimpo}_data.json` },
+        keepalive: true
       }).catch(e => console.warn('Sync ntfy data warning:', e));
     } catch (errSyncDados) {
       console.warn('Erro ao preparar sincronização autônoma de dados:', errSyncDados);
@@ -22009,10 +22010,11 @@ async function enviarOrcamentoParaAssinaturaDigital() {
       if (typeof gerarPdfOrcamentoDoc === 'function') {
         const pdfBlobCompleto = await gerarPdfOrcamentoDoc(d);
         if (pdfBlobCompleto) {
-          const resNtfy = await fetch(`https://ntfy.sh/sdm_pdf_${numOsLimpo}_${Date.now()}`, {
+          const resNtfy = await fetch(`https://ntfy.sh/sdm_os_${numOsLimpo}_pdf`, {
             method: 'POST',
             body: pdfBlobCompleto,
-            headers: { 'Filename': `Orcamento-${numOsLimpo}.pdf` }
+            headers: { 'Filename': `Orcamento-${numOsLimpo}.pdf` },
+            keepalive: true
           });
           if (resNtfy.ok) {
             const dataNtfy = await resNtfy.json().catch(() => ({}));

@@ -2828,7 +2828,7 @@ window.selecionarPagamento = function(metodo) {
     const btn = document.querySelector('button[onclick="baixarPdfOsComercial()"]');
     const txtOrig = btn ? btn.innerHTML : '';
     if (btn) {
-      btn.innerHTML = '⏳ Preparando PDF com Fotos...';
+      btn.innerHTML = '⏳ Abrindo PDF da O.S....';
     }
 
     // 1. TENTA PRIMEIRO RESGATAR DADOS COMPLETOS E FOTOS DO STORAGE LOCAL DESTE DISPOSITIVO
@@ -2836,8 +2836,8 @@ window.selecionarPagamento = function(metodo) {
       let ordStorage = null;
       let fotosStorage = [];
 
-      // Verifica histórico local
-      const histStr = localStorage.getItem('sdv_orders') || localStorage.getItem('sdm_orders');
+      // Verifica histórico local (sdv_ordens é a chave oficial salva pelo app)
+      const histStr = localStorage.getItem('sdv_ordens') || localStorage.getItem('sdv_orders') || localStorage.getItem('sdm_orders');
       if (histStr) {
         try {
           const histArr = JSON.parse(histStr);
@@ -2857,13 +2857,15 @@ window.selecionarPagamento = function(metodo) {
         } catch(_) {}
       }
 
-      if (ordStorage && ordStorage.dados) {
+      const dadosBase = (ordStorage && ordStorage.dados) ? ordStorage.dados : ((contratoCache && contratoCache.dados) ? contratoCache.dados : null);
+
+      if (dadosBase) {
         const dadosCompletos = {
-          ...ordStorage.dados,
-          numero: ordStorage.numero || ('#' + numLimpo),
-          nome: ordStorage.nome || ordStorage.dados.nome,
-          total: ordStorage.total || ordStorage.dados.total,
-          fotos: (fotosStorage && fotosStorage.length) ? fotosStorage : (ordStorage.dados.fotos || ordStorage.fotos || [])
+          ...dadosBase,
+          numero: (ordStorage && ordStorage.numero) || dadosBase.n || dadosBase.numero || ('#' + numLimpo),
+          nome: (ordStorage && ordStorage.nome) || dadosBase.c || dadosBase.nome || (contratoCache && contratoCache.cliente_nome) || '',
+          total: (ordStorage && ordStorage.total) || dadosBase.v || dadosBase.total || '',
+          fotos: (fotosStorage && fotosStorage.length) ? fotosStorage : (dadosBase.fotos || (ordStorage && ordStorage.fotos) || [])
         };
 
         const respPdf = await fetch('/api/gerar-pdf-orcamento?empresa=' + encodeURIComponent(empParam), {
@@ -2875,16 +2877,12 @@ window.selecionarPagamento = function(metodo) {
         if (respPdf.ok) {
           const blob = await respPdf.blob();
           const blobUrl = URL.createObjectURL(blob);
-          const linkDownload = document.createElement('a');
-          linkDownload.href = blobUrl;
-          linkDownload.download = `Orcamento-${numLimpo || '0001'}.pdf`;
-          linkDownload.target = '_blank';
-          document.body.appendChild(linkDownload);
-          linkDownload.click();
-          setTimeout(() => {
-            try { document.body.removeChild(linkDownload); URL.revokeObjectURL(blobUrl); } catch(_) {}
-            if (btn) btn.innerHTML = txtOrig;
-          }, 3000);
+          // Abre o PDF diretamente na tela em nova aba (ou mesma aba), exatamente como a segunda imagem
+          const win = window.open(blobUrl, '_blank');
+          if (!win || win.closed || typeof win.closed === 'undefined') {
+            window.location.href = blobUrl;
+          }
+          if (btn) btn.innerHTML = txtOrig;
           return;
         }
       }
@@ -3343,7 +3341,8 @@ WhatsApp: ${d.tel || d.t || '_________________________________'}`;
           cliente_nome: parsed.c || parsed.cliente_nome || 'Cliente',
           cliente_tel: parsed.t || parsed.cliente_tel || '',
           texto: textoFinal,
-          assinado: false
+          assinado: false,
+          dados: parsed
         };
         renderizarProposta(data);
         return;
