@@ -1159,16 +1159,16 @@ module.exports = async (req, res) => {
     }
 
 
+    const numBusc = String((dados && dados.numero) || (req.query && (req.query.num || req.query.os)) || '').replace(/\D/g, '');
+
     // Enriquecimento automático via Supabase caso fotos ou itens estejam ausentes
     const fotosIncompletas = !temFotosCompletas(dados.fotos);
     if (dados && (fotosIncompletas || !dados.itens || !dados.itens.length)) {
       try {
         const { getClient } = require('./_supabase');
         const supabase = getClient();
-        if (supabase) {
-          const numBusc = String(dados.numero || (req.query && (req.query.num || req.query.os)) || '').replace(/\D/g, '');
-          if (numBusc) {
-            const numHash = '#' + numBusc.padStart(4, '0');
+        if (supabase && numBusc) {
+          const numHash = '#' + numBusc.padStart(4, '0');
             const { data: records } = await supabase
               .from('contratos')
               .select('*')
@@ -1199,7 +1199,6 @@ module.exports = async (req, res) => {
               }
             }
           }
-        }
       } catch (e) {
         console.warn('Erro ao enriquecer dados com fotos/itens do Supabase:', e.message);
       }
@@ -1209,7 +1208,6 @@ module.exports = async (req, res) => {
     const aindaSemFotos = !temFotosCompletas(dados.fotos);
     if (dados && (aindaSemFotos || !dados.itens || !dados.itens.length)) {
       try {
-        const numBusc = String(dados.numero || (req.query && (req.query.num || req.query.os)) || '').replace(/\D/g, '');
         if (numBusc) {
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 4500);
