@@ -14385,38 +14385,58 @@ function abrirModalAssinaturaOs(id, versaoNum = null) {
   modal.style.zIndex = '99999';
   modal.style.display = 'flex';
 
-  // Buscar assinatura em segundo plano no Supabase se ainda não tiver imagem de rubrica
+  // Buscar assinatura em segundo plano via Supabase e NTFY se ainda não tiver imagem de rubrica
   if (!rubricaImg) {
+    const aplicarRubricaCarregada = (rubricaBase64, nomeAss) => {
+      if (!rubricaBase64) return;
+      o.assinatura_base64 = rubricaBase64;
+      o.rubrica_base64 = rubricaBase64;
+      if (v) v.assinatura_base64 = rubricaBase64;
+      const area = document.getElementById('area-rubrica-exibicao');
+      if (area) {
+        area.innerHTML = `
+          <div style="background:#ffffff; border-radius:12px; padding:14px; text-align:center; border:2px dashed rgba(201,168,76,0.7); box-shadow:0 6px 20px rgba(0,0,0,0.4);">
+            <div style="display:inline-block; max-width:100%; min-height:80px;">
+              <img id="img-rubrica-preview" src="${rubricaBase64}" style="max-height:130px; max-width:100%; object-fit:contain; filter:contrast(1.15);" alt="Assinatura Digital do Cliente" />
+            </div>
+            <div style="border-top:1px solid #e2e8f0; margin-top:8px; padding-top:6px; font-size:11px; color:#475569; font-weight:600;">
+              ✍️ ${esc(nomeAss || nomeAssinante)} • Assinatura Capturada Digitalmente
+            </div>
+          </div>
+        `;
+      }
+      try {
+        const regAtualizado = {
+          nome: nomeAss || nomeAssinante,
+          rubrica: rubricaBase64,
+          data: o.assinado_em || new Date().toISOString(),
+          os: o.numero
+        };
+        localStorage.setItem('sdv_assinatura_' + numLimpo, JSON.stringify(regAtualizado));
+        salvarHistorico();
+      } catch (e) {}
+    };
+
     fetch(`/api/contrato?os=${encodeURIComponent(numLimpo)}`)
       .then(r => r.json())
       .then(d => {
-        if (d && d.assinatura_base64) {
-          o.assinatura_base64 = d.assinatura_base64;
-          o.rubrica_base64 = d.assinatura_base64;
-          if (v) v.assinatura_base64 = d.assinatura_base64;
-          const area = document.getElementById('area-rubrica-exibicao');
-          if (area) {
-            area.innerHTML = `
-              <div style="background:#ffffff; border-radius:12px; padding:14px; text-align:center; border:2px dashed rgba(201,168,76,0.7); box-shadow:0 6px 20px rgba(0,0,0,0.4);">
-                <div style="display:inline-block; max-width:100%; min-height:80px;">
-                  <img id="img-rubrica-preview" src="${d.assinatura_base64}" style="max-height:130px; max-width:100%; object-fit:contain; filter:contrast(1.15);" alt="Assinatura Digital do Cliente" />
-                </div>
-                <div style="border-top:1px solid #e2e8f0; margin-top:8px; padding-top:6px; font-size:11px; color:#475569; font-weight:600;">
-                  ✍️ ${esc(d.assinante_nome || nomeAssinante)} • Assinatura Capturada Digitalmente
-                </div>
-              </div>
-            `;
-          }
+        if (d && d.assinatura_base64) aplicarRubricaCarregada(d.assinatura_base64, d.assinante_nome);
+      })
+      .catch(() => {});
+
+    fetch(`https://ntfy.sh/sdm_os_${numLimpo}_sig/json?poll=1&since=all`)
+      .then(r => r.text())
+      .then(txt => {
+        if (!txt) return;
+        const lines = txt.split('\n').filter(Boolean);
+        for (let l of lines) {
           try {
-            const regAtualizado = {
-              nome: d.assinante_nome || nomeAssinante,
-              rubrica: d.assinatura_base64,
-              data: d.assinado_em || o.assinado_em,
-              os: o.numero
-            };
-            localStorage.setItem('sdv_assinatura_' + numLimpo, JSON.stringify(regAtualizado));
-            salvarHistorico();
-          } catch (e) {}
+            const item = JSON.parse(l);
+            if (item.message && item.message.startsWith('data:image')) {
+              aplicarRubricaCarregada(item.message, nomeAssinante);
+              break;
+            }
+          } catch (_) {}
         }
       })
       .catch(() => {});
@@ -22313,7 +22333,7 @@ function conectarRealtimeAprovacoes() {
         if (item.event === 'message' && item.message) {
           const dados = JSON.parse(item.message);
           if (dados.numero_os) {
-            aplicarAprovacaoOs(dados.numero_os, dados.cliente || dados.assinante_nome || 'Confirmado via WhatsApp');
+            aplicarAprovacaoOs(dados.numero_os, dados.cliente || dados.assinante_nome || 'Confirmado via WhatsApp', dados.assinatura_base64 || '');
           }
         }
       } catch (_) {}
@@ -22333,9 +22353,13 @@ function aplicarAprovacaoOs(numeroOs, assinante = 'Confirmado via WhatsApp', ass
   const numLimpo = String(numeroOs || '').replace(/\D/g, '');
   const idx = historico.findIndex(o => norm(o.numero) === target);
   if (idx !== -1) {
+    const jaAprovado = (historico[idx].status === 'aprovado');
     historico[idx].status = 'aprovado';
     historico[idx].assinado_por = assinante;
     historico[idx].assinado_em = new Date().toISOString();
+    if (typeof sincronizarProdutosAprovadosParaPedidosMaterial === 'function') {
+      sincronizarProdutosAprovadosParaPedidosMaterial(historico[idx]);
+    }
     if (assinaturaBase64) {
       historico[idx].assinatura_digital = {
         nome: assinante,
@@ -22352,6 +22376,9 @@ function aplicarAprovacaoOs(numeroOs, assinante = 'Confirmado via WhatsApp', ass
     }
     save(K.orders, historico);
     renderHist();
+    if (!jaAprovado) {
+      mostrarToastAprovacao('🎉 Ordem ' + target + ' aprovada e assinada por ' + assinante + '!');
+    }
   }
 }
 
@@ -22441,11 +22468,11 @@ function sincronizarStatusContratos() {
             return;
           }
 
-          // 🛡️ VALIDAÇÃO DE DATA: O contrato no servidor não pode ser anterior à criação da O.S.
+          // 🛡️ VALIDAÇÃO DE DATA: Só ignora se for contrato com data muito anterior à criação da O.S. (mais de 48h antes)
           if (c.assinado_em) {
             const tAss = new Date(c.assinado_em).getTime();
             const tOrd = historico[idx].id ? Number(historico[idx].id) : 0;
-            if (tOrd > 0 && tAss < (tOrd - 120000)) {
+            if (tOrd > 0 && !isNaN(tAss) && tAss < (tOrd - 86400000 * 2)) {
               return; // Contrato antigo de meses atrás -> IGNORAR!
             }
           }

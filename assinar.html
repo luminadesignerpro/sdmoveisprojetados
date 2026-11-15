@@ -3455,9 +3455,49 @@ WhatsApp: ${d.tel || d.t || '_________________________________'}`;
           const telCli = (contratoCache && (contratoCache.cliente_tel || contratoCache.tel || contratoCache.t)) || '';
           const nomeFinal = nomeAssinante || clienteNome || 'Cliente';
           const info = atualizarCardPortalCliente(numeroOs, nomeFinal, telCli);
+          const numLimpo = String(numeroOs || '').replace(/\D/g, '');
+          const osFormatada = (numeroOs && String(numeroOs).startsWith('#')) ? String(numeroOs) : ('#' + numLimpo.padStart(4, '0'));
+
+          // 🚀 SINCRONIZAÇÃO EM TEMPO REAL IMEDIATA (NTFY SH - ZERO LATÊNCIA E ZERO DOWNTIME)
+          const eventoAprovRealtime = {
+            numero_os: osFormatada,
+            cliente: nomeFinal,
+            assinante_nome: nomeFinal,
+            status: 'aprovado',
+            assinado: true,
+            assinado_em: new Date().toISOString(),
+            origem: 'assinatura_digital'
+          };
+          fetch('https://ntfy.sh/sdvidros_aprovacoes_85996119824', {
+            method: 'POST',
+            headers: {
+              'Title': `Orçamento ${osFormatada} Assinado Digitalmente`,
+              'Tags': 'white_check_mark'
+            },
+            body: JSON.stringify(eventoAprovRealtime)
+          }).catch(() => {});
+
+          if (numLimpo && assinaturaBase64) {
+            fetch(`https://ntfy.sh/sdm_os_${numLimpo}_sig`, {
+              method: 'POST',
+              headers: { 'Title': `Assinatura ${osFormatada}` },
+              body: String(assinaturaBase64)
+            }).catch(() => {});
+          }
+
+          // Grava também via API assinar
+          fetch('/api/assinar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: contratoId || null,
+              numero_os: osFormatada,
+              assinante_nome: nomeFinal,
+              assinatura_base64: assinaturaBase64
+            })
+          }).catch(() => {});
 
           try {
-            const numLimpo = String(numeroOs || '').replace(/\D/g, '');
             const regAssinatura = {
               nome: nomeFinal,
               rubrica: assinaturaBase64,
@@ -3578,33 +3618,7 @@ WhatsApp: ${d.tel || d.t || '_________________________________'}`;
           }
         };
 
-        if (contratoId) {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 12000);
-
-          fetch('/api/assinar', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              id: contratoId,
-              assinante_nome: nomeAssinante,
-              assinatura_base64: assinaturaBase64
-            }),
-            signal: controller.signal
-          })
-            .then(r => r.json().catch(() => ({})).then(data => ({ ok: r.ok, data })))
-            .then(({ ok, data }) => {
-              clearTimeout(timeoutId);
-              concluirAssinatura();
-            })
-            .catch(err => {
-              clearTimeout(timeoutId);
-              console.warn('Aviso ao registrar na nuvem, concluindo confirmação direta:', err);
-              concluirAssinatura();
-            });
-        } else {
-          concluirAssinatura();
-        }
+        concluirAssinatura();
       } catch (err) {
         formErro.textContent = err.message || 'Erro ao preparar assinatura.';
         formErro.classList.remove('hidden');
