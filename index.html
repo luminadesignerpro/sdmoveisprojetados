@@ -14336,10 +14336,11 @@ function abrirModalAssinaturaOs(id, versaoNum = null) {
         `}
         </div>
 
+        ${!statusAprovado ? `
         <!-- Botões de ação rápida para desenhar ou reenviar -->
         <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
           <button type="button" class="btn btn-sm" onclick="alternarDesenhoAssinaturaModal(${o.id}, ${versaoNum || 'null'})" style="flex:1; background:rgba(201,168,76,0.18); border:1px solid rgba(201,168,76,0.5); color:var(--gold-light); font-weight:700; font-size:11.5px; padding:7px 10px; border-radius:8px;">
-            ✍️ ${rubricaImg ? 'Redesenhar com o Dedo' : 'Desenhar Rubrica com o Dedo'}
+            ✍️ Desenhar Rubrica com o Dedo
           </button>
           <button type="button" class="btn btn-sm" onclick="enviarLinkAssinarComDedo(${o.id})" style="flex:1; background:rgba(37,211,102,0.18); border:1px solid rgba(37,211,102,0.5); color:#4ade80; font-weight:700; font-size:11.5px; padding:7px 10px; border-radius:8px;">
             📱 Link p/ Cliente Assinar
@@ -14364,6 +14365,11 @@ function abrirModalAssinaturaOs(id, versaoNum = null) {
             </button>
           </div>
         </div>
+        ` : `
+        <div style="background:rgba(37,211,102,0.12); border:1.5px solid rgba(74,222,128,0.35); border-radius:10px; padding:10px 14px; text-align:center; color:#4ade80; font-size:12px; font-weight:800; margin-top:10px; display:flex; align-items:center; justify-content:center; gap:8px;">
+          <span>🔒</span> Documento Oficial Assinado • Bloqueado para Novas Assinaturas
+        </div>
+        `}
       </div>
 
       <div style="margin-top:14px; background:rgba(0,0,0,0.3); border-radius:8px; padding:8px 12px; font-size:11px; color:var(--muted); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">
@@ -14432,7 +14438,17 @@ function abrirModalAssinaturaOs(id, versaoNum = null) {
         for (let l of lines) {
           try {
             const item = JSON.parse(l);
-            if (item.message && item.message.startsWith('data:image')) {
+            const attUrl = (item.attachment && item.attachment.url) ? item.attachment.url : (item.id ? `https://ntfy.sh/file/${item.id}.txt` : '');
+            if (attUrl) {
+              fetch(attUrl)
+                .then(r => r.text())
+                .then(imgStr => {
+                  if (imgStr && imgStr.startsWith('data:image')) {
+                    aplicarRubricaCarregada(imgStr, nomeAssinante);
+                  }
+                }).catch(() => {});
+              break;
+            } else if (item.message && item.message.startsWith('data:image')) {
               aplicarRubricaCarregada(item.message, nomeAssinante);
               break;
             }
@@ -22333,7 +22349,7 @@ function conectarRealtimeAprovacoes() {
         if (item.event === 'message' && item.message) {
           const dados = JSON.parse(item.message);
           if (dados.numero_os) {
-            aplicarAprovacaoOs(dados.numero_os, dados.cliente || dados.assinante_nome || 'Confirmado via WhatsApp', dados.assinatura_base64 || '');
+            aplicarAprovacaoOs(dados.numero_os, dados.cliente || dados.assinante_nome || 'Confirmado via WhatsApp', dados.assinatura_base64 || '', dados.rubrica_url || '');
           }
         }
       } catch (_) {}
@@ -22347,7 +22363,7 @@ function conectarRealtimeAprovacoes() {
   }
 }
 
-function aplicarAprovacaoOs(numeroOs, assinante = 'Confirmado via WhatsApp', assinaturaBase64 = '') {
+function aplicarAprovacaoOs(numeroOs, assinante = 'Confirmado via WhatsApp', assinaturaBase64 = '', rubricaUrl = '') {
   const norm = s => '#' + String(s || '').replace(/\D/g, '').padStart(4, '0');
   const target = norm(numeroOs);
   const numLimpo = String(numeroOs || '').replace(/\D/g, '');
@@ -22360,20 +22376,57 @@ function aplicarAprovacaoOs(numeroOs, assinante = 'Confirmado via WhatsApp', ass
     if (typeof sincronizarProdutosAprovadosParaPedidosMaterial === 'function') {
       sincronizarProdutosAprovadosParaPedidosMaterial(historico[idx]);
     }
+    const salvarRubrica = (imgData) => {
+      const curIdx = historico.findIndex(o => norm(o.numero) === target);
+      if (curIdx !== -1) {
+        historico[curIdx].assinatura_digital = {
+          nome: assinante,
+          rubrica: imgData,
+          data: new Date().toISOString(),
+          os: target
+        };
+        try {
+          localStorage.setItem('sdv_assinatura_' + numLimpo, JSON.stringify(historico[curIdx].assinatura_digital));
+          const mapa = JSON.parse(localStorage.getItem('sdv_assinaturas_map') || '{}');
+          mapa[numLimpo] = historico[curIdx].assinatura_digital;
+          localStorage.setItem('sdv_assinaturas_map', JSON.stringify(mapa));
+        } catch(_) {}
+        save(K.orders, historico);
+        renderHist();
+      }
+    };
+
     if (assinaturaBase64) {
-      historico[idx].assinatura_digital = {
-        nome: assinante,
-        rubrica: assinaturaBase64,
-        data: new Date().toISOString(),
-        os: target
-      };
-      try {
-        localStorage.setItem('sdv_assinatura_' + numLimpo, JSON.stringify(historico[idx].assinatura_digital));
-        const mapa = JSON.parse(localStorage.getItem('sdv_assinaturas_map') || '{}');
-        mapa[numLimpo] = historico[idx].assinatura_digital;
-        localStorage.setItem('sdv_assinaturas_map', JSON.stringify(mapa));
-      } catch(_) {}
+      salvarRubrica(assinaturaBase64);
+    } else if (rubricaUrl) {
+      fetch(rubricaUrl)
+        .then(r => r.text())
+        .then(imgStr => { if (imgStr && imgStr.startsWith('data:image')) salvarRubrica(imgStr); })
+        .catch(() => {});
+    } else {
+      fetch(`https://ntfy.sh/sdm_os_${numLimpo}_sig/json?poll=1&since=all`)
+        .then(r => r.text())
+        .then(txt => {
+          if (!txt) return;
+          const lines = txt.split('\n').filter(Boolean);
+          for (let l of lines) {
+            try {
+              const item = JSON.parse(l);
+              const attUrl = (item.attachment && item.attachment.url) ? item.attachment.url : (item.id ? `https://ntfy.sh/file/${item.id}.txt` : '');
+              if (attUrl) {
+                fetch(attUrl).then(r => r.text()).then(imgData => {
+                  if (imgData && imgData.startsWith('data:image')) salvarRubrica(imgData);
+                }).catch(() => {});
+                break;
+              } else if (item.message && item.message.startsWith('data:image')) {
+                salvarRubrica(item.message);
+                break;
+              }
+            } catch (_) {}
+          }
+        }).catch(() => {});
     }
+
     save(K.orders, historico);
     renderHist();
     if (!jaAprovado) {
@@ -22485,17 +22538,53 @@ function sincronizarStatusContratos() {
             if (typeof sincronizarProdutosAprovadosParaPedidosMaterial === 'function') {
               sincronizarProdutosAprovadosParaPedidosMaterial(historico[idx]);
             }
+            const nLimpo = String(c.numero_os).replace(/\D/g, '');
+            const aplicarRubricaSync = (imgData) => {
+              const curIdx = historico.findIndex(o => norm(o.numero) === normC);
+              if (curIdx !== -1) {
+                historico[curIdx].assinatura_digital = {
+                  nome: c.assinante_nome || c.cliente || 'Cliente',
+                  rubrica: imgData,
+                  data: c.assinado_em || new Date().toISOString(),
+                  os: c.numero_os
+                };
+                try {
+                  localStorage.setItem('sdv_assinatura_' + nLimpo, JSON.stringify(historico[curIdx].assinatura_digital));
+                } catch(_) {}
+                save(K.orders, historico);
+                renderHist();
+              }
+            };
+
             if (c.assinatura_base64) {
-              historico[idx].assinatura_digital = {
-                nome: c.assinante_nome || c.cliente || 'Cliente',
-                rubrica: c.assinatura_base64,
-                data: c.assinado_em || new Date().toISOString(),
-                os: c.numero_os
-              };
-              const nLimpo = String(c.numero_os).replace(/\D/g, '');
-              try {
-                localStorage.setItem('sdv_assinatura_' + nLimpo, JSON.stringify(historico[idx].assinatura_digital));
-              } catch(e) {}
+              aplicarRubricaSync(c.assinatura_base64);
+            } else if (c.rubrica_url) {
+              fetch(c.rubrica_url)
+                .then(r => r.text())
+                .then(imgStr => { if (imgStr && imgStr.startsWith('data:image')) aplicarRubricaSync(imgStr); })
+                .catch(() => {});
+            } else if (!jaTinhaRubrica) {
+              fetch(`https://ntfy.sh/sdm_os_${nLimpo}_sig/json?poll=1&since=all`)
+                .then(r => r.text())
+                .then(txt => {
+                  if (!txt) return;
+                  const lines = txt.split('\n').filter(Boolean);
+                  for (let l of lines) {
+                    try {
+                      const item = JSON.parse(l);
+                      const attUrl = (item.attachment && item.attachment.url) ? item.attachment.url : (item.id ? `https://ntfy.sh/file/${item.id}.txt` : '');
+                      if (attUrl) {
+                        fetch(attUrl).then(r => r.text()).then(imgData => {
+                          if (imgData && imgData.startsWith('data:image')) aplicarRubricaSync(imgData);
+                        }).catch(() => {});
+                        break;
+                      } else if (item.message && item.message.startsWith('data:image')) {
+                        aplicarRubricaSync(item.message);
+                        break;
+                      }
+                    } catch (_) {}
+                  }
+                }).catch(() => {});
             }
             alterou = true;
           }

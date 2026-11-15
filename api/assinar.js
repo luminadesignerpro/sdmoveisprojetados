@@ -38,7 +38,29 @@ module.exports = async (req, res) => {
       origem: 'api_assinar'
     };
 
-    // 1. Grava no barramento de tempo real ntfy (sempre online, zero downtime)
+    let rubricaUrl = '';
+    // 1. Grava a rubrica em tópico específico da OS se fornecida e captura URL do arquivo
+    if (numLimpo && assinatura_base64) {
+      try {
+        const rSig = await fetch(`https://ntfy.sh/sdm_os_${numLimpo}_sig`, {
+          method: 'POST',
+          headers: { 'Title': `Assinatura ${numOs}` },
+          body: String(assinatura_base64)
+        });
+        const sigData = await rSig.json().catch(() => ({}));
+        if (sigData && sigData.attachment && sigData.attachment.url) {
+          rubricaUrl = sigData.attachment.url;
+        } else if (sigData && sigData.id) {
+          rubricaUrl = `https://ntfy.sh/file/${sigData.id}.txt`;
+        }
+      } catch (_) {}
+    }
+
+    if (rubricaUrl) {
+      eventoAprovacao.rubrica_url = rubricaUrl;
+    }
+
+    // 2. Grava no barramento de tempo real ntfy (sempre online, zero downtime)
     let ntfyOk = false;
     try {
       const rPub = await fetch(`https://ntfy.sh/${NTFY_TOPIC}`, {
@@ -49,17 +71,6 @@ module.exports = async (req, res) => {
       ntfyOk = rPub.ok;
     } catch (ntfyErr) {
       console.warn('Aviso ntfy pub:', ntfyErr.message);
-    }
-
-    // Grava também a rubrica em tópico específico da OS se fornecida
-    if (numLimpo && assinatura_base64) {
-      try {
-        await fetch(`https://ntfy.sh/sdm_os_${numLimpo}_sig`, {
-          method: 'POST',
-          headers: { 'Title': `Assinatura ${numOs}` },
-          body: String(assinatura_base64)
-        });
-      } catch (_) {}
     }
 
     // 2. Grava no Supabase caso configurado (não bloqueia se Supabase estiver offline ou pausado)

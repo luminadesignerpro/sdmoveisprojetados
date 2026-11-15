@@ -32,6 +32,7 @@ module.exports = async (req, res) => {
                 assinado: true,
                 assinante_nome: dados.assinante_nome || dados.cliente || 'Confirmado via WhatsApp',
                 assinado_em: dados.assinado_em || (item.time ? new Date(item.time * 1000).toISOString() : new Date().toISOString()),
+                rubrica_url: dados.rubrica_url || '',
                 texto: `Orçamento ${dados.numero_os} aprovado via WhatsApp.`
               });
             }
