@@ -8081,18 +8081,56 @@ function load(k, d=[]) {
     if (k === K.orders) {
       // 🛡️ Recuperação inteligente e unificada de ordens de serviço
       // Busca ordens em TODAS as chaves do localStorage que contenham ordens (incluindo chaves dinâmicas de empresa)
-      const chavesOrdens = new Set([key, 'sdv_ordens_sdmoveis', 'sdv_ordens', 'sdv_ordens_sdvidros', 'sdm_orders', 'sdv_orders']);
+
+      // 🔒 Carrega blacklist de excluídas para nunca ressuscitar O.S. deletadas
+      let blExcluidas = [];
+      try {
+        const blRaw = localStorage.getItem('sdv_ordens_excluidas');
+        if (blRaw) blExcluidas = JSON.parse(blRaw) || [];
+      } catch(_) {}
+
+      // 🔑 PRIORIDADE: lê a chave principal da empresa PRIMEIRO
+      let ordensChavePrincipal = [];
+      try {
+        if (val) {
+          const arrPrinc = JSON.parse(val);
+          if (Array.isArray(arrPrinc)) ordensChavePrincipal = arrPrinc;
+        }
+      } catch(_) {}
+
+      const chavesOrdens = new Set(['sdv_ordens_sdmoveis', 'sdv_ordens', 'sdv_ordens_sdvidros', 'sdm_orders', 'sdv_orders']);
+      // Remove a chave principal do set - já foi lida com prioridade
+      chavesOrdens.delete(key);
       // Varre TODAS as chaves do localStorage para achar qualquer chave sdv_ordens_* dinamicamente
       try {
         for (let i = 0; i < localStorage.length; i++) {
           const lk = localStorage.key(i);
-          if (lk && (lk.startsWith('sdv_ordens') || lk.startsWith('sdm_orders') || lk === 'sdv_orders')) {
+          if (lk && lk !== key && (lk.startsWith('sdv_ordens') || lk.startsWith('sdm_orders') || lk === 'sdv_orders')) {
             chavesOrdens.add(lk);
           }
         }
       } catch(_) {}
+
       const mapaOrdens = new Map();
 
+      // Helper para verificar se uma O.S. está na blacklist
+      const estaExcluida = (ord) => {
+        if (!blExcluidas.length) return false;
+        const nPuro = String(ord.numero || ord.id || '').replace(/\D/g, '');
+        const idStr = String(ord.id || '');
+        return blExcluidas.some(b => b === idStr || b === nPuro || b === ('#' + nPuro.padStart(4,'0')) || b === String(parseInt(nPuro, 10)));
+      };
+
+      // 1. Insere primeiro as ordens da chave principal (máxima prioridade)
+      ordensChavePrincipal.forEach(ord => {
+        if (ord && (ord.id || ord.numero) && !estaExcluida(ord)) {
+          const chaveUnica = String(ord.numero || ord.id).replace(/\D/g, '') || String(ord.id);
+          if (chaveUnica) mapaOrdens.set(chaveUnica, ord);
+        }
+      });
+
+      // 2. Merge das chaves legadas: só adiciona O.S. que ainda NÃO estão no mapa principal
+      //    e nunca sobrescreve as da chave principal (preservação total)
       chavesOrdens.forEach(chk => {
         try {
           const raw = localStorage.getItem(chk);
@@ -8100,14 +8138,16 @@ function load(k, d=[]) {
             const arr = JSON.parse(raw);
             if (Array.isArray(arr)) {
               arr.forEach(ord => {
-                if (ord && (ord.id || ord.numero)) {
+                if (ord && (ord.id || ord.numero) && !estaExcluida(ord)) {
                   const chaveUnica = String(ord.numero || ord.id).replace(/\D/g, '') || String(ord.id);
-                  if (!mapaOrdens.has(chaveUnica)) {
+                  if (chaveUnica && !mapaOrdens.has(chaveUnica)) {
+                    // Só adiciona se não existe na chave principal
                     mapaOrdens.set(chaveUnica, ord);
-                  } else {
+                  } else if (chaveUnica && mapaOrdens.has(chaveUnica)) {
+                    // Se a legada tem status 'aprovado' e a principal não, atualiza só o status
                     const existente = mapaOrdens.get(chaveUnica);
-                    if (ord.status === 'aprovado' && existente.status !== 'aprovado') {
-                      mapaOrdens.set(chaveUnica, ord);
+                    if (ord.status === 'aprovado' && existente.status !== 'aprovado' && ord.assinado_por) {
+                      mapaOrdens.set(chaveUnica, { ...existente, status: 'aprovado', assinado_por: ord.assinado_por, assinado_em: ord.assinado_em });
                     }
                   }
                 }
@@ -8182,6 +8222,20 @@ function sanitizarItemParaHistoricoStorage(item) {
 
 function save(k, v) {
   try {
+    // 🕐 Registra timestamp do último save de ordens (protege o focus listener)
+    if (k === K.orders) {
+      window._ultimoSaveOrdens = Date.now();
+    }
+
+    // 🧹 Limpeza preventiva de quota: antes de salvar ordens, limpa chaves temporárias pesadas
+    if (k === K.orders) {
+      try {
+        ['sdm_cam_capturas', 'sdm_orc_fotos_temp', 'sdm_orc_pdfs', 'sdm_camera_lock', 'sdm_camera_lock_val'].forEach(tmpKey => {
+          try { localStorage.removeItem(tmpKey); } catch(_) {}
+        });
+      } catch(_) {}
+    }
+
     let dadoParaSalvar = v;
     if (k === K.orders && Array.isArray(v)) {
       dadoParaSalvar = v.map(sanitizarItemParaHistoricoStorage);
@@ -8197,6 +8251,16 @@ function save(k, v) {
     console.warn('Erro ao salvar no storage (tentando limpeza de emergência):', e);
     try {
       if (k === K.orders && Array.isArray(v)) {
+        // Limpeza mais agressiva: remove galeria de câmera e storages de PDF antigos
+        try {
+          for (let ki = localStorage.length - 1; ki >= 0; ki--) {
+            const lk = localStorage.key(ki);
+            if (!lk) continue;
+            if (lk === 'sdm_cam_capturas' || lk === 'sdm_orc_fotos_temp' || lk === 'sdm_orc_pdfs' || lk === 'sdv_camera_gallery') {
+              localStorage.removeItem(lk);
+            }
+          }
+        } catch(_) {}
         // Reduz ainda mais o tamanho mantendo os metadados de todas as O.S.
         const superLeve = v.map(o => {
           const c = sanitizarItemParaHistoricoStorage(o);
@@ -8212,6 +8276,14 @@ function save(k, v) {
       }
     } catch(err2) {
       console.error('Falha crítica no storage:', err2);
+      // 🚨 Alerta visual ao usuário em caso de falha total
+      try {
+        if (k === K.orders) {
+          if (typeof mostrarToastAprovacao === 'function') {
+            mostrarToastAprovacao('⚠️ Erro ao salvar: armazenamento cheio. Libere espaço no dispositivo.');
+          }
+        }
+      } catch(_) {}
     }
   }
 }
@@ -13293,15 +13365,51 @@ window.addEventListener('storage', function(e) {
   verificarAtualizacoesAprovacoesPendentes();
   if (!e.key || e.key === 'sdv_ordens' || e.key === 'sdv_assinaturas_map' || e.key.startsWith('sdv_assinatura_')) {
     try {
-      historico = load(K.orders, []);
-      renderHist();
+      // 🛡️ Só recarrega se o evento veio de OUTRA aba (storage event nunca dispara na mesma aba)
+      // e se não foi um save feito por nós mesmos nos últimos 5s
+      if (!window._ultimoSaveOrdens || (Date.now() - window._ultimoSaveOrdens) > 5000) {
+        historico = load(K.orders, []);
+        renderHist();
+      }
     } catch (_) {}
   }
 });
 window.addEventListener('focus', function() {
   verificarAtualizacoesAprovacoesPendentes();
   try {
-    historico = load(K.orders, []);
+    // 🛡️ PROTEÇÃO CRÍTICA: Não recarrega historico se acabamos de salvar (< 8 segundos)
+    // Isso evita que o alert() em mobile cause um focus event que sobrescreva o historico
+    // com a versão do storage ANTES que a nova O.S. seja persistida
+    if (window._ultimoSaveOrdens && (Date.now() - window._ultimoSaveOrdens) < 8000) {
+      renderHist(); // Apenas re-renderiza com o historico já em memória (que tem a nova O.S.)
+      return;
+    }
+    // Recarga segura: faz merge para não perder ordens que estão em memória mas não no storage
+    const freshFromStorage = load(K.orders, []);
+    if (freshFromStorage.length >= historico.length) {
+      historico = freshFromStorage;
+    } else {
+      // Mantém em memória as que não foram encontradas no storage (pode ser quota issue)
+      const mapaFresh = new Map();
+      freshFromStorage.forEach(o => {
+        const k = String(o.numero || o.id).replace(/\D/g, '');
+        if (k) mapaFresh.set(k, o);
+      });
+      historico.forEach(o => {
+        const k = String(o.numero || o.id).replace(/\D/g, '');
+        if (k && !mapaFresh.has(k)) mapaFresh.set(k, o);
+        else if (k && mapaFresh.has(k)) {
+          // Mantém a versão com status mais avançado
+          const ex = mapaFresh.get(k);
+          if (o.status === 'aprovado' && ex.status !== 'aprovado') mapaFresh.set(k, o);
+        }
+      });
+      historico = Array.from(mapaFresh.values()).sort((a, b) => {
+        const na = parseInt(String(a.numero || a.id).replace(/\D/g, '') || '0');
+        const nb = parseInt(String(b.numero || b.id).replace(/\D/g, '') || '0');
+        return na - nb;
+      });
+    }
     renderHist();
   } catch (_) {}
 });
