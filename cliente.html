@@ -7819,9 +7819,39 @@ function mudarAba(tab) {
       const ordens = (typeof carregarOrdensDoStorage === 'function') ? carregarOrdensDoStorage() : [];
       const fLimpo = (filtro || '').trim().toLowerCase();
 
-      let filtradas = ordens;
+      // ── FILTRA ESTREITAMENTE AS ORDENS DO CLIENTE DA SESSÃO ATUAL ──
+      let ordensDoCliente = ordens;
+      if (clienteSessao && (clienteSessao.nome || clienteSessao.telefone || clienteSessao.os)) {
+        const nLimpo = (clienteSessao.nome || '').toLowerCase().trim();
+        const telLimpo = String(clienteSessao.telefone || '').replace(/\D/g, '');
+        const osNumLimpo = String(clienteSessao.os || '').replace(/\D/g, '');
+
+        const encontradas = ordens.filter(o => {
+          const oNome = (o.nome || (o.dados && o.dados.nome) || '').toLowerCase().trim();
+          const oTel = String(o.telefone || (o.dados && o.dados.telefone) || '').replace(/\D/g, '');
+          const oNum = String(o.numero || (o.dados && o.dados.numero) || '').replace(/\D/g, '');
+
+          // Se bate a O.S. da sessão
+          if (osNumLimpo && oNum === osNumLimpo) return true;
+          // Se bate o telefone (válido)
+          if (telLimpo && telLimpo.length >= 8 && oTel && (oTel === telLimpo || oTel.endsWith(telLimpo) || telLimpo.endsWith(oTel))) return true;
+          // Se bate o nome do cliente logado (excluindo termo genérico 'cliente')
+          if (nLimpo && nLimpo !== 'cliente' && (oNome === nLimpo || oNome.includes(nLimpo) || nLimpo.includes(oNome))) return true;
+
+          return false;
+        });
+
+        if (encontradas.length > 0) {
+          ordensDoCliente = encontradas;
+        } else if (osNumLimpo) {
+          const porOs = ordens.filter(o => String(o.numero || (o.dados && o.dados.numero) || '').replace(/\D/g, '') === osNumLimpo);
+          if (porOs.length > 0) ordensDoCliente = porOs;
+        }
+      }
+
+      let filtradas = ordensDoCliente;
       if (fLimpo) {
-        filtradas = ordens.filter(o => 
+        filtradas = ordensDoCliente.filter(o => 
           String(o.numero || '').toLowerCase().includes(fLimpo) ||
           String(o.nome || '').toLowerCase().includes(fLimpo) ||
           String(o.servico || o.descricao || '').toLowerCase().includes(fLimpo)
