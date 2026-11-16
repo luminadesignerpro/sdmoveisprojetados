@@ -1,5 +1,5 @@
-// Service Worker PWA – SD Móveis Projetados v9.5.38 (Filtro exclusivo da O.S. do cliente logado no portal e liberação do botão Novo Pedido de Material)
-const CACHE_NAME = 'sdmoveisprojetados-v9.5.38';
+// Service Worker PWA – SD Móveis Projetados v9.5.39 (Sincronização em tempo real de Pedidos de Materiais via NTFY e LocalStorage entre Funcionário e Admin)
+const CACHE_NAME = 'sdmoveisprojetados-v9.5.39';
 const ASSETS = [
   '/',
   '/index.html',
