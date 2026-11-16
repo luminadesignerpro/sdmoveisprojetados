@@ -13373,6 +13373,13 @@ window.addEventListener('storage', function(e) {
       }
     } catch (_) {}
   }
+  if (!e.key || e.key === 'sdv_pedidos_material' || e.key === 'sdv_crono_materiais') {
+    try {
+      if (typeof renderPedidosMaterial === 'function') {
+        renderPedidosMaterial();
+      }
+    } catch (_) {}
+  }
 });
 window.addEventListener('focus', function() {
   verificarAtualizacoesAprovacoesPendentes();
@@ -24517,16 +24524,20 @@ window.addEventListener('DOMContentLoaded', function() {
   conectarRealtimeAprovacoes();
   conectarRealtimeAgenda();
   iniciarPollingAgenda();
+  if (typeof conectarRealtimeMateriais === 'function') conectarRealtimeMateriais();
+  if (typeof iniciarPollingMateriais === 'function') iniciarPollingMateriais();
   verificarAtualizacoesAprovacoesPendentes();
   setInterval(sincronizarStatusContratos, 4000);
   window.addEventListener('focus', () => {
     sincronizarStatusContratos();
     verificarClipboardWhatsApp();
+    if (typeof renderPedidosMaterial === 'function') renderPedidosMaterial();
   });
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) {
       sincronizarStatusContratos();
       verificarClipboardWhatsApp();
+      if (typeof renderPedidosMaterial === 'function') renderPedidosMaterial();
     }
   });
   document.addEventListener('click', () => {
@@ -31791,6 +31802,12 @@ if (typeof setInterval !== 'undefined') {
         </div>
       </div>
       <div class="field">
+        <label style="font-weight:900;color:var(--gold-light);">📁 Pasta do Cliente / O.S. (Opcional)</label>
+        <select id="pedido-form-cliente" style="width:100%;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:13px;">
+          <option value="">📁 Outros / Itens Gerais</option>
+        </select>
+      </div>
+      <div class="field">
         <label>Fornecedor (opcional)</label>
         <input type="text" id="pedido-form-fornecedor" placeholder="Nome do fornecedor" style="width:100%;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:var(--font);font-size:13px;">
       </div>
@@ -32938,11 +32955,118 @@ function excluirEventoCronograma(id) {
 
 let _materialClienteFolderAtivo = 'todos';
 
+const NTFY_MATERIAIS_TOPIC = 'sdmoveis_materiais_85996119824';
+
 function carregarMateriais() {
-  try { return JSON.parse(localStorage.getItem(K_CRONO.materiais) || '[]'); } catch(_) { return []; }
+  try {
+    const raw = localStorage.getItem('sdv_pedidos_material') || localStorage.getItem(K_CRONO.materiais);
+    return raw ? JSON.parse(raw) : [];
+  } catch(_) { return []; }
 }
+
 function salvarMateriais(arr) {
-  try { localStorage.setItem(K_CRONO.materiais, JSON.stringify(arr)); } catch(_) {}
+  try {
+    const json = JSON.stringify(arr);
+    localStorage.setItem(K_CRONO.materiais, json);
+    localStorage.setItem('sdv_pedidos_material', json);
+  } catch(_) {}
+  if (typeof publicarSyncMateriais === 'function') {
+    publicarSyncMateriais(arr);
+  }
+}
+
+function publicarSyncMateriais(lista) {
+  if (!Array.isArray(lista)) return;
+  try {
+    fetch(`https://ntfy.sh/${NTFY_MATERIAIS_TOPIC}`, {
+      method: 'POST',
+      headers: { 'Title': 'Sync Materiais' },
+      body: JSON.stringify({
+        tipo: 'sync_materiais',
+        timestamp: Date.now(),
+        materiais: lista
+      })
+    }).catch(() => {});
+  } catch(_) {}
+}
+
+function aplicarSyncMateriaisRecebidos(remotos) {
+  if (!Array.isArray(remotos) || !remotos.length) return;
+  const locais = carregarMateriais();
+  const mapa = new Map();
+  locais.forEach(it => { if (it && it.id) mapa.set(String(it.id), it); });
+  let alterou = false;
+  remotos.forEach(r => {
+    if (!r || !r.id) return;
+    const k = String(r.id);
+    if (!mapa.has(k)) {
+      mapa.set(k, r);
+      alterou = true;
+    } else {
+      const l = mapa.get(k);
+      if (r.status !== l.status || (r.atualizadoEm && (!l.atualizadoEm || r.atualizadoEm > l.atualizadoEm))) {
+        mapa.set(k, { ...l, ...r });
+        alterou = true;
+      }
+    }
+  });
+  if (alterou) {
+    const listaFinal = Array.from(mapa.values());
+    try {
+      const json = JSON.stringify(listaFinal);
+      localStorage.setItem(K_CRONO.materiais, json);
+      localStorage.setItem('sdv_pedidos_material', json);
+    } catch(_) {}
+    if (typeof renderPedidosMaterial === 'function') {
+      renderPedidosMaterial();
+    }
+  }
+}
+
+function conectarRealtimeMateriais() {
+  if (typeof EventSource === 'undefined') return;
+  try {
+    const sse = new EventSource(`https://ntfy.sh/${NTFY_MATERIAIS_TOPIC}/sse?since=24h`);
+    sse.onmessage = function(e) {
+      try {
+        const item = JSON.parse(e.data);
+        if (item.event === 'message' && item.message) {
+          const dados = JSON.parse(item.message);
+          if (dados && dados.tipo === 'sync_materiais' && Array.isArray(dados.materiais)) {
+            aplicarSyncMateriaisRecebidos(dados.materiais);
+          }
+        }
+      } catch(_) {}
+    };
+    sse.onerror = function() {
+      try { sse.close(); } catch(_) {}
+      setTimeout(conectarRealtimeMateriais, 10000);
+    };
+  } catch(_) {}
+}
+
+function iniciarPollingMateriais() {
+  const poll = () => {
+    fetch(`https://ntfy.sh/${NTFY_MATERIAIS_TOPIC}/json?poll=1&since=24h`, { cache: 'no-store' })
+      .then(r => r.text())
+      .then(txt => {
+        if (!txt) return;
+        const linhas = txt.trim().split('\n');
+        for (const l of linhas) {
+          try {
+            const item = JSON.parse(l);
+            if (item.event === 'message' && item.message) {
+              const dados = JSON.parse(item.message);
+              if (dados && dados.tipo === 'sync_materiais' && Array.isArray(dados.materiais)) {
+                aplicarSyncMateriaisRecebidos(dados.materiais);
+              }
+            }
+          } catch(_) {}
+        }
+      }).catch(() => {});
+  };
+  poll();
+  setInterval(poll, 12000);
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -33619,6 +33743,27 @@ function abrirModalNovoPedidoMaterial(it) {
     const obsEl = document.getElementById('pedido-form-obs');
     if (obsEl) obsEl.value = it ? (it.obs||'') : '';
 
+    // Popula dropdown de pastas de clientes disponíveis
+    const cliSel = document.getElementById('pedido-form-cliente');
+    if (cliSel) {
+      let opts = '<option value="">📁 Outros / Itens Gerais</option>';
+      const ordens = Array.isArray(historico) ? historico : (typeof carregarOrdensDoStorage === 'function' ? carregarOrdensDoStorage() : []);
+      const mapaCli = new Map();
+      ordens.forEach(o => {
+        const n = (o.nome || (o.dados && o.dados.nome) || '').trim();
+        const num = o.numero || (o.dados && o.dados.numero) || '';
+        if (n && !mapaCli.has(n.toLowerCase())) {
+          mapaCli.set(n.toLowerCase(), { nome: n, os: num });
+        }
+      });
+      mapaCli.forEach(c => {
+        const isSel = (it && it.cliente && it.cliente.toLowerCase() === c.nome.toLowerCase()) ||
+                      (!it && typeof _materialClienteFolderAtivo !== 'undefined' && _materialClienteFolderAtivo && _materialClienteFolderAtivo.toLowerCase() === c.nome.toLowerCase());
+        opts += `<option value="${c.nome}" ${isSel ? 'selected' : ''}>📁 ${c.nome} ${c.os ? '(' + c.os + ')' : ''}</option>`;
+      });
+      cliSel.innerHTML = opts;
+    }
+
     // Calcula valor total inicial
     calcularTotalPedidoMaterial();
 
@@ -33682,8 +33827,11 @@ function salvarPedidoMaterial() {
   const formaPagamento = document.getElementById('pedido-form-pagamento') ? document.getElementById('pedido-form-pagamento').value : '';
   const comprovanteBase64 = document.getElementById('pedido-form-comprovante-base64') ? document.getElementById('pedido-form-comprovante-base64').value : '';
 
+  const selCli = document.getElementById('pedido-form-cliente');
+  const cliEscolhido = selCli ? selCli.value.trim() : '';
+
   const obj = {
-    id: editId || `mat_${Date.now()}`,
+    id: editId || `mat_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
     nome,
     qtd: qtdVal,
     unidade: document.getElementById('pedido-form-unidade').value,
@@ -33698,8 +33846,16 @@ function salvarPedidoMaterial() {
     criadoEm: editId ? undefined : new Date().toISOString()
   };
 
-  // Se o item estiver sendo criado e houver uma pasta de cliente ativa (diferente de 'todos'), atribui a ela
-  if (!editId && _materialClienteFolderAtivo && _materialClienteFolderAtivo !== 'todos' && _materialClienteFolderAtivo !== 'outros') {
+  if (cliEscolhido) {
+    obj.cliente = cliEscolhido;
+    try {
+      const ordens = Array.isArray(historico) ? historico : [];
+      const matchOs = ordens.find(o => (o.nome || (o.dados && o.dados.nome) || '').trim().toLowerCase() === cliEscolhido.toLowerCase());
+      if (matchOs && (matchOs.numero || (matchOs.dados && matchOs.dados.numero))) {
+        obj.os = matchOs.numero || matchOs.dados.numero;
+      }
+    } catch(_) {}
+  } else if (!editId && typeof _materialClienteFolderAtivo !== 'undefined' && _materialClienteFolderAtivo && _materialClienteFolderAtivo !== 'todos' && _materialClienteFolderAtivo !== 'outros') {
     obj.cliente = _materialClienteFolderAtivo;
   }
 
@@ -33708,12 +33864,17 @@ function salvarPedidoMaterial() {
     if (idx >= 0) lista[idx] = {...lista[idx], ...obj};
     else lista.push(obj);
   } else {
-    lista.push(obj);
+    lista.unshift(obj);
   }
 
   salvarMateriais(lista);
   fecharModalNovoPedidoMaterial();
   renderPedidosMaterial();
+  if (typeof mostrarToastAprovacao === 'function') {
+    mostrarToastAprovacao('✅ Pedido de material salvo com sucesso!');
+  } else {
+    alert('✅ Pedido de material salvo com sucesso!');
+  }
 }
 window.salvarPedidoMaterial = salvarPedidoMaterial;
 

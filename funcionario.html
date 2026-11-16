@@ -5358,6 +5358,22 @@
       solicitarPermissaoNotificacao();
       checarParametrosUrl();
       verificarSuporteBiometria();
+      if (typeof conectarRealtimeMateriais === 'function') conectarRealtimeMateriais();
+      if (typeof iniciarPollingMateriais === 'function') iniciarPollingMateriais();
+    });
+
+    window.addEventListener('storage', (e) => {
+      if (!e.key || e.key === 'sdv_pedidos_material' || e.key === 'sdv_cronograma_eventos') {
+        if (typeof renderPedidosMaterial === 'function') renderPedidosMaterial();
+      }
+    });
+    window.addEventListener('focus', () => {
+      if (typeof renderPedidosMaterial === 'function') renderPedidosMaterial();
+    });
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && typeof renderPedidosMaterial === 'function') {
+        renderPedidosMaterial();
+      }
     });
 
     function solicitarPermissaoNotificacao() {
@@ -14346,11 +14362,116 @@ function limparBuscaRapidaCrono() {
 }
 
 // ── PEDIDOS DE MATERIAL ───────────────────────────────────────────
+const NTFY_MATERIAIS_TOPIC = 'sdmoveis_materiais_85996119824';
+
 function carregarMateriais() {
-  try { return JSON.parse(localStorage.getItem(K_CRONO.materiais) || '[]'); } catch(_) { return []; }
+  try {
+    const raw = localStorage.getItem('sdv_pedidos_material') || localStorage.getItem(K_CRONO.materiais);
+    return raw ? JSON.parse(raw) : [];
+  } catch(_) { return []; }
 }
+
 function salvarMateriais(arr) {
-  try { localStorage.setItem(K_CRONO.materiais, JSON.stringify(arr)); } catch(_) {}
+  try {
+    const json = JSON.stringify(arr);
+    localStorage.setItem(K_CRONO.materiais, json);
+    localStorage.setItem('sdv_pedidos_material', json);
+  } catch(_) {}
+  publicarSyncMateriais(arr);
+}
+
+function publicarSyncMateriais(lista) {
+  if (!Array.isArray(lista)) return;
+  try {
+    fetch(`https://ntfy.sh/${NTFY_MATERIAIS_TOPIC}`, {
+      method: 'POST',
+      headers: { 'Title': 'Sync Materiais' },
+      body: JSON.stringify({
+        tipo: 'sync_materiais',
+        timestamp: Date.now(),
+        materiais: lista
+      })
+    }).catch(() => {});
+  } catch(_) {}
+}
+
+function aplicarSyncMateriaisRecebidos(remotos) {
+  if (!Array.isArray(remotos) || !remotos.length) return;
+  const locais = carregarMateriais();
+  const mapa = new Map();
+  locais.forEach(it => { if (it && it.id) mapa.set(String(it.id), it); });
+  let alterou = false;
+  remotos.forEach(r => {
+    if (!r || !r.id) return;
+    const k = String(r.id);
+    if (!mapa.has(k)) {
+      mapa.set(k, r);
+      alterou = true;
+    } else {
+      const l = mapa.get(k);
+      if (r.status !== l.status || (r.atualizadoEm && (!l.atualizadoEm || r.atualizadoEm > l.atualizadoEm))) {
+        mapa.set(k, { ...l, ...r });
+        alterou = true;
+      }
+    }
+  });
+  if (alterou) {
+    const listaFinal = Array.from(mapa.values());
+    try {
+      const json = JSON.stringify(listaFinal);
+      localStorage.setItem(K_CRONO.materiais, json);
+      localStorage.setItem('sdv_pedidos_material', json);
+    } catch(_) {}
+    if (typeof renderPedidosMaterial === 'function') {
+      renderPedidosMaterial();
+    }
+  }
+}
+
+function conectarRealtimeMateriais() {
+  if (typeof EventSource === 'undefined') return;
+  try {
+    const sse = new EventSource(`https://ntfy.sh/${NTFY_MATERIAIS_TOPIC}/sse?since=24h`);
+    sse.onmessage = function(e) {
+      try {
+        const item = JSON.parse(e.data);
+        if (item.event === 'message' && item.message) {
+          const dados = JSON.parse(item.message);
+          if (dados && dados.tipo === 'sync_materiais' && Array.isArray(dados.materiais)) {
+            aplicarSyncMateriaisRecebidos(dados.materiais);
+          }
+        }
+      } catch(_) {}
+    };
+    sse.onerror = function() {
+      try { sse.close(); } catch(_) {}
+      setTimeout(conectarRealtimeMateriais, 10000);
+    };
+  } catch(_) {}
+}
+
+function iniciarPollingMateriais() {
+  const poll = () => {
+    fetch(`https://ntfy.sh/${NTFY_MATERIAIS_TOPIC}/json?poll=1&since=24h`, { cache: 'no-store' })
+      .then(r => r.text())
+      .then(txt => {
+        if (!txt) return;
+        const linhas = txt.trim().split('\n');
+        for (const l of linhas) {
+          try {
+            const item = JSON.parse(l);
+            if (item.event === 'message' && item.message) {
+              const dados = JSON.parse(item.message);
+              if (dados && dados.tipo === 'sync_materiais' && Array.isArray(dados.materiais)) {
+                aplicarSyncMateriaisRecebidos(dados.materiais);
+              }
+            }
+          } catch(_) {}
+        }
+      }).catch(() => {});
+  };
+  poll();
+  setInterval(poll, 12000);
 }
 
 let _materialClienteFolderAtivo = 'todos';
@@ -14731,6 +14852,27 @@ function abrirModalNovoPedidoMaterial(it) {
     const obsEl = document.getElementById('pedido-form-obs');
     if (obsEl) obsEl.value = it ? (it.obs || '') : '';
 
+    // Popula dropdown de pastas de clientes disponíveis
+    const cliSel = document.getElementById('pedido-form-cliente');
+    if (cliSel) {
+      let opts = '<option value="">📁 Outros / Itens Gerais</option>';
+      const ordens = typeof carregarOrdensDoStorage === 'function' ? carregarOrdensDoStorage() : [];
+      const mapaCli = new Map();
+      ordens.forEach(o => {
+        const n = (o.nome || (o.dados && o.dados.nome) || '').trim();
+        const num = o.numero || (o.dados && o.dados.numero) || '';
+        if (n && !mapaCli.has(n.toLowerCase())) {
+          mapaCli.set(n.toLowerCase(), { nome: n, os: num });
+        }
+      });
+      mapaCli.forEach(c => {
+        const isSel = (it && it.cliente && it.cliente.toLowerCase() === c.nome.toLowerCase()) ||
+                      (!it && typeof _materialClienteFolderAtivo !== 'undefined' && _materialClienteFolderAtivo && _materialClienteFolderAtivo.toLowerCase() === c.nome.toLowerCase());
+        opts += `<option value="${c.nome}" ${isSel ? 'selected' : ''}>📁 ${c.nome} ${c.os ? '(' + c.os + ')' : ''}</option>`;
+      });
+      cliSel.innerHTML = opts;
+    }
+
     // Comprovante
     const base64El = document.getElementById('pedido-form-comprovante-base64');
     const imgEl = document.getElementById('pedido-form-comprovante-img');
@@ -14782,8 +14924,11 @@ function salvarPedidoMaterial() {
   const formaPagamento = document.getElementById('pedido-form-pagamento') ? document.getElementById('pedido-form-pagamento').value : '';
   const comprovanteBase64 = document.getElementById('pedido-form-comprovante-base64') ? document.getElementById('pedido-form-comprovante-base64').value : '';
 
+  const selCli = document.getElementById('pedido-form-cliente');
+  const cliEscolhido = selCli ? selCli.value.trim() : '';
+
   const obj = {
-    id: editId || `mat_${Date.now()}`,
+    id: editId || `mat_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
     nome,
     qtd: qtdVal,
     unidade: document.getElementById('pedido-form-unidade').value,
@@ -14798,8 +14943,16 @@ function salvarPedidoMaterial() {
     criadoEm: editId ? undefined : new Date().toISOString()
   };
 
-  // Se o item estiver sendo criado e houver uma pasta de cliente ativa (diferente de 'todos'), atribui a ela
-  if (!editId && _materialClienteFolderAtivo && _materialClienteFolderAtivo !== 'todos' && _materialClienteFolderAtivo !== 'outros') {
+  if (cliEscolhido) {
+    obj.cliente = cliEscolhido;
+    try {
+      const ordens = typeof carregarOrdensDoStorage === 'function' ? carregarOrdensDoStorage() : [];
+      const matchOs = ordens.find(o => (o.nome || (o.dados && o.dados.nome) || '').trim().toLowerCase() === cliEscolhido.toLowerCase());
+      if (matchOs && (matchOs.numero || (matchOs.dados && matchOs.dados.numero))) {
+        obj.os = matchOs.numero || matchOs.dados.numero;
+      }
+    } catch(_) {}
+  } else if (!editId && typeof _materialClienteFolderAtivo !== 'undefined' && _materialClienteFolderAtivo && _materialClienteFolderAtivo !== 'todos' && _materialClienteFolderAtivo !== 'outros') {
     obj.cliente = _materialClienteFolderAtivo;
   }
 
@@ -14808,12 +14961,17 @@ function salvarPedidoMaterial() {
     if (idx >= 0) lista[idx] = {...lista[idx], ...obj};
     else lista.push(obj);
   } else {
-    lista.push(obj);
+    lista.unshift(obj);
   }
 
   salvarMateriais(lista);
   fecharModalNovoPedidoMaterial();
   renderPedidosMaterial();
+  if (typeof mostrarToastNotificacao === 'function') {
+    mostrarToastNotificacao('✅ Pedido de material salvo com sucesso!');
+  } else {
+    alert('✅ Pedido de material salvo com sucesso!');
+  }
 }
 window.salvarPedidoMaterial = salvarPedidoMaterial;
 
@@ -14887,38 +15045,7 @@ function abrirFotoComprovanteModal(src) {
 window.abrirFotoComprovanteModal = abrirFotoComprovanteModal;
 window.fecharModalNovoPedidoMaterial = fecharModalNovoPedidoMaterial;
 
-function salvarPedidoMaterial() {
-  const nome = (document.getElementById('pedido-form-nome').value || '').trim();
-  if (!nome) { alert('Informe o nome do material.'); return; }
 
-  const lista = carregarMateriais();
-  const editId = document.getElementById('pedido-material-edit-id').value;
-
-  const obj = {
-    id: editId || `mat_${Date.now()}`,
-    nome,
-    qtd: document.getElementById('pedido-form-qtd').value,
-    unidade: document.getElementById('pedido-form-unidade').value,
-    valor: document.getElementById('pedido-form-valor').value,
-    urgencia: document.getElementById('pedido-form-urgencia').value,
-    fornecedor: (document.getElementById('pedido-form-fornecedor').value || '').trim(),
-    status: document.getElementById('pedido-form-status').value,
-    obs: (document.getElementById('pedido-form-obs').value || '').trim(),
-    criadoEm: editId ? undefined : new Date().toISOString()
-  };
-
-  if (editId) {
-    const idx = lista.findIndex(x => x.id === editId);
-    if (idx >= 0) lista[idx] = {...lista[idx], ...obj};
-    else lista.push(obj);
-  } else {
-    lista.push(obj);
-  }
-
-  salvarMateriais(lista);
-  fecharModalNovoPedidoMaterial();
-  renderPedidosMaterial();
-}
 
 function abrirModalConfigWhatsappMaterial() {
   const liberado = sessionStorage.getItem('sdv_material_liberado_sessao') === 'true';
@@ -15071,6 +15198,12 @@ function enviarPedidoMaterialWhatsApp() {
         <div id="pedido-form-comprovante-preview-box" style="display:none;margin-top:8px;">
           <img id="pedido-form-comprovante-img" src="" onclick="abrirFotoComprovanteModal(this.src)" style="max-height:120px;max-width:100%;border-radius:8px;border:1.5px solid #22c55e;cursor:pointer;object-fit:cover;box-shadow:0 4px 12px rgba(0,0,0,0.5);" title="Clique para ampliar">
         </div>
+      </div>
+      <div class="field">
+        <label style="font-size:12px;font-weight:700;color:var(--gold-light);display:block;margin-bottom:4px;">📁 Pasta do Cliente / O.S. (Opcional)</label>
+        <select id="pedido-form-cliente" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;background:#080811;border:1.5px solid rgba(201,168,76,0.3);color:#fff;font-family:inherit;font-size:13px;">
+          <option value="">📁 Outros / Itens Gerais</option>
+        </select>
       </div>
       <div class="field">
         <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;">Fornecedor (opcional)</label>
