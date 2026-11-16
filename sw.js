@@ -1,5 +1,5 @@
-// Service Worker PWA – SD Móveis Projetados v9.5.36 (Fix: remove total duplicado no cabeçalho do card no Histórico e garante total real da O.S. no modal Rateio Proporcional Visual)
-const CACHE_NAME = 'sdmoveisprojetados-v9.5.36';
+// Service Worker PWA – SD Móveis Projetados v9.5.38 (Filtro exclusivo da O.S. do cliente logado no portal e liberação do botão Novo Pedido de Material)
+const CACHE_NAME = 'sdmoveisprojetados-v9.5.38';
 const ASSETS = [
   '/',
   '/index.html',

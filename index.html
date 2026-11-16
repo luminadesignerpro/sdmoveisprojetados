@@ -15900,53 +15900,65 @@ function renderRateioInline() {
     }
   });
 
-  // Renderiza linhas de categorias idênticas à Imagem 1 (com layout limpo sem sobreposição)
+  // Renderiza linhas de categorias idênticas à Imagem 1 (com botões padronizados e saldo em destaque)
   containerList.innerHTML = cats.map((c, idx) => {
     const pct = Number(c.porcentagem) || 0;
     const val = Number(c.valor) || 0;
     const valFmt = typeof formatarValorPtBr === 'function' ? formatarValorPtBr(val) : val.toFixed(2).replace('.', ',');
 
-    let badgeDetalheHtml = '';
-    if (c.detalhes && c.detalhes.funcionarios && c.detalhes.funcionarios.length > 0) {
-      badgeDetalheHtml = '<span style="font-size:10px;color:#34d399;font-weight:700;background:rgba(16,185,129,0.18);padding:1px 6px;border-radius:4px;white-space:nowrap;border:1px solid rgba(16,185,129,0.3);">👥 ' + c.detalhes.funcionarios.length + ' func.</span>';
-    } else if (c.detalhes && c.detalhes.itens && c.detalhes.itens.length > 0) {
-      badgeDetalheHtml = '<span style="font-size:10px;color:#a78bfa;font-weight:700;background:rgba(139,92,246,0.18);padding:1px 6px;border-radius:4px;white-space:nowrap;border:1px solid rgba(139,92,246,0.3);">📋 ' + c.detalhes.itens.length + ' itens</span>';
+    // Calcula saldo restante da categoria (descontando itens gastos)
+    let totalGasto = 0;
+    if (c.detalhes && Array.isArray(c.detalhes.itens)) {
+      c.detalhes.itens.forEach(it => {
+        totalGasto += (typeof parseNum === 'function' ? parseNum(it.valor) : (parseFloat(String(it.valor || '0').replace(/[^0-9,.]/g, '').replace(',', '.')) || 0));
+      });
     }
+    if (c.detalhes && Array.isArray(c.detalhes.funcionarios)) {
+      c.detalhes.funcionarios.forEach(f => {
+        totalGasto += (typeof parseNum === 'function' ? parseNum(f.valor) : (parseFloat(String(f.valor || '0').replace(/[^0-9,.]/g, '').replace(',', '.')) || 0));
+      });
+    }
+    const saldo = val - totalGasto;
+    const saldoFmt = typeof formatarValorPtBr === 'function' ? formatarValorPtBr(saldo) : saldo.toFixed(2).replace('.', ',');
 
     return `
       <div class="dir-inline-cat-row" data-idx="${idx}" style="display:flex;flex-direction:column;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:12.5px;gap:4px;">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
-          <!-- Lado esquerdo: Botão elegante da Categoria com engrenagem -->
-          <div style="display:flex;align-items:center;gap:6px;min-width:0;flex-shrink:0;">
-            <button type="button" onclick="abrirDetalheCategoriaDirecionamento(${idx})" title="Clique para abrir detalhes de ${esc(c.nome)}"
-              style="background:rgba(255,255,255,0.06);border:1.5px solid ${c.cor || '#8b5cf6'};border-radius:8px;padding:4px 9px;color:#fff;font-weight:800;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.15s;"
-              onmouseover="this.style.background='rgba(255,255,255,0.12)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">
+          <!-- Lado esquerdo: Botão com largura 100% padronizada (130px) -->
+          <button type="button" onclick="abrirDetalheCategoriaDirecionamento(${idx})" title="Clique para abrir detalhes de ${esc(c.nome)}"
+            style="width:130px;min-width:130px;max-width:130px;height:32px;background:rgba(255,255,255,0.06);border:1.5px solid ${c.cor || '#8b5cf6'};border-radius:8px;padding:4px 8px;color:#fff;font-weight:800;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:space-between;box-sizing:border-box;transition:all 0.15s;flex-shrink:0;">
+            <div style="display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden;">
               <span style="width:8px;height:8px;border-radius:50%;background:${c.cor || '#8b5cf6'};flex-shrink:0;"></span>
-              <span>${esc(c.nome)}</span>
-              <span style="font-size:10px;opacity:0.85;">⚙️</span>
-            </button>
-            ${badgeDetalheHtml}
+              <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11.5px;font-weight:800;">${esc(c.nome)}</span>
+            </div>
+            <span style="font-size:10px;opacity:0.85;flex-shrink:0;margin-left:3px;">⚙️</span>
+          </button>
+
+          <!-- Centro: Saldo Restante em destaque (NUNCA mostra a soma dos itens, apenas o SALDO) -->
+          <div style="display:inline-flex;align-items:center;gap:4px;background:${saldo < 0 ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.14)'};border:1px solid ${saldo < 0 ? '#ef4444' : '#10b981'};padding:3px 7px;border-radius:6px;font-size:11px;font-weight:900;color:${saldo < 0 ? '#f87171' : '#34d399'};white-space:nowrap;flex-shrink:0;" title="Saldo restante após descontar os itens">
+            <span style="font-size:9.5px;opacity:0.85;color:#94a3b8;">Saldo:</span>
+            <span>R$ ${saldoFmt}</span>
           </div>
 
-          <!-- Lado direito: R$ [valor] ( [%] % ) + Botão Excluir -->
-          <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;margin-left:auto;">
+          <!-- Lado direito: R$ [valor previsto] ( [%] % ) + Botão Excluir -->
+          <div style="display:flex;align-items:center;gap:3px;flex-shrink:0;margin-left:auto;">
             <span style="color:#cbd5e1;font-weight:700;font-size:11px;">R$</span>
             <input type="text" class="inp-dir-cat-val" data-idx="${idx}" value="${valFmt}" inputmode="decimal"
               onfocus="if(!this.dataset.oldVal) this.dataset.oldVal = this.value; this.value = '';"
               onblur="if(!this.value.trim()){ this.value = this.dataset.oldVal || '0,00'; aoDigitarValorCategoriaInline(${idx}, this.value); } else { aoDigitarValorCategoriaInline(${idx}, this.value); }"
               oninput="aoDigitarValorCategoriaInline(${idx}, this.value)"
-              style="width:72px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);border-radius:6px;color:#fff;font-size:12px;font-weight:800;text-align:right;padding:3px 6px;outline:none;" />
+              style="width:66px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);border-radius:6px;color:#fff;font-size:11.5px;font-weight:800;text-align:right;padding:3px 5px;outline:none;" />
 
-            <span style="color:#94a3b8;font-weight:600;font-size:11px;margin-left:2px;">(</span>
+            <span style="color:#94a3b8;font-weight:600;font-size:11px;margin-left:1px;">(</span>
             <input type="number" step="0.1" min="0" max="100" class="inp-dir-cat-pct" data-idx="${idx}" value="${pct.toFixed(1).replace('.0','')}"
               onfocus="if(!this.dataset.oldVal) this.dataset.oldVal = this.value; this.value = '';"
               onblur="if(!this.value.trim()){ this.value = this.dataset.oldVal || '0'; aoDigitarPctCategoriaInline(${idx}, this.value); } else { aoDigitarPctCategoriaInline(${idx}, this.value); }"
               oninput="aoDigitarPctCategoriaInline(${idx}, this.value)"
-              style="width:46px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);border-radius:6px;color:#c4b5fd;font-size:12px;font-weight:800;text-align:right;padding:3px 5px;outline:none;" />
+              style="width:42px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);border-radius:6px;color:#c4b5fd;font-size:11.5px;font-weight:800;text-align:right;padding:3px 4px;outline:none;" />
             <span style="color:#94a3b8;font-weight:600;font-size:11px;">%)</span>
 
             <button type="button" onclick="removerCategoriaInline(${idx})"
-              style="background:none;border:none;color:#ef4444;font-size:12px;cursor:pointer;padding:2px 4px;opacity:0.6;line-height:1;"
+              style="background:none;border:none;color:#ef4444;font-size:12px;cursor:pointer;padding:2px 3px;opacity:0.6;line-height:1;"
               title="Remover Categoria" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">✕</button>
           </div>
         </div>
@@ -43128,6 +43140,7 @@ window.popularFiltroAlmoco = popularFiltroAlmoco;
 // SISTEMA DE DETALHAMENTO DE CATEGORIAS DO RATEIO (Funcionários, Materiais, etc.)
 // ═══════════════════════════════════════════════════════════════════════════
 var _detCatDirIdx = -1;
+var _detCatPrevisto = 0;
 
 function abrirDetalheCategoriaDirecionamento(idx) {
   const cats = obterCategoriasRateioInline();
@@ -43136,6 +43149,7 @@ function abrirDetalheCategoriaDirecionamento(idx) {
   const c = cats[idx];
   const nome = c.nome || '';
   const val = Number(c.valor) || 0;
+  _detCatPrevisto = val;
   const valFmt = typeof formatarValorPtBr === 'function' ? formatarValorPtBr(val) : val.toFixed(2).replace('.', ',');
   const icone = typeof obterIconeCategoriaDir === 'function' ? obterIconeCategoriaDir(nome) : '📋';
 
@@ -43151,6 +43165,7 @@ function abrirDetalheCategoriaDirecionamento(idx) {
 }
 
 function _renderConteudoModalDetalhe(c, totalVal) {
+  _detCatPrevisto = Number(totalVal) || 0;
   const nome = (c.nome || '').toLowerCase();
   const d = c.detalhes || {};
   const valFmt = typeof formatarValorPtBr === 'function' ? formatarValorPtBr(totalVal) : totalVal.toFixed(2).replace('.', ',');
@@ -43196,6 +43211,8 @@ function _renderConteudoModalDetalhe(c, totalVal) {
 
     const somaInicial = funcs.reduce((s, f) => s + (parseFloat(String(f.valor||'0').replace(',','.')) || 0), 0);
     const somaFmt = typeof formatarValorPtBr === 'function' ? formatarValorPtBr(somaInicial) : somaInicial.toFixed(2).replace('.', ',');
+    const saldoInicial = totalVal - somaInicial;
+    const saldoFmt = typeof formatarValorPtBr === 'function' ? formatarValorPtBr(saldoInicial) : saldoInicial.toFixed(2).replace('.', ',');
 
     return `
       <div>
@@ -43214,15 +43231,19 @@ function _renderConteudoModalDetalhe(c, totalVal) {
           <span>+</span> Adicionar Funcionário
         </button>
 
-        <!-- Card de Resumo de Totais -->
-        <div style="margin-top:14px;padding:12px;background:rgba(139,92,246,0.08);border-radius:10px;border:1px solid rgba(139,92,246,0.3);display:flex;justify-content:space-between;align-items:center;">
+        <!-- Card de Resumo de Totais com Saldo e Desconto em tempo real -->
+        <div style="margin-top:14px;padding:12px;background:rgba(139,92,246,0.08);border-radius:10px;border:1px solid rgba(139,92,246,0.3);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
           <div>
-            <div style="font-size:11px;color:#94a3b8;">Total Funcionários:</div>
-            <div id="det-func-total-soma" style="font-size:16px;color:#4ade80;font-weight:900;">R$ ${somaFmt}</div>
-          </div>
-          <div style="text-align:right;">
             <div style="font-size:11px;color:#94a3b8;">Previsto Categoria:</div>
             <div style="font-size:13px;color:#fcd34d;font-weight:800;">R$ ${valFmt}</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:11px;color:#94a3b8;">Total Funcionários:</div>
+            <div id="det-func-total-soma" style="font-size:13px;color:#cbd5e1;font-weight:800;">R$ ${somaFmt}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:11px;color:#94a3b8;font-weight:800;">SALDO RESTANTE:</div>
+            <div id="det-func-saldo" style="font-size:16px;color:${saldoInicial < 0 ? '#f87171' : '#34d399'};font-weight:900;">R$ ${saldoFmt}</div>
           </div>
         </div>
       </div>`;
@@ -43242,6 +43263,8 @@ function _renderConteudoModalDetalhe(c, totalVal) {
 
   const somaInicial = itens.reduce((s, i) => s + (parseFloat(String(i.valor||'0').replace(',','.')) || 0), 0);
   const somaFmt = typeof formatarValorPtBr === 'function' ? formatarValorPtBr(somaInicial) : somaInicial.toFixed(2).replace('.', ',');
+  const saldoInicial = totalVal - somaInicial;
+  const saldoFmt = typeof formatarValorPtBr === 'function' ? formatarValorPtBr(saldoInicial) : saldoInicial.toFixed(2).replace('.', ',');
 
   return `
     <div>
@@ -43259,15 +43282,19 @@ function _renderConteudoModalDetalhe(c, totalVal) {
         <span>+</span> Adicionar Item
       </button>
 
-      <!-- Card de Resumo de Totais -->
-      <div style="margin-top:14px;padding:12px;background:rgba(139,92,246,0.08);border-radius:10px;border:1px solid rgba(139,92,246,0.3);display:flex;justify-content:space-between;align-items:center;">
+      <!-- Card de Resumo de Totais com Desconto e Saldo em tempo real -->
+      <div style="margin-top:14px;padding:12px;background:rgba(139,92,246,0.08);border-radius:10px;border:1px solid rgba(139,92,246,0.3);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
         <div>
-          <div style="font-size:11px;color:#94a3b8;">Total dos Itens:</div>
-          <div id="det-item-total-soma" style="font-size:16px;color:#4ade80;font-weight:900;">R$ ${somaFmt}</div>
-        </div>
-        <div style="text-align:right;">
           <div style="font-size:11px;color:#94a3b8;">Previsto Categoria:</div>
           <div style="font-size:13px;color:#fcd34d;font-weight:800;">R$ ${valFmt}</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:11px;color:#94a3b8;">Total dos Itens:</div>
+          <div id="det-item-total-soma" style="font-size:13px;color:#cbd5e1;font-weight:800;">R$ ${somaFmt}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:11px;color:#94a3b8;font-weight:800;">SALDO RESTANTE:</div>
+          <div id="det-item-saldo" style="font-size:16px;color:${saldoInicial < 0 ? '#f87171' : '#34d399'};font-weight:900;">R$ ${saldoFmt}</div>
         </div>
       </div>
     </div>`;
@@ -43349,13 +43376,20 @@ function aoAtualizarLinhasFunc() {
     }
     const inpVal = r.querySelector('.det-func-val');
     if (inpVal) {
-      const v = parseFloat(String(inpVal.value || '0').replace(/[^0-9,.]/g,'').replace(',','.')) || 0;
+      const v = typeof parseNum === 'function' ? parseNum(inpVal.value) : (parseFloat(String(inpVal.value || '0').replace(/[^0-9,.]/g,'').replace(',','.')) || 0);
       soma += v;
     }
   });
+  const somaFmt = typeof formatarValorPtBr === 'function' ? formatarValorPtBr(soma) : soma.toFixed(2).replace('.', ',');
   const elSoma = document.getElementById('det-func-total-soma');
-  if (elSoma) {
-    elSoma.textContent = 'R$ ' + (typeof formatarValorPtBr === 'function' ? formatarValorPtBr(soma) : soma.toFixed(2).replace('.', ','));
+  if (elSoma) elSoma.textContent = 'R$ ' + somaFmt;
+
+  const saldo = _detCatPrevisto - soma;
+  const saldoFmt = typeof formatarValorPtBr === 'function' ? formatarValorPtBr(saldo) : saldo.toFixed(2).replace('.', ',');
+  const elSaldo = document.getElementById('det-func-saldo');
+  if (elSaldo) {
+    elSaldo.textContent = 'R$ ' + saldoFmt;
+    elSaldo.style.color = saldo < 0 ? '#f87171' : '#34d399';
   }
 }
 
@@ -43365,13 +43399,20 @@ function aoAtualizarLinhasItens() {
   rows.forEach(r => {
     const inpVal = r.querySelector('.det-item-val');
     if (inpVal) {
-      const v = parseFloat(String(inpVal.value || '0').replace(/[^0-9,.]/g,'').replace(',','.')) || 0;
+      const v = typeof parseNum === 'function' ? parseNum(inpVal.value) : (parseFloat(String(inpVal.value || '0').replace(/[^0-9,.]/g,'').replace(',','.')) || 0);
       soma += v;
     }
   });
+  const somaFmt = typeof formatarValorPtBr === 'function' ? formatarValorPtBr(soma) : soma.toFixed(2).replace('.', ',');
   const elSoma = document.getElementById('det-item-total-soma');
-  if (elSoma) {
-    elSoma.textContent = 'R$ ' + (typeof formatarValorPtBr === 'function' ? formatarValorPtBr(soma) : soma.toFixed(2).replace('.', ','));
+  if (elSoma) elSoma.textContent = 'R$ ' + somaFmt;
+
+  const saldo = _detCatPrevisto - soma;
+  const saldoFmt = typeof formatarValorPtBr === 'function' ? formatarValorPtBr(saldo) : saldo.toFixed(2).replace('.', ',');
+  const elSaldo = document.getElementById('det-item-saldo');
+  if (elSaldo) {
+    elSaldo.textContent = 'R$ ' + saldoFmt;
+    elSaldo.style.color = saldo < 0 ? '#f87171' : '#34d399';
   }
 }
 
@@ -43388,7 +43429,7 @@ function salvarDetalheCatDir() {
     rows.forEach(r => {
       const fNome = (r.querySelector('.det-func-nome') || {}).value || '';
       const fDias = parseInt((r.querySelector('.det-func-dias') || {}).value || '0', 10);
-      const fVal = parseFloat(String((r.querySelector('.det-func-val') || {}).value || '0').replace(/[^0-9,.]/g,'').replace(',','.')) || 0;
+      const fVal = typeof parseNum === 'function' ? parseNum((r.querySelector('.det-func-val') || {}).value) : (parseFloat(String((r.querySelector('.det-func-val') || {}).value || '0').replace(/[^0-9,.]/g,'').replace(',','.')) || 0);
       if (fNome || fVal > 0) funcs.push({ nome: fNome, dias: fDias, valor: fVal });
     });
     if (!c.detalhes) c.detalhes = {};
@@ -43398,7 +43439,7 @@ function salvarDetalheCatDir() {
     const itens = [];
     rows.forEach(r => {
       const desc = ((r.querySelector('.det-item-desc') || {}).value || '').trim();
-      const val = parseFloat(String((r.querySelector('.det-item-val') || {}).value || '0').replace(/[^0-9,.]/g,'').replace(',','.')) || 0;
+      const val = typeof parseNum === 'function' ? parseNum((r.querySelector('.det-item-val') || {}).value) : (parseFloat(String((r.querySelector('.det-item-val') || {}).value || '0').replace(/[^0-9,.]/g,'').replace(',','.')) || 0);
       if (desc || val > 0) itens.push({ desc, valor: val });
     });
     if (!c.detalhes) c.detalhes = {};
@@ -43577,53 +43618,65 @@ function renderizarRateioVisualOs() {
     }
   });
 
-  // Renderiza linhas
+  // Renderiza linhas de categorias idênticas à Imagem 1 (com botões padronizados e saldo em destaque)
   container.innerHTML = dirOsCategorias.map((c, idx) => {
     const pct = Number(c.porcentagem) || 0;
     const val = Number(c.valor) || 0;
     const valFmt = typeof formatarValorPtBr === 'function' ? formatarValorPtBr(val) : val.toFixed(2).replace('.', ',');
 
-    let badgeDetalheHtml = '';
-    if (c.detalhes && c.detalhes.funcionarios && c.detalhes.funcionarios.length > 0) {
-      badgeDetalheHtml = '<span style="font-size:10px;color:#34d399;font-weight:700;background:rgba(16,185,129,0.18);padding:1px 6px;border-radius:4px;white-space:nowrap;border:1px solid rgba(16,185,129,0.3);">👥 ' + c.detalhes.funcionarios.length + ' func.</span>';
-    } else if (c.detalhes && c.detalhes.itens && c.detalhes.itens.length > 0) {
-      badgeDetalheHtml = '<span style="font-size:10px;color:#a78bfa;font-weight:700;background:rgba(139,92,246,0.18);padding:1px 6px;border-radius:4px;white-space:nowrap;border:1px solid rgba(139,92,246,0.3);">📋 ' + c.detalhes.itens.length + ' itens</span>';
+    // Calcula saldo restante da categoria (descontando itens gastos)
+    let totalGasto = 0;
+    if (c.detalhes && Array.isArray(c.detalhes.itens)) {
+      c.detalhes.itens.forEach(it => {
+        totalGasto += (typeof parseNum === 'function' ? parseNum(it.valor) : (parseFloat(String(it.valor || '0').replace(/[^0-9,.]/g, '').replace(',', '.')) || 0));
+      });
     }
+    if (c.detalhes && Array.isArray(c.detalhes.funcionarios)) {
+      c.detalhes.funcionarios.forEach(f => {
+        totalGasto += (typeof parseNum === 'function' ? parseNum(f.valor) : (parseFloat(String(f.valor || '0').replace(/[^0-9,.]/g, '').replace(',', '.')) || 0));
+      });
+    }
+    const saldo = val - totalGasto;
+    const saldoFmt = typeof formatarValorPtBr === 'function' ? formatarValorPtBr(saldo) : saldo.toFixed(2).replace('.', ',');
 
     return `
       <div class="dir-os-cat-row" data-idx="${idx}" style="display:flex;flex-direction:column;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:12.5px;gap:4px;">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
-          <!-- Lado esquerdo: Botão elegante da Categoria com engrenagem -->
-          <div style="display:flex;align-items:center;gap:6px;min-width:0;flex-shrink:0;">
-            <button type="button" onclick="abrirDetalheCategoriaOs(${idx})" title="Clique para abrir detalhes de ${esc(c.nome)}"
-              style="background:rgba(255,255,255,0.06);border:1.5px solid ${c.cor || '#8b5cf6'};border-radius:8px;padding:4px 9px;color:#fff;font-weight:800;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.15s;"
-              onmouseover="this.style.background='rgba(255,255,255,0.12)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">
+          <!-- Lado esquerdo: Botão com largura 100% padronizada (130px) -->
+          <button type="button" onclick="abrirDetalheCategoriaOs(${idx})" title="Clique para abrir detalhes de ${esc(c.nome)}"
+            style="width:130px;min-width:130px;max-width:130px;height:32px;background:rgba(255,255,255,0.06);border:1.5px solid ${c.cor || '#8b5cf6'};border-radius:8px;padding:4px 8px;color:#fff;font-weight:800;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:space-between;box-sizing:border-box;transition:all 0.15s;flex-shrink:0;">
+            <div style="display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden;">
               <span style="width:8px;height:8px;border-radius:50%;background:${c.cor || '#8b5cf6'};flex-shrink:0;"></span>
-              <span>${esc(c.nome)}</span>
-              <span style="font-size:10px;opacity:0.85;">⚙️</span>
-            </button>
-            ${badgeDetalheHtml}
+              <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11.5px;font-weight:800;">${esc(c.nome)}</span>
+            </div>
+            <span style="font-size:10px;opacity:0.85;flex-shrink:0;margin-left:3px;">⚙️</span>
+          </button>
+
+          <!-- Centro: Saldo Restante em destaque (NUNCA mostra a soma dos itens, apenas o SALDO) -->
+          <div style="display:inline-flex;align-items:center;gap:4px;background:${saldo < 0 ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.14)'};border:1px solid ${saldo < 0 ? '#ef4444' : '#10b981'};padding:3px 7px;border-radius:6px;font-size:11px;font-weight:900;color:${saldo < 0 ? '#f87171' : '#34d399'};white-space:nowrap;flex-shrink:0;" title="Saldo restante após descontar os itens">
+            <span style="font-size:9.5px;opacity:0.85;color:#94a3b8;">Saldo:</span>
+            <span>R$ ${saldoFmt}</span>
           </div>
 
-          <!-- Lado direito: R$ [valor] ( [%] % ) + Botão Excluir -->
-          <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;margin-left:auto;">
+          <!-- Lado direito: R$ [valor previsto] ( [%] % ) + Botão Excluir -->
+          <div style="display:flex;align-items:center;gap:3px;flex-shrink:0;margin-left:auto;">
             <span style="color:#cbd5e1;font-weight:700;font-size:11px;">R$</span>
             <input type="text" class="inp-dir-os-val" data-idx="${idx}" value="${valFmt}" inputmode="decimal"
               onfocus="if(!this.dataset.oldVal) this.dataset.oldVal = this.value; this.value = '';"
               onblur="if(!this.value.trim()){ this.value = this.dataset.oldVal || '0,00'; aoDigitarValorCategoriaDirOs(${idx}, this.value); } else { aoDigitarValorCategoriaDirOs(${idx}, this.value); }"
               oninput="aoDigitarValorCategoriaDirOs(${idx}, this.value)"
-              style="width:72px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);border-radius:6px;color:#fff;font-size:12px;font-weight:800;text-align:right;padding:3px 6px;outline:none;" />
+              style="width:66px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);border-radius:6px;color:#fff;font-size:11.5px;font-weight:800;text-align:right;padding:3px 5px;outline:none;" />
 
-            <span style="color:#94a3b8;font-weight:600;font-size:11px;margin-left:2px;">(</span>
+            <span style="color:#94a3b8;font-weight:600;font-size:11px;margin-left:1px;">(</span>
             <input type="number" step="0.1" min="0" max="100" class="inp-dir-os-pct" data-idx="${idx}" value="${pct.toFixed(1).replace('.0','')}"
               onfocus="if(!this.dataset.oldVal) this.dataset.oldVal = this.value; this.value = '';"
               onblur="if(!this.value.trim()){ this.value = this.dataset.oldVal || '0'; aoDigitarPctCategoriaDirOs(${idx}, this.value); } else { aoDigitarPctCategoriaDirOs(${idx}, this.value); }"
               oninput="aoDigitarPctCategoriaDirOs(${idx}, this.value)"
-              style="width:46px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);border-radius:6px;color:#c4b5fd;font-size:12px;font-weight:800;text-align:right;padding:3px 5px;outline:none;" />
+              style="width:42px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);border-radius:6px;color:#c4b5fd;font-size:11.5px;font-weight:800;text-align:right;padding:3px 4px;outline:none;" />
             <span style="color:#94a3b8;font-weight:600;font-size:11px;">%)</span>
 
             <button type="button" onclick="removerCategoriaDirOs(${idx})"
-              style="background:none;border:none;color:#ef4444;font-size:12px;cursor:pointer;padding:2px 4px;opacity:0.6;line-height:1;"
+              style="background:none;border:none;color:#ef4444;font-size:12px;cursor:pointer;padding:2px 3px;opacity:0.6;line-height:1;"
               title="Remover Categoria" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">✕</button>
           </div>
         </div>
@@ -43742,6 +43795,7 @@ function abrirDetalheCategoriaOs(idx) {
   const c = dirOsCategorias[idx];
   const nome = c.nome || '';
   const val = Number(c.valor) || 0;
+  _detCatPrevisto = val;
   const valFmt = typeof formatarValorPtBr === 'function' ? formatarValorPtBr(val) : val.toFixed(2).replace('.', ',');
   const icone = typeof obterIconeCategoriaDir === 'function' ? obterIconeCategoriaDir(nome) : '📋';
 
@@ -43822,7 +43876,7 @@ window.salvarDetalheCatDir = function() {
       rows.forEach(r => {
         const fNome = (r.querySelector('.det-func-nome') || {}).value || '';
         const fDias = parseInt((r.querySelector('.det-func-dias') || {}).value || '0', 10);
-        const fVal = parseFloat(String((r.querySelector('.det-func-val') || {}).value || '0').replace(/[^0-9,.]/g,'').replace(',','.')) || 0;
+        const fVal = typeof parseNum === 'function' ? parseNum((r.querySelector('.det-func-val') || {}).value) : (parseFloat(String((r.querySelector('.det-func-val') || {}).value || '0').replace(/[^0-9,.]/g,'').replace(',','.')) || 0);
         if (fNome || fVal > 0) funcs.push({ nome: fNome, dias: fDias, valor: fVal });
       });
       if (!c.detalhes) c.detalhes = {};
@@ -43832,11 +43886,25 @@ window.salvarDetalheCatDir = function() {
       const itens = [];
       rows.forEach(r => {
         const desc = ((r.querySelector('.det-item-desc') || {}).value || '').trim();
-        const val = parseFloat(String((r.querySelector('.det-item-val') || {}).value || '0').replace(/[^0-9,.]/g,'').replace(',','.')) || 0;
+        const val = typeof parseNum === 'function' ? parseNum((r.querySelector('.det-item-val') || {}).value) : (parseFloat(String((r.querySelector('.det-item-val') || {}).value || '0').replace(/[^0-9,.]/g,'').replace(',','.')) || 0);
         if (desc || val > 0) itens.push({ desc, valor: val });
       });
       if (!c.detalhes) c.detalhes = {};
       c.detalhes.itens = itens;
+    }
+
+    if (typeof dirOsAtiva !== 'undefined' && dirOsAtiva) {
+      if (!dirOsAtiva.direcionamento) {
+        dirOsAtiva.direcionamento = { categorias: dirOsCategorias, valorTotal: dirOsValorTotal };
+      }
+      dirOsAtiva.direcionamento.categorias = dirOsCategorias;
+      const idx = (historico || []).findIndex(x => String(x.id) === String(dirOsAtiva.id) || String(x.numero) === String(dirOsAtiva.numero));
+      if (idx !== -1) {
+        historico[idx].direcionamento = dirOsAtiva.direcionamento;
+        if (typeof save === 'function' && typeof K !== 'undefined' && K.orders) {
+          save(K.orders, historico);
+        }
+      }
     }
 
     renderizarRateioVisualOs();

@@ -3765,7 +3765,7 @@
                 <span>📦</span> Novo Pedido
               </button>
               <button class="btn btn-sec btn-sm" onclick="abrirModalConfigWhatsappMaterial()" style="display:flex;align-items:center;gap:6px;font-size:11.5px;">
-                <span>⚙️</span> Config. Zap
+                <span>⚙️</span> Config. Zap <span style="font-size:10px;opacity:0.85;">🔒</span>
               </button>
             </div>
           </div>
@@ -9741,9 +9741,34 @@ function baterPontoNoCliente(tipo) {
       const ordens = (typeof carregarOrdensDoStorage === 'function') ? carregarOrdensDoStorage() : [];
       const fLimpo = (filtro || '').trim().toLowerCase();
 
-      let filtradas = ordens;
+      // Se for cliente logado, restringe estritamente às ordens dele
+      let ordensDisponiveis = ordens;
+      if (typeof clienteSessao !== 'undefined' && clienteSessao && !clienteSessao.isFuncionario && (clienteSessao.nome || clienteSessao.os)) {
+        const nLimpo = (clienteSessao.nome || '').toLowerCase().trim();
+        const osNumLimpo = String(clienteSessao.os || '').replace(/\D/g, '');
+        const telLimpo = String(clienteSessao.telefone || '').replace(/\D/g, '');
+
+        const encontradas = ordens.filter(o => {
+          const oNome = (o.nome || (o.dados && o.dados.nome) || '').toLowerCase().trim();
+          const oNum = String(o.numero || (o.dados && o.dados.numero) || '').replace(/\D/g, '');
+          const oTel = String(o.telefone || (o.dados && o.dados.telefone) || '').replace(/\D/g, '');
+
+          if (osNumLimpo && oNum === osNumLimpo) return true;
+          if (telLimpo && telLimpo.length >= 8 && oTel && (oTel === telLimpo || oTel.endsWith(telLimpo) || telLimpo.endsWith(oTel))) return true;
+          if (nLimpo && nLimpo !== 'cliente' && (oNome === nLimpo || oNome.includes(nLimpo) || nLimpo.includes(oNome))) return true;
+          return false;
+        });
+
+        if (encontradas.length > 0) ordensDisponiveis = encontradas;
+        else if (osNumLimpo) {
+          const porOs = ordens.filter(o => String(o.numero || (o.dados && o.dados.numero) || '').replace(/\D/g, '') === osNumLimpo);
+          if (porOs.length > 0) ordensDisponiveis = porOs;
+        }
+      }
+
+      let filtradas = ordensDisponiveis;
       if (fLimpo) {
-        filtradas = ordens.filter(o => 
+        filtradas = ordensDisponiveis.filter(o => 
           String(o.numero || '').toLowerCase().includes(fLimpo) ||
           String(o.nome || '').toLowerCase().includes(fLimpo) ||
           String(o.servico || o.descricao || '').toLowerCase().includes(fLimpo)
@@ -14669,13 +14694,7 @@ function excluirPedidoMaterial(id) {
 }
 
 function abrirModalNovoPedidoMaterial(it) {
-  const liberado = sessionStorage.getItem('sdv_material_liberado_sessao') === 'true';
-  if (!liberado) {
-    solicitarSenhaPedidoMaterialPortal(() => {
-      abrirModalNovoPedidoMaterial(it);
-    });
-    return;
-  }
+  // O botão "Novo Pedido" é 100% liberado para cadastro de novos pedidos de material
   try {
     const m = document.getElementById('modal-novo-pedido-material');
     if (!m) return;
@@ -14902,6 +14921,13 @@ function salvarPedidoMaterial() {
 }
 
 function abrirModalConfigWhatsappMaterial() {
+  const liberado = sessionStorage.getItem('sdv_material_liberado_sessao') === 'true';
+  if (!liberado) {
+    solicitarSenhaPedidoMaterialPortal(() => {
+      abrirModalConfigWhatsappMaterial();
+    });
+    return;
+  }
   const m = document.getElementById('modal-config-whatsapp-material');
   if (!m) return;
   try {
