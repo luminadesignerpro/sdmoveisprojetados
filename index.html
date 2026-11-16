@@ -15154,10 +15154,7 @@ function renderHistFiltrado() {
           <span class="hist-num">${esc(o.numero)}</span>
           <span class="status-pill ${st} status-bloqueada" style="cursor:default;opacity:0.95;user-select:none;">${statusLabels[st] || '🟡 Aguardando'}</span>
         </div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span class="hist-date">${esc(o.data_orc || '')}</span>
-          <strong style="font-size:13.5px;color:var(--gold);font-weight:900;">${esc(typeof obterTotalOsReal === 'function' && obterTotalOsReal(o) > 0 ? ('R$ ' + (typeof formatarValorPtBr === 'function' ? formatarValorPtBr(obterTotalOsReal(o)) : obterTotalOsReal(o).toFixed(2).replace('.', ','))) : (o.total || 'R$ 0,00'))}</strong>
-        </div>
+        <span class="hist-date">${esc(o.data_orc || '')}</span>
       </div>
       <!-- Botão Direcionamento abaixo do status Aguardando Resposta -->
       <div style="margin-top:8px;">
@@ -16317,13 +16314,13 @@ function abrirModalDirecionamentoOs(id) {
   dirOsAtiva = o;
   
   // Extrai valor total da OS
-  const totalRaw = o.total || (o.dados && o.dados.total) || 0;
+  const totalRaw = typeof obterTotalOsReal === 'function' ? obterTotalOsReal(o) : (o.total || (o.dados && o.dados.total) || 0);
   dirValorTotalNum = parseNum(totalRaw);
 
   // Inicializa categorias: se já tiver salvo na OS, carrega; senão tenta auto-gerar dos itens ou carrega padrão
   if (o.direcionamento && Array.isArray(o.direcionamento.categorias) && o.direcionamento.categorias.length > 0) {
     dirCategoriasEdicao = JSON.parse(JSON.stringify(o.direcionamento.categorias));
-    if (typeof o.direcionamento.valorTotal === 'number' && o.direcionamento.valorTotal > 0) {
+    if (dirValorTotalNum === 0 && typeof o.direcionamento.valorTotal === 'number' && o.direcionamento.valorTotal > 0) {
       dirValorTotalNum = o.direcionamento.valorTotal;
     }
   } else {
@@ -43519,13 +43516,15 @@ function abrirModalDirecionamentoOs(id) {
   }
   dirOsAtiva = o;
 
-  // Valor total da O.S. com resolução inteligente
-  dirOsValorTotal = typeof obterTotalOsReal === 'function' ? obterTotalOsReal(o) : parseNum(o.total || (o.dados && o.dados.total) || 0);
+  // Valor total da O.S. com resolução inteligente (O total real da O.S. SEMPRE prevalece)
+  const totalOsReal = typeof obterTotalOsReal === 'function' ? obterTotalOsReal(o) : parseNum(o.total || (o.dados && o.dados.total) || 0);
+  dirOsValorTotal = totalOsReal > 0 ? totalOsReal : parseNum(o.total || (o.dados && o.dados.total) || 0);
 
   // Inicializa categorias
   if (o.direcionamento && Array.isArray(o.direcionamento.categorias) && o.direcionamento.categorias.length > 0) {
     dirOsCategorias = JSON.parse(JSON.stringify(o.direcionamento.categorias));
-    if (typeof o.direcionamento.valorTotal === 'number' && o.direcionamento.valorTotal > 0) {
+    // Se a O.S. não tinha valor próprio mas o direcionamento tinha, usa como fallback
+    if (dirOsValorTotal === 0 && typeof o.direcionamento.valorTotal === 'number' && o.direcionamento.valorTotal > 0) {
       dirOsValorTotal = o.direcionamento.valorTotal;
     }
   } else {
@@ -43538,6 +43537,14 @@ function abrirModalDirecionamentoOs(id) {
       { nome: 'Frete', porcentagem: 5, valor: 0, cor: '#06b6d4' },
       { nome: 'Lucro da Empresa', porcentagem: 3, valor: 0, cor: '#22c55e' }
     ];
+  }
+
+  // Sempre recalcula os valores em R$ das categorias com base no valor total da O.S. e suas porcentagens
+  if (dirOsValorTotal > 0) {
+    dirOsCategorias.forEach(c => {
+      const pct = Number(c.porcentagem) || 0;
+      c.valor = Math.round(((dirOsValorTotal * pct) / 100) * 100) / 100;
+    });
   }
 
   // Preenche dados do modal

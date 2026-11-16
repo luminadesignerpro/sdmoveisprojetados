@@ -1,5 +1,5 @@
-// Service Worker PWA – SD Móveis Projetados v9.5.35 (Fix: O.S. sumindo após salvar — protege historico contra recarregamento pelo focus event; load() respeita blacklist e prioriza chave principal; save() limpa quota antes de salvar)
-const CACHE_NAME = 'sdmoveisprojetados-v9.5.35';
+// Service Worker PWA – SD Móveis Projetados v9.5.36 (Fix: remove total duplicado no cabeçalho do card no Histórico e garante total real da O.S. no modal Rateio Proporcional Visual)
+const CACHE_NAME = 'sdmoveisprojetados-v9.5.36';
 const ASSETS = [
   '/',
   '/index.html',
