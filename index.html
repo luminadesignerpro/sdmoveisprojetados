@@ -11016,6 +11016,13 @@ function recalcularTotaisGerais(campoOrigem = '') {
     if (taxaPercent > 0 && valProd > 0) {
       valServ = valProd * (taxaPercent / 100);
       if (elServ) elServ.value = formatarValorPtBr(valServ);
+    } else if (valServ > 0 && valProd > 0 && taxaPercent === 0) {
+      taxaPercent = (valServ / valProd) * 100;
+      if (elTaxa) elTaxa.value = formatarCampoTaxa({ value: taxaPercent });
+      const inpTopTaxa = document.getElementById('inp-ambiente-top-taxa');
+      if (inpTopTaxa && (inpTopTaxa.value === '' || inpTopTaxa.value === '0')) {
+        inpTopTaxa.value = Math.round(taxaPercent);
+      }
     }
   }
 
@@ -13009,6 +13016,19 @@ function editarOs(id) {
   itemId = 0;
   secaoAmbienteAtivaTr = null;
 
+  // 🛡️ Extrai previamente a taxa e valores financeiros para evitar que o serviço zere na montagem
+  let taxaParaRestaurar = 0;
+  if (d.taxaAcrescimo != null && parseNum(d.taxaAcrescimo) > 0) {
+    taxaParaRestaurar = parseNum(d.taxaAcrescimo);
+  } else if (d.valServico && d.valProdutos && parseNum(d.valProdutos) > 0) {
+    taxaParaRestaurar = Math.round((parseNum(d.valServico) / parseNum(d.valProdutos)) * 100);
+  }
+
+  const elTaxaPre = document.getElementById('o-taxa-acrescimo');
+  const inpTopTaxaPre = document.getElementById('inp-ambiente-top-taxa');
+  if (elTaxaPre && taxaParaRestaurar > 0) elTaxaPre.value = formatarCampoTaxa({ value: taxaParaRestaurar });
+  if (inpTopTaxaPre && taxaParaRestaurar > 0) inpTopTaxaPre.value = taxaParaRestaurar;
+
   const listaItensRaw = (d.itens && d.itens.length) ? d.itens : ((o.versoes_pdf && o.versoes_pdf[0] && o.versoes_pdf[0].dados && o.versoes_pdf[0].dados.itens) || []);
 
   if (listaItensRaw && listaItensRaw.length) {
@@ -13054,15 +13074,31 @@ function editarOs(id) {
           const ambObj = (d.ambientes && Array.isArray(d.ambientes)) ? d.ambientes.find(a => (a.nome || '').trim().toLowerCase() === ambNome.toLowerCase()) : null;
           const inpTopObs = document.getElementById('inp-orc-ambiente-top-obs');
           if (inpTopObs) inpTopObs.value = (ambObj && ambObj.obs) || d.obs_ambiente || '';
+
+          let taxaAmb0 = taxaParaRestaurar;
+          if (ambObj) {
+            if (ambObj.taxa != null && parseNum(ambObj.taxa) > 0) taxaAmb0 = parseNum(ambObj.taxa);
+            else if (ambObj.servicosVal > 0 && ambObj.produtosVal > 0) taxaAmb0 = Math.round((ambObj.servicosVal / ambObj.produtosVal) * 100);
+          }
+          if (inpTopTaxaPre && taxaAmb0 > 0) inpTopTaxaPre.value = taxaAmb0;
         }
         secaoAmbienteAtivaTr = null;
       } else {
         if (typeof adicionarNovoAmbienteSecao === 'function') {
-          adicionarNovoAmbienteSecao(ambNome);
+          adicionarNovoAmbienteSecao(ambNome, false);
           const ambObjSec = (d.ambientes && Array.isArray(d.ambientes)) ? d.ambientes.find(a => (a.nome || '').trim().toLowerCase() === ambNome.toLowerCase()) : null;
-          if (ambObjSec && ambObjSec.obs && secaoAmbienteAtivaTr) {
-            const inpSecObs = secaoAmbienteAtivaTr.querySelector('.inp-ambiente-obs');
-            if (inpSecObs) inpSecObs.value = ambObjSec.obs;
+          if (secaoAmbienteAtivaTr) {
+            if (ambObjSec && ambObjSec.obs) {
+              const inpSecObs = secaoAmbienteAtivaTr.querySelector('.inp-ambiente-obs');
+              if (inpSecObs) inpSecObs.value = ambObjSec.obs;
+            }
+            let taxaAmbSec = taxaParaRestaurar;
+            if (ambObjSec) {
+              if (ambObjSec.taxa != null && parseNum(ambObjSec.taxa) > 0) taxaAmbSec = parseNum(ambObjSec.taxa);
+              else if (ambObjSec.servicosVal > 0 && ambObjSec.produtosVal > 0) taxaAmbSec = Math.round((ambObjSec.servicosVal / ambObjSec.produtosVal) * 100);
+            }
+            const inpSecTaxa = secaoAmbienteAtivaTr.querySelector('.inp-secao-taxa') || secaoAmbienteAtivaTr.querySelector('.inp-ambiente-taxa');
+            if (inpSecTaxa && taxaAmbSec > 0) inpSecTaxa.value = taxaAmbSec;
           }
         }
       }
@@ -13086,23 +13122,31 @@ function editarOs(id) {
   const elDesc = document.getElementById('o-val-desconto');
 
   if (elProd && d.valProdutos != null) elProd.value = formatarValorPtBr(d.valProdutos);
-  if (elTaxa && d.taxaAcrescimo != null) elTaxa.value = formatarCampoTaxa({ value: d.taxaAcrescimo });
-  if (elServ && d.valServico != null) {
-    elServ.value = formatarValorPtBr(d.valServico);
-  } else if (elTaxa && d.taxaAcrescimo && elProd && d.valProdutos) {
-    elServ.value = formatarValorPtBr(parseNum(d.valProdutos) * (parseNum(d.taxaAcrescimo) / 100));
+  if (elTaxa && taxaParaRestaurar > 0) elTaxa.value = formatarCampoTaxa({ value: taxaParaRestaurar });
+  if (inpTopTaxaPre && taxaParaRestaurar > 0) inpTopTaxaPre.value = taxaParaRestaurar;
+
+  const valServRestaurar = (d.valServico != null && parseNum(d.valServico) > 0)
+    ? parseNum(d.valServico)
+    : (taxaParaRestaurar > 0 && d.valProdutos ? parseNum(d.valProdutos) * (taxaParaRestaurar / 100) : null);
+  if (elServ && valServRestaurar != null) {
+    elServ.value = formatarValorPtBr(valServRestaurar);
   }
-  if (elFrete && d.valFrete != null) elFrete.value = formatarValorPtBr(d.valFrete);
+
+  const valFreteRestaurar = (d.valFrete != null) ? d.valFrete : (d.frete != null ? d.frete : null);
+  if (elFrete && valFreteRestaurar != null) elFrete.value = formatarValorPtBr(valFreteRestaurar);
+
+  const valDescRestaurar = (d.valDesconto != null) ? d.valDesconto : (d.desconto != null ? d.desconto : null);
   const elTaxaDesc = document.getElementById('o-taxa-desconto');
-  if (d.tipoDesconto === 'porc' || (d.taxaDesconto > 0 && !d.valDesconto)) {
+  if (d.tipoDesconto === 'porc' || (d.taxaDesconto > 0 && !valDescRestaurar)) {
     alternarTipoDesconto('porc');
     if (elTaxaDesc && d.taxaDesconto != null) elTaxaDesc.value = formatarCampoTaxa({ value: d.taxaDesconto });
   } else {
     alternarTipoDesconto('reais');
-    if (elDesc && d.valDesconto != null) elDesc.value = formatarValorPtBr(d.valDesconto);
+    if (elDesc && valDescRestaurar != null) elDesc.value = formatarValorPtBr(valDescRestaurar);
     if (elTaxaDesc && d.taxaDesconto != null) elTaxaDesc.value = formatarCampoTaxa({ value: d.taxaDesconto });
   }
   recalcularTotaisGerais('edicao');
+  if (typeof atualizarSubtotaisAmbientes === 'function') atualizarSubtotaisAmbientes();
 
   // Configurações do modo de edição de O.S. com modificações
   const foiAprovadoOuReajuste = o.status === 'aprovado' || o.status === 'modificacao_aprovada' || o.status === 'reajustar' || !!o.assinado_por;
@@ -13555,7 +13599,17 @@ async function enviarPdfOsDoHistorico(id) {
       formatoPdf: oAtual.formatoPdf || _modoPdfOrcamentoSelecionado || 'detalhado',
       ambientes: (oAtual.ambientes&&oAtual.ambientes.length) ? oAtual.ambientes : ((typeof obterResumoAmbientesParaPdf==='function') ? obterResumoAmbientesParaPdf() : []),
       fotos: (typeof desduplicarListaFotos==='function') ? desduplicarListaFotos(fotosOs) : fotosOs,
-      assinatura_base64: (oAtual.assinatura_digital&&oAtual.assinatura_digital.rubrica)||oAtual.assinatura_base64||''
+      assinatura_base64: (oAtual.assinatura_digital&&oAtual.assinatura_digital.rubrica)||oAtual.assinatura_base64||'',
+      valProdutos: oAtual.valProdutos || (oAtual.dados && oAtual.dados.valProdutos) || '0,00',
+      valServico: oAtual.valServico || (oAtual.dados && oAtual.dados.valServico) || '0,00',
+      taxaAcrescimo: oAtual.taxaAcrescimo || (oAtual.dados && oAtual.dados.taxaAcrescimo) || '0,00',
+      valAcrescimo: oAtual.valAcrescimo || (oAtual.dados && oAtual.dados.valAcrescimo) || '0,00',
+      valFrete: oAtual.valFrete || oAtual.frete || (oAtual.dados && (oAtual.dados.valFrete || oAtual.dados.frete)) || '0,00',
+      frete: oAtual.valFrete || oAtual.frete || (oAtual.dados && (oAtual.dados.valFrete || oAtual.dados.frete)) || '0,00',
+      valDesconto: oAtual.valDesconto || oAtual.desconto || (oAtual.dados && (oAtual.dados.valDesconto || oAtual.dados.desconto)) || '0,00',
+      desconto: oAtual.valDesconto || oAtual.desconto || (oAtual.dados && (oAtual.dados.valDesconto || oAtual.dados.desconto)) || '0,00',
+      taxaDesconto: oAtual.taxaDesconto || (oAtual.dados && oAtual.dados.taxaDesconto) || '0,00',
+      tipoDesconto: oAtual.tipoDesconto || (oAtual.dados && oAtual.dados.tipoDesconto) || 'reais'
     };
 
     const blob = await obterPdfOrcamentoBlob(dadosPdf);
@@ -13943,15 +13997,17 @@ function normalizarDadosParaPdf(orig) {
     apto: d.apto || '',
     resp: d.resp || '',
     itens: Array.isArray(d.itens) ? d.itens : [],
-    total: d.total || 'R$ 0,00',
-    valProdutos: d.valProdutos,
-    valServico: d.valServico,
-    taxaAcrescimo: d.taxaAcrescimo,
-    valAcrescimo: d.valAcrescimo,
-    valFrete: d.valFrete,
-    valDesconto: d.valDesconto,
-    taxaDesconto: d.taxaDesconto,
-    tipoDesconto: d.tipoDesconto,
+    total: d.total || orig.total || 'R$ 0,00',
+    valProdutos: d.valProdutos || d.produtos || (orig && (orig.valProdutos || orig.produtos)) || '0,00',
+    valServico: d.valServico || d.servico || (orig && (orig.valServico || orig.servico)) || '0,00',
+    taxaAcrescimo: d.taxaAcrescimo || (orig && orig.taxaAcrescimo) || '0,00',
+    valAcrescimo: d.valAcrescimo || (orig && orig.valAcrescimo) || '0,00',
+    valFrete: d.valFrete || d.frete || (orig && (orig.valFrete || orig.frete)) || '0,00',
+    frete: d.valFrete || d.frete || (orig && (orig.valFrete || orig.frete)) || '0,00',
+    valDesconto: d.valDesconto || d.desconto || (orig && (orig.valDesconto || orig.desconto)) || '0,00',
+    desconto: d.valDesconto || d.desconto || (orig && (orig.valDesconto || orig.desconto)) || '0,00',
+    taxaDesconto: d.taxaDesconto || (orig && orig.taxaDesconto) || '0,00',
+    tipoDesconto: d.tipoDesconto || (orig && orig.tipoDesconto) || 'reais',
     fotos: d.fotos || [],
     status: d.status || '',
     assinatura_base64: d.assinatura_base64 || '',
@@ -15571,7 +15627,7 @@ function aoDigitarTaxaNoBadge(val, elOrigem) {
 window.aoDigitarTaxaNoBadge = aoDigitarTaxaNoBadge;
 
 
-function adicionarNovoAmbienteSecao(nomePadrao = '') {
+function adicionarNovoAmbienteSecao(nomePadrao = '', adicionarLinhaVazia = true) {
   if (typeof _contadorAmbientes === 'undefined') window._contadorAmbientes = 0;
   const idAmb = ++_contadorAmbientes;
   const tbody = document.getElementById('itens-lista');
@@ -15661,13 +15717,15 @@ function adicionarNovoAmbienteSecao(nomePadrao = '') {
     desmarcarTodosProdutosCatalogo();
   }
 
-  // 3. Adiciona imediatamente uma linha limpa de produto/serviço no novo ambiente
-  addItem('', '1', '', '', '', '', '', '', '');
+  // 3. Adiciona imediatamente uma linha limpa de produto/serviço no novo ambiente (se não estiver em restauração/edição)
+  if (adicionarLinhaVazia) {
+    addItem('', '1', '', '', '', '', '', '', '');
+  }
   if (typeof atualizarSubtotaisAmbientes === 'function') {
     atualizarSubtotaisAmbientes();
   }
 
-  if (typeof showToast === 'function') {
+  if (adicionarLinhaVazia && typeof showToast === 'function') {
     showToast('🛋️ Novo ambiente adicionado! Produtos no catálogo desmarcados para você escolher os novos itens.');
   }
 }
@@ -15698,6 +15756,14 @@ function atualizarSubtotaisAmbientes(origemTaxa = false) {
   if (elTaxa && elTaxa.value) {
     taxaGeral = typeof parseNum === 'function' ? parseNum(elTaxa.value) : parseFloat(elTaxa.value) || 0;
   }
+  if (taxaGeral === 0 && elServ && elProd) {
+    const vS = typeof parseNum === 'function' ? parseNum(elServ.value) : 0;
+    const vP = typeof parseNum === 'function' ? parseNum(elProd.value) : 0;
+    if (vS > 0 && vP > 0) {
+      taxaGeral = (vS / vP) * 100;
+      if (elTaxa) elTaxa.value = formatarCampoTaxa({ value: taxaGeral });
+    }
+  }
 
   let somaGeralServico = 0;
   let somaTotalProdutos = 0;
@@ -15714,13 +15780,20 @@ function atualizarSubtotaisAmbientes(origemTaxa = false) {
     somaTotalProdutos += prod0;
 
     let taxa0 = taxaGeral;
-    if (inpTopTaxaEl && inpTopTaxaEl.value !== '') {
-      taxa0 = typeof parseNum === 'function' ? parseNum(inpTopTaxaEl.value) : parseFloat(inpTopTaxaEl.value) || 0;
+    const inpVal0 = inpTopTaxaEl ? inpTopTaxaEl.value.trim() : '';
+    if (inpVal0 !== '' && parseNum(inpVal0) > 0) {
+      taxa0 = parseNum(inpVal0);
+    } else if (taxaGeral > 0) {
+      taxa0 = taxaGeral;
+      if (inpTopTaxaEl) inpTopTaxaEl.value = Math.round(taxaGeral);
     }
 
     let serv0 = a0.servicosVal || 0;
     if (taxa0 > 0 && prod0 > 0) {
       serv0 = prod0 * (taxa0 / 100);
+    } else if (serv0 === 0 && prod0 > 0 && elServ) {
+      const vS = typeof parseNum === 'function' ? parseNum(elServ.value) : 0;
+      if (vS > 0) serv0 = vS;
     }
     const tot0 = prod0 + serv0;
     somaGeralServico += serv0;
@@ -15739,8 +15812,12 @@ function atualizarSubtotaisAmbientes(origemTaxa = false) {
     let taxaSec = taxaGeral;
     if (a.trSec) {
       const inpSecTaxa = a.trSec.querySelector('.inp-secao-taxa') || a.trSec.querySelector('.inp-ambiente-taxa');
-      if (inpSecTaxa && inpSecTaxa.value !== '') {
-        taxaSec = typeof parseNum === 'function' ? parseNum(inpSecTaxa.value) : parseFloat(inpSecTaxa.value) || 0;
+      const inpValSec = inpSecTaxa ? inpSecTaxa.value.trim() : '';
+      if (inpValSec !== '' && parseNum(inpValSec) > 0) {
+        taxaSec = parseNum(inpValSec);
+      } else if (taxaGeral > 0) {
+        taxaSec = taxaGeral;
+        if (inpSecTaxa) inpSecTaxa.value = Math.round(taxaGeral);
       }
 
       let serv = a.servicosVal || 0;
@@ -15762,7 +15839,11 @@ function atualizarSubtotaisAmbientes(origemTaxa = false) {
 
   // 3. Atualiza campos do Resumo Financeiro Geral
   if (elProd) elProd.value = Number(somaTotalProdutos || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  if (elServ) elServ.value = Number(somaGeralServico || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (somaGeralServico > 0) {
+    if (elServ) elServ.value = Number(somaGeralServico).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  } else if (elServ && elServ.value && parseNum(elServ.value) > 0) {
+    somaGeralServico = parseNum(elServ.value);
+  }
 
   const elFrete = document.getElementById('o-val-frete');
   const elDesc = document.getElementById('o-val-desconto');
@@ -23825,16 +23906,18 @@ async function gerarPdfOrcamentoDoc(dados) {
   const valorTotalLimpo = String(total || '0,00').replace('R$', '').trim();
 
   // Valores discriminados para o PDF (a taxa de acréscimo é embutida no serviço ou oculta, NUNCA exibida como taxa ao cliente)
-  const valProdNum = parseNum(dados.valProdutos);
-  const valServNum = parseNum(dados.valServico);
-  const valAcrescimoNum = parseNum(dados.valAcrescimo);
-  const valFreteNum = parseNum(dados.valFrete);
-  const valDescNum = parseNum(dados.valDesconto);
+  const valProdNum = parseNum(dados.valProdutos || dados.produtos || (dados.dados && (dados.dados.valProdutos || dados.dados.produtos)) || 0);
+  const valServNum = parseNum(dados.valServico || dados.servico || (dados.dados && (dados.dados.valServico || dados.dados.servico)) || 0);
+  const valAcrescimoNum = parseNum(dados.valAcrescimo || 0);
+  const valFreteNum = parseNum(dados.valFrete || dados.frete || (dados.dados && (dados.dados.valFrete || dados.dados.frete)) || 0);
+  const valDescNum = parseNum(dados.valDesconto || dados.desconto || (dados.dados && (dados.dados.valDesconto || dados.dados.desconto)) || 0);
 
   if (formatoAmbiente) {
     // Formato Só Ambientes: Não discrimina custo de produto e serviço, exibe valor consolidado
+    const totGeralNum = parseNum(total || valorTotalLimpo);
+    const totAmbientesCalc = Math.max(0, totGeralNum - valFreteNum + valDescNum);
     page.drawText('Valor Total dos Ambientes:', { x: rightCardX + 10, y: totY, size: 6.8, font: fontRegular, color: GRAY });
-    const txtTotAmbResumo = 'R$ ' + valorTotalLimpo;
+    const txtTotAmbResumo = 'R$ ' + formatarValorPtBr(totAmbientesCalc > 0 ? totAmbientesCalc : totGeralNum);
     page.drawText(txtTotAmbResumo, { x: rightCardX + rightCardW - 10 - fontBold.widthOfTextAtSize(txtTotAmbResumo, 7.2), y: totY, size: 7.2, font: fontBold, color: DARK });
 
     if (valFreteNum > 0) {
@@ -24270,7 +24353,17 @@ async function enviarOuBaixarPdfOrcamento(orcObj = null) {
       formatoPdf: o.formatoPdf || _modoPdfOrcamentoSelecionado || 'detalhado',
       ambientes: (o.ambientes && o.ambientes.length) ? o.ambientes : ((typeof obterResumoAmbientesParaPdf === 'function') ? obterResumoAmbientesParaPdf() : []),
       fotos: (typeof desduplicarListaFotos === 'function') ? desduplicarListaFotos(fotosParaPdf) : fotosParaPdf,
-      assinatura_base64: (o.assinatura_digital && o.assinatura_digital.rubrica) || o.assinatura_base64 || o.rubrica_base64 || ''
+      assinatura_base64: (o.assinatura_digital && o.assinatura_digital.rubrica) || o.assinatura_base64 || o.rubrica_base64 || '',
+      valProdutos: o.valProdutos || (o.dados && o.dados.valProdutos) || '0,00',
+      valServico: o.valServico || (o.dados && o.dados.valServico) || '0,00',
+      taxaAcrescimo: o.taxaAcrescimo || (o.dados && o.dados.taxaAcrescimo) || '0,00',
+      valAcrescimo: o.valAcrescimo || (o.dados && o.dados.valAcrescimo) || '0,00',
+      valFrete: o.valFrete || o.frete || (o.dados && (o.dados.valFrete || o.dados.frete)) || '0,00',
+      frete: o.valFrete || o.frete || (o.dados && (o.dados.valFrete || o.dados.frete)) || '0,00',
+      valDesconto: o.valDesconto || o.desconto || (o.dados && (o.dados.valDesconto || o.dados.desconto)) || '0,00',
+      desconto: o.valDesconto || o.desconto || (o.dados && (o.dados.valDesconto || o.dados.desconto)) || '0,00',
+      taxaDesconto: o.taxaDesconto || (o.dados && o.dados.taxaDesconto) || '0,00',
+      tipoDesconto: o.tipoDesconto || (o.dados && o.dados.tipoDesconto) || 'reais'
     };
 
     const blob = await obterPdfOrcamentoBlob(dadosPdf);
