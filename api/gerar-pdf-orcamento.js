@@ -564,10 +564,10 @@ async function gerarPdfOrcamento(dados, fetchLogo, empInfo) {
   let totY = bottomY - 32;
   const valorTotalFormatado = formatMoney(total);
 
-  let valProdNum = parseNumSafe(dados.valProdutos);
-  let valServNum = parseNumSafe(dados.valServico);
-  const valFreteNum = parseNumSafe(dados.valFrete);
-  const valDescNum = parseNumSafe(dados.valDesconto);
+  let valProdNum = parseNumSafe(dados.valProdutos || dados.produtos || (dados.dados && (dados.dados.valProdutos || dados.dados.produtos)));
+  let valServNum = parseNumSafe(dados.valServico || dados.servico || (dados.dados && (dados.dados.valServico || dados.dados.servico)));
+  const valFreteNum = parseNumSafe(dados.valFrete || dados.frete || (dados.dados && (dados.dados.valFrete || dados.dados.frete)));
+  const valDescNum = parseNumSafe(dados.valDesconto || dados.desconto || (dados.dados && (dados.dados.valDesconto || dados.dados.desconto)));
   const totalGeralNum = parseNumSafe(total);
 
   if (valProdNum === 0 && typeof gruposAmbientes !== 'undefined' && gruposAmbientes.length > 0) {
