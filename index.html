@@ -2192,15 +2192,11 @@
           <span style="font-size:14px;">➕</span>
         </button>
 
-        <!-- BOTÃO PORTFÓLIO -->
-        <button type="button" class="btn btn-sm" id="btn-portfolio-orc" onclick="abrirModalPortfolio()" style="background:linear-gradient(135deg, rgba(139,92,246,0.3), rgba(99,102,241,0.25));border:1.5px solid #8b5cf6;color:#c4b5fd;font-weight:800;border-radius:8px;padding:6px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;box-shadow:0 2px 8px rgba(139,92,246,0.25);font-size:13px;" title="Abrir Portfólio de Trabalhos e Fotos">
-          <span style="font-size:14px;">🖼️</span> <span>Portfólio</span>
-          <span id="badge-portfolio-count" style="display:none;background:#8b5cf6;color:#fff;font-size:10px;font-weight:900;padding:1px 6px;border-radius:10px;min-width:16px;text-align:center;">0</span>
-        </button>
 
         <!-- Inputs ocultos para seleção de fotos do portfólio -->
         <input type="file" id="input-portfolio-galeria" accept="image/*" multiple style="display:none;" onchange="aoSelecionarFotosPortfolio(event)">
         <input type="file" id="input-portfolio-camera" accept="image/*" capture="environment" style="display:none;" onchange="aoSelecionarFotosPortfolio(event)">
+        <input type="file" id="input-portfolio-cliente-fotos" accept="image/*" multiple style="display:none;" onchange="aoSelecionarFotosClientePortfolio(event)">
       </div>
 
       <!-- MINIATURAS VISUAIS DE FOTOS E ARQUIVOS ANEXADOS AO ORÇAMENTO -->
@@ -5603,60 +5599,80 @@
 
 <!-- ══ MODAL PORTFÓLIO DE TRABALHOS & FOTOS ══ -->
 <div id="modal-portfolio" class="modal-overlay" style="display:none; z-index:99998;" onclick="fecharModalPortfolio(event)">
-  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:860px; width:95vw; max-height:92vh; display:flex; flex-direction:column; padding:18px; background:#11121d; border:1px solid rgba(139,92,246,0.4); box-shadow:0 20px 60px rgba(0,0,0,0.95), 0 0 30px rgba(139,92,246,0.25); border-radius:16px;">
-    <!-- Título -->
-    <div style="margin-bottom:14px; flex-shrink:0; display:flex; justify-content:space-between; align-items:center;">
-      <span style="font-size:15px; font-weight:800; color:#c4b5fd; display:flex; align-items:center; gap:8px;">
-        <span>🖼️</span> Portfólio de Trabalhos &amp; Fotos
-        <span id="badge-portfolio-modal" style="background:rgba(139,92,246,0.25); color:#c4b5fd; font-size:11px; padding:2px 9px; border-radius:12px; border:1px solid #8b5cf6;">0 fotos</span>
-      </span>
-      <button onclick="fecharModalPortfolio()" style="background:none; border:none; color:#9ca3af; font-size:20px; cursor:pointer; padding:4px 8px; line-height:1;">✕</button>
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:900px; width:95vw; max-height:94vh; display:flex; flex-direction:column; padding:0; background:#0f1020; border:1px solid rgba(16,185,129,0.4); box-shadow:0 20px 60px rgba(0,0,0,0.95), 0 0 30px rgba(16,185,129,0.2); border-radius:16px; overflow:hidden;">
+    <div style="padding:16px 20px; background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(5,150,105,0.1)); border-bottom:1px solid rgba(16,185,129,0.25); display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 4px 12px rgba(16,185,129,0.4);">🗂️</div>
+        <div>
+          <div style="font-size:15px; font-weight:900; color:#fff;">Portfólio de Trabalhos</div>
+          <div style="font-size:11px; color:#6ee7b7; margin-top:1px;">Pastas de Clientes · Fotos dos Projetos</div>
+        </div>
+        <span id="badge-portfolio-modal" style="background:rgba(16,185,129,0.2); color:#34d399; font-size:11px; padding:2px 9px; border-radius:12px; border:1px solid #10b981;">0 fotos</span>
+      </div>
+      <button onclick="fecharModalPortfolio()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:#9ca3af;font-size:16px;cursor:pointer;padding:5px 10px;border-radius:8px;line-height:1;">✕</button>
     </div>
-
-    <!-- Barra de ações -->
-    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px; flex-shrink:0; background:rgba(139,92,246,0.08); border:1.5px solid rgba(139,92,246,0.3); border-radius:10px; padding:10px 14px;">
-      <!-- Botão Adicionar com dropdown -->
-      <div style="position:relative;">
-        <button type="button" id="btn-portfolio-add-toggle" onclick="toggleMenuPortfolio()" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9); color:#fff; font-weight:800; font-size:12.5px; border:none; border-radius:8px; padding:8px 16px; cursor:pointer; display:inline-flex; align-items:center; gap:7px; box-shadow:0 2px 10px rgba(139,92,246,0.4);">
-          <span>➕</span> Adicionar Foto <span style="font-size:10px;">▼</span>
-        </button>
-        <div id="menu-portfolio-add" style="display:none; position:absolute; top:calc(100% + 6px); left:0; background:#1a1a2e; border:1.5px solid rgba(139,92,246,0.5); border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,0.6); z-index:10; min-width:180px; overflow:hidden;">
-          <button type="button" onclick="triggerPortfolioInput('galeria')" style="width:100%; background:none; border:none; color:#e5e7eb; font-size:12.5px; padding:12px 16px; cursor:pointer; display:flex; align-items:center; gap:10px; transition:background 0.15s;" onmouseover="this.style.background='rgba(139,92,246,0.2)'" onmouseout="this.style.background='none'">
-            🖼️ Buscar na Galeria
-          </button>
-          <div style="height:1px; background:rgba(255,255,255,0.08);"></div>
-          <button type="button" onclick="triggerPortfolioInput('camera')" style="width:100%; background:none; border:none; color:#e5e7eb; font-size:12.5px; padding:12px 16px; cursor:pointer; display:flex; align-items:center; gap:10px; transition:background 0.15s;" onmouseover="this.style.background='rgba(139,92,246,0.2)'" onmouseout="this.style.background='none'">
-            📷 Câmera
-          </button>
+    <div style="display:flex; border-bottom:1px solid rgba(255,255,255,0.08); flex-shrink:0; background:#0a0b15;">
+      <button type="button" id="tab-portfolio-clientes" onclick="mudarAbaPortfolio('clientes')" style="flex:1; padding:12px 8px; border:none; background:linear-gradient(135deg,rgba(16,185,129,0.2),rgba(5,150,105,0.15)); color:#34d399; font-size:12.5px; font-weight:800; cursor:pointer; border-bottom:2px solid #10b981; display:flex; align-items:center; justify-content:center; gap:6px;">🗂️ Pastas de Clientes</button>
+      <button type="button" id="tab-portfolio-fotos" onclick="mudarAbaPortfolio('fotos')" style="flex:1; padding:12px 8px; border:none; background:transparent; color:#6b7280; font-size:12.5px; font-weight:800; cursor:pointer; border-bottom:2px solid transparent; display:flex; align-items:center; justify-content:center; gap:6px;">🖼️ Todas as Fotos</button>
+    </div>
+    <div style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch;">
+      <div id="painel-portfolio-clientes" style="padding:16px;">
+        <div id="barra-acoes-clientes" style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px;">
+          <button type="button" onclick="abrirFormAdicionarCliente()" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-weight:900;font-size:12.5px;border:none;border-radius:9px;padding:9px 18px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;box-shadow:0 2px 10px rgba(16,185,129,0.4);">➕ Adicionar Cliente</button>
+          <input type="text" id="inp-busca-cliente-portfolio" placeholder="🔍 Buscar cliente..." oninput="renderizarPastasClientes()" style="flex:1; min-width:150px; background:rgba(0,0,0,0.4); border:1px solid rgba(16,185,129,0.4); border-radius:8px; padding:8px 12px; color:#e5e7eb; font-size:12.5px; outline:none; box-sizing:border-box;">
+        </div>
+        <div id="form-cliente-portfolio" style="display:none; background:rgba(16,185,129,0.06); border:1.5px solid rgba(16,185,129,0.3); border-radius:12px; padding:16px; margin-bottom:14px;">
+          <div style="font-size:13px; font-weight:800; color:#34d399; margin-bottom:12px;"><span id="form-cliente-titulo-label">➕ Novo Cliente</span></div>
+          <input type="hidden" id="form-cliente-id">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+            <div><label style="font-size:11px;color:#9ca3af;font-weight:700;display:block;margin-bottom:4px;">Nome *</label><input type="text" id="form-cliente-nome" placeholder="Nome do cliente" style="width:100%;background:rgba(0,0,0,0.5);border:1px solid rgba(16,185,129,0.4);border-radius:7px;padding:8px 10px;color:#e5e7eb;font-size:12.5px;outline:none;box-sizing:border-box;"></div>
+            <div><label style="font-size:11px;color:#9ca3af;font-weight:700;display:block;margin-bottom:4px;">WhatsApp / Telefone</label><input type="text" id="form-cliente-tel" placeholder="(85) 99999-9999" style="width:100%;background:rgba(0,0,0,0.5);border:1px solid rgba(16,185,129,0.4);border-radius:7px;padding:8px 10px;color:#e5e7eb;font-size:12.5px;outline:none;box-sizing:border-box;"></div>
+            <div><label style="font-size:11px;color:#9ca3af;font-weight:700;display:block;margin-bottom:4px;">Cidade / Bairro</label><input type="text" id="form-cliente-cidade" placeholder="Cidade ou bairro" style="width:100%;background:rgba(0,0,0,0.5);border:1px solid rgba(16,185,129,0.4);border-radius:7px;padding:8px 10px;color:#e5e7eb;font-size:12.5px;outline:none;box-sizing:border-box;"></div>
+            <div><label style="font-size:11px;color:#9ca3af;font-weight:700;display:block;margin-bottom:4px;">Nº O.S. / Projeto</label><input type="text" id="form-cliente-os" placeholder="Ex: #1129" style="width:100%;background:rgba(0,0,0,0.5);border:1px solid rgba(16,185,129,0.4);border-radius:7px;padding:8px 10px;color:#e5e7eb;font-size:12.5px;outline:none;box-sizing:border-box;"></div>
+          </div>
+          <div style="margin-bottom:10px;"><label style="font-size:11px;color:#9ca3af;font-weight:700;display:block;margin-bottom:4px;">Observações</label><textarea id="form-cliente-obs" rows="2" placeholder="Ambiente, estilo, preferências..." style="width:100%;background:rgba(0,0,0,0.5);border:1px solid rgba(16,185,129,0.4);border-radius:7px;padding:8px 10px;color:#e5e7eb;font-size:12.5px;outline:none;resize:vertical;box-sizing:border-box;"></textarea></div>
+          <div style="display:flex; gap:8px; justify-content:flex-end;">
+            <button type="button" onclick="cancelarFormCliente()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);color:#9ca3af;font-size:12px;font-weight:700;padding:7px 16px;border-radius:8px;cursor:pointer;">Cancelar</button>
+            <button type="button" onclick="salvarClientePortfolio()" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-size:12.5px;font-weight:900;border:none;padding:7px 20px;border-radius:8px;cursor:pointer;box-shadow:0 2px 8px rgba(16,185,129,0.35);">💾 Salvar</button>
+          </div>
+        </div>
+        <div id="grid-pastas-clientes" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(160px,1fr)); gap:12px;"></div>
+        <div id="detalhe-cliente-portfolio" style="display:none;">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+            <button type="button" onclick="voltarParaPastasClientes()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#e5e7eb;font-size:12px;font-weight:700;padding:7px 14px;border-radius:8px;cursor:pointer;">← Voltar</button>
+            <div id="detalhe-cliente-titulo" style="font-size:14px;font-weight:900;color:#fff;flex:1;"></div>
+            <button type="button" id="btn-editar-cliente-detalhe" onclick="" style="background:rgba(245,158,11,0.2);border:1px solid #f59e0b;color:#fbbf24;font-size:11.5px;font-weight:800;padding:6px 12px;border-radius:7px;cursor:pointer;">✏️ Editar</button>
+          </div>
+          <div id="detalhe-cliente-info" style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.25);border-radius:12px;padding:14px;margin-bottom:14px; display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:12.5px;"></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <span style="font-size:13px;font-weight:800;color:#e5e7eb;">📸 Fotos do Projeto</span>
+            <button type="button" onclick="triggerPortfolioInputCliente()" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-size:11.5px;font-weight:800;border:none;border-radius:7px;padding:6px 14px;cursor:pointer;">➕ Adicionar Fotos</button>
+          </div>
+          <div id="grid-fotos-cliente-detalhe" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(130px,1fr)); gap:10px;"></div>
         </div>
       </div>
-      <!-- Busca -->
-      <div style="flex:1; min-width:160px;">
-        <input type="text" id="inp-busca-portfolio" placeholder="🔍 Buscar por título ou categoria..." oninput="renderizarModalPortfolio()" style="width:100%; background:rgba(0,0,0,0.4); border:1px solid rgba(139,92,246,0.4); border-radius:8px; padding:8px 12px; color:#e5e7eb; font-size:12.5px; outline:none; box-sizing:border-box;">
+      <div id="painel-portfolio-fotos" style="display:none; padding:16px;">
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px;">
+          <input type="text" id="inp-busca-portfolio" placeholder="🔍 Buscar por título ou categoria..." oninput="renderizarModalPortfolio()" style="flex:1; min-width:150px; background:rgba(0,0,0,0.4); border:1px solid rgba(139,92,246,0.4); border-radius:8px; padding:8px 12px; color:#e5e7eb; font-size:12.5px; outline:none; box-sizing:border-box;">
+          <select id="sel-filtro-categoria-portfolio" onchange="renderizarModalPortfolio()" style="background:#0e1020; border:1px solid #8b5cf6; color:#c4b5fd; font-size:12px; font-weight:700; border-radius:8px; padding:7px 10px; outline:none; cursor:pointer;">
+            <option value="">Todas Categorias</option>
+            <option value="Cozinha">🍳 Cozinha</option><option value="Quarto">🛏️ Quarto</option><option value="Sala">🛋️ Sala</option><option value="Banheiro">🚿 Banheiro</option><option value="Escritório">💼 Escritório</option><option value="Área Gourmet">🍖 Área Gourmet</option><option value="Externo">🏠 Externo</option><option value="Outro">📁 Outro</option>
+          </select>
+          <div style="position:relative;">
+            <button type="button" id="btn-portfolio-add-toggle" onclick="toggleMenuPortfolio()" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9);color:#fff;font-weight:800;font-size:12px;border:none;border-radius:8px;padding:8px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 10px rgba(139,92,246,0.4);">➕ Adicionar Foto <span style="font-size:10px;">▼</span></button>
+            <div id="menu-portfolio-add" style="display:none; position:absolute; top:calc(100% + 6px); right:0; background:#1a1a2e; border:1.5px solid rgba(139,92,246,0.5); border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,0.6); z-index:10; min-width:180px; overflow:hidden;">
+              <button type="button" onclick="triggerPortfolioInput('galeria')" style="width:100%;background:none;border:none;color:#e5e7eb;font-size:12.5px;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onmouseover="this.style.background='rgba(139,92,246,0.2)'" onmouseout="this.style.background='none'">🖼️ Buscar na Galeria</button>
+              <div style="height:1px;background:rgba(255,255,255,0.08);"></div>
+              <button type="button" onclick="triggerPortfolioInput('camera')" style="width:100%;background:none;border:none;color:#e5e7eb;font-size:12.5px;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onmouseover="this.style.background='rgba(139,92,246,0.2)'" onmouseout="this.style.background='none'">📷 Câmera</button>
+            </div>
+          </div>
+        </div>
+        <div id="grid-portfolio-fotos" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(145px,1fr)); gap:12px; min-height:150px;"></div>
       </div>
-      <!-- Filtro de categorias -->
-      <select id="sel-filtro-categoria-portfolio" onchange="renderizarModalPortfolio()" style="background:#0e1020; border:1px solid #8b5cf6; color:#c4b5fd; font-size:12px; font-weight:700; border-radius:8px; padding:7px 10px; outline:none; cursor:pointer;">
-        <option value="">Todas Categorias</option>
-        <option value="Cozinha">🍳 Cozinha</option>
-        <option value="Quarto">🛏️ Quarto</option>
-        <option value="Sala">🛋️ Sala</option>
-        <option value="Banheiro">🚿 Banheiro</option>
-        <option value="Escritório">💼 Escritório</option>
-        <option value="Área Gourmet">🍖 Área Gourmet</option>
-        <option value="Externo">🏠 Externo</option>
-        <option value="Outro">📁 Outro</option>
-      </select>
     </div>
-
-    <!-- Grid de fotos -->
-    <div id="grid-portfolio-fotos" style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; min-height:200px; max-height:62vh; padding:6px; display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:12px;">
-      <!-- Renderizado via renderizarModalPortfolio() -->
-    </div>
-
-    <!-- Rodapé -->
-    <div style="display:flex; justify-content:flex-end; align-items:center; margin-top:14px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.08); flex-shrink:0; gap:10px;">
-      <span id="txt-portfolio-status" style="font-size:11px; color:#9ca3af; flex:1;"></span>
-      <button type="button" onclick="fecharModalPortfolio()" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#e5e7eb; font-size:12.5px; font-weight:700; padding:8px 20px; border-radius:8px; cursor:pointer;">Fechar</button>
+    <div style="padding:12px 20px; border-top:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; flex-shrink:0; background:#0a0b15;">
+      <span id="txt-portfolio-status" style="font-size:11px; color:#9ca3af;"></span>
+      <button type="button" onclick="fecharModalPortfolio()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#e5e7eb;font-size:12.5px;font-weight:700;padding:8px 20px;border-radius:8px;cursor:pointer;">Fechar</button>
     </div>
   </div>
 </div>
@@ -42112,6 +42128,18 @@ window.addEventListener('popstate', aplicarRetornoComparativo);
         </div>
         <span style="font-size:20px;color:#a78bfa;font-weight:bold;">➔</span>
       </button>
+
+      <!-- OPÇÃO 4: PORTFÓLIO DE TRABALHOS -->
+      <button type="button" onclick="fecharModalOpcoesCamera(); abrirModalPortfolio();" style="width:100%;padding:14px 12px;background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(5,150,105,0.2));border:1.5px solid rgba(16,185,129,0.5);border-radius:14px;display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left;box-shadow:0 4px 14px rgba(0,0,0,0.3);transition:transform 0.15s;" onmouseover="this.style.background='linear-gradient(135deg,rgba(16,185,129,0.3),rgba(5,150,105,0.35))'" onmouseout="this.style.background='linear-gradient(135deg,rgba(16,185,129,0.15),rgba(5,150,105,0.2))'">
+        <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 4px 12px rgba(16,185,129,0.4);">
+          🗂️
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:14.5px;font-weight:900;color:#fff;">Portfólio de Trabalhos</div>
+          <div style="font-size:11.5px;color:#6ee7b7;margin-top:2px;">Pastas de Clientes · Fotos dos Projetos</div>
+        </div>
+        <span style="font-size:20px;color:#34d399;font-weight:bold;">➔</span>
+      </button>
     </div>
   </div>
 </div>
@@ -44252,224 +44280,244 @@ window.abrirDetalheCategoriaOs = abrirDetalheCategoriaOs;
 window.salvarDirecionamentoDaOsAtiva = salvarDirecionamentoDaOsAtiva;
 
 // ════════════════════════════════════════════════════
-// 🖼️ PORTFÓLIO DE TRABALHOS & FOTOS
+// 🗂️ PORTFÓLIO — Gestão de Clientes & Fotos
 // ════════════════════════════════════════════════════
 (function() {
-  var CHAVE_PORTFOLIO = 'sdv_portfolio_fotos';
+  var CHAVE_FOTOS    = 'sdv_portfolio_fotos';
+  var CHAVE_CLIENTES = 'sdv_portfolio_clientes';
+  var _clienteAtivoId = null;
 
-  function obterFotosPortfolio() {
-    try { return JSON.parse(localStorage.getItem(CHAVE_PORTFOLIO) || '[]'); } catch(e) { return []; }
-  }
-  function salvarFotosPortfolio(arr) {
-    try { localStorage.setItem(CHAVE_PORTFOLIO, JSON.stringify(arr)); } catch(e) {
-      mostrarToast('⚠️ Erro ao salvar: armazenamento cheio', 'erro');
-    }
-  }
+  function obterFotosPortfolio() { try { return JSON.parse(localStorage.getItem(CHAVE_FOTOS)||'[]'); } catch(e){ return []; } }
+  function salvarFotosPortfolio(arr) { try { localStorage.setItem(CHAVE_FOTOS, JSON.stringify(arr)); } catch(e){ mostrarToast('⚠️ Armazenamento cheio','erro'); } }
+  function obterClientesPortfolio() { try { return JSON.parse(localStorage.getItem(CHAVE_CLIENTES)||'[]'); } catch(e){ return []; } }
+  function salvarClientesPortfolio(arr) { try { localStorage.setItem(CHAVE_CLIENTES, JSON.stringify(arr)); } catch(e){ mostrarToast('⚠️ Erro ao salvar','erro'); } }
 
   window.abrirModalPortfolio = function() {
     document.getElementById('modal-portfolio').style.display = 'flex';
-    document.getElementById('inp-busca-portfolio').value = '';
-    document.getElementById('sel-filtro-categoria-portfolio').value = '';
-    renderizarModalPortfolio();
+    mudarAbaPortfolio('clientes');
     atualizarBadgePortfolio();
   };
-
   window.fecharModalPortfolio = function(ev) {
     if (ev && ev.target !== document.getElementById('modal-portfolio')) return;
     document.getElementById('modal-portfolio').style.display = 'none';
   };
-
-  window.toggleMenuPortfolio = function() {
-    var menu = document.getElementById('menu-portfolio-add');
-    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-  };
-
-  // Fechar dropdown ao clicar fora
-  document.addEventListener('click', function(e) {
-    var toggle = document.getElementById('btn-portfolio-add-toggle');
-    var menu = document.getElementById('menu-portfolio-add');
-    if (menu && toggle && !toggle.contains(e.target) && !menu.contains(e.target)) {
-      menu.style.display = 'none';
-    }
-  });
-
-  window.triggerPortfolioInput = function(tipo) {
-    var menu = document.getElementById('menu-portfolio-add');
-    if (menu) menu.style.display = 'none';
-    if (tipo === 'camera') {
-      document.getElementById('input-portfolio-camera').click();
+  window.mudarAbaPortfolio = function(aba) {
+    var pC=document.getElementById('painel-portfolio-clientes'), pF=document.getElementById('painel-portfolio-fotos');
+    var tC=document.getElementById('tab-portfolio-clientes'), tF=document.getElementById('tab-portfolio-fotos');
+    if (!pC) return;
+    var estA='linear-gradient(135deg,rgba(16,185,129,0.2),rgba(5,150,105,0.15))';
+    if (aba==='clientes') {
+      pC.style.display='block'; pF.style.display='none';
+      tC.style.background=estA; tC.style.color='#34d399'; tC.style.borderBottom='2px solid #10b981';
+      tF.style.background='transparent'; tF.style.color='#6b7280'; tF.style.borderBottom='2px solid transparent';
+      var det=document.getElementById('detalhe-cliente-portfolio'); if(det) det.style.display='none';
+      var gr=document.getElementById('grid-pastas-clientes'); if(gr) gr.style.display='grid';
+      var ba=document.getElementById('barra-acoes-clientes'); if(ba) ba.style.display='flex';
+      renderizarPastasClientes();
     } else {
-      document.getElementById('input-portfolio-galeria').click();
+      pC.style.display='none'; pF.style.display='block';
+      tF.style.background=estA; tF.style.color='#34d399'; tF.style.borderBottom='2px solid #10b981';
+      tC.style.background='transparent'; tC.style.color='#6b7280'; tC.style.borderBottom='2px solid transparent';
+      var inp=document.getElementById('inp-busca-portfolio'); if(inp) inp.value='';
+      var sel=document.getElementById('sel-filtro-categoria-portfolio'); if(sel) sel.value='';
+      renderizarModalPortfolio();
     }
   };
 
-  window.aoSelecionarFotosPortfolio = function(event) {
-    var files = Array.from(event.target.files || []);
-    if (!files.length) return;
-    event.target.value = '';
-    var status = document.getElementById('txt-portfolio-status');
-    if (status) status.textContent = '⏳ Processando ' + files.length + ' foto(s)...';
-    var total = files.length;
-    var processados = 0;
-    var fotos = obterFotosPortfolio();
+  window.renderizarPastasClientes = function() {
+    var grid=document.getElementById('grid-pastas-clientes');
+    if (!grid || grid.style.display==='none') return;
+    var clientes=obterClientesPortfolio();
+    var busca=((document.getElementById('inp-busca-cliente-portfolio')||{}).value||'').toLowerCase().trim();
+    if (busca) clientes=clientes.filter(function(c){ return (c.nome||'').toLowerCase().includes(busca)||(c.cidade||'').toLowerCase().includes(busca)||(c.os||'').toLowerCase().includes(busca); });
+    if (!clientes.length) {
+      grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:40px 20px;color:#6b7280;"><div style="font-size:46px;margin-bottom:10px;">🗂️</div><div style="font-size:14px;font-weight:700;color:#9ca3af;margin-bottom:4px;">Nenhum cliente ainda</div><div style="font-size:12px;">Clique em <strong style="color:#34d399">➕ Adicionar Cliente</strong> para começar!</div></div>';
+      return;
+    }
+    var fotos=obterFotosPortfolio();
+    grid.innerHTML=clientes.map(function(c){
+      var fotosC=fotos.filter(function(f){ return f.clienteId===c.id; });
+      var thumb=fotosC.length?fotosC[fotosC.length-1].src:'';
+      var inicial=(c.nome||'?').charAt(0).toUpperCase();
+      return '<div onclick="abrirPastaCliente(\'' + c.id + '\')" style="background:#1a1b2e;border:1.5px solid rgba(16,185,129,0.25);border-radius:14px;overflow:hidden;cursor:pointer;transition:box-shadow 0.2s,transform 0.15s;" onmouseover="this.style.boxShadow=\'0 6px 22px rgba(16,185,129,0.3)\';this.style.transform=\'translateY(-2px)\'" onmouseout="this.style.boxShadow=\'none\';this.style.transform=\'none\'">'
+        +'<div style="height:90px;background:'+(thumb?'url(\''+thumb+'\') center/cover no-repeat':'linear-gradient(135deg,rgba(16,185,129,0.2),rgba(5,150,105,0.1))')+';display:flex;align-items:center;justify-content:center;">'+(thumb?'':'<div style="font-size:36px;font-weight:900;color:rgba(16,185,129,0.6);">'+inicial+'</div>')+'</div>'
+        +'<div style="padding:10px 12px;"><div style="font-size:13px;font-weight:900;color:#fff;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+(c.nome||'Cliente')+'</div>'
+        +'<div style="display:flex;align-items:center;justify-content:space-between;gap:6px;"><span style="font-size:10.5px;color:#6ee7b7;">'+(c.cidade?'📍 '+c.cidade:'')+(c.os?(c.cidade?' · ':'')+c.os:'')+'</span><span style="font-size:10px;color:#9ca3af;">'+fotosC.length+' foto'+(fotosC.length!==1?'s':'')+'</span></div></div></div>';
+    }).join('');
+  };
 
-    files.forEach(function(file) {
-      comprimirImagemCanvas(file, 1200, 0.82, function(dataUrl) {
-        if (dataUrl) {
-          fotos.push({
-            id: 'pf_' + Date.now() + '_' + Math.random().toString(36).substr(2,6),
-            src: dataUrl,
-            titulo: (file.name || 'Foto').replace(/\.[^.]+$/, ''),
-            categoria: 'Outro',
-            adicionadoEm: new Date().toISOString()
-          });
-        }
-        processados++;
-        if (processados === total) {
-          salvarFotosPortfolio(fotos);
-          renderizarModalPortfolio();
-          atualizarBadgePortfolio();
-          if (status) status.textContent = '✅ ' + total + ' foto(s) adicionada(s)!';
-          mostrarToast('🖼️ ' + total + ' foto(s) adicionada(s) ao portfólio!', 'sucesso');
-        }
+  window.abrirPastaCliente = function(id) {
+    var c=obterClientesPortfolio().find(function(x){ return x.id===id; }); if(!c) return;
+    _clienteAtivoId=id;
+    document.getElementById('grid-pastas-clientes').style.display='none';
+    var ba=document.getElementById('barra-acoes-clientes'); if(ba) ba.style.display='none';
+    document.getElementById('form-cliente-portfolio').style.display='none';
+    document.getElementById('detalhe-cliente-portfolio').style.display='block';
+    document.getElementById('detalhe-cliente-titulo').textContent='📁 '+(c.nome||'Cliente');
+    document.getElementById('btn-editar-cliente-detalhe').onclick=function(){ abrirFormEditarCliente(id); };
+    document.getElementById('detalhe-cliente-info').innerHTML=[
+      c.tel    ?'<div><div style="font-size:10px;color:#9ca3af;font-weight:700;margin-bottom:2px;">📱 WhatsApp/Tel</div><div style="color:#e5e7eb;font-weight:700;">'+c.tel+'</div></div>':'',
+      c.cidade ?'<div><div style="font-size:10px;color:#9ca3af;font-weight:700;margin-bottom:2px;">📍 Cidade/Bairro</div><div style="color:#e5e7eb;font-weight:700;">'+c.cidade+'</div></div>':'',
+      c.os     ?'<div><div style="font-size:10px;color:#9ca3af;font-weight:700;margin-bottom:2px;">📋 O.S.</div><div style="color:#34d399;font-weight:800;">'+c.os+'</div></div>':'',
+      c.obs    ?'<div style="grid-column:1/-1"><div style="font-size:10px;color:#9ca3af;font-weight:700;margin-bottom:2px;">💬 Obs</div><div style="color:#d1d5db;">'+c.obs+'</div></div>':'',
+      '<div><div style="font-size:10px;color:#9ca3af;font-weight:700;margin-bottom:2px;">📅 Cadastrado</div><div style="color:#6b7280;">'+new Date(c.criadoEm||Date.now()).toLocaleDateString('pt-BR')+'</div></div>'
+    ].filter(Boolean).join('');
+    renderizarFotosCliente(id);
+  };
+
+  window.voltarParaPastasClientes = function() {
+    _clienteAtivoId=null;
+    document.getElementById('detalhe-cliente-portfolio').style.display='none';
+    document.getElementById('grid-pastas-clientes').style.display='grid';
+    var ba=document.getElementById('barra-acoes-clientes'); if(ba) ba.style.display='flex';
+    document.getElementById('form-cliente-portfolio').style.display='none';
+    renderizarPastasClientes();
+  };
+
+  function renderizarFotosCliente(cId) {
+    var grid=document.getElementById('grid-fotos-cliente-detalhe'); if(!grid) return;
+    var fotos=obterFotosPortfolio().filter(function(f){ return f.clienteId===cId; });
+    if(!fotos.length){ grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:28px 10px;color:#6b7280;"><div style="font-size:36px;margin-bottom:8px;">📷</div><div style="font-size:12px;">Nenhuma foto ainda!</div></div>'; return; }
+    grid.innerHTML=fotos.map(function(foto){
+      return '<div style="position:relative;border-radius:10px;overflow:hidden;border:1.5px solid rgba(16,185,129,0.25);">'
+        +'<img src="'+foto.src+'" style="width:100%;height:110px;object-fit:cover;display:block;cursor:pointer;" onclick="ampliarFotoPortfolio(\'' + foto.id + '\')">'
+        +'<div style="position:absolute;top:4px;right:4px;display:flex;gap:4px;">'
+        +'<button onclick="anexarFotoPortfolioNaOs(\'' + foto.id + '\')" style="background:rgba(16,185,129,0.85);border:none;color:#fff;font-size:11px;padding:3px 7px;border-radius:5px;cursor:pointer;">📎</button>'
+        +'<button onclick="excluirFotoPortfolio(\'' + foto.id + '\')" style="background:rgba(239,68,68,0.85);border:none;color:#fff;font-size:11px;padding:3px 7px;border-radius:5px;cursor:pointer;">🗑️</button>'
+        +'</div>'+(foto.titulo?'<div style="padding:5px 8px;font-size:10.5px;color:#d1d5db;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:#0d0f1e;">'+foto.titulo+'</div>':'')+'</div>';
+    }).join('');
+  }
+
+  window.triggerPortfolioInputCliente = function() { document.getElementById('input-portfolio-cliente-fotos').click(); };
+  window.aoSelecionarFotosClientePortfolio = function(event) {
+    var files=Array.from(event.target.files||[]); if(!files.length) return; event.target.value='';
+    var total=files.length, processados=0, fotos=obterFotosPortfolio();
+    files.forEach(function(file){
+      comprimirImagemCanvas(file,1200,0.82,function(dataUrl){
+        if(dataUrl) fotos.push({id:'pf_'+Date.now()+'_'+Math.random().toString(36).substr(2,6),src:dataUrl,titulo:(file.name||'Foto').replace(/.[^.]+$/,''),categoria:'Outro',clienteId:_clienteAtivoId,adicionadoEm:new Date().toISOString()});
+        if(++processados===total){ salvarFotosPortfolio(fotos); if(_clienteAtivoId) renderizarFotosCliente(_clienteAtivoId); atualizarBadgePortfolio(); mostrarToast('📷 '+total+' foto(s) adicionada(s)!','sucesso'); }
       });
     });
   };
 
-  window.renderizarModalPortfolio = function() {
-    var grid = document.getElementById('grid-portfolio-fotos');
-    if (!grid) return;
-    var fotos = obterFotosPortfolio();
-    var busca = (document.getElementById('inp-busca-portfolio') || {}).value || '';
-    var catFiltro = (document.getElementById('sel-filtro-categoria-portfolio') || {}).value || '';
+  window.abrirFormAdicionarCliente = function() {
+    ['form-cliente-id','form-cliente-nome','form-cliente-tel','form-cliente-cidade','form-cliente-os','form-cliente-obs'].forEach(function(id){ document.getElementById(id).value=''; });
+    document.getElementById('form-cliente-titulo-label').textContent='➕ Novo Cliente';
+    document.getElementById('form-cliente-portfolio').style.display='block';
+    setTimeout(function(){ document.getElementById('form-cliente-nome').focus(); },50);
+  };
+  window.abrirFormEditarCliente = function(id) {
+    var c=obterClientesPortfolio().find(function(x){ return x.id===id; }); if(!c) return;
+    voltarParaPastasClientes();
+    document.getElementById('form-cliente-id').value=c.id;
+    document.getElementById('form-cliente-nome').value=c.nome||'';
+    document.getElementById('form-cliente-tel').value=c.tel||'';
+    document.getElementById('form-cliente-cidade').value=c.cidade||'';
+    document.getElementById('form-cliente-os').value=c.os||'';
+    document.getElementById('form-cliente-obs').value=c.obs||'';
+    document.getElementById('form-cliente-titulo-label').textContent='✏️ Editar Cliente';
+    document.getElementById('form-cliente-portfolio').style.display='block';
+  };
+  window.cancelarFormCliente = function() { document.getElementById('form-cliente-portfolio').style.display='none'; };
+  window.salvarClientePortfolio = function() {
+    var nome=(document.getElementById('form-cliente-nome').value||'').trim();
+    if(!nome){ mostrarToast('⚠️ Informe o nome!','aviso'); return; }
+    var id=document.getElementById('form-cliente-id').value;
+    var dados={nome:nome,tel:(document.getElementById('form-cliente-tel').value||'').trim(),cidade:(document.getElementById('form-cliente-cidade').value||'').trim(),os:(document.getElementById('form-cliente-os').value||'').trim(),obs:(document.getElementById('form-cliente-obs').value||'').trim()};
+    var clientes=obterClientesPortfolio();
+    if(id){ var idx=clientes.findIndex(function(c){ return c.id===id; }); if(idx!==-1) clientes[idx]=Object.assign(clientes[idx],dados); }
+    else clientes.push(Object.assign({id:'cli_'+Date.now(),criadoEm:new Date().toISOString()},dados));
+    salvarClientesPortfolio(clientes);
+    document.getElementById('form-cliente-portfolio').style.display='none';
+    renderizarPastasClientes(); atualizarBadgePortfolio();
+    mostrarToast('✅ Cliente salvo!','sucesso');
+  };
 
-    busca = busca.toLowerCase().trim();
-    if (busca) fotos = fotos.filter(function(f) {
-      return (f.titulo || '').toLowerCase().includes(busca) ||
-             (f.categoria || '').toLowerCase().includes(busca);
+  window.toggleMenuPortfolio = function() { var m=document.getElementById('menu-portfolio-add'); if(m) m.style.display=m.style.display==='none'?'block':'none'; };
+  document.addEventListener('click', function(e) {
+    var toggle=document.getElementById('btn-portfolio-add-toggle'), menu=document.getElementById('menu-portfolio-add');
+    if(menu && toggle && !toggle.contains(e.target) && !menu.contains(e.target)) menu.style.display='none';
+  });
+  window.triggerPortfolioInput = function(tipo) {
+    var m=document.getElementById('menu-portfolio-add'); if(m) m.style.display='none';
+    document.getElementById(tipo==='camera'?'input-portfolio-camera':'input-portfolio-galeria').click();
+  };
+  window.aoSelecionarFotosPortfolio = function(event) {
+    var files=Array.from(event.target.files||[]); if(!files.length) return; event.target.value='';
+    var status=document.getElementById('txt-portfolio-status'); if(status) status.textContent='⏳ Processando '+files.length+' foto(s)...';
+    var total=files.length, processados=0, fotos=obterFotosPortfolio();
+    files.forEach(function(file){
+      comprimirImagemCanvas(file,1200,0.82,function(dataUrl){
+        if(dataUrl) fotos.push({id:'pf_'+Date.now()+'_'+Math.random().toString(36).substr(2,6),src:dataUrl,titulo:(file.name||'Foto').replace(/.[^.]+$/,''),categoria:'Outro',adicionadoEm:new Date().toISOString()});
+        if(++processados===total){ salvarFotosPortfolio(fotos); renderizarModalPortfolio(); atualizarBadgePortfolio(); if(status) status.textContent='✅ '+total+' foto(s)!'; mostrarToast('🖼️ '+total+' foto(s) adicionada(s)!','sucesso'); }
+      });
     });
-    if (catFiltro) fotos = fotos.filter(function(f) { return f.categoria === catFiltro; });
-
-    var badge = document.getElementById('badge-portfolio-modal');
-    var total = obterFotosPortfolio().length;
-    if (badge) badge.textContent = total + ' foto' + (total !== 1 ? 's' : '');
-
-    if (!fotos.length) {
-      grid.innerHTML = '<div style="grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;color:#6b7280;text-align:center;gap:12px;"><div style="font-size:48px;">🖼️</div><div style="font-size:14px;font-weight:700;color:#9ca3af;">Nenhuma foto no portfólio ainda</div><div style="font-size:12px;">Toque em <strong style="color:#c4b5fd;">➕ Adicionar Foto</strong> para buscar fotos da galeria!</div></div>';
-      return;
-    }
-
-    var categorias = ['Cozinha','Quarto','Sala','Banheiro','Escritório','Área Gourmet','Externo','Outro'];
-    var opcoesCateg = categorias.map(function(c) {
-      return '<option value="' + c + '">' + c + '</option>';
-    }).join('');
-
-    grid.innerHTML = fotos.map(function(foto) {
-      return '<div style="background:#1a1b2e;border:1.5px solid rgba(139,92,246,0.25);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;transition:box-shadow 0.2s;" onmouseover="this.style.boxShadow=\'0 4px 20px rgba(139,92,246,0.35)\'" onmouseout="this.style.boxShadow=\'none\'">' +
-        '<div style="position:relative;cursor:pointer;" onclick="ampliarFotoPortfolio(\'' + foto.id + '\')">' +
-          '<img src="' + foto.src + '" alt="' + (foto.titulo || '') + '" style="width:100%;height:130px;object-fit:cover;display:block;">' +
-          '<div style="position:absolute;inset:0;background:rgba(0,0,0,0.0);transition:background 0.2s;display:flex;align-items:center;justify-content:center;" onmouseover="this.style.background=\'rgba(0,0,0,0.35)\'" onmouseout="this.style.background=\'rgba(0,0,0,0)\'">' +
-            '<span style="font-size:22px;opacity:0;transition:opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0">🔍</span>' +
-          '</div>' +
-        '</div>' +
-        '<div style="padding:8px 10px;display:flex;flex-direction:column;gap:6px;flex:1;">' +
-          '<input type="text" value="' + (foto.titulo || '') + '" onchange="editarCampoFotoPortfolio(\'' + foto.id + '\',\'titulo\',this.value)" style="background:rgba(0,0,0,0.4);border:1px solid rgba(139,92,246,0.3);border-radius:6px;color:#e5e7eb;font-size:11.5px;font-weight:700;padding:4px 7px;width:100%;box-sizing:border-box;outline:none;" placeholder="Título...">' +
-          '<select onchange="editarCampoFotoPortfolio(\'' + foto.id + '\',\'categoria\',this.value)" style="background:#0e1020;border:1px solid rgba(139,92,246,0.35);border-radius:6px;color:#c4b5fd;font-size:11px;padding:4px 6px;width:100%;outline:none;cursor:pointer;">' +
-            categorias.map(function(c) {
-              return '<option value="' + c + '"' + (foto.categoria === c ? ' selected' : '') + '>' + c + '</option>';
-            }).join('') +
-          '</select>' +
-          '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:2px;">' +
-            '<button type="button" onclick="anexarFotoPortfolioNaOs(\'' + foto.id + '\')" title="Anexar a esta O.S." style="flex:1;background:rgba(16,185,129,0.2);border:1px solid #10b981;color:#34d399;font-size:10px;font-weight:800;padding:4px 4px;border-radius:6px;cursor:pointer;min-width:0;">📎 O.S.</button>' +
-            '<button type="button" onclick="ampliarFotoPortfolio(\'' + foto.id + '\')" title="Ver em tela cheia" style="background:rgba(99,102,241,0.2);border:1px solid #6366f1;color:#a5b4fc;font-size:11px;padding:4px 7px;border-radius:6px;cursor:pointer;">🔍</button>' +
-            '<button type="button" onclick="excluirFotoPortfolio(\'' + foto.id + '\')" title="Excluir" style="background:rgba(239,68,68,0.15);border:1px solid #ef4444;color:#fca5a5;font-size:11px;padding:4px 7px;border-radius:6px;cursor:pointer;">🗑️</button>' +
-          '</div>' +
-        '</div>' +
-      '</div>';
+  };
+  window.renderizarModalPortfolio = function() {
+    var grid=document.getElementById('grid-portfolio-fotos'); if(!grid) return;
+    var fotos=obterFotosPortfolio();
+    var busca=((document.getElementById('inp-busca-portfolio')||{}).value||'').toLowerCase().trim();
+    var catF=((document.getElementById('sel-filtro-categoria-portfolio')||{}).value||'');
+    if(busca) fotos=fotos.filter(function(f){ return (f.titulo||'').toLowerCase().includes(busca)||(f.categoria||'').toLowerCase().includes(busca); });
+    if(catF) fotos=fotos.filter(function(f){ return f.categoria===catF; });
+    var total=obterFotosPortfolio().length;
+    var badge=document.getElementById('badge-portfolio-modal'); if(badge) badge.textContent=total+' foto'+(total!==1?'s':'');
+    if(!fotos.length){ grid.innerHTML='<div style="grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;color:#6b7280;text-align:center;gap:12px;"><div style="font-size:48px;">🖼️</div><div style="font-size:14px;font-weight:700;color:#9ca3af;">Nenhuma foto encontrada</div><div style="font-size:12px;">Use <strong style="color:#c4b5fd;">➕ Adicionar Foto</strong>!</div></div>'; return; }
+    var cats=['Cozinha','Quarto','Sala','Banheiro','Escritório','Área Gourmet','Externo','Outro'];
+    grid.innerHTML=fotos.map(function(foto){
+      return '<div style="background:#1a1b2e;border:1.5px solid rgba(139,92,246,0.25);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;" onmouseover="this.style.boxShadow=\'0 4px 20px rgba(139,92,246,0.35)\'" onmouseout="this.style.boxShadow=\'none\'">'
+        +'<div style="cursor:pointer;" onclick="ampliarFotoPortfolio(\'' + foto.id + '\')">'
+        +'<img src="'+foto.src+'" style="width:100%;height:120px;object-fit:cover;display:block;"></div>'
+        +'<div style="padding:7px 9px;display:flex;flex-direction:column;gap:5px;flex:1;">'
+        +'<input type="text" value="'+(foto.titulo||'')+'" onchange="editarCampoFotoPortfolio(\'' + foto.id + '\',\'titulo\',this.value)" style="background:rgba(0,0,0,0.4);border:1px solid rgba(139,92,246,0.3);border-radius:5px;color:#e5e7eb;font-size:11px;font-weight:700;padding:4px 7px;width:100%;box-sizing:border-box;outline:none;" placeholder="Título...">'
+        +'<select onchange="editarCampoFotoPortfolio(\'' + foto.id + '\',\'categoria\',this.value)" style="background:#0e1020;border:1px solid rgba(139,92,246,0.35);border-radius:5px;color:#c4b5fd;font-size:10.5px;padding:4px 5px;width:100%;outline:none;cursor:pointer;">'+cats.map(function(c){ return '<option value="'+c+'"'+(foto.categoria===c?' selected':'')+'>'+c+'</option>'; }).join('')+'</select>'
+        +'<div style="display:flex;gap:4px;margin-top:2px;">'
+        +'<button onclick="anexarFotoPortfolioNaOs(\'' + foto.id + '\')" style="flex:1;background:rgba(16,185,129,0.2);border:1px solid #10b981;color:#34d399;font-size:10px;font-weight:800;padding:4px;border-radius:5px;cursor:pointer;min-width:0;">📎 O.S.</button>'
+        +'<button onclick="ampliarFotoPortfolio(\'' + foto.id + '\')" style="background:rgba(99,102,241,0.2);border:1px solid #6366f1;color:#a5b4fc;font-size:11px;padding:4px 6px;border-radius:5px;cursor:pointer;">🔍</button>'
+        +'<button onclick="excluirFotoPortfolio(\'' + foto.id + '\')" style="background:rgba(239,68,68,0.15);border:1px solid #ef4444;color:#fca5a5;font-size:11px;padding:4px 6px;border-radius:5px;cursor:pointer;">🗑️</button>'
+        +'</div></div></div>';
     }).join('');
   };
-
-  window.editarCampoFotoPortfolio = function(id, campo, valor) {
-    var fotos = obterFotosPortfolio();
-    var idx = fotos.findIndex(function(f) { return f.id === id; });
-    if (idx === -1) return;
-    fotos[idx][campo] = valor;
-    salvarFotosPortfolio(fotos);
+  window.editarCampoFotoPortfolio = function(id,campo,valor) {
+    var fotos=obterFotosPortfolio(); var idx=fotos.findIndex(function(f){ return f.id===id; });
+    if(idx!==-1){ fotos[idx][campo]=valor; salvarFotosPortfolio(fotos); }
   };
-
   window.anexarFotoPortfolioNaOs = function(id) {
-    var fotos = obterFotosPortfolio();
-    var foto = fotos.find(function(f) { return f.id === id; });
-    if (!foto) return;
-    // Adiciona à galeria da O.S. atual (fotosOs)
-    if (typeof fotosOs === 'undefined') {
-      mostrarToast('⚠️ Abra um Orçamento antes de anexar!', 'aviso');
-      return;
-    }
-    var novaFoto = {
-      id: 'forc_' + Date.now(),
-      nome: (foto.titulo || 'Portfolio') + '.jpg',
-      tipo: 'image/jpeg',
-      dataUrl: foto.src,
-      ambienteId: null,
-      adicionadoEm: new Date().toISOString(),
-      origem: 'portfolio'
-    };
-    if (!Array.isArray(fotosOs)) fotosOs = [];
-    fotosOs.push(novaFoto);
-    if (typeof salvarFotosOsNoStorage === 'function') salvarFotosOsNoStorage();
-    if (typeof atualizarPreviewGaleriaOrcamento === 'function') atualizarPreviewGaleriaOrcamento();
-    if (typeof renderizarModalGaleriaOrc === 'function') renderizarModalGaleriaOrc();
-    mostrarToast('📎 Foto "' + (foto.titulo || 'Foto') + '" anexada à O.S.!', 'sucesso');
+    var foto=obterFotosPortfolio().find(function(f){ return f.id===id; }); if(!foto) return;
+    if(typeof fotosOs==='undefined'){ mostrarToast('⚠️ Abra um Orçamento antes!','aviso'); return; }
+    if(!Array.isArray(fotosOs)) fotosOs=[];
+    fotosOs.push({id:'forc_'+Date.now(),nome:(foto.titulo||'Portfolio')+'.jpg',tipo:'image/jpeg',dataUrl:foto.src,ambienteId:null,adicionadoEm:new Date().toISOString(),origem:'portfolio'});
+    if(typeof salvarFotosOsNoStorage==='function') salvarFotosOsNoStorage();
+    if(typeof atualizarPreviewGaleriaOrcamento==='function') atualizarPreviewGaleriaOrcamento();
+    if(typeof renderizarModalGaleriaOrc==='function') renderizarModalGaleriaOrc();
+    mostrarToast('📎 Foto "'+(foto.titulo||'Foto')+'" anexada à O.S.!','sucesso');
   };
-
   window.ampliarFotoPortfolio = function(id) {
-    var fotos = obterFotosPortfolio();
-    var foto = fotos.find(function(f) { return f.id === id; });
-    if (!foto) return;
-    var overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:999999;display:flex;align-items:center;justify-content:center;flex-direction:column;cursor:zoom-out;padding:20px;box-sizing:border-box;';
-    overlay.onclick = function() { document.body.removeChild(overlay); };
-    var titulo = document.createElement('div');
-    titulo.style.cssText = 'color:#c4b5fd;font-size:14px;font-weight:800;margin-bottom:12px;text-align:center;';
-    titulo.textContent = (foto.titulo || 'Foto') + (foto.categoria ? ' · ' + foto.categoria : '');
-    var img = document.createElement('img');
-    img.src = foto.src;
-    img.style.cssText = 'max-width:100%;max-height:85vh;border-radius:12px;box-shadow:0 0 40px rgba(139,92,246,0.5);object-fit:contain;';
-    var dica = document.createElement('div');
-    dica.style.cssText = 'color:#6b7280;font-size:11px;margin-top:12px;';
-    dica.textContent = 'Toque para fechar';
-    overlay.appendChild(titulo);
-    overlay.appendChild(img);
-    overlay.appendChild(dica);
-    document.body.appendChild(overlay);
+    var foto=obterFotosPortfolio().find(function(f){ return f.id===id; }); if(!foto) return;
+    var o=document.createElement('div'); o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:999999;display:flex;align-items:center;justify-content:center;flex-direction:column;cursor:zoom-out;padding:20px;box-sizing:border-box;';
+    o.onclick=function(){ document.body.removeChild(o); };
+    var t=document.createElement('div'); t.style.cssText='color:#c4b5fd;font-size:14px;font-weight:800;margin-bottom:12px;text-align:center;'; t.textContent=(foto.titulo||'Foto')+(foto.categoria?' · '+foto.categoria:'');
+    var img=document.createElement('img'); img.src=foto.src; img.style.cssText='max-width:100%;max-height:85vh;border-radius:12px;box-shadow:0 0 40px rgba(139,92,246,0.5);object-fit:contain;';
+    var dica=document.createElement('div'); dica.style.cssText='color:#6b7280;font-size:11px;margin-top:12px;'; dica.textContent='Toque para fechar';
+    o.appendChild(t); o.appendChild(img); o.appendChild(dica); document.body.appendChild(o);
   };
-
   window.excluirFotoPortfolio = function(id) {
-    if (!confirm('Excluir esta foto do portfólio?')) return;
-    var fotos = obterFotosPortfolio().filter(function(f) { return f.id !== id; });
-    salvarFotosPortfolio(fotos);
-    renderizarModalPortfolio();
-    atualizarBadgePortfolio();
-    mostrarToast('🗑️ Foto removida do portfólio', 'info');
+    if(!confirm('Excluir esta foto do portfólio?')) return;
+    salvarFotosPortfolio(obterFotosPortfolio().filter(function(f){ return f.id!==id; }));
+    renderizarModalPortfolio(); if(_clienteAtivoId) renderizarFotosCliente(_clienteAtivoId);
+    atualizarBadgePortfolio(); mostrarToast('🗑️ Foto removida','info');
   };
 
   function atualizarBadgePortfolio() {
-    var fotos = obterFotosPortfolio();
-    var badge = document.getElementById('badge-portfolio-count');
-    if (!badge) return;
-    if (fotos.length > 0) {
-      badge.style.display = 'inline-block';
-      badge.textContent = fotos.length;
-    } else {
-      badge.style.display = 'none';
-    }
+    var clientes=obterClientesPortfolio(), fotos=obterFotosPortfolio();
+    var n=clientes.length>0?clientes.length:fotos.length;
+    var badge=document.getElementById('badge-portfolio-count');
+    if(badge){ badge.style.display=n>0?'inline-block':'none'; badge.textContent=n; }
+    var bm=document.getElementById('badge-portfolio-modal');
+    if(bm) bm.textContent=fotos.length+' foto'+(fotos.length!==1?'s':'');
   }
-
-  // Atualiza badge ao carregar
-  window.addEventListener('load', function() { atualizarBadgePortfolio(); });
+  window.addEventListener('load', function(){ atualizarBadgePortfolio(); });
   setTimeout(atualizarBadgePortfolio, 1500);
-
   window.atualizarBadgePortfolio = atualizarBadgePortfolio;
 })();
 
