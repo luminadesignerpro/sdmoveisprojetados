@@ -46279,9 +46279,8 @@ async function gerarPdfFuncionarioBlob(nome) {
   var cargo = cfg.cargo || 'Nao informado';
   var cpf = cfg.cpf || 'Nao informado';
   var endereco = cfg.endereco || 'Nao informado';
-  var pix = cfg.pix || 'Nao informado';
 
-  const cardH = 240;
+  const cardH = 195;
   page.drawRectangle({
     x: MARGIN_X,
     y: y - cardH,
@@ -46292,7 +46291,7 @@ async function gerarPdfFuncionarioBlob(nome) {
     borderWidth: 1.5
   });
 
-  let fieldY = y - 28;
+  let fieldY = y - 26;
 
   function drawField(label, val, isHighlight) {
     page.drawText(clean(label), {
@@ -46317,7 +46316,6 @@ async function gerarPdfFuncionarioBlob(nome) {
   drawField('CARGO / FUNCAO:', cargo, false);
   drawField('CPF:', cpf, false);
   drawField('ENDERECO COMPLETO:', endereco, false);
-  drawField('CHAVE PIX / DADOS DE PAGAMENTO:', pix, false);
 
   y -= (cardH + 25);
 
@@ -46423,11 +46421,10 @@ async function gerarPdfTodosFuncionariosBlob() {
 
   const cols = [
     { label: '#', x: MARGIN_X, w: 25 },
-    { label: 'COLABORADOR', x: MARGIN_X + 25, w: 125 },
-    { label: 'CARGO', x: MARGIN_X + 150, w: 105 },
-    { label: 'CPF', x: MARGIN_X + 255, w: 95 },
-    { label: 'ENDERECO', x: MARGIN_X + 350, w: 100 },
-    { label: 'PIX / PAGTO', x: MARGIN_X + 450, w: 85 }
+    { label: 'COLABORADOR', x: MARGIN_X + 25, w: 150 },
+    { label: 'CARGO', x: MARGIN_X + 175, w: 120 },
+    { label: 'CPF', x: MARGIN_X + 295, w: 100 },
+    { label: 'ENDERECO', x: MARGIN_X + 395, w: 140 }
   ];
 
   function drawTableHeader() {
@@ -46465,7 +46462,6 @@ async function gerarPdfTodosFuncionariosBlob() {
     const cargo = c.cargo || '-';
     const cpf = c.cpf || '-';
     const endereco = c.endereco || '-';
-    const pix = c.pix || '-';
 
     const rowH = 22;
     if (idx % 2 === 1) {
@@ -46491,11 +46487,10 @@ async function gerarPdfTodosFuncionariosBlob() {
     }
 
     page.drawText(String(idx + 1), { x: cols[0].x + 4, y: y - 15, size: 8.5, font: fontBold, color: DARK });
-    page.drawText(clip(n, 22), { x: cols[1].x + 4, y: y - 15, size: 8.5, font: fontBold, color: DARK });
-    page.drawText(clip(cargo, 18), { x: cols[2].x + 4, y: y - 15, size: 8, font: fontReg, color: DARK });
-    page.drawText(clip(cpf, 16), { x: cols[3].x + 4, y: y - 15, size: 8, font: fontBold, color: NAVY });
-    page.drawText(clip(endereco, 18), { x: cols[4].x + 4, y: y - 15, size: 7.5, font: fontReg, color: GRAY });
-    page.drawText(clip(pix, 16), { x: cols[5].x + 4, y: y - 15, size: 7.5, font: fontReg, color: DARK });
+    page.drawText(clip(n, 28), { x: cols[1].x + 4, y: y - 15, size: 8.5, font: fontBold, color: DARK });
+    page.drawText(clip(cargo, 22), { x: cols[2].x + 4, y: y - 15, size: 8, font: fontReg, color: DARK });
+    page.drawText(clip(cpf, 18), { x: cols[3].x + 4, y: y - 15, size: 8, font: fontBold, color: NAVY });
+    page.drawText(clip(endereco, 28), { x: cols[4].x + 4, y: y - 15, size: 7.5, font: fontReg, color: GRAY });
 
     y -= rowH;
   });

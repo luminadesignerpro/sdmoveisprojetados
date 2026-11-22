@@ -1,5 +1,5 @@
-// Service Worker PWA – SD Móveis Projetados v9.5.55 (Geração e envio direto de arquivo PDF nativo)
-const CACHE_NAME = 'sdmoveisprojetados-v9.5.55';
+// Service Worker PWA – SD Móveis Projetados v9.5.56 (Remoção da coluna PIX / Pagamento do PDF)
+const CACHE_NAME = 'sdmoveisprojetados-v9.5.56';
 const ASSETS = [
   '/',
   '/index.html',
