@@ -5690,22 +5690,8 @@
 
     <!-- Cliente que Trabalhou * -->
     <div style="display:flex;flex-direction:column;gap:5px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;">
-        <label style="font-size:13px;font-weight:700;color:#cbd5e1;">Cliente que Trabalhou *</label>
-        <button type="button" onclick="toggleMiniNovoClientePonto()" style="background:none;border:none;color:#38bdf8;font-size:12.5px;font-weight:700;cursor:pointer;padding:0;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">+ Novo Cliente</button>
-      </div>
-      <select id="rbp-cliente" style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:12px;padding:11px 14px;font-size:14px;color:#ffffff;outline:none;box-sizing:border-box;cursor:pointer;font-weight:600;" onfocus="this.style.borderColor='#38bdf8'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'">
-        <option value="" style="background:#181a2c;color:#ffffff;">Selecione o Cliente</option>
-      </select>
-      
-      <!-- Mini form rápido para adicionar cliente -->
-      <div id="rbp-box-novo-cliente" style="display:none;background:rgba(37,99,235,0.12);border:1.5px dashed #3b82f6;border-radius:10px;padding:10px;gap:8px;margin-top:2px;">
-        <div style="display:flex;gap:6px;">
-          <input type="text" id="rbp-inp-novo-cliente" placeholder="Nome do novo cliente..." style="flex:1;background:#181a2c;border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:8px 10px;font-size:12.5px;color:#ffffff;outline:none;">
-          <button type="button" onclick="salvarMiniNovoClientePonto()" style="background:#2563eb;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer;">Adicionar</button>
-          <button type="button" onclick="toggleMiniNovoClientePonto(false)" style="background:rgba(255,255,255,0.1);color:#cbd5e1;border:none;border-radius:8px;padding:8px 10px;font-size:12px;cursor:pointer;">✕</button>
-        </div>
-      </div>
+      <label style="font-size:13px;font-weight:700;color:#cbd5e1;">Cliente que Trabalhou *</label>
+      <input type="text" id="rbp-cliente" placeholder="Digite o nome do cliente..." style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:12px;padding:11px 14px;font-size:14px;color:#ffffff;outline:none;box-sizing:border-box;font-weight:600;" onfocus="this.style.borderColor='#38bdf8'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'">
     </div>
 
     <!-- Valor do Ponto (R$) * e Status Pagamento -->
@@ -5826,9 +5812,26 @@
     </div>
 
     <!-- Ações / Botões -->
-    <div style="display:flex;justify-content:flex-end;align-items:center;gap:12px;margin-top:4px;">
-      <button type="button" onclick="fecharModalRegistrarBatidaPonto()" style="background:transparent;border:none;color:#94a3b8;font-size:14px;font-weight:700;padding:10px 16px;cursor:pointer;border-radius:10px;transition:color 0.15s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#94a3b8'">Cancelar</button>
-      <button type="button" onclick="salvarBatidaPontoModal()" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#ffffff;font-size:14px;font-weight:800;padding:12px 26px;border-radius:12px;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(37,99,235,0.5);transition:all 0.15s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 18px rgba(37,99,235,0.6)'" onmouseout="this.style.transform='none';this.style.boxShadow='0 4px 14px rgba(37,99,235,0.5)'">Salvar Ponto</button>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px;">
+      <!-- Botões WhatsApp: Enviar Dados do Funcionário -->
+      <div style="background:rgba(37,211,102,0.08);border:1.5px solid rgba(37,211,102,0.3);border-radius:12px;padding:10px 14px;display:flex;flex-direction:column;gap:8px;">
+        <div style="font-size:11.5px;font-weight:700;color:#25d366;display:flex;align-items:center;gap:5px;">
+          <span>📲</span> <span>Enviar via WhatsApp (Sem valores financeiros)</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <button type="button" onclick="enviarFuncionarioWhatsApp()" style="background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;font-size:12px;font-weight:800;padding:9px 10px;border-radius:10px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;box-shadow:0 3px 10px rgba(37,211,102,0.35);">
+            <span>👤</span> <span>Este Funcionário</span>
+          </button>
+          <button type="button" onclick="enviarTodosFuncionariosWhatsApp()" style="background:linear-gradient(135deg,#059669,#047857);color:#fff;font-size:12px;font-weight:800;padding:9px 10px;border-radius:10px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;box-shadow:0 3px 10px rgba(5,150,105,0.35);">
+            <span>👥</span> <span>Todos os Funcionários</span>
+          </button>
+        </div>
+      </div>
+      <!-- Botões Cancelar / Salvar -->
+      <div style="display:flex;justify-content:flex-end;align-items:center;gap:12px;">
+        <button type="button" onclick="fecharModalRegistrarBatidaPonto()" style="background:transparent;border:none;color:#94a3b8;font-size:14px;font-weight:700;padding:10px 16px;cursor:pointer;border-radius:10px;transition:color 0.15s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#94a3b8'">Cancelar</button>
+        <button type="button" onclick="salvarBatidaPontoModal()" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#ffffff;font-size:14px;font-weight:800;padding:12px 26px;border-radius:12px;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(37,99,235,0.5);transition:all 0.15s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 18px rgba(37,99,235,0.6)'" onmouseout="this.style.transform='none';this.style.boxShadow='0 4px 14px rgba(37,99,235,0.5)'">Salvar Ponto</button>
+      </div>
     </div>
 
   </div>
@@ -5889,6 +5892,18 @@
     <div style="display:flex; flex-direction:column; gap:4px;">
       <label style="font-size:12px; font-weight:700; color:#cbd5e1;">WhatsApp / Telefone</label>
       <input type="text" id="cfg-func-tel" placeholder="(88) 99999-9999" style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:9px 12px;font-size:13.5px;color:#fff;box-sizing:border-box;outline:none;" />
+    </div>
+
+    <!-- CPF e Endereço -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <label style="font-size:12px; font-weight:700; color:#cbd5e1;">🪪 CPF</label>
+        <input type="text" id="cfg-func-cpf" placeholder="000.000.000-00" style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:9px 12px;font-size:13.5px;color:#fff;box-sizing:border-box;outline:none;" />
+      </div>
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <label style="font-size:12px; font-weight:700; color:#cbd5e1;">📍 Endereço</label>
+        <input type="text" id="cfg-func-endereco" placeholder="Rua, Nº, Bairro..." style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:9px 12px;font-size:13.5px;color:#fff;box-sizing:border-box;outline:none;" />
+      </div>
     </div>
 
     <!-- Chave PIX -->
@@ -45777,6 +45792,8 @@ function abrirModalConfigFuncionarioPonto(nome) {
   var inpComb = document.getElementById('cfg-func-combustivel');
   var inpTel = document.getElementById('cfg-func-tel');
   var inpPix = document.getElementById('cfg-func-pix');
+  var inpCpf = document.getElementById('cfg-func-cpf');
+  var inpEnd = document.getElementById('cfg-func-endereco');
   var subtitulo = document.getElementById('cfg-func-subtitulo');
 
   if (inpNome) inpNome.value = nome || '';
@@ -45791,6 +45808,8 @@ function abrirModalConfigFuncionarioPonto(nome) {
     if (inpComb) inpComb.value = cfg.combustivel || '';
     if (inpTel) inpTel.value = cfg.telefone || '';
     if (inpPix) inpPix.value = cfg.pix || '';
+    if (inpCpf) inpCpf.value = cfg.cpf || '';
+    if (inpEnd) inpEnd.value = cfg.endereco || '';
   } else {
     if (inpCargo) inpCargo.value = '';
     if (inpDiaria) inpDiaria.value = '160,00';
@@ -45799,6 +45818,8 @@ function abrirModalConfigFuncionarioPonto(nome) {
     if (inpComb) inpComb.value = '';
     if (inpTel) inpTel.value = '';
     if (inpPix) inpPix.value = '';
+    if (inpCpf) inpCpf.value = '';
+    if (inpEnd) inpEnd.value = '';
   }
 }
 
@@ -45825,6 +45846,8 @@ function salvarConfigFuncionarioPonto() {
   var inpComb = document.getElementById('cfg-func-combustivel');
   var inpTel = document.getElementById('cfg-func-tel');
   var inpPix = document.getElementById('cfg-func-pix');
+  var inpCpf = document.getElementById('cfg-func-cpf');
+  var inpEnd = document.getElementById('cfg-func-endereco');
 
   var dados = {
     nome: nome,
@@ -45835,6 +45858,8 @@ function salvarConfigFuncionarioPonto() {
     combustivel: inpComb ? inpComb.value.trim() : '',
     telefone: inpTel ? inpTel.value.trim() : '',
     pix: inpPix ? inpPix.value.trim() : '',
+    cpf: inpCpf ? inpCpf.value.trim() : '',
+    endereco: inpEnd ? inpEnd.value.trim() : '',
     atualizadoEm: new Date().toISOString()
   };
 
@@ -45941,34 +45966,67 @@ function salvarMiniNovoFuncionarioPonto() {
 
 // ── Clientes ──
 function popularClientesModalPonto(selecionarNome) {
-  var select = document.getElementById('rbp-cliente');
-  if (!select) return;
+  var inp = document.getElementById('rbp-cliente');
+  if (!inp) return;
 
+  // Se for um input de texto, alimenta um datalist para sugestões
+  if (inp.tagName === 'INPUT') {
+    var dlId = 'rbp-cliente-datalist';
+    var dl = document.getElementById(dlId);
+    if (!dl) {
+      dl = document.createElement('datalist');
+      dl.id = dlId;
+      inp.setAttribute('list', dlId);
+      inp.parentNode.insertBefore(dl, inp.nextSibling);
+    }
+    var nomes = new Set();
+    if (typeof clientes !== 'undefined' && Array.isArray(clientes)) {
+      clientes.forEach(function(c) {
+        if (c && c.nome && c.nome.trim()) nomes.add(c.nome.trim());
+      });
+    }
+    try {
+      var clisPf = JSON.parse(localStorage.getItem('sdv_portfolio_clientes') || '[]');
+      if (Array.isArray(clisPf)) {
+        clisPf.forEach(function(c) {
+          if (c && c.nome && c.nome.trim()) nomes.add(c.nome.trim());
+        });
+      }
+    } catch(_) {}
+    var oNomeEl = document.getElementById('o-nome');
+    var nomeAtual = oNomeEl ? oNomeEl.value.trim() : '';
+    if (nomeAtual) nomes.add(nomeAtual);
+    dl.innerHTML = Array.from(nomes).sort().map(function(n) {
+      return '<option value="' + n + '">';
+    }).join('');
+    if (selecionarNome) inp.value = selecionarNome;
+    else if (nomeAtual && !inp.value) inp.value = nomeAtual;
+    return;
+  }
+
+  // Fallback para select (legado)
+  var select = inp;
   var nomes = new Set();
-
   if (typeof clientes !== 'undefined' && Array.isArray(clientes)) {
     clientes.forEach(function(c) {
       if (c && c.nome && c.nome.trim()) nomes.add(c.nome.trim());
     });
   }
-
   try {
-    var clisPf = JSON.parse(localStorage.getItem('sdv_portfolio_clientes') || '[]');
-    if (Array.isArray(clisPf)) {
-      clisPf.forEach(function(c) {
+    var clisPf2 = JSON.parse(localStorage.getItem('sdv_portfolio_clientes') || '[]');
+    if (Array.isArray(clisPf2)) {
+      clisPf2.forEach(function(c) {
         if (c && c.nome && c.nome.trim()) nomes.add(c.nome.trim());
       });
     }
   } catch(_) {}
-
-  var oNomeEl = document.getElementById('o-nome');
-  var nomeAtual = oNomeEl ? oNomeEl.value.trim() : '';
-  if (nomeAtual) nomes.add(nomeAtual);
-
+  var oNomeEl2 = document.getElementById('o-nome');
+  var nomeAtual2 = oNomeEl2 ? oNomeEl2.value.trim() : '';
+  if (nomeAtual2) nomes.add(nomeAtual2);
   var arr = Array.from(nomes).sort();
   select.innerHTML = '<option value="" style="background:#181a2c;color:#ffffff;">Selecione o Cliente</option>' +
     arr.map(function(n) {
-      var sel = (selecionarNome && selecionarNome === n) || (!selecionarNome && nomeAtual && nomeAtual === n) ? ' selected' : '';
+      var sel = (selecionarNome && selecionarNome === n) || (!selecionarNome && nomeAtual2 && nomeAtual2 === n) ? ' selected' : '';
       return '<option value="' + n + '"' + sel + ' style="background:#181a2c;color:#ffffff;">' + n + '</option>';
     }).join('');
 }
@@ -46124,6 +46182,63 @@ function salvarBatidaPontoModal() {
   else alert(msgSucesso);
 }
 
+// ── WhatsApp: enviar dados do funcionário SEM valores financeiros ──
+function enviarFuncionarioWhatsApp() {
+  var selFunc = document.getElementById('rbp-funcionario');
+  var nome = selFunc ? selFunc.value.trim() : '';
+  if (!nome) {
+    if (typeof mostrarToast === 'function') mostrarToast('⚠️ Selecione um funcionário primeiro!', 'aviso');
+    return;
+  }
+  var cfg = getDadosConfigFuncionario(nome);
+  var tel = cfg ? (cfg.telefone || '').replace(/\D/g, '') : '';
+
+  var linhas = ['👤 *DADOS DO FUNCIONÁRIO*', ''];
+  linhas.push('*Nome:* ' + nome);
+  if (cfg) {
+    if (cfg.cargo) linhas.push('*Cargo:* ' + cfg.cargo);
+    if (cfg.cpf) linhas.push('*CPF:* ' + cfg.cpf);
+    if (cfg.endereco) linhas.push('*Endereço:* ' + cfg.endereco);
+    if (cfg.telefone) linhas.push('*WhatsApp:* ' + cfg.telefone);
+    if (cfg.pix) linhas.push('*Chave PIX:* ' + cfg.pix);
+  }
+  linhas.push('');
+  linhas.push('_SD Móveis Projetados_');
+
+  var msg = encodeURIComponent(linhas.join('\n'));
+  var url = tel ? ('https://wa.me/55' + tel + '?text=' + msg) : ('https://wa.me/?text=' + msg);
+  window.open(url, '_blank');
+}
+
+function enviarTodosFuncionariosWhatsApp() {
+  var configs = {};
+  try {
+    configs = JSON.parse(localStorage.getItem('sdv_dados_funcionarios_config') || '{}');
+  } catch(_) {}
+
+  var nomes = Object.keys(configs);
+  if (nomes.length === 0) {
+    if (typeof mostrarToast === 'function') mostrarToast('⚠️ Nenhum funcionário configurado ainda.', 'aviso');
+    return;
+  }
+
+  var linhas = ['👥 *LISTA DE FUNCIONÁRIOS*', ''];
+  nomes.forEach(function(key, idx) {
+    var c = configs[key];
+    linhas.push('*' + (idx + 1) + '. ' + (c.nome || key) + '*');
+    if (c.cargo) linhas.push('   Cargo: ' + c.cargo);
+    if (c.cpf) linhas.push('   CPF: ' + c.cpf);
+    if (c.endereco) linhas.push('   Endereço: ' + c.endereco);
+    if (c.telefone) linhas.push('   WhatsApp: ' + c.telefone);
+    if (c.pix) linhas.push('   PIX: ' + c.pix);
+    linhas.push('');
+  });
+  linhas.push('_SD Móveis Projetados_');
+
+  var msg = encodeURIComponent(linhas.join('\n'));
+  window.open('https://wa.me/?text=' + msg, '_blank');
+}
+
 window.abrirModalRegistrarBatidaPonto = abrirModalRegistrarBatidaPonto;
 window.fecharModalRegistrarBatidaPonto = fecharModalRegistrarBatidaPonto;
 window.alternarCamposAlmocoPonto = alternarCamposAlmocoPonto;
@@ -46135,6 +46250,11 @@ window.popularClientesModalPonto = popularClientesModalPonto;
 window.toggleMiniNovoClientePonto = toggleMiniNovoClientePonto;
 window.salvarMiniNovoClientePonto = salvarMiniNovoClientePonto;
 window.salvarBatidaPontoModal = salvarBatidaPontoModal;
+window.abrirModalConfigFuncionarioPonto = abrirModalConfigFuncionarioPonto;
+window.fecharModalConfigFuncionarioPonto = fecharModalConfigFuncionarioPonto;
+window.salvarConfigFuncionarioPonto = salvarConfigFuncionarioPonto;
+window.enviarFuncionarioWhatsApp = enviarFuncionarioWhatsApp;
+window.enviarTodosFuncionariosWhatsApp = enviarTodosFuncionariosWhatsApp;
 
 </script>
 

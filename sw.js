@@ -1,5 +1,5 @@
-// Service Worker PWA – SD Móveis Projetados v9.5.50 (Combustível configurável, bloqueio automático de valores e exibição condicional)
-const CACHE_NAME = 'sdmoveisprojetados-v9.5.50';
+// Service Worker PWA – SD Móveis Projetados v9.5.51 (CPF e Endereço no funcionário, cliente por texto livre, botões WhatsApp sem valores)
+const CACHE_NAME = 'sdmoveisprojetados-v9.5.51';
 const ASSETS = [
   '/',
   '/index.html',
