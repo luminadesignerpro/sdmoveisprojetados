@@ -1,5 +1,5 @@
-// Service Worker PWA – SD Móveis Projetados v9.5.56 (Remoção da coluna PIX / Pagamento do PDF)
-const CACHE_NAME = 'sdmoveisprojetados-v9.5.56';
+// Service Worker PWA – SD Móveis Projetados v9.5.57 (Aba SD Veículos, controle de frota, licenciamento, abastecimento, KM e foto do comprovante)
+const CACHE_NAME = 'sdmoveisprojetados-v9.5.57';
 const ASSETS = [
   '/',
   '/index.html',
