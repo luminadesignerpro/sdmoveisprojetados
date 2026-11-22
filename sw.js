@@ -1,5 +1,5 @@
-// Service Worker PWA – SD Móveis Projetados v9.5.53 (Ajuste responsivo do PDF: tabela e cards perfeitamente alinhados na tela e na folha)
-const CACHE_NAME = 'sdmoveisprojetados-v9.5.53';
+// Service Worker PWA – SD Móveis Projetados v9.5.54 (Visualização direta sem disparar janela de impressão automaticamente)
+const CACHE_NAME = 'sdmoveisprojetados-v9.5.54';
 const ASSETS = [
   '/',
   '/index.html',
