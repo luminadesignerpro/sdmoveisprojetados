@@ -5600,10 +5600,10 @@
 
 <!-- ══ MODAL REGISTRAR BATIDA DE PONTO (EXEMPLO SEGUNDA IMAGEM) ══ -->
 <div id="modal-registrar-batida-ponto" class="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:999999;align-items:center;justify-content:center;backdrop-filter:blur(5px);padding:14px;box-sizing:border-box;" onclick="if(event.target===this) fecharModalRegistrarBatidaPonto()">
-  <div class="modal-box" onclick="event.stopPropagation()" style="background:#ffffff;color:#1e293b;border-radius:20px;padding:24px 20px;max-width:440px;width:100%;box-shadow:0 25px 60px rgba(0,0,0,0.5);display:flex;flex-direction:column;gap:16px;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <div class="modal-box" onclick="event.stopPropagation()" style="background:#ffffff;color:#1e293b;border-radius:20px;padding:24px 20px;max-width:460px;width:100%;max-height:92vh;overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:0 25px 60px rgba(0,0,0,0.5);display:flex;flex-direction:column;gap:15px;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
     
     <!-- Cabeçalho com Relógio Azul e Botão Fechar -->
-    <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f1f5f9;padding-bottom:14px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f1f5f9;padding-bottom:12px;">
       <div style="display:flex;align-items:center;gap:10px;font-size:18px;font-weight:800;color:#1e293b;">
         <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;border:2px solid #2563eb;color:#2563eb;font-size:15px;line-height:1;">🕒</span>
         <span>Registrar Batida de Ponto</span>
@@ -5612,22 +5612,42 @@
     </div>
 
     <!-- Data do Trabalho * -->
-    <div style="display:flex;flex-direction:column;gap:6px;">
+    <div style="display:flex;flex-direction:column;gap:5px;">
       <label style="font-size:13px;font-weight:700;color:#1e293b;">Data do Trabalho *</label>
       <input type="date" id="rbp-data" style="width:100%;background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:14px;font-weight:600;color:#1e293b;outline:none;box-sizing:border-box;transition:border-color 0.2s;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
     </div>
 
+    <!-- Nome do Funcionário * + Botão Adicionar Funcionário -->
+    <div style="display:flex;flex-direction:column;gap:5px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <label style="font-size:13px;font-weight:700;color:#1e293b;">Nome do Funcionário *</label>
+        <button type="button" onclick="toggleMiniNovoFuncionarioPonto()" style="background:none;border:none;color:#2563eb;font-size:12.5px;font-weight:700;cursor:pointer;padding:0;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">+ Novo Funcionário</button>
+      </div>
+      <select id="rbp-funcionario" style="width:100%;background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:14px;color:#1e293b;outline:none;box-sizing:border-box;cursor:pointer;font-weight:600;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
+        <option value="">Selecione o Funcionário</option>
+      </select>
+      
+      <!-- Mini form rápido para adicionar funcionário -->
+      <div id="rbp-box-novo-funcionario" style="display:none;background:#f8fafc;border:1.5px dashed #2563eb;border-radius:10px;padding:10px;gap:8px;margin-top:2px;">
+        <div style="display:flex;gap:6px;">
+          <input type="text" id="rbp-inp-novo-funcionario" placeholder="Nome do novo funcionário..." style="flex:1;background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:8px 10px;font-size:12.5px;color:#1e293b;outline:none;">
+          <button type="button" onclick="salvarMiniNovoFuncionarioPonto()" style="background:#2563eb;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer;">Adicionar</button>
+          <button type="button" onclick="toggleMiniNovoFuncionarioPonto(false)" style="background:#e2e8f0;color:#64748b;border:none;border-radius:8px;padding:8px 10px;font-size:12px;cursor:pointer;">✕</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Opção de Jornada / Ponto * -->
-    <div style="display:flex;flex-direction:column;gap:6px;">
+    <div style="display:flex;flex-direction:column;gap:5px;">
       <label style="font-size:13px;font-weight:700;color:#1e293b;">Opção de Jornada / Ponto *</label>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <!-- Dia Trabalhado -->
-        <div id="rbp-card-integral" onclick="selecionarJornadaPonto('integral')" style="padding:14px 10px;border:2px solid #2563eb;background:#eff6ff;border-radius:14px;cursor:pointer;display:flex;flex-direction:column;gap:4px;transition:all 0.15s;text-align:center;">
+        <div id="rbp-card-integral" onclick="selecionarJornadaPonto('integral')" style="padding:13px 10px;border:2px solid #2563eb;background:#eff6ff;border-radius:14px;cursor:pointer;display:flex;flex-direction:column;gap:3px;transition:all 0.15s;text-align:center;">
           <div style="font-size:14px;font-weight:800;color:#1e3a8a;">Dia Trabalhado</div>
           <div style="font-size:11.5px;color:#3b82f6;font-weight:500;">Integral (Diária cheia)</div>
         </div>
         <!-- Meio Dia -->
-        <div id="rbp-card-meio" onclick="selecionarJornadaPonto('meio_dia')" style="padding:14px 10px;border:1.5px solid #e2e8f0;background:#ffffff;border-radius:14px;cursor:pointer;display:flex;flex-direction:column;gap:4px;transition:all 0.15s;text-align:center;">
+        <div id="rbp-card-meio" onclick="selecionarJornadaPonto('meio_dia')" style="padding:13px 10px;border:1.5px solid #e2e8f0;background:#ffffff;border-radius:14px;cursor:pointer;display:flex;flex-direction:column;gap:3px;transition:all 0.15s;text-align:center;">
           <div style="font-size:14px;font-weight:800;color:#1e293b;">Meio Dia</div>
           <div style="font-size:11.5px;color:#64748b;font-weight:500;">Turno Parcial (Manhã/Tarde)</div>
         </div>
@@ -5635,12 +5655,12 @@
     </div>
 
     <!-- Cliente que Trabalhou * -->
-    <div style="display:flex;flex-direction:column;gap:6px;">
+    <div style="display:flex;flex-direction:column;gap:5px;">
       <div style="display:flex;align-items:center;justify-content:space-between;">
         <label style="font-size:13px;font-weight:700;color:#1e293b;">Cliente que Trabalhou *</label>
         <button type="button" onclick="toggleMiniNovoClientePonto()" style="background:none;border:none;color:#2563eb;font-size:12.5px;font-weight:700;cursor:pointer;padding:0;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">+ Novo Cliente</button>
       </div>
-      <select id="rbp-cliente" style="width:100%;background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:12px;padding:12px 14px;font-size:14px;color:#1e293b;outline:none;box-sizing:border-box;cursor:pointer;font-weight:600;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
+      <select id="rbp-cliente" style="width:100%;background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:14px;color:#1e293b;outline:none;box-sizing:border-box;cursor:pointer;font-weight:600;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
         <option value="">Selecione o Cliente</option>
       </select>
       
@@ -5656,13 +5676,13 @@
 
     <!-- Valor do Ponto (R$) * e Status Pagamento -->
     <div style="display:grid;grid-template-columns:1fr 1.2fr;gap:12px;">
-      <div style="display:flex;flex-direction:column;gap:6px;">
+      <div style="display:flex;flex-direction:column;gap:5px;">
         <label style="font-size:13px;font-weight:700;color:#1e293b;">Valor do Ponto (R$) *</label>
-        <input type="text" id="rbp-valor" value="160,00" style="width:100%;background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:12px;padding:12px 14px;font-size:14px;font-weight:700;color:#1e293b;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
+        <input type="text" id="rbp-valor" value="160,00" style="width:100%;background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:14px;font-weight:700;color:#1e293b;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
       </div>
-      <div style="display:flex;flex-direction:column;gap:6px;">
+      <div style="display:flex;flex-direction:column;gap:5px;">
         <label style="font-size:13px;font-weight:700;color:#1e293b;">Status Pagamento</label>
-        <select id="rbp-status-pagto" style="width:100%;background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:12px;padding:12px 10px;font-size:13px;font-weight:600;color:#1e293b;outline:none;box-sizing:border-box;cursor:pointer;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
+        <select id="rbp-status-pagto" style="width:100%;background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 10px;font-size:13px;font-weight:600;color:#1e293b;outline:none;box-sizing:border-box;cursor:pointer;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
           <option value="Pendente (A receber / Pagar)" selected>Pendente (A receber / Pagar)</option>
           <option value="Pago">Pago</option>
           <option value="Adiantamento">Adiantamento</option>
@@ -5670,14 +5690,60 @@
       </div>
     </div>
 
+    <!-- SEÇÃO: ALMOÇO / REFEIÇÃO (RESTAURANTE, VALOR, FORMA PAGAMENTO, PAGO OU PENDENTE) -->
+    <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-size:13px;font-weight:800;color:#1e293b;display:flex;align-items:center;gap:6px;">
+          <span>🍛</span> <span>Almoço / Refeição</span>
+        </div>
+        <label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#2563eb;cursor:pointer;">
+          <input type="checkbox" id="rbp-almoco-ativo" onchange="alternarCamposAlmocoPonto(this.checked)" checked style="accent-color:#2563eb;cursor:pointer;width:15px;height:15px;">
+          <span>Incluir Almoço</span>
+        </label>
+      </div>
+
+      <div id="rbp-almoco-campos" style="display:flex;flex-direction:column;gap:10px;">
+        <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:10px;">
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:11.5px;font-weight:700;color:#475569;">Nome do Restaurante</label>
+            <input type="text" id="rbp-almoco-restaurante" placeholder="Ex: Restaurante do Zé..." style="width:100%;background:#ffffff;border:1.5px solid #cbd5e1;border-radius:10px;padding:9px 12px;font-size:13px;color:#1e293b;outline:none;box-sizing:border-box;">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:11.5px;font-weight:700;color:#475569;">Valor do Almoço (R$)</label>
+            <input type="text" id="rbp-almoco-valor" placeholder="25,00" value="25,00" style="width:100%;background:#ffffff;border:1.5px solid #cbd5e1;border-radius:10px;padding:9px 12px;font-size:13px;font-weight:700;color:#1e293b;outline:none;box-sizing:border-box;">
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:11.5px;font-weight:700;color:#475569;">Status do Almoço</label>
+            <select id="rbp-almoco-status" style="width:100%;background:#ffffff;border:1.5px solid #cbd5e1;border-radius:10px;padding:9px 8px;font-size:12.5px;font-weight:700;color:#1e293b;outline:none;box-sizing:border-box;cursor:pointer;">
+              <option value="Pago" selected>Pago</option>
+              <option value="Pendente">Pendente</option>
+            </select>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:11.5px;font-weight:700;color:#475569;">Forma de Pagamento</label>
+            <select id="rbp-almoco-forma" style="width:100%;background:#ffffff;border:1.5px solid #cbd5e1;border-radius:10px;padding:9px 8px;font-size:12.5px;font-weight:600;color:#1e293b;outline:none;box-sizing:border-box;cursor:pointer;">
+              <option value="Pix" selected>Pix</option>
+              <option value="Dinheiro">Dinheiro</option>
+              <option value="Cartão">Cartão</option>
+              <option value="Pago pela Empresa">Pago pela Empresa</option>
+              <option value="A Reembolsar">A Reembolsar</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Descrição / Tarefas Realizadas -->
-    <div style="display:flex;flex-direction:column;gap:6px;">
+    <div style="display:flex;flex-direction:column;gap:5px;">
       <label style="font-size:13px;font-weight:700;color:#1e293b;">Descrição / Tarefas Realizadas</label>
-      <textarea id="rbp-descricao" rows="2" placeholder="Ex: Reforma elétrica, limpeza pós-obra..." style="width:100%;background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:12px;padding:12px 14px;font-size:13px;color:#1e293b;outline:none;box-sizing:border-box;resize:vertical;font-family:inherit;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'"></textarea>
+      <textarea id="rbp-descricao" rows="2" placeholder="Ex: Reforma elétrica, limpeza pós-obra..." style="width:100%;background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:13px;color:#1e293b;outline:none;box-sizing:border-box;resize:vertical;font-family:inherit;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'"></textarea>
     </div>
 
     <!-- Ações / Botões -->
-    <div style="display:flex;justify-content:flex-end;align-items:center;gap:12px;margin-top:6px;">
+    <div style="display:flex;justify-content:flex-end;align-items:center;gap:12px;margin-top:4px;">
       <button type="button" onclick="fecharModalRegistrarBatidaPonto()" style="background:transparent;border:none;color:#64748b;font-size:14px;font-weight:700;padding:10px 16px;cursor:pointer;border-radius:10px;transition:color 0.15s;" onmouseover="this.style.color='#1e293b'" onmouseout="this.style.color='#64748b'">Cancelar</button>
       <button type="button" onclick="salvarBatidaPontoModal()" style="background:#2563eb;color:#ffffff;font-size:14px;font-weight:800;padding:12px 26px;border-radius:12px;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(37,99,235,0.35);transition:background 0.15s;" onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'">Salvar Ponto</button>
     </div>
@@ -44617,7 +44683,7 @@ window.salvarDirecionamentoDaOsAtiva = salvarDirecionamentoDaOsAtiva;
 
 
 // ════════════════════════════════════════════════════
-// 🕒 REGISTRAR BATIDA DE PONTO (MODAL EXATAMENTE COMO A IMAGEM)
+// 🕒 REGISTRAR BATIDA DE PONTO (COM FUNCIONÁRIO E ALMOÇO)
 // ════════════════════════════════════════════════════
 var _jornadaPontoAtiva = 'integral';
 
@@ -44633,11 +44699,12 @@ function abrirModalRegistrarBatidaPonto() {
   var inputData = document.getElementById('rbp-data');
   if (inputData) inputData.value = a + '-' + m + '-' + d;
 
-  // 2. Jornada padrão: Dia Trabalhado
-  selecionarJornadaPonto('integral');
-
-  // 3. Popular clientes
+  // 2. Popular funcionários e clientes
+  popularFuncionariosModalPonto();
   popularClientesModalPonto();
+
+  // 3. Jornada padrão: Dia Trabalhado
+  selecionarJornadaPonto('integral');
 
   // 4. Valor padrão 160,00
   var inpValor = document.getElementById('rbp-valor');
@@ -44647,11 +44714,25 @@ function abrirModalRegistrarBatidaPonto() {
   var selStatus = document.getElementById('rbp-status-pagto');
   if (selStatus) selStatus.value = 'Pendente (A receber / Pagar)';
 
-  // 6. Descrição
+  // 6. Almoço padrão
+  var chkAlmoco = document.getElementById('rbp-almoco-ativo');
+  if (chkAlmoco) chkAlmoco.checked = true;
+  alternarCamposAlmocoPonto(true);
+  var inpRest = document.getElementById('rbp-almoco-restaurante');
+  if (inpRest) inpRest.value = '';
+  var inpAlmValor = document.getElementById('rbp-almoco-valor');
+  if (inpAlmValor) inpAlmValor.value = '25,00';
+  var selAlmStatus = document.getElementById('rbp-almoco-status');
+  if (selAlmStatus) selAlmStatus.value = 'Pago';
+  var selAlmForma = document.getElementById('rbp-almoco-forma');
+  if (selAlmForma) selAlmForma.value = 'Pix';
+
+  // 7. Descrição
   var txtDesc = document.getElementById('rbp-descricao');
   if (txtDesc) txtDesc.value = '';
 
-  // Esconder mini form de novo cliente
+  // Esconder mini forms
+  toggleMiniNovoFuncionarioPonto(false);
   toggleMiniNovoClientePonto(false);
 
   // Exibir modal
@@ -44661,6 +44742,11 @@ function abrirModalRegistrarBatidaPonto() {
 function fecharModalRegistrarBatidaPonto() {
   var modal = document.getElementById('modal-registrar-batida-ponto');
   if (modal) modal.style.display = 'none';
+}
+
+function alternarCamposAlmocoPonto(ativo) {
+  var campos = document.getElementById('rbp-almoco-campos');
+  if (campos) campos.style.display = ativo ? 'flex' : 'none';
 }
 
 function selecionarJornadaPonto(tipo) {
@@ -44704,20 +44790,94 @@ function selecionarJornadaPonto(tipo) {
   }
 }
 
+// ── Funcionários ──
+function popularFuncionariosModalPonto(selecionarNome) {
+  var select = document.getElementById('rbp-funcionario');
+  if (!select) return;
+
+  var nomes = new Set();
+
+  if (typeof funcionariosLista !== 'undefined' && Array.isArray(funcionariosLista)) {
+    funcionariosLista.forEach(function(f) {
+      if (f && f.nome && f.nome.trim()) nomes.add(f.nome.trim());
+    });
+  }
+
+  // Funcionários customizados salvos localmente
+  try {
+    var salvos = JSON.parse(localStorage.getItem('sdv_funcionarios_custom') || '[]');
+    if (Array.isArray(salvos)) {
+      salvos.forEach(function(n) { if (n && n.trim()) nomes.add(n.trim()); });
+    }
+  } catch(_) {}
+
+  // Se vazio, adiciona padrão
+  if (nomes.size === 0) {
+    nomes.add('David');
+    nomes.add('João');
+    nomes.add('Marceneiro 1');
+  }
+
+  var arr = Array.from(nomes).sort();
+  select.innerHTML = '<option value="">Selecione o Funcionário</option>' +
+    arr.map(function(n) {
+      var sel = (selecionarNome && selecionarNome === n) ? ' selected' : '';
+      return '<option value="' + n + '"' + sel + '>' + n + '</option>';
+    }).join('');
+}
+
+function toggleMiniNovoFuncionarioPonto(forcar) {
+  var box = document.getElementById('rbp-box-novo-funcionario');
+  if (!box) return;
+  var display = typeof forcar === 'boolean' ? (forcar ? 'flex' : 'none') : (box.style.display === 'none' ? 'flex' : 'none');
+  box.style.display = display;
+  if (display === 'flex') {
+    var inp = document.getElementById('rbp-inp-novo-funcionario');
+    if (inp) { inp.value = ''; inp.focus(); }
+  }
+}
+
+function salvarMiniNovoFuncionarioPonto() {
+  var inp = document.getElementById('rbp-inp-novo-funcionario');
+  var nome = inp ? inp.value.trim() : '';
+  if (!nome) {
+    if (typeof mostrarToast === 'function') mostrarToast('⚠️ Digite o nome do funcionário!', 'aviso');
+    return;
+  }
+  // Salvar no localStorage de custom
+  try {
+    var salvos = JSON.parse(localStorage.getItem('sdv_funcionarios_custom') || '[]');
+    if (!salvos.includes(nome)) {
+      salvos.push(nome);
+      localStorage.setItem('sdv_funcionarios_custom', JSON.stringify(salvos));
+    }
+  } catch(_) {}
+
+  // Se existir funcionariosLista, adiciona lá também
+  if (typeof funcionariosLista !== 'undefined' && Array.isArray(funcionariosLista)) {
+    if (!funcionariosLista.some(function(f) { return f.nome === nome; })) {
+      funcionariosLista.push({ id: Date.now(), nome: nome, cargo: 'Colaborador' });
+    }
+  }
+
+  popularFuncionariosModalPonto(nome);
+  toggleMiniNovoFuncionarioPonto(false);
+  if (typeof mostrarToast === 'function') mostrarToast('✅ Funcionário "' + nome + '" adicionado!', 'sucesso');
+}
+
+// ── Clientes ──
 function popularClientesModalPonto(selecionarNome) {
   var select = document.getElementById('rbp-cliente');
   if (!select) return;
 
   var nomes = new Set();
 
-  // Clientes do array global
   if (typeof clientes !== 'undefined' && Array.isArray(clientes)) {
     clientes.forEach(function(c) {
       if (c && c.nome && c.nome.trim()) nomes.add(c.nome.trim());
     });
   }
 
-  // Clientes do portfolio
   try {
     var clisPf = JSON.parse(localStorage.getItem('sdv_portfolio_clientes') || '[]');
     if (Array.isArray(clisPf)) {
@@ -44727,7 +44887,6 @@ function popularClientesModalPonto(selecionarNome) {
     }
   } catch(_) {}
 
-  // Cliente atual no orçamento
   var oNomeEl = document.getElementById('o-nome');
   var nomeAtual = oNomeEl ? oNomeEl.value.trim() : '';
   if (nomeAtual) nomes.add(nomeAtual);
@@ -44763,12 +44922,21 @@ function salvarMiniNovoClientePonto() {
   if (typeof mostrarToast === 'function') mostrarToast('✅ Cliente "' + nome + '" adicionado!', 'sucesso');
 }
 
+// ── Salvar Batida de Ponto Completa ──
 function salvarBatidaPontoModal() {
   var inputData = document.getElementById('rbp-data');
   var dataVal = inputData ? inputData.value : '';
   if (!dataVal) {
     if (typeof mostrarToast === 'function') mostrarToast('⚠️ Por favor, selecione a data do trabalho!', 'aviso');
     else alert('Por favor, selecione a data do trabalho!');
+    return;
+  }
+
+  var selFunc = document.getElementById('rbp-funcionario');
+  var funcVal = selFunc ? selFunc.value.trim() : '';
+  if (!funcVal) {
+    if (typeof mostrarToast === 'function') mostrarToast('⚠️ Por favor, selecione o funcionário!', 'aviso');
+    else alert('Por favor, selecione o funcionário!');
     return;
   }
 
@@ -44786,6 +44954,25 @@ function salvarBatidaPontoModal() {
   var selStatus = document.getElementById('rbp-status-pagto');
   var statusVal = selStatus ? selStatus.value : 'Pendente (A receber / Pagar)';
 
+  // Almoço
+  var chkAlmoco = document.getElementById('rbp-almoco-ativo');
+  var temAlmoco = chkAlmoco ? chkAlmoco.checked : false;
+  var almRestaurante = '';
+  var almValor = '';
+  var almStatus = '';
+  var almForma = '';
+
+  if (temAlmoco) {
+    var inpRest = document.getElementById('rbp-almoco-restaurante');
+    almRestaurante = inpRest ? inpRest.value.trim() : '';
+    var inpAlmVal = document.getElementById('rbp-almoco-valor');
+    almValor = inpAlmVal ? inpAlmVal.value.trim() : '0,00';
+    var selAlmStat = document.getElementById('rbp-almoco-status');
+    almStatus = selAlmStat ? selAlmStat.value : 'Pago';
+    var selAlmForma = document.getElementById('rbp-almoco-forma');
+    almForma = selAlmForma ? selAlmForma.value : 'Pix';
+  }
+
   var txtDesc = document.getElementById('rbp-descricao');
   var descVal = txtDesc ? txtDesc.value.trim() : '';
 
@@ -44797,11 +44984,19 @@ function salvarBatidaPontoModal() {
     id: 'ponto_' + Date.now(),
     data: dataVal,
     dataFormatada: dataFormatada,
+    funcionario: funcVal,
     jornada: _jornadaPontoAtiva,
     jornadaTexto: _jornadaPontoAtiva === 'integral' ? 'Dia Trabalhado (Integral)' : 'Meio Dia (Turno Parcial)',
     cliente: clienteVal,
     valor: valorVal,
     statusPagamento: statusVal,
+    // Dados do Almoço
+    almoco: temAlmoco ? {
+      restaurante: almRestaurante || 'Restaurante',
+      valor: almValor || '0,00',
+      status: almStatus || 'Pago',
+      forma: almForma || 'Pix'
+    } : null,
     descricao: descVal,
     criadoEm: new Date().toISOString()
   };
@@ -44816,7 +45011,11 @@ function salvarBatidaPontoModal() {
 
   fecharModalRegistrarBatidaPonto();
 
-  var msgSucesso = '✅ Ponto registrado! ' + dataFormatada + ' · ' + clienteVal + ' · R$ ' + valorVal;
+  var msgSucesso = '✅ Ponto: ' + funcVal + ' · ' + clienteVal + ' · R$ ' + valorVal;
+  if (temAlmoco && almValor) {
+    msgSucesso += ' (Almoço: ' + (almRestaurante ? almRestaurante + ' ' : '') + 'R$ ' + almValor + ' - ' + almStatus + ')';
+  }
+
   if (typeof mostrarToast === 'function') mostrarToast(msgSucesso, 'sucesso');
   else if (typeof showToast === 'function') showToast(msgSucesso, 'success');
   else alert(msgSucesso);
@@ -44824,7 +45023,12 @@ function salvarBatidaPontoModal() {
 
 window.abrirModalRegistrarBatidaPonto = abrirModalRegistrarBatidaPonto;
 window.fecharModalRegistrarBatidaPonto = fecharModalRegistrarBatidaPonto;
+window.alternarCamposAlmocoPonto = alternarCamposAlmocoPonto;
 window.selecionarJornadaPonto = selecionarJornadaPonto;
+window.popularFuncionariosModalPonto = popularFuncionariosModalPonto;
+window.toggleMiniNovoFuncionarioPonto = toggleMiniNovoFuncionarioPonto;
+window.salvarMiniNovoFuncionarioPonto = salvarMiniNovoFuncionarioPonto;
+window.popularClientesModalPonto = popularClientesModalPonto;
 window.toggleMiniNovoClientePonto = toggleMiniNovoClientePonto;
 window.salvarMiniNovoClientePonto = salvarMiniNovoClientePonto;
 window.salvarBatidaPontoModal = salvarBatidaPontoModal;
