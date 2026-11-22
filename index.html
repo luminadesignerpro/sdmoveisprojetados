@@ -1998,7 +1998,8 @@
     <button id="tab-contratos" class="tab" data-tab="contratos" onclick="goTab('contratos')"><span>📄</span><span>Contratos</span></button>
     <button id="tab-usuarios" class="tab" data-tab="usuarios" onclick="goTab('usuarios')"><span>👥</span><span>Usuários</span></button>
     <button type="button" id="tab-portal-cliente" class="tab" onclick="abrirPortalCliente()" title="Acessar Portal do Cliente"><span>🌐</span><span>Portal Cliente</span></button>
-    <button type="button" id="tab-portal-funcionario" class="tab" onclick="abrirPortalFuncionario()" title="Acessar Portal do Ponto"><span>🌐</span><span>Portal do Ponto</span></button>
+    <button type="button" id="tab-portal-funcionario" class="tab" onclick="abrirPortalFuncionario()" title="Acessar Portal da Equipe"><span>👷</span><span>Portal Equipe</span></button>
+    <button type="button" id="tab-portal-ponto" class="tab" onclick="abrirPortalDoPonto()" title="Acessar Portal do Ponto"><span>🌐</span><span>Portal do Ponto</span></button>
     <button type="button" id="tab-cronograma" class="tab" data-tab="cronograma" onclick="goTab('cronograma')" title="Cronograma e Pedido de Material"><span>📅</span><span>Cronograma</span></button>
     <button type="button" id="tab-relatorio" class="tab" data-tab="relatorio" onclick="goTab('relatorio')" title="Relatório Financeiro"><span>📊</span><span>Relatório</span></button>
     <button type="button" id="tab-ferramentas" class="tab" data-tab="ferramentas" onclick="goTab('ferramentas')" title="Ferramentas de Obra"><span>🔧</span><span>Ferramentas</span></button>
@@ -12409,6 +12410,23 @@ function abrirPortalFuncionarioDireto() {
     ? funcionariosLista 
     : ((typeof funcionarios !== 'undefined' && Array.isArray(funcionarios) && funcionarios.length > 0) ? funcionarios : []);
   let url = `${baseOrigin}${basePath}/funcionario.html?portal=funcionario&empresa=${encodeURIComponent(licAtivaLink.id)}&empNome=${encodeURIComponent(licAtivaLink.nome)}`;
+  if (listaFuncs.length > 0) {
+    const f1 = listaFuncs.find(f => f.id === 100 || (f.nome && f.nome.toLowerCase().includes('samuel'))) || listaFuncs[0];
+    url += `&funcId=${encodeURIComponent(f1.id)}&nome=${encodeURIComponent(f1.nome)}&cargo=${encodeURIComponent(f1.cargo || 'Colaborador')}`;
+  } else {
+    url += `&funcId=100&nome=Samuel%20David&cargo=${encodeURIComponent('Instalador / Técnico Líder')}`;
+  }
+  abrirLinkPortalFuncionario(url);
+}
+
+function abrirPortalDoPonto() {
+  const baseOrigin = window.location.origin;
+  const basePath = window.location.pathname.replace(/\/index\.html$/i, '').replace(/\/$/, '');
+  const licAtivaLink = (typeof obterLicencaAtiva === 'function' ? obterLicencaAtiva() : { id: 'sdvidros', nome: 'SD Vidros' });
+  const listaFuncs = (typeof funcionariosLista !== 'undefined' && Array.isArray(funcionariosLista) && funcionariosLista.length > 0) 
+    ? funcionariosLista 
+    : ((typeof funcionarios !== 'undefined' && Array.isArray(funcionarios) && funcionarios.length > 0) ? funcionarios : []);
+  let url = `${baseOrigin}${basePath}/funcionario.html?portal=ponto&empresa=${encodeURIComponent(licAtivaLink.id)}&empNome=${encodeURIComponent(licAtivaLink.nome)}`;
   if (listaFuncs.length > 0) {
     const f1 = listaFuncs.find(f => f.id === 100 || (f.nome && f.nome.toLowerCase().includes('samuel'))) || listaFuncs[0];
     url += `&funcId=${encodeURIComponent(f1.id)}&nome=${encodeURIComponent(f1.nome)}&cargo=${encodeURIComponent(f1.cargo || 'Colaborador')}`;
@@ -31351,10 +31369,31 @@ function aplicarReajusteComparativo() {
 // ══════════════════════════════════════════════
 function restaurarOrdemAbasSalva() {
   try {
-    const saved = JSON.parse(localStorage.getItem('sdm_tabs_custom_order') || 'null');
+    let saved = JSON.parse(localStorage.getItem('sdm_tabs_custom_order') || 'null');
     if (!Array.isArray(saved) || !saved.length) return;
     const container = document.querySelector('.tabs');
     if (!container) return;
+
+    // Garantir que tab-portal-funcionario (Portal Equipe) esteja na lista
+    if (!saved.includes('tab-portal-funcionario')) {
+      const idxCli = saved.indexOf('tab-portal-cliente');
+      if (idxCli !== -1) saved.splice(idxCli + 1, 0, 'tab-portal-funcionario');
+      else saved.push('tab-portal-funcionario');
+    }
+
+    // Garantir que tab-portal-ponto (Portal do Ponto) esteja na lista
+    if (!saved.includes('tab-portal-ponto')) {
+      const idxPortalEq = saved.indexOf('tab-portal-funcionario');
+      if (idxPortalEq !== -1) saved.splice(idxPortalEq + 1, 0, 'tab-portal-ponto');
+      else saved.push('tab-portal-ponto');
+    }
+
+    // Garantir que tab-ponto (Ponto do Funcionário) esteja na lista
+    if (!saved.includes('tab-ponto')) {
+      const idxPP = saved.indexOf('tab-portal-ponto');
+      if (idxPP !== -1) saved.splice(idxPP + 1, 0, 'tab-ponto');
+      else saved.push('tab-ponto');
+    }
 
     // Garantir que tab-bater-ponto esteja na lista se ainda não foi salvo
     if (!saved.includes('tab-bater-ponto')) {
@@ -31363,21 +31402,13 @@ function restaurarOrdemAbasSalva() {
       else saved.push('tab-bater-ponto');
     }
 
-    // Posicionar Ponto do Funcionário na posição de destaque da 3ª imagem (trocando com Portal do Ponto)
-    const idxPortal = saved.indexOf('tab-portal-funcionario');
-    const idxPontoTab = saved.indexOf('tab-ponto');
-    if (idxPortal !== -1 && idxPontoTab !== -1 && idxPortal < idxPontoTab) {
-      saved[idxPortal] = 'tab-ponto';
-      saved[idxPontoTab] = 'tab-portal-funcionario';
-      try { localStorage.setItem('sdm_tabs_custom_order', JSON.stringify(saved)); } catch(_) {}
-    }
-
     saved.forEach(id => {
       const el = document.getElementById(id);
       if (el && el.parentNode === container) {
         container.appendChild(el);
       }
     });
+    try { localStorage.setItem('sdm_tabs_custom_order', JSON.stringify(saved)); } catch(_) {}
   } catch(_) {}
 }
 
@@ -31389,8 +31420,8 @@ function restaurarOrdemAbasPadrao() {
     'tab-detector', 'tab-agenda', 'tab-agenda-pessoal', 'tab-produtos',
     'tab-empresa', 'tab-clientes', 'tab-camera', 'tab-contratos',
     'tab-usuarios', 'tab-cronograma', 'tab-relatorio', 'tab-ferramentas',
-    'tab-portal-cliente', 'tab-ponto', 'tab-portal-funcionario', 'tab-bater-ponto',
-    'btn-central-mensagens'
+    'tab-portal-cliente', 'tab-portal-funcionario', 'tab-portal-ponto', 'tab-ponto',
+    'tab-bater-ponto', 'btn-central-mensagens'
   ];
   const container = document.querySelector('.tabs');
   if (container) {

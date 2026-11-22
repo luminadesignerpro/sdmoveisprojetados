@@ -2612,7 +2612,7 @@
           <button type="button" class="portal-tab" id="btn-tab-mensagens" onclick="mudarAba('mensagens')">
             <span>💬</span> <span>Mensagens</span> <span class="tab-badge" id="badge-msg-count" style="display:none">0</span>
           </button>
-          <button type="button" class="portal-tab" id="btn-tab-ponto" onclick="mudarAba('ponto')" style="display:none !important;">
+          <button type="button" class="portal-tab" id="btn-tab-ponto" onclick="mudarAba('ponto')">
             <span id="tab-fin-icone">👷</span> <span id="tab-fin-rotulo">Ponto do Funcionário</span>
           </button>
           <button type="button" class="portal-tab" id="btn-tab-cronograma" onclick="mudarAba('cronograma')">
@@ -5586,7 +5586,7 @@
       } catch(_) {}
 
       // ── SE VEIO COM PARÂMETROS DE FUNCIONÁRIO NA URL ──
-      if (paramNomeUrl || paramFuncIdUrl || paramPortal === 'funcionario') {
+      if (paramNomeUrl || paramFuncIdUrl || paramPortal === 'funcionario' || paramPortal === 'ponto') {
         const funcs = (typeof carregarFuncionariosDoStorage === 'function') ? carregarFuncionariosDoStorage() : [
           { id: 100, nome: 'Samuel David', cargo: 'Instalador / Técnico Líder', whatsapp: '(85) 99611-9824' }
         ];
@@ -5780,12 +5780,34 @@
         try { renderizarResumoPontoCliente(); } catch(_) {}
         try { renderizarEspelhoPontoCliente(); } catch(_) {}
         try { atualizarMenuJogosVisiveis(); } catch(_) {}
-        try { mudarAba('status'); } catch(_) {}
+
+        // Controle da visibilidade do botão Ponto do Funcionário conforme o portal acessado
+        const _urlP = new URLSearchParams(window.location.search);
+        const _pModo = (_urlP.get('portal') || _urlP.get('modo') || '').toLowerCase();
+        const _btnPonto = document.getElementById('btn-tab-ponto');
+        if (_pModo === 'ponto') {
+          // Portal do Ponto: Mesmos comandos da 2ª imagem MENOS o botão ponto do funcionário
+          if (_btnPonto) _btnPonto.style.display = 'none';
+          try { mudarAba('status'); } catch(_) {}
+        } else {
+          // Portal Equipe: Todos os comandos incluindo o botão ponto
+          if (_btnPonto) _btnPonto.style.display = '';
+          try { mudarAba('status'); } catch(_) {}
+        }
       } else {
         if (tabRotulo) tabRotulo.textContent = 'Ponto do Funcionário';
         if (tabIcone) tabIcone.textContent = '👷';
         if (contFin) contFin.style.display = 'none';
         if (contPonto) contPonto.style.display = 'block';
+
+        const _urlP = new URLSearchParams(window.location.search);
+        const _pModo = (_urlP.get('portal') || _urlP.get('modo') || '').toLowerCase();
+        const _btnPonto = document.getElementById('btn-tab-ponto');
+        if (_pModo === 'ponto') {
+          if (_btnPonto) _btnPonto.style.display = 'none';
+        } else {
+          if (_btnPonto) _btnPonto.style.display = '';
+        }
         try { mudarAba('status'); } catch(_) {}
       }
 

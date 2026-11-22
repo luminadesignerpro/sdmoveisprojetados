@@ -1,5 +1,5 @@
-// Service Worker PWA – SD Móveis Projetados v9.5.44 (Portal do Ponto, Ponto do Funcionário na barra principal e Modal de Ponto com Tema Escuro)
-const CACHE_NAME = 'sdmoveisprojetados-v9.5.44';
+// Service Worker PWA – SD Móveis Projetados v9.5.45 (Restauração do Portal Equipe + Novo Portal do Ponto + Ponto do Funcionário)
+const CACHE_NAME = 'sdmoveisprojetados-v9.5.45';
 const ASSETS = [
   '/',
   '/index.html',
