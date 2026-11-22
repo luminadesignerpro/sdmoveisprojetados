@@ -2004,6 +2004,7 @@
     <button type="button" id="tab-relatorio" class="tab" data-tab="relatorio" onclick="goTab('relatorio')" title="Relatório Financeiro"><span>📊</span><span>Relatório</span></button>
     <button type="button" id="tab-ferramentas" class="tab" data-tab="ferramentas" onclick="goTab('ferramentas')" title="Ferramentas de Obra"><span>🔧</span><span>Ferramentas</span></button>
     <button type="button" id="btn-central-mensagens" class="tab" onclick="abrirModalCentralMensagens()" title="Central de Mensagens com Clientes"><span>💬</span><span>Mensagens <span id="badge-msg-clientes" style="display:none;background:#ef4444;color:#fff;font-size:9px;padding:1px 5px;border-radius:999px;font-weight:900;">0</span></span></button>
+    <button type="button" id="tab-msg-funcionarios" class="tab" onclick="abrirModalMsgsFuncionarios()" title="Mensagens dos Funcionários"><span>👷💬</span><span>Mensagem dos Funcionários <span id="badge-msgs-funcs" style="display:none;background:#ef4444;color:#fff;font-size:9px;padding:1px 5px;border-radius:999px;font-weight:900;">0</span></span></button>
   </div>
 
   <!-- ══════════════════════════════════════════ -->
@@ -6896,6 +6897,47 @@
           </button>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL MENSAGENS DOS FUNCIONÁRIOS ══ -->
+<div id="modal-msgs-funcionarios" class="modal-overlay" style="display:none; z-index:99999;" onclick="fecharModalMsgsFuncionarios(event)">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:680px;width:95%;max-height:90vh;display:flex;flex-direction:column;padding:0;overflow:hidden;background:#0d0e1c;border:1.5px solid rgba(56,189,248,0.35);border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,0.8);">
+    
+    <!-- Header -->
+    <div style="padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.08);background:linear-gradient(135deg,rgba(14,165,233,0.15),rgba(201,168,76,0.1));display:flex;justify-content:space-between;align-items:center;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:24px;">👷💬</span>
+        <div>
+          <div style="font-size:16px;font-weight:900;color:#fff;">Mensagens dos Funcionários</div>
+          <div style="font-size:11.5px;color:#38bdf8;font-weight:700;">Recados, fotos e vídeos enviados pelo Portal do Ponto</div>
+        </div>
+      </div>
+      <button class="modal-close" onclick="fecharModalMsgsFuncionarios()" title="Fechar" style="background:rgba(255,255,255,0.08);border:none;color:#fff;font-size:16px;cursor:pointer;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;">✕</button>
+    </div>
+
+    <!-- Barra de Filtros e Ações -->
+    <div style="padding:12px 18px;border-bottom:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <div style="flex:1;min-width:180px;position:relative;">
+        <input type="text" id="filtro-msgs-funcs" placeholder="🔍 Buscar funcionário, cliente ou O.S...." oninput="filtrarMsgsFuncionarios()" style="width:100%;background:#131526;border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:8px 12px;font-size:13px;color:#fff;box-sizing:border-box;outline:none;" />
+      </div>
+      <select id="filtro-status-msgs-funcs" onchange="filtrarMsgsFuncionarios()" style="background:#131526;border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:8px 12px;font-size:12.5px;color:#fff;outline:none;font-weight:700;">
+        <option value="todas">Todas</option>
+        <option value="nao_lidas">Não Lidas ⏳</option>
+        <option value="lidas">Lidas ✓</option>
+      </select>
+      <button type="button" onclick="marcarTodasMsgsFuncLidas()" style="background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.4);color:#4ade80;padding:8px 12px;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:5px;">
+        <span>✓✓</span> <span>Marcar lidas</span>
+      </button>
+      <button type="button" onclick="limparTodasMsgsFuncionarios()" style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);color:#f87171;padding:8px 12px;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;">
+        🗑️ Limpar
+      </button>
+    </div>
+
+    <!-- Lista de Mensagens -->
+    <div id="lista-msgs-funcionarios" style="padding:16px 18px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:12px;max-height:60vh;">
+      <!-- Preenchido dinamicamente -->
     </div>
   </div>
 </div>
@@ -25452,6 +25494,214 @@ function tocarAlertaPortal() {
 }
 
 // ══════════════════════════════════════════════
+//  MENSAGENS DOS FUNCIONÁRIOS (PORTAL DO PONTO)
+// ══════════════════════════════════════════════
+function escHtml(s) {
+  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function abrirModalMsgsFuncionarios() {
+  const modal = document.getElementById('modal-msgs-funcionarios');
+  if (modal) modal.style.display = 'flex';
+  filtrarMsgsFuncionarios();
+  atualizarBadgeMsgsFuncionarios();
+}
+
+function fecharModalMsgsFuncionarios(e) {
+  if (!e || e.target === document.getElementById('modal-msgs-funcionarios')) {
+    const modal = document.getElementById('modal-msgs-funcionarios');
+    if (modal) modal.style.display = 'none';
+  }
+}
+
+function filtrarMsgsFuncionarios() {
+  const inpBusca = document.getElementById('filtro-msgs-funcs');
+  const selStatus = document.getElementById('filtro-status-msgs-funcs');
+  const termo = inpBusca ? inpBusca.value.trim().toLowerCase() : '';
+  const statusFiltro = selStatus ? selStatus.value : 'todas';
+
+  let msgs = [];
+  try {
+    msgs = JSON.parse(localStorage.getItem('sdv_msgs_funcionarios') || '[]');
+  } catch(_) {}
+
+  let filtradas = msgs;
+  if (termo) {
+    filtradas = filtradas.filter(m => 
+      (m.colaborador && m.colaborador.toLowerCase().includes(termo)) ||
+      (m.cliente && m.cliente.toLowerCase().includes(termo)) ||
+      (m.os && String(m.os).toLowerCase().includes(termo)) ||
+      (m.texto && m.texto.toLowerCase().includes(termo))
+    );
+  }
+
+  if (statusFiltro === 'nao_lidas') {
+    filtradas = filtradas.filter(m => !m.lida);
+  } else if (statusFiltro === 'lidas') {
+    filtradas = filtradas.filter(m => m.lida);
+  }
+
+  renderizarListaMsgsFuncionarios(filtradas);
+  atualizarBadgeMsgsFuncionarios();
+}
+
+function renderizarListaMsgsFuncionarios(msgs) {
+  const lista = document.getElementById('lista-msgs-funcionarios');
+  if (!lista) return;
+
+  if (!msgs || !msgs.length) {
+    lista.innerHTML = `
+      <div style="text-align:center;padding:36px 14px;color:rgba(255,255,255,0.4);background:rgba(255,255,255,0.02);border-radius:12px;border:1px dashed rgba(255,255,255,0.1);">
+        <div style="font-size:32px;margin-bottom:8px;">👷💬</div>
+        <div style="font-size:14px;font-weight:800;color:#fff;">Nenhuma mensagem de funcionário encontrada</div>
+        <div style="font-size:12px;margin-top:4px;">Quando os colaboradores enviarem mensagens pelo Portal do Ponto, elas aparecerão aqui.</div>
+      </div>
+    `;
+    return;
+  }
+
+  lista.innerHTML = msgs.map(m => {
+    const isNaoLida = !m.lida;
+    const midiasHtml = (m.midias && m.midias.length) ? `
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+        ${m.midias.map((mid, idx) => {
+          if (mid.tipo === 'video') {
+            return `
+              <div style="position:relative;width:90px;height:90px;border-radius:10px;overflow:hidden;background:#000;border:1.5px solid #38bdf8;cursor:pointer;" onclick="abrirMidiaGrandeMsgFunc('${mid.data}', 'video')">
+                <video src="${mid.data}" style="width:100%;height:100%;object-fit:cover;" muted></video>
+                <span style="position:absolute;bottom:3px;left:4px;font-size:10px;background:rgba(0,0,0,0.7);color:#38bdf8;padding:1px 5px;border-radius:4px;">▶ Vídeo</span>
+              </div>
+            `;
+          }
+          return `
+            <div style="position:relative;width:90px;height:90px;border-radius:10px;overflow:hidden;background:#000;border:1.5px solid rgba(255,255,255,0.15);cursor:pointer;" onclick="abrirMidiaGrandeMsgFunc('${mid.data}', 'imagem')">
+              <img src="${mid.data}" style="width:100%;height:100%;object-fit:cover;" />
+            </div>
+          `;
+        }).join('')}
+      </div>
+    ` : '';
+
+    return `
+      <div style="background:${isNaoLida ? 'linear-gradient(135deg,rgba(14,165,233,0.12),rgba(201,168,76,0.06))' : 'rgba(255,255,255,0.03)'};border:1.5px solid ${isNaoLida ? 'rgba(56,189,248,0.4)' : 'rgba(255,255,255,0.08)'};border-radius:14px;padding:14px 16px;position:relative;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="background:linear-gradient(135deg,#0284c7,#0369a1);color:#fff;font-size:11.5px;font-weight:900;padding:3px 10px;border-radius:999px;display:inline-flex;align-items:center;gap:4px;">
+              👷 ${escHtml(m.colaborador || 'Funcionário')}
+            </span>
+            ${isNaoLida ? '<span style="background:#ef4444;color:#fff;font-size:10px;font-weight:900;padding:2px 8px;border-radius:999px;">NOVA</span>' : '<span style="color:#22c55e;font-size:11px;font-weight:800;">✓ Lida</span>'}
+          </div>
+          <span style="font-size:11px;color:rgba(255,255,255,0.45);font-weight:600;">${escHtml(m.dataHora || '')}</span>
+        </div>
+
+        <div style="display:flex;gap:12px;margin-bottom:8px;font-size:12.5px;color:var(--gold-light);flex-wrap:wrap;">
+          <span>👤 <strong>Cliente:</strong> ${escHtml(m.cliente || 'Não informado')}</span>
+          ${m.os ? `<span>📋 <strong>O.S.:</strong> #${escHtml(m.os)}</span>` : ''}
+        </div>
+
+        ${m.texto ? `<div style="font-size:13.5px;color:#fff;line-height:1.5;background:rgba(0,0,0,0.25);padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.05);white-space:pre-wrap;">${escHtml(m.texto)}</div>` : ''}
+
+        ${midiasHtml}
+
+        <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:12px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06);">
+          <button type="button" onclick="alternarStatusLidaMsgFunc('${m.id}')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#fff;font-size:11.5px;padding:5px 12px;border-radius:8px;cursor:pointer;font-weight:700;">
+            ${m.lida ? 'Marcar como não lida' : '✓ Marcar como lida'}
+          </button>
+          <button type="button" onclick="excluirMsgFunc('${m.id}')" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);color:#f87171;font-size:11.5px;padding:5px 12px;border-radius:8px;cursor:pointer;font-weight:700;">
+            🗑️ Excluir
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function alternarStatusLidaMsgFunc(id) {
+  let msgs = [];
+  try { msgs = JSON.parse(localStorage.getItem('sdv_msgs_funcionarios') || '[]'); } catch(_) {}
+  const target = msgs.find(m => String(m.id) === String(id));
+  if (target) {
+    target.lida = !target.lida;
+    localStorage.setItem('sdv_msgs_funcionarios', JSON.stringify(msgs));
+    filtrarMsgsFuncionarios();
+    atualizarBadgeMsgsFuncionarios();
+  }
+}
+
+function marcarTodasMsgsFuncLidas() {
+  let msgs = [];
+  try { msgs = JSON.parse(localStorage.getItem('sdv_msgs_funcionarios') || '[]'); } catch(_) {}
+  msgs.forEach(m => m.lida = true);
+  localStorage.setItem('sdv_msgs_funcionarios', JSON.stringify(msgs));
+  filtrarMsgsFuncionarios();
+  atualizarBadgeMsgsFuncionarios();
+  if (typeof showToast === 'function') showToast('Todas as mensagens foram marcadas como lidas!', 'success');
+}
+
+function excluirMsgFunc(id) {
+  if (!confirm('Deseja realmente excluir esta mensagem do funcionário?')) return;
+  let msgs = [];
+  try { msgs = JSON.parse(localStorage.getItem('sdv_msgs_funcionarios') || '[]'); } catch(_) {}
+  msgs = msgs.filter(m => String(m.id) !== String(id));
+  localStorage.setItem('sdv_msgs_funcionarios', JSON.stringify(msgs));
+  filtrarMsgsFuncionarios();
+  atualizarBadgeMsgsFuncionarios();
+  if (typeof showToast === 'function') showToast('Mensagem excluída com sucesso.', 'info');
+}
+
+function limparTodasMsgsFuncionarios() {
+  if (!confirm('Deseja excluir TODAS as mensagens dos funcionários? Esta ação não pode ser desfeita.')) return;
+  localStorage.setItem('sdv_msgs_funcionarios', '[]');
+  filtrarMsgsFuncionarios();
+  atualizarBadgeMsgsFuncionarios();
+  if (typeof showToast === 'function') showToast('Todas as mensagens foram apagadas.', 'info');
+}
+
+function atualizarBadgeMsgsFuncionarios() {
+  let msgs = [];
+  try { msgs = JSON.parse(localStorage.getItem('sdv_msgs_funcionarios') || '[]'); } catch(_) {}
+  const naoLidas = msgs.filter(m => !m.lida).length;
+  const badge = document.getElementById('badge-msgs-funcs');
+  if (badge) {
+    badge.textContent = naoLidas;
+    badge.style.display = naoLidas > 0 ? 'inline-block' : 'none';
+  }
+}
+
+function abrirMidiaGrandeMsgFunc(url, tipo) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:999999;display:flex;align-items:center;justify-content:center;padding:16px;cursor:pointer;';
+  overlay.onclick = () => document.body.removeChild(overlay);
+  
+  if (tipo === 'video') {
+    overlay.innerHTML = `
+      <div style="position:relative;max-width:90vw;max-height:90vh;" onclick="event.stopPropagation()">
+        <video src="${url}" controls autoplay style="max-width:100%;max-height:85vh;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.8);"></video>
+        <button style="position:absolute;top:-40px;right:0;background:none;border:none;color:#fff;font-size:24px;cursor:pointer;" onclick="document.body.removeChild(this.closest('div').parentElement)">✕ Fechar</button>
+      </div>
+    `;
+  } else {
+    overlay.innerHTML = `
+      <div style="position:relative;max-width:90vw;max-height:90vh;" onclick="event.stopPropagation()">
+        <img src="${url}" style="max-width:100%;max-height:85vh;border-radius:12px;object-fit:contain;box-shadow:0 8px 32px rgba(0,0,0,0.8);" />
+        <button style="position:absolute;top:-40px;right:0;background:none;border:none;color:#fff;font-size:24px;cursor:pointer;" onclick="document.body.removeChild(this.closest('div').parentElement)">✕ Fechar</button>
+      </div>
+    `;
+  }
+  document.body.appendChild(overlay);
+}
+
+// Ouvinte para atualizar badge se funcionário enviar mensagem em outra aba
+window.addEventListener('storage', (e) => {
+  if (!e.key || e.key === 'sdv_msgs_funcionarios') {
+    atualizarBadgeMsgsFuncionarios();
+    if (document.getElementById('modal-msgs-funcionarios') && document.getElementById('modal-msgs-funcionarios').style.display !== 'none') {
+      filtrarMsgsFuncionarios();
+    }
+  }
+});
+
+// ══════════════════════════════════════════════
 //  MÓDULO FINANCEIRO (FLUXO DE CAIXA & GESTÃO)
 // ══════════════════════════════════════════════
 let finFiltroAtual = 'todos';
@@ -31402,6 +31652,13 @@ function restaurarOrdemAbasSalva() {
       else saved.push('tab-bater-ponto');
     }
 
+    // Garantir que tab-msg-funcionarios esteja na lista se ainda não foi salvo
+    if (!saved.includes('tab-msg-funcionarios')) {
+      const idxMsg = saved.indexOf('btn-central-mensagens');
+      if (idxMsg !== -1) saved.splice(idxMsg + 1, 0, 'tab-msg-funcionarios');
+      else saved.push('tab-msg-funcionarios');
+    }
+
     saved.forEach(id => {
       const el = document.getElementById(id);
       if (el && el.parentNode === container) {
@@ -31421,7 +31678,7 @@ function restaurarOrdemAbasPadrao() {
     'tab-empresa', 'tab-clientes', 'tab-camera', 'tab-contratos',
     'tab-usuarios', 'tab-cronograma', 'tab-relatorio', 'tab-ferramentas',
     'tab-portal-cliente', 'tab-portal-funcionario', 'tab-portal-ponto', 'tab-ponto',
-    'tab-bater-ponto', 'btn-central-mensagens'
+    'tab-bater-ponto', 'btn-central-mensagens', 'tab-msg-funcionarios'
   ];
   const container = document.querySelector('.tabs');
   if (container) {
@@ -31761,6 +32018,7 @@ function moverAbaPosicao(tabId, direcao) {
 
     // Restaura ordem salva
     restaurarOrdemAbasSalva();
+    try { atualizarBadgeMsgsFuncionarios(); } catch(_) {}
   }
 
   if (document.readyState === 'loading') {
