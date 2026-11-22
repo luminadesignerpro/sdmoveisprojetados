@@ -1,5 +1,5 @@
-// Service Worker PWA – SD Móveis Projetados v9.5.48 (Select de clientes/O.S. na Mensagem do Portal do Ponto e Botão Configurar Dados do Funcionário na Batida de Ponto)
-const CACHE_NAME = 'sdmoveisprojetados-v9.5.48';
+// Service Worker PWA – SD Móveis Projetados v9.5.49 (Opção de Renomear cada Botão e Colocar Ícones Personalizados)
+const CACHE_NAME = 'sdmoveisprojetados-v9.5.49';
 const ASSETS = [
   '/',
   '/index.html',

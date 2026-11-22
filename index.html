@@ -1635,6 +1635,32 @@
     .tabs.modo-organizar-ativo .tab {
       border-color: rgba(201,168,76,0.35);
       cursor: pointer;
+      position: relative !important;
+    }
+    .btn-editar-aba-lapiz {
+      display: none;
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      width: 24px;
+      height: 24px;
+      background: linear-gradient(135deg, #facc15, #ca8a04);
+      color: #000;
+      border-radius: 50%;
+      font-size: 12px;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 100;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.7);
+      border: 1.5px solid #ffffff;
+      transition: transform 0.15s;
+    }
+    .btn-editar-aba-lapiz:hover {
+      transform: scale(1.25);
+    }
+    .tabs.modo-organizar-ativo .btn-editar-aba-lapiz {
+      display: flex !important;
     }
     @keyframes tabWiggleAnim {
       0% { transform: scale(1.08) rotate(-1.5deg); }
@@ -1960,18 +1986,21 @@
     })();
   </script>
 
-  <!-- BANNER DO MODO DE ORGANIZAÇÃO PRECISA DAS ABAS -->
+  <!-- BANNER DO MODO DE ORGANIZAÇÃO & PERSONALIZAÇÃO DAS ABAS -->
   <div id="banner-organizar-abas" style="display:none;background:linear-gradient(135deg, rgba(201,168,76,0.25), rgba(16,18,27,0.98));border:1.5px solid var(--gold);border-radius:12px;padding:12px 14px;margin-bottom:12px;box-shadow:0 8px 25px rgba(0,0,0,0.6);align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
     <div>
       <div style="font-size:13px;font-weight:900;color:var(--gold-light);display:flex;align-items:center;gap:6px;">
-        <span>🔀</span> <span>Modo Organizar Abas com Precisão</span>
+        <span>🔀</span> <span>Modo Organizar & Personalizar Abas</span>
       </div>
       <div id="banner-organizar-msg" style="font-size:11.5px;color:#cbd5e1;margin-top:3px;">
-        1º Toque na aba que quer mover. 2º Toque na posição onde quer deixar.
+        Toque na aba para mover, ou clique em ✏️ para renomear e mudar o ícone.
       </div>
     </div>
-    <div style="display:flex;gap:6px;">
-      <button type="button" onclick="restaurarOrdemAbasPadrao()" class="btn btn-sec" style="padding:7px 11px;font-size:11px;font-weight:800;border-radius:8px;">
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+      <button type="button" onclick="abrirModalPersonalizarTodasAbas()" class="btn btn-sec" style="padding:7px 12px;font-size:11.5px;font-weight:800;border-radius:8px;background:rgba(56,189,248,0.18);border:1.5px solid #38bdf8;color:#38bdf8;" title="Lista completa para renomear e alterar ícones de todos os botões">
+        ✏️ Renomear / Ícones
+      </button>
+      <button type="button" onclick="restaurarOrdemAbasPadrao()" class="btn btn-sec" style="padding:7px 11px;font-size:11px;font-weight:800;border-radius:8px;" title="Restaurar posições, nomes e ícones originais">
         🔄 Padrão
       </button>
       <button type="button" onclick="alternarModoOrganizarAbas(false)" class="btn btn-primary" style="padding:7px 16px;font-size:12px;font-weight:900;background:linear-gradient(135deg,#059669,#10b981);border:none;border-radius:8px;box-shadow:0 3px 12px rgba(16,185,129,0.4);">
@@ -5817,6 +5846,123 @@
     <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:6px; border-top:1px solid rgba(255,255,255,0.08); padding-top:12px;">
       <button type="button" onclick="fecharModalConfigFuncionarioPonto()" style="background:transparent;border:none;color:#94a3b8;font-size:13px;font-weight:700;cursor:pointer;padding:8px 14px;">Cancelar</button>
       <button type="button" onclick="salvarConfigFuncionarioPonto()" style="background:linear-gradient(135deg,#eab308,#ca8a04);color:#000;font-size:13.5px;font-weight:900;padding:10px 22px;border-radius:10px;border:none;cursor:pointer;box-shadow:0 4px 12px rgba(234,179,8,0.35);">💾 Salvar Dados</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ MODAL PERSONALIZAR UMA ABA (NOME E ÍCONE) ══ -->
+<div id="modal-personalizar-aba" class="modal-overlay" style="display:none; z-index:999999;" onclick="fecharModalPersonalizarUmaAba(event)">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:440px; width:95vw; background:#0f1020; border:1.5px solid var(--gold); box-shadow:0 20px 60px rgba(0,0,0,0.95); border-radius:16px; padding:20px; overflow:hidden; display:flex; flex-direction:column; gap:14px;">
+    
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:12px;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:22px;">✏️</span>
+        <div>
+          <div style="font-size:15px; font-weight:900; color:#fff;">Renomear & Alterar Ícone</div>
+          <div style="font-size:11px; color:var(--gold-light);" id="edit-aba-subtitulo">Personalizar botão</div>
+        </div>
+      </div>
+      <button type="button" onclick="fecharModalPersonalizarUmaAba()" style="background:rgba(255,255,255,0.08);border:none;color:#fff;font-size:15px;cursor:pointer;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;">✕</button>
+    </div>
+
+    <!-- Prévia do Botão -->
+    <div style="text-align:center;background:rgba(255,255,255,0.02);padding:14px;border-radius:12px;border:1px dashed rgba(255,255,255,0.1);">
+      <div style="font-size:11px;color:rgba(255,255,255,0.45);margin-bottom:8px;font-weight:700;text-transform:uppercase;">Prévia do Botão</div>
+      <div style="display:inline-flex;justify-content:center;">
+        <div id="edit-aba-preview" class="tab active" style="min-width:110px;height:72px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;pointer-events:none;">
+          <span style="font-size:20px;" id="edit-aba-prev-icone">📋</span>
+          <span style="font-size:12px;font-weight:700;" id="edit-aba-prev-nome">Orçamento</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Campo Ícone -->
+    <div style="display:flex; flex-direction:column; gap:6px;">
+      <label style="font-size:12.5px; font-weight:700; color:#cbd5e1;">Ícone do Botão (Emoji ou Símbolo)</label>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="edit-aba-input-icone" maxlength="8" placeholder="Ex: 📋" oninput="atualizarPreviewEdicaoAba()" style="width:70px;text-align:center;font-size:20px;background:#181a2c;border:1.5px solid rgba(255,255,255,0.15);border-radius:10px;padding:8px;color:#fff;box-sizing:border-box;outline:none;" />
+        <div style="flex:1;font-size:11px;color:rgba(255,255,255,0.5);display:flex;align-items:center;">Toque em um emoji abaixo ou digite o que preferir</div>
+      </div>
+      <!-- Sugestões rápidas de emojis -->
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px;background:#131526;padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);max-height:95px;overflow-y:auto;">
+        <button type="button" onclick="selecionarEmojiAba('📋')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);font-size:16px;width:30px;height:30px;border-radius:6px;cursor:pointer;">📋</button>
+        <button type="button" onclick="selecionarEmojiAba('🗂️')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);font-size:16px;width:30px;height:30px;border-radius:6px;cursor:pointer;">🗂️</button>
+        <button type="button" onclick="selecionarEmojiAba('💰')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);font-size:16px;width:30px;height:30px;border-radius:6px;cursor:pointer;">💰</button>
+        <button type="button" onclick="selecionarEmojiAba('📦')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);font-size:16px;width:30px;height:30px;border-radius:6px;cursor:pointer;">📦</button>
+        <button type="button" onclick="selecionarEmojiAba('⚡💧')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);font-size:12px;width:30px;height:30px;border-radius:6px;cursor:pointer;">⚡💧</button>
+        <button type="button" onclick="selecionarEmojiAba('📅')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);font-size:16px;width:30px;height:30px;border-radius:6px;cursor:pointer;">📅</button>
+        <button type="button" onclick="selecionarEmojiAba('🏢')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);font-size:16px;width:30px;height:30px;border-radius:6px;cursor:pointer;">🏢</button>
+        <button type="button" onclick="selecionarEmojiAba('👤')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);font-size:16px;width:30px;height:30px;border-radius:6px;cursor:pointer;">👤</button>
+        <button type="button" onclick="selecionarEmojiAba('👷')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);font-size:16px;width:30px;height:30px;border-radius:6px;cursor:pointer;">👷</button>
+        <button type="button" onclick="selecionarEmojiAba('🕒')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);font-size:16px;width:30px;height:30px;border-radius:6px;cursor:pointer;">🕒</button>
+        <button type="button" onclick="selecionarEmojiAba('📷')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);font-size:16px;width:30px;height:30px;border-radius:6px;cursor:pointer;">📷</button>
+        <button type="button" onclick="selecionarEmojiAba('📄')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);font-size:16px;width:30px;height:30px;border-radius:6px;cursor:pointer;">📄</button>
+        <button type="button" onclick="selecionarEmojiAba('👥')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);font-size:16px;width:30px;height:30px;border-radius:6px;cursor:pointer;">👥</button>
+        <button type="button" onclick="selecionarEmojiAba('🌐')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);font-size:16px;width:30px;height:30px;border-radius:6px;cursor:pointer;">🌐</button>
+        <button type="button" onclick="selecionarEmojiAba('📊')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);font-size:16px;width:30px;height:30px;border-radius:6px;cursor:pointer;">📊</button>
+        <button type="button" onclick="selecionarEmojiAba('🔧')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);font-size:16px;width:30px;height:30px;border-radius:6px;cursor:pointer;">🔧</button>
+        <button type="button" onclick="selecionarEmojiAba('💬')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);font-size:16px;width:30px;height:30px;border-radius:6px;cursor:pointer;">💬</button>
+        <button type="button" onclick="selecionarEmojiAba('📨')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);font-size:16px;width:30px;height:30px;border-radius:6px;cursor:pointer;">📨</button>
+        <button type="button" onclick="selecionarEmojiAba('👷💬')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);font-size:12px;width:30px;height:30px;border-radius:6px;cursor:pointer;">👷💬</button>
+        <button type="button" onclick="selecionarEmojiAba('💎')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);font-size:16px;width:30px;height:30px;border-radius:6px;cursor:pointer;">💎</button>
+        <button type="button" onclick="selecionarEmojiAba('⭐')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);font-size:16px;width:30px;height:30px;border-radius:6px;cursor:pointer;">⭐</button>
+        <button type="button" onclick="selecionarEmojiAba('🏠')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);font-size:16px;width:30px;height:30px;border-radius:6px;cursor:pointer;">🏠</button>
+        <button type="button" onclick="selecionarEmojiAba('🛠️')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);font-size:16px;width:30px;height:30px;border-radius:6px;cursor:pointer;">🛠️</button>
+        <button type="button" onclick="selecionarEmojiAba('🛋️')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);font-size:16px;width:30px;height:30px;border-radius:6px;cursor:pointer;">🛋️</button>
+        <button type="button" onclick="selecionarEmojiAba('📐')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);font-size:16px;width:30px;height:30px;border-radius:6px;cursor:pointer;">📐</button>
+        <button type="button" onclick="selecionarEmojiAba('🪚')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);font-size:16px;width:30px;height:30px;border-radius:6px;cursor:pointer;">🪚</button>
+        <button type="button" onclick="selecionarEmojiAba('🚪')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);font-size:16px;width:30px;height:30px;border-radius:6px;cursor:pointer;">🚪</button>
+        <button type="button" onclick="selecionarEmojiAba('🚚')" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);font-size:16px;width:30px;height:30px;border-radius:6px;cursor:pointer;">🚚</button>
+      </div>
+    </div>
+
+    <!-- Campo Nome -->
+    <div style="display:flex; flex-direction:column; gap:4px;">
+      <label style="font-size:12.5px; font-weight:700; color:#cbd5e1;">Nome / Rótulo do Botão *</label>
+      <input type="text" id="edit-aba-input-nome" placeholder="Nome da aba..." oninput="atualizarPreviewEdicaoAba()" style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.15);border-radius:10px;padding:10px 14px;font-size:14px;font-weight:700;color:#fff;box-sizing:border-box;outline:none;" />
+    </div>
+
+    <!-- Ações -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; border-top:1px solid rgba(255,255,255,0.08); padding-top:12px;">
+      <button type="button" onclick="restaurarAbaEspecificaPadrao()" style="background:none;border:none;color:#ef4444;font-size:12px;font-weight:700;cursor:pointer;padding:0;">Restaurar Padrão</button>
+      <div style="display:flex;gap:8px;">
+        <button type="button" onclick="fecharModalPersonalizarUmaAba()" style="background:transparent;border:none;color:#94a3b8;font-size:13px;font-weight:700;cursor:pointer;padding:8px 12px;">Cancelar</button>
+        <button type="button" onclick="salvarPersonalizacaoUmaAba()" style="background:linear-gradient(135deg,#eab308,#ca8a04);color:#000;font-size:13.5px;font-weight:900;padding:9px 18px;border-radius:10px;border:none;cursor:pointer;box-shadow:0 4px 12px rgba(234,179,8,0.35);">💾 Salvar Botão</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ MODAL GERENCIAR NOMES E ÍCONES DE TODAS AS ABAS ══ -->
+<div id="modal-personalizar-todas-abas" class="modal-overlay" style="display:none; z-index:999999;" onclick="fecharModalPersonalizarTodasAbas(event)">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:620px; width:95vw; max-height:88vh; background:#0f1020; border:1.5px solid var(--gold); box-shadow:0 20px 60px rgba(0,0,0,0.95); border-radius:16px; padding:0; overflow:hidden; display:flex; flex-direction:column;">
+    
+    <div style="padding:16px 20px; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; background:linear-gradient(135deg,rgba(201,168,76,0.18),rgba(14,165,233,0.1));">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="font-size:24px;">✏️</span>
+        <div>
+          <div style="font-size:16px; font-weight:900; color:#fff;">Renomear & Ícones das Abas</div>
+          <div style="font-size:11.5px; color:var(--gold-light);">Personalize qualquer botão do sistema como desejar</div>
+        </div>
+      </div>
+      <button type="button" onclick="fecharModalPersonalizarTodasAbas()" style="background:rgba(255,255,255,0.08);border:none;color:#fff;font-size:15px;cursor:pointer;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;">✕</button>
+    </div>
+
+    <div style="padding:10px 18px;background:rgba(255,255,255,0.02);border-bottom:1px solid rgba(255,255,255,0.06);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+      <span style="font-size:12px;color:rgba(255,255,255,0.6);">Altere o ícone e o nome de cada botão diretamente abaixo:</span>
+      <button type="button" onclick="restaurarTodasAbasPadraoConfirm()" style="background:none;border:none;color:#ef4444;font-size:11.5px;font-weight:700;cursor:pointer;">🔄 Restaurar Todos Padrões</button>
+    </div>
+
+    <!-- Lista de Abas para Edição -->
+    <div id="lista-edicao-todas-abas" style="padding:14px 18px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:8px;max-height:55vh;">
+      <!-- Preenchido dinamicamente -->
+    </div>
+
+    <div style="padding:12px 18px;border-top:1px solid rgba(255,255,255,0.08);background:#0a0b16;display:flex;justify-content:flex-end;gap:10px;">
+      <button type="button" onclick="fecharModalPersonalizarTodasAbas()" style="background:transparent;border:none;color:#94a3b8;font-size:13px;font-weight:700;cursor:pointer;padding:8px 14px;">Fechar</button>
+      <button type="button" onclick="salvarTodasPersonalizacoesAbas()" style="background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:13.5px;font-weight:900;padding:10px 22px;border-radius:10px;border:none;cursor:pointer;box-shadow:0 4px 12px rgba(16,185,129,0.35);">💾 Salvar Todas as Alterações</button>
     </div>
 
   </div>
@@ -31738,6 +31884,250 @@ function restaurarOrdemAbasSalva() {
   } catch(_) {}
 }
 
+// ══════════════════════════════════════════════
+//  PERSONALIZAÇÃO DE NOMES E ÍCONES DAS ABAS
+// ══════════════════════════════════════════════
+const ABAS_PADRAO_INFO = {
+  'tab-orcamento': { icone: '📋', nome: 'Orçamento' },
+  'tab-historico': { icone: '🗂️', nome: 'Histórico' },
+  'tab-financeiro': { icone: '💰', nome: 'Financeiro' },
+  'tab-estoque': { icone: '📦', nome: 'Estoque' },
+  'tab-detector': { icone: '⚡💧', nome: 'Detector Danos' },
+  'tab-agenda': { icone: '📅', nome: 'Agenda' },
+  'tab-agenda-pessoal': { icone: '📅', nome: 'Agenda Pessoal' },
+  'tab-produtos': { icone: '📦', nome: 'Produtos/Serviços' },
+  'tab-empresa': { icone: '🏢', nome: 'Dados Empresa' },
+  'tab-clientes': { icone: '👤', nome: 'Clientes' },
+  'tab-ponto': { icone: '👷', nome: 'Ponto do Funcionário' },
+  'tab-bater-ponto': { icone: '🕒', nome: 'Bater Ponto' },
+  'tab-camera': { icone: '📷', nome: 'Câmera' },
+  'tab-contratos': { icone: '📄', nome: 'Contratos' },
+  'tab-usuarios': { icone: '👥', nome: 'Usuários' },
+  'tab-portal-cliente': { icone: '🌐', nome: 'Portal Cliente' },
+  'tab-portal-funcionario': { icone: '👷', nome: 'Portal Equipe' },
+  'tab-portal-ponto': { icone: '🌐', nome: 'Portal do Ponto' },
+  'tab-cronograma': { icone: '📅', nome: 'Cronograma' },
+  'tab-relatorio': { icone: '📊', nome: 'Relatório' },
+  'tab-ferramentas': { icone: '🔧', nome: 'Ferramentas' },
+  'btn-central-mensagens': { icone: '💬', nome: 'Mensagens' },
+  'tab-msg-funcionarios': { icone: '👷💬', nome: 'Mensagem dos Funcionários' }
+};
+
+function getCustomLabelsAbas() {
+  try {
+    return JSON.parse(localStorage.getItem('sdm_tabs_custom_labels') || '{}');
+  } catch(_) {
+    return {};
+  }
+}
+
+function aplicarCustomizacoesAbas() {
+  const customMap = getCustomLabelsAbas();
+  Object.keys(ABAS_PADRAO_INFO).forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const info = customMap[id] || ABAS_PADRAO_INFO[id];
+    if (!info) return;
+
+    // Atualiza ícone e nome preservando badges
+    const spans = el.querySelectorAll(':scope > span:not(.btn-editar-aba-lapiz)');
+    if (spans.length >= 2) {
+      if (info.icone) spans[0].textContent = info.icone;
+      if (info.nome) {
+        const badge = spans[1].querySelector('span');
+        if (badge) {
+          spans[1].innerHTML = escHtml(info.nome) + ' ' + badge.outerHTML;
+        } else {
+          spans[1].textContent = info.nome;
+        }
+      }
+    }
+  });
+}
+
+function adicionarBotoesEdicaoLapizAbas() {
+  const container = document.querySelector('.tabs');
+  if (!container) return;
+  const tabs = container.querySelectorAll('.tab');
+  tabs.forEach(tab => {
+    if (!tab.id) return;
+    let lapiz = tab.querySelector('.btn-editar-aba-lapiz');
+    if (!lapiz) {
+      lapiz = document.createElement('span');
+      lapiz.className = 'btn-editar-aba-lapiz';
+      lapiz.innerHTML = '✏️';
+      lapiz.title = 'Renomear e colocar ícone neste botão';
+      lapiz.onclick = function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        abrirModalPersonalizarUmaAba(tab.id);
+      };
+      tab.appendChild(lapiz);
+    }
+  });
+}
+
+let _abaEmEdicaoId = null;
+
+function abrirModalPersonalizarUmaAba(tabId) {
+  _abaEmEdicaoId = tabId;
+  const modal = document.getElementById('modal-personalizar-aba');
+  if (!modal) return;
+  modal.style.display = 'flex';
+
+  const padrao = ABAS_PADRAO_INFO[tabId] || { icone: '📌', nome: tabId };
+  const customMap = getCustomLabelsAbas();
+  const infoAtual = customMap[tabId] || padrao;
+
+  const inpIcone = document.getElementById('edit-aba-input-icone');
+  const inpNome = document.getElementById('edit-aba-input-nome');
+  const subTit = document.getElementById('edit-aba-subtitulo');
+
+  if (inpIcone) inpIcone.value = infoAtual.icone || padrao.icone || '';
+  if (inpNome) inpNome.value = infoAtual.nome || padrao.nome || '';
+  if (subTit) subTit.textContent = 'Editando botão original: ' + padrao.nome;
+
+  atualizarPreviewEdicaoAba();
+}
+
+function fecharModalPersonalizarUmaAba(e) {
+  if (!e || e.target === document.getElementById('modal-personalizar-aba')) {
+    const modal = document.getElementById('modal-personalizar-aba');
+    if (modal) modal.style.display = 'none';
+    _abaEmEdicaoId = null;
+  }
+}
+
+function atualizarPreviewEdicaoAba() {
+  const inpIcone = document.getElementById('edit-aba-input-icone');
+  const inpNome = document.getElementById('edit-aba-input-nome');
+  const prevIcone = document.getElementById('edit-aba-prev-icone');
+  const prevNome = document.getElementById('edit-aba-prev-nome');
+
+  const icone = (inpIcone && inpIcone.value.trim()) || '📌';
+  const nome = (inpNome && inpNome.value.trim()) || 'Botão';
+
+  if (prevIcone) prevIcone.textContent = icone;
+  if (prevNome) prevNome.textContent = nome;
+}
+
+function selecionarEmojiAba(emoji) {
+  const inpIcone = document.getElementById('edit-aba-input-icone');
+  if (inpIcone) {
+    inpIcone.value = emoji;
+    atualizarPreviewEdicaoAba();
+  }
+}
+
+function salvarPersonalizacaoUmaAba() {
+  if (!_abaEmEdicaoId) return;
+  const inpIcone = document.getElementById('edit-aba-input-icone');
+  const inpNome = document.getElementById('edit-aba-input-nome');
+
+  const icone = (inpIcone && inpIcone.value.trim()) || '📌';
+  const nome = (inpNome && inpNome.value.trim()) || '';
+
+  if (!nome) {
+    if (typeof showToast === 'function') showToast('⚠️ Digite um nome para o botão!', 'error');
+    else alert('Digite um nome para o botão!');
+    return;
+  }
+
+  const customMap = getCustomLabelsAbas();
+  customMap[_abaEmEdicaoId] = { icone, nome };
+  localStorage.setItem('sdm_tabs_custom_labels', JSON.stringify(customMap));
+
+  aplicarCustomizacoesAbas();
+  fecharModalPersonalizarUmaAba();
+  if (typeof showToast === 'function') showToast(`✅ Botão renomeado para "${nome}"!`, 'success');
+}
+
+function restaurarAbaEspecificaPadrao() {
+  if (!_abaEmEdicaoId) return;
+  const padrao = ABAS_PADRAO_INFO[_abaEmEdicaoId];
+  if (!padrao) return;
+
+  const customMap = getCustomLabelsAbas();
+  delete customMap[_abaEmEdicaoId];
+  localStorage.setItem('sdm_tabs_custom_labels', JSON.stringify(customMap));
+
+  const inpIcone = document.getElementById('edit-aba-input-icone');
+  const inpNome = document.getElementById('edit-aba-input-nome');
+  if (inpIcone) inpIcone.value = padrao.icone;
+  if (inpNome) inpNome.value = padrao.nome;
+  atualizarPreviewEdicaoAba();
+
+  aplicarCustomizacoesAbas();
+  if (typeof showToast === 'function') showToast(`✅ Botão restaurado para o padrão original: "${padrao.nome}"!`, 'info');
+}
+
+// ── Personalização em Massa (Todas as Abas) ──
+function abrirModalPersonalizarTodasAbas() {
+  const modal = document.getElementById('modal-personalizar-todas-abas');
+  const lista = document.getElementById('lista-edicao-todas-abas');
+  if (!modal || !lista) return;
+
+  const customMap = getCustomLabelsAbas();
+  const container = document.querySelector('.tabs');
+  const tabsNaTela = container ? Array.from(container.querySelectorAll('.tab')).map(t => t.id).filter(id => ABAS_PADRAO_INFO[id]) : Object.keys(ABAS_PADRAO_INFO);
+
+  lista.innerHTML = tabsNaTela.map(id => {
+    const padrao = ABAS_PADRAO_INFO[id];
+    const info = customMap[id] || padrao;
+    return `
+      <div style="display:flex;align-items:center;gap:8px;background:#141627;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);">
+        <input type="text" id="mass-icone-${id}" value="${escHtml(info.icone)}" maxlength="8" title="Ícone / Emoji" style="width:50px;text-align:center;font-size:17px;background:#181a2c;border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:6px;color:#fff;outline:none;" />
+        <input type="text" id="mass-nome-${id}" value="${escHtml(info.nome)}" placeholder="${escHtml(padrao.nome)}" title="Nome do botão" style="flex:1;background:#181a2c;border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:7px 10px;font-size:13px;font-weight:700;color:#fff;outline:none;" />
+        <button type="button" onclick="restaurarLinhaMassaAba('${id}')" title="Restaurar padrão deste botão" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:11px;padding:6px 9px;border-radius:7px;cursor:pointer;">🔄</button>
+      </div>
+    `;
+  }).join('');
+
+  modal.style.display = 'flex';
+}
+
+function restaurarLinhaMassaAba(id) {
+  const padrao = ABAS_PADRAO_INFO[id];
+  if (!padrao) return;
+  const inpI = document.getElementById('mass-icone-' + id);
+  const inpN = document.getElementById('mass-nome-' + id);
+  if (inpI) inpI.value = padrao.icone;
+  if (inpN) inpN.value = padrao.nome;
+}
+
+function fecharModalPersonalizarTodasAbas(e) {
+  if (!e || e.target === document.getElementById('modal-personalizar-todas-abas')) {
+    const modal = document.getElementById('modal-personalizar-todas-abas');
+    if (modal) modal.style.display = 'none';
+  }
+}
+
+function salvarTodasPersonalizacoesAbas() {
+  const customMap = getCustomLabelsAbas();
+  Object.keys(ABAS_PADRAO_INFO).forEach(id => {
+    const inpI = document.getElementById('mass-icone-' + id);
+    const inpN = document.getElementById('mass-nome-' + id);
+    if (inpI && inpN) {
+      const icone = inpI.value.trim() || ABAS_PADRAO_INFO[id].icone;
+      const nome = inpN.value.trim() || ABAS_PADRAO_INFO[id].nome;
+      customMap[id] = { icone, nome };
+    }
+  });
+
+  localStorage.setItem('sdm_tabs_custom_labels', JSON.stringify(customMap));
+  aplicarCustomizacoesAbas();
+  fecharModalPersonalizarTodasAbas();
+  if (typeof showToast === 'function') showToast('✅ Todos os nomes e ícones foram salvos!', 'success');
+}
+
+function restaurarTodasAbasPadraoConfirm() {
+  if (!confirm('Deseja restaurar TODOS os nomes e ícones originais de fábrica de todas as abas?')) return;
+  localStorage.removeItem('sdm_tabs_custom_labels');
+  aplicarCustomizacoesAbas();
+  fecharModalPersonalizarTodasAbas();
+  if (typeof showToast === 'function') showToast('✅ Nomes e ícones restaurados para o padrão original!', 'info');
+}
+
 function restaurarOrdemAbasPadrao() {
   if (!confirm('Deseja restaurar a ordem original padrão de todas as abas?')) return;
   localStorage.removeItem('sdm_tabs_custom_order');
@@ -31755,6 +32145,10 @@ function restaurarOrdemAbasPadrao() {
       const el = document.getElementById(id);
       if (el && el.parentNode === container) container.appendChild(el);
     });
+  }
+  if (confirm('Deseja também restaurar os nomes e ícones originais de todos os botões?')) {
+    localStorage.removeItem('sdm_tabs_custom_labels');
+    aplicarCustomizacoesAbas();
   }
   const bannerMsg = document.getElementById('banner-organizar-msg');
   if (bannerMsg) bannerMsg.innerHTML = '✅ Ordem padrão restaurada!';
@@ -31792,13 +32186,14 @@ function alternarModoOrganizarAbas(forcar) {
   }
 
   if (modoOrganizarAbasAtivo) {
+    try { adicionarBotoesEdicaoLapizAbas(); } catch(_) {}
     const bannerMsg = document.getElementById('banner-organizar-msg');
     if (bannerMsg) {
-      bannerMsg.innerHTML = '👉 <strong>1º Passo:</strong> Toque no botão que você quer mover.';
+      bannerMsg.innerHTML = '👉 Toque no botão para mover, ou no ✏️ para renomear e mudar o ícone.';
     }
     try { if (navigator.vibrate) navigator.vibrate(30); } catch(_) {}
     if (typeof showToast === 'function') {
-      showToast('🔀 Modo Organizar ativado! Toque no botão que quer mover.', 'info');
+      showToast('🔀 Modo Organizar ativado! Toque para mover ou no ✏️ para editar.', 'info');
     }
   } else {
     const tabs = Array.from(container.querySelectorAll('.tab'));
@@ -32021,6 +32416,9 @@ function moverAbaPosicao(tabId, direcao) {
 
     // Clique nas abas: navegação normal OU seleção precisa no Modo Organizar
     container.addEventListener('click', (e) => {
+      if (e.target.closest('.btn-editar-aba-lapiz')) {
+        return;
+      }
       const tab = e.target.closest('.tab');
       if (!tab) return;
 
@@ -32087,6 +32485,8 @@ function moverAbaPosicao(tabId, direcao) {
 
     // Restaura ordem salva
     restaurarOrdemAbasSalva();
+    try { aplicarCustomizacoesAbas(); } catch(_) {}
+    try { adicionarBotoesEdicaoLapizAbas(); } catch(_) {}
     try { atualizarBadgeMsgsFuncionarios(); } catch(_) {}
   }
 
