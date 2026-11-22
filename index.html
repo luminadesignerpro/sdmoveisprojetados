@@ -46221,31 +46221,40 @@ function enviarFuncionarioPdf() {
     '<html lang="pt-BR">' +
     '<head>' +
     '<meta charset="UTF-8">' +
-    '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+    '<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">' +
     '<title>Ficha Cadastral - ' + _sanitizarTextoPdf(nome) + '</title>' +
     '<style>' +
     '  @page { size: A4 portrait; margin: 12mm; }' +
     '  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }' +
-    '  body { background: #f8fafc; color: #0f172a; padding: 24px; }' +
-    '  .no-print { display: flex; gap: 10px; margin-bottom: 20px; justify-content: flex-end; }' +
-    '  .btn { border: none; padding: 10px 18px; border-radius: 8px; font-weight: 800; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }' +
+    '  body { background: #f1f5f9; color: #0f172a; padding: 14px; width: 100%; max-width: 100%; overflow-x: hidden; }' +
+    '  .no-print { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; justify-content: center; width: 100%; max-width: 760px; margin-left: auto; margin-right: auto; }' +
+    '  .btn { border: none; padding: 10px 16px; border-radius: 8px; font-weight: 800; font-size: 12.5px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); flex: 1; min-width: 140px; }' +
     '  .btn-print { background: #2563eb; color: #fff; }' +
     '  .btn-wa { background: #16a34a; color: #fff; }' +
-    '  .btn-close { background: #64748b; color: #fff; }' +
-    '  .sheet { max-width: 760px; margin: 0 auto; background: #fff; border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 32px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }' +
-    '  .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ca8a04; padding-bottom: 16px; margin-bottom: 24px; }' +
-    '  .brand-title { font-size: 20px; font-weight: 900; color: #0f172a; letter-spacing: 0.5px; }' +
-    '  .brand-sub { font-size: 12px; color: #ca8a04; font-weight: 800; text-transform: uppercase; margin-top: 2px; }' +
-    '  .doc-title { text-align: right; font-size: 14px; font-weight: 800; color: #475569; }' +
-    '  .doc-date { text-align: right; font-size: 11.5px; color: #94a3b8; margin-top: 2px; }' +
-    '  .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 20px; }' +
-    '  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }' +
-    '  .field { display: flex; flex-direction: column; gap: 4px; }' +
-    '  .field.full { grid-column: span 2; }' +
-    '  .label { font-size: 11px; text-transform: uppercase; font-weight: 800; color: #64748b; letter-spacing: 0.5px; }' +
-    '  .val { font-size: 15px; font-weight: 700; color: #0f172a; word-break: break-word; }' +
-    '  .val-highlight { color: #1e3a8a; font-size: 17px; }' +
-    '  .notice { font-size: 11px; color: #94a3b8; font-style: italic; margin-top: 20px; text-align: center; border-top: 1px dashed #cbd5e1; padding-top: 14px; }' +
+    '  .btn-close { background: #64748b; color: #fff; flex: 0 0 auto; min-width: 80px; }' +
+    '  .sheet { width: 100%; max-width: 760px; margin: 0 auto; background: #fff; border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 22px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); box-sizing: border-box; overflow: hidden; }' +
+    '  .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ca8a04; padding-bottom: 14px; margin-bottom: 18px; flex-wrap: wrap; gap: 10px; }' +
+    '  .brand-title { font-size: 19px; font-weight: 900; color: #0f172a; letter-spacing: 0.5px; }' +
+    '  .brand-sub { font-size: 11.5px; color: #ca8a04; font-weight: 800; text-transform: uppercase; margin-top: 2px; }' +
+    '  .doc-title { text-align: right; font-size: 13px; font-weight: 800; color: #475569; }' +
+    '  .doc-date { text-align: right; font-size: 11px; color: #94a3b8; margin-top: 2px; }' +
+    '  .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; margin-bottom: 16px; width: 100%; box-sizing: border-box; }' +
+    '  .grid { display: grid; grid-template-columns: 1fr; gap: 14px; width: 100%; box-sizing: border-box; }' +
+    '  @media (min-width: 600px) {' +
+    '    .grid { grid-template-columns: 1fr 1fr; gap: 16px; }' +
+    '    .field.full { grid-column: span 2; }' +
+    '  }' +
+    '  .field { display: flex; flex-direction: column; gap: 3px; min-width: 0; overflow: hidden; }' +
+    '  .label { font-size: 10.5px; text-transform: uppercase; font-weight: 800; color: #64748b; letter-spacing: 0.5px; }' +
+    '  .val { font-size: 14.5px; font-weight: 700; color: #0f172a; word-break: break-word; overflow-wrap: anywhere; }' +
+    '  .val-highlight { color: #1e3a8a; font-size: 16.5px; }' +
+    '  .notice { font-size: 10.5px; color: #94a3b8; font-style: italic; margin-top: 16px; text-align: center; border-top: 1px dashed #cbd5e1; padding-top: 12px; line-height: 1.4; }' +
+    '  @media (max-width: 599px) {' +
+    '    body { padding: 8px; }' +
+    '    .sheet { padding: 14px; }' +
+    '    .header { flex-direction: column; align-items: flex-start; gap: 4px; }' +
+    '    .doc-title, .doc-date { text-align: left; }' +
+    '  }' +
     '  @media print {' +
     '    body { background: #fff; padding: 0; }' +
     '    .no-print { display: none !important; }' +
@@ -46333,7 +46342,8 @@ function enviarTodosFuncionariosPdf() {
   var dataHoje = new Date().toLocaleDateString('pt-BR');
   var horaAgora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-  var linhasHtml = nomes.map(function(key, idx) {
+  // Linhas da tabela (para Desktop e Impressão)
+  var linhasTabelaHtml = nomes.map(function(key, idx) {
     var c = configs[key] || {};
     var n = c.nome || key;
     var cargo = c.cargo || '—';
@@ -46341,13 +46351,35 @@ function enviarTodosFuncionariosPdf() {
     var endereco = c.endereco || '—';
     var pix = c.pix || '—';
     return '<tr>' +
-      '<td style="padding:10px 8px;border-bottom:1px solid #e2e8f0;text-align:center;font-weight:700;">' + (idx + 1) + '</td>' +
-      '<td style="padding:10px 8px;border-bottom:1px solid #e2e8f0;font-weight:800;color:#0f172a;">' + _sanitizarTextoPdf(n) + '</td>' +
-      '<td style="padding:10px 8px;border-bottom:1px solid #e2e8f0;color:#334155;">' + _sanitizarTextoPdf(cargo) + '</td>' +
-      '<td style="padding:10px 8px;border-bottom:1px solid #e2e8f0;font-weight:700;color:#1e3a8a;">' + _sanitizarTextoPdf(cpf) + '</td>' +
-      '<td style="padding:10px 8px;border-bottom:1px solid #e2e8f0;color:#475569;font-size:12px;">' + _sanitizarTextoPdf(endereco) + '</td>' +
-      '<td style="padding:10px 8px;border-bottom:1px solid #e2e8f0;color:#334155;font-size:12px;">' + _sanitizarTextoPdf(pix) + '</td>' +
+      '<td style="padding:8px 6px;border-bottom:1px solid #e2e8f0;text-align:center;font-weight:700;">' + (idx + 1) + '</td>' +
+      '<td style="padding:8px 6px;border-bottom:1px solid #e2e8f0;font-weight:800;color:#0f172a;word-break:break-word;">' + _sanitizarTextoPdf(n) + '</td>' +
+      '<td style="padding:8px 6px;border-bottom:1px solid #e2e8f0;color:#334155;word-break:break-word;">' + _sanitizarTextoPdf(cargo) + '</td>' +
+      '<td style="padding:8px 6px;border-bottom:1px solid #e2e8f0;font-weight:700;color:#1e3a8a;word-break:break-word;">' + _sanitizarTextoPdf(cpf) + '</td>' +
+      '<td style="padding:8px 6px;border-bottom:1px solid #e2e8f0;color:#475569;font-size:11.5px;word-break:break-word;">' + _sanitizarTextoPdf(endereco) + '</td>' +
+      '<td style="padding:8px 6px;border-bottom:1px solid #e2e8f0;color:#334155;font-size:11.5px;word-break:break-word;">' + _sanitizarTextoPdf(pix) + '</td>' +
       '</tr>';
+  }).join('');
+
+  // Cards individuais (perfeito para tela de celular: 100% contido, nada transborda)
+  var cardsMobileHtml = nomes.map(function(key, idx) {
+    var c = configs[key] || {};
+    var n = c.nome || key;
+    var cargo = c.cargo || '—';
+    var cpf = c.cpf || '—';
+    var endereco = c.endereco || '—';
+    var pix = c.pix || '—';
+    return '<div class="func-card-mob">' +
+      '<div class="func-card-mob-header">' +
+        '<div style="font-size:14.5px;font-weight:900;color:#0f172a;">' + (idx + 1) + '. ' + _sanitizarTextoPdf(n) + '</div>' +
+        '<span style="background:rgba(202,138,4,0.12);color:#ca8a04;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:6px;border:1px solid rgba(202,138,4,0.25);">Colaborador</span>' +
+      '</div>' +
+      '<div class="func-card-mob-body">' +
+        '<div><span class="lbl-mob">Cargo:</span> <span class="val-mob">' + _sanitizarTextoPdf(cargo) + '</span></div>' +
+        '<div><span class="lbl-mob">🪪 CPF:</span> <span class="val-mob" style="color:#1e3a8a;font-weight:800;">' + _sanitizarTextoPdf(cpf) + '</span></div>' +
+        '<div><span class="lbl-mob">📍 Endereço:</span> <span class="val-mob">' + _sanitizarTextoPdf(endereco) + '</span></div>' +
+        '<div><span class="lbl-mob">🔑 PIX:</span> <span class="val-mob">' + _sanitizarTextoPdf(pix) + '</span></div>' +
+      '</div>' +
+    '</div>';
   }).join('');
 
   var w = window.open('', '_blank');
@@ -46373,31 +46405,56 @@ function enviarTodosFuncionariosPdf() {
     '<html lang="pt-BR">' +
     '<head>' +
     '<meta charset="UTF-8">' +
-    '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+    '<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">' +
     '<title>Relação de Funcionários - SD Móveis Projetados</title>' +
     '<style>' +
-    '  @page { size: A4 landscape; margin: 10mm; }' +
+    '  @page { size: A4 portrait; margin: 10mm; }' +
     '  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }' +
-    '  body { background: #f8fafc; color: #0f172a; padding: 20px; }' +
-    '  .no-print { display: flex; gap: 10px; margin-bottom: 16px; justify-content: flex-end; }' +
-    '  .btn { border: none; padding: 10px 18px; border-radius: 8px; font-weight: 800; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }' +
+    '  body { background: #f1f5f9; color: #0f172a; padding: 14px; width: 100%; max-width: 100%; overflow-x: hidden; }' +
+    '  .no-print { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; justify-content: center; width: 100%; max-width: 900px; margin-left: auto; margin-right: auto; }' +
+    '  .btn { border: none; padding: 10px 16px; border-radius: 8px; font-weight: 800; font-size: 12.5px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); flex: 1; min-width: 140px; }' +
     '  .btn-print { background: #2563eb; color: #fff; }' +
     '  .btn-wa { background: #16a34a; color: #fff; }' +
-    '  .btn-close { background: #64748b; color: #fff; }' +
-    '  .sheet { max-width: 1060px; margin: 0 auto; background: #fff; border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }' +
-    '  .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ca8a04; padding-bottom: 14px; margin-bottom: 18px; }' +
-    '  .brand-title { font-size: 20px; font-weight: 900; color: #0f172a; }' +
-    '  .brand-sub { font-size: 12px; color: #ca8a04; font-weight: 800; text-transform: uppercase; margin-top: 2px; }' +
-    '  .doc-title { text-align: right; font-size: 13px; font-weight: 800; color: #475569; }' +
-    '  .doc-date { text-align: right; font-size: 11.5px; color: #94a3b8; margin-top: 2px; }' +
-    '  table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }' +
-    '  th { background: #0f172a; color: #fff; text-align: left; padding: 10px 8px; font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }' +
+    '  .btn-close { background: #64748b; color: #fff; flex: 0 0 auto; min-width: 80px; }' +
+    '  .sheet { width: 100%; max-width: 900px; margin: 0 auto; background: #fff; border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); box-sizing: border-box; overflow: hidden; }' +
+    '  .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ca8a04; padding-bottom: 14px; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }' +
+    '  .brand-title { font-size: 19px; font-weight: 900; color: #0f172a; }' +
+    '  .brand-sub { font-size: 11.5px; color: #ca8a04; font-weight: 800; text-transform: uppercase; margin-top: 2px; }' +
+    '  .doc-title { text-align: right; font-size: 12.5px; font-weight: 800; color: #475569; }' +
+    '  .doc-date { text-align: right; font-size: 11px; color: #94a3b8; margin-top: 2px; }' +
+    '  /* Tabela Responsiva com Scroll Seguro */' +
+    '  .table-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 6px; box-sizing: border-box; }' +
+    '  table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; min-width: 600px; }' +
+    '  th { background: #0f172a; color: #fff; text-align: left; padding: 9px 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }' +
     '  tr:nth-child(even) { background: #f8fafc; }' +
-    '  .notice { font-size: 11px; color: #94a3b8; font-style: italic; margin-top: 18px; text-align: center; border-top: 1px dashed #cbd5e1; padding-top: 12px; }' +
+    '  /* Cards para Celular */' +
+    '  .mobile-cards-wrap { display: none; flex-direction: column; gap: 10px; width: 100%; margin-top: 8px; }' +
+    '  .func-card-mob { background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 12px 14px; width: 100%; box-sizing: border-box; }' +
+    '  .func-card-mob-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 8px; }' +
+    '  .func-card-mob-body { display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; }' +
+    '  .lbl-mob { font-weight: 800; color: #64748b; font-size: 11px; text-transform: uppercase; margin-right: 4px; }' +
+    '  .val-mob { font-weight: 700; color: #0f172a; word-break: break-word; }' +
+    '  .notice { font-size: 10.5px; color: #94a3b8; font-style: italic; margin-top: 16px; text-align: center; border-top: 1px dashed #cbd5e1; padding-top: 12px; line-height: 1.4; }' +
+    '  /* Regras para Celular: mostra Cards para nunca estourar a tela */' +
+    '  @media screen and (max-width: 680px) {' +
+    '    body { padding: 8px; }' +
+    '    .sheet { padding: 14px; border-radius: 10px; }' +
+    '    .header { flex-direction: column; align-items: flex-start; gap: 4px; }' +
+    '    .doc-title, .doc-date { text-align: left; }' +
+    '    .table-wrap { display: none; }' +
+    '    .mobile-cards-wrap { display: flex; }' +
+    '  }' +
+    '  /* Regras de Impressão e PDF: Sempre imprime a tabela A4 limpa e alinhada */' +
     '  @media print {' +
-    '    body { background: #fff; padding: 0; }' +
+    '    body { background: #fff; padding: 0; width: 100%; }' +
     '    .no-print { display: none !important; }' +
-    '    .sheet { border: none; box-shadow: none; padding: 0; max-width: 100%; }' +
+    '    .sheet { border: none; box-shadow: none; padding: 0; max-width: 100%; width: 100%; overflow: visible; }' +
+    '    .mobile-cards-wrap { display: none !important; }' +
+    '    .table-wrap { display: block !important; border: none; overflow: visible !important; width: 100% !important; margin: 0; }' +
+    '    table { display: table !important; width: 100% !important; min-width: 100% !important; table-layout: fixed !important; font-size: 11px !important; }' +
+    '    th { background: #0f172a !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 6px 4px !important; font-size: 10px !important; }' +
+    '    td { padding: 6px 4px !important; font-size: 10.5px !important; }' +
+    '    tr:nth-child(even) { background: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }' +
     '  }' +
     '</style>' +
     '</head>' +
@@ -46418,21 +46475,28 @@ function enviarTodosFuncionariosPdf() {
     '      <div class="doc-date">Emissão: ' + dataHoje + ' às ' + horaAgora + '</div>' +
     '    </div>' +
     '  </div>' +
-    '  <table>' +
-    '    <thead>' +
-    '      <tr>' +
-    '        <th style="text-align:center;width:40px;">#</th>' +
-    '        <th>Nome</th>' +
-    '        <th>Cargo</th>' +
-    '        <th>CPF</th>' +
-    '        <th>Endereço</th>' +
-    '        <th>Chave PIX</th>' +
-    '      </tr>' +
-    '    </thead>' +
-    '    <tbody>' +
-    linhasHtml +
-    '    </tbody>' +
-    '  </table>' +
+    '  <!-- Lista em Cards (Celular) -->' +
+    '  <div class="mobile-cards-wrap">' +
+    cardsMobileHtml +
+    '  </div>' +
+    '  <!-- Tabela Estruturada (Desktop e Impressão PDF) -->' +
+    '  <div class="table-wrap">' +
+    '    <table>' +
+    '      <thead>' +
+    '        <tr>' +
+    '          <th style="text-align:center;width:32px;">#</th>' +
+    '          <th style="width:130px;">Nome</th>' +
+    '          <th style="width:115px;">Cargo</th>' +
+    '          <th style="width:110px;">CPF</th>' +
+    '          <th style="width:130px;">Endereço</th>' +
+    '          <th style="width:110px;">Chave PIX</th>' +
+    '        </tr>' +
+    '      </thead>' +
+    '      <tbody>' +
+    linhasTabelaHtml +
+    '      </tbody>' +
+    '    </table>' +
+    '  </div>' +
     '  <div class="notice">Documento oficial gerado sem exibição de valores financeiros e sem telefones pessoais para resguardo de privacidade. — SD Móveis Projetados</div>' +
     '</div>' +
     '<script>' +
