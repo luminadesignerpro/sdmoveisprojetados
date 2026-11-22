@@ -5711,7 +5711,10 @@
     <!-- Valor do Ponto (R$) * e Status Pagamento -->
     <div style="display:grid;grid-template-columns:1fr 1.2fr;gap:12px;">
       <div style="display:flex;flex-direction:column;gap:5px;">
-        <label style="font-size:13px;font-weight:700;color:#cbd5e1;">Valor do Ponto (R$) *</label>
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <label style="font-size:13px;font-weight:700;color:#cbd5e1;">Valor do Ponto (R$) *</label>
+          <span id="rbp-valor-lock" style="display:none;font-size:11px;color:#38bdf8;font-weight:700;">🔒 Bloqueado</span>
+        </div>
         <input type="text" id="rbp-valor" value="160,00" style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:12px;padding:11px 14px;font-size:14px;font-weight:700;color:#ffffff;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#38bdf8'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'">
       </div>
       <div style="display:flex;flex-direction:column;gap:5px;">
@@ -5743,7 +5746,10 @@
             <input type="text" id="rbp-almoco-restaurante" placeholder="Ex: Restaurante do Zé..." style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:9px 12px;font-size:13px;color:#ffffff;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#38bdf8'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'">
           </div>
           <div style="display:flex;flex-direction:column;gap:4px;">
-            <label style="font-size:11.5px;font-weight:700;color:#cbd5e1;">Valor do Almoço (R$)</label>
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <label style="font-size:11.5px;font-weight:700;color:#cbd5e1;">Valor do Almoço (R$)</label>
+              <span id="rbp-almoco-lock" style="display:none;font-size:10.5px;color:#38bdf8;font-weight:700;">🔒 Bloqueado</span>
+            </div>
             <input type="text" id="rbp-almoco-valor" placeholder="25,00" value="25,00" style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:9px 12px;font-size:13px;font-weight:700;color:#ffffff;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#38bdf8'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'">
           </div>
         </div>
@@ -5766,6 +5772,49 @@
               <option value="A Reembolsar" style="background:#181a2c;color:#ffffff;">A Reembolsar</option>
             </select>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEÇÃO: COMBUSTÍVEL / AJUDA DE CUSTO (EXIBIDA SOMENTE SE CONFIGURADA PARA O FUNCIONÁRIO) -->
+    <div id="rbp-box-combustivel" style="display:none;background:rgba(255,255,255,0.04);border:1.5px solid rgba(56,189,248,0.25);border-radius:14px;padding:12px 14px;flex-direction:column;gap:10px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-size:13px;font-weight:800;color:#ffffff;display:flex;align-items:center;gap:6px;">
+          <span>⛽</span> <span>Combustível / Ajuda de Custo</span>
+        </div>
+        <span style="font-size:11px;color:#38bdf8;font-weight:700;">🔒 Valor configurado</span>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <label style="font-size:11.5px;font-weight:700;color:#cbd5e1;">Valor do Combustível (R$)</label>
+            <span style="font-size:10.5px;color:#38bdf8;font-weight:700;">🔒 Bloqueado</span>
+          </div>
+          <input type="text" id="rbp-combustivel-valor" readonly placeholder="0,00" style="width:100%;background:#111322;border:1.5px solid rgba(255,255,255,0.08);border-radius:10px;padding:9px 12px;font-size:13px;font-weight:700;color:#38bdf8;outline:none;box-sizing:border-box;cursor:not-allowed;" title="Valor de combustível fixado na configuração do funcionário">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <label style="font-size:11.5px;font-weight:700;color:#cbd5e1;">Status do Combustível</label>
+          <select id="rbp-combustivel-status" style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:9px 8px;font-size:12.5px;font-weight:700;color:#ffffff;outline:none;box-sizing:border-box;cursor:pointer;" onfocus="this.style.borderColor='#38bdf8'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'">
+            <option value="Pago" selected style="background:#181a2c;color:#ffffff;">Pago</option>
+            <option value="Pendente" style="background:#181a2c;color:#ffffff;">Pendente</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <label style="font-size:11.5px;font-weight:700;color:#cbd5e1;">Forma de Pagamento</label>
+          <select id="rbp-combustivel-forma" style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:9px 8px;font-size:12.5px;font-weight:600;color:#ffffff;outline:none;box-sizing:border-box;cursor:pointer;" onfocus="this.style.borderColor='#38bdf8'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'">
+            <option value="Pix" selected style="background:#181a2c;color:#ffffff;">Pix</option>
+            <option value="Dinheiro" style="background:#181a2c;color:#ffffff;">Dinheiro</option>
+            <option value="Cartão" style="background:#181a2c;color:#ffffff;">Cartão</option>
+            <option value="Pago pela Empresa" style="background:#181a2c;color:#ffffff;">Pago pela Empresa</option>
+          </select>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <label style="font-size:11.5px;font-weight:700;color:#cbd5e1;">Observação (Opcional)</label>
+          <input type="text" id="rbp-combustivel-obs" placeholder="Ex: Moto, Carro..." style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:9px 12px;font-size:12.5px;color:#ffffff;outline:none;box-sizing:border-box;">
         </div>
       </div>
     </div>
@@ -5824,16 +5873,22 @@
       </div>
     </div>
 
-    <!-- Linha Almoço Padrão e WhatsApp -->
+    <!-- Linha Almoço Padrão e Combustível -->
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
       <div style="display:flex; flex-direction:column; gap:4px;">
-        <label style="font-size:12px; font-weight:700; color:#cbd5e1;">Almoço Padrão (R$)</label>
+        <label style="font-size:12px; font-weight:700; color:#cbd5e1;">🍛 Almoço Padrão (R$)</label>
         <input type="text" id="cfg-func-almoco" placeholder="25,00" style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:9px 12px;font-size:13.5px;color:#fff;box-sizing:border-box;outline:none;" />
       </div>
       <div style="display:flex; flex-direction:column; gap:4px;">
-        <label style="font-size:12px; font-weight:700; color:#cbd5e1;">WhatsApp / Telefone</label>
-        <input type="text" id="cfg-func-tel" placeholder="(88) 99999-9999" style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:9px 12px;font-size:13.5px;color:#fff;box-sizing:border-box;outline:none;" />
+        <label style="font-size:12px; font-weight:700; color:#cbd5e1;">⛽ Combustível (R$)</label>
+        <input type="text" id="cfg-func-combustivel" placeholder="0,00 (Opcional)" style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:9px 12px;font-size:13.5px;color:#38bdf8;font-weight:700;box-sizing:border-box;outline:none;" />
       </div>
+    </div>
+
+    <!-- WhatsApp / Telefone -->
+    <div style="display:flex; flex-direction:column; gap:4px;">
+      <label style="font-size:12px; font-weight:700; color:#cbd5e1;">WhatsApp / Telefone</label>
+      <input type="text" id="cfg-func-tel" placeholder="(88) 99999-9999" style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:9px 12px;font-size:13.5px;color:#fff;box-sizing:border-box;outline:none;" />
     </div>
 
     <!-- Chave PIX -->
@@ -45472,18 +45527,11 @@ function abrirModalRegistrarBatidaPonto() {
   popularFuncionariosModalPonto();
   popularClientesModalPonto();
 
-  // 3. Jornada padrão: Dia Trabalhado
-  selecionarJornadaPonto('integral');
-
-  // 4. Valor padrão 160,00
-  var inpValor = document.getElementById('rbp-valor');
-  if (inpValor) inpValor.value = '160,00';
-
-  // 5. Status pagamento
+  // 3. Status pagamento padrão
   var selStatus = document.getElementById('rbp-status-pagto');
   if (selStatus) selStatus.value = 'Pendente (A receber / Pagar)';
 
-  // 6. Almoço padrão
+  // 4. Almoço padrão
   var chkAlmoco = document.getElementById('rbp-almoco-ativo');
   if (chkAlmoco) chkAlmoco.checked = true;
   alternarCamposAlmocoPonto(true);
@@ -45496,9 +45544,14 @@ function abrirModalRegistrarBatidaPonto() {
   var selAlmForma = document.getElementById('rbp-almoco-forma');
   if (selAlmForma) selAlmForma.value = 'Pix';
 
-  // 7. Descrição
+  // 5. Descrição
   var txtDesc = document.getElementById('rbp-descricao');
   if (txtDesc) txtDesc.value = '';
+
+  // 6. Jornada padrão: Dia Trabalhado e sincroniza campos conforme funcionário
+  selecionarJornadaPonto('integral');
+  var selFunc = document.getElementById('rbp-funcionario');
+  aoTrocarFuncionarioPonto(selFunc ? selFunc.value : '');
 
   // Esconder mini forms
   toggleMiniNovoFuncionarioPonto(false);
@@ -45531,6 +45584,7 @@ function selecionarJornadaPonto(tipo) {
   var cardInt = document.getElementById('rbp-card-integral');
   var cardMeio = document.getElementById('rbp-card-meio');
   var inpValor = document.getElementById('rbp-valor');
+  var lockValor = document.getElementById('rbp-valor-lock');
   var selFunc = document.getElementById('rbp-funcionario');
   var cfg = selFunc ? getDadosConfigFuncionario(selFunc.value) : null;
 
@@ -45548,7 +45602,23 @@ function selecionarJornadaPonto(tipo) {
       if (cardMeio.children[1]) cardMeio.children[1].style.color = '#94a3b8';
     }
     if (inpValor) {
-      inpValor.value = (cfg && cfg.diaria) ? cfg.diaria : '160,00';
+      if (cfg && cfg.diaria) {
+        inpValor.value = cfg.diaria;
+        inpValor.readOnly = true;
+        inpValor.style.background = '#111322';
+        inpValor.style.cursor = 'not-allowed';
+        inpValor.style.borderColor = 'rgba(56,189,248,0.3)';
+        inpValor.style.color = '#38bdf8';
+        if (lockValor) lockValor.style.display = 'inline';
+      } else {
+        inpValor.value = '160,00';
+        inpValor.readOnly = false;
+        inpValor.style.background = '#181a2c';
+        inpValor.style.cursor = 'text';
+        inpValor.style.borderColor = 'rgba(255,255,255,0.12)';
+        inpValor.style.color = '#ffffff';
+        if (lockValor) lockValor.style.display = 'none';
+      }
     }
   } else {
     if (cardInt) {
@@ -45564,27 +45634,117 @@ function selecionarJornadaPonto(tipo) {
       if (cardMeio.children[1]) cardMeio.children[1].style.color = '#60a5fa';
     }
     if (inpValor) {
-      inpValor.value = (cfg && cfg.meiodia) ? cfg.meiodia : '80,00';
+      if (cfg && cfg.meiodia) {
+        inpValor.value = cfg.meiodia;
+        inpValor.readOnly = true;
+        inpValor.style.background = '#111322';
+        inpValor.style.cursor = 'not-allowed';
+        inpValor.style.borderColor = 'rgba(56,189,248,0.3)';
+        inpValor.style.color = '#38bdf8';
+        if (lockValor) lockValor.style.display = 'inline';
+      } else {
+        inpValor.value = '80,00';
+        inpValor.readOnly = false;
+        inpValor.style.background = '#181a2c';
+        inpValor.style.cursor = 'text';
+        inpValor.style.borderColor = 'rgba(255,255,255,0.12)';
+        inpValor.style.color = '#ffffff';
+        if (lockValor) lockValor.style.display = 'none';
+      }
     }
   }
 }
 
 function aoTrocarFuncionarioPonto(nome) {
-  if (!nome) return;
-  var cfg = getDadosConfigFuncionario(nome);
+  var selFunc = document.getElementById('rbp-funcionario');
+  if ((!nome || typeof nome !== 'string') && selFunc) nome = selFunc.value.trim();
+
+  var cfg = nome ? getDadosConfigFuncionario(nome) : null;
   var inpValor = document.getElementById('rbp-valor');
+  var lockValor = document.getElementById('rbp-valor-lock');
   var inpAlmocoValor = document.getElementById('rbp-almoco-valor');
+  var lockAlmoco = document.getElementById('rbp-almoco-lock');
+  var boxCombustivel = document.getElementById('rbp-box-combustivel');
+  var inpCombValor = document.getElementById('rbp-combustivel-valor');
+
   if (cfg) {
+    // 1. Atualizar e BLOQUEAR Valor do Ponto
     if (inpValor) {
       if (_jornadaPontoAtiva === 'meio_dia') {
         inpValor.value = cfg.meiodia || '80,00';
       } else {
         inpValor.value = cfg.diaria || '160,00';
       }
+      inpValor.readOnly = true;
+      inpValor.style.background = '#111322';
+      inpValor.style.cursor = 'not-allowed';
+      inpValor.style.borderColor = 'rgba(56,189,248,0.3)';
+      inpValor.style.color = '#38bdf8';
+      inpValor.title = 'Valor bloqueado conforme dados salvos de ' + (cfg.nome || nome);
     }
-    if (cfg.almoco && inpAlmocoValor) {
-      inpAlmocoValor.value = cfg.almoco;
+    if (lockValor) lockValor.style.display = 'inline';
+
+    // 2. Atualizar e BLOQUEAR Valor do Almoço
+    if (inpAlmocoValor) {
+      if (cfg.almoco) {
+        inpAlmocoValor.value = cfg.almoco;
+      }
+      inpAlmocoValor.readOnly = true;
+      inpAlmocoValor.style.background = '#111322';
+      inpAlmocoValor.style.cursor = 'not-allowed';
+      inpAlmocoValor.style.borderColor = 'rgba(56,189,248,0.3)';
+      inpAlmocoValor.style.color = '#38bdf8';
+      inpAlmocoValor.title = 'Valor bloqueado conforme dados salvos de ' + (cfg.nome || nome);
     }
+    if (lockAlmoco) lockAlmoco.style.display = 'inline';
+
+    // 3. Combustível:
+    // Se o funcionário tem valor de combustível > 0, exibe o bloco de combustível bloqueado
+    // Se NÃO colocou valor de combustível (vazio, nulo ou 0), NÃO DEVE APARECER na segunda imagem
+    var combNum = 0;
+    if (cfg.combustivel) {
+      var cClean = String(cfg.combustivel).replace('R$', '').replace(/\s/g, '').replace('.', '').replace(',', '.');
+      combNum = parseFloat(cClean) || 0;
+    }
+
+    if (combNum > 0) {
+      if (boxCombustivel) boxCombustivel.style.display = 'flex';
+      if (inpCombValor) {
+        inpCombValor.value = cfg.combustivel;
+        inpCombValor.readOnly = true;
+        inpCombValor.style.background = '#111322';
+        inpCombValor.style.cursor = 'not-allowed';
+      }
+    } else {
+      if (boxCombustivel) boxCombustivel.style.display = 'none';
+      if (inpCombValor) inpCombValor.value = '';
+    }
+  } else {
+    // Sem configuração salva: campos liberados para preenchimento manual
+    if (inpValor) {
+      inpValor.readOnly = false;
+      inpValor.style.background = '#181a2c';
+      inpValor.style.cursor = 'text';
+      inpValor.style.borderColor = 'rgba(255,255,255,0.12)';
+      inpValor.style.color = '#ffffff';
+      inpValor.title = '';
+      if (_jornadaPontoAtiva === 'meio_dia') inpValor.value = '80,00';
+      else inpValor.value = '160,00';
+    }
+    if (lockValor) lockValor.style.display = 'none';
+
+    if (inpAlmocoValor) {
+      inpAlmocoValor.readOnly = false;
+      inpAlmocoValor.style.background = '#181a2c';
+      inpAlmocoValor.style.cursor = 'text';
+      inpAlmocoValor.style.borderColor = 'rgba(255,255,255,0.12)';
+      inpAlmocoValor.style.color = '#ffffff';
+      inpAlmocoValor.title = '';
+    }
+    if (lockAlmoco) lockAlmoco.style.display = 'none';
+
+    if (boxCombustivel) boxCombustivel.style.display = 'none';
+    if (inpCombValor) inpCombValor.value = '';
   }
 }
 
@@ -45614,6 +45774,7 @@ function abrirModalConfigFuncionarioPonto(nome) {
   var inpDiaria = document.getElementById('cfg-func-diaria');
   var inpMeio = document.getElementById('cfg-func-meiodia');
   var inpAlm = document.getElementById('cfg-func-almoco');
+  var inpComb = document.getElementById('cfg-func-combustivel');
   var inpTel = document.getElementById('cfg-func-tel');
   var inpPix = document.getElementById('cfg-func-pix');
   var subtitulo = document.getElementById('cfg-func-subtitulo');
@@ -45627,6 +45788,7 @@ function abrirModalConfigFuncionarioPonto(nome) {
     if (inpDiaria) inpDiaria.value = cfg.diaria || '160,00';
     if (inpMeio) inpMeio.value = cfg.meiodia || '80,00';
     if (inpAlm) inpAlm.value = cfg.almoco || '25,00';
+    if (inpComb) inpComb.value = cfg.combustivel || '';
     if (inpTel) inpTel.value = cfg.telefone || '';
     if (inpPix) inpPix.value = cfg.pix || '';
   } else {
@@ -45634,6 +45796,7 @@ function abrirModalConfigFuncionarioPonto(nome) {
     if (inpDiaria) inpDiaria.value = '160,00';
     if (inpMeio) inpMeio.value = '80,00';
     if (inpAlm) inpAlm.value = '25,00';
+    if (inpComb) inpComb.value = '';
     if (inpTel) inpTel.value = '';
     if (inpPix) inpPix.value = '';
   }
@@ -45659,6 +45822,7 @@ function salvarConfigFuncionarioPonto() {
   var inpDiaria = document.getElementById('cfg-func-diaria');
   var inpMeio = document.getElementById('cfg-func-meiodia');
   var inpAlm = document.getElementById('cfg-func-almoco');
+  var inpComb = document.getElementById('cfg-func-combustivel');
   var inpTel = document.getElementById('cfg-func-tel');
   var inpPix = document.getElementById('cfg-func-pix');
 
@@ -45668,6 +45832,7 @@ function salvarConfigFuncionarioPonto() {
     diaria: inpDiaria ? inpDiaria.value.trim() : '160,00',
     meiodia: inpMeio ? inpMeio.value.trim() : '80,00',
     almoco: inpAlm ? inpAlm.value.trim() : '25,00',
+    combustivel: inpComb ? inpComb.value.trim() : '',
     telefone: inpTel ? inpTel.value.trim() : '',
     pix: inpPix ? inpPix.value.trim() : '',
     atualizadoEm: new Date().toISOString()
@@ -45882,6 +46047,25 @@ function salvarBatidaPontoModal() {
     almForma = selAlmForma ? selAlmForma.value : 'Pix';
   }
 
+  // Combustível / Ajuda de Custo (apenas se exibido na tela)
+  var boxComb = document.getElementById('rbp-box-combustivel');
+  var temComb = boxComb && boxComb.style.display !== 'none';
+  var combValor = '';
+  var combStatus = '';
+  var combForma = '';
+  var combObs = '';
+
+  if (temComb) {
+    var inpCVal = document.getElementById('rbp-combustivel-valor');
+    combValor = inpCVal ? inpCVal.value.trim() : '';
+    var selCStat = document.getElementById('rbp-combustivel-status');
+    combStatus = selCStat ? selCStat.value : 'Pago';
+    var selCForma = document.getElementById('rbp-combustivel-forma');
+    combForma = selCForma ? selCForma.value : 'Pix';
+    var inpCObs = document.getElementById('rbp-combustivel-obs');
+    combObs = inpCObs ? inpCObs.value.trim() : '';
+  }
+
   var txtDesc = document.getElementById('rbp-descricao');
   var descVal = txtDesc ? txtDesc.value.trim() : '';
 
@@ -45906,6 +46090,13 @@ function salvarBatidaPontoModal() {
       status: almStatus || 'Pago',
       forma: almForma || 'Pix'
     } : null,
+    // Dados do Combustível
+    combustivel: (temComb && combValor) ? {
+      valor: combValor,
+      status: combStatus || 'Pago',
+      forma: combForma || 'Pix',
+      obs: combObs || ''
+    } : null,
     descricao: descVal,
     criadoEm: new Date().toISOString()
   };
@@ -45923,6 +46114,9 @@ function salvarBatidaPontoModal() {
   var msgSucesso = '✅ Ponto: ' + funcVal + ' · ' + clienteVal + ' · R$ ' + valorVal;
   if (temAlmoco && almValor) {
     msgSucesso += ' (Almoço: ' + (almRestaurante ? almRestaurante + ' ' : '') + 'R$ ' + almValor + ' - ' + almStatus + ')';
+  }
+  if (temComb && combValor) {
+    msgSucesso += ' (Combustível: R$ ' + combValor + ' - ' + combStatus + ')';
   }
 
   if (typeof mostrarToast === 'function') mostrarToast(msgSucesso, 'sucesso');
