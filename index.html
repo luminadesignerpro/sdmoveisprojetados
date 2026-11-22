@@ -2032,6 +2032,7 @@
     <button type="button" id="tab-cronograma" class="tab" data-tab="cronograma" onclick="goTab('cronograma')" title="Cronograma e Pedido de Material"><span>📅</span><span>Cronograma</span></button>
     <button type="button" id="tab-relatorio" class="tab" data-tab="relatorio" onclick="goTab('relatorio')" title="Relatório Financeiro"><span>📊</span><span>Relatório</span></button>
     <button type="button" id="tab-ferramentas" class="tab" data-tab="ferramentas" onclick="goTab('ferramentas')" title="Ferramentas de Obra"><span>🔧</span><span>Ferramentas</span></button>
+    <button type="button" id="tab-veiculos" class="tab" data-tab="veiculos" onclick="goTab('veiculos')" title="SD Veículos - Controle de Veículos, Licenciamento e Abastecimento"><span>🚗</span><span>SD Veículos</span></button>
     <button type="button" id="btn-central-mensagens" class="tab" onclick="abrirModalCentralMensagens()" title="Central de Mensagens com Clientes"><span>💬</span><span>Mensagens <span id="badge-msg-clientes" style="display:none;background:#ef4444;color:#fff;font-size:9px;padding:1px 5px;border-radius:999px;font-weight:900;">0</span></span></button>
     <button type="button" id="tab-msg-funcionarios" class="tab" onclick="abrirModalMsgsFuncionarios()" title="Mensagens dos Funcionários"><span>👷💬</span><span>Mensagem dos Funcionários <span id="badge-msgs-funcs" style="display:none;background:#ef4444;color:#fff;font-size:9px;padding:1px 5px;border-radius:999px;font-weight:900;">0</span></span></button>
   </div>
@@ -4744,7 +4745,363 @@
   </div>
 
   <!-- ══════════════════════════════════════════ -->
-  <!-- PANEL: ESTOQUE (ENTRADA E SAÍDA DE MATERIAL) -->
+  <!-- PANEL: SD VEÍCULOS (FROTA, LICENCIAMENTO & ABASTECIMENTO) -->
+  <!-- ══════════════════════════════════════════ -->
+  <div id="panel-veiculos" class="panel">
+
+    <!-- BARRA SUPERIOR DE NAVEGAÇÃO & AÇÕES RÁPIDAS -->
+    <div style="background:linear-gradient(135deg,rgba(201,168,76,0.14),rgba(16,18,27,0.95));border:1.5px solid var(--border);border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:0 8px 30px rgba(0,0,0,0.5);">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+        <div>
+          <div style="font-size:12px;font-weight:900;color:var(--gold);letter-spacing:0.1em;text-transform:uppercase;">Frota & Manutenções • SD Móveis</div>
+          <h2 style="font-size:22px;font-weight:900;color:#fff;margin:2px 0 4px 0;display:flex;align-items:center;gap:8px;">
+            <span id="sdv-header-icone">🚗</span> <span id="sdv-header-titulo">SD Veículos</span>
+          </h2>
+          <div style="font-size:12.5px;color:var(--muted);">Controle de veículos da empresa, dados de licenciamento, abastecimento e manutenções.</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button type="button" class="btn btn-sec" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="padding:8px 14px;font-size:12px;font-weight:800;border-radius:10px;display:flex;align-items:center;gap:6px;">
+            ⬆ Abas
+          </button>
+        </div>
+      </div>
+
+      <!-- BOTÕES DE AÇÃO RÁPIDA (CONFORME IMAGEM DE REFERÊNCIA) -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;width:100%;box-sizing:border-box;">
+        <button type="button" class="btn" onclick="abrirModalNovoVeiculo()" style="padding:11px 14px;font-size:13px;font-weight:800;background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff;border:none;border-radius:12px;box-shadow:0 4px 15px rgba(245,158,11,0.35);display:flex;align-items:center;justify-content:center;gap:8px;">
+          ➕ Adicionar Veículo
+        </button>
+        <button type="button" class="btn" onclick="abrirModalNovoAbastecimento()" style="padding:11px 14px;font-size:13px;font-weight:800;background:linear-gradient(135deg,#0284c7,#2563eb);color:#fff;border:none;border-radius:12px;box-shadow:0 4px 15px rgba(37,99,235,0.35);display:flex;align-items:center;justify-content:center;gap:8px;">
+          ⛽ + Abastecimento / KM
+        </button>
+      </div>
+    </div>
+
+    <!-- SELETOR DE VEÍCULO ATIVO -->
+    <div id="sdv-seletor-container" style="margin-bottom:16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+      <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:240px;">
+        <span style="font-size:20px;">🚘</span>
+        <div style="flex:1;">
+          <label style="display:block;font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:3px;">Veículo Ativo / Selecionado:</label>
+          <select id="sdv-select-veiculo" onchange="sdvTrocarVeiculoAtivo(this.value)" style="width:100%;padding:8px 12px;border-radius:8px;background:#0d1117;color:#fff;border:1.5px solid rgba(212,175,55,0.4);font-weight:700;font-size:13px;cursor:pointer;">
+            <!-- Opções geradas dinamicamente -->
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <button type="button" onclick="sdvEditarVeiculoAtual()" class="btn btn-sec" style="padding:8px 12px;font-size:12px;font-weight:700;border-radius:8px;" title="Editar dados do veículo ativo">✏️ Editar</button>
+        <button type="button" onclick="sdvExcluirVeiculoAtual()" class="btn btn-sec" style="padding:8px 12px;font-size:12px;font-weight:700;border-radius:8px;color:#ef4444;" title="Excluir este veículo">🗑️</button>
+      </div>
+    </div>
+
+    <!-- CARD 1: ALERTA DE LICENCIAMENTO (RÉPLICA FIEL DA IMAGEM 2) -->
+    <div id="sdv-card-alerta-licenciamento" style="margin-bottom:16px;">
+      <!-- Preenchido dinamicamente via renderSdvAlertaLicenciamento() -->
+    </div>
+
+    <!-- CARD 2: DADOS DO VEÍCULO (RÉPLICA DA IMAGEM 2) -->
+    <div class="card" style="border:1.5px solid rgba(212,175,55,0.3);margin-bottom:16px;background:rgba(18,22,34,0.95);border-radius:16px;padding:18px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:10px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:22px;color:#f59e0b;">📜</span>
+          <span style="font-size:16px;font-weight:900;color:#fff;">Dados do Veículo</span>
+        </div>
+        <span id="sdv-badge-tipo" style="background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.35);padding:4px 10px;border-radius:999px;font-size:11px;font-weight:800;text-transform:uppercase;">Moto</span>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;">
+        <div>
+          <label style="display:block;font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:5px;">Modelo do Veículo *</label>
+          <input type="text" id="sdv-detalhe-modelo" class="input-gold" style="width:100%;box-sizing:border-box;font-weight:800;" placeholder="Ex: Honda CG 160 Fan" />
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <label style="display:block;font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:5px;">Ano *</label>
+            <input type="number" id="sdv-detalhe-ano" class="input-gold" style="width:100%;box-sizing:border-box;font-weight:800;" placeholder="Ex: 2023" />
+          </div>
+          <div>
+            <label style="display:block;font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:5px;">Placa *</label>
+            <input type="text" id="sdv-detalhe-placa" class="input-gold" style="width:100%;box-sizing:border-box;font-weight:800;text-transform:uppercase;" placeholder="Ex: BRA-2E19" />
+          </div>
+        </div>
+        <div>
+          <label style="display:block;font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:5px;">Data do Próximo Licenciamento *</label>
+          <input type="date" id="sdv-detalhe-data-lic" class="input-gold" style="width:100%;box-sizing:border-box;font-weight:800;" />
+        </div>
+        <div>
+          <label style="display:block;font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:5px;">KM Atual do Veículo</label>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <input type="number" id="sdv-detalhe-km" class="input-gold" style="width:100%;box-sizing:border-box;font-weight:900;color:#38bdf8;" placeholder="Ex: 34850" />
+            <span style="font-size:12px;font-weight:800;color:var(--muted);">KM</span>
+          </div>
+        </div>
+        <div>
+          <label style="display:block;font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:5px;">Motorista / Responsável</label>
+          <input type="text" id="sdv-detalhe-motorista" class="input-gold" style="width:100%;box-sizing:border-box;" placeholder="Ex: Samuel David" />
+        </div>
+        <div>
+          <label style="display:block;font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:5px;">Tipo de Veículo</label>
+          <select id="sdv-detalhe-tipo" class="input-gold" style="width:100%;box-sizing:border-box;font-weight:700;">
+            <option value="moto">🏍️ Moto</option>
+            <option value="carro">🚗 Carro / Utilitário Leve</option>
+            <option value="caminhao">🚚 Caminhão / Furgão</option>
+            <option value="outro">🚙 Outro Veículo</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-top:14px;display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" id="sdv-detalhe-notificacao" style="width:18px;height:18px;accent-color:#2563eb;cursor:pointer;" checked />
+        <label for="sdv-detalhe-notificacao" style="font-size:13px;font-weight:700;color:#fff;cursor:pointer;">
+          Receber notificação antes do vencimento
+        </label>
+      </div>
+
+      <div style="margin-top:16px;text-align:right;">
+        <button type="button" onclick="sdvSalvarDadosVeiculoAtual()" class="btn btn-primary" style="padding:10px 20px;font-size:13px;font-weight:800;background:linear-gradient(135deg,#059669,#10b981);border:none;border-radius:10px;box-shadow:0 4px 15px rgba(16,185,129,0.35);">
+          💾 Salvar Alterações do Veículo
+        </button>
+      </div>
+    </div>
+
+    <!-- CARD 3: ABASTECIMENTOS & CONTROLE DE KM & COMPROVANTES (PEDIDO DO USUÁRIO) -->
+    <div class="card" style="border:1.5px solid rgba(56,189,248,0.35);margin-bottom:16px;background:rgba(18,22,34,0.95);border-radius:16px;padding:18px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:10px;">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:22px;color:#38bdf8;">⛽</span>
+            <span style="font-size:16px;font-weight:900;color:#fff;">Abastecimentos & Controle de KM</span>
+          </div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px;">Histórico de KM, combustíveis gastos e fotos dos comprovantes</div>
+        </div>
+        <button type="button" onclick="abrirModalNovoAbastecimento()" class="btn" style="padding:9px 16px;font-size:12.5px;font-weight:800;background:linear-gradient(135deg,#0284c7,#2563eb);color:#fff;border:none;border-radius:10px;box-shadow:0 4px 15px rgba(37,99,235,0.35);display:flex;align-items:center;gap:6px;">
+          ⛽ + Novo Abastecimento
+        </button>
+      </div>
+
+      <!-- RESUMO / KPIS DE COMBUSTÍVEL -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:18px;">
+        <div style="background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.25);border-radius:12px;padding:12px;text-align:center;">
+          <div style="font-size:11px;font-weight:800;color:#7dd3fc;text-transform:uppercase;">KM Atual</div>
+          <div id="sdv-kpi-km" style="font-size:20px;font-weight:900;color:#fff;margin-top:3px;">0 km</div>
+        </div>
+        <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);border-radius:12px;padding:12px;text-align:center;">
+          <div style="font-size:11px;font-weight:800;color:#6ee7b7;text-transform:uppercase;">Total Abastecido</div>
+          <div id="sdv-kpi-total-gasto" style="font-size:20px;font-weight:900;color:#10b981;margin-top:3px;">R$ 0,00</div>
+        </div>
+        <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:12px;padding:12px;text-align:center;">
+          <div style="font-size:11px;font-weight:800;color:#fcd34d;text-transform:uppercase;">Último Abastecido</div>
+          <div id="sdv-kpi-ultimo-data" style="font-size:14px;font-weight:900;color:#fff;margin-top:6px;">--/--/----</div>
+        </div>
+        <div style="background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.25);border-radius:12px;padding:12px;text-align:center;">
+          <div style="font-size:11px;font-weight:800;color:#d8b4fe;text-transform:uppercase;">Abastecimentos</div>
+          <div id="sdv-kpi-qtd" style="font-size:20px;font-weight:900;color:#c084fc;margin-top:3px;">0</div>
+        </div>
+      </div>
+
+      <!-- LISTA / TABELA DE HISTÓRICO DE ABASTECIMENTOS -->
+      <div id="sdv-lista-abastecimentos">
+        <!-- Renderizado dinamicamente via renderSdvHistoricoAbastecimentos() -->
+      </div>
+    </div>
+
+  </div>
+
+  <!-- MODAL: ADICIONAR NOVO VEÍCULO -->
+  <div id="modal-adicionar-veiculo" class="modal-overlay" style="display:none;" onclick="fecharModalNovoVeiculo(event)">
+    <div class="modal-box" onclick="event.stopPropagation()" style="max-width:520px;border:1.5px solid rgba(212,175,55,0.45);box-shadow:0 12px 40px rgba(0,0,0,0.85);border-radius:18px;">
+      <div class="modal-title" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:22px;">🚗</span>
+          <span style="font-size:17px;font-weight:900;color:#fff;">Adicionar Novo Veículo</span>
+        </div>
+        <button type="button" class="modal-close" onclick="fecharModalNovoVeiculo()">✕</button>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <label style="display:block;font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:4px;">Tipo *</label>
+            <select id="modal-veic-tipo" class="input-gold" style="width:100%;box-sizing:border-box;">
+              <option value="moto">🏍️ Moto</option>
+              <option value="carro" selected>🚗 Carro</option>
+              <option value="caminhao">🚚 Utilitário / Caminhão</option>
+              <option value="outro">🚙 Outro</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block;font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:4px;">Ano *</label>
+            <input type="number" id="modal-veic-ano" class="input-gold" style="width:100%;box-sizing:border-box;" placeholder="Ex: 2023" />
+          </div>
+        </div>
+
+        <div>
+          <label style="display:block;font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:4px;">Modelo / Nome do Veículo *</label>
+          <input type="text" id="modal-veic-modelo" class="input-gold" style="width:100%;box-sizing:border-box;" placeholder="Ex: Honda CG 160 Fan / Fiat Strada" />
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <label style="display:block;font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:4px;">Placa *</label>
+            <input type="text" id="modal-veic-placa" class="input-gold" style="width:100%;box-sizing:border-box;text-transform:uppercase;" placeholder="Ex: BRA-2E19" />
+          </div>
+          <div>
+            <label style="display:block;font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:4px;">KM Inicial / Atual *</label>
+            <input type="number" id="modal-veic-km" class="input-gold" style="width:100%;box-sizing:border-box;" placeholder="Ex: 15000" />
+          </div>
+        </div>
+
+        <div>
+          <label style="display:block;font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:4px;">Data do Próximo Licenciamento *</label>
+          <input type="date" id="modal-veic-data-lic" class="input-gold" style="width:100%;box-sizing:border-box;" />
+        </div>
+
+        <div>
+          <label style="display:block;font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:4px;">Motorista / Responsável (Opcional)</label>
+          <input type="text" id="modal-veic-motorista" class="input-gold" style="width:100%;box-sizing:border-box;" placeholder="Ex: Samuel David" />
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">
+        <button type="button" class="btn btn-sec" onclick="fecharModalNovoVeiculo()">Cancelar</button>
+        <button type="button" class="btn btn-primary" onclick="sdvSalvarNovoVeiculo()" style="padding:10px 20px;font-size:13px;font-weight:800;background:linear-gradient(135deg,#059669,#10b981);border:none;border-radius:10px;">
+          Salvar Veículo
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: REGISTRAR NOVO ABASTECIMENTO COM KM E FOTO DO COMPROVANTE -->
+  <div id="modal-registrar-abastecimento" class="modal-overlay" style="display:none;" onclick="fecharModalNovoAbastecimento(event)">
+    <div class="modal-box" onclick="event.stopPropagation()" style="max-width:540px;max-height:90vh;overflow-y:auto;border:1.5px solid rgba(56,189,248,0.45);box-shadow:0 12px 40px rgba(0,0,0,0.85);border-radius:18px;">
+      <div class="modal-title" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:22px;">⛽</span>
+          <span style="font-size:17px;font-weight:900;color:#fff;">Registrar Abastecimento</span>
+        </div>
+        <button type="button" class="modal-close" onclick="fecharModalNovoAbastecimento()">✕</button>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div>
+          <label style="display:block;font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:4px;">Veículo *</label>
+          <select id="modal-abast-veiculo" class="input-gold" style="width:100%;box-sizing:border-box;">
+            <!-- Opções dos veículos cadastrados -->
+          </select>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <label style="display:block;font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:4px;">Data *</label>
+            <input type="date" id="modal-abast-data" class="input-gold" style="width:100%;box-sizing:border-box;" />
+          </div>
+          <div>
+            <label style="display:block;font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:4px;">KM Atual *</label>
+            <input type="number" id="modal-abast-km" class="input-gold" style="width:100%;box-sizing:border-box;font-weight:900;color:#38bdf8;" placeholder="Ex: 34850" />
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <label style="display:block;font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:4px;">Combustível *</label>
+            <select id="modal-abast-combustivel" class="input-gold" style="width:100%;box-sizing:border-box;">
+              <option value="Gasolina Comum">Gasolina Comum</option>
+              <option value="Gasolina Aditivada">Gasolina Aditivada</option>
+              <option value="Etanol">Etanol</option>
+              <option value="Diesel S10">Diesel S10</option>
+              <option value="Diesel Comum">Diesel Comum</option>
+              <option value="GNV">GNV</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block;font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:4px;">Valor Total (R$) *</label>
+            <input type="number" step="0.01" id="modal-abast-valor" class="input-gold" style="width:100%;box-sizing:border-box;font-weight:900;color:#10b981;" placeholder="Ex: 120,00" oninput="sdvCalcularPrecoPorLitro()" />
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <label style="display:block;font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:4px;">Litros Abastecidos (Opcional)</label>
+            <input type="number" step="0.01" id="modal-abast-litros" class="input-gold" style="width:100%;box-sizing:border-box;" placeholder="Ex: 20.5" oninput="sdvCalcularPrecoPorLitro()" />
+          </div>
+          <div>
+            <label style="display:block;font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:4px;">Preço por Litro (R$)</label>
+            <input type="number" step="0.001" id="modal-abast-preco-litro" class="input-gold" style="width:100%;box-sizing:border-box;" placeholder="Ex: 5.89" />
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <label style="display:block;font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:4px;">Posto de Combustível (Opcional)</label>
+            <input type="text" id="modal-abast-posto" class="input-gold" style="width:100%;box-sizing:border-box;" placeholder="Ex: Posto Shell / Ipiranga" />
+          </div>
+          <div>
+            <label style="display:block;font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:4px;">Motorista (Opcional)</label>
+            <input type="text" id="modal-abast-motorista" class="input-gold" style="width:100%;box-sizing:border-box;" placeholder="Ex: Samuel David" />
+          </div>
+        </div>
+
+        <!-- FOTO DO COMPROVANTE (PEDIDO EXPRESSO DO USUÁRIO) -->
+        <div style="background:rgba(255,255,255,0.03);border:1.5px dashed rgba(56,189,248,0.4);border-radius:14px;padding:14px;text-align:center;">
+          <label style="display:block;font-size:12.5px;font-weight:800;color:#fff;margin-bottom:6px;">
+            📸 Foto do Comprovante de Pagamento
+          </label>
+          <div style="font-size:11.5px;color:var(--muted);margin-bottom:10px;">
+            Tire uma foto pelo celular ou selecione da galeria
+          </div>
+
+          <input type="file" id="modal-abast-foto-input" accept="image/*" capture="environment" style="display:none;" onchange="sdvProcessarFotoComprovante(event)" />
+          
+          <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">
+            <button type="button" class="btn" onclick="document.getElementById('modal-abast-foto-input').click()" style="padding:9px 16px;font-size:12px;font-weight:800;background:linear-gradient(135deg,#0284c7,#2563eb);color:#fff;border:none;border-radius:10px;display:flex;align-items:center;gap:6px;">
+              📷 Tirar Foto / Selecionar Comprovante
+            </button>
+            <button type="button" id="sdv-btn-remover-foto" class="btn btn-sec" onclick="sdvRemoverFotoComprovante()" style="display:none;padding:9px 14px;font-size:12px;font-weight:700;color:#ef4444;border-radius:10px;">
+              🗑️ Remover Foto
+            </button>
+          </div>
+
+          <!-- Preview da foto -->
+          <div id="sdv-preview-foto-container" style="display:none;margin-top:12px;position:relative;display:none;justify-content:center;">
+            <img id="sdv-preview-foto-img" src="" alt="Comprovante" style="max-width:180px;max-height:160px;object-fit:cover;border-radius:10px;border:2px solid #38bdf8;box-shadow:0 4px 15px rgba(0,0,0,0.6);cursor:pointer;" onclick="sdvAmpliarFotoPreview()" title="Clique para ver imagem completa" />
+          </div>
+          <input type="hidden" id="modal-abast-foto-base64" value="" />
+        </div>
+
+        <div>
+          <label style="display:block;font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:4px;">Observações (Opcional)</label>
+          <input type="text" id="modal-abast-obs" class="input-gold" style="width:100%;box-sizing:border-box;" placeholder="Ex: Viagem para entrega de obra" />
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">
+        <button type="button" class="btn btn-sec" onclick="fecharModalNovoAbastecimento()">Cancelar</button>
+        <button type="button" class="btn btn-primary" onclick="sdvSalvarNovoAbastecimento()" style="padding:10px 22px;font-size:13px;font-weight:800;background:linear-gradient(135deg,#059669,#10b981);border:none;border-radius:10px;box-shadow:0 4px 15px rgba(16,185,129,0.35);">
+          💾 Salvar Abastecimento
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ZOOM / VISUALIZAR COMPROVANTE EM TELA CHEIA -->
+  <div id="modal-zoom-comprovante" class="modal-overlay" style="display:none;z-index:99999;" onclick="fecharModalZoomComprovante(event)">
+    <div class="modal-box" onclick="event.stopPropagation()" style="max-width:700px;width:95vw;max-height:92vh;overflow-y:auto;border:1.5px solid rgba(212,175,55,0.45);box-shadow:0 12px 50px rgba(0,0,0,0.95);border-radius:18px;text-align:center;padding:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div style="font-size:15px;font-weight:900;color:#fff;display:flex;align-items:center;gap:6px;">
+          <span>🧾</span> <span id="modal-zoom-titulo">Comprovante de Abastecimento</span>
+        </div>
+        <button type="button" class="modal-close" onclick="fecharModalZoomComprovante()">✕</button>
+      </div>
+      <div style="margin:10px 0;background:#000;border-radius:12px;overflow:hidden;display:flex;justify-content:center;align-items:center;min-height:200px;">
+        <img id="modal-zoom-img" src="" alt="Comprovante Ampliado" style="max-width:100%;max-height:75vh;object-fit:contain;border-radius:8px;" />
+      </div>
+      <div style="display:flex;justify-content:center;gap:10px;margin-top:12px;">
+        <button type="button" class="btn btn-sec" onclick="fecharModalZoomComprovante()" style="padding:8px 20px;font-size:13px;font-weight:800;">
+          Fechar
+        </button>
+      </div>
+    </div>
+  </div>
   <!-- ══════════════════════════════════════════ -->
   <div id="panel-estoque" class="panel">
     <!-- Cabeçalho do Estoque -->
@@ -9919,7 +10276,7 @@ function goTab(t, bypassAuth = false) {
   if (abaAtiva && t !== 'orcamento' && typeof salvarRascunhoOrcamento === 'function') {
     salvarRascunhoOrcamento();
   }
-  ['orcamento','historico','financeiro','estoque','detector','agenda','agenda-pessoal','produtos','empresa','clientes','ponto','contratos','usuarios','licenca','camera','relatorio','cronograma','ferramentas'].forEach(p => {
+  ['orcamento','historico','financeiro','estoque','detector','agenda','agenda-pessoal','produtos','empresa','clientes','ponto','contratos','usuarios','licenca','camera','relatorio','cronograma','ferramentas','veiculos'].forEach(p => {
     const pan = document.getElementById('panel-'+p);
     if (pan) pan.classList.toggle('active', p===t);
     const tab = document.getElementById('tab-'+p);
@@ -9952,6 +10309,7 @@ function goTab(t, bypassAuth = false) {
   if (t==='relatorio')  { renderRelatorio(); if (typeof renderRelatorioAlmoco === 'function') renderRelatorioAlmoco(); }
   if (t==='cronograma') { if (typeof mudarAbaCronograma === 'function') mudarAbaCronograma('semana'); }
   if (t==='ferramentas') { renderFerramentas(); }
+  if (t==='veiculos')   { renderVeiculosView(); }
 
   // Rola para o topo do painel correspondente
   const panAtivo = document.getElementById('panel-' + t);
@@ -22507,6 +22865,12 @@ function processarComandoVozHandsFree(fraseOriginal) {
     return;
   }
 
+  // Veículos / Frota / Abastecimento
+  if (frase.includes('veículo') || frase.includes('veiculo') || frase.includes('veículos') || frase.includes('veiculos') || frase.includes('carro') || frase.includes('moto') || frase.includes('abastecimento') || frase.includes('combustível') || frase.includes('combustivel')) {
+    dispararBotao('veiculos', 'Abrindo SD Veículos');
+    return;
+  }
+
   // Detector de Danos
   if (frase.includes('detector') || frase.includes('danos') || frase.includes('laudo')) {
     dispararBotao('detector', 'Abrindo Detector de Danos');
@@ -31952,6 +32316,13 @@ function restaurarOrdemAbasSalva() {
       else saved.push('tab-msg-funcionarios');
     }
 
+    // Garantir que tab-veiculos esteja na lista se ainda não foi salvo
+    if (!saved.includes('tab-veiculos')) {
+      const idxFerr = saved.indexOf('tab-ferramentas');
+      if (idxFerr !== -1) saved.splice(idxFerr + 1, 0, 'tab-veiculos');
+      else saved.push('tab-veiculos');
+    }
+
     saved.forEach(id => {
       const el = document.getElementById(id);
       if (el && el.parentNode === container) {
@@ -31987,6 +32358,7 @@ const ABAS_PADRAO_INFO = {
   'tab-cronograma': { icone: '📅', nome: 'Cronograma' },
   'tab-relatorio': { icone: '📊', nome: 'Relatório' },
   'tab-ferramentas': { icone: '🔧', nome: 'Ferramentas' },
+  'tab-veiculos': { icone: '🚗', nome: 'SD Veículos' },
   'btn-central-mensagens': { icone: '💬', nome: 'Mensagens' },
   'tab-msg-funcionarios': { icone: '👷💬', nome: 'Mensagem dos Funcionários' }
 };
@@ -32213,7 +32585,7 @@ function restaurarOrdemAbasPadrao() {
     'tab-orcamento', 'tab-historico', 'tab-financeiro', 'tab-estoque',
     'tab-detector', 'tab-agenda', 'tab-agenda-pessoal', 'tab-produtos',
     'tab-empresa', 'tab-clientes', 'tab-camera', 'tab-contratos',
-    'tab-usuarios', 'tab-cronograma', 'tab-relatorio', 'tab-ferramentas',
+    'tab-usuarios', 'tab-cronograma', 'tab-relatorio', 'tab-ferramentas', 'tab-veiculos',
     'tab-portal-cliente', 'tab-portal-funcionario', 'tab-portal-ponto', 'tab-ponto',
     'tab-bater-ponto', 'btn-central-mensagens', 'tab-msg-funcionarios'
   ];
@@ -46637,6 +47009,756 @@ window.enviarFuncionarioPdf = enviarFuncionarioPdf;
 window.enviarTodosFuncionariosPdf = enviarTodosFuncionariosPdf;
 window.enviarFuncionarioWhatsApp = enviarFuncionarioWhatsApp;
 window.enviarTodosFuncionariosWhatsApp = enviarTodosFuncionariosWhatsApp;
+
+// ══════════════════════════════════════════════
+// MÓDULO: SD VEÍCULOS (FROTA, LICENCIAMENTO & ABASTECIMENTO)
+// ══════════════════════════════════════════════
+
+const SDV_KEY_VEICULOS = 'sdv_veiculos_cadastrados';
+const SDV_KEY_ATIVO = 'sdv_veiculo_ativo_id';
+const SDV_KEY_ABASTECIMENTOS = 'sdv_veiculos_abastecimentos';
+
+function sdvObterVeiculos() {
+  try {
+    const raw = localStorage.getItem(SDV_KEY_VEICULOS);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch(e) {
+    console.warn('Erro ao obter veículos SDV:', e);
+  }
+  // Veículo padrão inicial (baseado na referência da empresa)
+  const padrao = [
+    {
+      id: 'veic_padrao_1',
+      tipo: 'moto',
+      modelo: 'Honda CG 160 Fan',
+      ano: '2023',
+      placa: 'BRA-2E19',
+      kmAtual: 34850,
+      dataLicenciamento: '2026-12-20',
+      receberNotificacao: true,
+      motorista: 'Samuel David',
+      criadoEm: new Date().toISOString()
+    }
+  ];
+  try {
+    localStorage.setItem(SDV_KEY_VEICULOS, JSON.stringify(padrao));
+  } catch(_) {}
+  return padrao;
+}
+
+function sdvSalvarVeiculos(lista) {
+  try {
+    localStorage.setItem(SDV_KEY_VEICULOS, JSON.stringify(lista || []));
+  } catch(e) {
+    console.error('Erro ao salvar veículos:', e);
+    alert('Erro ao salvar veículos no armazenamento local: ' + (e.message || e));
+  }
+}
+
+function sdvObterAbastecimentos() {
+  try {
+    const raw = localStorage.getItem(SDV_KEY_ABASTECIMENTOS);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch(e) {
+    console.warn('Erro ao obter abastecimentos:', e);
+  }
+  return [];
+}
+
+function sdvSalvarAbastecimentos(lista) {
+  try {
+    localStorage.setItem(SDV_KEY_ABASTECIMENTOS, JSON.stringify(lista || []));
+  } catch(e) {
+    console.error('Erro ao salvar abastecimentos:', e);
+    alert('Erro ao salvar abastecimentos: ' + (e.message || e));
+  }
+}
+
+function sdvObterVeiculoAtivoId() {
+  const veiculos = sdvObterVeiculos();
+  let ativoId = '';
+  try {
+    ativoId = localStorage.getItem(SDV_KEY_ATIVO) || '';
+  } catch(_) {}
+  if (!ativoId || !veiculos.some(v => v.id === ativoId)) {
+    ativoId = veiculos[0] ? veiculos[0].id : '';
+    sdvDefinirVeiculoAtivoId(ativoId);
+  }
+  return ativoId;
+}
+
+function sdvDefinirVeiculoAtivoId(id) {
+  try {
+    localStorage.setItem(SDV_KEY_ATIVO, id);
+  } catch(_) {}
+}
+
+function sdvObterVeiculoAtivo() {
+  const veiculos = sdvObterVeiculos();
+  const ativoId = sdvObterVeiculoAtivoId();
+  return veiculos.find(v => v.id === ativoId) || veiculos[0] || null;
+}
+
+// Renderização principal do Painel SD Veículos
+function renderVeiculosView() {
+  const veiculos = sdvObterVeiculos();
+  const veiculoAtivo = sdvObterVeiculoAtivo();
+  if (!veiculoAtivo) return;
+
+  // Atualiza seletor de veículos
+  const sel = document.getElementById('sdv-select-veiculo');
+  if (sel) {
+    sel.innerHTML = veiculos.map(v => {
+      const icone = v.tipo === 'moto' ? '🏍️' : (v.tipo === 'caminhao' ? '🚚' : '🚗');
+      return `<option value="${v.id}" ${v.id === veiculoAtivo.id ? 'selected' : ''}>${icone} ${v.modelo || 'Sem modelo'} (${v.placa || 'Sem placa'})</option>`;
+    }).join('');
+  }
+
+  // Atualiza título e ícone do cabeçalho
+  const iconeHeader = document.getElementById('sdv-header-icone');
+  const tituloHeader = document.getElementById('sdv-header-titulo');
+  if (iconeHeader) {
+    iconeHeader.textContent = veiculoAtivo.tipo === 'moto' ? '🏍️' : (veiculoAtivo.tipo === 'caminhao' ? '🚚' : '🚗');
+  }
+  if (tituloHeader) {
+    tituloHeader.textContent = veiculoAtivo.modelo ? ('SD Veículos • ' + veiculoAtivo.modelo) : 'SD Veículos';
+  }
+
+  // Atualiza badge de tipo
+  const badgeTipo = document.getElementById('sdv-badge-tipo');
+  if (badgeTipo) {
+    const tipos = { moto: '🏍️ Moto', carro: '🚗 Carro', caminhao: '🚚 Utilitário/Caminhão', outro: '🚙 Veículo' };
+    badgeTipo.textContent = tipos[veiculoAtivo.tipo] || '🚗 Veículo';
+  }
+
+  // Preenche formulário de dados do veículo
+  const inpModelo = document.getElementById('sdv-detalhe-modelo');
+  const inpAno = document.getElementById('sdv-detalhe-ano');
+  const inpPlaca = document.getElementById('sdv-detalhe-placa');
+  const inpDataLic = document.getElementById('sdv-detalhe-data-lic');
+  const inpKm = document.getElementById('sdv-detalhe-km');
+  const inpMotorista = document.getElementById('sdv-detalhe-motorista');
+  const selTipo = document.getElementById('sdv-detalhe-tipo');
+  const chkNotif = document.getElementById('sdv-detalhe-notificacao');
+
+  if (inpModelo) inpModelo.value = veiculoAtivo.modelo || '';
+  if (inpAno) inpAno.value = veiculoAtivo.ano || '';
+  if (inpPlaca) inpPlaca.value = veiculoAtivo.placa || '';
+  if (inpDataLic) inpDataLic.value = veiculoAtivo.dataLicenciamento || '';
+  if (inpKm) inpKm.value = veiculoAtivo.kmAtual || '';
+  if (inpMotorista) inpMotorista.value = veiculoAtivo.motorista || '';
+  if (selTipo) selTipo.value = veiculoAtivo.tipo || 'carro';
+  if (chkNotif) chkNotif.checked = veiculoAtivo.receberNotificacao !== false;
+
+  // Renderiza card de alerta de licenciamento (réplica fiel da Imagem 2)
+  renderSdvAlertaLicenciamento(veiculoAtivo);
+
+  // Renderiza histórico e KPIs de abastecimento
+  renderSdvHistoricoAbastecimentos(veiculoAtivo.id);
+}
+
+// Renderiza o Alerta de Licenciamento
+function renderSdvAlertaLicenciamento(veiculo) {
+  const container = document.getElementById('sdv-card-alerta-licenciamento');
+  if (!container) return;
+
+  if (!veiculo || !veiculo.dataLicenciamento) {
+    container.innerHTML = `
+      <div style="background:rgba(255,255,255,0.03);border:1px dashed rgba(255,255,255,0.15);border-radius:14px;padding:14px;text-align:center;color:var(--muted);font-size:12.5px;">
+        📅 Nenhuma data de licenciamento definida para este veículo. Preencha a data abaixo e salve.
+      </div>
+    `;
+    return;
+  }
+
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+
+  const partes = String(veiculo.dataLicenciamento).split('-');
+  let dias = 0;
+  let dataFmt = veiculo.dataLicenciamento;
+
+  if (partes.length === 3) {
+    const ano = parseInt(partes[0], 10);
+    const mes = parseInt(partes[1], 10) - 1;
+    const dia = parseInt(partes[2], 10);
+    const dtLic = new Date(ano, mes, dia);
+    dtLic.setHours(0, 0, 0, 0);
+    const diffMs = dtLic.getTime() - hoje.getTime();
+    dias = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    dataFmt = String(dia).padStart(2, '0') + '/' + String(mes + 1).padStart(2, '0') + '/' + ano;
+  }
+
+  if (dias > 0 && dias <= 30) {
+    // Layout Idêntico à Imagem 2 enviada pelo usuário
+    container.innerHTML = `
+      <div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:16px;padding:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;box-shadow:0 4px 15px rgba(245,158,11,0.08);">
+        <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:240px;">
+          <div style="width:44px;height:44px;border-radius:12px;background:#2563eb;display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;box-shadow:0 4px 12px rgba(37,99,235,0.3);flex-shrink:0;">
+            📅
+          </div>
+          <div>
+            <div style="font-size:15px;font-weight:900;color:#92400e;">Licenciamento Próximo do Vencimento!</div>
+            <div style="font-size:12.5px;color:#78350f;margin-top:2px;">Faltam apenas <strong>${dias} dias</strong> para o vencimento do licenciamento (${dataFmt}).</div>
+          </div>
+        </div>
+        <div>
+          <span style="background:#fef08a;color:#854d0e;font-size:12px;font-weight:900;padding:8px 14px;border-radius:999px;border:1px solid #facc15;white-space:nowrap;letter-spacing:0.3px;display:inline-block;">
+            VENCE EM ${dias} DIAS
+          </span>
+        </div>
+      </div>
+    `;
+  } else if (dias <= 0) {
+    const atraso = Math.abs(dias);
+    container.innerHTML = `
+      <div style="background:#fef2f2;border:1.5px solid #fca5a5;border-radius:16px;padding:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;box-shadow:0 4px 15px rgba(239,68,68,0.1);">
+        <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:240px;">
+          <div style="width:44px;height:44px;border-radius:12px;background:#dc2626;display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;box-shadow:0 4px 12px rgba(220,38,38,0.3);flex-shrink:0;">
+            ⚠️
+          </div>
+          <div>
+            <div style="font-size:15px;font-weight:900;color:#991b1b;">Licenciamento Vencido!</div>
+            <div style="font-size:12.5px;color:#7f1d1d;margin-top:2px;">O licenciamento venceu há <strong>${atraso === 0 ? 'hoje' : (atraso + ' dia(s)')}</strong> (${dataFmt}). Regularize imediatamente.</div>
+          </div>
+        </div>
+        <div>
+          <span style="background:#fee2e2;color:#991b1b;font-size:12px;font-weight:900;padding:8px 14px;border-radius:999px;border:1px solid #f87171;white-space:nowrap;letter-spacing:0.3px;display:inline-block;">
+            VENCIDO HÁ ${atraso} DIAS
+          </span>
+        </div>
+      </div>
+    `;
+  } else {
+    container.innerHTML = `
+      <div style="background:rgba(16,185,129,0.08);border:1.5px solid rgba(16,185,129,0.3);border-radius:16px;padding:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:240px;">
+          <div style="width:44px;height:44px;border-radius:12px;background:#059669;display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;box-shadow:0 4px 12px rgba(5,150,105,0.3);flex-shrink:0;">
+            ✅
+          </div>
+          <div>
+            <div style="font-size:15px;font-weight:900;color:#10b981;">Licenciamento em Dia!</div>
+            <div style="font-size:12.5px;color:var(--text2);margin-top:2px;">Vencimento previsto para <strong>${dataFmt}</strong> (faltam ${dias} dias).</div>
+          </div>
+        </div>
+        <div>
+          <span style="background:rgba(16,185,129,0.18);color:#34d399;font-size:12px;font-weight:900;padding:8px 14px;border-radius:999px;border:1px solid rgba(16,185,129,0.4);white-space:nowrap;letter-spacing:0.3px;display:inline-block;">
+            EM DIA (${dias} DIAS)
+          </span>
+        </div>
+      </div>
+    `;
+  }
+}
+
+// Troca o veículo ativo
+function sdvTrocarVeiculoAtivo(veicId) {
+  sdvDefinirVeiculoAtivoId(veicId);
+  renderVeiculosView();
+}
+
+// Salva dados do veículo ativo editado no card
+function sdvSalvarDadosVeiculoAtual() {
+  const veiculos = sdvObterVeiculos();
+  const ativoId = sdvObterVeiculoAtivoId();
+  const v = veiculos.find(x => x.id === ativoId);
+  if (!v) return;
+
+  const modelo = (document.getElementById('sdv-detalhe-modelo').value || '').trim();
+  const ano = (document.getElementById('sdv-detalhe-ano').value || '').trim();
+  const placa = (document.getElementById('sdv-detalhe-placa').value || '').trim().toUpperCase();
+  const dataLic = (document.getElementById('sdv-detalhe-data-lic').value || '').trim();
+  const km = parseFloat(document.getElementById('sdv-detalhe-km').value) || 0;
+  const motorista = (document.getElementById('sdv-detalhe-motorista').value || '').trim();
+  const tipo = document.getElementById('sdv-detalhe-tipo').value || 'carro';
+  const notif = document.getElementById('sdv-detalhe-notificacao').checked;
+
+  if (!modelo) { alert('Informe o modelo do veículo.'); return; }
+  if (!ano) { alert('Informe o ano do veículo.'); return; }
+  if (!placa) { alert('Informe a placa do veículo.'); return; }
+  if (!dataLic) { alert('Informe a data do próximo licenciamento.'); return; }
+
+  v.modelo = modelo;
+  v.ano = ano;
+  v.placa = placa;
+  v.dataLicenciamento = dataLic;
+  v.kmAtual = km;
+  v.motorista = motorista;
+  v.tipo = tipo;
+  v.receberNotificacao = notif;
+  v.atualizadoEm = new Date().toISOString();
+
+  sdvSalvarVeiculos(veiculos);
+  if (typeof showToast === 'function') showToast('✅ Dados do veículo atualizados com sucesso!', 'success');
+  else alert('Dados do veículo atualizados com sucesso!');
+  renderVeiculosView();
+}
+
+// Modal Novo Veículo
+function abrirModalNovoVeiculo() {
+  document.getElementById('modal-veic-tipo').value = 'carro';
+  document.getElementById('modal-veic-ano').value = new Date().getFullYear();
+  document.getElementById('modal-veic-modelo').value = '';
+  document.getElementById('modal-veic-placa').value = '';
+  document.getElementById('modal-veic-km').value = '';
+  document.getElementById('modal-veic-data-lic').value = '';
+  document.getElementById('modal-veic-motorista').value = '';
+
+  const modal = document.getElementById('modal-adicionar-veiculo');
+  if (modal) modal.style.display = 'flex';
+}
+
+function fecharModalNovoVeiculo(e) {
+  if (e && e.target !== e.currentTarget) return;
+  const modal = document.getElementById('modal-adicionar-veiculo');
+  if (modal) modal.style.display = 'none';
+}
+
+function sdvSalvarNovoVeiculo() {
+  const tipo = document.getElementById('modal-veic-tipo').value;
+  const ano = (document.getElementById('modal-veic-ano').value || '').trim();
+  const modelo = (document.getElementById('modal-veic-modelo').value || '').trim();
+  const placa = (document.getElementById('modal-veic-placa').value || '').trim().toUpperCase();
+  const km = parseFloat(document.getElementById('modal-veic-km').value) || 0;
+  const dataLic = (document.getElementById('modal-veic-data-lic').value || '').trim();
+  const motorista = (document.getElementById('modal-veic-motorista').value || '').trim();
+
+  if (!modelo) { alert('Por favor, informe o modelo do veículo.'); return; }
+  if (!ano) { alert('Por favor, informe o ano do veículo.'); return; }
+  if (!placa) { alert('Por favor, informe a placa do veículo.'); return; }
+  if (!dataLic) { alert('Por favor, informe a data do próximo licenciamento.'); return; }
+
+  const novo = {
+    id: 'veic_' + Date.now(),
+    tipo: tipo,
+    modelo: modelo,
+    ano: ano,
+    placa: placa,
+    kmAtual: km,
+    dataLicenciamento: dataLic,
+    receberNotificacao: true,
+    motorista: motorista,
+    criadoEm: new Date().toISOString()
+  };
+
+  const veiculos = sdvObterVeiculos();
+  veiculos.push(novo);
+  sdvSalvarVeiculos(veiculos);
+  sdvDefinirVeiculoAtivoId(novo.id);
+
+  fecharModalNovoVeiculo();
+  if (typeof showToast === 'function') showToast('✅ Novo veículo cadastrado com sucesso!', 'success');
+  else alert('Veículo cadastrado com sucesso!');
+  renderVeiculosView();
+}
+
+function sdvEditarVeiculoAtual() {
+  const v = sdvObterVeiculoAtivo();
+  if (!v) return;
+  const el = document.getElementById('sdv-detalhe-modelo');
+  if (el) {
+    el.focus();
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
+function sdvExcluirVeiculoAtual() {
+  const veiculos = sdvObterVeiculos();
+  if (veiculos.length <= 1) {
+    alert('Aviso: Você precisa manter pelo menos 1 veículo cadastrado no sistema.');
+    return;
+  }
+  const ativo = sdvObterVeiculoAtivo();
+  if (!ativo) return;
+
+  if (!confirm(`Deseja realmente excluir o veículo "${ativo.modelo} (${ativo.placa})"?\nOs registros de abastecimento deste veículo também serão removidos.`)) {
+    return;
+  }
+
+  const novosVeiculos = veiculos.filter(x => x.id !== ativo.id);
+  sdvSalvarVeiculos(novosVeiculos);
+
+  // Remove abastecimentos vinculados
+  const todosAbast = sdvObterAbastecimentos();
+  const filtrados = todosAbast.filter(x => x.veiculoId !== ativo.id);
+  sdvSalvarAbastecimentos(filtrados);
+
+  sdvDefinirVeiculoAtivoId(novosVeiculos[0].id);
+  if (typeof showToast === 'function') showToast('🗑️ Veículo excluído com sucesso.', 'info');
+  renderVeiculosView();
+}
+
+// ══════════════════════════════════════════════
+// ABASTECIMENTOS, KM & FOTO DO COMPROVANTE
+// ══════════════════════════════════════════════
+
+function abrirModalNovoAbastecimento() {
+  const veiculos = sdvObterVeiculos();
+  const ativoId = sdvObterVeiculoAtivoId();
+  const veiculo = sdvObterVeiculoAtivo();
+
+  // Popula select de veículos
+  const sel = document.getElementById('modal-abast-veiculo');
+  if (sel) {
+    sel.innerHTML = veiculos.map(v => {
+      const icone = v.tipo === 'moto' ? '🏍️' : (v.tipo === 'caminhao' ? '🚚' : '🚗');
+      return `<option value="${v.id}" ${v.id === ativoId ? 'selected' : ''}>${icone} ${v.modelo || 'Sem modelo'} (${v.placa}) - KM Atual: ${v.kmAtual || 0}</option>`;
+    }).join('');
+  }
+
+  // Preenche data atual YYYY-MM-DD
+  const hoje = new Date();
+  const dataHoje = hoje.toISOString().split('T')[0];
+  document.getElementById('modal-abast-data').value = dataHoje;
+
+  // Sugere KM atual do veículo
+  const kmAtual = veiculo ? (veiculo.kmAtual || '') : '';
+  document.getElementById('modal-abast-km').value = kmAtual;
+
+  document.getElementById('modal-abast-combustivel').value = (veiculo && veiculo.tipo === 'moto') ? 'Gasolina Comum' : 'Gasolina Comum';
+  document.getElementById('modal-abast-valor').value = '';
+  document.getElementById('modal-abast-litros').value = '';
+  document.getElementById('modal-abast-preco-litro').value = '';
+  document.getElementById('modal-abast-posto').value = '';
+  document.getElementById('modal-abast-motorista').value = veiculo ? (veiculo.motorista || '') : '';
+  document.getElementById('modal-abast-obs').value = '';
+
+  // Limpa foto
+  sdvRemoverFotoComprovante();
+
+  const modal = document.getElementById('modal-registrar-abastecimento');
+  if (modal) modal.style.display = 'flex';
+}
+
+function fecharModalNovoAbastecimento(e) {
+  if (e && e.target !== e.currentTarget) return;
+  const modal = document.getElementById('modal-registrar-abastecimento');
+  if (modal) modal.style.display = 'none';
+}
+
+// Cálculo automático de preço por litro
+function sdvCalcularPrecoPorLitro() {
+  const valor = parseFloat(document.getElementById('modal-abast-valor').value) || 0;
+  const litros = parseFloat(document.getElementById('modal-abast-litros').value) || 0;
+  const inpPreco = document.getElementById('modal-abast-preco-litro');
+  if (valor > 0 && litros > 0 && inpPreco) {
+    inpPreco.value = (valor / litros).toFixed(3);
+  }
+}
+
+// Processamento da foto do comprovante com compressão de imagem inteligente
+function sdvProcessarFotoComprovante(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      // Redimensiona mantendo proporção para no máximo 1024x1024
+      const maxDim = 1024;
+      let width = img.width;
+      let height = img.height;
+
+      if (width > maxDim || height > maxDim) {
+        if (width > height) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        } else {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // Comprime como JPEG com qualidade 0.72 (~80-120KB)
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.72);
+
+      document.getElementById('modal-abast-foto-base64').value = dataUrl;
+      const prevImg = document.getElementById('sdv-preview-foto-img');
+      const prevCont = document.getElementById('sdv-preview-foto-container');
+      const btnRemover = document.getElementById('sdv-btn-remover-foto');
+
+      if (prevImg) prevImg.src = dataUrl;
+      if (prevCont) prevCont.style.display = 'flex';
+      if (btnRemover) btnRemover.style.display = 'inline-block';
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function sdvRemoverFotoComprovante() {
+  const inpFile = document.getElementById('modal-abast-foto-input');
+  const inpBase64 = document.getElementById('modal-abast-foto-base64');
+  const prevCont = document.getElementById('sdv-preview-foto-container');
+  const prevImg = document.getElementById('sdv-preview-foto-img');
+  const btnRemover = document.getElementById('sdv-btn-remover-foto');
+
+  if (inpFile) inpFile.value = '';
+  if (inpBase64) inpBase64.value = '';
+  if (prevImg) prevImg.src = '';
+  if (prevCont) prevCont.style.display = 'none';
+  if (btnRemover) btnRemover.style.display = 'none';
+}
+
+function sdvAmpliarFotoPreview() {
+  const base64 = document.getElementById('modal-abast-foto-base64').value;
+  if (!base64) return;
+  sdvExibirFotoZoom(base64, 'Comprovante Selecionado');
+}
+
+// Salva o registro de abastecimento
+function sdvSalvarNovoAbastecimento() {
+  const veicId = document.getElementById('modal-abast-veiculo').value;
+  const data = (document.getElementById('modal-abast-data').value || '').trim();
+  const km = parseFloat(document.getElementById('modal-abast-km').value) || 0;
+  const comb = document.getElementById('modal-abast-combustivel').value;
+  const valor = parseFloat(document.getElementById('modal-abast-valor').value) || 0;
+  const litros = parseFloat(document.getElementById('modal-abast-litros').value) || 0;
+  const precoLitro = parseFloat(document.getElementById('modal-abast-preco-litro').value) || 0;
+  const posto = (document.getElementById('modal-abast-posto').value || '').trim();
+  const motorista = (document.getElementById('modal-abast-motorista').value || '').trim();
+  const fotoBase64 = (document.getElementById('modal-abast-foto-base64').value || '').trim();
+  const obs = (document.getElementById('modal-abast-obs').value || '').trim();
+
+  if (!data) { alert('Informe a data do abastecimento.'); return; }
+  if (km <= 0) { alert('Informe o KM atual válido.'); return; }
+  if (valor <= 0) { alert('Informe o valor total do abastecimento (R$).'); return; }
+
+  const novo = {
+    id: 'abast_' + Date.now(),
+    veiculoId: veicId,
+    data: data,
+    kmAtual: km,
+    combustivel: comb,
+    valorTotal: valor,
+    litros: litros,
+    precoLitro: precoLitro,
+    posto: posto,
+    motorista: motorista,
+    fotoComprovante: fotoBase64,
+    obs: obs,
+    criadoEm: new Date().toISOString()
+  };
+
+  const lista = sdvObterAbastecimentos();
+  lista.unshift(novo); // Insere no início
+  sdvSalvarAbastecimentos(lista);
+
+  // Atualiza automaticamente o KM atual do veículo cadastrado caso o KM informado seja maior
+  const veiculos = sdvObterVeiculos();
+  const v = veiculos.find(x => x.id === veicId);
+  if (v && (!v.kmAtual || km > v.kmAtual)) {
+    v.kmAtual = km;
+    sdvSalvarVeiculos(veiculos);
+  }
+
+  fecharModalNovoAbastecimento();
+  if (typeof showToast === 'function') showToast('✅ Abastecimento e KM registrados com sucesso!', 'success');
+  else alert('Abastecimento registrado com sucesso!');
+
+  // Atualiza visão se o veículo do abastecimento for o ativo
+  if (veicId === sdvObterVeiculoAtivoId()) {
+    renderVeiculosView();
+  }
+}
+
+// Renderiza a lista de abastecimentos e os KPIs do veículo ativo
+function renderSdvHistoricoAbastecimentos(veiculoId) {
+  const lista = sdvObterAbastecimentos().filter(x => x.veiculoId === veiculoId);
+  const container = document.getElementById('sdv-lista-abastecimentos');
+  const veiculo = sdvObterVeiculoAtivo();
+
+  // Atualiza KPIs
+  const kpiKm = document.getElementById('sdv-kpi-km');
+  const kpiTotal = document.getElementById('sdv-kpi-total-gasto');
+  const kpiUltimo = document.getElementById('sdv-kpi-ultimo-data');
+  const kpiQtd = document.getElementById('sdv-kpi-qtd');
+
+  const totalGasto = lista.reduce((acc, cur) => acc + (cur.valorTotal || 0), 0);
+  const ultimo = lista.length > 0 ? lista[0] : null;
+
+  if (kpiKm) {
+    const kmVal = veiculo ? (veiculo.kmAtual || (ultimo ? ultimo.kmAtual : 0)) : 0;
+    kpiKm.textContent = Number(kmVal).toLocaleString('pt-BR') + ' km';
+  }
+  if (kpiTotal) {
+    kpiTotal.textContent = 'R$ ' + totalGasto.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  if (kpiUltimo) {
+    if (ultimo && ultimo.data) {
+      const p = ultimo.data.split('-');
+      kpiUltimo.textContent = (p.length === 3 ? (p[2] + '/' + p[1] + '/' + p[0]) : ultimo.data);
+    } else {
+      kpiUltimo.textContent = '--/--/----';
+    }
+  }
+  if (kpiQtd) {
+    kpiQtd.textContent = String(lista.length);
+  }
+
+  if (!container) return;
+
+  if (lista.length === 0) {
+    container.innerHTML = `
+      <div style="background:rgba(255,255,255,0.02);border:1.5px dashed rgba(255,255,255,0.12);border-radius:14px;padding:24px 16px;text-align:center;color:var(--muted);">
+        <div style="font-size:32px;margin-bottom:8px;">⛽</div>
+        <div style="font-size:14px;font-weight:800;color:#fff;">Nenhum abastecimento registrado para este veículo</div>
+        <div style="font-size:12px;margin-top:4px;color:var(--text2);">Clique no botão <strong>"+ Novo Abastecimento"</strong> acima para registrar KM, valor e anexar a foto do comprovante.</div>
+      </div>
+    `;
+    return;
+  }
+
+  // Ordena por data decrescente
+  const itensHtml = lista.map((item, idx) => {
+    const partes = String(item.data || '').split('-');
+    const dataFmt = partes.length === 3 ? (partes[2] + '/' + partes[1] + '/' + partes[0]) : item.data;
+    const valorFmt = (item.valorTotal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const kmFmt = Number(item.kmAtual || 0).toLocaleString('pt-BR');
+
+    // Diferença de KM com o abastecimento anterior (mais antigo)
+    let badgeKmDiff = '';
+    const proximoMaisAntigo = lista[idx + 1];
+    if (proximoMaisAntigo && item.kmAtual && proximoMaisAntigo.kmAtual && (item.kmAtual > proximoMaisAntigo.kmAtual)) {
+      const diff = item.kmAtual - proximoMaisAntigo.kmAtual;
+      badgeKmDiff = `<span style="font-size:11px;color:#38bdf8;font-weight:800;background:rgba(56,189,248,0.12);padding:2px 6px;border-radius:6px;margin-left:6px;">+${diff.toLocaleString('pt-BR')} km</span>`;
+    }
+
+    const temFoto = !!item.fotoComprovante;
+    const fotoThumbnail = temFoto ? `
+      <div style="cursor:pointer;position:relative;" onclick="sdvVerComprovanteZoom('${item.id}')" title="Clique para ampliar o comprovante">
+        <img src="${item.fotoComprovante}" alt="Comprovante" style="width:72px;height:72px;object-fit:cover;border-radius:10px;border:1.5px solid rgba(56,189,248,0.5);box-shadow:0 3px 10px rgba(0,0,0,0.5);" />
+        <span style="position:absolute;bottom:3px;right:3px;background:rgba(0,0,0,0.75);color:#fff;font-size:9px;padding:1px 4px;border-radius:4px;font-weight:900;">🔍 VER</span>
+      </div>
+    ` : `
+      <div style="width:72px;height:72px;border-radius:10px;border:1px dashed rgba(255,255,255,0.15);background:rgba(255,255,255,0.02);display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);font-size:10px;text-align:center;padding:4px;">
+        <span style="font-size:16px;">🧾</span>
+        <span>Sem foto</span>
+      </div>
+    `;
+
+    return `
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:260px;">
+          ${fotoThumbnail}
+          <div style="flex:1;">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
+              <span style="font-size:13px;font-weight:900;color:#fff;">📅 ${dataFmt}</span>
+              <span style="background:rgba(16,185,129,0.15);color:#10b981;border:1px solid rgba(16,185,129,0.3);padding:2px 8px;border-radius:999px;font-size:11px;font-weight:800;">
+                ${item.combustivel || 'Combustível'}
+              </span>
+              <span style="font-size:14px;font-weight:900;color:#10b981;">
+                R$ ${valorFmt}
+              </span>
+            </div>
+            <div style="font-size:12px;color:var(--text2);display:flex;align-items:center;flex-wrap:wrap;gap:10px;">
+              <span>🚗 <strong>KM:</strong> ${kmFmt} ${badgeKmDiff}</span>
+              ${item.litros ? `<span>⛽ <strong>Litros:</strong> ${item.litros} L</span>` : ''}
+              ${item.precoLitro ? `<span>💲 <strong>R$/L:</strong> ${item.precoLitro}</span>` : ''}
+            </div>
+            ${(item.posto || item.motorista || item.obs) ? `
+              <div style="font-size:11.5px;color:var(--muted);margin-top:4px;">
+                ${item.posto ? `<span>🏪 ${item.posto}</span> ` : ''}
+                ${item.motorista ? `<span>👤 ${item.motorista}</span> ` : ''}
+                ${item.obs ? `<span>📝 ${item.obs}</span>` : ''}
+              </div>
+            ` : ''}
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          ${temFoto ? `
+            <button type="button" onclick="sdvVerComprovanteZoom('${item.id}')" class="btn btn-sec" style="padding:7px 12px;font-size:11.5px;font-weight:700;border-radius:8px;" title="Visualizar comprovante ampliado">
+              🔍 Ver Foto
+            </button>
+          ` : ''}
+          <button type="button" onclick="sdvExcluirAbastecimento('${item.id}')" class="btn btn-sec" style="padding:7px 10px;font-size:11.5px;font-weight:700;border-radius:8px;color:#ef4444;" title="Excluir este registro">
+            🗑️
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  container.innerHTML = itensHtml;
+}
+
+// Visualização de foto ampliada (Zoom)
+function sdvVerComprovanteZoom(abastId) {
+  const lista = sdvObterAbastecimentos();
+  const item = lista.find(x => x.id === abastId);
+  if (!item || !item.fotoComprovante) {
+    alert('Comprovante não disponível.');
+    return;
+  }
+  const partes = String(item.data || '').split('-');
+  const dataFmt = partes.length === 3 ? (partes[2] + '/' + partes[1] + '/' + partes[0]) : item.data;
+  const tit = `Comprovante - ${item.combustivel || 'Abastecimento'} (${dataFmt} • R$ ${Number(item.valorTotal || 0).toFixed(2)})`;
+  sdvExibirFotoZoom(item.fotoComprovante, tit);
+}
+
+function sdvExibirFotoZoom(src, titulo) {
+  const modal = document.getElementById('modal-zoom-comprovante');
+  const img = document.getElementById('modal-zoom-img');
+  const titEl = document.getElementById('modal-zoom-titulo');
+
+  if (img) img.src = src;
+  if (titEl) titEl.textContent = titulo || 'Comprovante';
+  if (modal) modal.style.display = 'flex';
+}
+
+function fecharModalZoomComprovante(e) {
+  if (e && e.target !== e.currentTarget) return;
+  const modal = document.getElementById('modal-zoom-comprovante');
+  if (modal) modal.style.display = 'none';
+}
+
+// Excluir registro de abastecimento
+function sdvExcluirAbastecimento(abastId) {
+  if (!confirm('Deseja realmente excluir este registro de abastecimento?')) return;
+  const lista = sdvObterAbastecimentos();
+  const novaLista = lista.filter(x => x.id !== abastId);
+  sdvSalvarAbastecimentos(novaLista);
+  if (typeof showToast === 'function') showToast('🗑️ Abastecimento excluído.', 'info');
+  renderVeiculosView();
+}
+
+// Exportações para o escopo global do browser
+window.sdvObterVeiculos = sdvObterVeiculos;
+window.sdvSalvarVeiculos = sdvSalvarVeiculos;
+window.sdvObterAbastecimentos = sdvObterAbastecimentos;
+window.sdvSalvarAbastecimentos = sdvSalvarAbastecimentos;
+window.renderVeiculosView = renderVeiculosView;
+window.sdvTrocarVeiculoAtivo = sdvTrocarVeiculoAtivo;
+window.sdvSalvarDadosVeiculoAtual = sdvSalvarDadosVeiculoAtual;
+window.abrirModalNovoVeiculo = abrirModalNovoVeiculo;
+window.fecharModalNovoVeiculo = fecharModalNovoVeiculo;
+window.sdvSalvarNovoVeiculo = sdvSalvarNovoVeiculo;
+window.sdvEditarVeiculoAtual = sdvEditarVeiculoAtual;
+window.sdvExcluirVeiculoAtual = sdvExcluirVeiculoAtual;
+window.abrirModalNovoAbastecimento = abrirModalNovoAbastecimento;
+window.fecharModalNovoAbastecimento = fecharModalNovoAbastecimento;
+window.sdvCalcularPrecoPorLitro = sdvCalcularPrecoPorLitro;
+window.sdvProcessarFotoComprovante = sdvProcessarFotoComprovante;
+window.sdvRemoverFotoComprovante = sdvRemoverFotoComprovante;
+window.sdvAmpliarFotoPreview = sdvAmpliarFotoPreview;
+window.sdvSalvarNovoAbastecimento = sdvSalvarNovoAbastecimento;
+window.sdvVerComprovanteZoom = sdvVerComprovanteZoom;
+window.sdvExibirFotoZoom = sdvExibirFotoZoom;
+window.fecharModalZoomComprovante = fecharModalZoomComprovante;
+window.sdvExcluirAbastecimento = sdvExcluirAbastecimento;
 
 </script>
 
