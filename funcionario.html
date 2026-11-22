@@ -13183,6 +13183,9 @@ function renderizarMeuSetorFinanceiro() {
   var totalAlmoco = 0;
   var totalAlmocoPago = 0;
   var totalAlmocoPendente = 0;
+  var totalCombustivel = 0;
+  var totalCombustivelPago = 0;
+  var totalCombustivelPendente = 0;
   var countIntegrais = 0;
   var countMeioDia = 0;
 
@@ -13215,6 +13218,18 @@ function renderizarMeuSetorFinanceiro() {
         totalAlmocoPendente += aVal;
       }
     }
+
+    if (b.combustivel && b.combustivel.valor) {
+      var combStr = String(b.combustivel.valor).replace('R$', '').replace(/\s/g, '').replace('.', '').replace(',', '.');
+      var cVal = parseFloat(combStr) || 0;
+      totalCombustivel += cVal;
+      var combStat = (b.combustivel.status || '').toLowerCase();
+      if (combStat.includes('pago')) {
+        totalCombustivelPago += cVal;
+      } else {
+        totalCombustivelPendente += cVal;
+      }
+    }
   });
 
   // Vales solicitados pelo colaborador
@@ -13236,7 +13251,7 @@ function renderizarMeuSetorFinanceiro() {
 
   if (batidasColab.length > 0) {
     // Calculado referente ao Bater Ponto
-    var valorAReceber = Math.max(0, totalPontosPendentes + totalAlmocoPendente - totalValesAbatidos);
+    var valorAReceber = Math.max(0, totalPontosPendentes + totalAlmocoPendente + totalCombustivelPendente - totalValesAbatidos);
 
     if (elSalario) {
       elSalario.textContent = 'R$ ' + totalGanhosPontos.toFixed(2).replace('.', ',');
@@ -13281,6 +13296,7 @@ function renderizarMeuSetorFinanceiro() {
       var partesDet = [];
       if (totalPontosPendentes > 0) partesDet.push('Diárias a receber: <strong>R$ ' + totalPontosPendentes.toFixed(2).replace('.', ',') + '</strong>');
       if (totalAlmocoPendente > 0) partesDet.push('Almoço pendente: <strong>R$ ' + totalAlmocoPendente.toFixed(2).replace('.', ',') + '</strong>');
+      if (totalCombustivelPendente > 0) partesDet.push('Combustível pendente: <strong>R$ ' + totalCombustivelPendente.toFixed(2).replace('.', ',') + '</strong>');
       if (totalValesAbatidos > 0) partesDet.push('Vales deduzidos: <strong>-R$ ' + totalValesAbatidos.toFixed(2).replace('.', ',') + '</strong>');
       if (totalPontosPagos > 0) partesDet.push('Já quitado: R$ ' + totalPontosPagos.toFixed(2).replace('.', ','));
       elReceberSub.innerHTML = partesDet.length > 0 ? partesDet.join(' · ') : 'Todas as diárias estão quitadas.';
@@ -13372,6 +13388,15 @@ function renderizarMeuSetorFinanceiro() {
             '</div>';
         }
 
+        var infoCombustivel = '';
+        if (b.combustivel && b.combustivel.valor) {
+          var combPago = (b.combustivel.status || '').toLowerCase().includes('pago');
+          infoCombustivel = '<div style="margin-top:6px;font-size:11px;color:#cbd5e1;background:rgba(56,189,248,0.06);border:1px solid rgba(56,189,248,0.18);padding:6px 10px;border-radius:6px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;">' +
+            '<span>⛽ <strong>Combustível:</strong> R$ ' + b.combustivel.valor + ' (' + (b.combustivel.forma || 'Pix') + (b.combustivel.obs ? ' · ' + b.combustivel.obs : '') + ')</span>' +
+            '<span style="color:' + (combPago ? '#34d399' : '#fbbf24') + ';font-weight:700;">' + (combPago ? 'Pago' : 'Pendente') + '</span>' +
+            '</div>';
+        }
+
         var infoDesc = b.descricao ? '<div style="margin-top:4px;font-size:11px;color:#94a3b8;font-style:italic;">📝 ' + b.descricao + '</div>' : '';
 
         return '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px 14px;box-shadow:0 2px 8px rgba(0,0,0,0.2);">' +
@@ -13387,6 +13412,7 @@ function renderizarMeuSetorFinanceiro() {
             '</div>' +
           '</div>' +
           infoAlmoco +
+          infoCombustivel +
           infoDesc +
         '</div>';
       }).join('');

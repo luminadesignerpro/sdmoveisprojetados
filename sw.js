@@ -1,5 +1,5 @@
-// Service Worker PWA – SD Móveis Projetados v9.5.49 (Opção de Renomear cada Botão e Colocar Ícones Personalizados)
-const CACHE_NAME = 'sdmoveisprojetados-v9.5.49';
+// Service Worker PWA – SD Móveis Projetados v9.5.50 (Combustível configurável, bloqueio automático de valores e exibição condicional)
+const CACHE_NAME = 'sdmoveisprojetados-v9.5.50';
 const ASSETS = [
   '/',
   '/index.html',
