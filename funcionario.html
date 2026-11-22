@@ -3984,11 +3984,26 @@
           </div>
 
           <div style="display:flex;flex-direction:column;gap:14px;">
-            <!-- Nome do Cliente -->
+            <!-- Seleção de Cliente / Obra -->
             <div>
-              <label style="font-size:12px;font-weight:800;color:rgba(255,255,255,0.7);margin-bottom:5px;display:block;">👤 Nome do Cliente / Obra</label>
-              <input type="text" id="msg-ponto-cliente" placeholder="Ex: João Silva" style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.15);border-radius:10px;color:#fff;padding:10px 14px;font-size:14px;box-sizing:border-box;" />
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                <label style="font-size:12px;font-weight:800;color:rgba(255,255,255,0.7);">👤 Cliente / Obra *</label>
+                <button type="button" onclick="alternarModoClienteMsgPonto()" id="btn-toggle-modo-cliente-ponto" style="background:none;border:none;color:#38bdf8;font-size:11.5px;font-weight:700;cursor:pointer;padding:0;">✏️ Digitar outro</button>
+              </div>
+              
+              <!-- Dropdown de Seleção de Cliente -->
+              <div id="box-select-cliente-msg-ponto">
+                <select id="msg-ponto-cliente-select" onchange="aoSelecionarClienteMsgPonto(this.value)" style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.15);border-radius:10px;color:#fff;padding:11px 14px;font-size:14px;box-sizing:border-box;cursor:pointer;font-weight:600;">
+                  <option value="" style="background:#181a2c;color:#fff;">Selecione o Cliente / O.S.</option>
+                </select>
+              </div>
+
+              <!-- Input manual caso queira digitar -->
+              <div id="box-manual-cliente-msg-ponto" style="display:none;margin-top:6px;">
+                <input type="text" id="msg-ponto-cliente" placeholder="Ex: João Silva" style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.15);border-radius:10px;color:#fff;padding:10px 14px;font-size:14px;box-sizing:border-box;" />
+              </div>
             </div>
+
             <!-- Nº O.S. -->
             <div>
               <label style="font-size:12px;font-weight:800;color:rgba(255,255,255,0.7);margin-bottom:5px;display:block;">🗂️ Nº da O.S.</label>
@@ -5875,6 +5890,7 @@
           if (_paneJogos) _paneJogos.style.display = 'none';
           if (_btnMensagens) _btnMensagens.style.display = 'none';
           if (_btnMsgPonto) _btnMsgPonto.style.display = '';
+          try { popularClientesMsgPonto(); } catch(_) {}
           try { renderizarHistoricoMsgPonto(); } catch(_) {}
           try { mudarAba('status'); } catch(_) {}
         } else {
@@ -6018,6 +6034,9 @@ function mudarAba(tab) {
           if (typeof selecionarJogo === 'function') selecionarJogo(jogoAtivoId || 'damas');
         } else if (tab === 'camera') {
           if (typeof inicializarCameraUltraZoom === 'function') inicializarCameraUltraZoom();
+        } else if (tab === 'msg-ponto') {
+          if (typeof popularClientesMsgPonto === 'function') popularClientesMsgPonto();
+          if (typeof renderizarHistoricoMsgPonto === 'function') renderizarHistoricoMsgPonto();
         } else {
           if (typeof pararJogoCorrida === 'function') pararJogoCorrida();
           if (typeof tiroRodando !== 'undefined' && tiroRodando && typeof fimJogoTiro === 'function') fimJogoTiro();
@@ -9538,6 +9557,70 @@ function baterPontoNoCliente(tipo) {
     // ══════════════════════════════════════════════
     let _msgPontoMidiasTemp = [];
 
+    function alternarModoClienteMsgPonto() {
+      const boxSel = document.getElementById('box-select-cliente-msg-ponto');
+      const boxMan = document.getElementById('box-manual-cliente-msg-ponto');
+      const btnToggle = document.getElementById('btn-toggle-modo-cliente-ponto');
+      if (!boxSel || !boxMan) return;
+      const estaManual = boxMan.style.display !== 'none';
+      if (estaManual) {
+        boxMan.style.display = 'none';
+        boxSel.style.display = 'block';
+        if (btnToggle) btnToggle.textContent = '✏️ Digitar outro';
+      } else {
+        boxMan.style.display = 'block';
+        boxSel.style.display = 'none';
+        if (btnToggle) btnToggle.textContent = '📋 Escolher da lista';
+        const inp = document.getElementById('msg-ponto-cliente');
+        if (inp) inp.focus();
+      }
+    }
+
+    function popularClientesMsgPonto() {
+      const sel = document.getElementById('msg-ponto-cliente-select');
+      if (!sel) return;
+
+      const ordens = typeof carregarOrdensDoStorage === 'function' ? carregarOrdensDoStorage() : [];
+      const clientes = [];
+      const mapaVistos = new Set();
+
+      ordens.forEach(o => {
+        const nome = (o.nome || (o.dados && o.dados.nome) || '').trim();
+        const osNum = (o.numero || (o.dados && o.dados.numero) || '').trim();
+        const chave = (nome + '_' + osNum).toLowerCase();
+        if (nome && !mapaVistos.has(chave)) {
+          mapaVistos.add(chave);
+          clientes.push({ nome, os: osNum });
+        }
+      });
+
+      if (typeof clienteSessao !== 'undefined' && clienteSessao && clienteSessao.nome) {
+        const ch = (clienteSessao.nome + '_' + (clienteSessao.os || '')).toLowerCase();
+        if (!mapaVistos.has(ch)) {
+          mapaVistos.add(ch);
+          clientes.unshift({ nome: clienteSessao.nome, os: clienteSessao.os || '' });
+        }
+      }
+
+      let html = '<option value="" style="background:#181a2c;color:#fff;">Selecione o Cliente / O.S.</option>';
+      clientes.forEach(c => {
+        const val = JSON.stringify({ nome: c.nome, os: c.os });
+        html += `<option value='${esc(val)}' style="background:#181a2c;color:#fff;">👤 ${esc(c.nome)} ${c.os ? '(' + esc(c.os) + ')' : ''}</option>`;
+      });
+      sel.innerHTML = html;
+    }
+
+    function aoSelecionarClienteMsgPonto(val) {
+      if (!val) return;
+      try {
+        const dados = JSON.parse(val);
+        const inpCli = document.getElementById('msg-ponto-cliente');
+        const inpOs = document.getElementById('msg-ponto-os');
+        if (inpCli) inpCli.value = dados.nome || '';
+        if (inpOs) inpOs.value = (dados.os || '').replace(/\D/g, '') || dados.os || '';
+      } catch(_) {}
+    }
+
     function previewMsgPontoMidias(input) {
       if (!input || !input.files || !input.files.length) return;
       const files = Array.from(input.files);
@@ -9629,11 +9712,25 @@ function baterPontoNoCliente(tipo) {
     }
 
     function enviarMsgPonto() {
+      const selCli = document.getElementById('msg-ponto-cliente-select');
+      const boxMan = document.getElementById('box-manual-cliente-msg-ponto');
       const inpCli = document.getElementById('msg-ponto-cliente');
       const inpOs = document.getElementById('msg-ponto-os');
       const inpTxt = document.getElementById('msg-ponto-texto');
       
-      const cliente = inpCli ? inpCli.value.trim() : '';
+      let cliente = '';
+      if (boxMan && boxMan.style.display !== 'none') {
+        cliente = inpCli ? inpCli.value.trim() : '';
+      } else if (selCli && selCli.value) {
+        try {
+          const d = JSON.parse(selCli.value);
+          cliente = d.nome || '';
+        } catch(_) {
+          cliente = selCli.value;
+        }
+      }
+      if (!cliente && inpCli) cliente = inpCli.value.trim();
+      
       const os = inpOs ? inpOs.value.trim() : '';
       const texto = inpTxt ? inpTxt.value.trim() : '';
 
