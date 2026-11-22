@@ -1,5 +1,5 @@
-// Service Worker PWA – SD Móveis Projetados v9.5.54 (Visualização direta sem disparar janela de impressão automaticamente)
-const CACHE_NAME = 'sdmoveisprojetados-v9.5.54';
+// Service Worker PWA – SD Móveis Projetados v9.5.55 (Geração e envio direto de arquivo PDF nativo)
+const CACHE_NAME = 'sdmoveisprojetados-v9.5.55';
 const ASSETS = [
   '/',
   '/index.html',
