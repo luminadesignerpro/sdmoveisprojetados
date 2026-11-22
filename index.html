@@ -5813,17 +5813,25 @@
 
     <!-- Ações / Botões -->
     <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px;">
-      <!-- Botões WhatsApp: Enviar Dados do Funcionário -->
-      <div style="background:rgba(37,211,102,0.08);border:1.5px solid rgba(37,211,102,0.3);border-radius:12px;padding:10px 14px;display:flex;flex-direction:column;gap:8px;">
-        <div style="font-size:11.5px;font-weight:700;color:#25d366;display:flex;align-items:center;gap:5px;">
-          <span>📲</span> <span>Enviar via WhatsApp (Sem valores financeiros)</span>
+      <!-- Botões: Enviar em PDF (Com CPF, Sem Telefone, Sem Valores) -->
+      <div style="background:rgba(234,179,8,0.08);border:1.5px solid rgba(234,179,8,0.3);border-radius:12px;padding:10px 14px;display:flex;flex-direction:column;gap:8px;">
+        <div style="font-size:11.5px;font-weight:700;color:#facc15;display:flex;align-items:center;justify-content:space-between;">
+          <span style="display:flex;align-items:center;gap:5px;">📄 <span>Enviar em PDF (Com CPF • Sem Telefone • Sem Valores)</span></span>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-          <button type="button" onclick="enviarFuncionarioWhatsApp()" style="background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;font-size:12px;font-weight:800;padding:9px 10px;border-radius:10px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;box-shadow:0 3px 10px rgba(37,211,102,0.35);">
-            <span>👤</span> <span>Este Funcionário</span>
+          <button type="button" onclick="enviarFuncionarioPdf()" style="background:linear-gradient(135deg,#eab308,#ca8a04);color:#000;font-size:12px;font-weight:900;padding:10px 8px;border-radius:10px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 3px 10px rgba(234,179,8,0.35);">
+            <span>📄</span> <span>Este Funcionário (PDF)</span>
           </button>
-          <button type="button" onclick="enviarTodosFuncionariosWhatsApp()" style="background:linear-gradient(135deg,#059669,#047857);color:#fff;font-size:12px;font-weight:800;padding:9px 10px;border-radius:10px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;box-shadow:0 3px 10px rgba(5,150,105,0.35);">
-            <span>👥</span> <span>Todos os Funcionários</span>
+          <button type="button" onclick="enviarTodosFuncionariosPdf()" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#000;font-size:12px;font-weight:900;padding:10px 8px;border-radius:10px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 3px 10px rgba(245,158,11,0.35);">
+            <span>📑</span> <span>Todos Funcionários (PDF)</span>
+          </button>
+        </div>
+        <div style="display:flex;justify-content:center;gap:14px;margin-top:2px;">
+          <button type="button" onclick="enviarFuncionarioWhatsApp()" style="background:none;border:none;color:#25d366;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px;text-decoration:underline;">
+            <span>📲 WhatsApp (Este)</span>
+          </button>
+          <button type="button" onclick="enviarTodosFuncionariosWhatsApp()" style="background:none;border:none;color:#25d366;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px;text-decoration:underline;">
+            <span>📲 WhatsApp (Todos)</span>
           </button>
         </div>
       </div>
@@ -46182,7 +46190,267 @@ function salvarBatidaPontoModal() {
   else alert(msgSucesso);
 }
 
-// ── WhatsApp: enviar dados do funcionário SEM valores financeiros ──
+// ── PDF & WhatsApp: enviar dados do funcionário com CPF, SEM telefone e SEM valores ──
+function _sanitizarTextoPdf(str) {
+  return (str || '').toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function enviarFuncionarioPdf() {
+  var selFunc = document.getElementById('rbp-funcionario');
+  var nome = selFunc ? selFunc.value.trim() : '';
+  if (!nome) {
+    if (typeof mostrarToast === 'function') mostrarToast('⚠️ Selecione um funcionário primeiro!', 'aviso');
+    else alert('Selecione um funcionário primeiro!');
+    return;
+  }
+  var cfg = getDadosConfigFuncionario(nome) || {};
+  var cargo = cfg.cargo || 'Não informado';
+  var cpf = cfg.cpf || 'Não informado';
+  var endereco = cfg.endereco || 'Não informado';
+  var pix = cfg.pix || 'Não informado';
+  var dataHoje = new Date().toLocaleDateString('pt-BR');
+  var horaAgora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+  var w = window.open('', '_blank');
+  if (!w) {
+    alert('Pop-up bloqueado. Por favor, permita os pop-ups para gerar e imprimir o PDF.');
+    return;
+  }
+
+  var html = '<!DOCTYPE html>' +
+    '<html lang="pt-BR">' +
+    '<head>' +
+    '<meta charset="UTF-8">' +
+    '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+    '<title>Ficha Cadastral - ' + _sanitizarTextoPdf(nome) + '</title>' +
+    '<style>' +
+    '  @page { size: A4 portrait; margin: 12mm; }' +
+    '  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }' +
+    '  body { background: #f8fafc; color: #0f172a; padding: 24px; }' +
+    '  .no-print { display: flex; gap: 10px; margin-bottom: 20px; justify-content: flex-end; }' +
+    '  .btn { border: none; padding: 10px 18px; border-radius: 8px; font-weight: 800; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }' +
+    '  .btn-print { background: #2563eb; color: #fff; }' +
+    '  .btn-wa { background: #16a34a; color: #fff; }' +
+    '  .btn-close { background: #64748b; color: #fff; }' +
+    '  .sheet { max-width: 760px; margin: 0 auto; background: #fff; border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 32px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }' +
+    '  .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ca8a04; padding-bottom: 16px; margin-bottom: 24px; }' +
+    '  .brand-title { font-size: 20px; font-weight: 900; color: #0f172a; letter-spacing: 0.5px; }' +
+    '  .brand-sub { font-size: 12px; color: #ca8a04; font-weight: 800; text-transform: uppercase; margin-top: 2px; }' +
+    '  .doc-title { text-align: right; font-size: 14px; font-weight: 800; color: #475569; }' +
+    '  .doc-date { text-align: right; font-size: 11.5px; color: #94a3b8; margin-top: 2px; }' +
+    '  .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 20px; }' +
+    '  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }' +
+    '  .field { display: flex; flex-direction: column; gap: 4px; }' +
+    '  .field.full { grid-column: span 2; }' +
+    '  .label { font-size: 11px; text-transform: uppercase; font-weight: 800; color: #64748b; letter-spacing: 0.5px; }' +
+    '  .val { font-size: 15px; font-weight: 700; color: #0f172a; word-break: break-word; }' +
+    '  .val-highlight { color: #1e3a8a; font-size: 17px; }' +
+    '  .notice { font-size: 11px; color: #94a3b8; font-style: italic; margin-top: 20px; text-align: center; border-top: 1px dashed #cbd5e1; padding-top: 14px; }' +
+    '  @media print {' +
+    '    body { background: #fff; padding: 0; }' +
+    '    .no-print { display: none !important; }' +
+    '    .sheet { border: none; box-shadow: none; padding: 0; max-width: 100%; }' +
+    '  }' +
+    '</style>' +
+    '</head>' +
+    '<body>' +
+    '<div class="no-print">' +
+    '  <button class="btn btn-print" onclick="window.print()">🖨️ Salvar em PDF / Imprimir</button>' +
+    '  <button class="btn btn-wa" onclick="compartilharNoWhatsApp()">📲 Compartilhar WhatsApp</button>' +
+    '  <button class="btn btn-close" onclick="window.close()">✕ Fechar</button>' +
+    '</div>' +
+    '<div class="sheet">' +
+    '  <div class="header">' +
+    '    <div>' +
+    '      <div class="brand-title">SD MÓVEIS PROJETADOS</div>' +
+    '      <div class="brand-sub">Ficha Cadastral do Colaborador</div>' +
+    '    </div>' +
+    '    <div>' +
+    '      <div class="doc-title">DOCUMENTO OFICIAL</div>' +
+    '      <div class="doc-date">Emissão: ' + dataHoje + ' às ' + horaAgora + '</div>' +
+    '    </div>' +
+    '  </div>' +
+    '  <div class="card">' +
+    '    <div class="grid">' +
+    '      <div class="field full">' +
+    '        <div class="label">Nome Completo</div>' +
+    '        <div class="val val-highlight">' + _sanitizarTextoPdf(nome) + '</div>' +
+    '      </div>' +
+    '      <div class="field">' +
+    '        <div class="label">Cargo / Função</div>' +
+    '        <div class="val">' + _sanitizarTextoPdf(cargo) + '</div>' +
+    '      </div>' +
+    '      <div class="field">' +
+    '        <div class="label">🪪 CPF</div>' +
+    '        <div class="val">' + _sanitizarTextoPdf(cpf) + '</div>' +
+    '      </div>' +
+    '      <div class="field full">' +
+    '        <div class="label">📍 Endereço Completo</div>' +
+    '        <div class="val">' + _sanitizarTextoPdf(endereco) + '</div>' +
+    '      </div>' +
+    '      <div class="field full">' +
+    '        <div class="label">🔑 Chave PIX / Dados de Pagamento</div>' +
+    '        <div class="val">' + _sanitizarTextoPdf(pix) + '</div>' +
+    '      </div>' +
+    '    </div>' +
+    '  </div>' +
+    '  <div class="notice">Documento oficial gerado sem exibição de valores financeiros e sem número de telefone pessoal para resguardo de privacidade. — SD Móveis Projetados</div>' +
+    '</div>' +
+    '<script>' +
+    'function compartilharNoWhatsApp() {' +
+    '  var texto = encodeURIComponent("👤 *FICHA DO FUNCIONÁRIO (PDF)*\\n\\n" +' +
+    '    "*Nome:* ' + encodeURIComponent(nome) + '\\n" +' +
+    '    "*Cargo:* ' + encodeURIComponent(cargo) + '\\n" +' +
+    '    "*CPF:* ' + encodeURIComponent(cpf) + '\\n" +' +
+    '    "*Endereço:* ' + encodeURIComponent(endereco) + '\\n" +' +
+    '    "*Chave PIX:* ' + encodeURIComponent(pix) + '\\n\\n" +' +
+    '    "_SD Móveis Projetados_");' +
+    '  window.open("https://wa.me/?text=" + texto, "_blank");' +
+    '}' +
+    'setTimeout(function(){ window.print(); }, 400);' +
+    '<\/script>' +
+    '</body>' +
+    '</html>';
+
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+}
+
+function enviarTodosFuncionariosPdf() {
+  var configs = {};
+  try {
+    configs = JSON.parse(localStorage.getItem('sdv_dados_funcionarios_config') || '{}');
+  } catch(_) {}
+
+  var nomes = Object.keys(configs);
+  if (nomes.length === 0) {
+    if (typeof mostrarToast === 'function') mostrarToast('⚠️ Nenhum funcionário configurado ainda.', 'aviso');
+    else alert('Nenhum funcionário configurado ainda.');
+    return;
+  }
+
+  var dataHoje = new Date().toLocaleDateString('pt-BR');
+  var horaAgora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+  var linhasHtml = nomes.map(function(key, idx) {
+    var c = configs[key] || {};
+    var n = c.nome || key;
+    var cargo = c.cargo || '—';
+    var cpf = c.cpf || '—';
+    var endereco = c.endereco || '—';
+    var pix = c.pix || '—';
+    return '<tr>' +
+      '<td style="padding:10px 8px;border-bottom:1px solid #e2e8f0;text-align:center;font-weight:700;">' + (idx + 1) + '</td>' +
+      '<td style="padding:10px 8px;border-bottom:1px solid #e2e8f0;font-weight:800;color:#0f172a;">' + _sanitizarTextoPdf(n) + '</td>' +
+      '<td style="padding:10px 8px;border-bottom:1px solid #e2e8f0;color:#334155;">' + _sanitizarTextoPdf(cargo) + '</td>' +
+      '<td style="padding:10px 8px;border-bottom:1px solid #e2e8f0;font-weight:700;color:#1e3a8a;">' + _sanitizarTextoPdf(cpf) + '</td>' +
+      '<td style="padding:10px 8px;border-bottom:1px solid #e2e8f0;color:#475569;font-size:12px;">' + _sanitizarTextoPdf(endereco) + '</td>' +
+      '<td style="padding:10px 8px;border-bottom:1px solid #e2e8f0;color:#334155;font-size:12px;">' + _sanitizarTextoPdf(pix) + '</td>' +
+      '</tr>';
+  }).join('');
+
+  var w = window.open('', '_blank');
+  if (!w) {
+    alert('Pop-up bloqueado. Por favor, permita os pop-ups para gerar e imprimir o PDF.');
+    return;
+  }
+
+  var textoWaLines = ['👥 *RELAÇÃO DE FUNCIONÁRIOS (PDF)*', ''];
+  nomes.forEach(function(k, i) {
+    var c = configs[k] || {};
+    textoWaLines.push('*' + (i + 1) + '. ' + (c.nome || k) + '*');
+    if (c.cargo) textoWaLines.push('   Cargo: ' + c.cargo);
+    if (c.cpf) textoWaLines.push('   CPF: ' + c.cpf);
+    if (c.endereco) textoWaLines.push('   Endereço: ' + c.endereco);
+    if (c.pix) textoWaLines.push('   PIX: ' + c.pix);
+    textoWaLines.push('');
+  });
+  textoWaLines.push('_SD Móveis Projetados_');
+  var textoWaJson = JSON.stringify(textoWaLines.join('\n'));
+
+  var html = '<!DOCTYPE html>' +
+    '<html lang="pt-BR">' +
+    '<head>' +
+    '<meta charset="UTF-8">' +
+    '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+    '<title>Relação de Funcionários - SD Móveis Projetados</title>' +
+    '<style>' +
+    '  @page { size: A4 landscape; margin: 10mm; }' +
+    '  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }' +
+    '  body { background: #f8fafc; color: #0f172a; padding: 20px; }' +
+    '  .no-print { display: flex; gap: 10px; margin-bottom: 16px; justify-content: flex-end; }' +
+    '  .btn { border: none; padding: 10px 18px; border-radius: 8px; font-weight: 800; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }' +
+    '  .btn-print { background: #2563eb; color: #fff; }' +
+    '  .btn-wa { background: #16a34a; color: #fff; }' +
+    '  .btn-close { background: #64748b; color: #fff; }' +
+    '  .sheet { max-width: 1060px; margin: 0 auto; background: #fff; border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }' +
+    '  .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ca8a04; padding-bottom: 14px; margin-bottom: 18px; }' +
+    '  .brand-title { font-size: 20px; font-weight: 900; color: #0f172a; }' +
+    '  .brand-sub { font-size: 12px; color: #ca8a04; font-weight: 800; text-transform: uppercase; margin-top: 2px; }' +
+    '  .doc-title { text-align: right; font-size: 13px; font-weight: 800; color: #475569; }' +
+    '  .doc-date { text-align: right; font-size: 11.5px; color: #94a3b8; margin-top: 2px; }' +
+    '  table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }' +
+    '  th { background: #0f172a; color: #fff; text-align: left; padding: 10px 8px; font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }' +
+    '  tr:nth-child(even) { background: #f8fafc; }' +
+    '  .notice { font-size: 11px; color: #94a3b8; font-style: italic; margin-top: 18px; text-align: center; border-top: 1px dashed #cbd5e1; padding-top: 12px; }' +
+    '  @media print {' +
+    '    body { background: #fff; padding: 0; }' +
+    '    .no-print { display: none !important; }' +
+    '    .sheet { border: none; box-shadow: none; padding: 0; max-width: 100%; }' +
+    '  }' +
+    '</style>' +
+    '</head>' +
+    '<body>' +
+    '<div class="no-print">' +
+    '  <button class="btn btn-print" onclick="window.print()">🖨️ Salvar em PDF / Imprimir</button>' +
+    '  <button class="btn btn-wa" onclick="compartilharNoWhatsApp()">📲 Compartilhar WhatsApp</button>' +
+    '  <button class="btn btn-close" onclick="window.close()">✕ Fechar</button>' +
+    '</div>' +
+    '<div class="sheet">' +
+    '  <div class="header">' +
+    '    <div>' +
+    '      <div class="brand-title">SD MÓVEIS PROJETADOS</div>' +
+    '      <div class="brand-sub">Relação Geral de Colaboradores (' + nomes.length + ' Cadastrados)</div>' +
+    '    </div>' +
+    '    <div>' +
+    '      <div class="doc-title">DOCUMENTO OFICIAL</div>' +
+    '      <div class="doc-date">Emissão: ' + dataHoje + ' às ' + horaAgora + '</div>' +
+    '    </div>' +
+    '  </div>' +
+    '  <table>' +
+    '    <thead>' +
+    '      <tr>' +
+    '        <th style="text-align:center;width:40px;">#</th>' +
+    '        <th>Nome</th>' +
+    '        <th>Cargo</th>' +
+    '        <th>CPF</th>' +
+    '        <th>Endereço</th>' +
+    '        <th>Chave PIX</th>' +
+    '      </tr>' +
+    '    </thead>' +
+    '    <tbody>' +
+    linhasHtml +
+    '    </tbody>' +
+    '  </table>' +
+    '  <div class="notice">Documento oficial gerado sem exibição de valores financeiros e sem telefones pessoais para resguardo de privacidade. — SD Móveis Projetados</div>' +
+    '</div>' +
+    '<script>' +
+    'function compartilharNoWhatsApp() {' +
+    '  var texto = ' + textoWaJson + ';' +
+    '  window.open("https://wa.me/?text=" + encodeURIComponent(texto), "_blank");' +
+    '}' +
+    'setTimeout(function(){ window.print(); }, 400);' +
+    '<\/script>' +
+    '</body>' +
+    '</html>';
+
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+}
+
+// ── WhatsApp: enviar dados do funcionário com CPF, SEM telefone e SEM valores financeiros ──
 function enviarFuncionarioWhatsApp() {
   var selFunc = document.getElementById('rbp-funcionario');
   var nome = selFunc ? selFunc.value.trim() : '';
@@ -46191,7 +46459,6 @@ function enviarFuncionarioWhatsApp() {
     return;
   }
   var cfg = getDadosConfigFuncionario(nome);
-  var tel = cfg ? (cfg.telefone || '').replace(/\D/g, '') : '';
 
   var linhas = ['👤 *DADOS DO FUNCIONÁRIO*', ''];
   linhas.push('*Nome:* ' + nome);
@@ -46199,14 +46466,13 @@ function enviarFuncionarioWhatsApp() {
     if (cfg.cargo) linhas.push('*Cargo:* ' + cfg.cargo);
     if (cfg.cpf) linhas.push('*CPF:* ' + cfg.cpf);
     if (cfg.endereco) linhas.push('*Endereço:* ' + cfg.endereco);
-    if (cfg.telefone) linhas.push('*WhatsApp:* ' + cfg.telefone);
     if (cfg.pix) linhas.push('*Chave PIX:* ' + cfg.pix);
   }
   linhas.push('');
   linhas.push('_SD Móveis Projetados_');
 
   var msg = encodeURIComponent(linhas.join('\n'));
-  var url = tel ? ('https://wa.me/55' + tel + '?text=' + msg) : ('https://wa.me/?text=' + msg);
+  var url = 'https://wa.me/?text=' + msg;
   window.open(url, '_blank');
 }
 
@@ -46229,7 +46495,6 @@ function enviarTodosFuncionariosWhatsApp() {
     if (c.cargo) linhas.push('   Cargo: ' + c.cargo);
     if (c.cpf) linhas.push('   CPF: ' + c.cpf);
     if (c.endereco) linhas.push('   Endereço: ' + c.endereco);
-    if (c.telefone) linhas.push('   WhatsApp: ' + c.telefone);
     if (c.pix) linhas.push('   PIX: ' + c.pix);
     linhas.push('');
   });
@@ -46253,6 +46518,8 @@ window.salvarBatidaPontoModal = salvarBatidaPontoModal;
 window.abrirModalConfigFuncionarioPonto = abrirModalConfigFuncionarioPonto;
 window.fecharModalConfigFuncionarioPonto = fecharModalConfigFuncionarioPonto;
 window.salvarConfigFuncionarioPonto = salvarConfigFuncionarioPonto;
+window.enviarFuncionarioPdf = enviarFuncionarioPdf;
+window.enviarTodosFuncionariosPdf = enviarTodosFuncionariosPdf;
 window.enviarFuncionarioWhatsApp = enviarFuncionarioWhatsApp;
 window.enviarTodosFuncionariosWhatsApp = enviarTodosFuncionariosWhatsApp;
 
