@@ -1992,13 +1992,13 @@
     <button id="tab-produtos" class="tab" data-tab="produtos" onclick="abrirAbaProdutosMenu()"><span>📦</span><span>Produtos/Serviços</span></button>
     <button id="tab-empresa" class="tab" data-tab="empresa" onclick="solicitarAcessoDadosEmpresa()"><span>🏢</span><span>Dados Empresa</span></button>
     <button id="tab-clientes" class="tab" data-tab="clientes" onclick="goTab('clientes')"><span>👤</span><span>Clientes</span></button>
-    <button id="tab-ponto" class="tab" data-tab="ponto" onclick="goTab('ponto')"><span>👷</span><span>Equipe & Ponto</span></button>
+    <button id="tab-ponto" class="tab" data-tab="ponto" onclick="goTab('ponto')" title="Ponto do Funcionário"><span>👷</span><span>Ponto do Funcionário</span></button>
     <button type="button" id="tab-bater-ponto" class="tab" onclick="abrirModalRegistrarBatidaPonto()" title="Registrar Batida de Ponto"><span>🕒</span><span>Bater Ponto</span></button>
     <button id="tab-camera" class="tab" data-tab="camera" onclick="abrirOpcoesCamera(event)"><span>📷</span><span>Câmera</span></button>
     <button id="tab-contratos" class="tab" data-tab="contratos" onclick="goTab('contratos')"><span>📄</span><span>Contratos</span></button>
     <button id="tab-usuarios" class="tab" data-tab="usuarios" onclick="goTab('usuarios')"><span>👥</span><span>Usuários</span></button>
     <button type="button" id="tab-portal-cliente" class="tab" onclick="abrirPortalCliente()" title="Acessar Portal do Cliente"><span>🌐</span><span>Portal Cliente</span></button>
-    <button type="button" id="tab-portal-funcionario" class="tab" onclick="abrirPortalFuncionario()" title="Acessar Portal do Funcionário"><span>👷</span><span>Portal Equipe</span></button>
+    <button type="button" id="tab-portal-funcionario" class="tab" onclick="abrirPortalFuncionario()" title="Acessar Portal do Ponto"><span>🌐</span><span>Portal do Ponto</span></button>
     <button type="button" id="tab-cronograma" class="tab" data-tab="cronograma" onclick="goTab('cronograma')" title="Cronograma e Pedido de Material"><span>📅</span><span>Cronograma</span></button>
     <button type="button" id="tab-relatorio" class="tab" data-tab="relatorio" onclick="goTab('relatorio')" title="Relatório Financeiro"><span>📊</span><span>Relatório</span></button>
     <button type="button" id="tab-ferramentas" class="tab" data-tab="ferramentas" onclick="goTab('ferramentas')" title="Ferramentas de Obra"><span>🔧</span><span>Ferramentas</span></button>
@@ -5598,58 +5598,58 @@
   </div>
 </div>
 
-<!-- ══ MODAL REGISTRAR BATIDA DE PONTO (EXEMPLO SEGUNDA IMAGEM) ══ -->
-<div id="modal-registrar-batida-ponto" class="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:999999;align-items:center;justify-content:center;backdrop-filter:blur(5px);padding:14px;box-sizing:border-box;" onclick="if(event.target===this) fecharModalRegistrarBatidaPonto()">
-  <div class="modal-box" onclick="event.stopPropagation()" style="background:#ffffff;color:#1e293b;border-radius:20px;padding:24px 20px;max-width:460px;width:100%;max-height:92vh;overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:0 25px 60px rgba(0,0,0,0.5);display:flex;flex-direction:column;gap:15px;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<!-- ══ MODAL REGISTRAR BATIDA DE PONTO (TEMA ESCURO INTEGRADO) ══ -->
+<div id="modal-registrar-batida-ponto" class="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:999999;align-items:center;justify-content:center;backdrop-filter:blur(8px);padding:14px;box-sizing:border-box;" onclick="if(event.target===this) fecharModalRegistrarBatidaPonto()">
+  <div class="modal-box" onclick="event.stopPropagation()" style="background:#0f1020;color:#ffffff;border:1.5px solid rgba(56,189,248,0.3);border-radius:20px;padding:24px 20px;max-width:460px;width:100%;max-height:92vh;overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:0 25px 60px rgba(0,0,0,0.95), 0 0 30px rgba(56,189,248,0.15);display:flex;flex-direction:column;gap:15px;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
     
     <!-- Cabeçalho com Relógio Azul e Botão Fechar -->
-    <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f1f5f9;padding-bottom:12px;">
-      <div style="display:flex;align-items:center;gap:10px;font-size:18px;font-weight:800;color:#1e293b;">
-        <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;border:2px solid #2563eb;color:#2563eb;font-size:15px;line-height:1;">🕒</span>
+    <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:10px;font-size:18px;font-weight:800;color:#ffffff;">
+        <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;border:2px solid #38bdf8;color:#38bdf8;font-size:15px;line-height:1;">🕒</span>
         <span>Registrar Batida de Ponto</span>
       </div>
-      <button type="button" onclick="fecharModalRegistrarBatidaPonto()" style="background:none;border:none;color:#94a3b8;font-size:20px;cursor:pointer;padding:4px 6px;line-height:1;transition:color 0.15s;" onmouseover="this.style.color='#1e293b'" onmouseout="this.style.color='#94a3b8'">✕</button>
+      <button type="button" onclick="fecharModalRegistrarBatidaPonto()" style="background:none;border:none;color:#94a3b8;font-size:20px;cursor:pointer;padding:4px 6px;line-height:1;transition:color 0.15s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#94a3b8'">✕</button>
     </div>
 
     <!-- Data do Trabalho * -->
     <div style="display:flex;flex-direction:column;gap:5px;">
-      <label style="font-size:13px;font-weight:700;color:#1e293b;">Data do Trabalho *</label>
-      <input type="date" id="rbp-data" style="width:100%;background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:14px;font-weight:600;color:#1e293b;outline:none;box-sizing:border-box;transition:border-color 0.2s;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
+      <label style="font-size:13px;font-weight:700;color:#cbd5e1;">Data do Trabalho *</label>
+      <input type="date" id="rbp-data" style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:12px;padding:11px 14px;font-size:14px;font-weight:600;color:#ffffff;outline:none;box-sizing:border-box;transition:border-color 0.2s;" onfocus="this.style.borderColor='#38bdf8'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'">
     </div>
 
     <!-- Nome do Funcionário * + Botão Adicionar Funcionário -->
     <div style="display:flex;flex-direction:column;gap:5px;">
       <div style="display:flex;align-items:center;justify-content:space-between;">
-        <label style="font-size:13px;font-weight:700;color:#1e293b;">Nome do Funcionário *</label>
-        <button type="button" onclick="toggleMiniNovoFuncionarioPonto()" style="background:none;border:none;color:#2563eb;font-size:12.5px;font-weight:700;cursor:pointer;padding:0;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">+ Novo Funcionário</button>
+        <label style="font-size:13px;font-weight:700;color:#cbd5e1;">Nome do Funcionário *</label>
+        <button type="button" onclick="toggleMiniNovoFuncionarioPonto()" style="background:none;border:none;color:#38bdf8;font-size:12.5px;font-weight:700;cursor:pointer;padding:0;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">+ Novo Funcionário</button>
       </div>
-      <select id="rbp-funcionario" style="width:100%;background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:14px;color:#1e293b;outline:none;box-sizing:border-box;cursor:pointer;font-weight:600;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
-        <option value="">Selecione o Funcionário</option>
+      <select id="rbp-funcionario" style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:12px;padding:11px 14px;font-size:14px;color:#ffffff;outline:none;box-sizing:border-box;cursor:pointer;font-weight:600;" onfocus="this.style.borderColor='#38bdf8'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'">
+        <option value="" style="background:#181a2c;color:#ffffff;">Selecione o Funcionário</option>
       </select>
       
       <!-- Mini form rápido para adicionar funcionário -->
-      <div id="rbp-box-novo-funcionario" style="display:none;background:#f8fafc;border:1.5px dashed #2563eb;border-radius:10px;padding:10px;gap:8px;margin-top:2px;">
+      <div id="rbp-box-novo-funcionario" style="display:none;background:rgba(37,99,235,0.12);border:1.5px dashed #3b82f6;border-radius:10px;padding:10px;gap:8px;margin-top:2px;">
         <div style="display:flex;gap:6px;">
-          <input type="text" id="rbp-inp-novo-funcionario" placeholder="Nome do novo funcionário..." style="flex:1;background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:8px 10px;font-size:12.5px;color:#1e293b;outline:none;">
+          <input type="text" id="rbp-inp-novo-funcionario" placeholder="Nome do novo funcionário..." style="flex:1;background:#181a2c;border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:8px 10px;font-size:12.5px;color:#ffffff;outline:none;">
           <button type="button" onclick="salvarMiniNovoFuncionarioPonto()" style="background:#2563eb;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer;">Adicionar</button>
-          <button type="button" onclick="toggleMiniNovoFuncionarioPonto(false)" style="background:#e2e8f0;color:#64748b;border:none;border-radius:8px;padding:8px 10px;font-size:12px;cursor:pointer;">✕</button>
+          <button type="button" onclick="toggleMiniNovoFuncionarioPonto(false)" style="background:rgba(255,255,255,0.1);color:#cbd5e1;border:none;border-radius:8px;padding:8px 10px;font-size:12px;cursor:pointer;">✕</button>
         </div>
       </div>
     </div>
 
     <!-- Opção de Jornada / Ponto * -->
     <div style="display:flex;flex-direction:column;gap:5px;">
-      <label style="font-size:13px;font-weight:700;color:#1e293b;">Opção de Jornada / Ponto *</label>
+      <label style="font-size:13px;font-weight:700;color:#cbd5e1;">Opção de Jornada / Ponto *</label>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <!-- Dia Trabalhado -->
-        <div id="rbp-card-integral" onclick="selecionarJornadaPonto('integral')" style="padding:13px 10px;border:2px solid #2563eb;background:#eff6ff;border-radius:14px;cursor:pointer;display:flex;flex-direction:column;gap:3px;transition:all 0.15s;text-align:center;">
-          <div style="font-size:14px;font-weight:800;color:#1e3a8a;">Dia Trabalhado</div>
-          <div style="font-size:11.5px;color:#3b82f6;font-weight:500;">Integral (Diária cheia)</div>
+        <div id="rbp-card-integral" onclick="selecionarJornadaPonto('integral')" style="padding:13px 10px;border:2px solid #3b82f6;background:rgba(37,99,235,0.22);border-radius:14px;cursor:pointer;display:flex;flex-direction:column;gap:3px;transition:all 0.15s;text-align:center;">
+          <div style="font-size:14px;font-weight:800;color:#93c5fd;">Dia Trabalhado</div>
+          <div style="font-size:11.5px;color:#60a5fa;font-weight:600;">Integral (Diária cheia)</div>
         </div>
         <!-- Meio Dia -->
-        <div id="rbp-card-meio" onclick="selecionarJornadaPonto('meio_dia')" style="padding:13px 10px;border:1.5px solid #e2e8f0;background:#ffffff;border-radius:14px;cursor:pointer;display:flex;flex-direction:column;gap:3px;transition:all 0.15s;text-align:center;">
-          <div style="font-size:14px;font-weight:800;color:#1e293b;">Meio Dia</div>
-          <div style="font-size:11.5px;color:#64748b;font-weight:500;">Turno Parcial (Manhã/Tarde)</div>
+        <div id="rbp-card-meio" onclick="selecionarJornadaPonto('meio_dia')" style="padding:13px 10px;border:1.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);border-radius:14px;cursor:pointer;display:flex;flex-direction:column;gap:3px;transition:all 0.15s;text-align:center;">
+          <div style="font-size:14px;font-weight:800;color:#cbd5e1;">Meio Dia</div>
+          <div style="font-size:11.5px;color:#94a3b8;font-weight:500;">Turno Parcial (Manhã/Tarde)</div>
         </div>
       </div>
     </div>
@@ -5657,19 +5657,19 @@
     <!-- Cliente que Trabalhou * -->
     <div style="display:flex;flex-direction:column;gap:5px;">
       <div style="display:flex;align-items:center;justify-content:space-between;">
-        <label style="font-size:13px;font-weight:700;color:#1e293b;">Cliente que Trabalhou *</label>
-        <button type="button" onclick="toggleMiniNovoClientePonto()" style="background:none;border:none;color:#2563eb;font-size:12.5px;font-weight:700;cursor:pointer;padding:0;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">+ Novo Cliente</button>
+        <label style="font-size:13px;font-weight:700;color:#cbd5e1;">Cliente que Trabalhou *</label>
+        <button type="button" onclick="toggleMiniNovoClientePonto()" style="background:none;border:none;color:#38bdf8;font-size:12.5px;font-weight:700;cursor:pointer;padding:0;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">+ Novo Cliente</button>
       </div>
-      <select id="rbp-cliente" style="width:100%;background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:14px;color:#1e293b;outline:none;box-sizing:border-box;cursor:pointer;font-weight:600;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
-        <option value="">Selecione o Cliente</option>
+      <select id="rbp-cliente" style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:12px;padding:11px 14px;font-size:14px;color:#ffffff;outline:none;box-sizing:border-box;cursor:pointer;font-weight:600;" onfocus="this.style.borderColor='#38bdf8'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'">
+        <option value="" style="background:#181a2c;color:#ffffff;">Selecione o Cliente</option>
       </select>
       
       <!-- Mini form rápido para adicionar cliente -->
-      <div id="rbp-box-novo-cliente" style="display:none;background:#f8fafc;border:1.5px dashed #2563eb;border-radius:10px;padding:10px;gap:8px;margin-top:2px;">
+      <div id="rbp-box-novo-cliente" style="display:none;background:rgba(37,99,235,0.12);border:1.5px dashed #3b82f6;border-radius:10px;padding:10px;gap:8px;margin-top:2px;">
         <div style="display:flex;gap:6px;">
-          <input type="text" id="rbp-inp-novo-cliente" placeholder="Nome do novo cliente..." style="flex:1;background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:8px 10px;font-size:12.5px;color:#1e293b;outline:none;">
+          <input type="text" id="rbp-inp-novo-cliente" placeholder="Nome do novo cliente..." style="flex:1;background:#181a2c;border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:8px 10px;font-size:12.5px;color:#ffffff;outline:none;">
           <button type="button" onclick="salvarMiniNovoClientePonto()" style="background:#2563eb;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer;">Adicionar</button>
-          <button type="button" onclick="toggleMiniNovoClientePonto(false)" style="background:#e2e8f0;color:#64748b;border:none;border-radius:8px;padding:8px 10px;font-size:12px;cursor:pointer;">✕</button>
+          <button type="button" onclick="toggleMiniNovoClientePonto(false)" style="background:rgba(255,255,255,0.1);color:#cbd5e1;border:none;border-radius:8px;padding:8px 10px;font-size:12px;cursor:pointer;">✕</button>
         </div>
       </div>
     </div>
@@ -5677,27 +5677,27 @@
     <!-- Valor do Ponto (R$) * e Status Pagamento -->
     <div style="display:grid;grid-template-columns:1fr 1.2fr;gap:12px;">
       <div style="display:flex;flex-direction:column;gap:5px;">
-        <label style="font-size:13px;font-weight:700;color:#1e293b;">Valor do Ponto (R$) *</label>
-        <input type="text" id="rbp-valor" value="160,00" style="width:100%;background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:14px;font-weight:700;color:#1e293b;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
+        <label style="font-size:13px;font-weight:700;color:#cbd5e1;">Valor do Ponto (R$) *</label>
+        <input type="text" id="rbp-valor" value="160,00" style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:12px;padding:11px 14px;font-size:14px;font-weight:700;color:#ffffff;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#38bdf8'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'">
       </div>
       <div style="display:flex;flex-direction:column;gap:5px;">
-        <label style="font-size:13px;font-weight:700;color:#1e293b;">Status Pagamento</label>
-        <select id="rbp-status-pagto" style="width:100%;background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 10px;font-size:13px;font-weight:600;color:#1e293b;outline:none;box-sizing:border-box;cursor:pointer;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
-          <option value="Pendente (A receber / Pagar)" selected>Pendente (A receber / Pagar)</option>
-          <option value="Pago">Pago</option>
-          <option value="Adiantamento">Adiantamento</option>
+        <label style="font-size:13px;font-weight:700;color:#cbd5e1;">Status Pagamento</label>
+        <select id="rbp-status-pagto" style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:12px;padding:11px 10px;font-size:13px;font-weight:600;color:#ffffff;outline:none;box-sizing:border-box;cursor:pointer;" onfocus="this.style.borderColor='#38bdf8'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'">
+          <option value="Pendente (A receber / Pagar)" selected style="background:#181a2c;color:#ffffff;">Pendente (A receber / Pagar)</option>
+          <option value="Pago" style="background:#181a2c;color:#ffffff;">Pago</option>
+          <option value="Adiantamento" style="background:#181a2c;color:#ffffff;">Adiantamento</option>
         </select>
       </div>
     </div>
 
     <!-- SEÇÃO: ALMOÇO / REFEIÇÃO (RESTAURANTE, VALOR, FORMA PAGAMENTO, PAGO OU PENDENTE) -->
-    <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;">
+    <div style="background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.1);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;">
       <div style="display:flex;align-items:center;justify-content:space-between;">
-        <div style="font-size:13px;font-weight:800;color:#1e293b;display:flex;align-items:center;gap:6px;">
+        <div style="font-size:13px;font-weight:800;color:#ffffff;display:flex;align-items:center;gap:6px;">
           <span>🍛</span> <span>Almoço / Refeição</span>
         </div>
-        <label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#2563eb;cursor:pointer;">
-          <input type="checkbox" id="rbp-almoco-ativo" onchange="alternarCamposAlmocoPonto(this.checked)" checked style="accent-color:#2563eb;cursor:pointer;width:15px;height:15px;">
+        <label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#38bdf8;cursor:pointer;">
+          <input type="checkbox" id="rbp-almoco-ativo" onchange="alternarCamposAlmocoPonto(this.checked)" checked style="accent-color:#38bdf8;cursor:pointer;width:15px;height:15px;">
           <span>Incluir Almoço</span>
         </label>
       </div>
@@ -5705,31 +5705,31 @@
       <div id="rbp-almoco-campos" style="display:flex;flex-direction:column;gap:10px;">
         <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:10px;">
           <div style="display:flex;flex-direction:column;gap:4px;">
-            <label style="font-size:11.5px;font-weight:700;color:#475569;">Nome do Restaurante</label>
-            <input type="text" id="rbp-almoco-restaurante" placeholder="Ex: Restaurante do Zé..." style="width:100%;background:#ffffff;border:1.5px solid #cbd5e1;border-radius:10px;padding:9px 12px;font-size:13px;color:#1e293b;outline:none;box-sizing:border-box;">
+            <label style="font-size:11.5px;font-weight:700;color:#cbd5e1;">Nome do Restaurante</label>
+            <input type="text" id="rbp-almoco-restaurante" placeholder="Ex: Restaurante do Zé..." style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:9px 12px;font-size:13px;color:#ffffff;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#38bdf8'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'">
           </div>
           <div style="display:flex;flex-direction:column;gap:4px;">
-            <label style="font-size:11.5px;font-weight:700;color:#475569;">Valor do Almoço (R$)</label>
-            <input type="text" id="rbp-almoco-valor" placeholder="25,00" value="25,00" style="width:100%;background:#ffffff;border:1.5px solid #cbd5e1;border-radius:10px;padding:9px 12px;font-size:13px;font-weight:700;color:#1e293b;outline:none;box-sizing:border-box;">
+            <label style="font-size:11.5px;font-weight:700;color:#cbd5e1;">Valor do Almoço (R$)</label>
+            <input type="text" id="rbp-almoco-valor" placeholder="25,00" value="25,00" style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:9px 12px;font-size:13px;font-weight:700;color:#ffffff;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#38bdf8'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'">
           </div>
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
           <div style="display:flex;flex-direction:column;gap:4px;">
-            <label style="font-size:11.5px;font-weight:700;color:#475569;">Status do Almoço</label>
-            <select id="rbp-almoco-status" style="width:100%;background:#ffffff;border:1.5px solid #cbd5e1;border-radius:10px;padding:9px 8px;font-size:12.5px;font-weight:700;color:#1e293b;outline:none;box-sizing:border-box;cursor:pointer;">
-              <option value="Pago" selected>Pago</option>
-              <option value="Pendente">Pendente</option>
+            <label style="font-size:11.5px;font-weight:700;color:#cbd5e1;">Status do Almoço</label>
+            <select id="rbp-almoco-status" style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:9px 8px;font-size:12.5px;font-weight:700;color:#ffffff;outline:none;box-sizing:border-box;cursor:pointer;" onfocus="this.style.borderColor='#38bdf8'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'">
+              <option value="Pago" selected style="background:#181a2c;color:#ffffff;">Pago</option>
+              <option value="Pendente" style="background:#181a2c;color:#ffffff;">Pendente</option>
             </select>
           </div>
           <div style="display:flex;flex-direction:column;gap:4px;">
-            <label style="font-size:11.5px;font-weight:700;color:#475569;">Forma de Pagamento</label>
-            <select id="rbp-almoco-forma" style="width:100%;background:#ffffff;border:1.5px solid #cbd5e1;border-radius:10px;padding:9px 8px;font-size:12.5px;font-weight:600;color:#1e293b;outline:none;box-sizing:border-box;cursor:pointer;">
-              <option value="Pix" selected>Pix</option>
-              <option value="Dinheiro">Dinheiro</option>
-              <option value="Cartão">Cartão</option>
-              <option value="Pago pela Empresa">Pago pela Empresa</option>
-              <option value="A Reembolsar">A Reembolsar</option>
+            <label style="font-size:11.5px;font-weight:700;color:#cbd5e1;">Forma de Pagamento</label>
+            <select id="rbp-almoco-forma" style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:9px 8px;font-size:12.5px;font-weight:600;color:#ffffff;outline:none;box-sizing:border-box;cursor:pointer;" onfocus="this.style.borderColor='#38bdf8'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'">
+              <option value="Pix" selected style="background:#181a2c;color:#ffffff;">Pix</option>
+              <option value="Dinheiro" style="background:#181a2c;color:#ffffff;">Dinheiro</option>
+              <option value="Cartão" style="background:#181a2c;color:#ffffff;">Cartão</option>
+              <option value="Pago pela Empresa" style="background:#181a2c;color:#ffffff;">Pago pela Empresa</option>
+              <option value="A Reembolsar" style="background:#181a2c;color:#ffffff;">A Reembolsar</option>
             </select>
           </div>
         </div>
@@ -5738,14 +5738,14 @@
 
     <!-- Descrição / Tarefas Realizadas -->
     <div style="display:flex;flex-direction:column;gap:5px;">
-      <label style="font-size:13px;font-weight:700;color:#1e293b;">Descrição / Tarefas Realizadas</label>
-      <textarea id="rbp-descricao" rows="2" placeholder="Ex: Reforma elétrica, limpeza pós-obra..." style="width:100%;background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;font-size:13px;color:#1e293b;outline:none;box-sizing:border-box;resize:vertical;font-family:inherit;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'"></textarea>
+      <label style="font-size:13px;font-weight:700;color:#cbd5e1;">Descrição / Tarefas Realizadas</label>
+      <textarea id="rbp-descricao" rows="2" placeholder="Ex: Reforma elétrica, limpeza pós-obra..." style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:12px;padding:11px 14px;font-size:13px;color:#ffffff;outline:none;box-sizing:border-box;resize:vertical;font-family:inherit;" onfocus="this.style.borderColor='#38bdf8'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'"></textarea>
     </div>
 
     <!-- Ações / Botões -->
     <div style="display:flex;justify-content:flex-end;align-items:center;gap:12px;margin-top:4px;">
-      <button type="button" onclick="fecharModalRegistrarBatidaPonto()" style="background:transparent;border:none;color:#64748b;font-size:14px;font-weight:700;padding:10px 16px;cursor:pointer;border-radius:10px;transition:color 0.15s;" onmouseover="this.style.color='#1e293b'" onmouseout="this.style.color='#64748b'">Cancelar</button>
-      <button type="button" onclick="salvarBatidaPontoModal()" style="background:#2563eb;color:#ffffff;font-size:14px;font-weight:800;padding:12px 26px;border-radius:12px;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(37,99,235,0.35);transition:background 0.15s;" onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'">Salvar Ponto</button>
+      <button type="button" onclick="fecharModalRegistrarBatidaPonto()" style="background:transparent;border:none;color:#94a3b8;font-size:14px;font-weight:700;padding:10px 16px;cursor:pointer;border-radius:10px;transition:color 0.15s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#94a3b8'">Cancelar</button>
+      <button type="button" onclick="salvarBatidaPontoModal()" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#ffffff;font-size:14px;font-weight:800;padding:12px 26px;border-radius:12px;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(37,99,235,0.5);transition:all 0.15s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 18px rgba(37,99,235,0.6)'" onmouseout="this.style.transform='none';this.style.boxShadow='0 4px 14px rgba(37,99,235,0.5)'">Salvar Ponto</button>
     </div>
 
   </div>
@@ -31362,6 +31362,16 @@ function restaurarOrdemAbasSalva() {
       if (idxPonto !== -1) saved.splice(idxPonto + 1, 0, 'tab-bater-ponto');
       else saved.push('tab-bater-ponto');
     }
+
+    // Posicionar Ponto do Funcionário na posição de destaque da 3ª imagem (trocando com Portal do Ponto)
+    const idxPortal = saved.indexOf('tab-portal-funcionario');
+    const idxPontoTab = saved.indexOf('tab-ponto');
+    if (idxPortal !== -1 && idxPontoTab !== -1 && idxPortal < idxPontoTab) {
+      saved[idxPortal] = 'tab-ponto';
+      saved[idxPontoTab] = 'tab-portal-funcionario';
+      try { localStorage.setItem('sdm_tabs_custom_order', JSON.stringify(saved)); } catch(_) {}
+    }
+
     saved.forEach(id => {
       const el = document.getElementById(id);
       if (el && el.parentNode === container) {
@@ -31377,9 +31387,10 @@ function restaurarOrdemAbasPadrao() {
   const padrao = [
     'tab-orcamento', 'tab-historico', 'tab-financeiro', 'tab-estoque',
     'tab-detector', 'tab-agenda', 'tab-agenda-pessoal', 'tab-produtos',
-    'tab-empresa', 'tab-clientes', 'tab-ponto', 'tab-bater-ponto', 'tab-camera',
-    'tab-contratos', 'tab-usuarios', 'tab-portal-cliente', 'tab-portal-funcionario',
-    'tab-cronograma', 'tab-relatorio', 'tab-ferramentas', 'btn-central-mensagens'
+    'tab-empresa', 'tab-clientes', 'tab-camera', 'tab-contratos',
+    'tab-usuarios', 'tab-cronograma', 'tab-relatorio', 'tab-ferramentas',
+    'tab-portal-cliente', 'tab-ponto', 'tab-portal-funcionario', 'tab-bater-ponto',
+    'btn-central-mensagens'
   ];
   const container = document.querySelector('.tabs');
   if (container) {
@@ -44757,32 +44768,32 @@ function selecionarJornadaPonto(tipo) {
 
   if (tipo === 'integral') {
     if (cardInt) {
-      cardInt.style.border = '2px solid #2563eb';
-      cardInt.style.background = '#eff6ff';
-      cardInt.children[0].style.color = '#1e3a8a';
-      cardInt.children[1].style.color = '#3b82f6';
+      cardInt.style.border = '2px solid #3b82f6';
+      cardInt.style.background = 'rgba(37,99,235,0.22)';
+      if (cardInt.children[0]) cardInt.children[0].style.color = '#93c5fd';
+      if (cardInt.children[1]) cardInt.children[1].style.color = '#60a5fa';
     }
     if (cardMeio) {
-      cardMeio.style.border = '1.5px solid #e2e8f0';
-      cardMeio.style.background = '#ffffff';
-      cardMeio.children[0].style.color = '#1e293b';
-      cardMeio.children[1].style.color = '#64748b';
+      cardMeio.style.border = '1.5px solid rgba(255,255,255,0.1)';
+      cardMeio.style.background = 'rgba(255,255,255,0.04)';
+      if (cardMeio.children[0]) cardMeio.children[0].style.color = '#cbd5e1';
+      if (cardMeio.children[1]) cardMeio.children[1].style.color = '#94a3b8';
     }
     if (inpValor && (inpValor.value === '80,00' || inpValor.value === '80' || !inpValor.value)) {
       inpValor.value = '160,00';
     }
   } else {
     if (cardInt) {
-      cardInt.style.border = '1.5px solid #e2e8f0';
-      cardInt.style.background = '#ffffff';
-      cardInt.children[0].style.color = '#1e293b';
-      cardInt.children[1].style.color = '#64748b';
+      cardInt.style.border = '1.5px solid rgba(255,255,255,0.1)';
+      cardInt.style.background = 'rgba(255,255,255,0.04)';
+      if (cardInt.children[0]) cardInt.children[0].style.color = '#cbd5e1';
+      if (cardInt.children[1]) cardInt.children[1].style.color = '#94a3b8';
     }
     if (cardMeio) {
-      cardMeio.style.border = '2px solid #2563eb';
-      cardMeio.style.background = '#eff6ff';
-      cardMeio.children[0].style.color = '#1e3a8a';
-      cardMeio.children[1].style.color = '#3b82f6';
+      cardMeio.style.border = '2px solid #3b82f6';
+      cardMeio.style.background = 'rgba(37,99,235,0.22)';
+      if (cardMeio.children[0]) cardMeio.children[0].style.color = '#93c5fd';
+      if (cardMeio.children[1]) cardMeio.children[1].style.color = '#60a5fa';
     }
     if (inpValor && (inpValor.value === '160,00' || inpValor.value === '160' || !inpValor.value)) {
       inpValor.value = '80,00';
@@ -44819,10 +44830,10 @@ function popularFuncionariosModalPonto(selecionarNome) {
   }
 
   var arr = Array.from(nomes).sort();
-  select.innerHTML = '<option value="">Selecione o Funcionário</option>' +
+  select.innerHTML = '<option value="" style="background:#181a2c;color:#ffffff;">Selecione o Funcionário</option>' +
     arr.map(function(n) {
       var sel = (selecionarNome && selecionarNome === n) ? ' selected' : '';
-      return '<option value="' + n + '"' + sel + '>' + n + '</option>';
+      return '<option value="' + n + '"' + sel + ' style="background:#181a2c;color:#ffffff;">' + n + '</option>';
     }).join('');
 }
 
@@ -44892,10 +44903,10 @@ function popularClientesModalPonto(selecionarNome) {
   if (nomeAtual) nomes.add(nomeAtual);
 
   var arr = Array.from(nomes).sort();
-  select.innerHTML = '<option value="">Selecione o Cliente</option>' +
+  select.innerHTML = '<option value="" style="background:#181a2c;color:#ffffff;">Selecione o Cliente</option>' +
     arr.map(function(n) {
       var sel = (selecionarNome && selecionarNome === n) || (!selecionarNome && nomeAtual && nomeAtual === n) ? ' selected' : '';
-      return '<option value="' + n + '"' + sel + '>' + n + '</option>';
+      return '<option value="' + n + '"' + sel + ' style="background:#181a2c;color:#ffffff;">' + n + '</option>';
     }).join('');
 }
 
