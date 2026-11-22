@@ -2612,7 +2612,7 @@
           <button type="button" class="portal-tab" id="btn-tab-mensagens" onclick="mudarAba('mensagens')">
             <span>💬</span> <span>Mensagens</span> <span class="tab-badge" id="badge-msg-count" style="display:none">0</span>
           </button>
-          <button type="button" class="portal-tab" id="btn-tab-ponto" onclick="mudarAba('ponto')">
+          <button type="button" class="portal-tab" id="btn-tab-ponto" onclick="mudarAba('ponto')" style="display:none !important;">
             <span id="tab-fin-icone">👷</span> <span id="tab-fin-rotulo">Ponto do Funcionário</span>
           </button>
           <button type="button" class="portal-tab" id="btn-tab-cronograma" onclick="mudarAba('cronograma')">
@@ -5780,13 +5780,13 @@
         try { renderizarResumoPontoCliente(); } catch(_) {}
         try { renderizarEspelhoPontoCliente(); } catch(_) {}
         try { atualizarMenuJogosVisiveis(); } catch(_) {}
-        try { mudarAba('ponto'); } catch(_) {}
+        try { mudarAba('status'); } catch(_) {}
       } else {
         if (tabRotulo) tabRotulo.textContent = 'Ponto do Funcionário';
         if (tabIcone) tabIcone.textContent = '👷';
         if (contFin) contFin.style.display = 'none';
         if (contPonto) contPonto.style.display = 'block';
-        try { mudarAba('ponto'); } catch(_) {}
+        try { mudarAba('status'); } catch(_) {}
       }
 
       try { carregarDadosStatus(sessao); } catch(_) {}

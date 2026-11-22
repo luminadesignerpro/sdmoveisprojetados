@@ -1,5 +1,5 @@
-// Service Worker PWA – SD Móveis Projetados v9.5.40 (Fix: Exibição de Frete no PDF do Orçamento e Preservação Automática do Valor de Serviço na Edição de O.S.)
-const CACHE_NAME = 'sdmoveisprojetados-v9.5.43';
+// Service Worker PWA – SD Móveis Projetados v9.5.44 (Portal do Ponto, Ponto do Funcionário na barra principal e Modal de Ponto com Tema Escuro)
+const CACHE_NAME = 'sdmoveisprojetados-v9.5.44';
 const ASSETS = [
   '/',
   '/index.html',
