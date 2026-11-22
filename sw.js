@@ -1,5 +1,5 @@
-// Service Worker PWA – SD Móveis Projetados v9.5.51 (CPF e Endereço no funcionário, cliente por texto livre, botões WhatsApp sem valores)
-const CACHE_NAME = 'sdmoveisprojetados-v9.5.51';
+// Service Worker PWA – SD Móveis Projetados v9.5.52 (Envio em PDF com CPF, sem telefone e sem valores financeiros)
+const CACHE_NAME = 'sdmoveisprojetados-v9.5.52';
 const ASSETS = [
   '/',
   '/index.html',
