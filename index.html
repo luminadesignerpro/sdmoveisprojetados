@@ -46195,7 +46195,325 @@ function _sanitizarTextoPdf(str) {
   return (str || '').toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-function enviarFuncionarioPdf() {
+async function gerarPdfFuncionarioBlob(nome) {
+  if (typeof PDFLib === 'undefined') throw new Error('PDFLib não carregado.');
+  const { PDFDocument, StandardFonts, rgb } = PDFLib;
+  const pdfDoc = await PDFDocument.create();
+  const fontReg = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+  const PAGE_W = 595.28;
+  const PAGE_H = 841.89;
+  const MARGIN_X = 40;
+  const CONTENT_W = PAGE_W - (MARGIN_X * 2);
+
+  const DARK = rgb(0.08, 0.10, 0.15);
+  const GOLD = rgb(0.82, 0.65, 0.22);
+  const GRAY = rgb(0.45, 0.49, 0.56);
+  const BORDER = rgb(0.85, 0.88, 0.92);
+  const BOX_BG = rgb(0.97, 0.98, 0.99);
+  const WHITE = rgb(1, 1, 1);
+  const NAVY = rgb(0.12, 0.23, 0.54);
+
+  function clean(t) {
+    if (!t) return '';
+    return String(t)
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^\x20-\x7E]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  const page = pdfDoc.addPage([PAGE_W, PAGE_H]);
+  let y = PAGE_H - 45;
+
+  page.drawRectangle({
+    x: MARGIN_X,
+    y: y - 65,
+    width: CONTENT_W,
+    height: 65,
+    color: rgb(0.06, 0.08, 0.13)
+  });
+  page.drawRectangle({
+    x: MARGIN_X,
+    y: y - 65,
+    width: CONTENT_W,
+    height: 3,
+    color: GOLD
+  });
+
+  page.drawText(clean('SD MOVEIS PROJETADOS'), {
+    x: MARGIN_X + 16,
+    y: y - 24,
+    size: 15,
+    font: fontBold,
+    color: GOLD
+  });
+  page.drawText(clean('FICHA CADASTRAL DO COLABORADOR'), {
+    x: MARGIN_X + 16,
+    y: y - 44,
+    size: 11,
+    font: fontBold,
+    color: WHITE
+  });
+
+  const hoje = new Date().toLocaleDateString('pt-BR');
+  page.drawText(clean('Emissao: ' + hoje), {
+    x: MARGIN_X + CONTENT_W - 130,
+    y: y - 24,
+    size: 9.5,
+    font: fontReg,
+    color: rgb(0.8, 0.85, 0.95)
+  });
+  page.drawText(clean('DOC OFICIAL'), {
+    x: MARGIN_X + CONTENT_W - 130,
+    y: y - 44,
+    size: 9.5,
+    font: fontBold,
+    color: GOLD
+  });
+
+  y -= 95;
+
+  var cfg = getDadosConfigFuncionario(nome) || {};
+  var cargo = cfg.cargo || 'Nao informado';
+  var cpf = cfg.cpf || 'Nao informado';
+  var endereco = cfg.endereco || 'Nao informado';
+  var pix = cfg.pix || 'Nao informado';
+
+  const cardH = 240;
+  page.drawRectangle({
+    x: MARGIN_X,
+    y: y - cardH,
+    width: CONTENT_W,
+    height: cardH,
+    color: BOX_BG,
+    borderColor: BORDER,
+    borderWidth: 1.5
+  });
+
+  let fieldY = y - 28;
+
+  function drawField(label, val, isHighlight) {
+    page.drawText(clean(label), {
+      x: MARGIN_X + 20,
+      y: fieldY,
+      size: 9,
+      font: fontBold,
+      color: GRAY
+    });
+    fieldY -= 15;
+    page.drawText(clean(val), {
+      x: MARGIN_X + 20,
+      y: fieldY,
+      size: isHighlight ? 13 : 11.5,
+      font: fontBold,
+      color: isHighlight ? NAVY : DARK
+    });
+    fieldY -= 24;
+  }
+
+  drawField('NOME COMPLETO:', nome, true);
+  drawField('CARGO / FUNCAO:', cargo, false);
+  drawField('CPF:', cpf, false);
+  drawField('ENDERECO COMPLETO:', endereco, false);
+  drawField('CHAVE PIX / DADOS DE PAGAMENTO:', pix, false);
+
+  y -= (cardH + 25);
+
+  page.drawText(clean('Documento cadastral gerado sem exibicao de valores financeiros e sem'), {
+    x: MARGIN_X + 10,
+    y: y,
+    size: 8.5,
+    font: fontReg,
+    color: GRAY
+  });
+  page.drawText(clean('contato telefonico pessoal para resguardo de privacidade. - SD Moveis Projetados'), {
+    x: MARGIN_X + 10,
+    y: y - 13,
+    size: 8.5,
+    font: fontReg,
+    color: GRAY
+  });
+
+  const pdfBytes = await pdfDoc.save();
+  return new Blob([pdfBytes], { type: 'application/pdf' });
+}
+
+async function gerarPdfTodosFuncionariosBlob() {
+  if (typeof PDFLib === 'undefined') throw new Error('PDFLib não carregado.');
+  const { PDFDocument, StandardFonts, rgb } = PDFLib;
+  const pdfDoc = await PDFDocument.create();
+  const fontReg = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+  const PAGE_W = 595.28;
+  const PAGE_H = 841.89;
+  const MARGIN_X = 30;
+  const CONTENT_W = PAGE_W - (MARGIN_X * 2);
+
+  const DARK = rgb(0.08, 0.10, 0.15);
+  const GOLD = rgb(0.82, 0.65, 0.22);
+  const GRAY = rgb(0.45, 0.49, 0.56);
+  const BORDER = rgb(0.85, 0.88, 0.92);
+  const ROW_ALT = rgb(0.96, 0.97, 0.99);
+  const HEADER_BG = rgb(0.08, 0.11, 0.18);
+  const WHITE = rgb(1, 1, 1);
+  const NAVY = rgb(0.12, 0.23, 0.54);
+
+  function clean(t) {
+    if (!t) return '';
+    return String(t)
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^\x20-\x7E]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  var configs = {};
+  try {
+    configs = JSON.parse(localStorage.getItem('sdv_dados_funcionarios_config') || '{}');
+  } catch(_) {}
+  var nomes = Object.keys(configs);
+
+  let page = pdfDoc.addPage([PAGE_W, PAGE_H]);
+  let y = PAGE_H - 40;
+
+  function drawHeaderBanner() {
+    page.drawRectangle({
+      x: MARGIN_X,
+      y: y - 55,
+      width: CONTENT_W,
+      height: 55,
+      color: HEADER_BG
+    });
+    page.drawRectangle({
+      x: MARGIN_X,
+      y: y - 55,
+      width: CONTENT_W,
+      height: 3,
+      color: GOLD
+    });
+    page.drawText(clean('SD MOVEIS PROJETADOS'), {
+      x: MARGIN_X + 14,
+      y: y - 22,
+      size: 14,
+      font: fontBold,
+      color: GOLD
+    });
+    page.drawText(clean('RELACAO GERAL DE COLABORADORES (' + nomes.length + ' CADASTRADOS)'), {
+      x: MARGIN_X + 14,
+      y: y - 40,
+      size: 10,
+      font: fontBold,
+      color: WHITE
+    });
+    const hoje = new Date().toLocaleDateString('pt-BR');
+    page.drawText(clean('Emissao: ' + hoje), {
+      x: MARGIN_X + CONTENT_W - 110,
+      y: y - 22,
+      size: 9,
+      font: fontReg,
+      color: rgb(0.8, 0.85, 0.95)
+    });
+    y -= 75;
+  }
+
+  drawHeaderBanner();
+
+  const cols = [
+    { label: '#', x: MARGIN_X, w: 25 },
+    { label: 'COLABORADOR', x: MARGIN_X + 25, w: 125 },
+    { label: 'CARGO', x: MARGIN_X + 150, w: 105 },
+    { label: 'CPF', x: MARGIN_X + 255, w: 95 },
+    { label: 'ENDERECO', x: MARGIN_X + 350, w: 100 },
+    { label: 'PIX / PAGTO', x: MARGIN_X + 450, w: 85 }
+  ];
+
+  function drawTableHeader() {
+    page.drawRectangle({
+      x: MARGIN_X,
+      y: y - 22,
+      width: CONTENT_W,
+      height: 22,
+      color: rgb(0.12, 0.15, 0.24)
+    });
+    cols.forEach(c => {
+      page.drawText(clean(c.label), {
+        x: c.x + 4,
+        y: y - 15,
+        size: 8,
+        font: fontBold,
+        color: WHITE
+      });
+    });
+    y -= 22;
+  }
+
+  drawTableHeader();
+
+  nomes.forEach((k, idx) => {
+    if (y < 60) {
+      page = pdfDoc.addPage([PAGE_W, PAGE_H]);
+      y = PAGE_H - 40;
+      drawHeaderBanner();
+      drawTableHeader();
+    }
+
+    const c = configs[k] || {};
+    const n = c.nome || k;
+    const cargo = c.cargo || '-';
+    const cpf = c.cpf || '-';
+    const endereco = c.endereco || '-';
+    const pix = c.pix || '-';
+
+    const rowH = 22;
+    if (idx % 2 === 1) {
+      page.drawRectangle({
+        x: MARGIN_X,
+        y: y - rowH,
+        width: CONTENT_W,
+        height: rowH,
+        color: ROW_ALT
+      });
+    }
+
+    page.drawLine({
+      start: { x: MARGIN_X, y: y - rowH },
+      end: { x: MARGIN_X + CONTENT_W, y: y - rowH },
+      thickness: 0.5,
+      color: BORDER
+    });
+
+    function clip(str, maxChars) {
+      const s = clean(str);
+      return s.length > maxChars ? s.substring(0, maxChars - 2) + '..' : s;
+    }
+
+    page.drawText(String(idx + 1), { x: cols[0].x + 4, y: y - 15, size: 8.5, font: fontBold, color: DARK });
+    page.drawText(clip(n, 22), { x: cols[1].x + 4, y: y - 15, size: 8.5, font: fontBold, color: DARK });
+    page.drawText(clip(cargo, 18), { x: cols[2].x + 4, y: y - 15, size: 8, font: fontReg, color: DARK });
+    page.drawText(clip(cpf, 16), { x: cols[3].x + 4, y: y - 15, size: 8, font: fontBold, color: NAVY });
+    page.drawText(clip(endereco, 18), { x: cols[4].x + 4, y: y - 15, size: 7.5, font: fontReg, color: GRAY });
+    page.drawText(clip(pix, 16), { x: cols[5].x + 4, y: y - 15, size: 7.5, font: fontReg, color: DARK });
+
+    y -= rowH;
+  });
+
+  y -= 20;
+  page.drawText(clean('Documento gerado sem valores financeiros e sem telefones pessoais. - SD Moveis Projetados'), {
+    x: MARGIN_X + 10,
+    y: y,
+    size: 8.5,
+    font: fontReg,
+    color: GRAY
+  });
+
+  const pdfBytes = await pdfDoc.save();
+  return new Blob([pdfBytes], { type: 'application/pdf' });
+}
+
+async function enviarFuncionarioPdf() {
   var selFunc = document.getElementById('rbp-funcionario');
   var nome = selFunc ? selFunc.value.trim() : '';
   if (!nome) {
@@ -46203,129 +46521,48 @@ function enviarFuncionarioPdf() {
     else alert('Selecione um funcionário primeiro!');
     return;
   }
-  var cfg = getDadosConfigFuncionario(nome) || {};
-  var cargo = cfg.cargo || 'Não informado';
-  var cpf = cfg.cpf || 'Não informado';
-  var endereco = cfg.endereco || 'Não informado';
-  var pix = cfg.pix || 'Não informado';
-  var dataHoje = new Date().toLocaleDateString('pt-BR');
-  var horaAgora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  if (typeof mostrarToast === 'function') mostrarToast('⏳ Gerando PDF de ' + nome + '...', 'info');
 
-  var w = window.open('', '_blank');
-  if (!w) {
-    alert('Pop-up bloqueado. Por favor, permita os pop-ups para gerar e imprimir o PDF.');
-    return;
+  try {
+    var blob = await gerarPdfFuncionarioBlob(nome);
+    var nomeArquivo = 'Ficha_' + (nome.replace(/[^a-zA-Z0-9]/g, '_')) + '.pdf';
+    var file = new File([blob], nomeArquivo, { type: 'application/pdf' });
+
+    var compartilhou = false;
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: 'Ficha Cadastral - ' + nome,
+          text: 'Ficha Cadastral em PDF de ' + nome + ' (SD Móveis Projetados)'
+        });
+        compartilhou = true;
+      } catch(e) {
+        if (e.name !== 'AbortError') console.warn(e);
+        else compartilhou = true;
+      }
+    }
+
+    if (!compartilhou) {
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = nomeArquivo;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.open(url, '_blank');
+      setTimeout(function() { URL.revokeObjectURL(url); }, 5000);
+      if (typeof mostrarToast === 'function') mostrarToast('✅ PDF baixado com sucesso!', 'sucesso');
+    }
+  } catch(err) {
+    console.error('Erro ao gerar PDF do funcionário:', err);
+    if (typeof mostrarToast === 'function') mostrarToast('⚠️ ' + (err.message || 'Erro ao gerar PDF'), 'erro');
+    else alert('Erro ao gerar PDF: ' + err.message);
   }
-
-  var html = '<!DOCTYPE html>' +
-    '<html lang="pt-BR">' +
-    '<head>' +
-    '<meta charset="UTF-8">' +
-    '<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">' +
-    '<title>Ficha Cadastral - ' + _sanitizarTextoPdf(nome) + '</title>' +
-    '<style>' +
-    '  @page { size: A4 portrait; margin: 12mm; }' +
-    '  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }' +
-    '  body { background: #f1f5f9; color: #0f172a; padding: 14px; width: 100%; max-width: 100%; overflow-x: hidden; }' +
-    '  .no-print { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; justify-content: center; width: 100%; max-width: 760px; margin-left: auto; margin-right: auto; }' +
-    '  .btn { border: none; padding: 10px 16px; border-radius: 8px; font-weight: 800; font-size: 12.5px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); flex: 1; min-width: 140px; }' +
-    '  .btn-print { background: #2563eb; color: #fff; }' +
-    '  .btn-wa { background: #16a34a; color: #fff; }' +
-    '  .btn-close { background: #64748b; color: #fff; flex: 0 0 auto; min-width: 80px; }' +
-    '  .sheet { width: 100%; max-width: 760px; margin: 0 auto; background: #fff; border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 22px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); box-sizing: border-box; overflow: hidden; }' +
-    '  .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ca8a04; padding-bottom: 14px; margin-bottom: 18px; flex-wrap: wrap; gap: 10px; }' +
-    '  .brand-title { font-size: 19px; font-weight: 900; color: #0f172a; letter-spacing: 0.5px; }' +
-    '  .brand-sub { font-size: 11.5px; color: #ca8a04; font-weight: 800; text-transform: uppercase; margin-top: 2px; }' +
-    '  .doc-title { text-align: right; font-size: 13px; font-weight: 800; color: #475569; }' +
-    '  .doc-date { text-align: right; font-size: 11px; color: #94a3b8; margin-top: 2px; }' +
-    '  .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; margin-bottom: 16px; width: 100%; box-sizing: border-box; }' +
-    '  .grid { display: grid; grid-template-columns: 1fr; gap: 14px; width: 100%; box-sizing: border-box; }' +
-    '  @media (min-width: 600px) {' +
-    '    .grid { grid-template-columns: 1fr 1fr; gap: 16px; }' +
-    '    .field.full { grid-column: span 2; }' +
-    '  }' +
-    '  .field { display: flex; flex-direction: column; gap: 3px; min-width: 0; overflow: hidden; }' +
-    '  .label { font-size: 10.5px; text-transform: uppercase; font-weight: 800; color: #64748b; letter-spacing: 0.5px; }' +
-    '  .val { font-size: 14.5px; font-weight: 700; color: #0f172a; word-break: break-word; overflow-wrap: anywhere; }' +
-    '  .val-highlight { color: #1e3a8a; font-size: 16.5px; }' +
-    '  .notice { font-size: 10.5px; color: #94a3b8; font-style: italic; margin-top: 16px; text-align: center; border-top: 1px dashed #cbd5e1; padding-top: 12px; line-height: 1.4; }' +
-    '  @media (max-width: 599px) {' +
-    '    body { padding: 8px; }' +
-    '    .sheet { padding: 14px; }' +
-    '    .header { flex-direction: column; align-items: flex-start; gap: 4px; }' +
-    '    .doc-title, .doc-date { text-align: left; }' +
-    '  }' +
-    '  @media print {' +
-    '    body { background: #fff; padding: 0; }' +
-    '    .no-print { display: none !important; }' +
-    '    .sheet { border: none; box-shadow: none; padding: 0; max-width: 100%; }' +
-    '  }' +
-    '</style>' +
-    '</head>' +
-    '<body>' +
-    '<div class="no-print">' +
-    '  <button class="btn btn-print" onclick="window.print()">🖨️ Salvar em PDF / Imprimir</button>' +
-    '  <button class="btn btn-wa" onclick="compartilharNoWhatsApp()">📲 Compartilhar WhatsApp</button>' +
-    '  <button class="btn btn-close" onclick="window.close()">✕ Fechar</button>' +
-    '</div>' +
-    '<div class="sheet">' +
-    '  <div class="header">' +
-    '    <div>' +
-    '      <div class="brand-title">SD MÓVEIS PROJETADOS</div>' +
-    '      <div class="brand-sub">Ficha Cadastral do Colaborador</div>' +
-    '    </div>' +
-    '    <div>' +
-    '      <div class="doc-title">DOCUMENTO OFICIAL</div>' +
-    '      <div class="doc-date">Emissão: ' + dataHoje + ' às ' + horaAgora + '</div>' +
-    '    </div>' +
-    '  </div>' +
-    '  <div class="card">' +
-    '    <div class="grid">' +
-    '      <div class="field full">' +
-    '        <div class="label">Nome Completo</div>' +
-    '        <div class="val val-highlight">' + _sanitizarTextoPdf(nome) + '</div>' +
-    '      </div>' +
-    '      <div class="field">' +
-    '        <div class="label">Cargo / Função</div>' +
-    '        <div class="val">' + _sanitizarTextoPdf(cargo) + '</div>' +
-    '      </div>' +
-    '      <div class="field">' +
-    '        <div class="label">🪪 CPF</div>' +
-    '        <div class="val">' + _sanitizarTextoPdf(cpf) + '</div>' +
-    '      </div>' +
-    '      <div class="field full">' +
-    '        <div class="label">📍 Endereço Completo</div>' +
-    '        <div class="val">' + _sanitizarTextoPdf(endereco) + '</div>' +
-    '      </div>' +
-    '      <div class="field full">' +
-    '        <div class="label">🔑 Chave PIX / Dados de Pagamento</div>' +
-    '        <div class="val">' + _sanitizarTextoPdf(pix) + '</div>' +
-    '      </div>' +
-    '    </div>' +
-    '  </div>' +
-    '  <div class="notice">Documento oficial gerado sem exibição de valores financeiros e sem número de telefone pessoal para resguardo de privacidade. — SD Móveis Projetados</div>' +
-    '</div>' +
-    '<script>' +
-    'function compartilharNoWhatsApp() {' +
-    '  var texto = encodeURIComponent("👤 *FICHA DO FUNCIONÁRIO (PDF)*\\n\\n" +' +
-    '    "*Nome:* ' + encodeURIComponent(nome) + '\\n" +' +
-    '    "*Cargo:* ' + encodeURIComponent(cargo) + '\\n" +' +
-    '    "*CPF:* ' + encodeURIComponent(cpf) + '\\n" +' +
-    '    "*Endereço:* ' + encodeURIComponent(endereco) + '\\n" +' +
-    '    "*Chave PIX:* ' + encodeURIComponent(pix) + '\\n\\n" +' +
-    '    "_SD Móveis Projetados_");' +
-    '  window.open("https://wa.me/?text=" + texto, "_blank");' +
-    '}' +
-    '<\/script>' +
-    '</body>' +
-    '</html>';
-
-  w.document.open();
-  w.document.write(html);
-  w.document.close();
 }
 
-function enviarTodosFuncionariosPdf() {
+async function enviarTodosFuncionariosPdf() {
   var configs = {};
   try {
     configs = JSON.parse(localStorage.getItem('sdv_dados_funcionarios_config') || '{}');
@@ -46337,233 +46574,54 @@ function enviarTodosFuncionariosPdf() {
     else alert('Nenhum funcionário configurado ainda.');
     return;
   }
+  if (typeof mostrarToast === 'function') mostrarToast('⏳ Gerando PDF de todos os funcionários...', 'info');
 
-  var dataHoje = new Date().toLocaleDateString('pt-BR');
-  var horaAgora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  try {
+    var blob = await gerarPdfTodosFuncionariosBlob();
+    var nomeArquivo = 'Relacao_Funcionarios_SD_Moveis.pdf';
+    var file = new File([blob], nomeArquivo, { type: 'application/pdf' });
 
-  // Linhas da tabela (para Desktop e Impressão)
-  var linhasTabelaHtml = nomes.map(function(key, idx) {
-    var c = configs[key] || {};
-    var n = c.nome || key;
-    var cargo = c.cargo || '—';
-    var cpf = c.cpf || '—';
-    var endereco = c.endereco || '—';
-    var pix = c.pix || '—';
-    return '<tr>' +
-      '<td style="padding:8px 6px;border-bottom:1px solid #e2e8f0;text-align:center;font-weight:700;">' + (idx + 1) + '</td>' +
-      '<td style="padding:8px 6px;border-bottom:1px solid #e2e8f0;font-weight:800;color:#0f172a;word-break:break-word;">' + _sanitizarTextoPdf(n) + '</td>' +
-      '<td style="padding:8px 6px;border-bottom:1px solid #e2e8f0;color:#334155;word-break:break-word;">' + _sanitizarTextoPdf(cargo) + '</td>' +
-      '<td style="padding:8px 6px;border-bottom:1px solid #e2e8f0;font-weight:700;color:#1e3a8a;word-break:break-word;">' + _sanitizarTextoPdf(cpf) + '</td>' +
-      '<td style="padding:8px 6px;border-bottom:1px solid #e2e8f0;color:#475569;font-size:11.5px;word-break:break-word;">' + _sanitizarTextoPdf(endereco) + '</td>' +
-      '<td style="padding:8px 6px;border-bottom:1px solid #e2e8f0;color:#334155;font-size:11.5px;word-break:break-word;">' + _sanitizarTextoPdf(pix) + '</td>' +
-      '</tr>';
-  }).join('');
+    var compartilhou = false;
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: 'Relação de Funcionários (PDF)',
+          text: 'Relação de Colaboradores em PDF (SD Móveis Projetados)'
+        });
+        compartilhou = true;
+      } catch(e) {
+        if (e.name !== 'AbortError') console.warn(e);
+        else compartilhou = true;
+      }
+    }
 
-  // Cards individuais (perfeito para tela de celular: 100% contido, nada transborda)
-  var cardsMobileHtml = nomes.map(function(key, idx) {
-    var c = configs[key] || {};
-    var n = c.nome || key;
-    var cargo = c.cargo || '—';
-    var cpf = c.cpf || '—';
-    var endereco = c.endereco || '—';
-    var pix = c.pix || '—';
-    return '<div class="func-card-mob">' +
-      '<div class="func-card-mob-header">' +
-        '<div style="font-size:14.5px;font-weight:900;color:#0f172a;">' + (idx + 1) + '. ' + _sanitizarTextoPdf(n) + '</div>' +
-        '<span style="background:rgba(202,138,4,0.12);color:#ca8a04;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:6px;border:1px solid rgba(202,138,4,0.25);">Colaborador</span>' +
-      '</div>' +
-      '<div class="func-card-mob-body">' +
-        '<div><span class="lbl-mob">Cargo:</span> <span class="val-mob">' + _sanitizarTextoPdf(cargo) + '</span></div>' +
-        '<div><span class="lbl-mob">🪪 CPF:</span> <span class="val-mob" style="color:#1e3a8a;font-weight:800;">' + _sanitizarTextoPdf(cpf) + '</span></div>' +
-        '<div><span class="lbl-mob">📍 Endereço:</span> <span class="val-mob">' + _sanitizarTextoPdf(endereco) + '</span></div>' +
-        '<div><span class="lbl-mob">🔑 PIX:</span> <span class="val-mob">' + _sanitizarTextoPdf(pix) + '</span></div>' +
-      '</div>' +
-    '</div>';
-  }).join('');
-
-  var w = window.open('', '_blank');
-  if (!w) {
-    alert('Pop-up bloqueado. Por favor, permita os pop-ups para gerar e imprimir o PDF.');
-    return;
+    if (!compartilhou) {
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = nomeArquivo;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.open(url, '_blank');
+      setTimeout(function() { URL.revokeObjectURL(url); }, 5000);
+      if (typeof mostrarToast === 'function') mostrarToast('✅ PDF baixado com sucesso!', 'sucesso');
+    }
+  } catch(err) {
+    console.error('Erro ao gerar PDF de todos:', err);
+    if (typeof mostrarToast === 'function') mostrarToast('⚠️ ' + (err.message || 'Erro ao gerar PDF'), 'erro');
+    else alert('Erro ao gerar PDF: ' + err.message);
   }
-
-  var textoWaLines = ['👥 *RELAÇÃO DE FUNCIONÁRIOS (PDF)*', ''];
-  nomes.forEach(function(k, i) {
-    var c = configs[k] || {};
-    textoWaLines.push('*' + (i + 1) + '. ' + (c.nome || k) + '*');
-    if (c.cargo) textoWaLines.push('   Cargo: ' + c.cargo);
-    if (c.cpf) textoWaLines.push('   CPF: ' + c.cpf);
-    if (c.endereco) textoWaLines.push('   Endereço: ' + c.endereco);
-    if (c.pix) textoWaLines.push('   PIX: ' + c.pix);
-    textoWaLines.push('');
-  });
-  textoWaLines.push('_SD Móveis Projetados_');
-  var textoWaJson = JSON.stringify(textoWaLines.join('\n'));
-
-  var html = '<!DOCTYPE html>' +
-    '<html lang="pt-BR">' +
-    '<head>' +
-    '<meta charset="UTF-8">' +
-    '<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">' +
-    '<title>Relação de Funcionários - SD Móveis Projetados</title>' +
-    '<style>' +
-    '  @page { size: A4 portrait; margin: 10mm; }' +
-    '  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }' +
-    '  body { background: #f1f5f9; color: #0f172a; padding: 14px; width: 100%; max-width: 100%; overflow-x: hidden; }' +
-    '  .no-print { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; justify-content: center; width: 100%; max-width: 900px; margin-left: auto; margin-right: auto; }' +
-    '  .btn { border: none; padding: 10px 16px; border-radius: 8px; font-weight: 800; font-size: 12.5px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); flex: 1; min-width: 140px; }' +
-    '  .btn-print { background: #2563eb; color: #fff; }' +
-    '  .btn-wa { background: #16a34a; color: #fff; }' +
-    '  .btn-close { background: #64748b; color: #fff; flex: 0 0 auto; min-width: 80px; }' +
-    '  .sheet { width: 100%; max-width: 900px; margin: 0 auto; background: #fff; border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); box-sizing: border-box; overflow: hidden; }' +
-    '  .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ca8a04; padding-bottom: 14px; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }' +
-    '  .brand-title { font-size: 19px; font-weight: 900; color: #0f172a; }' +
-    '  .brand-sub { font-size: 11.5px; color: #ca8a04; font-weight: 800; text-transform: uppercase; margin-top: 2px; }' +
-    '  .doc-title { text-align: right; font-size: 12.5px; font-weight: 800; color: #475569; }' +
-    '  .doc-date { text-align: right; font-size: 11px; color: #94a3b8; margin-top: 2px; }' +
-    '  /* Tabela Responsiva com Scroll Seguro */' +
-    '  .table-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 6px; box-sizing: border-box; }' +
-    '  table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; min-width: 600px; }' +
-    '  th { background: #0f172a; color: #fff; text-align: left; padding: 9px 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }' +
-    '  tr:nth-child(even) { background: #f8fafc; }' +
-    '  /* Cards para Celular */' +
-    '  .mobile-cards-wrap { display: none; flex-direction: column; gap: 10px; width: 100%; margin-top: 8px; }' +
-    '  .func-card-mob { background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 12px 14px; width: 100%; box-sizing: border-box; }' +
-    '  .func-card-mob-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 8px; }' +
-    '  .func-card-mob-body { display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; }' +
-    '  .lbl-mob { font-weight: 800; color: #64748b; font-size: 11px; text-transform: uppercase; margin-right: 4px; }' +
-    '  .val-mob { font-weight: 700; color: #0f172a; word-break: break-word; }' +
-    '  .notice { font-size: 10.5px; color: #94a3b8; font-style: italic; margin-top: 16px; text-align: center; border-top: 1px dashed #cbd5e1; padding-top: 12px; line-height: 1.4; }' +
-    '  /* Regras para Celular: mostra Cards para nunca estourar a tela */' +
-    '  @media screen and (max-width: 680px) {' +
-    '    body { padding: 8px; }' +
-    '    .sheet { padding: 14px; border-radius: 10px; }' +
-    '    .header { flex-direction: column; align-items: flex-start; gap: 4px; }' +
-    '    .doc-title, .doc-date { text-align: left; }' +
-    '    .table-wrap { display: none; }' +
-    '    .mobile-cards-wrap { display: flex; }' +
-    '  }' +
-    '  /* Regras de Impressão e PDF: Sempre imprime a tabela A4 limpa e alinhada */' +
-    '  @media print {' +
-    '    body { background: #fff; padding: 0; width: 100%; }' +
-    '    .no-print { display: none !important; }' +
-    '    .sheet { border: none; box-shadow: none; padding: 0; max-width: 100%; width: 100%; overflow: visible; }' +
-    '    .mobile-cards-wrap { display: none !important; }' +
-    '    .table-wrap { display: block !important; border: none; overflow: visible !important; width: 100% !important; margin: 0; }' +
-    '    table { display: table !important; width: 100% !important; min-width: 100% !important; table-layout: fixed !important; font-size: 11px !important; }' +
-    '    th { background: #0f172a !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 6px 4px !important; font-size: 10px !important; }' +
-    '    td { padding: 6px 4px !important; font-size: 10.5px !important; }' +
-    '    tr:nth-child(even) { background: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }' +
-    '  }' +
-    '</style>' +
-    '</head>' +
-    '<body>' +
-    '<div class="no-print">' +
-    '  <button class="btn btn-print" onclick="window.print()">🖨️ Salvar em PDF / Imprimir</button>' +
-    '  <button class="btn btn-wa" onclick="compartilharNoWhatsApp()">📲 Compartilhar WhatsApp</button>' +
-    '  <button class="btn btn-close" onclick="window.close()">✕ Fechar</button>' +
-    '</div>' +
-    '<div class="sheet">' +
-    '  <div class="header">' +
-    '    <div>' +
-    '      <div class="brand-title">SD MÓVEIS PROJETADOS</div>' +
-    '      <div class="brand-sub">Relação Geral de Colaboradores (' + nomes.length + ' Cadastrados)</div>' +
-    '    </div>' +
-    '    <div>' +
-    '      <div class="doc-title">DOCUMENTO OFICIAL</div>' +
-    '      <div class="doc-date">Emissão: ' + dataHoje + ' às ' + horaAgora + '</div>' +
-    '    </div>' +
-    '  </div>' +
-    '  <!-- Lista em Cards (Celular) -->' +
-    '  <div class="mobile-cards-wrap">' +
-    cardsMobileHtml +
-    '  </div>' +
-    '  <!-- Tabela Estruturada (Desktop e Impressão PDF) -->' +
-    '  <div class="table-wrap">' +
-    '    <table>' +
-    '      <thead>' +
-    '        <tr>' +
-    '          <th style="text-align:center;width:32px;">#</th>' +
-    '          <th style="width:130px;">Nome</th>' +
-    '          <th style="width:115px;">Cargo</th>' +
-    '          <th style="width:110px;">CPF</th>' +
-    '          <th style="width:130px;">Endereço</th>' +
-    '          <th style="width:110px;">Chave PIX</th>' +
-    '        </tr>' +
-    '      </thead>' +
-    '      <tbody>' +
-    linhasTabelaHtml +
-    '      </tbody>' +
-    '    </table>' +
-    '  </div>' +
-    '  <div class="notice">Documento oficial gerado sem exibição de valores financeiros e sem telefones pessoais para resguardo de privacidade. — SD Móveis Projetados</div>' +
-    '</div>' +
-    '<script>' +
-    'function compartilharNoWhatsApp() {' +
-    '  var texto = ' + textoWaJson + ';' +
-    '  window.open("https://wa.me/?text=" + encodeURIComponent(texto), "_blank");' +
-    '}' +
-    '<\/script>' +
-    '</body>' +
-    '</html>';
-
-  w.document.open();
-  w.document.write(html);
-  w.document.close();
 }
 
-// ── WhatsApp: enviar dados do funcionário com CPF, SEM telefone e SEM valores financeiros ──
+// ── WhatsApp: envia diretamente o PDF ──
 function enviarFuncionarioWhatsApp() {
-  var selFunc = document.getElementById('rbp-funcionario');
-  var nome = selFunc ? selFunc.value.trim() : '';
-  if (!nome) {
-    if (typeof mostrarToast === 'function') mostrarToast('⚠️ Selecione um funcionário primeiro!', 'aviso');
-    return;
-  }
-  var cfg = getDadosConfigFuncionario(nome);
-
-  var linhas = ['👤 *DADOS DO FUNCIONÁRIO*', ''];
-  linhas.push('*Nome:* ' + nome);
-  if (cfg) {
-    if (cfg.cargo) linhas.push('*Cargo:* ' + cfg.cargo);
-    if (cfg.cpf) linhas.push('*CPF:* ' + cfg.cpf);
-    if (cfg.endereco) linhas.push('*Endereço:* ' + cfg.endereco);
-    if (cfg.pix) linhas.push('*Chave PIX:* ' + cfg.pix);
-  }
-  linhas.push('');
-  linhas.push('_SD Móveis Projetados_');
-
-  var msg = encodeURIComponent(linhas.join('\n'));
-  var url = 'https://wa.me/?text=' + msg;
-  window.open(url, '_blank');
+  enviarFuncionarioPdf();
 }
 
 function enviarTodosFuncionariosWhatsApp() {
-  var configs = {};
-  try {
-    configs = JSON.parse(localStorage.getItem('sdv_dados_funcionarios_config') || '{}');
-  } catch(_) {}
-
-  var nomes = Object.keys(configs);
-  if (nomes.length === 0) {
-    if (typeof mostrarToast === 'function') mostrarToast('⚠️ Nenhum funcionário configurado ainda.', 'aviso');
-    return;
-  }
-
-  var linhas = ['👥 *LISTA DE FUNCIONÁRIOS*', ''];
-  nomes.forEach(function(key, idx) {
-    var c = configs[key];
-    linhas.push('*' + (idx + 1) + '. ' + (c.nome || key) + '*');
-    if (c.cargo) linhas.push('   Cargo: ' + c.cargo);
-    if (c.cpf) linhas.push('   CPF: ' + c.cpf);
-    if (c.endereco) linhas.push('   Endereço: ' + c.endereco);
-    if (c.pix) linhas.push('   PIX: ' + c.pix);
-    linhas.push('');
-  });
-  linhas.push('_SD Móveis Projetados_');
-
-  var msg = encodeURIComponent(linhas.join('\n'));
-  window.open('https://wa.me/?text=' + msg, '_blank');
+  enviarTodosFuncionariosPdf();
 }
 
 window.abrirModalRegistrarBatidaPonto = abrirModalRegistrarBatidaPonto;
