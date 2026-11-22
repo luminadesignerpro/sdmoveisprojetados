@@ -1,5 +1,5 @@
-// Service Worker PWA – SD Móveis Projetados v9.5.45 (Restauração do Portal Equipe + Novo Portal do Ponto + Ponto do Funcionário)
-const CACHE_NAME = 'sdmoveisprojetados-v9.5.45';
+// Service Worker PWA – SD Móveis Projetados v9.5.46 (Portal do Ponto sem Jogos, Cálculo de Batidas em Meu Setor Financeiro e Fix Meio Dia 80)
+const CACHE_NAME = 'sdmoveisprojetados-v9.5.46';
 const ASSETS = [
   '/',
   '/index.html',

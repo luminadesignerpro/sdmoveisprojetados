@@ -3601,6 +3601,25 @@
 
         </div>
 
+        <!-- ══ EXTRATO DE BATIDAS DE PONTO (DIÁRIAS & MEIO DIA) ══ -->
+        <div style="background:linear-gradient(145deg,#0e111d,#161b2c);border:1.5px solid rgba(56,189,248,0.35);border-radius:18px;padding:20px;margin-bottom:18px;box-shadow:0 10px 30px rgba(0,0,0,0.5);">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:12px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="font-size:24px;">🕒</span>
+              <div>
+                <div style="font-size:16px;font-weight:900;color:#fff;">Extrato de Batidas de Ponto · Diárias</div>
+                <div id="fin-extrato-resumo-sub" style="font-size:11.5px;color:#38bdf8;">Valores calculados das batidas de ponto realizadas</div>
+              </div>
+            </div>
+            <button type="button" onclick="renderizarMeuSetorFinanceiro()" style="background:rgba(56,189,248,0.18);border:1px solid rgba(56,189,248,0.4);color:#38bdf8;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+              🔄 Atualizar Extrato
+            </button>
+          </div>
+          <div id="fin-lista-batidas-container" style="display:flex;flex-direction:column;gap:8px;">
+            <!-- Preenchido dinamicamente via JS -->
+          </div>
+        </div>
+
         <!-- ══ SEÇÃO DE SOLICITAÇÃO DE VALE (ADIANTAMENTO) ══ -->
         <div style="background:linear-gradient(145deg,#0e111d,#161b2c);border:1.5px solid rgba(250,204,21,0.35);border-radius:18px;padding:20px;margin-bottom:18px;box-shadow:0 10px 30px rgba(0,0,0,0.5);">
           
@@ -5781,17 +5800,22 @@
         try { renderizarEspelhoPontoCliente(); } catch(_) {}
         try { atualizarMenuJogosVisiveis(); } catch(_) {}
 
-        // Controle da visibilidade do botão Ponto do Funcionário conforme o portal acessado
+        // Controle da visibilidade dos botões conforme o portal acessado
         const _urlP = new URLSearchParams(window.location.search);
         const _pModo = (_urlP.get('portal') || _urlP.get('modo') || '').toLowerCase();
         const _btnPonto = document.getElementById('btn-tab-ponto');
+        const _btnJogos = document.getElementById('btn-tab-jogos');
+        const _paneJogos = document.getElementById('pane-jogos');
         if (_pModo === 'ponto') {
-          // Portal do Ponto: Mesmos comandos da 2ª imagem MENOS o botão ponto do funcionário
+          // Portal do Ponto: Mesmos comandos da 2ª imagem MENOS o botão ponto do funcionário E MENOS o botão jogos
           if (_btnPonto) _btnPonto.style.display = 'none';
+          if (_btnJogos) _btnJogos.style.display = 'none';
+          if (_paneJogos) _paneJogos.style.display = 'none';
           try { mudarAba('status'); } catch(_) {}
         } else {
-          // Portal Equipe: Todos os comandos incluindo o botão ponto
+          // Portal Equipe: Todos os comandos incluindo o botão ponto e jogos
           if (_btnPonto) _btnPonto.style.display = '';
+          if (_btnJogos) _btnJogos.style.display = '';
           try { mudarAba('status'); } catch(_) {}
         }
       } else {
@@ -5803,10 +5827,15 @@
         const _urlP = new URLSearchParams(window.location.search);
         const _pModo = (_urlP.get('portal') || _urlP.get('modo') || '').toLowerCase();
         const _btnPonto = document.getElementById('btn-tab-ponto');
+        const _btnJogos = document.getElementById('btn-tab-jogos');
+        const _paneJogos = document.getElementById('pane-jogos');
         if (_pModo === 'ponto') {
           if (_btnPonto) _btnPonto.style.display = 'none';
+          if (_btnJogos) _btnJogos.style.display = 'none';
+          if (_paneJogos) _paneJogos.style.display = 'none';
         } else {
           if (_btnPonto) _btnPonto.style.display = '';
+          if (_btnJogos) _btnJogos.style.display = '';
         }
         try { mudarAba('status'); } catch(_) {}
       }
@@ -5837,6 +5866,15 @@ function validarCodigoLiberadoManual() {}
 function checarLiberacaoEmpresaAutomatica() {}
 
 function mudarAba(tab) {
+      // No Portal do Ponto, não permite acessar jogos ou ponto (redireciona para status)
+      try {
+        const _urlCheck = new URLSearchParams(window.location.search);
+        const _pModoCheck = (_urlCheck.get('portal') || _urlCheck.get('modo') || '').toLowerCase();
+        if (_pModoCheck === 'ponto' && (tab === 'jogos' || tab === 'ponto')) {
+          tab = 'status';
+        }
+      } catch(_) {}
+
       // Ao sair da aba cronograma, bloqueia o acesso do Pedido de Material
       if (tab !== 'cronograma') {
         sessionStorage.removeItem('sdv_material_liberado_sessao');
@@ -12719,55 +12757,69 @@ function renderizarMeuSetorFinanceiro() {
 
   var salarioBase = Number(colab.salario || 4500);
   var valorHora = Number(colab.valorHora || (salarioBase / 220));
+  var cNome = ((colab && colab.nome) || (typeof clienteSessao !== 'undefined' && clienteSessao && clienteSessao.nome) || 'Samuel David').toLowerCase().trim();
 
-  var pontos = (typeof carregarPontosDoStorage === 'function') ? carregarPontosDoStorage() : [];
-  var cNome = (colab.nome || '').toLowerCase();
-  var pontosColab = pontos.filter(function(p) {
-    return (p.colaboradorId === colab.id) || (p.colaboradorNome && p.colaboradorNome.toLowerCase() === cNome);
+  // ── Carregar batidas de ponto registradas via Bater Ponto ──
+  var batidasPonto = [];
+  try {
+    batidasPonto = JSON.parse(localStorage.getItem('sdv_batidas_ponto') || '[]');
+    if (!Array.isArray(batidasPonto)) batidasPonto = [];
+  } catch(_) { batidasPonto = []; }
+
+  var batidasColab = batidasPonto.filter(function(b) {
+    if (!b) return false;
+    var func = (b.funcionario || '').toLowerCase().trim();
+    return func === cNome || func.includes(cNome) || cNome.includes(func) || !func;
   });
 
-  var totalMinutosTrab = 0;
-  var totalMinutosNeg = 0;
+  var totalGanhosPontos = 0;
+  var totalPontosPagos = 0;
+  var totalPontosPendentes = 0;
+  var totalAlmoco = 0;
+  var totalAlmocoPago = 0;
+  var totalAlmocoPendente = 0;
+  var countIntegrais = 0;
+  var countMeioDia = 0;
 
-  pontosColab.forEach(function(p) {
-    if (p.minutosTrabalhados) {
-      totalMinutosTrab += Number(p.minutosTrabalhados);
-    } else if (p.tempoTrabalhado && p.tempoTrabalhado.includes('h')) {
-      var match = p.tempoTrabalhado.match(/(\d+)h\s*(\d+)m/);
-      if (match) totalMinutosTrab += Number(match[1]) * 60 + Number(match[2]);
+  batidasColab.forEach(function(b) {
+    var vStr = String(b.valor || '0').replace('R$', '').replace(/\s/g, '').replace('.', '').replace(',', '.');
+    var v = parseFloat(vStr) || 0;
+    totalGanhosPontos += v;
+
+    var statusPagto = (b.statusPagamento || '').toLowerCase();
+    if (statusPagto.includes('pago')) {
+      totalPontosPagos += v;
+    } else {
+      totalPontosPendentes += v;
     }
-    if (p.minutosNegativos) {
-      totalMinutosNeg += Number(p.minutosNegativos);
-    } else if (p.horaNegativa && p.horaNegativa.includes('h')) {
-      var matchNeg = p.horaNegativa.match(/(\d+)h\s*(\d+)m/);
-      if (matchNeg) totalMinutosNeg += Number(matchNeg[1]) * 60 + Number(matchNeg[2]);
+
+    if (b.jornada === 'integral' || (b.jornadaTexto && b.jornadaTexto.toLowerCase().includes('integral'))) {
+      countIntegrais++;
+    } else {
+      countMeioDia++;
+    }
+
+    if (b.almoco && b.almoco.valor) {
+      var almStr = String(b.almoco.valor).replace('R$', '').replace(/\s/g, '').replace('.', '').replace(',', '.');
+      var aVal = parseFloat(almStr) || 0;
+      totalAlmoco += aVal;
+      var almStat = (b.almoco.status || '').toLowerCase();
+      if (almStat.includes('pago')) {
+        totalAlmocoPago += aVal;
+      } else {
+        totalAlmocoPendente += aVal;
+      }
     }
   });
 
-  var hTrab = Math.floor(totalMinutosTrab / 60);
-  var mTrab = totalMinutosTrab % 60;
-  var strHorasTrab = String(hTrab).padStart(2, '0') + 'h ' + String(mTrab).padStart(2, '0') + 'm';
-
-  var hNeg = Math.floor(totalMinutosNeg / 60);
-  var mNeg = totalMinutosNeg % 60;
-  var strHorasNeg = String(hNeg).padStart(2, '0') + 'h ' + String(mNeg).padStart(2, '0') + 'm';
-
-  var valorGanhoHoras = (totalMinutosTrab / 60) * valorHora;
-  var valorDescontoNeg = (totalMinutosNeg / 60) * valorHora;
-
-  var todosVales = carregarValesDoStorage().filter(function(v) {
+  // Vales solicitados pelo colaborador
+  var todosVales = (typeof carregarValesDoStorage === 'function' ? carregarValesDoStorage() : []).filter(function(v) {
     return ((v.colaboradorId === colab.id) || (v.colaboradorNome && v.colaboradorNome.toLowerCase() === cNome)) &&
       (v.status !== 'Recusado' && v.status !== 'Cancelado');
   });
   var totalValesAbatidos = todosVales.reduce(function(acc, v) { return acc + Number(v.valor || 0); }, 0);
 
-  var valorAReceber = 0;
-  if (valorGanhoHoras > 0) {
-    valorAReceber = Math.max(0, valorGanhoHoras - valorDescontoNeg - totalValesAbatidos);
-  } else {
-    valorAReceber = Math.max(0, salarioBase - valorDescontoNeg - totalValesAbatidos);
-  }
-
+  // Elementos do DOM
   var elSalario = document.getElementById('fin-val-salario');
   var elHora = document.getElementById('fin-val-hora');
   var elHT = document.getElementById('fin-val-horas-trab');
@@ -12777,17 +12829,163 @@ function renderizarMeuSetorFinanceiro() {
   var elReceber = document.getElementById('fin-val-a-receber');
   var elReceberSub = document.getElementById('fin-val-a-receber-sub');
 
-  if (elSalario) elSalario.textContent = 'R$ ' + salarioBase.toFixed(2).replace('.', ',');
-  if (elHora) elHora.textContent = 'R$ ' + valorHora.toFixed(2).replace('.', ',') + '/h';
-  if (elHT) elHT.textContent = strHorasTrab;
-  if (elGanhoBruto) elGanhoBruto.textContent = 'Ganhos: R$ ' + valorGanhoHoras.toFixed(2).replace('.', ',');
-  if (elHN) elHN.textContent = strHorasNeg;
-  if (elDescNeg) elDescNeg.textContent = 'Desconto: -R$ ' + valorDescontoNeg.toFixed(2).replace('.', ',');
-  if (elReceber) elReceber.textContent = 'R$ ' + valorAReceber.toFixed(2).replace('.', ',');
-  if (elReceberSub) {
-    elReceberSub.innerHTML = totalValesAbatidos > 0 
-      ? 'Total após desconto de <strong>R$ ' + totalValesAbatidos.toFixed(2).replace('.', ',') + '</strong> em adiantamentos/vales'
-      : 'Nenhum vale deduzido até o momento.';
+  if (batidasColab.length > 0) {
+    // Calculado referente ao Bater Ponto
+    var valorAReceber = Math.max(0, totalPontosPendentes + totalAlmocoPendente - totalValesAbatidos);
+
+    if (elSalario) {
+      elSalario.textContent = 'R$ ' + totalGanhosPontos.toFixed(2).replace('.', ',');
+      if (elSalario.previousElementSibling) {
+        elSalario.previousElementSibling.innerHTML = '<span>💵</span> <span>Total Diárias</span>';
+      }
+      if (elSalario.nextElementSibling) {
+        elSalario.nextElementSibling.textContent = `${countIntegrais} dia(s) · ${countMeioDia} meio dia`;
+      }
+    }
+    if (elHora) {
+      elHora.innerHTML = 'R$ 160 <span style="font-size:12px;color:#94a3b8;font-weight:400;">/ R$ 80</span>';
+      if (elHora.previousElementSibling) {
+        elHora.previousElementSibling.innerHTML = '<span>⏱️</span> <span>Diária / Meio Dia</span>';
+      }
+      if (elHora.nextElementSibling) {
+        elHora.nextElementSibling.textContent = 'Integral: R$ 160 | Meio: R$ 80';
+      }
+    }
+    if (elHT) {
+      elHT.textContent = `${countIntegrais + countMeioDia} jornada(s)`;
+      if (elHT.previousElementSibling) {
+        elHT.previousElementSibling.innerHTML = '<span>⌛</span> <span>Pontos Batidos</span>';
+      }
+      if (elGanhoBruto) {
+        elGanhoBruto.textContent = 'Total Ganho: R$ ' + totalGanhosPontos.toFixed(2).replace('.', ',');
+      }
+    }
+    if (elHN) {
+      elHN.textContent = 'R$ ' + totalAlmoco.toFixed(2).replace('.', ',');
+      if (elHN.previousElementSibling) {
+        elHN.previousElementSibling.innerHTML = '<span>🍛</span> <span>Almoço / Refeições</span>';
+      }
+      if (elDescNeg) {
+        elDescNeg.textContent = `Pago: R$ ${totalAlmocoPago.toFixed(2).replace('.', ',')} | Pendente: R$ ${totalAlmocoPendente.toFixed(2).replace('.', ',')}`;
+      }
+    }
+    if (elReceber) {
+      elReceber.textContent = 'R$ ' + valorAReceber.toFixed(2).replace('.', ',');
+    }
+    if (elReceberSub) {
+      var partesDet = [];
+      if (totalPontosPendentes > 0) partesDet.push('Diárias a receber: <strong>R$ ' + totalPontosPendentes.toFixed(2).replace('.', ',') + '</strong>');
+      if (totalAlmocoPendente > 0) partesDet.push('Almoço pendente: <strong>R$ ' + totalAlmocoPendente.toFixed(2).replace('.', ',') + '</strong>');
+      if (totalValesAbatidos > 0) partesDet.push('Vales deduzidos: <strong>-R$ ' + totalValesAbatidos.toFixed(2).replace('.', ',') + '</strong>');
+      if (totalPontosPagos > 0) partesDet.push('Já quitado: R$ ' + totalPontosPagos.toFixed(2).replace('.', ','));
+      elReceberSub.innerHTML = partesDet.length > 0 ? partesDet.join(' · ') : 'Todas as diárias estão quitadas.';
+    }
+  } else {
+    // Modo padrão por horas/salário se não houver batidas de ponto
+    var pontos = (typeof carregarPontosDoStorage === 'function') ? carregarPontosDoStorage() : [];
+    var pontosColab = pontos.filter(function(p) {
+      return (p.colaboradorId === colab.id) || (p.colaboradorNome && p.colaboradorNome.toLowerCase() === cNome);
+    });
+
+    var totalMinutosTrab = 0;
+    var totalMinutosNeg = 0;
+
+    pontosColab.forEach(function(p) {
+      if (p.minutosTrabalhados) {
+        totalMinutosTrab += Number(p.minutosTrabalhados);
+      } else if (p.tempoTrabalhado && p.tempoTrabalhado.includes('h')) {
+        var match = p.tempoTrabalhado.match(/(\d+)h\s*(\d+)m/);
+        if (match) totalMinutosTrab += Number(match[1]) * 60 + Number(match[2]);
+      }
+      if (p.minutosNegativos) {
+        totalMinutosNeg += Number(p.minutosNegativos);
+      } else if (p.horaNegativa && p.horaNegativa.includes('h')) {
+        var matchNeg = p.horaNegativa.match(/(\d+)h\s*(\d+)m/);
+        if (matchNeg) totalMinutosNeg += Number(matchNeg[1]) * 60 + Number(matchNeg[2]);
+      }
+    });
+
+    var hTrab = Math.floor(totalMinutosTrab / 60);
+    var mTrab = totalMinutosTrab % 60;
+    var strHorasTrab = String(hTrab).padStart(2, '0') + 'h ' + String(mTrab).padStart(2, '0') + 'm';
+
+    var hNeg = Math.floor(totalMinutosNeg / 60);
+    var mNeg = totalMinutosNeg % 60;
+    var strHorasNeg = String(hNeg).padStart(2, '0') + 'h ' + String(mNeg).padStart(2, '0') + 'm';
+
+    var valorGanhoHoras = (totalMinutosTrab / 60) * valorHora;
+    var valorDescontoNeg = (totalMinutosNeg / 60) * valorHora;
+
+    var valorAReceber = 0;
+    if (valorGanhoHoras > 0) {
+      valorAReceber = Math.max(0, valorGanhoHoras - valorDescontoNeg - totalValesAbatidos);
+    } else {
+      valorAReceber = Math.max(0, salarioBase - valorDescontoNeg - totalValesAbatidos);
+    }
+
+    if (elSalario) elSalario.textContent = 'R$ ' + salarioBase.toFixed(2).replace('.', ',');
+    if (elHora) elHora.textContent = 'R$ ' + valorHora.toFixed(2).replace('.', ',') + '/h';
+    if (elHT) elHT.textContent = strHorasTrab;
+    if (elGanhoBruto) elGanhoBruto.textContent = 'Ganhos: R$ ' + valorGanhoHoras.toFixed(2).replace('.', ',');
+    if (elHN) elHN.textContent = strHorasNeg;
+    if (elDescNeg) elDescNeg.textContent = 'Desconto: -R$ ' + valorDescontoNeg.toFixed(2).replace('.', ',');
+    if (elReceber) elReceber.textContent = 'R$ ' + valorAReceber.toFixed(2).replace('.', ',');
+    if (elReceberSub) {
+      elReceberSub.innerHTML = totalValesAbatidos > 0 
+        ? 'Total após desconto de <strong>R$ ' + totalValesAbatidos.toFixed(2).replace('.', ',') + '</strong> em adiantamentos/vales'
+        : 'Nenhum vale deduzido até o momento.';
+    }
+  }
+
+  // ── Renderizar lista detalhada das batidas de ponto ──
+  var containerBatidas = document.getElementById('fin-lista-batidas-container');
+  var resumoSub = document.getElementById('fin-extrato-resumo-sub');
+  if (resumoSub) {
+    resumoSub.textContent = `${batidasColab.length} batida(s) de ponto · Total: R$ ${totalGanhosPontos.toFixed(2).replace('.', ',')} (A receber: R$ ${totalPontosPendentes.toFixed(2).replace('.', ',')} · Quitado: R$ ${totalPontosPagos.toFixed(2).replace('.', ',')})`;
+  }
+  if (containerBatidas) {
+    if (batidasColab.length === 0) {
+      containerBatidas.innerHTML = '<div style="background:rgba(255,255,255,0.03);border:1px dashed rgba(255,255,255,0.12);border-radius:12px;padding:16px;text-align:center;color:#94a3b8;font-size:12.5px;">Nenhuma batida de ponto registrada ainda para este colaborador. Registre batidas pelo botão <strong>Bater Ponto</strong> na tela principal para calcular automaticamente aqui.</div>';
+    } else {
+      containerBatidas.innerHTML = batidasColab.map(function(b) {
+        var isPago = (b.statusPagamento || '').toLowerCase().includes('pago');
+        var corStatus = isPago ? '#10b981' : '#f59e0b';
+        var bgStatus = isPago ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.15)';
+        var borderStatus = isPago ? '#10b981' : '#f59e0b';
+        var txtStatus = isPago ? '✅ Pago' : '⏳ Pendente';
+
+        var badgeJornada = (b.jornada === 'integral' || (b.jornadaTexto && b.jornadaTexto.toLowerCase().includes('integral')))
+          ? '<span style="background:rgba(37,99,235,0.18);border:1px solid #3b82f6;color:#93c5fd;font-size:11px;padding:2px 8px;border-radius:6px;font-weight:700;">☀️ Dia Trabalhado</span>'
+          : '<span style="background:rgba(168,85,247,0.18);border:1px solid #a855f7;color:#d8b4fe;font-size:11px;padding:2px 8px;border-radius:6px;font-weight:700;">🌗 Meio Dia</span>';
+
+        var infoAlmoco = '';
+        if (b.almoco && (b.almoco.valor || b.almoco.restaurante)) {
+          var almPago = (b.almoco.status || '').toLowerCase().includes('pago');
+          infoAlmoco = '<div style="margin-top:6px;font-size:11px;color:#cbd5e1;background:rgba(255,255,255,0.03);padding:6px 10px;border-radius:6px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;">' +
+            '<span>🍛 <strong>Almoço:</strong> ' + (b.almoco.restaurante || 'Restaurante') + ' · R$ ' + (b.almoco.valor || '0,00') + ' (' + (b.almoco.forma || 'Pix') + ')</span>' +
+            '<span style="color:' + (almPago ? '#34d399' : '#fbbf24') + ';font-weight:700;">' + (almPago ? 'Pago' : 'Pendente') + '</span>' +
+            '</div>';
+        }
+
+        var infoDesc = b.descricao ? '<div style="margin-top:4px;font-size:11px;color:#94a3b8;font-style:italic;">📝 ' + b.descricao + '</div>' : '';
+
+        return '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px 14px;box-shadow:0 2px 8px rgba(0,0,0,0.2);">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px;">' +
+            '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
+              '<span style="font-size:13px;font-weight:800;color:#fff;">📅 ' + (b.dataFormatada || b.data) + '</span>' +
+              badgeJornada +
+              '<span style="font-size:12px;color:#38bdf8;font-weight:700;">👤 ' + (b.cliente || 'Cliente') + '</span>' +
+            '</div>' +
+            '<div style="display:flex;align-items:center;gap:8px;">' +
+              '<span style="font-size:15px;font-weight:900;color:#facc15;">R$ ' + (b.valor || '0,00') + '</span>' +
+              '<span style="font-size:10.5px;font-weight:800;padding:3px 8px;border-radius:6px;background:' + bgStatus + ';border:1px solid ' + borderStatus + ';color:' + corStatus + ';">' + txtStatus + '</span>' +
+            '</div>' +
+          '</div>' +
+          infoAlmoco +
+          infoDesc +
+        '</div>';
+      }).join('');
+    }
   }
 
   var sem = obterInicioEFimSemanaAtual();

@@ -5643,14 +5643,14 @@
       <label style="font-size:13px;font-weight:700;color:#cbd5e1;">Opção de Jornada / Ponto *</label>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <!-- Dia Trabalhado -->
-        <div id="rbp-card-integral" onclick="selecionarJornadaPonto('integral')" style="padding:13px 10px;border:2px solid #3b82f6;background:rgba(37,99,235,0.22);border-radius:14px;cursor:pointer;display:flex;flex-direction:column;gap:3px;transition:all 0.15s;text-align:center;">
-          <div style="font-size:14px;font-weight:800;color:#93c5fd;">Dia Trabalhado</div>
-          <div style="font-size:11.5px;color:#60a5fa;font-weight:600;">Integral (Diária cheia)</div>
+        <div id="rbp-card-integral" onclick="selecionarJornadaPonto('integral')" style="padding:13px 10px;border:2px solid #3b82f6;background:rgba(37,99,235,0.25);border-radius:14px;cursor:pointer;display:flex;flex-direction:column;gap:3px;transition:all 0.15s;text-align:center;user-select:none;-webkit-tap-highlight-color:transparent;">
+          <div style="font-size:14px;font-weight:800;color:#93c5fd;pointer-events:none;">Dia Trabalhado</div>
+          <div style="font-size:11.5px;color:#60a5fa;font-weight:600;pointer-events:none;">Integral (Diária cheia)</div>
         </div>
         <!-- Meio Dia -->
-        <div id="rbp-card-meio" onclick="selecionarJornadaPonto('meio_dia')" style="padding:13px 10px;border:1.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);border-radius:14px;cursor:pointer;display:flex;flex-direction:column;gap:3px;transition:all 0.15s;text-align:center;">
-          <div style="font-size:14px;font-weight:800;color:#cbd5e1;">Meio Dia</div>
-          <div style="font-size:11.5px;color:#94a3b8;font-weight:500;">Turno Parcial (Manhã/Tarde)</div>
+        <div id="rbp-card-meio" onclick="selecionarJornadaPonto('meio_dia')" style="padding:13px 10px;border:1.5px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);border-radius:14px;cursor:pointer;display:flex;flex-direction:column;gap:3px;transition:all 0.15s;text-align:center;user-select:none;-webkit-tap-highlight-color:transparent;">
+          <div style="font-size:14px;font-weight:800;color:#cbd5e1;pointer-events:none;">Meio Dia</div>
+          <div style="font-size:11.5px;color:#94a3b8;font-weight:500;pointer-events:none;">Turno Parcial (Manhã/Tarde)</div>
         </div>
       </div>
     </div>
@@ -44800,33 +44800,33 @@ function selecionarJornadaPonto(tipo) {
   if (tipo === 'integral') {
     if (cardInt) {
       cardInt.style.border = '2px solid #3b82f6';
-      cardInt.style.background = 'rgba(37,99,235,0.22)';
+      cardInt.style.background = 'rgba(37,99,235,0.25)';
       if (cardInt.children[0]) cardInt.children[0].style.color = '#93c5fd';
       if (cardInt.children[1]) cardInt.children[1].style.color = '#60a5fa';
     }
     if (cardMeio) {
-      cardMeio.style.border = '1.5px solid rgba(255,255,255,0.1)';
+      cardMeio.style.border = '1.5px solid rgba(255,255,255,0.12)';
       cardMeio.style.background = 'rgba(255,255,255,0.04)';
       if (cardMeio.children[0]) cardMeio.children[0].style.color = '#cbd5e1';
       if (cardMeio.children[1]) cardMeio.children[1].style.color = '#94a3b8';
     }
-    if (inpValor && (inpValor.value === '80,00' || inpValor.value === '80' || !inpValor.value)) {
+    if (inpValor) {
       inpValor.value = '160,00';
     }
   } else {
     if (cardInt) {
-      cardInt.style.border = '1.5px solid rgba(255,255,255,0.1)';
+      cardInt.style.border = '1.5px solid rgba(255,255,255,0.12)';
       cardInt.style.background = 'rgba(255,255,255,0.04)';
       if (cardInt.children[0]) cardInt.children[0].style.color = '#cbd5e1';
       if (cardInt.children[1]) cardInt.children[1].style.color = '#94a3b8';
     }
     if (cardMeio) {
       cardMeio.style.border = '2px solid #3b82f6';
-      cardMeio.style.background = 'rgba(37,99,235,0.22)';
+      cardMeio.style.background = 'rgba(37,99,235,0.25)';
       if (cardMeio.children[0]) cardMeio.children[0].style.color = '#93c5fd';
       if (cardMeio.children[1]) cardMeio.children[1].style.color = '#60a5fa';
     }
-    if (inpValor && (inpValor.value === '160,00' || inpValor.value === '160' || !inpValor.value)) {
+    if (inpValor) {
       inpValor.value = '80,00';
     }
   }
