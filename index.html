@@ -4867,8 +4867,12 @@
             </div>
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
               <input type="file" id="sdv-detalhe-foto-input" accept="image/*" capture="environment" style="display:none;" onchange="sdvProcessarFotoVeiculo(event, 'detalhe')" />
-              <button type="button" class="btn" onclick="document.getElementById('sdv-detalhe-foto-input').click()" style="padding:9px 15px;font-size:12px;font-weight:800;background:linear-gradient(135deg,#0284c7,#2563eb);color:#fff;border:none;border-radius:10px;display:flex;align-items:center;gap:6px;">
-                📷 Tirar Foto / Galeria
+              <input type="file" id="sdv-detalhe-foto-input-galeria" accept="image/*" style="display:none;" onchange="sdvProcessarFotoVeiculo(event, 'detalhe')" />
+              <button type="button" class="btn" onclick="document.getElementById('sdv-detalhe-foto-input').click()" style="padding:8px 12px;font-size:11.5px;font-weight:800;background:linear-gradient(135deg,#0284c7,#2563eb);color:#fff;border:none;border-radius:9px;display:flex;align-items:center;gap:5px;">
+                📷 Tirar Foto
+              </button>
+              <button type="button" class="btn btn-sec" onclick="document.getElementById('sdv-detalhe-foto-input-galeria').click()" style="padding:8px 12px;font-size:11.5px;font-weight:800;border-radius:9px;display:flex;align-items:center;gap:5px;border:1px solid rgba(56,189,248,0.4);color:#38bdf8;">
+                🖼️ Buscar Foto
               </button>
               <button type="button" id="sdv-btn-remover-foto-veic" class="btn btn-sec" onclick="sdvRemoverFotoVeiculo('detalhe')" style="display:none;padding:9px 12px;font-size:12px;font-weight:700;color:#ef4444;border-radius:10px;">
                 🗑️ Remover
@@ -5014,8 +5018,12 @@
             </div>
             <div style="display:flex;align-items:center;gap:6px;">
               <input type="file" id="modal-veic-foto-input" accept="image/*" capture="environment" style="display:none;" onchange="sdvProcessarFotoVeiculo(event, 'modal-novo')" />
-              <button type="button" class="btn" onclick="document.getElementById('modal-veic-foto-input').click()" style="padding:7px 12px;font-size:11.5px;font-weight:800;background:linear-gradient(135deg,#0284c7,#2563eb);color:#fff;border:none;border-radius:8px;">
-                📷 Selecionar
+              <input type="file" id="modal-veic-foto-input-galeria" accept="image/*" style="display:none;" onchange="sdvProcessarFotoVeiculo(event, 'modal-novo')" />
+              <button type="button" class="btn" onclick="document.getElementById('modal-veic-foto-input').click()" style="padding:7px 10px;font-size:11px;font-weight:800;background:linear-gradient(135deg,#0284c7,#2563eb);color:#fff;border:none;border-radius:8px;">
+                📷 Câmera
+              </button>
+              <button type="button" class="btn btn-sec" onclick="document.getElementById('modal-veic-foto-input-galeria').click()" style="padding:7px 10px;font-size:11px;font-weight:800;border-radius:8px;border:1px solid rgba(56,189,248,0.4);color:#38bdf8;">
+                🖼️ Buscar Foto
               </button>
               <button type="button" id="modal-veic-btn-remover-foto" class="btn btn-sec" onclick="sdvRemoverFotoVeiculo('modal-novo')" style="display:none;padding:7px 10px;font-size:11.5px;font-weight:700;color:#ef4444;border-radius:8px;">
                 🗑️
@@ -5115,10 +5123,14 @@
           </div>
 
           <input type="file" id="modal-abast-foto-input" accept="image/*" capture="environment" style="display:none;" onchange="sdvProcessarFotoComprovante(event)" />
+          <input type="file" id="modal-abast-foto-input-galeria" accept="image/*" style="display:none;" onchange="sdvProcessarFotoComprovante(event)" />
           
           <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">
-            <button type="button" class="btn" onclick="document.getElementById('modal-abast-foto-input').click()" style="padding:9px 16px;font-size:12px;font-weight:800;background:linear-gradient(135deg,#0284c7,#2563eb);color:#fff;border:none;border-radius:10px;display:flex;align-items:center;gap:6px;">
-              📷 Tirar Foto / Selecionar Comprovante
+            <button type="button" class="btn" onclick="document.getElementById('modal-abast-foto-input').click()" style="padding:9px 14px;font-size:12px;font-weight:800;background:linear-gradient(135deg,#0284c7,#2563eb);color:#fff;border:none;border-radius:10px;display:flex;align-items:center;gap:6px;">
+              📷 Tirar Foto
+            </button>
+            <button type="button" class="btn btn-sec" onclick="document.getElementById('modal-abast-foto-input-galeria').click()" style="padding:9px 14px;font-size:12px;font-weight:800;border-radius:10px;display:flex;align-items:center;gap:6px;border:1px solid rgba(56,189,248,0.4);color:#38bdf8;">
+              🖼️ Buscar Foto
             </button>
             <button type="button" id="sdv-btn-remover-foto" class="btn btn-sec" onclick="sdvRemoverFotoComprovante()" style="display:none;padding:9px 14px;font-size:12px;font-weight:700;color:#ef4444;border-radius:10px;">
               🗑️ Remover Foto
@@ -5220,9 +5232,13 @@
           <label style="display:block;font-size:12.5px;font-weight:800;color:#fff;margin-bottom:6px;">📷 Foto do Veículo</label>
           <div style="font-size:11.5px;color:var(--muted);margin-bottom:10px;">Tire uma foto com a câmera ou selecione da galeria</div>
           <input type="file" id="modal-foto-input" accept="image/*" capture="environment" style="display:none;" onchange="sdvProcessarFotoGaleria(event)" />
+          <input type="file" id="modal-foto-input-galeria" accept="image/*" style="display:none;" onchange="sdvProcessarFotoGaleria(event)" />
           <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">
-            <button type="button" class="btn" onclick="document.getElementById('modal-foto-input').click()" style="padding:9px 16px;font-size:12px;font-weight:800;background:linear-gradient(135deg,#7c3aed,#9333ea);color:#fff;border:none;border-radius:10px;display:flex;align-items:center;gap:6px;">
-              📷 Selecionar Foto
+            <button type="button" class="btn" onclick="document.getElementById('modal-foto-input').click()" style="padding:9px 14px;font-size:12px;font-weight:800;background:linear-gradient(135deg,#7c3aed,#9333ea);color:#fff;border:none;border-radius:10px;display:flex;align-items:center;gap:6px;">
+              📷 Tirar Foto
+            </button>
+            <button type="button" class="btn btn-sec" onclick="document.getElementById('modal-foto-input-galeria').click()" style="padding:9px 14px;font-size:12px;font-weight:800;border-radius:10px;display:flex;align-items:center;gap:6px;border:1.5px solid rgba(147,51,234,0.5);color:#c084fc;">
+              🖼️ Buscar Foto (Galeria)
             </button>
             <button type="button" id="modal-foto-btn-remover" class="btn btn-sec" onclick="sdvLimparPreviewFotoGaleria()" style="display:none;padding:9px 12px;font-size:12px;font-weight:700;color:#ef4444;border-radius:10px;">
               🗑️ Remover
@@ -47163,6 +47179,7 @@ const SDV_KEY_FOTOS_GALERIA = 'sdv_veiculos_fotos_galeria';
 
 let _sdvPastaAtiva = 'Todas';
 let _sdvFiltroVeiculoGaleria = 'todos';
+let _sdvBuscaFotoGaleria = '';
 
 function sdvObterVeiculos() {
   try {
@@ -48239,6 +48256,116 @@ function sdvExcluirFotoGaleria(fotoId) {
   renderSdvGaleriaFotos();
 }
 
+function sdvGerarHtmlGridFotos() {
+  const veiculos = sdvObterVeiculos();
+  const todasFotos = sdvObterFotosGaleria();
+
+  let fotosFiltradas = todasFotos;
+  if (_sdvFiltroVeiculoGaleria !== 'todos') {
+    fotosFiltradas = fotosFiltradas.filter(f => f.veiculoId === _sdvFiltroVeiculoGaleria);
+  }
+  if (_sdvPastaAtiva !== 'Todas') {
+    fotosFiltradas = fotosFiltradas.filter(f => f.pasta === _sdvPastaAtiva);
+  }
+  if (_sdvBuscaFotoGaleria && _sdvBuscaFotoGaleria.trim() !== '') {
+    const termo = _sdvBuscaFotoGaleria.trim().toLowerCase();
+    fotosFiltradas = fotosFiltradas.filter(f => {
+      const vOwner = veiculos.find(v => v.id === f.veiculoId);
+      const vNome = vOwner ? (vOwner.modelo + ' ' + (vOwner.placa || '')).toLowerCase() : '';
+      const titulo = (f.titulo || '').toLowerCase();
+      const pasta = (f.pasta || '').toLowerCase();
+      const data = (f.data || '').toLowerCase();
+      return titulo.includes(termo) || pasta.includes(termo) || vNome.includes(termo) || data.includes(termo);
+    });
+  }
+
+  if (fotosFiltradas.length === 0) {
+    if (_sdvBuscaFotoGaleria && _sdvBuscaFotoGaleria.trim() !== '') {
+      return `
+        <div style="grid-column: 1 / -1; background:rgba(255,255,255,0.02);border:1.5px dashed rgba(255,255,255,0.12);border-radius:14px;padding:32px 16px;text-align:center;color:var(--muted);">
+          <div style="font-size:36px;margin-bottom:8px;">🔍</div>
+          <div style="font-size:14px;font-weight:800;color:#fff;">Nenhuma foto encontrada para "${_sdvBuscaFotoGaleria}"</div>
+          <div style="font-size:12px;margin-top:4px;color:var(--text2);">Tente buscar por outro nome, placa ou pasta.</div>
+          <button type="button" class="btn btn-sec btn-sm" onclick="sdvLimparBuscaGaleria()" style="margin-top:10px;font-size:11.5px;font-weight:700;">
+            ✕ Limpar Busca
+          </button>
+        </div>
+      `;
+    }
+    return `
+      <div style="grid-column: 1 / -1; background:rgba(255,255,255,0.02);border:1.5px dashed rgba(255,255,255,0.12);border-radius:14px;padding:32px 16px;text-align:center;color:var(--muted);">
+        <div style="font-size:36px;margin-bottom:8px;">📷</div>
+        <div style="font-size:14px;font-weight:800;color:#fff;">Nenhuma foto encontrada nesta pasta</div>
+        <div style="font-size:12px;margin-top:4px;color:var(--text2);">Clique em <strong>"📸 + Adicionar Foto"</strong> para registrar vistorias, documentos ou fotos do veículo.</div>
+      </div>
+    `;
+  }
+
+  return fotosFiltradas.map(f => {
+    const vOwner = veiculos.find(v => v.id === f.veiculoId);
+    const vNome = vOwner ? vOwner.modelo : 'Veículo';
+    const partes = String(f.data || '').split('-');
+    const dataFmt = partes.length === 3 ? (partes[2] + '/' + partes[1] + '/' + partes[0]) : f.data;
+
+    return `
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 4px 15px rgba(0,0,0,0.4);">
+        <div style="position:relative;width:100%;height:140px;cursor:pointer;background:#000;" onclick="sdvExibirFotoZoom('${f.fotoBase64}', '${vNome} - ${f.pasta}')" title="Clique para ampliar">
+          <img src="${f.fotoBase64}" alt="Foto" style="width:100%;height:100%;object-fit:cover;" />
+          <span style="position:absolute;top:6px;left:6px;background:rgba(0,0,0,0.7);color:#c084fc;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:800;">
+            📁 ${f.pasta}
+          </span>
+          <span style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.8);color:#fff;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:900;">
+            🔍 VER
+          </span>
+        </div>
+        <div style="padding:10px 12px;display:flex;flex-direction:column;gap:4px;flex:1;justify-content:space-between;">
+          <div>
+            <div style="font-size:12px;font-weight:800;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+              ${f.titulo || vNome}
+            </div>
+            <div style="font-size:10.5px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;margin-top:2px;">
+              <span>🚗 ${vNome}</span>
+              <span>📅 ${dataFmt}</span>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:6px;border-top:1px solid rgba(255,255,255,0.06);padding-top:6px;">
+            <button type="button" onclick="sdvExibirFotoZoom('${f.fotoBase64}', '${vNome} - ${f.pasta}')" class="btn btn-sec" style="padding:4px 8px;font-size:11px;font-weight:700;border-radius:6px;">
+              🔍
+            </button>
+            <button type="button" onclick="sdvExcluirFotoGaleria('${f.id}')" class="btn btn-sec" style="padding:4px 8px;font-size:11px;font-weight:700;border-radius:6px;color:#ef4444;" title="Excluir foto">
+              🗑️
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function sdvFiltrarBuscaGaleria(termo) {
+  _sdvBuscaFotoGaleria = termo || '';
+  const grid = document.getElementById('sdv-grid-fotos-galeria');
+  if (grid) {
+    grid.innerHTML = sdvGerarHtmlGridFotos();
+  }
+  const btnLimpar = document.getElementById('sdv-btn-limpar-busca');
+  if (btnLimpar) {
+    btnLimpar.style.display = _sdvBuscaFotoGaleria ? 'block' : 'none';
+  }
+}
+
+function sdvLimparBuscaGaleria() {
+  _sdvBuscaFotoGaleria = '';
+  const inp = document.getElementById('sdv-busca-fotos-input');
+  if (inp) inp.value = '';
+  const btnLimpar = document.getElementById('sdv-btn-limpar-busca');
+  if (btnLimpar) btnLimpar.style.display = 'none';
+  const grid = document.getElementById('sdv-grid-fotos-galeria');
+  if (grid) {
+    grid.innerHTML = sdvGerarHtmlGridFotos();
+  }
+}
+
 function renderSdvGaleriaFotos() {
   const container = document.getElementById('sdv-card-fotos-galeria');
   if (!container) return;
@@ -48246,18 +48373,6 @@ function renderSdvGaleriaFotos() {
   const veiculos = sdvObterVeiculos();
   const todasFotos = sdvObterFotosGaleria();
   const pastas = sdvObterPastas();
-  const veicAtivo = sdvObterVeiculoAtivo();
-
-  // Filtragem por veículo
-  let fotosFiltradas = todasFotos;
-  if (_sdvFiltroVeiculoGaleria !== 'todos') {
-    fotosFiltradas = fotosFiltradas.filter(f => f.veiculoId === _sdvFiltroVeiculoGaleria);
-  }
-
-  // Filtragem por pasta
-  if (_sdvPastaAtiva !== 'Todas') {
-    fotosFiltradas = fotosFiltradas.filter(f => f.pasta === _sdvPastaAtiva);
-  }
 
   // Gera chips das pastas
   const totalGeral = (_sdvFiltroVeiculoGaleria === 'todos')
@@ -48299,58 +48414,6 @@ function renderSdvGaleriaFotos() {
     `).join('')}
   `;
 
-  // Grid de fotos
-  let gridFotosHtml = '';
-  if (fotosFiltradas.length === 0) {
-    gridFotosHtml = `
-      <div style="grid-column: 1 / -1; background:rgba(255,255,255,0.02);border:1.5px dashed rgba(255,255,255,0.12);border-radius:14px;padding:32px 16px;text-align:center;color:var(--muted);">
-        <div style="font-size:36px;margin-bottom:8px;">📷</div>
-        <div style="font-size:14px;font-weight:800;color:#fff;">Nenhuma foto encontrada nesta pasta</div>
-        <div style="font-size:12px;margin-top:4px;color:var(--text2);">Clique em <strong>"📸 + Adicionar Foto"</strong> para registrar vistorias, documentos ou fotos do veículo.</div>
-      </div>
-    `;
-  } else {
-    gridFotosHtml = fotosFiltradas.map(f => {
-      const vOwner = veiculos.find(v => v.id === f.veiculoId);
-      const vNome = vOwner ? vOwner.modelo : 'Veículo';
-      const partes = String(f.data || '').split('-');
-      const dataFmt = partes.length === 3 ? (partes[2] + '/' + partes[1] + '/' + partes[0]) : f.data;
-
-      return `
-        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 4px 15px rgba(0,0,0,0.4);">
-          <div style="position:relative;width:100%;height:140px;cursor:pointer;background:#000;" onclick="sdvExibirFotoZoom('${f.fotoBase64}', '${vNome} - ${f.pasta}')" title="Clique para ampliar">
-            <img src="${f.fotoBase64}" alt="Foto" style="width:100%;height:100%;object-fit:cover;" />
-            <span style="position:absolute;top:6px;left:6px;background:rgba(0,0,0,0.7);color:#c084fc;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:800;">
-              📁 ${f.pasta}
-            </span>
-            <span style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.8);color:#fff;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:900;">
-              🔍 VER
-            </span>
-          </div>
-          <div style="padding:10px 12px;display:flex;flex-direction:column;gap:4px;flex:1;justify-content:space-between;">
-            <div>
-              <div style="font-size:12px;font-weight:800;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-                ${f.titulo || vNome}
-              </div>
-              <div style="font-size:10.5px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;margin-top:2px;">
-                <span>🚗 ${vNome}</span>
-                <span>📅 ${dataFmt}</span>
-              </div>
-            </div>
-            <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:6px;border-top:1px solid rgba(255,255,255,0.06);padding-top:6px;">
-              <button type="button" onclick="sdvExibirFotoZoom('${f.fotoBase64}', '${vNome} - ${f.pasta}')" class="btn btn-sec" style="padding:4px 8px;font-size:11px;font-weight:700;border-radius:6px;">
-                🔍
-              </button>
-              <button type="button" onclick="sdvExcluirFotoGaleria('${f.id}')" class="btn btn-sec" style="padding:4px 8px;font-size:11px;font-weight:700;border-radius:6px;color:#ef4444;" title="Excluir foto">
-                🗑️
-              </button>
-            </div>
-          </div>
-        </div>
-      `;
-    }).join('');
-  }
-
   container.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:10px;">
       <div>
@@ -48372,6 +48435,14 @@ function renderSdvGaleriaFotos() {
       </div>
     </div>
 
+    <!-- CAMPO DE BUSCA DE FOTO -->
+    <div style="margin-bottom:12px;position:relative;">
+      <input type="text" id="sdv-busca-fotos-input" value="${_sdvBuscaFotoGaleria}" placeholder="🔍 Buscar foto (por título, veículo, pasta ou data)..." oninput="sdvFiltrarBuscaGaleria(this.value)" style="width:100%;box-sizing:border-box;background:#0d1117;border:1.5px solid rgba(147,51,234,0.35);border-radius:10px;padding:9px 36px 9px 12px;font-size:12.5px;color:#fff;outline:none;" />
+      <button type="button" id="sdv-btn-limpar-busca" onclick="sdvLimparBuscaGaleria()" style="display:${_sdvBuscaFotoGaleria ? 'block' : 'none'};position:absolute;right:10px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:4px;" title="Limpar busca">
+        ✕
+      </button>
+    </div>
+
     <!-- BARRA DE FILTROS & PASTAS -->
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
       <!-- Chips das Pastas -->
@@ -48389,50 +48460,15 @@ function renderSdvGaleriaFotos() {
     </div>
 
     <!-- GRID DE FOTOS -->
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;">
-      ${gridFotosHtml}
+    <div id="sdv-grid-fotos-galeria" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;">
+      ${sdvGerarHtmlGridFotos()}
     </div>
   `;
 }
 
-// Exportações para o browser
-window.sdvObterVeiculos = sdvObterVeiculos;
-window.sdvSalvarVeiculos = sdvSalvarVeiculos;
-window.sdvObterAbastecimentos = sdvObterAbastecimentos;
-window.sdvSalvarAbastecimentos = sdvSalvarAbastecimentos;
-window.renderVeiculosView = renderVeiculosView;
-window.sdvTrocarVeiculoAtivo = sdvTrocarVeiculoAtivo;
-window.sdvSalvarDadosVeiculoAtual = sdvSalvarDadosVeiculoAtual;
-window.abrirModalNovoVeiculo = abrirModalNovoVeiculo;
-window.fecharModalNovoVeiculo = fecharModalNovoVeiculo;
-window.sdvSalvarNovoVeiculo = sdvSalvarNovoVeiculo;
-window.sdvEditarVeiculoAtual = sdvEditarVeiculoAtual;
-window.sdvExcluirVeiculoAtual = sdvExcluirVeiculoAtual;
-window.abrirModalNovoAbastecimento = abrirModalNovoAbastecimento;
-window.fecharModalNovoAbastecimento = fecharModalNovoAbastecimento;
-window.sdvCalcularPrecoPorLitro = sdvCalcularPrecoPorLitro;
-window.sdvProcessarFotoComprovante = sdvProcessarFotoComprovante;
-window.sdvRemoverFotoComprovante = sdvRemoverFotoComprovante;
-window.sdvAmpliarFotoPreview = sdvAmpliarFotoPreview;
-window.sdvSalvarNovoAbastecimento = sdvSalvarNovoAbastecimento;
-window.sdvVerComprovanteZoom = sdvVerComprovanteZoom;
-window.sdvExibirFotoZoom = sdvExibirFotoZoom;
-window.fecharModalZoomComprovante = fecharModalZoomComprovante;
-window.sdvExcluirAbastecimento = sdvExcluirAbastecimento;
-window.sdvProcessarFotoVeiculo = sdvProcessarFotoVeiculo;
-window.sdvRemoverFotoVeiculo = sdvRemoverFotoVeiculo;
-window.sdvAmpliarFotoVeiculo = sdvAmpliarFotoVeiculo;
-window.sdvAbrirModalGaleriaVeiculos = sdvAbrirModalGaleriaVeiculos;
-window.sdvAbrirModalNovaPasta = sdvAbrirModalNovaPasta;
-window.sdvFecharModalNovaPasta = sdvFecharModalNovaPasta;
-window.sdvCriarNovaPasta = sdvCriarNovaPasta;
-window.sdvExcluirPasta = sdvExcluirPasta;
-window.sdvAbrirModalNovaFoto = sdvAbrirModalNovaFoto;
-window.sdvFecharModalNovaFoto = sdvFecharModalNovaFoto;
-window.sdvProcessarFotoGaleria = sdvProcessarFotoGaleria;
-window.sdvLimparPreviewFotoGaleria = sdvLimparPreviewFotoGaleria;
-window.sdvSalvarNovaFotoGaleria = sdvSalvarNovaFotoGaleria;
-window.sdvExcluirFotoGaleria = sdvExcluirFotoGaleria;
+window.sdvGerarHtmlGridFotos = sdvGerarHtmlGridFotos;
+window.sdvFiltrarBuscaGaleria = sdvFiltrarBuscaGaleria;
+window.sdvLimparBuscaGaleria = sdvLimparBuscaGaleria;
 window.renderSdvGaleriaFotos = renderSdvGaleriaFotos;
 
 </script>
