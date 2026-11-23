@@ -1369,11 +1369,29 @@
         </div>
       </div>
 
+      <!-- Condições Comerciais: À Vista 10% OFF & 50/50 -->
+      <div class="pay-condicoes-row" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <button type="button" class="pay-method-btn" id="pay-btn-avista" onclick="selecionarPagamento('avista')">
+          <span class="pay-icon">💵</span>
+          <span style="font-weight:900;">À Vista (Pix)</span>
+          <span style="font-size:10px;background:rgba(34,197,94,0.2);color:#4ade80;padding:2px 6px;border-radius:4px;font-weight:800;margin-top:2px;">10% DESCONTO</span>
+        </button>
+        <button type="button" class="pay-method-btn" id="pay-btn-5050" onclick="selecionarPagamento('5050')">
+          <span class="pay-icon">⚖️</span>
+          <span style="font-weight:900;">50% Entrada</span>
+          <span style="font-size:10px;background:rgba(59,130,246,0.2);color:#60a5fa;padding:2px 6px;border-radius:4px;font-weight:800;margin-top:2px;">+ 50% NA ENTREGA</span>
+        </button>
+      </div>
+
+      <!-- Resumo do Cálculo Automático do Valor -->
+      <div id="bloco-resumo-calculo-valor" style="margin-bottom:14px;"></div>
+
       <!-- Method buttons -->
       <div class="pay-methods-grid">
         <button class="pay-method-btn" id="pay-btn-credito" onclick="selecionarPagamento('credito')">
           <span class="pay-icon">💳</span>
           Cartão de<br>Crédito
+          <span style="font-size:10px;color:#facc15;font-weight:800;">SEM JUROS</span>
         </button>
         <button class="pay-method-btn" id="pay-btn-debito" onclick="selecionarPagamento('debito')">
           <span class="pay-icon">🏧</span>
@@ -1627,8 +1645,16 @@
         </label>
         <div style="background:#0b1019;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px;margin-bottom:14px;display:flex;flex-direction:column;gap:10px;">
           <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:#fff;margin:0;">
+            <input type="checkbox" id="cfg-mostrar-avista" checked style="width:18px;height:18px;accent-color:#c9a038;cursor:pointer;" />
+            <span>💵 Mostrar À Vista (10% de Desconto)</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:#fff;margin:0;">
+            <input type="checkbox" id="cfg-mostrar-50-50" checked style="width:18px;height:18px;accent-color:#c9a038;cursor:pointer;" />
+            <span>⚖️ Mostrar 50% Entrada e 50% na Entrega</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:#fff;margin:0;">
             <input type="checkbox" id="cfg-mostrar-credito" checked style="width:18px;height:18px;accent-color:#c9a038;cursor:pointer;" />
-            <span>💳 Mostrar Cartão de Crédito</span>
+            <span>💳 Mostrar Cartão de Crédito (Sem Juros)</span>
           </label>
           <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:#fff;margin:0;">
             <input type="checkbox" id="cfg-mostrar-debito" checked style="width:18px;height:18px;accent-color:#c9a038;cursor:pointer;" />
@@ -2049,6 +2075,20 @@
     if (typeof renderizarDadosRecebedor === 'function') {
       try { renderizarDadosRecebedor(); } catch(e) {}
     }
+    if (typeof selecionarPagamento === 'function') {
+      const rec = (typeof obterDadosRecebedor === 'function') ? obterDadosRecebedor() : {};
+      if (rec.mostrarAvista !== false) {
+        selecionarPagamento('avista');
+      } else if (rec.mostrar5050 !== false) {
+        selecionarPagamento('5050');
+      } else if (rec.mostrarPixQr !== false) {
+        selecionarPagamento('pix-qr');
+      } else if (rec.mostrarCredito !== false) {
+        selecionarPagamento('credito');
+      } else {
+        selecionarPagamento('pix-copia');
+      }
+    }
     try {
       const lic = (typeof obterLicencaAtiva === 'function') ? obterLicencaAtiva() : { telefone: '85996119824' };
       const zapLimpo = String(lic.telefone || '85996119824').replace(/\D/g, '');
@@ -2071,6 +2111,8 @@
       pix: saved.pix || lic.pix || '85996119824',
       cidade: saved.cidade || lic.cidade || 'Itaitinga - CE',
       qrCustomImg: saved.qrCustomImg || '',
+      mostrarAvista: saved.mostrarAvista !== undefined ? Boolean(saved.mostrarAvista) : true,
+      mostrar5050: saved.mostrar5050 !== undefined ? Boolean(saved.mostrar5050) : true,
       mostrarCredito: saved.mostrarCredito !== undefined ? Boolean(saved.mostrarCredito) : true,
       mostrarDebito: saved.mostrarDebito !== undefined ? Boolean(saved.mostrarDebito) : true,
       mostrarPixCopia: saved.mostrarPixCopia !== undefined ? Boolean(saved.mostrarPixCopia) : true,
@@ -2079,6 +2121,9 @@
   }
 
   function aplicarVisibilidadeMetodosPagamento(rec) {
+    const btnAvista = document.getElementById('pay-btn-avista');
+    const btn5050 = document.getElementById('pay-btn-5050');
+    const condicoesRow = document.querySelector('.pay-condicoes-row');
     const btnCredito = document.getElementById('pay-btn-credito');
     const btnDebito = document.getElementById('pay-btn-debito');
     const btnPixCopia = document.getElementById('pay-btn-pix-copia');
@@ -2086,10 +2131,23 @@
     const methodsGrid = document.querySelector('.pay-methods-grid');
     const pixRow = document.querySelector('.pay-pix-row');
 
+    const mAvista = rec.mostrarAvista !== false;
+    const m5050 = rec.mostrar5050 !== false;
     const mCred = rec.mostrarCredito !== false;
     const mDeb = rec.mostrarDebito !== false;
     const mCopia = rec.mostrarPixCopia !== false;
     const mQr = rec.mostrarPixQr !== false;
+
+    if (btnAvista) btnAvista.style.display = mAvista ? '' : 'none';
+    if (btn5050) btn5050.style.display = m5050 ? '' : 'none';
+    if (condicoesRow) {
+      if (!mAvista && !m5050) {
+        condicoesRow.style.display = 'none';
+      } else {
+        condicoesRow.style.display = 'grid';
+        condicoesRow.style.gridTemplateColumns = (!mAvista || !m5050) ? '1fr' : '1fr 1fr';
+      }
+    }
 
     if (btnCredito) btnCredito.style.display = mCred ? '' : 'none';
     if (btnDebito) btnDebito.style.display = mDeb ? '' : 'none';
@@ -2116,12 +2174,16 @@
     // Se a opção selecionada no momento foi desabilitada, seleciona a primeira visível
     const atual = formaPagamentoEscolhida || 'pix-qr';
     if (
+      (atual === 'avista' && !mAvista) ||
+      (atual === '5050' && !m5050) ||
       (atual === 'credito' && !mCred) ||
       (atual === 'debito' && !mDeb) ||
       (atual === 'pix-copia' && !mCopia) ||
       (atual === 'pix-qr' && !mQr)
     ) {
-      if (mQr) selecionarPagamento('pix-qr');
+      if (mAvista) selecionarPagamento('avista');
+      else if (m5050) selecionarPagamento('5050');
+      else if (mQr) selecionarPagamento('pix-qr');
       else if (mCopia) selecionarPagamento('pix-copia');
       else if (mCred) selecionarPagamento('credito');
       else if (mDeb) selecionarPagamento('debito');
@@ -2268,6 +2330,8 @@
     if (document.getElementById('cfg-rec-cidade')) document.getElementById('cfg-rec-cidade').value = rec.cidade;
 
     // Configuração de visibilidade das opções de pagamento
+    if (document.getElementById('cfg-mostrar-avista')) document.getElementById('cfg-mostrar-avista').checked = rec.mostrarAvista !== false;
+    if (document.getElementById('cfg-mostrar-50-50')) document.getElementById('cfg-mostrar-50-50').checked = rec.mostrar5050 !== false;
     if (document.getElementById('cfg-mostrar-credito')) document.getElementById('cfg-mostrar-credito').checked = rec.mostrarCredito !== false;
     if (document.getElementById('cfg-mostrar-debito')) document.getElementById('cfg-mostrar-debito').checked = rec.mostrarDebito !== false;
     if (document.getElementById('cfg-mostrar-pix-copia')) document.getElementById('cfg-mostrar-pix-copia').checked = rec.mostrarPixCopia !== false;
@@ -2338,6 +2402,8 @@
       pix: (document.getElementById('cfg-rec-pix').value || '').trim() || '85996119824',
       cidade: (document.getElementById('cfg-rec-cidade').value || '').trim() || 'Itaitinga - CE',
       qrCustomImg: tempQrCustomEmpresa || '',
+      mostrarAvista: document.getElementById('cfg-mostrar-avista') ? document.getElementById('cfg-mostrar-avista').checked : true,
+      mostrar5050: document.getElementById('cfg-mostrar-50-50') ? document.getElementById('cfg-mostrar-50-50').checked : true,
       mostrarCredito: document.getElementById('cfg-mostrar-credito') ? document.getElementById('cfg-mostrar-credito').checked : true,
       mostrarDebito: document.getElementById('cfg-mostrar-debito') ? document.getElementById('cfg-mostrar-debito').checked : true,
       mostrarPixCopia: document.getElementById('cfg-mostrar-pix-copia') ? document.getElementById('cfg-mostrar-pix-copia').checked : true,
@@ -2540,9 +2606,184 @@
     if (btnContinuar) btnContinuar.disabled = false;
   };
 
+
+  function parseMoedaBRL(str) {
+    if (typeof str === 'number') return isNaN(str) ? 0 : str;
+    if (!str) return 0;
+    const limpo = String(str).replace(/[^\d,\.]/g, '').trim();
+    if (limpo.includes(',')) {
+      const semPonto = limpo.replace(/\./g, '');
+      const comPonto = semPonto.replace(',', '.');
+      return parseFloat(comPonto) || 0;
+    }
+    return parseFloat(limpo) || 0;
+  }
+
+  function obterValorTotalContrato() {
+    let val = 0;
+    if (contratoCache) {
+      if (contratoCache.dados) {
+        const d = contratoCache.dados;
+        const v = d.total || d.v || d.valorTotal || d.valor;
+        if (v) val = parseMoedaBRL(v);
+      }
+      if (!val && (contratoCache.total || contratoCache.valor || contratoCache.valorTotal)) {
+        val = parseMoedaBRL(contratoCache.total || contratoCache.valor || contratoCache.valorTotal);
+      }
+      if (!val && contratoCache.texto) {
+        const m = contratoCache.texto.match(/Valor\s+Total\s*:\s*(R\$\s*[\d\.,]+)/i);
+        if (m && m[1]) val = parseMoedaBRL(m[1]);
+      }
+    }
+    if (!val) {
+      const el = document.getElementById('contrato-texto');
+      if (el && el.textContent) {
+        const m = el.textContent.match(/Valor\s+Total\s*:\s*(R\$\s*[\d\.,]+)/i);
+        if (m && m[1]) val = parseMoedaBRL(m[1]);
+      }
+    }
+    return val > 0 ? val : 1200;
+  }
+
+  function atualizarCalculoValorPagamento() {
+    const total = obterValorTotalContrato();
+    const formatBRL = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+    // Garante que as parcelas do cartão sempre refletem o valor total SEM JUROS
+    popularParcelasCartao(total);
+
+    const boxResumo = document.getElementById('bloco-resumo-calculo-valor');
+    if (!boxResumo) return;
+
+    const metodo = formaPagamentoEscolhida || 'avista';
+
+    if (metodo === 'avista' || metodo === 'pix-copia' || metodo === 'pix-qr') {
+      const desconto10 = total * 0.10;
+      const valorComDesconto = total - desconto10;
+
+      boxResumo.innerHTML = `
+        <div style="background:rgba(34,197,94,0.08);border:1.5px solid rgba(34,197,94,0.45);border-radius:14px;padding:14px;box-shadow:0 4px 16px rgba(0,0,0,0.3);">
+          <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:10px;margin-bottom:10px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:24px;">💵</span>
+              <div>
+                <div style="font-size:14px;font-weight:900;color:#4ade80;">Valor À Vista: 10% de Desconto</div>
+                <div style="font-size:11.5px;color:#94a3b8;">Desconto deduzido automaticamente do valor total do contrato</div>
+              </div>
+            </div>
+            <span style="background:rgba(34,197,94,0.18);border:1px solid #22c55e;color:#4ade80;font-size:11px;font-weight:900;padding:4px 10px;border-radius:20px;">
+              -10% OFF
+            </span>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:#cbd5e1;margin-bottom:8px;">
+            <span>Valor Total Original: <strong style="text-decoration:line-through;color:#94a3b8;">${formatBRL(total)}</strong></span>
+            <span style="color:#4ade80;font-weight:800;">Economia: -${formatBRL(desconto10)}</span>
+          </div>
+
+          <div style="background:rgba(34,197,94,0.12);border:1.5px solid #22c55e;border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:11px;color:#a7f3d0;text-transform:uppercase;font-weight:800;letter-spacing:0.06em;">Total a Pagar com 10% de Desconto:</div>
+            <div style="font-size:26px;font-weight:900;color:#22c55e;margin-top:3px;">${formatBRL(valorComDesconto)}</div>
+          </div>
+        </div>
+      `;
+
+      const pixHint = document.querySelector('.pix-qr-hint');
+      if (pixHint) {
+        pixHint.innerHTML = `Pague <strong>${formatBRL(valorComDesconto)}</strong> via Pix para confirmar com <strong>10% de desconto</strong>.`;
+      }
+    } else if (metodo === '5050') {
+      const parcela50 = total * 0.50;
+
+      boxResumo.innerHTML = `
+        <div style="background:rgba(59,130,246,0.08);border:1.5px solid rgba(59,130,246,0.45);border-radius:14px;padding:14px;box-shadow:0 4px 16px rgba(0,0,0,0.3);">
+          <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:10px;margin-bottom:10px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:24px;">⚖️</span>
+              <div>
+                <div style="font-size:14px;font-weight:900;color:#60a5fa;">50% na Entrada + 50% na Entrega</div>
+                <div style="font-size:11.5px;color:#94a3b8;">Valor total integral do serviço dividido em 2 etapas</div>
+              </div>
+            </div>
+            <span style="background:rgba(59,130,246,0.18);border:1px solid #3b82f6;color:#60a5fa;font-size:11px;font-weight:900;padding:4px 10px;border-radius:20px;">
+              VALOR INTEGRAL
+            </span>
+          </div>
+
+          <div style="font-size:12.5px;color:#cbd5e1;margin-bottom:10px;">
+            Valor Total do Contrato: <strong style="color:#fff;">${formatBRL(total)}</strong>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div style="background:rgba(59,130,246,0.12);border:1.5px solid #3b82f6;border-radius:10px;padding:10px;text-align:center;">
+              <div style="font-size:10.5px;color:#93c5fd;font-weight:800;text-transform:uppercase;">1ª Parcela (Entrada Agora)</div>
+              <div style="font-size:18px;font-weight:900;color:#60a5fa;margin-top:2px;">${formatBRL(parcela50)}</div>
+              <div style="font-size:10.5px;color:#cbd5e1;margin-top:3px;">Início da produção</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.03);border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px;text-align:center;">
+              <div style="font-size:10.5px;color:#94a3b8;font-weight:800;text-transform:uppercase;">2ª Parcela (Na Entrega)</div>
+              <div style="font-size:18px;font-weight:900;color:#fff;margin-top:2px;">${formatBRL(parcela50)}</div>
+              <div style="font-size:10.5px;color:#94a3b8;margin-top:3px;">Conclusão e montagem</div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const pixHint = document.querySelector('.pix-qr-hint');
+      if (pixHint) {
+        pixHint.innerHTML = `Pague a <strong>1ª parcela de entrada: ${formatBRL(parcela50)}</strong> para iniciar a fabricação. O saldo restante de <strong>${formatBRL(parcela50)}</strong> será pago somente na entrega/instalação.`;
+      }
+    } else if (metodo === 'credito') {
+      boxResumo.innerHTML = `
+        <div style="background:rgba(250,204,21,0.08);border:1.5px solid rgba(250,204,21,0.4);border-radius:14px;padding:14px;box-shadow:0 4px 16px rgba(0,0,0,0.3);">
+          <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:10px;margin-bottom:10px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:24px;">💳</span>
+              <div>
+                <div style="font-size:14px;font-weight:900;color:#facc15;">Cartão de Crédito (Valor Total Sem Juros)</div>
+                <div style="font-size:11.5px;color:#94a3b8;">Valor total integral parcelado em até 12x sem juros</div>
+              </div>
+            </div>
+            <span style="background:rgba(250,204,21,0.18);border:1px solid #eab308;color:#facc15;font-size:11px;font-weight:900;padding:4px 10px;border-radius:20px;">
+              SEM JUROS
+            </span>
+          </div>
+
+          <div style="background:rgba(250,204,21,0.1);border:1.5px solid rgba(250,204,21,0.4);border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:11px;color:#fef08a;text-transform:uppercase;font-weight:800;">Valor Total Sem Juros:</div>
+            <div style="font-size:24px;font-weight:900;color:#facc15;margin-top:2px;">${formatBRL(total)}</div>
+            <div style="font-size:12px;color:#fde047;margin-top:4px;">Parcele em até <strong>12x de ${formatBRL(total / 12)} sem juros</strong> no cartão!</div>
+          </div>
+        </div>
+      `;
+    } else if (metodo === 'debito') {
+      boxResumo.innerHTML = `
+        <div style="background:rgba(56,189,248,0.08);border:1.5px solid rgba(56,189,248,0.35);border-radius:14px;padding:14px;box-shadow:0 4px 16px rgba(0,0,0,0.3);">
+          <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:10px;margin-bottom:10px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:24px;">🏧</span>
+              <div>
+                <div style="font-size:14px;font-weight:900;color:#38bdf8;">Cartão de Débito</div>
+                <div style="font-size:11.5px;color:#94a3b8;">Valor total integral debitado à vista da conta corrente</div>
+              </div>
+            </div>
+            <span style="background:rgba(56,189,248,0.18);border:1px solid #38bdf8;color:#38bdf8;font-size:11px;font-weight:900;padding:4px 10px;border-radius:20px;">
+              À VISTA
+            </span>
+          </div>
+
+          <div style="background:rgba(56,189,248,0.1);border:1.5px solid rgba(56,189,248,0.35);border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:11px;color:#bae6fd;text-transform:uppercase;font-weight:800;">Valor Total no Débito:</div>
+            <div style="font-size:24px;font-weight:900;color:#38bdf8;margin-top:2px;">${formatBRL(total)}</div>
+          </div>
+        </div>
+      `;
+    }
+  }
+
 window.selecionarPagamento = function(metodo) {
     formaPagamentoEscolhida = metodo;
-    ['credito','debito','pix-copia','pix-qr'].forEach(function(m) {
+    ['avista','5050','credito','debito','pix-copia','pix-qr'].forEach(function(m) {
       const btn = document.getElementById('pay-btn-' + m);
       if (btn) btn.classList.remove('selected');
     });
@@ -2556,14 +2797,18 @@ window.selecionarPagamento = function(metodo) {
     const btnSel = document.getElementById('pay-btn-' + metodo);
     if (btnSel) btnSel.classList.add('selected');
 
-    if (metodo === 'pix-copia') {
-      if (pixCopiaPanel) pixCopiaPanel.classList.add('visible');
-    } else if (metodo === 'pix-qr') {
+    if (metodo === 'avista' || metodo === 'pix-qr') {
       if (pixQrPanel) pixQrPanel.classList.add('visible');
+      if (pixCopiaPanel) pixCopiaPanel.classList.add('visible');
+    } else if (metodo === '5050') {
+      if (pixQrPanel) pixQrPanel.classList.add('visible');
+      if (pixCopiaPanel) pixCopiaPanel.classList.add('visible');
+    } else if (metodo === 'pix-copia') {
+      if (pixCopiaPanel) pixCopiaPanel.classList.add('visible');
     } else if (metodo === 'credito') {
       if (cardMaqPanel) cardMaqPanel.classList.add('visible');
       const badge = document.getElementById('card-tipo-badge');
-      if (badge) badge.textContent = 'Cartão de Crédito';
+      if (badge) badge.textContent = 'Cartão de Crédito (Sem Juros)';
       const wParc = document.getElementById('wrap-parcelas');
       const wDeb = document.getElementById('wrap-debito-info');
       if (wParc) wParc.classList.remove('hidden');
@@ -2576,6 +2821,10 @@ window.selecionarPagamento = function(metodo) {
       const wDeb = document.getElementById('wrap-debito-info');
       if (wParc) wParc.classList.add('hidden');
       if (wDeb) wDeb.classList.remove('hidden');
+    }
+
+    if (typeof atualizarCalculoValorPagamento === 'function') {
+      atualizarCalculoValorPagamento();
     }
 
     const btnContinuar = document.getElementById('btn-continuar-assinar');
