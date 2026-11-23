@@ -4767,12 +4767,15 @@
       </div>
 
       <!-- BOTÕES DE AÇÃO RÁPIDA (CONFORME IMAGEM DE REFERÊNCIA) -->
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;width:100%;box-sizing:border-box;">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;width:100%;box-sizing:border-box;">
         <button type="button" class="btn" onclick="abrirModalNovoVeiculo()" style="padding:11px 14px;font-size:13px;font-weight:800;background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff;border:none;border-radius:12px;box-shadow:0 4px 15px rgba(245,158,11,0.35);display:flex;align-items:center;justify-content:center;gap:8px;">
           ➕ Adicionar Veículo
         </button>
         <button type="button" class="btn" onclick="abrirModalNovoAbastecimento()" style="padding:11px 14px;font-size:13px;font-weight:800;background:linear-gradient(135deg,#0284c7,#2563eb);color:#fff;border:none;border-radius:12px;box-shadow:0 4px 15px rgba(37,99,235,0.35);display:flex;align-items:center;justify-content:center;gap:8px;">
           ⛽ + Abastecimento / KM
+        </button>
+        <button type="button" class="btn" onclick="sdvAbrirModalGaleriaVeiculos()" style="padding:11px 14px;font-size:13px;font-weight:800;background:linear-gradient(135deg,#7c3aed,#9333ea);color:#fff;border:none;border-radius:12px;box-shadow:0 4px 15px rgba(147,51,234,0.35);display:flex;align-items:center;justify-content:center;gap:8px;">
+          📷 Fotos dos Veículos
         </button>
       </div>
     </div>
@@ -4848,6 +4851,32 @@
             <option value="outro">🚙 Outro Veículo</option>
           </select>
         </div>
+
+        <!-- FOTO DO VEÍCULO (PEDIDO DO USUÁRIO: NA PRIMEIRA EM TIPO DE VEICULO COLOCAR A FOTO) -->
+        <div style="grid-column: 1 / -1; background:rgba(255,255,255,0.02); border:1.5px dashed rgba(212,175,55,0.35); border-radius:14px; padding:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div id="sdv-veiculo-foto-preview-box" style="width:72px;height:72px;border-radius:14px;background:#0d1117;border:2px solid rgba(212,175,55,0.4);display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,0.5);cursor:pointer;" onclick="sdvAmpliarFotoVeiculo()" title="Clique para ampliar a foto do veículo">
+                <span id="sdv-veiculo-foto-placeholder" style="font-size:32px;">🚗</span>
+                <img id="sdv-veiculo-foto-img" src="" alt="Foto do Veículo" style="display:none;width:100%;height:100%;object-fit:cover;" />
+              </div>
+              <div>
+                <label style="display:block;font-size:13px;font-weight:800;color:#fff;">Foto do Veículo</label>
+                <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">Tire uma foto ou escolha da galeria para identificar o veículo</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <input type="file" id="sdv-detalhe-foto-input" accept="image/*" capture="environment" style="display:none;" onchange="sdvProcessarFotoVeiculo(event, 'detalhe')" />
+              <button type="button" class="btn" onclick="document.getElementById('sdv-detalhe-foto-input').click()" style="padding:9px 15px;font-size:12px;font-weight:800;background:linear-gradient(135deg,#0284c7,#2563eb);color:#fff;border:none;border-radius:10px;display:flex;align-items:center;gap:6px;">
+                📷 Tirar Foto / Galeria
+              </button>
+              <button type="button" id="sdv-btn-remover-foto-veic" class="btn btn-sec" onclick="sdvRemoverFotoVeiculo('detalhe')" style="display:none;padding:9px 12px;font-size:12px;font-weight:700;color:#ef4444;border-radius:10px;">
+                🗑️ Remover
+              </button>
+            </div>
+          </div>
+          <input type="hidden" id="sdv-detalhe-foto-base64" value="" />
+        </div>
       </div>
 
       <div style="margin-top:14px;display:flex;align-items:center;gap:8px;">
@@ -4905,6 +4934,15 @@
       </div>
     </div>
 
+    <!-- CARD 4: GALERIA DE FOTOS DOS VEÍCULOS & PASTAS -->
+    <div id="sdv-card-fotos-galeria" class="card" style="border:1.5px solid rgba(147,51,234,0.35);margin-bottom:16px;background:rgba(18,22,34,0.95);border-radius:16px;padding:18px;transition:box-shadow 0.5s ease;">
+      <!-- Preenchido dinamicamente via renderSdvGaleriaFotos() -->
+      <div style="text-align:center;color:var(--muted);padding:24px;">
+        <span style="font-size:28px;">📷</span>
+        <div style="font-size:13px;margin-top:8px;">Carregando galeria...</div>
+      </div>
+    </div>
+
   </div>
 
   <!-- MODAL: ADICIONAR NOVO VEÍCULO -->
@@ -4959,6 +4997,32 @@
         <div>
           <label style="display:block;font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:4px;">Motorista / Responsável (Opcional)</label>
           <input type="text" id="modal-veic-motorista" class="input-gold" style="width:100%;box-sizing:border-box;" placeholder="Ex: Samuel David" />
+        </div>
+
+        <!-- FOTO DO VEÍCULO NO CADASTRO -->
+        <div style="background:rgba(255,255,255,0.02); border:1.5px dashed rgba(212,175,55,0.35); border-radius:14px; padding:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="width:58px;height:58px;border-radius:12px;background:#0d1117;border:2px solid rgba(212,175,55,0.4);display:flex;align-items:center;justify-content:center;overflow:hidden;">
+                <span id="modal-veic-foto-placeholder" style="font-size:26px;">🚗</span>
+                <img id="modal-veic-foto-img" src="" alt="Foto" style="display:none;width:100%;height:100%;object-fit:cover;" />
+              </div>
+              <div>
+                <label style="display:block;font-size:12px;font-weight:800;color:#fff;">Foto do Veículo (Opcional)</label>
+                <div style="font-size:11px;color:var(--muted);">Tire uma foto ou selecione</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <input type="file" id="modal-veic-foto-input" accept="image/*" capture="environment" style="display:none;" onchange="sdvProcessarFotoVeiculo(event, 'modal-novo')" />
+              <button type="button" class="btn" onclick="document.getElementById('modal-veic-foto-input').click()" style="padding:7px 12px;font-size:11.5px;font-weight:800;background:linear-gradient(135deg,#0284c7,#2563eb);color:#fff;border:none;border-radius:8px;">
+                📷 Selecionar
+              </button>
+              <button type="button" id="modal-veic-btn-remover-foto" class="btn btn-sec" onclick="sdvRemoverFotoVeiculo('modal-novo')" style="display:none;padding:7px 10px;font-size:11.5px;font-weight:700;color:#ef4444;border-radius:8px;">
+                🗑️
+              </button>
+            </div>
+          </div>
+          <input type="hidden" id="modal-veic-foto-base64" value="" />
         </div>
       </div>
 
@@ -5102,6 +5166,83 @@
       </div>
     </div>
   </div>
+
+  <!-- MODAL: ADICIONAR NOVA PASTA NA GALERIA -->
+  <div id="modal-adicionar-pasta-veiculo" class="modal-overlay" style="display:none;" onclick="sdvFecharModalNovaPasta(event)">
+    <div class="modal-box" onclick="event.stopPropagation()" style="max-width:420px;border:1.5px solid rgba(147,51,234,0.45);box-shadow:0 12px 40px rgba(0,0,0,0.85);border-radius:18px;">
+      <div class="modal-title" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:22px;">📁</span>
+          <span style="font-size:17px;font-weight:900;color:#fff;">Nova Pasta de Fotos</span>
+        </div>
+        <button type="button" class="modal-close" onclick="sdvFecharModalNovaPasta()">✕</button>
+      </div>
+      <div>
+        <label style="display:block;font-size:12px;font-weight:700;color:var(--text2);margin-bottom:6px;">Nome da Pasta *</label>
+        <input type="text" id="modal-pasta-nome" class="input-gold" style="width:100%;box-sizing:border-box;" placeholder="Ex: Vistorias, Documentos, Manutenções..." />
+        <div style="font-size:11px;color:var(--muted);margin-top:6px;">As pastas ajudam a organizar as fotos por categoria.</div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:18px;">
+        <button type="button" class="btn btn-sec" onclick="sdvFecharModalNovaPasta()">Cancelar</button>
+        <button type="button" class="btn btn-primary" onclick="sdvCriarNovaPasta()" style="padding:10px 20px;font-size:13px;font-weight:800;background:linear-gradient(135deg,#7c3aed,#9333ea);border:none;border-radius:10px;box-shadow:0 4px 15px rgba(147,51,234,0.35);">
+          📁 Criar Pasta
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ADICIONAR FOTO NA GALERIA DOS VEÍCULOS -->
+  <div id="modal-adicionar-foto-veiculo" class="modal-overlay" style="display:none;" onclick="sdvFecharModalNovaFoto(event)">
+    <div class="modal-box" onclick="event.stopPropagation()" style="max-width:520px;max-height:90vh;overflow-y:auto;border:1.5px solid rgba(147,51,234,0.45);box-shadow:0 12px 40px rgba(0,0,0,0.85);border-radius:18px;">
+      <div class="modal-title" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:22px;">📸</span>
+          <span style="font-size:17px;font-weight:900;color:#fff;">Adicionar Foto na Galeria</span>
+        </div>
+        <button type="button" class="modal-close" onclick="sdvFecharModalNovaFoto()">✕</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div>
+          <label style="display:block;font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:4px;">Veículo *</label>
+          <select id="modal-foto-veiculo" class="input-gold" style="width:100%;box-sizing:border-box;"></select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <label style="display:block;font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:4px;">Pasta *</label>
+            <select id="modal-foto-pasta" class="input-gold" style="width:100%;box-sizing:border-box;"></select>
+          </div>
+          <div>
+            <label style="display:block;font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:4px;">Título (Opcional)</label>
+            <input type="text" id="modal-foto-titulo" class="input-gold" style="width:100%;box-sizing:border-box;" placeholder="Ex: Vistoria entrada" />
+          </div>
+        </div>
+        <div style="background:rgba(255,255,255,0.03);border:1.5px dashed rgba(147,51,234,0.4);border-radius:14px;padding:14px;text-align:center;">
+          <label style="display:block;font-size:12.5px;font-weight:800;color:#fff;margin-bottom:6px;">📷 Foto do Veículo</label>
+          <div style="font-size:11.5px;color:var(--muted);margin-bottom:10px;">Tire uma foto com a câmera ou selecione da galeria</div>
+          <input type="file" id="modal-foto-input" accept="image/*" capture="environment" style="display:none;" onchange="sdvProcessarFotoGaleria(event)" />
+          <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">
+            <button type="button" class="btn" onclick="document.getElementById('modal-foto-input').click()" style="padding:9px 16px;font-size:12px;font-weight:800;background:linear-gradient(135deg,#7c3aed,#9333ea);color:#fff;border:none;border-radius:10px;display:flex;align-items:center;gap:6px;">
+              📷 Selecionar Foto
+            </button>
+            <button type="button" id="modal-foto-btn-remover" class="btn btn-sec" onclick="sdvLimparPreviewFotoGaleria()" style="display:none;padding:9px 12px;font-size:12px;font-weight:700;color:#ef4444;border-radius:10px;">
+              🗑️ Remover
+            </button>
+          </div>
+          <div id="modal-foto-preview-box" style="display:none;margin-top:12px;justify-content:center;">
+            <img id="modal-foto-preview-img" src="" alt="Preview" style="max-width:200px;max-height:160px;object-fit:cover;border-radius:10px;border:2px solid #9333ea;box-shadow:0 4px 15px rgba(0,0,0,0.6);" />
+          </div>
+          <input type="hidden" id="modal-foto-base64" value="" />
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">
+        <button type="button" class="btn btn-sec" onclick="sdvFecharModalNovaFoto()">Cancelar</button>
+        <button type="button" class="btn btn-primary" onclick="sdvSalvarNovaFotoGaleria()" style="padding:10px 22px;font-size:13px;font-weight:800;background:linear-gradient(135deg,#7c3aed,#9333ea);border:none;border-radius:10px;box-shadow:0 4px 15px rgba(147,51,234,0.35);">
+          💾 Salvar Foto
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ══════════════════════════════════════════ -->
   <div id="panel-estoque" class="panel">
     <!-- Cabeçalho do Estoque -->
@@ -47011,12 +47152,17 @@ window.enviarFuncionarioWhatsApp = enviarFuncionarioWhatsApp;
 window.enviarTodosFuncionariosWhatsApp = enviarTodosFuncionariosWhatsApp;
 
 // ══════════════════════════════════════════════
-// MÓDULO: SD VEÍCULOS (FROTA, LICENCIAMENTO & ABASTECIMENTO)
+// MÓDULO: SD VEÍCULOS (FROTA, LICENCIAMENTO, ABASTECIMENTO, FOTOS & PASTAS)
 // ══════════════════════════════════════════════
 
 const SDV_KEY_VEICULOS = 'sdv_veiculos_cadastrados';
 const SDV_KEY_ATIVO = 'sdv_veiculo_ativo_id';
 const SDV_KEY_ABASTECIMENTOS = 'sdv_veiculos_abastecimentos';
+const SDV_KEY_PASTAS = 'sdv_veiculos_pastas';
+const SDV_KEY_FOTOS_GALERIA = 'sdv_veiculos_fotos_galeria';
+
+let _sdvPastaAtiva = 'Todas';
+let _sdvFiltroVeiculoGaleria = 'todos';
 
 function sdvObterVeiculos() {
   try {
@@ -47040,6 +47186,7 @@ function sdvObterVeiculos() {
       dataLicenciamento: '2026-12-20',
       receberNotificacao: true,
       motorista: 'Samuel David',
+      foto: '',
       criadoEm: new Date().toISOString()
     }
   ];
@@ -47080,6 +47227,48 @@ function sdvSalvarAbastecimentos(lista) {
   }
 }
 
+function sdvObterPastas() {
+  const padrao = ['Geral', 'Vistorias', 'Manutenções', 'Documentos'];
+  try {
+    const raw = localStorage.getItem(SDV_KEY_PASTAS);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch(_) {}
+  try {
+    localStorage.setItem(SDV_KEY_PASTAS, JSON.stringify(padrao));
+  } catch(_) {}
+  return padrao;
+}
+
+function sdvSalvarPastas(pastas) {
+  try {
+    localStorage.setItem(SDV_KEY_PASTAS, JSON.stringify(pastas || []));
+  } catch(e) {
+    console.error('Erro ao salvar pastas:', e);
+  }
+}
+
+function sdvObterFotosGaleria() {
+  try {
+    const raw = localStorage.getItem(SDV_KEY_FOTOS_GALERIA);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch(_) {}
+  return [];
+}
+
+function sdvSalvarFotosGaleria(fotos) {
+  try {
+    localStorage.setItem(SDV_KEY_FOTOS_GALERIA, JSON.stringify(fotos || []));
+  } catch(e) {
+    console.error('Erro ao salvar fotos da galeria:', e);
+  }
+}
+
 function sdvObterVeiculoAtivoId() {
   const veiculos = sdvObterVeiculos();
   let ativoId = '';
@@ -47116,15 +47305,20 @@ function renderVeiculosView() {
   if (sel) {
     sel.innerHTML = veiculos.map(v => {
       const icone = v.tipo === 'moto' ? '🏍️' : (v.tipo === 'caminhao' ? '🚚' : '🚗');
-      return `<option value="${v.id}" ${v.id === veiculoAtivo.id ? 'selected' : ''}>${icone} ${v.modelo || 'Sem modelo'} (${v.placa || 'Sem placa'})</option>`;
+      const temFotoTxt = v.foto ? ' 📷' : '';
+      return `<option value="${v.id}" ${v.id === veiculoAtivo.id ? 'selected' : ''}>${icone} ${v.modelo || 'Sem modelo'} (${v.placa || 'Sem placa'})${temFotoTxt}</option>`;
     }).join('');
   }
 
-  // Atualiza título e ícone do cabeçalho
+  // Atualiza título e ícone/foto do cabeçalho
   const iconeHeader = document.getElementById('sdv-header-icone');
   const tituloHeader = document.getElementById('sdv-header-titulo');
   if (iconeHeader) {
-    iconeHeader.textContent = veiculoAtivo.tipo === 'moto' ? '🏍️' : (veiculoAtivo.tipo === 'caminhao' ? '🚚' : '🚗');
+    if (veiculoAtivo.foto) {
+      iconeHeader.innerHTML = `<img src="${veiculoAtivo.foto}" alt="Foto" style="width:36px;height:36px;border-radius:10px;object-fit:cover;border:1.5px solid #d4af37;vertical-align:middle;box-shadow:0 3px 10px rgba(0,0,0,0.5);" />`;
+    } else {
+      iconeHeader.textContent = veiculoAtivo.tipo === 'moto' ? '🏍️' : (veiculoAtivo.tipo === 'caminhao' ? '🚚' : '🚗');
+    }
   }
   if (tituloHeader) {
     tituloHeader.textContent = veiculoAtivo.modelo ? ('SD Veículos • ' + veiculoAtivo.modelo) : 'SD Veículos';
@@ -47156,11 +47350,36 @@ function renderVeiculosView() {
   if (selTipo) selTipo.value = veiculoAtivo.tipo || 'carro';
   if (chkNotif) chkNotif.checked = veiculoAtivo.receberNotificacao !== false;
 
+  // Preenche Foto do Veículo no card
+  const inpFotoBase64 = document.getElementById('sdv-detalhe-foto-base64');
+  const imgFoto = document.getElementById('sdv-veiculo-foto-img');
+  const placeholderFoto = document.getElementById('sdv-veiculo-foto-placeholder');
+  const btnRemoverFoto = document.getElementById('sdv-btn-remover-foto-veic');
+
+  if (inpFotoBase64) inpFotoBase64.value = veiculoAtivo.foto || '';
+  if (imgFoto && placeholderFoto) {
+    if (veiculoAtivo.foto) {
+      imgFoto.src = veiculoAtivo.foto;
+      imgFoto.style.display = 'block';
+      placeholderFoto.style.display = 'none';
+      if (btnRemoverFoto) btnRemoverFoto.style.display = 'inline-block';
+    } else {
+      imgFoto.src = '';
+      imgFoto.style.display = 'none';
+      placeholderFoto.style.display = 'inline-block';
+      placeholderFoto.textContent = veiculoAtivo.tipo === 'moto' ? '🏍️' : (veiculoAtivo.tipo === 'caminhao' ? '🚚' : '🚗');
+      if (btnRemoverFoto) btnRemoverFoto.style.display = 'none';
+    }
+  }
+
   // Renderiza card de alerta de licenciamento (réplica fiel da Imagem 2)
   renderSdvAlertaLicenciamento(veiculoAtivo);
 
   // Renderiza histórico e KPIs de abastecimento
   renderSdvHistoricoAbastecimentos(veiculoAtivo.id);
+
+  // Renderiza Galeria de Fotos e Pastas dos Veículos
+  renderSdvGaleriaFotos();
 }
 
 // Renderiza o Alerta de Licenciamento
@@ -47196,7 +47415,7 @@ function renderSdvAlertaLicenciamento(veiculo) {
   }
 
   if (dias > 0 && dias <= 30) {
-    // Layout Idêntico à Imagem 2 enviada pelo usuário
+    // Layout Idêntico à Imagem enviada pelo usuário
     container.innerHTML = `
       <div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:16px;padding:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;box-shadow:0 4px 15px rgba(245,158,11,0.08);">
         <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:240px;">
@@ -47263,6 +47482,92 @@ function sdvTrocarVeiculoAtivo(veicId) {
   renderVeiculosView();
 }
 
+// Processa upload de foto do veículo (comprimida)
+function sdvProcessarFotoVeiculo(event, origem) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      const maxDim = 1024;
+      let width = img.width;
+      let height = img.height;
+      if (width > maxDim || height > maxDim) {
+        if (width > height) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        } else {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+
+      if (origem === 'detalhe') {
+        const inp = document.getElementById('sdv-detalhe-foto-base64');
+        const prev = document.getElementById('sdv-veiculo-foto-img');
+        const icon = document.getElementById('sdv-veiculo-foto-placeholder');
+        const btnRem = document.getElementById('sdv-btn-remover-foto-veic');
+        if (inp) inp.value = dataUrl;
+        if (prev) { prev.src = dataUrl; prev.style.display = 'block'; }
+        if (icon) icon.style.display = 'none';
+        if (btnRem) btnRem.style.display = 'inline-block';
+      } else if (origem === 'modal-novo') {
+        const inp = document.getElementById('modal-veic-foto-base64');
+        const prev = document.getElementById('modal-veic-foto-img');
+        const icon = document.getElementById('modal-veic-foto-placeholder');
+        const btnRem = document.getElementById('modal-veic-btn-remover-foto');
+        if (inp) inp.value = dataUrl;
+        if (prev) { prev.src = dataUrl; prev.style.display = 'block'; }
+        if (icon) icon.style.display = 'none';
+        if (btnRem) btnRem.style.display = 'inline-block';
+      }
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function sdvRemoverFotoVeiculo(origem) {
+  if (origem === 'detalhe') {
+    const inp = document.getElementById('sdv-detalhe-foto-base64');
+    const prev = document.getElementById('sdv-veiculo-foto-img');
+    const icon = document.getElementById('sdv-veiculo-foto-placeholder');
+    const btnRem = document.getElementById('sdv-btn-remover-foto-veic');
+    const file = document.getElementById('sdv-detalhe-foto-input');
+    if (inp) inp.value = '';
+    if (file) file.value = '';
+    if (prev) { prev.src = ''; prev.style.display = 'none'; }
+    if (icon) icon.style.display = 'inline-block';
+    if (btnRem) btnRem.style.display = 'none';
+  } else if (origem === 'modal-novo') {
+    const inp = document.getElementById('modal-veic-foto-base64');
+    const prev = document.getElementById('modal-veic-foto-img');
+    const icon = document.getElementById('modal-veic-foto-placeholder');
+    const btnRem = document.getElementById('modal-veic-btn-remover-foto');
+    const file = document.getElementById('modal-veic-foto-input');
+    if (inp) inp.value = '';
+    if (file) file.value = '';
+    if (prev) { prev.src = ''; prev.style.display = 'none'; }
+    if (icon) icon.style.display = 'inline-block';
+    if (btnRem) btnRem.style.display = 'none';
+  }
+}
+
+function sdvAmpliarFotoVeiculo() {
+  const base64 = (document.getElementById('sdv-detalhe-foto-base64') || {}).value;
+  if (!base64) return;
+  const veic = sdvObterVeiculoAtivo();
+  sdvExibirFotoZoom(base64, (veic ? (veic.modelo + ' - Foto Oficial') : 'Foto do Veículo'));
+}
+
 // Salva dados do veículo ativo editado no card
 function sdvSalvarDadosVeiculoAtual() {
   const veiculos = sdvObterVeiculos();
@@ -47278,6 +47583,7 @@ function sdvSalvarDadosVeiculoAtual() {
   const motorista = (document.getElementById('sdv-detalhe-motorista').value || '').trim();
   const tipo = document.getElementById('sdv-detalhe-tipo').value || 'carro';
   const notif = document.getElementById('sdv-detalhe-notificacao').checked;
+  const foto = (document.getElementById('sdv-detalhe-foto-base64').value || '').trim();
 
   if (!modelo) { alert('Informe o modelo do veículo.'); return; }
   if (!ano) { alert('Informe o ano do veículo.'); return; }
@@ -47292,6 +47598,7 @@ function sdvSalvarDadosVeiculoAtual() {
   v.motorista = motorista;
   v.tipo = tipo;
   v.receberNotificacao = notif;
+  v.foto = foto;
   v.atualizadoEm = new Date().toISOString();
 
   sdvSalvarVeiculos(veiculos);
@@ -47309,6 +47616,7 @@ function abrirModalNovoVeiculo() {
   document.getElementById('modal-veic-km').value = '';
   document.getElementById('modal-veic-data-lic').value = '';
   document.getElementById('modal-veic-motorista').value = '';
+  sdvRemoverFotoVeiculo('modal-novo');
 
   const modal = document.getElementById('modal-adicionar-veiculo');
   if (modal) modal.style.display = 'flex';
@@ -47328,6 +47636,7 @@ function sdvSalvarNovoVeiculo() {
   const km = parseFloat(document.getElementById('modal-veic-km').value) || 0;
   const dataLic = (document.getElementById('modal-veic-data-lic').value || '').trim();
   const motorista = (document.getElementById('modal-veic-motorista').value || '').trim();
+  const foto = (document.getElementById('modal-veic-foto-base64').value || '').trim();
 
   if (!modelo) { alert('Por favor, informe o modelo do veículo.'); return; }
   if (!ano) { alert('Por favor, informe o ano do veículo.'); return; }
@@ -47344,6 +47653,7 @@ function sdvSalvarNovoVeiculo() {
     dataLicenciamento: dataLic,
     receberNotificacao: true,
     motorista: motorista,
+    foto: foto,
     criadoEm: new Date().toISOString()
   };
 
@@ -47377,7 +47687,7 @@ function sdvExcluirVeiculoAtual() {
   const ativo = sdvObterVeiculoAtivo();
   if (!ativo) return;
 
-  if (!confirm(`Deseja realmente excluir o veículo "${ativo.modelo} (${ativo.placa})"?\nOs registros de abastecimento deste veículo também serão removidos.`)) {
+  if (!confirm(`Deseja realmente excluir o veículo "${ativo.modelo} (${ativo.placa})"?\nOs registros de abastecimento e fotos vinculados a este veículo também serão removidos.`)) {
     return;
   }
 
@@ -47388,6 +47698,11 @@ function sdvExcluirVeiculoAtual() {
   const todosAbast = sdvObterAbastecimentos();
   const filtrados = todosAbast.filter(x => x.veiculoId !== ativo.id);
   sdvSalvarAbastecimentos(filtrados);
+
+  // Remove fotos vinculadas
+  const todasFotos = sdvObterFotosGaleria();
+  const fotosFiltradas = todasFotos.filter(x => x.veiculoId !== ativo.id);
+  sdvSalvarFotosGaleria(fotosFiltradas);
 
   sdvDefinirVeiculoAtivoId(novosVeiculos[0].id);
   if (typeof showToast === 'function') showToast('🗑️ Veículo excluído com sucesso.', 'info');
@@ -47442,7 +47757,6 @@ function fecharModalNovoAbastecimento(e) {
   if (modal) modal.style.display = 'none';
 }
 
-// Cálculo automático de preço por litro
 function sdvCalcularPrecoPorLitro() {
   const valor = parseFloat(document.getElementById('modal-abast-valor').value) || 0;
   const litros = parseFloat(document.getElementById('modal-abast-litros').value) || 0;
@@ -47452,7 +47766,6 @@ function sdvCalcularPrecoPorLitro() {
   }
 }
 
-// Processamento da foto do comprovante com compressão de imagem inteligente
 function sdvProcessarFotoComprovante(event) {
   const file = event.target.files && event.target.files[0];
   if (!file) return;
@@ -47461,7 +47774,6 @@ function sdvProcessarFotoComprovante(event) {
   reader.onload = function(e) {
     const img = new Image();
     img.onload = function() {
-      // Redimensiona mantendo proporção para no máximo 1024x1024
       const maxDim = 1024;
       let width = img.width;
       let height = img.height;
@@ -47481,8 +47793,6 @@ function sdvProcessarFotoComprovante(event) {
       canvas.height = height;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, width, height);
-
-      // Comprime como JPEG com qualidade 0.72 (~80-120KB)
       const dataUrl = canvas.toDataURL('image/jpeg', 0.72);
 
       document.getElementById('modal-abast-foto-base64').value = dataUrl;
@@ -47519,7 +47829,6 @@ function sdvAmpliarFotoPreview() {
   sdvExibirFotoZoom(base64, 'Comprovante Selecionado');
 }
 
-// Salva o registro de abastecimento
 function sdvSalvarNovoAbastecimento() {
   const veicId = document.getElementById('modal-abast-veiculo').value;
   const data = (document.getElementById('modal-abast-data').value || '').trim();
@@ -47554,10 +47863,9 @@ function sdvSalvarNovoAbastecimento() {
   };
 
   const lista = sdvObterAbastecimentos();
-  lista.unshift(novo); // Insere no início
+  lista.unshift(novo);
   sdvSalvarAbastecimentos(lista);
 
-  // Atualiza automaticamente o KM atual do veículo cadastrado caso o KM informado seja maior
   const veiculos = sdvObterVeiculos();
   const v = veiculos.find(x => x.id === veicId);
   if (v && (!v.kmAtual || km > v.kmAtual)) {
@@ -47569,19 +47877,16 @@ function sdvSalvarNovoAbastecimento() {
   if (typeof showToast === 'function') showToast('✅ Abastecimento e KM registrados com sucesso!', 'success');
   else alert('Abastecimento registrado com sucesso!');
 
-  // Atualiza visão se o veículo do abastecimento for o ativo
   if (veicId === sdvObterVeiculoAtivoId()) {
     renderVeiculosView();
   }
 }
 
-// Renderiza a lista de abastecimentos e os KPIs do veículo ativo
 function renderSdvHistoricoAbastecimentos(veiculoId) {
   const lista = sdvObterAbastecimentos().filter(x => x.veiculoId === veiculoId);
   const container = document.getElementById('sdv-lista-abastecimentos');
   const veiculo = sdvObterVeiculoAtivo();
 
-  // Atualiza KPIs
   const kpiKm = document.getElementById('sdv-kpi-km');
   const kpiTotal = document.getElementById('sdv-kpi-total-gasto');
   const kpiUltimo = document.getElementById('sdv-kpi-ultimo-data');
@@ -47622,14 +47927,12 @@ function renderSdvHistoricoAbastecimentos(veiculoId) {
     return;
   }
 
-  // Ordena por data decrescente
   const itensHtml = lista.map((item, idx) => {
     const partes = String(item.data || '').split('-');
     const dataFmt = partes.length === 3 ? (partes[2] + '/' + partes[1] + '/' + partes[0]) : item.data;
     const valorFmt = (item.valorTotal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const kmFmt = Number(item.kmAtual || 0).toLocaleString('pt-BR');
 
-    // Diferença de KM com o abastecimento anterior (mais antigo)
     let badgeKmDiff = '';
     const proximoMaisAntigo = lista[idx + 1];
     if (proximoMaisAntigo && item.kmAtual && proximoMaisAntigo.kmAtual && (item.kmAtual > proximoMaisAntigo.kmAtual)) {
@@ -47695,7 +47998,6 @@ function renderSdvHistoricoAbastecimentos(veiculoId) {
   container.innerHTML = itensHtml;
 }
 
-// Visualização de foto ampliada (Zoom)
 function sdvVerComprovanteZoom(abastId) {
   const lista = sdvObterAbastecimentos();
   const item = lista.find(x => x.id === abastId);
@@ -47725,7 +48027,6 @@ function fecharModalZoomComprovante(e) {
   if (modal) modal.style.display = 'none';
 }
 
-// Excluir registro de abastecimento
 function sdvExcluirAbastecimento(abastId) {
   if (!confirm('Deseja realmente excluir este registro de abastecimento?')) return;
   const lista = sdvObterAbastecimentos();
@@ -47735,7 +48036,366 @@ function sdvExcluirAbastecimento(abastId) {
   renderVeiculosView();
 }
 
-// Exportações para o escopo global do browser
+// ══════════════════════════════════════════════
+// GALERIA DE FOTOS DOS VEÍCULOS & PASTAS
+// ══════════════════════════════════════════════
+
+function sdvAbrirModalGaleriaVeiculos() {
+  const card = document.getElementById('sdv-card-fotos-galeria');
+  if (card) {
+    card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    card.style.boxShadow = '0 0 25px rgba(147,51,234,0.6)';
+    setTimeout(() => {
+      card.style.boxShadow = '';
+    }, 1500);
+  }
+}
+
+function sdvAbrirModalNovaPasta() {
+  const inp = document.getElementById('modal-pasta-nome');
+  if (inp) inp.value = '';
+  const modal = document.getElementById('modal-adicionar-pasta-veiculo');
+  if (modal) modal.style.display = 'flex';
+}
+
+function sdvFecharModalNovaPasta(e) {
+  if (e && e.target !== e.currentTarget) return;
+  const modal = document.getElementById('modal-adicionar-pasta-veiculo');
+  if (modal) modal.style.display = 'none';
+}
+
+function sdvCriarNovaPasta() {
+  const inp = document.getElementById('modal-pasta-nome');
+  const nome = (inp ? inp.value : '').trim();
+  if (!nome) {
+    alert('Por favor, informe o nome da nova pasta.');
+    return;
+  }
+  const pastas = sdvObterPastas();
+  if (pastas.some(p => p.toLowerCase() === nome.toLowerCase())) {
+    alert('Já existe uma pasta com esse nome.');
+    return;
+  }
+  pastas.push(nome);
+  sdvSalvarPastas(pastas);
+  _sdvPastaAtiva = nome;
+  sdvFecharModalNovaPasta();
+  if (typeof showToast === 'function') showToast(`📁 Pasta "${nome}" criada com sucesso!`, 'success');
+  renderSdvGaleriaFotos();
+}
+
+function sdvExcluirPasta(nomePasta) {
+  if (nomePasta === 'Geral') {
+    alert('A pasta "Geral" é padrão do sistema e não pode ser excluída.');
+    return;
+  }
+  if (!confirm(`Deseja realmente excluir a pasta "${nomePasta}"?\nAs fotos contidas nela serão movidas para a pasta "Geral".`)) {
+    return;
+  }
+  const pastas = sdvObterPastas().filter(p => p !== nomePasta);
+  sdvSalvarPastas(pastas);
+
+  // Move fotos para a pasta Geral
+  const fotos = sdvObterFotosGaleria();
+  fotos.forEach(f => {
+    if (f.pasta === nomePasta) f.pasta = 'Geral';
+  });
+  sdvSalvarFotosGaleria(fotos);
+
+  _sdvPastaAtiva = 'Todas';
+  if (typeof showToast === 'function') showToast(`🗑️ Pasta "${nomePasta}" excluída.`, 'info');
+  renderSdvGaleriaFotos();
+}
+
+function sdvAbrirModalNovaFoto(pastaSugerida) {
+  const veiculos = sdvObterVeiculos();
+  const ativoId = sdvObterVeiculoAtivoId();
+  const pastas = sdvObterPastas();
+
+  // Popula seletor de veículos
+  const selVeic = document.getElementById('modal-foto-veiculo');
+  if (selVeic) {
+    selVeic.innerHTML = veiculos.map(v => {
+      const icone = v.tipo === 'moto' ? '🏍️' : (v.tipo === 'caminhao' ? '🚚' : '🚗');
+      return `<option value="${v.id}" ${v.id === ativoId ? 'selected' : ''}>${icone} ${v.modelo} (${v.placa})</option>`;
+    }).join('');
+  }
+
+  // Popula seletor de pastas
+  const selPasta = document.getElementById('modal-foto-pasta');
+  const pastaAlvo = pastaSugerida || (_sdvPastaAtiva !== 'Todas' ? _sdvPastaAtiva : 'Geral');
+  if (selPasta) {
+    selPasta.innerHTML = pastas.map(p => `
+      <option value="${p}" ${p === pastaAlvo ? 'selected' : ''}>📁 ${p}</option>
+    `).join('');
+  }
+
+  const inpTitulo = document.getElementById('modal-foto-titulo');
+  if (inpTitulo) inpTitulo.value = '';
+
+  sdvLimparPreviewFotoGaleria();
+
+  const modal = document.getElementById('modal-adicionar-foto-veiculo');
+  if (modal) modal.style.display = 'flex';
+}
+
+function sdvFecharModalNovaFoto(e) {
+  if (e && e.target !== e.currentTarget) return;
+  const modal = document.getElementById('modal-adicionar-foto-veiculo');
+  if (modal) modal.style.display = 'none';
+}
+
+function sdvProcessarFotoGaleria(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      const maxDim = 1280;
+      let width = img.width;
+      let height = img.height;
+      if (width > maxDim || height > maxDim) {
+        if (width > height) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        } else {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.78);
+
+      const inp = document.getElementById('modal-foto-base64');
+      const prev = document.getElementById('modal-foto-preview-img');
+      const box = document.getElementById('modal-foto-preview-box');
+      const btnRem = document.getElementById('modal-foto-btn-remover');
+
+      if (inp) inp.value = dataUrl;
+      if (prev) prev.src = dataUrl;
+      if (box) box.style.display = 'flex';
+      if (btnRem) btnRem.style.display = 'inline-block';
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function sdvLimparPreviewFotoGaleria() {
+  const inpFile = document.getElementById('modal-foto-input');
+  const inpBase64 = document.getElementById('modal-foto-base64');
+  const prev = document.getElementById('modal-foto-preview-img');
+  const box = document.getElementById('modal-foto-preview-box');
+  const btnRem = document.getElementById('modal-foto-btn-remover');
+
+  if (inpFile) inpFile.value = '';
+  if (inpBase64) inpBase64.value = '';
+  if (prev) prev.src = '';
+  if (box) box.style.display = 'none';
+  if (btnRem) btnRem.style.display = 'none';
+}
+
+function sdvSalvarNovaFotoGaleria() {
+  const veicId = (document.getElementById('modal-foto-veiculo') || {}).value;
+  const pasta = (document.getElementById('modal-foto-pasta') || {}).value || 'Geral';
+  const titulo = ((document.getElementById('modal-foto-titulo') || {}).value || '').trim();
+  const fotoBase64 = ((document.getElementById('modal-foto-base64') || {}).value || '').trim();
+
+  if (!fotoBase64) {
+    alert('Por favor, tire uma foto ou escolha uma imagem da galeria.');
+    return;
+  }
+
+  const novaFoto = {
+    id: 'vf_' + Date.now(),
+    veiculoId: veicId,
+    pasta: pasta,
+    titulo: titulo,
+    data: new Date().toISOString().split('T')[0],
+    fotoBase64: fotoBase64,
+    criadoEm: new Date().toISOString()
+  };
+
+  const fotos = sdvObterFotosGaleria();
+  fotos.unshift(novaFoto);
+  sdvSalvarFotosGaleria(fotos);
+
+  sdvFecharModalNovaFoto();
+  if (typeof showToast === 'function') showToast('📸 Foto salva com sucesso na galeria!', 'success');
+  renderSdvGaleriaFotos();
+}
+
+function sdvExcluirFotoGaleria(fotoId) {
+  if (!confirm('Deseja realmente excluir esta foto da galeria?')) return;
+  const fotos = sdvObterFotosGaleria().filter(f => f.id !== fotoId);
+  sdvSalvarFotosGaleria(fotos);
+  if (typeof showToast === 'function') showToast('🗑️ Foto removida.', 'info');
+  renderSdvGaleriaFotos();
+}
+
+function renderSdvGaleriaFotos() {
+  const container = document.getElementById('sdv-card-fotos-galeria');
+  if (!container) return;
+
+  const veiculos = sdvObterVeiculos();
+  const todasFotos = sdvObterFotosGaleria();
+  const pastas = sdvObterPastas();
+  const veicAtivo = sdvObterVeiculoAtivo();
+
+  // Filtragem por veículo
+  let fotosFiltradas = todasFotos;
+  if (_sdvFiltroVeiculoGaleria !== 'todos') {
+    fotosFiltradas = fotosFiltradas.filter(f => f.veiculoId === _sdvFiltroVeiculoGaleria);
+  }
+
+  // Filtragem por pasta
+  if (_sdvPastaAtiva !== 'Todas') {
+    fotosFiltradas = fotosFiltradas.filter(f => f.pasta === _sdvPastaAtiva);
+  }
+
+  // Gera chips das pastas
+  const totalGeral = (_sdvFiltroVeiculoGaleria === 'todos')
+    ? todasFotos.length
+    : todasFotos.filter(f => f.veiculoId === _sdvFiltroVeiculoGaleria).length;
+
+  const chipsPastasHtml = `
+    <button type="button" onclick="_sdvPastaAtiva='Todas'; renderSdvGaleriaFotos()" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:800;border:none;cursor:pointer;background:${_sdvPastaAtiva === 'Todas' ? 'linear-gradient(135deg,#7c3aed,#9333ea)' : 'rgba(255,255,255,0.06)'};color:#fff;box-shadow:${_sdvPastaAtiva === 'Todas' ? '0 2px 8px rgba(147,51,234,0.4)' : 'none'};">
+      📁 Todas (${totalGeral})
+    </button>
+    ${pastas.map(p => {
+      const qtd = (_sdvFiltroVeiculoGaleria === 'todos')
+        ? todasFotos.filter(f => f.pasta === p).length
+        : todasFotos.filter(f => f.veiculoId === _sdvFiltroVeiculoGaleria && f.pasta === p).length;
+      const ehAtiva = (_sdvPastaAtiva === p);
+      const ehExcluivel = (p !== 'Geral');
+      return `
+        <div style="display:inline-flex;align-items:center;background:${ehAtiva ? 'linear-gradient(135deg,#7c3aed,#9333ea)' : 'rgba(255,255,255,0.06)'};border-radius:999px;padding:2px 4px 2px 10px;box-shadow:${ehAtiva ? '0 2px 8px rgba(147,51,234,0.4)' : 'none'};">
+          <button type="button" onclick="_sdvPastaAtiva='${p}'; renderSdvGaleriaFotos()" style="background:transparent;border:none;color:#fff;font-size:12px;font-weight:800;cursor:pointer;padding:4px 6px;">
+            📁 ${p} (${qtd})
+          </button>
+          ${ehExcluivel ? `
+            <button type="button" onclick="sdvExcluirPasta('${p}')" style="background:transparent;border:none;color:rgba(255,255,255,0.5);font-size:11px;cursor:pointer;padding:2px 6px;border-radius:50%;" title="Excluir pasta ${p}">
+              ✕
+            </button>
+          ` : ''}
+        </div>
+      `;
+    }).join('')}
+  `;
+
+  // Gera opções do filtro por veículo
+  const veicOptionsHtml = `
+    <option value="todos" ${_sdvFiltroVeiculoGaleria === 'todos' ? 'selected' : ''}>Todos os Veículos</option>
+    ${veiculos.map(v => `
+      <option value="${v.id}" ${_sdvFiltroVeiculoGaleria === v.id ? 'selected' : ''}>
+        ${v.tipo === 'moto' ? '🏍️' : '🚗'} ${v.modelo} (${v.placa})
+      </option>
+    `).join('')}
+  `;
+
+  // Grid de fotos
+  let gridFotosHtml = '';
+  if (fotosFiltradas.length === 0) {
+    gridFotosHtml = `
+      <div style="grid-column: 1 / -1; background:rgba(255,255,255,0.02);border:1.5px dashed rgba(255,255,255,0.12);border-radius:14px;padding:32px 16px;text-align:center;color:var(--muted);">
+        <div style="font-size:36px;margin-bottom:8px;">📷</div>
+        <div style="font-size:14px;font-weight:800;color:#fff;">Nenhuma foto encontrada nesta pasta</div>
+        <div style="font-size:12px;margin-top:4px;color:var(--text2);">Clique em <strong>"📸 + Adicionar Foto"</strong> para registrar vistorias, documentos ou fotos do veículo.</div>
+      </div>
+    `;
+  } else {
+    gridFotosHtml = fotosFiltradas.map(f => {
+      const vOwner = veiculos.find(v => v.id === f.veiculoId);
+      const vNome = vOwner ? vOwner.modelo : 'Veículo';
+      const partes = String(f.data || '').split('-');
+      const dataFmt = partes.length === 3 ? (partes[2] + '/' + partes[1] + '/' + partes[0]) : f.data;
+
+      return `
+        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 4px 15px rgba(0,0,0,0.4);">
+          <div style="position:relative;width:100%;height:140px;cursor:pointer;background:#000;" onclick="sdvExibirFotoZoom('${f.fotoBase64}', '${vNome} - ${f.pasta}')" title="Clique para ampliar">
+            <img src="${f.fotoBase64}" alt="Foto" style="width:100%;height:100%;object-fit:cover;" />
+            <span style="position:absolute;top:6px;left:6px;background:rgba(0,0,0,0.7);color:#c084fc;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:800;">
+              📁 ${f.pasta}
+            </span>
+            <span style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.8);color:#fff;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:900;">
+              🔍 VER
+            </span>
+          </div>
+          <div style="padding:10px 12px;display:flex;flex-direction:column;gap:4px;flex:1;justify-content:space-between;">
+            <div>
+              <div style="font-size:12px;font-weight:800;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                ${f.titulo || vNome}
+              </div>
+              <div style="font-size:10.5px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;margin-top:2px;">
+                <span>🚗 ${vNome}</span>
+                <span>📅 ${dataFmt}</span>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:6px;border-top:1px solid rgba(255,255,255,0.06);padding-top:6px;">
+              <button type="button" onclick="sdvExibirFotoZoom('${f.fotoBase64}', '${vNome} - ${f.pasta}')" class="btn btn-sec" style="padding:4px 8px;font-size:11px;font-weight:700;border-radius:6px;">
+                🔍
+              </button>
+              <button type="button" onclick="sdvExcluirFotoGaleria('${f.id}')" class="btn btn-sec" style="padding:4px 8px;font-size:11px;font-weight:700;border-radius:6px;color:#ef4444;" title="Excluir foto">
+                🗑️
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  container.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:10px;">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:22px;color:#c084fc;">📷</span>
+          <span style="font-size:16px;font-weight:900;color:#fff;">Fotos dos Veículos & Pastas</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">
+          Galeria organizada por pastas para vistorias, documentos, manutenções e registros fotográficos.
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <button type="button" onclick="sdvAbrirModalNovaPasta()" class="btn btn-sec" style="padding:8px 14px;font-size:12px;font-weight:800;border-radius:10px;display:flex;align-items:center;gap:6px;">
+          📁 + Adicionar Pasta
+        </button>
+        <button type="button" onclick="sdvAbrirModalNovaFoto()" class="btn" style="padding:8px 16px;font-size:12px;font-weight:800;background:linear-gradient(135deg,#7c3aed,#9333ea);color:#fff;border:none;border-radius:10px;box-shadow:0 4px 15px rgba(147,51,234,0.35);display:flex;align-items:center;gap:6px;">
+          📸 + Adicionar Foto
+        </button>
+      </div>
+    </div>
+
+    <!-- BARRA DE FILTROS & PASTAS -->
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+      <!-- Chips das Pastas -->
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1;">
+        ${chipsPastasHtml}
+      </div>
+
+      <!-- Seletor de Veículo -->
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="font-size:12px;color:var(--muted);font-weight:700;">Veículo:</span>
+        <select onchange="_sdvFiltroVeiculoGaleria=this.value; renderSdvGaleriaFotos()" style="padding:6px 10px;border-radius:8px;background:#0d1117;color:#fff;border:1px solid rgba(255,255,255,0.15);font-size:12px;font-weight:700;cursor:pointer;">
+          ${veicOptionsHtml}
+        </select>
+      </div>
+    </div>
+
+    <!-- GRID DE FOTOS -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;">
+      ${gridFotosHtml}
+    </div>
+  `;
+}
+
+// Exportações para o browser
 window.sdvObterVeiculos = sdvObterVeiculos;
 window.sdvSalvarVeiculos = sdvSalvarVeiculos;
 window.sdvObterAbastecimentos = sdvObterAbastecimentos;
@@ -47759,6 +48419,21 @@ window.sdvVerComprovanteZoom = sdvVerComprovanteZoom;
 window.sdvExibirFotoZoom = sdvExibirFotoZoom;
 window.fecharModalZoomComprovante = fecharModalZoomComprovante;
 window.sdvExcluirAbastecimento = sdvExcluirAbastecimento;
+window.sdvProcessarFotoVeiculo = sdvProcessarFotoVeiculo;
+window.sdvRemoverFotoVeiculo = sdvRemoverFotoVeiculo;
+window.sdvAmpliarFotoVeiculo = sdvAmpliarFotoVeiculo;
+window.sdvAbrirModalGaleriaVeiculos = sdvAbrirModalGaleriaVeiculos;
+window.sdvAbrirModalNovaPasta = sdvAbrirModalNovaPasta;
+window.sdvFecharModalNovaPasta = sdvFecharModalNovaPasta;
+window.sdvCriarNovaPasta = sdvCriarNovaPasta;
+window.sdvExcluirPasta = sdvExcluirPasta;
+window.sdvAbrirModalNovaFoto = sdvAbrirModalNovaFoto;
+window.sdvFecharModalNovaFoto = sdvFecharModalNovaFoto;
+window.sdvProcessarFotoGaleria = sdvProcessarFotoGaleria;
+window.sdvLimparPreviewFotoGaleria = sdvLimparPreviewFotoGaleria;
+window.sdvSalvarNovaFotoGaleria = sdvSalvarNovaFotoGaleria;
+window.sdvExcluirFotoGaleria = sdvExcluirFotoGaleria;
+window.renderSdvGaleriaFotos = renderSdvGaleriaFotos;
 
 </script>
 
