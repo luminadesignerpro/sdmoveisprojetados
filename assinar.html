@@ -1644,30 +1644,54 @@
           <span>💳</span> <span>Formas de Pagamento Visíveis para o Cliente:</span>
         </label>
         <div style="background:#0b1019;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px;margin-bottom:14px;display:flex;flex-direction:column;gap:10px;">
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:#fff;margin:0;">
-            <input type="checkbox" id="cfg-mostrar-avista" checked style="width:18px;height:18px;accent-color:#c9a038;cursor:pointer;" />
-            <span>💵 Mostrar À Vista (10% de Desconto)</span>
-          </label>
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:#fff;margin:0;">
-            <input type="checkbox" id="cfg-mostrar-50-50" checked style="width:18px;height:18px;accent-color:#c9a038;cursor:pointer;" />
-            <span>⚖️ Mostrar 50% Entrada e 50% na Entrega</span>
-          </label>
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:#fff;margin:0;">
-            <input type="checkbox" id="cfg-mostrar-credito" checked style="width:18px;height:18px;accent-color:#c9a038;cursor:pointer;" />
-            <span>💳 Mostrar Cartão de Crédito (Sem Juros)</span>
-          </label>
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:#fff;margin:0;">
-            <input type="checkbox" id="cfg-mostrar-debito" checked style="width:18px;height:18px;accent-color:#c9a038;cursor:pointer;" />
-            <span>🏧 Mostrar Cartão de Débito</span>
-          </label>
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:#fff;margin:0;">
-            <input type="checkbox" id="cfg-mostrar-pix-copia" checked style="width:18px;height:18px;accent-color:#c9a038;cursor:pointer;" />
-            <span>📋 Mostrar Pix Copiar/Colar</span>
-          </label>
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:#fff;margin:0;">
-            <input type="checkbox" id="cfg-mostrar-pix-qr" checked style="width:18px;height:18px;accent-color:#c9a038;cursor:pointer;" />
-            <span>📲 Mostrar Pix QR Code</span>
-          </label>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:#fff;margin:0;">
+              <input type="checkbox" id="cfg-mostrar-avista" checked style="width:18px;height:18px;accent-color:#c9a038;cursor:pointer;" />
+              <span>💵 Mostrar À Vista</span>
+            </label>
+            <input type="text" id="cfg-label-avista" placeholder="Nome do botão (ex: À Vista (Pix))" maxlength="30"
+              style="width:100%;background:#0b1019;border:1px solid rgba(201,160,56,0.35);border-radius:8px;color:#f1f5f9;font-size:12px;padding:6px 10px;outline:none;" />
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:#fff;margin:0;">
+              <input type="checkbox" id="cfg-mostrar-50-50" checked style="width:18px;height:18px;accent-color:#c9a038;cursor:pointer;" />
+              <span>⚖️ Mostrar 50% Entrada</span>
+            </label>
+            <input type="text" id="cfg-label-5050" placeholder="Nome do botão (ex: 50% Entrada)" maxlength="30"
+              style="width:100%;background:#0b1019;border:1px solid rgba(201,160,56,0.35);border-radius:8px;color:#f1f5f9;font-size:12px;padding:6px 10px;outline:none;" />
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:#fff;margin:0;">
+              <input type="checkbox" id="cfg-mostrar-credito" checked style="width:18px;height:18px;accent-color:#c9a038;cursor:pointer;" />
+              <span>💳 Mostrar Cartão de Crédito</span>
+            </label>
+            <input type="text" id="cfg-label-credito" placeholder="Nome do botão (ex: Cartão de Crédito)" maxlength="30"
+              style="width:100%;background:#0b1019;border:1px solid rgba(201,160,56,0.35);border-radius:8px;color:#f1f5f9;font-size:12px;padding:6px 10px;outline:none;" />
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:#fff;margin:0;">
+              <input type="checkbox" id="cfg-mostrar-debito" checked style="width:18px;height:18px;accent-color:#c9a038;cursor:pointer;" />
+              <span>🏧 Mostrar Cartão de Débito</span>
+            </label>
+            <input type="text" id="cfg-label-debito" placeholder="Nome do botão (ex: Cartão de Débito)" maxlength="30"
+              style="width:100%;background:#0b1019;border:1px solid rgba(201,160,56,0.35);border-radius:8px;color:#f1f5f9;font-size:12px;padding:6px 10px;outline:none;" />
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:#fff;margin:0;">
+              <input type="checkbox" id="cfg-mostrar-pix-copia" checked style="width:18px;height:18px;accent-color:#c9a038;cursor:pointer;" />
+              <span>📋 Mostrar Pix Copiar/Colar</span>
+            </label>
+            <input type="text" id="cfg-label-pix-copia" placeholder="Nome do botão (ex: Pix Copiar/Colar)" maxlength="30"
+              style="width:100%;background:#0b1019;border:1px solid rgba(201,160,56,0.35);border-radius:8px;color:#f1f5f9;font-size:12px;padding:6px 10px;outline:none;" />
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:#fff;margin:0;">
+              <input type="checkbox" id="cfg-mostrar-pix-qr" checked style="width:18px;height:18px;accent-color:#c9a038;cursor:pointer;" />
+              <span>📲 Mostrar Pix QR Code</span>
+            </label>
+            <input type="text" id="cfg-label-pix-qr" placeholder="Nome do botão (ex: Pix QR Code)" maxlength="30"
+              style="width:100%;background:#0b1019;border:1px solid rgba(201,160,56,0.35);border-radius:8px;color:#f1f5f9;font-size:12px;padding:6px 10px;outline:none;" />
+          </div>
         </div>
 
         <div style="display:flex;gap:10px;margin-top:14px;">
@@ -2116,7 +2140,13 @@
       mostrarCredito: saved.mostrarCredito !== undefined ? Boolean(saved.mostrarCredito) : true,
       mostrarDebito: saved.mostrarDebito !== undefined ? Boolean(saved.mostrarDebito) : true,
       mostrarPixCopia: saved.mostrarPixCopia !== undefined ? Boolean(saved.mostrarPixCopia) : true,
-      mostrarPixQr: saved.mostrarPixQr !== undefined ? Boolean(saved.mostrarPixQr) : true
+      mostrarPixQr: saved.mostrarPixQr !== undefined ? Boolean(saved.mostrarPixQr) : true,
+      labelAvista: saved.labelAvista || 'À Vista (Pix)',
+      label5050: saved.label5050 || '50% Entrada',
+      labelCredito: saved.labelCredito || 'Cartão de Crédito',
+      labelDebito: saved.labelDebito || 'Cartão de Débito',
+      labelPixCopia: saved.labelPixCopia || 'Pix Copiar/Colar',
+      labelPixQr: saved.labelPixQr || 'Pix QR Code'
     };
   }
 
@@ -2215,6 +2245,57 @@
     }
 
     aplicarVisibilidadeMetodosPagamento(rec);
+
+    // Atualiza os textos dos botões de pagamento com os labels salvos
+    const btnAvista = document.getElementById('pay-btn-avista');
+    if (btnAvista) {
+      const spanLabel = btnAvista.querySelector('span[style*="font-weight:900"]');
+      if (spanLabel) spanLabel.textContent = rec.labelAvista || 'À Vista (Pix)';
+    }
+    const btn5050 = document.getElementById('pay-btn-5050');
+    if (btn5050) {
+      const spanLabel = btn5050.querySelector('span[style*="font-weight:900"]');
+      if (spanLabel) spanLabel.textContent = rec.label5050 || '50% Entrada';
+    }
+    const btnCredito = document.getElementById('pay-btn-credito');
+    if (btnCredito) {
+      // credito tem texto direto (sem span com font-weight:900), update innerHTML carefully
+      const icon = btnCredito.querySelector('.pay-icon');
+      const badge = btnCredito.querySelector('span[style*="color:#facc15"]');
+      if (icon && badge) {
+        btnCredito.innerHTML = '';
+        btnCredito.appendChild(icon);
+        btnCredito.appendChild(document.createTextNode((rec.labelCredito || 'Cartão de Crédito').replace('<br>', ' ')));
+        btnCredito.appendChild(badge);
+      }
+    }
+    const btnDebito = document.getElementById('pay-btn-debito');
+    if (btnDebito) {
+      const icon = btnDebito.querySelector('.pay-icon');
+      if (icon) {
+        btnDebito.innerHTML = '';
+        btnDebito.appendChild(icon);
+        btnDebito.appendChild(document.createTextNode(rec.labelDebito || 'Cartão de Débito'));
+      }
+    }
+    const btnPixCopia = document.getElementById('pay-btn-pix-copia');
+    if (btnPixCopia) {
+      const icon = btnPixCopia.querySelector('.pay-icon');
+      if (icon) {
+        btnPixCopia.innerHTML = '';
+        btnPixCopia.appendChild(icon);
+        btnPixCopia.appendChild(document.createTextNode(rec.labelPixCopia || 'Pix Copiar/Colar'));
+      }
+    }
+    const btnPixQr = document.getElementById('pay-btn-pix-qr');
+    if (btnPixQr) {
+      const icon = btnPixQr.querySelector('.pay-icon');
+      if (icon) {
+        btnPixQr.innerHTML = '';
+        btnPixQr.appendChild(icon);
+        btnPixQr.appendChild(document.createTextNode(rec.labelPixQr || 'Pix QR Code'));
+      }
+    }
   }
 
   // Upload e manipulação da imagem do QR Code Pix da empresa
@@ -2337,6 +2418,14 @@
     if (document.getElementById('cfg-mostrar-pix-copia')) document.getElementById('cfg-mostrar-pix-copia').checked = rec.mostrarPixCopia !== false;
     if (document.getElementById('cfg-mostrar-pix-qr')) document.getElementById('cfg-mostrar-pix-qr').checked = rec.mostrarPixQr !== false;
 
+    // Label inputs para nomes dos botões
+    if (document.getElementById('cfg-label-avista')) document.getElementById('cfg-label-avista').value = rec.labelAvista || 'À Vista (Pix)';
+    if (document.getElementById('cfg-label-5050')) document.getElementById('cfg-label-5050').value = rec.label5050 || '50% Entrada';
+    if (document.getElementById('cfg-label-credito')) document.getElementById('cfg-label-credito').value = rec.labelCredito || 'Cartão de Crédito';
+    if (document.getElementById('cfg-label-debito')) document.getElementById('cfg-label-debito').value = rec.labelDebito || 'Cartão de Débito';
+    if (document.getElementById('cfg-label-pix-copia')) document.getElementById('cfg-label-pix-copia').value = rec.labelPixCopia || 'Pix Copiar/Colar';
+    if (document.getElementById('cfg-label-pix-qr')) document.getElementById('cfg-label-pix-qr').value = rec.labelPixQr || 'Pix QR Code';
+
     // QR Code customizado
     tempQrCustomEmpresa = rec.qrCustomImg || '';
     const wrap = document.getElementById('cfg-qr-preview-wrap');
@@ -2407,7 +2496,13 @@
       mostrarCredito: document.getElementById('cfg-mostrar-credito') ? document.getElementById('cfg-mostrar-credito').checked : true,
       mostrarDebito: document.getElementById('cfg-mostrar-debito') ? document.getElementById('cfg-mostrar-debito').checked : true,
       mostrarPixCopia: document.getElementById('cfg-mostrar-pix-copia') ? document.getElementById('cfg-mostrar-pix-copia').checked : true,
-      mostrarPixQr: document.getElementById('cfg-mostrar-pix-qr') ? document.getElementById('cfg-mostrar-pix-qr').checked : true
+      mostrarPixQr: document.getElementById('cfg-mostrar-pix-qr') ? document.getElementById('cfg-mostrar-pix-qr').checked : true,
+      labelAvista: (document.getElementById('cfg-label-avista') ? document.getElementById('cfg-label-avista').value.trim() : '') || 'À Vista (Pix)',
+      label5050: (document.getElementById('cfg-label-5050') ? document.getElementById('cfg-label-5050').value.trim() : '') || '50% Entrada',
+      labelCredito: (document.getElementById('cfg-label-credito') ? document.getElementById('cfg-label-credito').value.trim() : '') || 'Cartão de Crédito',
+      labelDebito: (document.getElementById('cfg-label-debito') ? document.getElementById('cfg-label-debito').value.trim() : '') || 'Cartão de Débito',
+      labelPixCopia: (document.getElementById('cfg-label-pix-copia') ? document.getElementById('cfg-label-pix-copia').value.trim() : '') || 'Pix Copiar/Colar',
+      labelPixQr: (document.getElementById('cfg-label-pix-qr') ? document.getElementById('cfg-label-pix-qr').value.trim() : '') || 'Pix QR Code'
     };
     try {
       localStorage.setItem('sdv_dados_recebedor', JSON.stringify(rec));

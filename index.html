@@ -2325,7 +2325,7 @@
             <div class="total-label">Total do Orçamento</div>
             <div class="total-val" id="total">R$ 0,00</div>
           </div>
-          <div class="forma-badge" id="forma-badge">À vista</div>
+          <div class="forma-badge" id="forma-badge" title="Clique para aplicar 10% de desconto à vista" onclick="aplicarDescontoAvista()" style="cursor:pointer;" >À vista</div>
         </div>
       </div>
     </div>
@@ -12060,6 +12060,41 @@ function alternarTipoDesconto(tipo) {
   }
   aoModificarValoresResumoFinanceiro(tipo === 'porc' ? 'desconto_porc' : 'desconto');
 }
+
+  // ── DESCONTO À VISTA AUTOMÁTICO ──────────────────────────
+  // Clicando no badge "À vista" aplica 10% de desconto automático
+  function aplicarDescontoAvista() {
+    // Lê o total atual do orçamento
+    const elTotal = document.getElementById('total');
+    if (!elTotal) return;
+    const totalText = elTotal.textContent || '';
+    // Parse: "R$ 1.953,00" → 1953.00
+    const totalNum = parseFloat(
+      totalText.replace(/[^0-9,]/g, '').replace(',', '.')
+    );
+    if (!totalNum || totalNum <= 0) return;
+
+    const desconto10 = totalNum * 0.10;
+    const descontoFormatado = desconto10.toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+
+    // Garante que o modo é R$ (não %)
+    if (typeof alternarTipoDesconto === 'function') {
+      alternarTipoDesconto('reais');
+    }
+
+    // Preenche o input de desconto
+    const elDesc = document.getElementById('o-val-desconto');
+    if (elDesc) {
+      elDesc.value = descontoFormatado;
+      // Dispara o recálculo
+      if (typeof aoModificarValoresResumoFinanceiro === 'function') {
+        aoModificarValoresResumoFinanceiro('desconto');
+      }
+    }
+  }
 
 function aoModificarValoresResumoFinanceiro(campoOrigem = '') {
   valoresResumoEditadosManualmente = true;
