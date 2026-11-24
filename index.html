@@ -49092,33 +49092,40 @@ async function _prjRenderizarPaginasPdfCanvas() {
   if (pagsLbl) pagsLbl.textContent = '(' + totalPags + (totalPags === 1 ? ' pág' : ' págs') + ')';
 
   wrap.innerHTML = '';
-  const maxWidth = Math.max(280, (wrap.clientWidth || 340) - 24);
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const containerWidth = Math.max(280, (wrap.clientWidth || 340) - 24);
+  const dpr = Math.max(window.devicePixelRatio || 1, 2);
 
   for (let num = 1; num <= totalPags; num++) {
     const page = await _prjPdfDocAtual.getPage(num);
     const vpBase = page.getViewport({ scale: 1 });
-    const fitScale = (maxWidth / vpBase.width) * _prjPdfZoomAtual;
-    const viewport = page.getViewport({ scale: fitScale });
+    const cssWidth = Math.floor(containerWidth * _prjPdfZoomAtual);
+    const cssHeight = Math.floor((vpBase.height / vpBase.width) * cssWidth);
+
+    // Supersampling HD: garante no mínimo 1800px de largura interna para textos técnicos e cotas nítidas
+    const minRenderWidth = Math.max(1800, cssWidth * dpr);
+    const maxRenderWidth = 3200;
+    const renderWidth = Math.min(maxRenderWidth, minRenderWidth);
+    const renderScale = renderWidth / vpBase.width;
+    const viewport = page.getViewport({ scale: renderScale });
 
     const pageBox = document.createElement('div');
-    pageBox.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:4px;width:100%;';
+    pageBox.style.cssText = 'display:flex;flex-direction:column;align-items:' + (_prjPdfZoomAtual > 1 ? 'flex-start' : 'center') + ';gap:4px;min-width:100%;';
 
     const canvas = document.createElement('canvas');
-    canvas.width = Math.floor(viewport.width * dpr);
-    canvas.height = Math.floor(viewport.height * dpr);
-    canvas.style.width = Math.floor(viewport.width) + 'px';
-    canvas.style.height = Math.floor(viewport.height) + 'px';
+    canvas.width = Math.floor(viewport.width);
+    canvas.height = Math.floor(viewport.height);
+    canvas.style.width = cssWidth + 'px';
+    canvas.style.height = cssHeight + 'px';
     canvas.style.background = '#ffffff';
     canvas.style.borderRadius = '8px';
     canvas.style.boxShadow = '0 4px 18px rgba(0,0,0,0.5)';
+    canvas.style.flexShrink = '0';
 
-    const ctx = canvas.getContext('2d');
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const ctx = canvas.getContext('2d', { alpha: false });
 
     const lbl = document.createElement('div');
     lbl.textContent = 'Página ' + num + ' de ' + totalPags;
-    lbl.style.cssText = 'font-size:11px;color:#94a3b8;font-weight:700;';
+    lbl.style.cssText = 'font-size:11px;color:#94a3b8;font-weight:700;align-self:center;';
 
     pageBox.appendChild(canvas);
     pageBox.appendChild(lbl);
@@ -49136,7 +49143,7 @@ async function prjAbrirPdf(id) {
   const tit = document.getElementById('prj-ver-pdf-titulo');
   const wrap = document.getElementById('prj-ver-pdf-canvas-wrap');
   if (tit) tit.textContent = '📄 ' + (item.titulo || item.nomeArquivo || 'Projeto PDF');
-  if (wrap) wrap.innerHTML = '<div style="color:#cbd5e1;font-size:13px;padding:30px;">⏳ Renderizando PDF dentro do app...</div>';
+  if (wrap) wrap.innerHTML = '<div style="color:#cbd5e1;font-size:13px;padding:30px;">⏳ Renderizando PDF em alta definição...</div>';
   if (m) m.style.display = 'flex';
 
   _prjPdfZoomAtual = 1.0;
@@ -49167,7 +49174,7 @@ async function prjAbrirPdf(id) {
 
 async function prjZoomPdf(delta) {
   if (!_prjPdfDocAtual) return;
-  _prjPdfZoomAtual = Math.max(0.5, Math.min(3.0, _prjPdfZoomAtual + delta));
+  _prjPdfZoomAtual = Math.max(0.75, Math.min(4.0, _prjPdfZoomAtual + delta));
   await _prjRenderizarPaginasPdfCanvas();
 }
 
@@ -49287,30 +49294,34 @@ async function prjEnviarCompartilharArquivo() {
   prjBaixarPdf(item.id);
 }
 
-function prjEnviarViaWhatsApp(tipo) {
+async function prjEnviarViaWhatsApp(tipo) {
   const item = _prjPdfsCache.find(x => x.id === _prjPdfIdAcaoAtual);
-  if (!item) return;
-  const titulo = item.titulo || item.nomeArquivo || 'Projeto.pdf';
-  const msg = encodeURIComponent('Olá! Segue o projeto em PDF: *' + titulo + '*');
+  if (!item || !item.dataUrl) return;
+  const nomeArq = (item.nomeArquivo && item.nomeArquivo.toLowerCase().endsWith('.pdf'))
+    ? item.nomeArquivo
+    : ((item.titulo || 'projeto') + '.pdf');
+  const titulo = item.titulo || nomeArq;
+  const blob = _prjDataUrlParaBlob(item.dataUrl);
+  const file = new File([blob], nomeArq, { type: 'application/pdf' });
 
-  // Baixa o PDF para ficar pronto para anexar se ainda não compartilhou diretamente
-  prjBaixarPdf(item.id);
-  prjFecharModalEnviar();
-
-  const isAndroid = /Android/i.test(navigator.userAgent || '');
-  if (tipo === 'business') {
-    if (isAndroid) {
-      window.location.href = 'intent://send?text=' + msg + '#Intent;package=com.whatsapp.w4b;scheme=whatsapp;end;';
-    } else {
-      window.open('https://api.whatsapp.com/send?text=' + msg, '_blank');
-    }
-  } else {
-    if (isAndroid) {
-      window.location.href = 'intent://send?text=' + msg + '#Intent;package=com.whatsapp;scheme=whatsapp;end;';
-    } else {
-      window.open('https://api.whatsapp.com/send?text=' + msg, '_blank');
+  // Tenta enviar o arquivo PDF anexado via Web Share API (suportado no Android para WhatsApp e WA Business)
+  if (navigator.share) {
+    try {
+      const shareData = { title: titulo, files: [file] };
+      if (!navigator.canShare || navigator.canShare({ files: [file] })) {
+        await navigator.share(shareData);
+        prjFecharModalEnviar();
+        return;
+      }
+    } catch (e) {
+      if (e && e.name === 'AbortError') return;
     }
   }
+
+  // Fallback se o navegador bloquear share com arquivo: baixa o PDF e avisa
+  prjBaixarPdf(item.id);
+  prjFecharModalEnviar();
+  alert('PDF baixado no aparelho! Agora selecione o arquivo "' + nomeArq + '" nos anexos do ' + (tipo === 'business' ? 'WhatsApp Business' : 'WhatsApp') + '.');
 }
 
 function prjBaixarPdf(id) {
