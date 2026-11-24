@@ -5416,6 +5416,9 @@
       </div>
       <div id="prj-enviar-pdf-nome" style="font-size:12.5px;color:#cbd5e1;background:#0b0f17;border:1px solid #243046;border-radius:10px;padding:10px;margin-bottom:12px;word-break:break-word;"></div>
       <div style="display:flex;flex-direction:column;gap:10px;">
+        <button type="button" onclick="prjCopiarParaCatalogo(_prjPdfIdAcaoAtual);prjFecharModalEnviar();" style="width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid rgba(59,130,246,0.6);background:linear-gradient(135deg,#1d4ed8,#2563eb);color:#fff;font-size:13.5px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 14px rgba(37,99,235,0.35);">
+          <span>📖</span> <span>Compartilhar para a Aba Catálogo</span>
+        </button>
         <button type="button" onclick="prjEnviarCompartilharArquivo()" style="width:100%;padding:12px 14px;border-radius:12px;border:none;background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;font-size:13.5px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 14px rgba(34,197,94,0.35);">
           <span>📤</span> <span>Enviar PDF Direto (WhatsApp / WA Business)</span>
         </button>
@@ -48930,10 +48933,11 @@ function _prjRenderListaPdfs() {
             <button type="button" onclick="prjCompartilharPdf('${item.id}')" style="flex:1;padding:8px 10px;border-radius:8px;border:none;background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;font-size:12px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;"><span>🔗</span><span>Compartilhar</span></button>
           </div>
           <div style="display:flex;gap:6px;">
-            <button type="button" onclick="prjAbrirModalRenomear('${item.id}')" style="flex:1;padding:7px 8px;border-radius:8px;border:1px solid rgba(255,255,255,0.16);background:#161b26;color:#e2e8f0;font-size:11.5px;font-weight:700;cursor:pointer;">✏️ Renomear</button>
-            <button type="button" onclick="prjAbrirModalMover('${item.id}')" style="flex:1;padding:7px 8px;border-radius:8px;border:1px solid rgba(245,158,11,0.35);background:rgba(245,158,11,0.1);color:#fbbf24;font-size:11.5px;font-weight:700;cursor:pointer;">📁 Mover</button>
-            <button type="button" onclick="prjBaixarPdf('${item.id}')" style="padding:7px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.16);background:#161b26;color:#e2e8f0;font-size:11.5px;font-weight:700;cursor:pointer;" title="Baixar PDF">⬇️</button>
-            <button type="button" onclick="prjExcluirPdf('${item.id}')" style="padding:7px 10px;border-radius:8px;border:1px solid rgba(239,68,68,0.35);background:rgba(239,68,68,0.12);color:#fca5a5;font-size:11.5px;font-weight:700;cursor:pointer;" title="Excluir PDF">🗑️</button>
+            <button type="button" onclick="prjAbrirModalRenomear('${item.id}')" style="flex:1;padding:7px 6px;border-radius:8px;border:1px solid rgba(255,255,255,0.16);background:#161b26;color:#e2e8f0;font-size:11px;font-weight:700;cursor:pointer;" title="Renomear Projeto">✏️ Renomear</button>
+            <button type="button" onclick="prjAbrirModalMover('${item.id}')" style="flex:1;padding:7px 6px;border-radius:8px;border:1px solid rgba(245,158,11,0.35);background:rgba(245,158,11,0.1);color:#fbbf24;font-size:11px;font-weight:700;cursor:pointer;" title="Mover para outra pasta">📁 Mover</button>
+            <button type="button" onclick="prjCopiarParaCatalogo('${item.id}')" style="flex:1;padding:7px 6px;border-radius:8px;border:1px solid rgba(59,130,246,0.45);background:rgba(59,130,246,0.15);color:#93c5fd;font-size:11px;font-weight:800;cursor:pointer;" title="Copiar/Compartilhar este PDF para o Catálogo">📖 Catálogo</button>
+            <button type="button" onclick="prjBaixarPdf('${item.id}')" style="padding:7px 9px;border-radius:8px;border:1px solid rgba(255,255,255,0.16);background:#161b26;color:#e2e8f0;font-size:11px;font-weight:700;cursor:pointer;" title="Baixar PDF">⬇️</button>
+            <button type="button" onclick="prjExcluirPdf('${item.id}')" style="padding:7px 9px;border-radius:8px;border:1px solid rgba(239,68,68,0.35);background:rgba(239,68,68,0.12);color:#fca5a5;font-size:11px;font-weight:700;cursor:pointer;" title="Excluir PDF">🗑️</button>
           </div>
         </div>
       </div>`;
@@ -49267,6 +49271,33 @@ function prjFecharModalEnviar() {
   if (m) m.style.display = 'none';
 }
 
+async function prjCopiarParaCatalogo(id) {
+  const item = _prjPdfsCache.find(x => x.id === id);
+  if (!item || !item.dataUrl) {
+    alert('PDF não encontrado para compartilhar no catálogo.');
+    return;
+  }
+  const agora = new Date();
+  const dataFmt = agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  const itemCat = {
+    id: 'cat_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+    titulo: item.titulo || item.nomeArquivo || 'Catálogo.pdf',
+    nomeArquivo: item.nomeArquivo || 'catalogo.pdf',
+    tamanho: item.tamanho || 0,
+    dataFmt: dataFmt,
+    criadoEm: Date.now(),
+    dataUrl: item.dataUrl
+  };
+
+  await _catSalvarPdfDB(itemCat);
+  if (typeof renderCatalogoView === 'function') {
+    await renderCatalogoView();
+  }
+  if (confirm('PDF "' + (item.titulo || item.nomeArquivo) + '" adicionado com sucesso ao Catálogo! Deseja ir para a aba Catálogo agora?')) {
+    if (typeof goTab === 'function') goTab('catalogo');
+  }
+}
+
 async function prjCompartilharPdf(id) {
   _prjPdfIdAcaoAtual = id;
   const item = _prjPdfsCache.find(x => x.id === id);
@@ -49396,6 +49427,7 @@ window.prjFecharModalMover = prjFecharModalMover;
 window.prjConfirmarMover = prjConfirmarMover;
 window.prjAbrirModalEnviar = prjAbrirModalEnviar;
 window.prjCompartilharPdf = prjCompartilharPdf;
+window.prjCopiarParaCatalogo = prjCopiarParaCatalogo;
 window.prjFecharModalEnviar = prjFecharModalEnviar;
 window.prjEnviarCompartilharArquivo = prjEnviarCompartilharArquivo;
 window.prjEnviarViaWhatsApp = prjEnviarViaWhatsApp;
@@ -49523,9 +49555,10 @@ function _catRenderListaPdfs() {
             <button type="button" onclick="catCompartilharPdf('${item.id}')" style="flex:1;padding:8px 10px;border-radius:8px;border:none;background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;font-size:12px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;"><span>🔗</span><span>Compartilhar</span></button>
           </div>
           <div style="display:flex;gap:6px;">
-            <button type="button" onclick="catRenomearPdf('${item.id}')" style="flex:1;padding:7px 8px;border-radius:8px;border:1px solid rgba(255,255,255,0.16);background:#161b26;color:#e2e8f0;font-size:11.5px;font-weight:700;cursor:pointer;">✏️ Renomear</button>
-            <button type="button" onclick="catBaixarPdf('${item.id}')" style="padding:7px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.16);background:#161b26;color:#e2e8f0;font-size:11.5px;font-weight:700;cursor:pointer;" title="Baixar PDF">⬇️</button>
-            <button type="button" onclick="catExcluirPdf('${item.id}')" style="padding:7px 10px;border-radius:8px;border:1px solid rgba(239,68,68,0.35);background:rgba(239,68,68,0.12);color:#fca5a5;font-size:11.5px;font-weight:700;cursor:pointer;" title="Excluir PDF">🗑️</button>
+            <button type="button" onclick="catRenomearPdf('${item.id}')" style="flex:1;padding:7px 6px;border-radius:8px;border:1px solid rgba(255,255,255,0.16);background:#161b26;color:#e2e8f0;font-size:11px;font-weight:700;cursor:pointer;">✏️ Renomear</button>
+            <button type="button" onclick="catCopiarParaProjetos('${item.id}')" style="flex:1;padding:7px 6px;border-radius:8px;border:1px solid rgba(245,158,11,0.45);background:rgba(245,158,11,0.15);color:#fbbf24;font-size:11px;font-weight:800;cursor:pointer;" title="Enviar para a aba Projetos">📐 Projetos</button>
+            <button type="button" onclick="catBaixarPdf('${item.id}')" style="padding:7px 9px;border-radius:8px;border:1px solid rgba(255,255,255,0.16);background:#161b26;color:#e2e8f0;font-size:11px;font-weight:700;cursor:pointer;" title="Baixar PDF">⬇️</button>
+            <button type="button" onclick="catExcluirPdf('${item.id}')" style="padding:7px 9px;border-radius:8px;border:1px solid rgba(239,68,68,0.35);background:rgba(239,68,68,0.12);color:#fca5a5;font-size:11px;font-weight:700;cursor:pointer;" title="Excluir PDF">🗑️</button>
           </div>
         </div>
       </div>`;
@@ -49606,6 +49639,30 @@ async function catAbrirPdf(id) {
   await prjAbrirPdf(id);
 }
 
+async function catCopiarParaProjetos(id) {
+  const item = _catPdfsCache.find(x => x.id === id);
+  if (!item || !item.dataUrl) return;
+  const agora = new Date();
+  const dataFmt = agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  const itemPrj = {
+    id: 'prj_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+    pasta: 'Geral',
+    titulo: item.titulo || item.nomeArquivo || 'Projeto.pdf',
+    nomeArquivo: item.nomeArquivo || 'projeto.pdf',
+    tamanho: item.tamanho || 0,
+    dataFmt: dataFmt,
+    criadoEm: Date.now(),
+    dataUrl: item.dataUrl
+  };
+  await _prjSalvarPdfDB(itemPrj);
+  if (typeof renderProjetosView === 'function') {
+    await renderProjetosView();
+  }
+  if (confirm('PDF adicionado com sucesso aos Projetos! Deseja ir para a aba Projetos agora?')) {
+    if (typeof goTab === 'function') goTab('projetos');
+  }
+}
+
 async function catCompartilharPdf(id) {
   const item = _catPdfsCache.find(x => x.id === id);
   if (!item || !item.dataUrl) return;
@@ -49660,6 +49717,7 @@ window.catAoSelecionarArquivosPdf = catAoSelecionarArquivosPdf;
 window.catAbrirPdf = catAbrirPdf;
 window.catAbrirModalEnviar = catAbrirModalEnviar;
 window.catCompartilharPdf = catCompartilharPdf;
+window.catCopiarParaProjetos = catCopiarParaProjetos;
 window.catRenomearPdf = catRenomearPdf;
 window.catBaixarPdf = catBaixarPdf;
 window.catExcluirPdf = catExcluirPdf;
