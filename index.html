@@ -2034,6 +2034,7 @@
     <button type="button" id="tab-ferramentas" class="tab" data-tab="ferramentas" onclick="goTab('ferramentas')" title="Ferramentas de Obra"><span>🔧</span><span>Ferramentas</span></button>
     <button type="button" id="tab-veiculos" class="tab" data-tab="veiculos" onclick="goTab('veiculos')" title="SD Veículos - Controle de Veículos, Licenciamento e Abastecimento"><span>🚗</span><span>SD Veículos</span></button>
     <button type="button" id="tab-projetos" class="tab" data-tab="projetos" onclick="goTab('projetos')" title="Projetos - Pastas e Arquivos PDF"><span>📐</span><span>Projetos</span></button>
+    <button type="button" id="tab-catalogo" class="tab" data-tab="catalogo" onclick="goTab('catalogo')" title="Catálogo - Arquivos PDF de Catálogo"><span>📖</span><span>Catálogo</span></button>
     <button type="button" id="btn-central-mensagens" class="tab" onclick="abrirModalCentralMensagens()" title="Central de Mensagens com Clientes"><span>💬</span><span>Mensagens <span id="badge-msg-clientes" style="display:none;background:#ef4444;color:#fff;font-size:9px;padding:1px 5px;border-radius:999px;font-weight:900;">0</span></span></button>
     <button type="button" id="tab-msg-funcionarios" class="tab" onclick="abrirModalMsgsFuncionarios()" title="Mensagens dos Funcionários"><span>👷💬</span><span>Mensagem dos Funcionários <span id="badge-msgs-funcs" style="display:none;background:#ef4444;color:#fff;font-size:9px;padding:1px 5px;border-radius:999px;font-weight:900;">0</span></span></button>
   </div>
@@ -5429,6 +5430,67 @@
       </div>
       <div style="font-size:11px;color:#94a3b8;margin-top:10px;text-align:center;">
         Use <strong>"Enviar PDF Direto"</strong> para anexar o arquivo direto no WhatsApp ou WA Business.
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- PAINEL CATÁLOGO (BUSCAR PDF & VISUALIZAR)  -->
+  <!-- ══════════════════════════════════════════ -->
+  <div id="panel-catalogo" class="panel">
+    <div style="background:linear-gradient(135deg,rgba(201,168,76,0.14),rgba(16,18,27,0.95));border:1.5px solid var(--border);border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:0 8px 30px rgba(0,0,0,0.5);">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+        <div>
+          <div style="font-size:12px;font-weight:900;color:var(--gold);letter-spacing:0.1em;text-transform:uppercase;">Mostruário &amp; Referências • SD Móveis</div>
+          <h2 style="font-size:22px;font-weight:900;color:#fff;margin:2px 0 4px 0;display:flex;align-items:center;gap:8px;">
+            <span>📖</span> <span>Catálogo em PDF</span>
+          </h2>
+          <div style="font-size:12.5px;color:var(--muted);">Adicione catálogos de cores, ferragens, MDF e modelos em PDF para abrir dentro do app ou enviar ao cliente.</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button type="button" class="btn btn-sec" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="padding:8px 14px;font-size:12px;font-weight:800;border-radius:10px;display:flex;align-items:center;gap:6px;">
+            ⬆ Abas
+          </button>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr;gap:10px;width:100%;box-sizing:border-box;">
+        <button type="button" class="btn" onclick="catAbrirModalBuscarPdf()" style="padding:12px 16px;font-size:13.5px;font-weight:800;background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff;border:none;border-radius:12px;box-shadow:0 4px 15px rgba(59,130,246,0.35);display:flex;align-items:center;justify-content:center;gap:8px;">
+          <span>📄</span> <span>Buscar PDF do Catálogo</span>
+        </button>
+      </div>
+    </div>
+
+    <div style="background:rgba(16,18,27,0.95);border:1.5px solid rgba(201,168,76,0.28);border-radius:16px;padding:16px;box-shadow:0 8px 28px rgba(0,0,0,0.45);">
+      <div style="margin-bottom:14px;position:relative;">
+        <input type="text" id="cat-busca-pdf-input" placeholder="🔍 Filtrar catálogos (por nome ou data)..." oninput="catFiltrarPdfs(this.value)" style="width:100%;box-sizing:border-box;background:#0d1117;border:1.5px solid rgba(59,130,246,0.4);border-radius:10px;padding:10px 38px 10px 12px;font-size:13px;color:#fff;outline:none;" />
+        <button type="button" id="cat-btn-limpar-busca" onclick="catLimparBusca()" title="Limpar busca" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.12);border:none;color:#fff;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:800;cursor:pointer;">✕</button>
+      </div>
+      <div id="cat-lista-pdfs"></div>
+    </div>
+  </div>
+
+  <!-- MODAL: BUSCAR / ANEXAR PDF NO CATÁLOGO -->
+  <div id="modal-cat-novo-pdf" class="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.78);z-index:9999;align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)catFecharModalBuscarPdf()">
+    <div style="background:#121622;border:1.5px solid #3b82f6;border-radius:16px;max-width:440px;width:100%;padding:18px;box-shadow:0 16px 40px rgba(0,0,0,0.65);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h3 style="margin:0;color:#fff;font-size:16px;font-weight:900;">📖 Buscar PDF para o Catálogo</h3>
+        <button type="button" onclick="catFecharModalBuscarPdf()" style="background:transparent;border:none;color:#94a3b8;font-size:20px;cursor:pointer;">✕</button>
+      </div>
+      <div style="margin-bottom:12px;">
+        <label style="display:block;font-size:12px;color:#cbd5e1;font-weight:700;margin-bottom:6px;">Título do Catálogo (opcional)</label>
+        <input type="text" id="cat-input-titulo-pdf" placeholder="Ex: Catálogo Duratex 2026" maxlength="60" style="width:100%;box-sizing:border-box;background:#0b0f17;border:1.5px solid #2b3548;border-radius:10px;padding:10px 12px;color:#fff;font-size:13px;outline:none;" />
+      </div>
+      <div style="margin-bottom:14px;">
+        <input type="file" id="cat-input-file-pdf" accept="application/pdf,.pdf" multiple style="display:none;" onchange="catAoSelecionarArquivosPdf(this)" />
+        <button type="button" onclick="document.getElementById('cat-input-file-pdf').click()" style="width:100%;padding:14px;border-radius:12px;border:2px dashed rgba(59,130,246,0.65);background:rgba(59,130,246,0.1);color:#93c5fd;font-size:13.5px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+          <span>📂</span> <span>Buscar PDF no Aparelho / Arquivos</span>
+        </button>
+        <div id="cat-status-upload-pdf" style="font-size:12px;color:#94a3b8;margin-top:8px;text-align:center;">Selecione um ou mais arquivos .PDF</div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;">
+        <button type="button" onclick="catFecharModalBuscarPdf()" class="btn btn-sec" style="padding:9px 14px;font-size:12.5px;border-radius:10px;">Fechar</button>
       </div>
     </div>
   </div>
@@ -10606,7 +10668,7 @@ function goTab(t, bypassAuth = false) {
   if (abaAtiva && t !== 'orcamento' && typeof salvarRascunhoOrcamento === 'function') {
     salvarRascunhoOrcamento();
   }
-  ['orcamento','historico','financeiro','estoque','detector','agenda','agenda-pessoal','produtos','empresa','clientes','ponto','contratos','usuarios','licenca','camera','relatorio','cronograma','ferramentas','veiculos','projetos'].forEach(p => {
+  ['orcamento','historico','financeiro','estoque','detector','agenda','agenda-pessoal','produtos','empresa','clientes','ponto','contratos','usuarios','licenca','camera','relatorio','cronograma','ferramentas','veiculos','projetos','catalogo'].forEach(p => {
     const pan = document.getElementById('panel-'+p);
     if (pan) pan.classList.toggle('active', p===t);
     const tab = document.getElementById('tab-'+p);
@@ -10641,6 +10703,7 @@ function goTab(t, bypassAuth = false) {
   if (t==='ferramentas') { renderFerramentas(); }
   if (t==='veiculos')   { renderVeiculosView(); }
   if (t==='projetos')   { if (typeof renderProjetosView === 'function') renderProjetosView(); }
+  if (t==='catalogo')   { if (typeof renderCatalogoView === 'function') renderCatalogoView(); }
 
   // Rola para o topo do painel correspondente
   const panAtivo = document.getElementById('panel-' + t);
@@ -49293,6 +49356,258 @@ window.prjEnviarCompartilharArquivo = prjEnviarCompartilharArquivo;
 window.prjEnviarViaWhatsApp = prjEnviarViaWhatsApp;
 window.prjBaixarPdf = prjBaixarPdf;
 window.prjExcluirPdf = prjExcluirPdf;
+
+
+// ══════════════════════════════════════════════════════════════════════
+// MÓDULO CATÁLOGO (BUSCAR PDF, ABRIR NO APP, RENOMEAR, WHATSAPP)
+// ══════════════════════════════════════════════════════════════════════
+const CAT_PDFS_LS_KEY = 'sd_catalogo_pdfs_fallback_v1';
+let _catBuscaTexto = '';
+let _catPdfsCache = [];
+
+function _catAbrirDB() {
+  return new Promise((resolve, reject) => {
+    if (!window.indexedDB) return reject(new Error('IndexedDB indisponível'));
+    const req = indexedDB.open('sd_catalogo_pdf_db', 1);
+    req.onupgradeneeded = function(e) {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains('pdfs')) {
+        db.createObjectStore('pdfs', { keyPath: 'id' });
+      }
+    };
+    req.onsuccess = function(e) { resolve(e.target.result); };
+    req.onerror = function(e) { reject(e.target.error); };
+  });
+}
+
+async function _catListarPdfsDB() {
+  try {
+    const db = await _catAbrirDB();
+    return await new Promise((resolve, reject) => {
+      const tx = db.transaction('pdfs', 'readonly');
+      const req = tx.objectStore('pdfs').getAll();
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => reject(req.error);
+    });
+  } catch (_) {
+    try { return JSON.parse(localStorage.getItem(CAT_PDFS_LS_KEY) || '[]'); } catch (__) { return []; }
+  }
+}
+
+async function _catSalvarPdfDB(item) {
+  try {
+    const db = await _catAbrirDB();
+    return await new Promise((resolve, reject) => {
+      const tx = db.transaction('pdfs', 'readwrite');
+      tx.objectStore('pdfs').put(item);
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch (_) {
+    const arr = _catPdfsCache.slice();
+    const idx = arr.findIndex(x => x.id === item.id);
+    if (idx !== -1) arr[idx] = item; else arr.unshift(item);
+    try { localStorage.setItem(CAT_PDFS_LS_KEY, JSON.stringify(arr)); } catch (__) {}
+    return true;
+  }
+}
+
+async function _catExcluirPdfDB(id) {
+  try {
+    const db = await _catAbrirDB();
+    return await new Promise((resolve, reject) => {
+      const tx = db.transaction('pdfs', 'readwrite');
+      tx.objectStore('pdfs').delete(id);
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch (_) {
+    const arr = _catPdfsCache.filter(x => x.id !== id);
+    try { localStorage.setItem(CAT_PDFS_LS_KEY, JSON.stringify(arr)); } catch (__) {}
+    return true;
+  }
+}
+
+async function renderCatalogoView() {
+  _catPdfsCache = await _catListarPdfsDB();
+  _catPdfsCache.sort((a, b) => (b.criadoEm || 0) - (a.criadoEm || 0));
+  _catRenderListaPdfs();
+}
+
+function _catRenderListaPdfs() {
+  const wrap = document.getElementById('cat-lista-pdfs');
+  if (!wrap) return;
+  const termo = (_catBuscaTexto || '').trim().toLowerCase();
+
+  const filtrados = _catPdfsCache.filter(item => {
+    if (!termo) return true;
+    const hay = ((item.titulo || '') + ' ' + (item.nomeArquivo || '') + ' ' + (item.dataFmt || '')).toLowerCase();
+    return hay.includes(termo);
+  });
+
+  if (filtrados.length === 0) {
+    wrap.innerHTML = `
+      <div style="border:1.5px dashed rgba(255,255,255,0.15);border-radius:14px;padding:28px 16px;text-align:center;">
+        <div style="font-size:34px;margin-bottom:8px;">📖</div>
+        <div style="font-size:14px;font-weight:800;color:#fff;margin-bottom:4px;">Nenhum PDF no catálogo</div>
+        <div style="font-size:12px;color:var(--muted);">Clique em <strong>"📄 Buscar PDF do Catálogo"</strong> acima para adicionar arquivos.</div>
+      </div>`;
+    return;
+  }
+
+  wrap.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px;">' + filtrados.map(item => {
+    const titulo = item.titulo || item.nomeArquivo || 'Catalogo.pdf';
+    return `
+      <div style="background:#0d1117;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px;display:flex;flex-direction:column;justify-content:space-between;gap:10px;">
+        <div>
+          <div style="display:flex;align-items:flex-start;gap:10px;">
+            <div style="width:38px;height:38px;border-radius:10px;background:rgba(59,130,246,0.16);border:1px solid rgba(59,130,246,0.35);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">📖</div>
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:13.5px;font-weight:800;color:#fff;word-break:break-word;">${_prjEscHtml(titulo)}</div>
+              <div style="font-size:11px;color:#94a3b8;word-break:break-all;margin-top:2px;">${_prjEscHtml(item.nomeArquivo || '')}</div>
+            </div>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;font-size:10.5px;color:#cbd5e1;">
+            <span style="background:rgba(255,255,255,0.07);padding:2px 7px;border-radius:6px;">${_prjFormatarTamanho(item.tamanho)}</span>
+            <span style="background:rgba(255,255,255,0.07);padding:2px 7px;border-radius:6px;">${_prjEscHtml(item.dataFmt || '')}</span>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;gap:6px;">
+            <button type="button" onclick="catAbrirPdf('${item.id}')" style="flex:1;padding:8px 10px;border-radius:8px;border:none;background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff;font-size:12px;font-weight:800;cursor:pointer;">👁️ Abrir</button>
+            <button type="button" onclick="catAbrirModalEnviar('${item.id}')" style="flex:1;padding:8px 10px;border-radius:8px;border:none;background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;font-size:12px;font-weight:800;cursor:pointer;">📲 Enviar</button>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button type="button" onclick="catRenomearPdf('${item.id}')" style="flex:1;padding:7px 8px;border-radius:8px;border:1px solid rgba(255,255,255,0.16);background:#161b26;color:#e2e8f0;font-size:11.5px;font-weight:700;cursor:pointer;">✏️ Renomear</button>
+            <button type="button" onclick="catBaixarPdf('${item.id}')" style="padding:7px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.16);background:#161b26;color:#e2e8f0;font-size:11.5px;font-weight:700;cursor:pointer;" title="Baixar PDF">⬇️</button>
+            <button type="button" onclick="catExcluirPdf('${item.id}')" style="padding:7px 10px;border-radius:8px;border:1px solid rgba(239,68,68,0.35);background:rgba(239,68,68,0.12);color:#fca5a5;font-size:11.5px;font-weight:700;cursor:pointer;" title="Excluir PDF">🗑️</button>
+          </div>
+        </div>
+      </div>`;
+  }).join('') + '</div>';
+}
+
+function catFiltrarPdfs(val) {
+  _catBuscaTexto = val || '';
+  const btn = document.getElementById('cat-btn-limpar-busca');
+  if (btn) btn.style.display = _catBuscaTexto.trim() ? 'block' : 'none';
+  _catRenderListaPdfs();
+}
+
+function catLimparBusca() {
+  const inp = document.getElementById('cat-busca-pdf-input');
+  if (inp) inp.value = '';
+  catFiltrarPdfs('');
+}
+
+function catAbrirModalBuscarPdf() {
+  const m = document.getElementById('modal-cat-novo-pdf');
+  const inpTit = document.getElementById('cat-input-titulo-pdf');
+  const inpFile = document.getElementById('cat-input-file-pdf');
+  const status = document.getElementById('cat-status-upload-pdf');
+  if (inpTit) inpTit.value = '';
+  if (inpFile) inpFile.value = '';
+  if (status) status.textContent = 'Selecione um ou mais arquivos .PDF';
+  if (m) m.style.display = 'flex';
+}
+
+function catFecharModalBuscarPdf() {
+  const m = document.getElementById('modal-cat-novo-pdf');
+  if (m) m.style.display = 'none';
+}
+
+async function catAoSelecionarArquivosPdf(input) {
+  if (!input || !input.files || input.files.length === 0) return;
+  const inpTit = document.getElementById('cat-input-titulo-pdf');
+  const status = document.getElementById('cat-status-upload-pdf');
+  const tituloCustom = (inpTit ? inpTit.value.trim() : '');
+  const files = Array.from(input.files);
+
+  if (status) status.textContent = 'Salvando ' + files.length + ' arquivo(s)...';
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const dataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = e => resolve(e.target.result);
+      reader.onerror = () => reject(new Error('Falha ao ler arquivo'));
+      reader.readAsDataURL(file);
+    });
+    const agora = new Date();
+    const dataFmt = agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const item = {
+      id: 'cat_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+      titulo: (files.length === 1 && tituloCustom) ? tituloCustom : file.name.replace(/\.pdf$/i, ''),
+      nomeArquivo: file.name,
+      tamanho: file.size,
+      dataFmt: dataFmt,
+      criadoEm: Date.now(),
+      dataUrl: dataUrl
+    };
+    await _catSalvarPdfDB(item);
+  }
+
+  await renderCatalogoView();
+  catFecharModalBuscarPdf();
+}
+
+async function catAbrirPdf(id) {
+  const item = _catPdfsCache.find(x => x.id === id);
+  if (!item || !item.dataUrl) return;
+  // Reaproveita o visualizador interno PDF.js dentro do app
+  if (!_prjPdfsCache.some(x => x.id === id)) {
+    _prjPdfsCache.push(item);
+  }
+  await prjAbrirPdf(id);
+}
+
+function catAbrirModalEnviar(id) {
+  const item = _catPdfsCache.find(x => x.id === id);
+  if (!item) return;
+  if (!_prjPdfsCache.some(x => x.id === id)) {
+    _prjPdfsCache.push(item);
+  }
+  prjAbrirModalEnviar(id);
+}
+
+async function catRenomearPdf(id) {
+  const item = _catPdfsCache.find(x => x.id === id);
+  if (!item) return;
+  const novo = prompt('Novo nome do catálogo:', item.titulo || item.nomeArquivo || '');
+  if (!novo || !novo.trim()) return;
+  item.titulo = novo.trim();
+  await _catSalvarPdfDB(item);
+  await renderCatalogoView();
+}
+
+function catBaixarPdf(id) {
+  const item = _catPdfsCache.find(x => x.id === id);
+  if (!item || !item.dataUrl) return;
+  const a = document.createElement('a');
+  a.href = item.dataUrl;
+  a.download = item.nomeArquivo || (item.titulo + '.pdf') || 'catalogo.pdf';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+async function catExcluirPdf(id) {
+  if (!confirm('Deseja excluir este PDF do catálogo?')) return;
+  await _catExcluirPdfDB(id);
+  await renderCatalogoView();
+}
+
+window.renderCatalogoView = renderCatalogoView;
+window.catFiltrarPdfs = catFiltrarPdfs;
+window.catLimparBusca = catLimparBusca;
+window.catAbrirModalBuscarPdf = catAbrirModalBuscarPdf;
+window.catFecharModalBuscarPdf = catFecharModalBuscarPdf;
+window.catAoSelecionarArquivosPdf = catAoSelecionarArquivosPdf;
+window.catAbrirPdf = catAbrirPdf;
+window.catAbrirModalEnviar = catAbrirModalEnviar;
+window.catRenomearPdf = catRenomearPdf;
+window.catBaixarPdf = catBaixarPdf;
+window.catExcluirPdf = catExcluirPdf;
 
 </script>
 
