@@ -48927,7 +48927,7 @@ function _prjRenderListaPdfs() {
         <div style="display:flex;flex-direction:column;gap:6px;">
           <div style="display:flex;gap:6px;">
             <button type="button" onclick="prjAbrirPdf('${item.id}')" style="flex:1;padding:8px 10px;border-radius:8px;border:none;background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff;font-size:12px;font-weight:800;cursor:pointer;">👁️ Abrir</button>
-            <button type="button" onclick="prjAbrirModalEnviar('${item.id}')" style="flex:1;padding:8px 10px;border-radius:8px;border:none;background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;font-size:12px;font-weight:800;cursor:pointer;">📲 Enviar</button>
+            <button type="button" onclick="prjCompartilharPdf('${item.id}')" style="flex:1;padding:8px 10px;border-radius:8px;border:none;background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;font-size:12px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;"><span>🔗</span><span>Compartilhar</span></button>
           </div>
           <div style="display:flex;gap:6px;">
             <button type="button" onclick="prjAbrirModalRenomear('${item.id}')" style="flex:1;padding:7px 8px;border-radius:8px;border:1px solid rgba(255,255,255,0.16);background:#161b26;color:#e2e8f0;font-size:11.5px;font-weight:700;cursor:pointer;">✏️ Renomear</button>
@@ -49267,6 +49267,39 @@ function prjFecharModalEnviar() {
   if (m) m.style.display = 'none';
 }
 
+async function prjCompartilharPdf(id) {
+  _prjPdfIdAcaoAtual = id;
+  const item = _prjPdfsCache.find(x => x.id === id);
+  if (!item || !item.dataUrl) return;
+
+  const nomeArq = (item.nomeArquivo && item.nomeArquivo.toLowerCase().endsWith('.pdf'))
+    ? item.nomeArquivo
+    : ((item.titulo || 'projeto') + '.pdf');
+  const titulo = item.titulo || nomeArq;
+  const blob = _prjDataUrlParaBlob(item.dataUrl);
+  const file = new File([blob], nomeArq, { type: 'application/pdf' });
+
+  // Dispara a gaveta nativa de compartilhamento do Android / celular
+  if (navigator.share) {
+    try {
+      const shareData = {
+        title: titulo,
+        files: [file]
+      };
+      if (!navigator.canShare || navigator.canShare({ files: [file] })) {
+        await navigator.share(shareData);
+        return;
+      }
+    } catch (e) {
+      if (e && e.name === 'AbortError') return;
+      console.warn('Share com arquivo não aceito, tentando modal/download:', e);
+    }
+  }
+
+  // Fallback: abre modal de opções
+  prjAbrirModalEnviar(id);
+}
+
 async function prjEnviarCompartilharArquivo() {
   const item = _prjPdfsCache.find(x => x.id === _prjPdfIdAcaoAtual);
   if (!item || !item.dataUrl) return;
@@ -49362,6 +49395,7 @@ window.prjAbrirModalMover = prjAbrirModalMover;
 window.prjFecharModalMover = prjFecharModalMover;
 window.prjConfirmarMover = prjConfirmarMover;
 window.prjAbrirModalEnviar = prjAbrirModalEnviar;
+window.prjCompartilharPdf = prjCompartilharPdf;
 window.prjFecharModalEnviar = prjFecharModalEnviar;
 window.prjEnviarCompartilharArquivo = prjEnviarCompartilharArquivo;
 window.prjEnviarViaWhatsApp = prjEnviarViaWhatsApp;
@@ -49486,7 +49520,7 @@ function _catRenderListaPdfs() {
         <div style="display:flex;flex-direction:column;gap:6px;">
           <div style="display:flex;gap:6px;">
             <button type="button" onclick="catAbrirPdf('${item.id}')" style="flex:1;padding:8px 10px;border-radius:8px;border:none;background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff;font-size:12px;font-weight:800;cursor:pointer;">👁️ Abrir</button>
-            <button type="button" onclick="catAbrirModalEnviar('${item.id}')" style="flex:1;padding:8px 10px;border-radius:8px;border:none;background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;font-size:12px;font-weight:800;cursor:pointer;">📲 Enviar</button>
+            <button type="button" onclick="catCompartilharPdf('${item.id}')" style="flex:1;padding:8px 10px;border-radius:8px;border:none;background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;font-size:12px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;"><span>🔗</span><span>Compartilhar</span></button>
           </div>
           <div style="display:flex;gap:6px;">
             <button type="button" onclick="catRenomearPdf('${item.id}')" style="flex:1;padding:7px 8px;border-radius:8px;border:1px solid rgba(255,255,255,0.16);background:#161b26;color:#e2e8f0;font-size:11.5px;font-weight:700;cursor:pointer;">✏️ Renomear</button>
@@ -49572,6 +49606,15 @@ async function catAbrirPdf(id) {
   await prjAbrirPdf(id);
 }
 
+async function catCompartilharPdf(id) {
+  const item = _catPdfsCache.find(x => x.id === id);
+  if (!item || !item.dataUrl) return;
+  if (!_prjPdfsCache.some(x => x.id === id)) {
+    _prjPdfsCache.push(item);
+  }
+  await prjCompartilharPdf(id);
+}
+
 function catAbrirModalEnviar(id) {
   const item = _catPdfsCache.find(x => x.id === id);
   if (!item) return;
@@ -49616,6 +49659,7 @@ window.catFecharModalBuscarPdf = catFecharModalBuscarPdf;
 window.catAoSelecionarArquivosPdf = catAoSelecionarArquivosPdf;
 window.catAbrirPdf = catAbrirPdf;
 window.catAbrirModalEnviar = catAbrirModalEnviar;
+window.catCompartilharPdf = catCompartilharPdf;
 window.catRenomearPdf = catRenomearPdf;
 window.catBaixarPdf = catBaixarPdf;
 window.catExcluirPdf = catExcluirPdf;
