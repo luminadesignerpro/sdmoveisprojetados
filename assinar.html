@@ -1347,7 +1347,10 @@
               <div class="recebedor-nome" id="rec-nome">SD Móveis Projetados</div>
             </div>
           </div>
-          <button type="button" class="btn-editar-recebedor" onclick="abrirModalRecebedor()">⚙️ Configurar</button>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
+            <button type="button" class="btn-editar-recebedor" onclick="abrirEditarContratoApartirConfig()" title="Editar texto/cláusulas do contrato">✏️ Editar Contrato</button>
+            <button type="button" class="btn-editar-recebedor" onclick="abrirModalRecebedor()">⚙️ Configurar</button>
+          </div>
         </div>
         <div class="recebedor-grid">
           <div class="recebedor-item">
@@ -1698,6 +1701,9 @@
           <button type="button" class="btn btn-gold" onclick="salvarDadosRecebedor()" style="flex:1;">💾 Salvar Dados</button>
           <button type="button" class="btn btn-outline" onclick="fecharModalRecebedor()" style="width:auto;">Cancelar</button>
         </div>
+        <button type="button" onclick="fecharModalRecebedor();abrirEditarContratoApartirConfig();" style="width:100%;margin-top:10px;padding:10px 14px;border-radius:10px;border:1.5px solid rgba(201,160,56,0.5);background:rgba(201,160,56,0.12);color:#f3c760;font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+          <span>✏️</span> <span>Editar Contrato</span>
+        </button>
 
         <!-- Alterar Senha -->
         <div class="alterar-senha-section">
@@ -3267,6 +3273,17 @@ window.selecionarPagamento = function(metodo) {
   };
 
   let _textoContratoOriginalCache = '';
+
+  window.abrirEditarContratoApartirConfig = function() {
+    const box = document.getElementById('contrato-texto');
+    if (box && box.getAttribute('contenteditable') !== 'true' && typeof window.toggleEditarContratoAssinar === 'function') {
+      window.toggleEditarContratoAssinar();
+    }
+    if (box) {
+      box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(function() { try { box.focus(); } catch (_) {} }, 350);
+    }
+  };
 
   window.toggleEditarContratoAssinar = function() {
     const box = document.getElementById('contrato-texto');

@@ -2033,6 +2033,7 @@
     <button type="button" id="tab-relatorio" class="tab" data-tab="relatorio" onclick="goTab('relatorio')" title="Relatório Financeiro"><span>📊</span><span>Relatório</span></button>
     <button type="button" id="tab-ferramentas" class="tab" data-tab="ferramentas" onclick="goTab('ferramentas')" title="Ferramentas de Obra"><span>🔧</span><span>Ferramentas</span></button>
     <button type="button" id="tab-veiculos" class="tab" data-tab="veiculos" onclick="goTab('veiculos')" title="SD Veículos - Controle de Veículos, Licenciamento e Abastecimento"><span>🚗</span><span>SD Veículos</span></button>
+    <button type="button" id="tab-projetos" class="tab" data-tab="projetos" onclick="goTab('projetos')" title="Projetos - Pastas e Arquivos PDF"><span>📐</span><span>Projetos</span></button>
     <button type="button" id="btn-central-mensagens" class="tab" onclick="abrirModalCentralMensagens()" title="Central de Mensagens com Clientes"><span>💬</span><span>Mensagens <span id="badge-msg-clientes" style="display:none;background:#ef4444;color:#fff;font-size:9px;padding:1px 5px;border-radius:999px;font-weight:900;">0</span></span></button>
     <button type="button" id="tab-msg-funcionarios" class="tab" onclick="abrirModalMsgsFuncionarios()" title="Mensagens dos Funcionários"><span>👷💬</span><span>Mensagem dos Funcionários <span id="badge-msgs-funcs" style="display:none;background:#ef4444;color:#fff;font-size:9px;padding:1px 5px;border-radius:999px;font-weight:900;">0</span></span></button>
   </div>
@@ -5260,6 +5261,113 @@
   </div>
 
   <!-- ══════════════════════════════════════════ -->
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- PAINEL PROJETOS (PASTAS & BUSCAR PDF)      -->
+  <!-- ══════════════════════════════════════════ -->
+  <div id="panel-projetos" class="panel">
+    <!-- BARRA SUPERIOR -->
+    <div style="background:linear-gradient(135deg,rgba(201,168,76,0.14),rgba(16,18,27,0.95));border:1.5px solid var(--border);border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:0 8px 30px rgba(0,0,0,0.5);">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+        <div>
+          <div style="font-size:12px;font-weight:900;color:var(--gold);letter-spacing:0.1em;text-transform:uppercase;">Arquivos &amp; Plantas • SD Móveis</div>
+          <h2 style="font-size:22px;font-weight:900;color:#fff;margin:2px 0 4px 0;display:flex;align-items:center;gap:8px;">
+            <span>📐</span> <span>Projetos &amp; PDFs</span>
+          </h2>
+          <div style="font-size:12.5px;color:var(--muted);">Organize projetos em pastas, busque arquivos PDF no aparelho e visualize quando precisar.</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button type="button" class="btn btn-sec" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="padding:8px 14px;font-size:12px;font-weight:800;border-radius:10px;display:flex;align-items:center;gap:6px;">
+            ⬆ Abas
+          </button>
+        </div>
+      </div>
+
+      <!-- AÇÕES RÁPIDAS: ADICIONAR PASTA & BUSCAR PDF -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;width:100%;box-sizing:border-box;">
+        <button type="button" class="btn" onclick="prjAbrirModalNovaPasta()" style="padding:11px 14px;font-size:13px;font-weight:800;background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff;border:none;border-radius:12px;box-shadow:0 4px 15px rgba(245,158,11,0.35);display:flex;align-items:center;justify-content:center;gap:8px;">
+          <span>📁</span> <span>+ Adicionar Pasta</span>
+        </button>
+        <button type="button" class="btn" onclick="prjAbrirModalBuscarPdf()" style="padding:11px 14px;font-size:13px;font-weight:800;background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff;border:none;border-radius:12px;box-shadow:0 4px 15px rgba(59,130,246,0.35);display:flex;align-items:center;justify-content:center;gap:8px;">
+          <span>📄</span> <span>Buscar PDF</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- CARD PRINCIPAL: PASTAS + BUSCA + LISTA DE PDFS -->
+    <div style="background:rgba(16,18,27,0.95);border:1.5px solid rgba(201,168,76,0.28);border-radius:16px;padding:16px;box-shadow:0 8px 28px rgba(0,0,0,0.45);">
+      <!-- CAMPO DE BUSCA POR NOME DO PDF -->
+      <div style="margin-bottom:14px;position:relative;">
+        <input type="text" id="prj-busca-pdf-input" placeholder="🔍 Filtrar PDFs salvos (por nome, cliente, pasta ou data)..." oninput="prjFiltrarPdfs(this.value)" style="width:100%;box-sizing:border-box;background:#0d1117;border:1.5px solid rgba(59,130,246,0.4);border-radius:10px;padding:10px 38px 10px 12px;font-size:13px;color:#fff;outline:none;" />
+        <button type="button" id="prj-btn-limpar-busca" onclick="prjLimparBusca()" title="Limpar busca" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.12);border:none;color:#fff;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:800;cursor:pointer;">✕</button>
+      </div>
+
+      <!-- CHIPS DE PASTAS -->
+      <div id="prj-pastas-chips" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;"></div>
+
+      <!-- LISTA DE PDFS -->
+      <div id="prj-lista-pdfs"></div>
+    </div>
+  </div>
+
+  <!-- MODAL: ADICIONAR PASTA DE PROJETOS -->
+  <div id="modal-prj-nova-pasta" class="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.78);z-index:9999;align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)prjFecharModalNovaPasta()">
+    <div style="background:#121622;border:1.5px solid var(--gold);border-radius:16px;max-width:400px;width:100%;padding:18px;box-shadow:0 16px 40px rgba(0,0,0,0.65);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h3 style="margin:0;color:#fff;font-size:16px;font-weight:900;">📁 Nova Pasta de Projetos</h3>
+        <button type="button" onclick="prjFecharModalNovaPasta()" style="background:transparent;border:none;color:#94a3b8;font-size:20px;cursor:pointer;">✕</button>
+      </div>
+      <label style="display:block;font-size:12px;color:#cbd5e1;font-weight:700;margin-bottom:6px;">Nome da Pasta</label>
+      <input type="text" id="prj-input-nome-pasta" placeholder="Ex: Cozinhas, Quartos, Cliente João..." maxlength="40" style="width:100%;box-sizing:border-box;background:#0b0f17;border:1.5px solid #2b3548;border-radius:10px;padding:10px 12px;color:#fff;font-size:13.5px;outline:none;margin-bottom:14px;" onkeydown="if(event.key==='Enter')prjSalvarNovaPasta()" />
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button type="button" onclick="prjFecharModalNovaPasta()" class="btn btn-sec" style="padding:9px 14px;font-size:12.5px;border-radius:10px;">Cancelar</button>
+        <button type="button" onclick="prjSalvarNovaPasta()" class="btn" style="padding:9px 16px;font-size:12.5px;font-weight:800;background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff;border:none;border-radius:10px;">💾 Criar Pasta</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: BUSCAR / ANEXAR PDF -->
+  <div id="modal-prj-novo-pdf" class="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.78);z-index:9999;align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)prjFecharModalBuscarPdf()">
+    <div style="background:#121622;border:1.5px solid #3b82f6;border-radius:16px;max-width:440px;width:100%;padding:18px;box-shadow:0 16px 40px rgba(0,0,0,0.65);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h3 style="margin:0;color:#fff;font-size:16px;font-weight:900;">📄 Buscar &amp; Adicionar PDF</h3>
+        <button type="button" onclick="prjFecharModalBuscarPdf()" style="background:transparent;border:none;color:#94a3b8;font-size:20px;cursor:pointer;">✕</button>
+      </div>
+      <div style="margin-bottom:12px;">
+        <label style="display:block;font-size:12px;color:#cbd5e1;font-weight:700;margin-bottom:6px;">Pasta de Destino</label>
+        <select id="prj-select-pasta-pdf" style="width:100%;box-sizing:border-box;background:#0b0f17;border:1.5px solid #2b3548;border-radius:10px;padding:10px 12px;color:#fff;font-size:13px;outline:none;"></select>
+      </div>
+      <div style="margin-bottom:12px;">
+        <label style="display:block;font-size:12px;color:#cbd5e1;font-weight:700;margin-bottom:6px;">Título / Observação (opcional)</label>
+        <input type="text" id="prj-input-titulo-pdf" placeholder="Ex: Planta Cozinha Planejada" maxlength="60" style="width:100%;box-sizing:border-box;background:#0b0f17;border:1.5px solid #2b3548;border-radius:10px;padding:10px 12px;color:#fff;font-size:13px;outline:none;" />
+      </div>
+      <div style="margin-bottom:14px;">
+        <input type="file" id="prj-input-file-pdf" accept="application/pdf,.pdf" multiple style="display:none;" onchange="prjAoSelecionarArquivosPdf(this)" />
+        <button type="button" onclick="document.getElementById('prj-input-file-pdf').click()" style="width:100%;padding:14px;border-radius:12px;border:2px dashed rgba(59,130,246,0.65);background:rgba(59,130,246,0.1);color:#93c5fd;font-size:13.5px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+          <span>📂</span> <span>Buscar PDF no Aparelho / Arquivos</span>
+        </button>
+        <div id="prj-status-upload-pdf" style="font-size:12px;color:#94a3b8;margin-top:8px;text-align:center;">Selecione um ou mais arquivos .PDF</div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;">
+        <button type="button" onclick="prjFecharModalBuscarPdf()" class="btn btn-sec" style="padding:9px 14px;font-size:12.5px;border-radius:10px;">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: VISUALIZADOR DE PDF -->
+  <div id="modal-prj-ver-pdf" class="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:10000;align-items:center;justify-content:center;padding:12px;" onclick="if(event.target===this)prjFecharVisualizadorPdf()">
+    <div style="background:#121622;border:1.5px solid var(--gold);border-radius:16px;max-width:900px;width:100%;height:88vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,0.75);">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #243046;gap:10px;">
+        <div id="prj-ver-pdf-titulo" style="font-size:14px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📄 Visualizando PDF</div>
+        <div style="display:flex;gap:8px;flex-shrink:0;">
+          <a id="prj-ver-pdf-nova-aba" href="#" target="_blank" rel="noopener" class="btn btn-sec" style="padding:6px 12px;font-size:12px;border-radius:8px;text-decoration:none;">↗️ Abrir Externo</a>
+          <button type="button" onclick="prjFecharVisualizadorPdf()" style="background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.4);color:#fca5a5;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:800;cursor:pointer;">✕ Fechar</button>
+        </div>
+      </div>
+      <iframe id="prj-ver-pdf-frame" src="" style="flex:1;width:100%;border:none;background:#1e293b;"></iframe>
+    </div>
+  </div>
+
   <div id="panel-estoque" class="panel">
     <!-- Cabeçalho do Estoque -->
     <div style="background:linear-gradient(135deg,rgba(201,168,76,0.12),rgba(16,18,27,0.92));border:1.5px solid var(--border);border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:0 8px 30px rgba(0,0,0,0.5);">
@@ -10433,7 +10541,7 @@ function goTab(t, bypassAuth = false) {
   if (abaAtiva && t !== 'orcamento' && typeof salvarRascunhoOrcamento === 'function') {
     salvarRascunhoOrcamento();
   }
-  ['orcamento','historico','financeiro','estoque','detector','agenda','agenda-pessoal','produtos','empresa','clientes','ponto','contratos','usuarios','licenca','camera','relatorio','cronograma','ferramentas','veiculos'].forEach(p => {
+  ['orcamento','historico','financeiro','estoque','detector','agenda','agenda-pessoal','produtos','empresa','clientes','ponto','contratos','usuarios','licenca','camera','relatorio','cronograma','ferramentas','veiculos','projetos'].forEach(p => {
     const pan = document.getElementById('panel-'+p);
     if (pan) pan.classList.toggle('active', p===t);
     const tab = document.getElementById('tab-'+p);
@@ -10467,6 +10575,7 @@ function goTab(t, bypassAuth = false) {
   if (t==='cronograma') { if (typeof mudarAbaCronograma === 'function') mudarAbaCronograma('semana'); }
   if (t==='ferramentas') { renderFerramentas(); }
   if (t==='veiculos')   { renderVeiculosView(); }
+  if (t==='projetos')   { if (typeof renderProjetosView === 'function') renderProjetosView(); }
 
   // Rola para o topo do painel correspondente
   const panAtivo = document.getElementById('panel-' + t);
@@ -48505,6 +48614,395 @@ window.sdvGerarHtmlGridFotos = sdvGerarHtmlGridFotos;
 window.sdvFiltrarBuscaGaleria = sdvFiltrarBuscaGaleria;
 window.sdvLimparBuscaGaleria = sdvLimparBuscaGaleria;
 window.renderSdvGaleriaFotos = renderSdvGaleriaFotos;
+
+
+// ══════════════════════════════════════════════════════════════════════
+// MÓDULO PROJETOS (PASTAS & ARQUIVOS PDF COM INDEXEDDB)
+// ══════════════════════════════════════════════════════════════════════
+const PRJ_PASTAS_KEY = 'sd_projetos_pastas_v1';
+const PRJ_PDFS_LS_KEY = 'sd_projetos_pdfs_fallback_v1';
+let _prjPastaSelecionada = 'Todas';
+let _prjBuscaTexto = '';
+let _prjPdfsCache = [];
+let _prjBlobUrlAtual = null;
+
+function _prjObterPastas() {
+  let pastas = [];
+  try {
+    pastas = JSON.parse(localStorage.getItem(PRJ_PASTAS_KEY) || '[]');
+  } catch (_) {}
+  if (!Array.isArray(pastas) || pastas.length === 0) {
+    pastas = ['Geral'];
+    try { localStorage.setItem(PRJ_PASTAS_KEY, JSON.stringify(pastas)); } catch (_) {}
+  }
+  if (!pastas.includes('Geral')) pastas.unshift('Geral');
+  return pastas;
+}
+
+function _prjSalvarPastas(pastas) {
+  try { localStorage.setItem(PRJ_PASTAS_KEY, JSON.stringify(pastas)); } catch (_) {}
+}
+
+function _prjAbrirDB() {
+  return new Promise((resolve, reject) => {
+    if (!window.indexedDB) return reject(new Error('IndexedDB indisponível'));
+    const req = indexedDB.open('sd_projetos_pdf_db', 1);
+    req.onupgradeneeded = function(e) {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains('pdfs')) {
+        db.createObjectStore('pdfs', { keyPath: 'id' });
+      }
+    };
+    req.onsuccess = function(e) { resolve(e.target.result); };
+    req.onerror = function(e) { reject(e.target.error); };
+  });
+}
+
+async function _prjListarPdfsDB() {
+  try {
+    const db = await _prjAbrirDB();
+    return await new Promise((resolve, reject) => {
+      const tx = db.transaction('pdfs', 'readonly');
+      const store = tx.objectStore('pdfs');
+      const req = store.getAll();
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => reject(req.error);
+    });
+  } catch (_) {
+    try {
+      return JSON.parse(localStorage.getItem(PRJ_PDFS_LS_KEY) || '[]');
+    } catch (__) {
+      return [];
+    }
+  }
+}
+
+async function _prjSalvarPdfDB(item) {
+  try {
+    const db = await _prjAbrirDB();
+    return await new Promise((resolve, reject) => {
+      const tx = db.transaction('pdfs', 'readwrite');
+      tx.objectStore('pdfs').put(item);
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch (_) {
+    const arr = _prjPdfsCache.slice();
+    arr.unshift(item);
+    try { localStorage.setItem(PRJ_PDFS_LS_KEY, JSON.stringify(arr)); } catch (__) {}
+    return true;
+  }
+}
+
+async function _prjExcluirPdfDB(id) {
+  try {
+    const db = await _prjAbrirDB();
+    return await new Promise((resolve, reject) => {
+      const tx = db.transaction('pdfs', 'readwrite');
+      tx.objectStore('pdfs').delete(id);
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch (_) {
+    const arr = _prjPdfsCache.filter(x => x.id !== id);
+    try { localStorage.setItem(PRJ_PDFS_LS_KEY, JSON.stringify(arr)); } catch (__) {}
+    return true;
+  }
+}
+
+function _prjEscHtml(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function _prjFormatarTamanho(bytes) {
+  const b = Number(bytes || 0);
+  if (b < 1024) return b + ' B';
+  if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
+  return (b / (1024 * 1024)).toFixed(2) + ' MB';
+}
+
+async function renderProjetosView() {
+  _prjPdfsCache = await _prjListarPdfsDB();
+  _prjPdfsCache.sort((a, b) => (b.criadoEm || 0) - (a.criadoEm || 0));
+  _prjRenderPastasChips();
+  _prjRenderListaPdfs();
+}
+
+function _prjRenderPastasChips() {
+  const wrap = document.getElementById('prj-pastas-chips');
+  if (!wrap) return;
+  const pastas = _prjObterPastas();
+  if (_prjPastaSelecionada !== 'Todas' && !pastas.includes(_prjPastaSelecionada)) {
+    _prjPastaSelecionada = 'Todas';
+  }
+
+  let htmlChips = '';
+  const totalTodas = _prjPdfsCache.length;
+  const ativoTodas = _prjPastaSelecionada === 'Todas';
+  htmlChips += `<button type="button" onclick="prjSelecionarPasta('Todas')" style="padding:7px 12px;border-radius:999px;font-size:12px;font-weight:800;cursor:pointer;border:1px solid ${ativoTodas ? '#f59e0b' : 'rgba(255,255,255,0.14)'};background:${ativoTodas ? 'linear-gradient(135deg,#d97706,#f59e0b)' : '#0d1117'};color:${ativoTodas ? '#fff' : '#cbd5e1'};display:inline-flex;align-items:center;gap:6px;">📁 Todas (${totalTodas})</button>`;
+
+  pastas.forEach(p => {
+    const qtd = _prjPdfsCache.filter(x => (x.pasta || 'Geral') === p).length;
+    const ativo = _prjPastaSelecionada === p;
+    const btnDel = p !== 'Geral' ? `<span onclick="event.stopPropagation();prjExcluirPasta('${_prjEscHtml(p).replace(/'/g, "\\'")}')" title="Excluir pasta" style="margin-left:4px;opacity:0.75;font-weight:900;">✕</span>` : '';
+    htmlChips += `<button type="button" onclick="prjSelecionarPasta('${_prjEscHtml(p).replace(/'/g, "\\'")}')" style="padding:7px 12px;border-radius:999px;font-size:12px;font-weight:800;cursor:pointer;border:1px solid ${ativo ? '#f59e0b' : 'rgba(255,255,255,0.14)'};background:${ativo ? 'linear-gradient(135deg,#d97706,#f59e0b)' : '#0d1117'};color:${ativo ? '#fff' : '#cbd5e1'};display:inline-flex;align-items:center;gap:6px;">📁 ${_prjEscHtml(p)} (${qtd})${btnDel}</button>`;
+  });
+
+  wrap.innerHTML = htmlChips;
+}
+
+function _prjRenderListaPdfs() {
+  const wrap = document.getElementById('prj-lista-pdfs');
+  if (!wrap) return;
+  const termo = (_prjBuscaTexto || '').trim().toLowerCase();
+
+  const filtrados = _prjPdfsCache.filter(item => {
+    const pastaItem = item.pasta || 'Geral';
+    if (_prjPastaSelecionada !== 'Todas' && pastaItem !== _prjPastaSelecionada) return false;
+    if (!termo) return true;
+    const hay = ((item.titulo || '') + ' ' + (item.nomeArquivo || '') + ' ' + pastaItem + ' ' + (item.dataFmt || '')).toLowerCase();
+    return hay.includes(termo);
+  });
+
+  if (filtrados.length === 0) {
+    wrap.innerHTML = `
+      <div style="border:1.5px dashed rgba(255,255,255,0.15);border-radius:14px;padding:28px 16px;text-align:center;">
+        <div style="font-size:34px;margin-bottom:8px;">📄</div>
+        <div style="font-size:14px;font-weight:800;color:#fff;margin-bottom:4px;">Nenhum PDF encontrado nesta pasta</div>
+        <div style="font-size:12px;color:var(--muted);">Clique em <strong>"📄 Buscar PDF"</strong> acima para adicionar arquivos de projeto.</div>
+      </div>`;
+    return;
+  }
+
+  wrap.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;">' + filtrados.map(item => {
+    const titulo = item.titulo || item.nomeArquivo || 'Projeto.pdf';
+    return `
+      <div style="background:#0d1117;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px;display:flex;flex-direction:column;justify-content:space-between;gap:10px;">
+        <div>
+          <div style="display:flex;align-items:flex-start;gap:10px;">
+            <div style="width:38px;height:38px;border-radius:10px;background:rgba(239,68,68,0.16);border:1px solid rgba(239,68,68,0.35);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">📄</div>
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:13.5px;font-weight:800;color:#fff;word-break:break-word;">${_prjEscHtml(titulo)}</div>
+              <div style="font-size:11px;color:#94a3b8;word-break:break-all;margin-top:2px;">${_prjEscHtml(item.nomeArquivo || '')}</div>
+            </div>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;font-size:10.5px;color:#cbd5e1;">
+            <span style="background:rgba(245,158,11,0.15);color:#fbbf24;padding:2px 7px;border-radius:6px;font-weight:700;">📁 ${_prjEscHtml(item.pasta || 'Geral')}</span>
+            <span style="background:rgba(255,255,255,0.07);padding:2px 7px;border-radius:6px;">${_prjFormatarTamanho(item.tamanho)}</span>
+            <span style="background:rgba(255,255,255,0.07);padding:2px 7px;border-radius:6px;">${_prjEscHtml(item.dataFmt || '')}</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button type="button" onclick="prjAbrirPdf('${item.id}')" style="flex:1;padding:7px 10px;border-radius:8px;border:none;background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff;font-size:12px;font-weight:800;cursor:pointer;">👁️ Abrir</button>
+          <button type="button" onclick="prjBaixarPdf('${item.id}')" style="padding:7px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.16);background:#161b26;color:#e2e8f0;font-size:12px;font-weight:700;cursor:pointer;" title="Baixar PDF">⬇️</button>
+          <button type="button" onclick="prjExcluirPdf('${item.id}')" style="padding:7px 10px;border-radius:8px;border:1px solid rgba(239,68,68,0.35);background:rgba(239,68,68,0.12);color:#fca5a5;font-size:12px;font-weight:700;cursor:pointer;" title="Excluir PDF">🗑️</button>
+        </div>
+      </div>`;
+  }).join('') + '</div>';
+}
+
+function prjSelecionarPasta(nome) {
+  _prjPastaSelecionada = nome;
+  _prjRenderPastasChips();
+  _prjRenderListaPdfs();
+}
+
+function prjFiltrarPdfs(val) {
+  _prjBuscaTexto = val || '';
+  const btnLimpar = document.getElementById('prj-btn-limpar-busca');
+  if (btnLimpar) btnLimpar.style.display = _prjBuscaTexto.trim() ? 'block' : 'none';
+  _prjRenderListaPdfs();
+}
+
+function prjLimparBusca() {
+  const inp = document.getElementById('prj-busca-pdf-input');
+  if (inp) inp.value = '';
+  prjFiltrarPdfs('');
+}
+
+function prjAbrirModalNovaPasta() {
+  const m = document.getElementById('modal-prj-nova-pasta');
+  const inp = document.getElementById('prj-input-nome-pasta');
+  if (inp) inp.value = '';
+  if (m) m.style.display = 'flex';
+  if (inp) setTimeout(() => inp.focus(), 100);
+}
+
+function prjFecharModalNovaPasta() {
+  const m = document.getElementById('modal-prj-nova-pasta');
+  if (m) m.style.display = 'none';
+}
+
+function prjSalvarNovaPasta() {
+  const inp = document.getElementById('prj-input-nome-pasta');
+  const nome = (inp ? inp.value : '').trim();
+  if (!nome) {
+    alert('Digite o nome da pasta.');
+    return;
+  }
+  const pastas = _prjObterPastas();
+  if (!pastas.some(p => p.toLowerCase() === nome.toLowerCase())) {
+    pastas.push(nome);
+    _prjSalvarPastas(pastas);
+  }
+  _prjPastaSelecionada = nome;
+  prjFecharModalNovaPasta();
+  _prjRenderPastasChips();
+  _prjRenderListaPdfs();
+}
+
+function prjExcluirPasta(nome) {
+  if (nome === 'Geral') return;
+  if (!confirm('Excluir a pasta "' + nome + '"? Os PDFs dela serão movidos para "Geral".')) return;
+  let pastas = _prjObterPastas().filter(p => p !== nome);
+  _prjSalvarPastas(pastas);
+  _prjPdfsCache.forEach(async item => {
+    if (item.pasta === nome) {
+      item.pasta = 'Geral';
+      await _prjSalvarPdfDB(item);
+    }
+  });
+  if (_prjPastaSelecionada === nome) _prjPastaSelecionada = 'Todas';
+  _prjRenderPastasChips();
+  _prjRenderListaPdfs();
+}
+
+function prjAbrirModalBuscarPdf() {
+  const m = document.getElementById('modal-prj-novo-pdf');
+  const sel = document.getElementById('prj-select-pasta-pdf');
+  const inpTit = document.getElementById('prj-input-titulo-pdf');
+  const inpFile = document.getElementById('prj-input-file-pdf');
+  const status = document.getElementById('prj-status-upload-pdf');
+  if (sel) {
+    const pastas = _prjObterPastas();
+    sel.innerHTML = pastas.map(p => `<option value="${_prjEscHtml(p)}">${_prjEscHtml(p)}</option>`).join('');
+    if (_prjPastaSelecionada !== 'Todas' && pastas.includes(_prjPastaSelecionada)) {
+      sel.value = _prjPastaSelecionada;
+    }
+  }
+  if (inpTit) inpTit.value = '';
+  if (inpFile) inpFile.value = '';
+  if (status) status.textContent = 'Selecione um ou mais arquivos .PDF';
+  if (m) m.style.display = 'flex';
+}
+
+function prjFecharModalBuscarPdf() {
+  const m = document.getElementById('modal-prj-novo-pdf');
+  if (m) m.style.display = 'none';
+}
+
+async function prjAoSelecionarArquivosPdf(input) {
+  if (!input || !input.files || input.files.length === 0) return;
+  const sel = document.getElementById('prj-select-pasta-pdf');
+  const inpTit = document.getElementById('prj-input-titulo-pdf');
+  const status = document.getElementById('prj-status-upload-pdf');
+  const pasta = (sel && sel.value) ? sel.value : 'Geral';
+  const tituloCustom = (inpTit ? inpTit.value.trim() : '');
+  const files = Array.from(input.files);
+
+  if (status) status.textContent = 'Salvando ' + files.length + ' arquivo(s)...';
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const dataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = e => resolve(e.target.result);
+      reader.onerror = () => reject(new Error('Falha ao ler arquivo'));
+      reader.readAsDataURL(file);
+    });
+    const agora = new Date();
+    const dataFmt = agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const item = {
+      id: 'prj_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+      pasta: pasta,
+      titulo: (files.length === 1 && tituloCustom) ? tituloCustom : file.name.replace(/\.pdf$/i, ''),
+      nomeArquivo: file.name,
+      tamanho: file.size,
+      dataFmt: dataFmt,
+      criadoEm: Date.now(),
+      dataUrl: dataUrl
+    };
+    await _prjSalvarPdfDB(item);
+  }
+
+  _prjPastaSelecionada = pasta;
+  await renderProjetosView();
+  prjFecharModalBuscarPdf();
+}
+
+function _prjDataUrlParaBlobUrl(dataUrl) {
+  try {
+    const parts = dataUrl.split(',');
+    const byteString = atob(parts[1]);
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+    const blob = new Blob([ab], { type: 'application/pdf' });
+    return URL.createObjectURL(blob);
+  } catch (_) {
+    return dataUrl;
+  }
+}
+
+function prjAbrirPdf(id) {
+  const item = _prjPdfsCache.find(x => x.id === id);
+  if (!item || !item.dataUrl) return;
+  if (_prjBlobUrlAtual) {
+    try { URL.revokeObjectURL(_prjBlobUrlAtual); } catch (_) {}
+    _prjBlobUrlAtual = null;
+  }
+  const blobUrl = _prjDataUrlParaBlobUrl(item.dataUrl);
+  _prjBlobUrlAtual = blobUrl;
+
+  const m = document.getElementById('modal-prj-ver-pdf');
+  const tit = document.getElementById('prj-ver-pdf-titulo');
+  const frame = document.getElementById('prj-ver-pdf-frame');
+  const link = document.getElementById('prj-ver-pdf-nova-aba');
+  if (tit) tit.textContent = '📄 ' + (item.titulo || item.nomeArquivo || 'Projeto PDF');
+  if (frame) frame.src = blobUrl;
+  if (link) link.href = blobUrl;
+  if (m) m.style.display = 'flex';
+}
+
+function prjFecharVisualizadorPdf() {
+  const m = document.getElementById('modal-prj-ver-pdf');
+  const frame = document.getElementById('prj-ver-pdf-frame');
+  if (frame) frame.src = '';
+  if (m) m.style.display = 'none';
+}
+
+function prjBaixarPdf(id) {
+  const item = _prjPdfsCache.find(x => x.id === id);
+  if (!item || !item.dataUrl) return;
+  const a = document.createElement('a');
+  a.href = item.dataUrl;
+  a.download = item.nomeArquivo || (item.titulo + '.pdf') || 'projeto.pdf';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+async function prjExcluirPdf(id) {
+  if (!confirm('Deseja excluir este PDF?')) return;
+  await _prjExcluirPdfDB(id);
+  await renderProjetosView();
+}
+
+window.renderProjetosView = renderProjetosView;
+window.prjSelecionarPasta = prjSelecionarPasta;
+window.prjFiltrarPdfs = prjFiltrarPdfs;
+window.prjLimparBusca = prjLimparBusca;
+window.prjAbrirModalNovaPasta = prjAbrirModalNovaPasta;
+window.prjFecharModalNovaPasta = prjFecharModalNovaPasta;
+window.prjSalvarNovaPasta = prjSalvarNovaPasta;
+window.prjExcluirPasta = prjExcluirPasta;
+window.prjAbrirModalBuscarPdf = prjAbrirModalBuscarPdf;
+window.prjFecharModalBuscarPdf = prjFecharModalBuscarPdf;
+window.prjAoSelecionarArquivosPdf = prjAoSelecionarArquivosPdf;
+window.prjAbrirPdf = prjAbrirPdf;
+window.prjFecharVisualizadorPdf = prjFecharVisualizadorPdf;
+window.prjBaixarPdf = prjBaixarPdf;
+window.prjExcluirPdf = prjExcluirPdf;
 
 </script>
 
