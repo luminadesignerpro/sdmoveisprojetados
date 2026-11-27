@@ -2603,7 +2603,7 @@
 
         <!-- Abas do Portal (Grid Uniforme com Caixa Padronizada) -->
         <div class="portal-tabs">
-          <button type="button" class="portal-tab active" id="btn-tab-status" onclick="mudarAba('status')">
+          <button type="button" class="portal-tab" id="btn-tab-status" onclick="mudarAba('status')">
             <span>📊</span> <span>Status do Serviço</span>
           </button>
           <button type="button" class="portal-tab" id="btn-tab-galeria" onclick="mudarAba('galeria')">
@@ -2695,7 +2695,7 @@
         </div>
       </div>
 
-      <div id="pane-status" class="tab-pane active">
+      <div id="pane-status" class="tab-pane">
 
         <!-- ══ SELETOR DE O.S. – EXCLUSIVO PORTAL EQUIPE ══ -->
         <div id="card-seletor-os-equipe" style="background:linear-gradient(135deg,rgba(14,165,233,0.13),rgba(201,168,76,0.10));border:1.5px solid rgba(56,189,248,0.35);border-radius:16px;padding:16px 18px;margin-bottom:14px;box-shadow:0 8px 24px rgba(0,0,0,0.45);">
@@ -5959,14 +5959,28 @@
           if (_btnMsgPonto) _btnMsgPonto.style.display = '';
           try { popularClientesMsgPonto(); } catch(_) {}
           try { renderizarHistoricoMsgPonto(); } catch(_) {}
-          try { mudarAba('status'); } catch(_) {}
+          try {
+            const libStatus = sessionStorage.getItem('sdv_status_liberado_sessao') === 'true';
+            if (libStatus) {
+              mudarAba('status');
+            } else {
+              mudarAba('galeria');
+            }
+          } catch(_) {}
         } else {
           // Portal Equipe: Todos os comandos incluindo o botão ponto e jogos
           if (_btnPonto) _btnPonto.style.display = '';
           if (_btnJogos) _btnJogos.style.display = '';
           if (_btnMsgPonto) _btnMsgPonto.style.display = 'none';
           if (_btnMensagens) _btnMensagens.style.display = '';
-          try { mudarAba('status'); } catch(_) {}
+          try {
+            const libStatus = sessionStorage.getItem('sdv_status_liberado_sessao') === 'true';
+            if (libStatus) {
+              mudarAba('status');
+            } else {
+              mudarAba('galeria');
+            }
+          } catch(_) {}
         }
       } else {
         if (tabRotulo) tabRotulo.textContent = 'Ponto do Funcionário';
@@ -5994,7 +6008,14 @@
           if (_btnMsgPonto2) _btnMsgPonto2.style.display = 'none';
           if (_btnMensagens2) _btnMensagens2.style.display = '';
         }
-        try { mudarAba('status'); } catch(_) {}
+        try {
+            const libStatus = sessionStorage.getItem('sdv_status_liberado_sessao') === 'true';
+            if (libStatus) {
+              mudarAba('status');
+            } else {
+              mudarAba('galeria');
+            }
+          } catch(_) {}
       }
 
       try { carregarDadosStatus(sessao); } catch(_) {}
@@ -6023,17 +6044,6 @@ function validarCodigoLiberadoManual() {}
 function checarLiberacaoEmpresaAutomatica() {}
 
 function mudarAba(tab) {
-      // ── BLOQUEIO COM SENHA PARA O STATUS DO SERVIÇO ──
-      if (tab === 'status') {
-        const liberadoStatus = sessionStorage.getItem('sdv_status_liberado_sessao') === 'true';
-        if (!liberadoStatus) {
-          solicitarSenhaStatusPortal(() => {
-            mudarAba('status');
-          });
-          return;
-        }
-      }
-
       // ── BLOQUEIO COM SENHA PARA O STATUS DO SERVIÇO ──
       if (tab === 'status') {
         const liberadoStatus = sessionStorage.getItem('sdv_status_liberado_sessao') === 'true';
@@ -9193,6 +9203,12 @@ function baterPontoNoCliente(tipo) {
     }
 
     function renderizarSeletorOSEquipe(termoFiltro = '') {
+      if (typeof _isModoEmpresa === 'function' && _isModoEmpresa()) {
+        const cOS = document.getElementById('card-seletor-os-equipe');
+        if (cOS) cOS.style.display = 'none';
+        return;
+      }
+
       const container = document.getElementById('lista-os-seletor-equipe');
       if (!container) return;
 
@@ -15884,15 +15900,20 @@ function inicializarModoEmpresaSeNecessario() {
   if (_isModoEmpresa()) {
     const btnTab = document.getElementById('btn-tab-vales-empresa');
     if (btnTab) btnTab.style.display = 'flex';
-    // Se for portal=empresa, ajusta o título e abre direto a gestão de vales
-    const titEl = document.getElementById('nome-cliente-topo') || document.querySelector('.client-name-badge');
-    if (titEl && titEl.textContent.includes('Samuel David')) {
-      // Deixa o nome da empresa ou gestor
+
+    // Na aba Portal Empresa: oculta o card "Selecionar O.S. de Trabalho" (Portal Equipe)
+    const cardSeletorOS = document.getElementById('card-seletor-os-equipe');
+    if (cardSeletorOS) {
+      cardSeletorOS.style.display = 'none';
     }
-    setTimeout(() => {
-      mudarAba('vales-empresa');
-      renderizarPainelEmpresaVales();
-    }, 200);
+
+    // Se for portal=empresa, ajusta o topo e abre direto a gestão de vales da empresa
+    const titEl = document.getElementById('nome-cliente-topo') || document.querySelector('.client-name-badge');
+    if (titEl) {
+      titEl.textContent = '🏢 SD Móveis (Portal Empresa)';
+    }
+    mudarAba('vales-empresa');
+    renderizarPainelEmpresaVales();
   }
   verificarNotificacoesFimDiaVales();
 }
@@ -16144,28 +16165,35 @@ function confirmarSenhaStatusPortal() {
   const msgErro = document.getElementById('msg-erro-senha-status-portal');
   const digitada = (inp ? inp.value : '').trim();
 
-  // Senhas aceitas: senha do cliente/colaborador, senha de acesso mestre da empresa, ou padrões do sistema
+  // Senhas aceitas: senha configurada no modal trocar senha, senha do colaborador, dados do recebedor, 1234, admin
+  let senhaValida = false;
   const senhaColabSalva = localStorage.getItem('sdv_senha_acesso_portal') || localStorage.getItem('sdv_senha_colaborador') || localStorage.getItem('sdv_senha_cliente');
-  const senhaMestre = '1234';
   const senhaEmpresa = localStorage.getItem('sdv_dados_recebedor') ? (JSON.parse(localStorage.getItem('sdv_dados_recebedor') || '{}').senha || '') : '';
+  const senhaMestre = '1234';
 
-  let senhaCorreta = false;
-  if (digitada === senhaMestre) senhaCorreta = true;
-  if (senhaColabSalva && digitada === senhaColabSalva) senhaCorreta = true;
-  if (senhaEmpresa && digitada === senhaEmpresa) senhaCorreta = true;
-  if (digitada === 'admin' || digitada === '123456') senhaCorreta = true;
+  if (digitada === senhaMestre || digitada === 'admin' || digitada === '123456') senhaValida = true;
+  if (senhaColabSalva && digitada === senhaColabSalva) senhaValida = true;
+  if (senhaEmpresa && digitada === senhaEmpresa) senhaValida = true;
 
-  if (senhaCorreta) {
+  // Se o cliente logado tem senha cadastrada
+  if (typeof clienteSessao !== 'undefined' && clienteSessao && clienteSessao.senha && digitada === clienteSessao.senha) {
+    senhaValida = true;
+  }
+
+  if (senhaValida) {
     sessionStorage.setItem('sdv_status_liberado_sessao', 'true');
     fecharModalSenhaStatusPortal();
     if (typeof _callbackAcessoStatusPortal === 'function') {
       const cb = _callbackAcessoStatusPortal;
       _callbackAcessoStatusPortal = null;
       cb();
+    } else {
+      mudarAba('status');
     }
   } else {
     if (msgErro) {
       msgErro.style.display = 'block';
+      msgErro.textContent = 'Senha incorreta. Tente novamente.';
     }
     if (inp) {
       inp.select();
