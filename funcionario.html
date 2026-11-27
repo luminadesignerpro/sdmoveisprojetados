@@ -13670,10 +13670,27 @@ function renderizarHistoricoVales(colab) {
           'Chave Pix: <strong>' + (v.pix || '--') + '</strong>' +
         '</div>' +
       '</div>' +
+      '<div style="display:flex;align-items:center;gap:8px;">' +
+        '<button type="button" onclick="excluirValeHistorico(\'' + String(v.id || '').replace(/'/g, '') + '\')" style="background:rgba(239,68,68,0.14);border:1px solid rgba(239,68,68,0.4);color:#fca5a5;padding:7px 12px;border-radius:8px;font-size:11.5px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">🗑️ Excluir</button>' +
+      '</div>' +
     '</div>';
   });
 
   container.innerHTML = html;
+}
+
+function excluirValeHistorico(valeId) {
+  if (!valeId) return;
+  if (!confirm('Deseja realmente excluir este vale do histórico?')) return;
+  var vales = carregarValesDoStorage();
+  var novaLista = vales.filter(function(v) { return String(v.id || '') !== String(valeId); });
+  salvarValesNoStorage(novaLista);
+  if (typeof renderizarMeuSetorFinanceiro === 'function') renderizarMeuSetorFinanceiro();
+  if (typeof renderizarPainelEmpresaVales === 'function') renderizarPainelEmpresaVales();
+  if (typeof verificarNotificacoesFimDiaVales === 'function') verificarNotificacoesFimDiaVales();
+  if (typeof mostrarToastNotificacao === 'function') {
+    mostrarToastNotificacao('Vale Excluído', 'O registro do vale foi removido do histórico.', '🗑️');
+  }
 }
 
 function abrirModalPedirVale() {
