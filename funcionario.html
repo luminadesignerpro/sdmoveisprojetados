@@ -5746,6 +5746,21 @@
         localStorage.removeItem('sdv_usuario_deslogou');
       } catch(_) {}
 
+      // ── SE VEIO EM MODO EMPRESA / ADMIN NA URL ──
+      if (paramPortal === 'empresa' || paramPortal === 'admin') {
+        const sessaoEmpresa = {
+          id: 'empresa-admin',
+          nome: paramNomeUrl || 'Empresa (Administrador)',
+          cargo: paramCargoUrl || 'Administrador',
+          isFuncionario: true,
+          isEmpresa: true,
+          os: urlParams.get('os') || '#PONTO',
+          dataLogin: new Date().toISOString()
+        };
+        iniciarPortalCliente(sessaoEmpresa);
+        return;
+      }
+
       // ── SE VEIO COM PARÂMETROS DE FUNCIONÁRIO NA URL ──
       if (paramNomeUrl || paramFuncIdUrl || paramPortal === 'funcionario' || paramPortal === 'ponto') {
         const funcs = (typeof carregarFuncionariosDoStorage === 'function') ? carregarFuncionariosDoStorage() : [
@@ -5967,6 +5982,17 @@
               mudarAba('galeria');
             }
           } catch(_) {}
+        } else if (_pModo === 'empresa' || _pModo === 'admin') {
+          // Portal Empresa: mostra gestão de vales, oculta seletor de O.S. da equipe
+          if (_btnPonto) _btnPonto.style.display = '';
+          if (_btnJogos) _btnJogos.style.display = '';
+          if (_btnMsgPonto) _btnMsgPonto.style.display = 'none';
+          if (_btnMensagens) _btnMensagens.style.display = '';
+          const _btnValesEmp = document.getElementById('btn-tab-vales-empresa');
+          if (_btnValesEmp) _btnValesEmp.style.display = 'flex';
+          const _cardOsEq = document.getElementById('card-seletor-os-equipe');
+          if (_cardOsEq) _cardOsEq.style.display = 'none';
+          try { mudarAba('vales-empresa'); } catch(_) {}
         } else {
           // Portal Equipe: Todos os comandos incluindo o botão ponto e jogos
           if (_btnPonto) _btnPonto.style.display = '';
@@ -6044,8 +6070,9 @@ function validarCodigoLiberadoManual() {}
 function checarLiberacaoEmpresaAutomatica() {}
 
 function mudarAba(tab) {
-      // ── BLOQUEIO COM SENHA PARA O STATUS DO SERVIÇO ──
-      if (tab === 'status') {
+      // ── BLOQUEIO COM SENHA PARA O STATUS DO SERVIÇO (apenas fora do Portal Empresa) ──
+      const _emModoEmpresa = (typeof _isModoEmpresa === 'function' && _isModoEmpresa());
+      if (tab === 'status' && !_emModoEmpresa) {
         const liberadoStatus = sessionStorage.getItem('sdv_status_liberado_sessao') === 'true';
         if (!liberadoStatus) {
           solicitarSenhaStatusPortal(() => {
@@ -6054,7 +6081,10 @@ function mudarAba(tab) {
           return;
         }
       }
-
+      if (tab === 'status' && _emModoEmpresa) {
+        const _cOsEmp = document.getElementById('card-seletor-os-equipe');
+        if (_cOsEmp) _cOsEmp.style.display = 'none';
+      }
       // No Portal do Ponto, não permite acessar jogos ou ponto (redireciona para status)
       try {
         const _urlCheck = new URLSearchParams(window.location.search);
@@ -16609,33 +16639,6 @@ window.confirmarSenhaStatusPortal = confirmarSenhaStatusPortal;
   </div>
 </div>
 
-
-<!-- ══════════════════════════════════════════════════════════════════ -->
-<!-- MODAL DE SENHA PARA O STATUS DO SERVIÇO                         -->
-<!-- ══════════════════════════════════════════════════════════════════ -->
-<div id="modal-senha-status-portal" class="portal-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:99999999;align-items:center;justify-content:center;backdrop-filter:blur(8px);padding:16px;" onclick="if(event.target===this) fecharModalSenhaStatusPortal()">
-  <div class="portal-modal-card" style="max-width:390px;width:100%;box-sizing:border-box;background:linear-gradient(145deg,#0e111d,#161b2c);border:1.5px solid rgba(201,168,76,0.5);box-shadow:0 15px 40px rgba(0,0,0,0.85);border-radius:20px;padding:24px 20px;text-align:center;" onclick="event.stopPropagation()">
-    <div style="font-size:38px;margin-bottom:8px;">🔒</div>
-    <h3 style="color:#fff;font-size:17px;font-weight:900;margin:0 0 6px 0;">Área Protegida</h3>
-    <p style="color:#94a3b8;font-size:12.5px;margin:0 0 16px 0;line-height:1.4;">
-      Digite a senha de acesso para visualizar o <strong>Status do Serviço</strong>.
-    </p>
-
-    <div style="margin-bottom:14px;position:relative;">
-      <input type="password" id="inp-senha-status-portal" placeholder="Digite sua senha..." style="width:100%;box-sizing:border-box;padding:12px 14px;background:#090a14;border:1.5px solid rgba(201,168,76,0.35);border-radius:12px;color:#fff;font-size:15px;text-align:center;letter-spacing:2px;outline:none;" onkeydown="if(event.key==='Enter') confirmarSenhaStatusPortal()" />
-      <div id="msg-erro-senha-status-portal" style="display:none;color:#fca5a5;font-size:11.5px;font-weight:800;margin-top:6px;">Senha incorreta. Tente novamente.</div>
-    </div>
-
-    <div style="display:flex;gap:10px;">
-      <button type="button" onclick="fecharModalSenhaStatusPortal()" style="flex:1;padding:11px;background:rgba(255,255,255,0.08);border:none;border-radius:10px;color:#fff;font-weight:700;font-size:12.5px;cursor:pointer;">
-        Cancelar
-      </button>
-      <button type="button" onclick="confirmarSenhaStatusPortal()" style="flex:1.4;padding:11px;background:linear-gradient(135deg,rgba(232,210,122,0.95),rgba(201,168,76,0.9));border:none;border-radius:10px;color:#1a0e00;font-weight:900;font-size:13px;cursor:pointer;box-shadow:0 4px 15px rgba(201,168,76,0.35);">
-        🔓 Desbloquear
-      </button>
-    </div>
-  </div>
-</div>
 
 </body>
 </html>
