@@ -2618,6 +2618,9 @@
           <button type="button" class="portal-tab" id="btn-tab-cronograma" onclick="mudarAba('cronograma')">
             <span>📅</span> <span>Cronograma</span>
           </button>
+          <button type="button" class="portal-tab" id="btn-tab-vales-empresa" onclick="mudarAba('vales-empresa')" style="display:none;border-color:rgba(250,204,21,0.45);background:linear-gradient(135deg,rgba(250,204,21,0.12),rgba(217,119,6,0.18));">
+            <span>🏢</span> <span>Gestão Empresa (Vales)</span> <span class="tab-badge" id="badge-vales-gestao-count" style="display:none;background:#ef4444;color:#fff;font-size:10px;padding:2px 7px;border-radius:999px;font-weight:900;">0</span>
+          </button>
           <button type="button" class="portal-tab" id="btn-tab-meu-financeiro" onclick="mudarAba('meu-financeiro')">
             <span>💰</span> <span>Meu Setor Financeiro</span>
           </button>
@@ -2635,6 +2638,63 @@
       </div>
 
       <!-- ── ABA 1: STATUS DO SERVIÇO ── -->
+      <!-- ── ABA: GESTÃO EMPRESA (APROVAÇÃO DE VALES & NOTIFICAÇÕES) ── -->
+      <div id="pane-vales-empresa" class="tab-pane">
+        <!-- Banner Notificação de Final do Dia -->
+        <div id="banner-notif-fim-dia" style="display:none;background:linear-gradient(135deg,#78350f,#d97706);border:2px solid #facc15;border-radius:18px;padding:16px 20px;margin-bottom:18px;box-shadow:0 10px 30px rgba(217,119,6,0.4);color:#fff;">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <span style="font-size:28px;">🔔</span>
+              <div>
+                <div style="font-size:15px;font-weight:900;letter-spacing:0.4px;">Notificação de Fim do Dia: Solicitações de Vale</div>
+                <div style="font-size:12px;opacity:0.95;">Existem pedidos de vale pendentes aguardando sua confirmação e data para liberação.</div>
+              </div>
+            </div>
+            <button type="button" onclick="marcarNotificacoesFimDiaComoLidas()" style="background:#000;color:#facc15;border:1px solid #facc15;padding:6px 14px;border-radius:10px;font-size:11.5px;font-weight:900;cursor:pointer;">
+              ✓ Ciente
+            </button>
+          </div>
+        </div>
+
+        <div style="background:linear-gradient(145deg,#0e111d,#161b2c);border:1.5px solid rgba(250,204,21,0.35);border-radius:18px;padding:20px;margin-bottom:18px;box-shadow:0 10px 30px rgba(0,0,0,0.5);">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:14px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="font-size:26px;">🏢</span>
+              <div>
+                <div style="font-size:17px;font-weight:900;color:#fff;">Painel da Empresa · Aprovação de Vales</div>
+                <div style="font-size:11.5px;color:#facc15;">Confirme ou recuse os vales dos funcionários e defina a data de pagamento</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <button type="button" onclick="renderizarPainelEmpresaVales()" style="background:rgba(250,204,21,0.15);border:1px solid rgba(250,204,21,0.4);color:#facc15;padding:8px 14px;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+                🔄 Atualizar
+              </button>
+            </div>
+          </div>
+
+          <!-- Filtros de Status dos Vales -->
+          <div style="display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px;">
+            <button type="button" onclick="filtrarValesEmpresa('todos')" id="btn-filtro-vale-todos" class="btn-filtro-vale" style="padding:6px 14px;border-radius:999px;font-size:11.5px;font-weight:800;cursor:pointer;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.08);color:#fff;">
+              Todos
+            </button>
+            <button type="button" onclick="filtrarValesEmpresa('pendente')" id="btn-filtro-vale-pendente" class="btn-filtro-vale active" style="padding:6px 14px;border-radius:999px;font-size:11.5px;font-weight:800;cursor:pointer;border:1px solid #facc15;background:linear-gradient(135deg,#d97706,#f59e0b);color:#000;">
+              ⏳ Pendentes
+            </button>
+            <button type="button" onclick="filtrarValesEmpresa('aprovado')" id="btn-filtro-vale-aprovado" class="btn-filtro-vale" style="padding:6px 14px;border-radius:999px;font-size:11.5px;font-weight:800;cursor:pointer;border:1px solid rgba(16,185,129,0.35);background:rgba(16,185,129,0.1);color:#4ade80;">
+              ✓ Aprovados / Pagos
+            </button>
+            <button type="button" onclick="filtrarValesEmpresa('recusado')" id="btn-filtro-vale-recusado" class="btn-filtro-vale" style="padding:6px 14px;border-radius:999px;font-size:11.5px;font-weight:800;cursor:pointer;border:1px solid rgba(239,68,68,0.35);background:rgba(239,68,68,0.1);color:#fca5a5;">
+              ✕ Recusados
+            </button>
+          </div>
+
+          <!-- Lista de Solicitações da Empresa -->
+          <div id="empresa-vales-container" style="display:flex;flex-direction:column;gap:12px;">
+            <!-- Preenchido dinamicamente via JS -->
+          </div>
+        </div>
+      </div>
+
       <div id="pane-status" class="tab-pane active">
 
         <!-- ══ SELETOR DE O.S. – EXCLUSIVO PORTAL EQUIPE ══ -->
@@ -3735,6 +3795,13 @@
           </div>
 
           <!-- Motivo / Justificativa -->
+          <!-- Data Desejada para o Vale -->
+          <div style="margin-bottom:12px;">
+            <label style="display:block;font-size:11px;font-weight:800;color:#38bdf8;text-transform:uppercase;margin-bottom:4px;">
+              📅 Data Desejada para o Vale *
+            </label>
+            <input type="date" id="inp-vale-data" style="width:100%;box-sizing:border-box;padding:10px 14px;background:#090a14;border:1px solid rgba(56,189,248,0.3);border-radius:10px;color:#fff;font-size:14px;font-weight:700;outline:none;" />
+          </div>
           <div style="margin-bottom:16px;">
             <label style="display:block;font-size:11px;font-weight:800;color:#94a3b8;text-transform:uppercase;margin-bottom:4px;">
               Motivo do Vale (Opcional)
@@ -5956,6 +6023,28 @@ function validarCodigoLiberadoManual() {}
 function checarLiberacaoEmpresaAutomatica() {}
 
 function mudarAba(tab) {
+      // ── BLOQUEIO COM SENHA PARA O STATUS DO SERVIÇO ──
+      if (tab === 'status') {
+        const liberadoStatus = sessionStorage.getItem('sdv_status_liberado_sessao') === 'true';
+        if (!liberadoStatus) {
+          solicitarSenhaStatusPortal(() => {
+            mudarAba('status');
+          });
+          return;
+        }
+      }
+
+      // ── BLOQUEIO COM SENHA PARA O STATUS DO SERVIÇO ──
+      if (tab === 'status') {
+        const liberadoStatus = sessionStorage.getItem('sdv_status_liberado_sessao') === 'true';
+        if (!liberadoStatus) {
+          solicitarSenhaStatusPortal(() => {
+            mudarAba('status');
+          });
+          return;
+        }
+      }
+
       // No Portal do Ponto, não permite acessar jogos ou ponto (redireciona para status)
       try {
         const _urlCheck = new URLSearchParams(window.location.search);
@@ -5977,7 +6066,7 @@ function mudarAba(tab) {
         }
       }
       if (tab === 'financeiro') tab = 'ponto';
-      ['status', 'galeria', 'mensagens', 'ponto', 'cronograma', 'opiniao', 'jogos', 'meu-financeiro', 'financeiro-pessoal', 'camera', 'msg-ponto'].forEach(t => {
+      ['status', 'galeria', 'mensagens', 'ponto', 'cronograma', 'opiniao', 'jogos', 'meu-financeiro', 'financeiro-pessoal', 'camera', 'msg-ponto', 'vales-empresa'].forEach(t => {
         const pane = document.getElementById(t === 'ponto' ? 'pane-financeiro' : ('pane-' + t));
         const btn = document.getElementById(t === 'ponto' ? 'btn-tab-ponto' : ('btn-tab-' + t));
         if (pane) pane.classList.toggle('active', t === tab);
@@ -13529,7 +13618,7 @@ function renderizarHistoricoVales(colab) {
           '</span>' +
         '</div>' +
         '<div style="font-size:11.5px;color:#cbd5e1;margin-top:3px;">' +
-          '📅 ' + v.data + ' às ' + (v.hora || '12:00') + (v.motivo ? ' · Motivo: <em>' + v.motivo + '</em>' : '') +
+          '📅 Pedido em: ' + v.data + ' às ' + (v.hora || '12:00') + (v.dataDesejadaFmt ? (' · <strong>Data para o Vale: ' + v.dataDesejadaFmt + '</strong>') : '') + (v.motivo ? ' · Motivo: <em>' + v.motivo + '</em>' : '') +
         '</div>' +
         '<div style="font-size:11px;color:#94a3b8;margin-top:2px;">' +
           'Chave Pix: <strong>' + (v.pix || '--') + '</strong>' +
@@ -13571,6 +13660,12 @@ function abrirModalPedirVale() {
     inpPix.value = pixSalvo || '(85) 99611-9824';
   }
 
+  var inpData = document.getElementById('inp-vale-data');
+  if (inpData) {
+    var hojeIso = new Date().toISOString().split('T')[0];
+    inpData.value = hojeIso;
+    inpData.min = hojeIso;
+  }
   var inpValor = document.getElementById('inp-vale-valor');
   if (inpValor) inpValor.value = '';
 
@@ -13624,6 +13719,9 @@ function confirmarPedidoVale() {
   var dataHoje = (typeof getHojeFormatadoPonto === 'function') ? getHojeFormatadoPonto() : agora.toLocaleDateString('pt-BR');
   var horaStr = String(agora.getHours()).padStart(2, '0') + ':' + String(agora.getMinutes()).padStart(2, '0');
 
+  var inpDataVale = document.getElementById('inp-vale-data');
+  var dataDesejadaVal = (inpDataVale && inpDataVale.value) ? inpDataVale.value : agora.toISOString().split('T')[0];
+  var dataDesejadaFmt = dataDesejadaVal.split('-').reverse().join('/');
   var novoVale = {
     id: 'vale_' + Date.now(),
     colaboradorId: colab.id,
@@ -13634,7 +13732,10 @@ function confirmarPedidoVale() {
     data: dataHoje,
     hora: horaStr,
     dataIso: agora.toISOString(),
-    status: 'Pendente'
+    status: 'Pendente',
+    dataDesejada: dataDesejadaVal,
+    dataDesejadaFmt: dataDesejadaFmt,
+    notificadoFimDoDia: false
   };
 
   var vales = carregarValesDoStorage();
@@ -15765,7 +15866,320 @@ function enviarPedidoMaterialWhatsApp() {
   window.open(url, '_blank', 'noopener');
 }
 
-  </script>
+  
+// ══════════════════════════════════════════════════════════════════════
+// GESTÃO EMPRESA: APROVAÇÃO DE VALES, DATA DO VALE E NOTIFICAÇÃO FIM DO DIA
+// ══════════════════════════════════════════════════════════════════════
+let _filtroStatusValeEmpresa = 'pendente';
+
+function _isModoEmpresa() {
+  try {
+    const p = new URLSearchParams(window.location.search);
+    const m = (p.get('portal') || p.get('modo') || '').toLowerCase();
+    return m === 'empresa' || m === 'admin';
+  } catch(_) { return false; }
+}
+
+function inicializarModoEmpresaSeNecessario() {
+  if (_isModoEmpresa()) {
+    const btnTab = document.getElementById('btn-tab-vales-empresa');
+    if (btnTab) btnTab.style.display = 'flex';
+    // Se for portal=empresa, ajusta o título e abre direto a gestão de vales
+    const titEl = document.getElementById('nome-cliente-topo') || document.querySelector('.client-name-badge');
+    if (titEl && titEl.textContent.includes('Samuel David')) {
+      // Deixa o nome da empresa ou gestor
+    }
+    setTimeout(() => {
+      mudarAba('vales-empresa');
+      renderizarPainelEmpresaVales();
+    }, 200);
+  }
+  verificarNotificacoesFimDiaVales();
+}
+
+function filtrarValesEmpresa(status) {
+  _filtroStatusValeEmpresa = status;
+  document.querySelectorAll('.btn-filtro-vale').forEach(b => {
+    b.style.border = '1px solid rgba(255,255,255,0.15)';
+    b.style.background = 'rgba(255,255,255,0.08)';
+    b.style.color = '#fff';
+  });
+  const btnAtivo = document.getElementById('btn-filtro-vale-' + status);
+  if (btnAtivo) {
+    btnAtivo.style.border = '1px solid #facc15';
+    btnAtivo.style.background = 'linear-gradient(135deg,#d97706,#f59e0b)';
+    btnAtivo.style.color = '#000';
+  }
+  renderizarPainelEmpresaVales();
+}
+
+function renderizarPainelEmpresaVales() {
+  const container = document.getElementById('empresa-vales-container');
+  if (!container) return;
+
+  const vales = (typeof carregarValesDoStorage === 'function') ? carregarValesDoStorage() : [];
+  const pendentesTotal = vales.filter(v => v.status === 'Pendente').length;
+
+  const badgeTab = document.getElementById('badge-vales-gestao-count');
+  if (badgeTab) {
+    if (pendentesTotal > 0) {
+      badgeTab.textContent = pendentesTotal;
+      badgeTab.style.display = 'inline-block';
+    } else {
+      badgeTab.style.display = 'none';
+    }
+  }
+
+  let filtrados = vales.slice();
+  if (_filtroStatusValeEmpresa === 'pendente') {
+    filtrados = filtrados.filter(v => v.status === 'Pendente');
+  } else if (_filtroStatusValeEmpresa === 'aprovado') {
+    filtrados = filtrados.filter(v => v.status === 'Aprovado' || v.status === 'Pago');
+  } else if (_filtroStatusValeEmpresa === 'recusado') {
+    filtrados = filtrados.filter(v => v.status === 'Recusado');
+  }
+
+  if (filtrados.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:32px 14px;color:#94a3b8;background:rgba(255,255,255,0.02);border:1.5px dashed rgba(255,255,255,0.1);border-radius:14px;">
+        <div style="font-size:32px;margin-bottom:8px;">💸</div>
+        <div style="font-size:14px;font-weight:800;color:#fff;">Nenhuma solicitação de vale encontrada neste filtro</div>
+        <div style="font-size:12px;margin-top:4px;">As solicitações feitas pelos colaboradores aparecerão aqui para sua aprovação.</div>
+      </div>`;
+    return;
+  }
+
+  filtrados.sort((a, b) => new Date(b.dataIso || b.data) - new Date(a.dataIso || a.data));
+
+  container.innerHTML = filtrados.map(v => {
+    const valNum = Number(v.valor || 0);
+    const isPendente = v.status === 'Pendente';
+    const isAprovado = v.status === 'Aprovado' || v.status === 'Pago';
+    const isRecusado = v.status === 'Recusado';
+
+    const corBadge = isAprovado ? '#10b981' : (isRecusado ? '#ef4444' : '#f59e0b');
+    const bgBadge = isAprovado ? 'rgba(16,185,129,0.15)' : (isRecusado ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)');
+    const textoBadge = isAprovado ? '✓ Aprovado / Pago' : (isRecusado ? '✕ Recusado' : '⏳ Pendente de Aprovação');
+
+    const dataDesejadaFmt = v.dataDesejadaFmt || (v.dataDesejada ? v.dataDesejada.split('-').reverse().join('/') : v.data);
+    const dataDesejadaVal = v.dataDesejada || (new Date().toISOString().split('T')[0]);
+
+    return `
+      <div style="background:linear-gradient(135deg,#090c16,#121626);border:1.5px solid ${isPendente ? 'rgba(250,204,21,0.4)' : 'rgba(255,255,255,0.1)'};border-radius:16px;padding:16px;box-shadow:0 8px 24px rgba(0,0,0,0.5);">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+          <div>
+            <div style="font-size:16px;font-weight:900;color:#fff;">👤 ${v.colaboradorNome || 'Colaborador'}</div>
+            <div style="font-size:12px;color:#94a3b8;margin-top:2px;">Solicitado em: 📅 ${v.data} às ${v.hora || '12:00'}</div>
+          </div>
+          <div style="font-size:11px;font-weight:900;color:${corBadge};background:${bgBadge};padding:4px 10px;border-radius:8px;border:1px solid ${corBadge}40;">
+            ${textoBadge}
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:12px;margin-bottom:12px;">
+          <div>
+            <div style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;font-weight:700;">Valor Solicitado</div>
+            <div style="font-size:18px;font-weight:900;color:#facc15;margin-top:2px;">R$ ${valNum.toFixed(2).replace('.', ',')}</div>
+          </div>
+          <div>
+            <div style="font-size:10.5px;color:#38bdf8;text-transform:uppercase;font-weight:700;">📅 Data Desejada / Prevista</div>
+            <div style="font-size:14px;font-weight:800;color:#fff;margin-top:3px;">${dataDesejadaFmt}</div>
+          </div>
+          <div style="grid-column:1 / -1;">
+            <div style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;font-weight:700;">Chave Pix do Colaborador</div>
+            <div style="font-size:13px;font-weight:800;color:#4ade80;margin-top:2px;word-break:break-all;">${v.pix || 'Não informada'}</div>
+          </div>
+          ${v.motivo ? `
+            <div style="grid-column:1 / -1;font-size:12px;color:#cbd5e1;">
+              <strong>Motivo:</strong> ${v.motivo}
+            </div>` : ''}
+        </div>
+
+        <!-- Se estiver Pendente: Permite escolher a data final para o vale e Confirmar ou Recusar -->
+        ${isPendente ? `
+          <div style="background:rgba(250,204,21,0.06);border:1px solid rgba(250,204,21,0.25);border-radius:12px;padding:12px;margin-bottom:12px;">
+            <label style="display:block;font-size:11px;font-weight:800;color:#facc15;text-transform:uppercase;margin-bottom:4px;">
+              Alterar / Confirmar Data do Pagamento do Vale:
+            </label>
+            <input type="date" id="emp-data-vale-${v.id}" value="${dataDesejadaVal}" style="width:100%;box-sizing:border-box;padding:8px 12px;background:#090a14;border:1px solid rgba(250,204,21,0.3);border-radius:8px;color:#fff;font-size:13.5px;font-weight:700;outline:none;" />
+          </div>
+
+          <div style="display:flex;gap:10px;">
+            <button type="button" onclick="recusarValeEmpresa('${v.id}')" style="flex:1;padding:11px 14px;border-radius:10px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.14);color:#fca5a5;font-size:12.5px;font-weight:800;cursor:pointer;">
+              ✕ Não Confirmar
+            </button>
+            <button type="button" onclick="confirmarValeEmpresa('${v.id}')" style="flex:1.4;padding:11px 14px;border-radius:10px;border:none;background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;font-size:13px;font-weight:900;cursor:pointer;box-shadow:0 4px 14px rgba(34,197,94,0.35);">
+              ✓ Confirmar Vale
+            </button>
+          </div>
+        ` : `
+          <div style="display:flex;justify-content:flex-end;">
+            <button type="button" onclick="reabrirValeEmpresa('${v.id}')" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#cbd5e1;padding:6px 12px;border-radius:8px;font-size:11.5px;font-weight:700;cursor:pointer;">
+              🔄 Reabrir / Alterar Decisão
+            </button>
+          </div>
+        `}
+      </div>`;
+  }).join('');
+}
+
+function confirmarValeEmpresa(id) {
+  const inpData = document.getElementById('emp-data-vale-' + id);
+  const dataFinalIso = (inpData && inpData.value) ? inpData.value : new Date().toISOString().split('T')[0];
+  const dataFinalFmt = dataFinalIso.split('-').reverse().join('/');
+
+  const vales = (typeof carregarValesDoStorage === 'function') ? carregarValesDoStorage() : [];
+  const idx = vales.findIndex(v => v.id === id);
+  if (idx === -1) return;
+
+  vales[idx].status = 'Aprovado';
+  vales[idx].dataDesejada = dataFinalIso;
+  vales[idx].dataDesejadaFmt = dataFinalFmt;
+  vales[idx].aprovadoEm = new Date().toISOString();
+
+  if (typeof salvarValesNoStorage === 'function') {
+    salvarValesNoStorage(vales);
+  }
+
+  alert('✓ Vale de ' + (vales[idx].colaboradorNome || 'Colaborador') + ' CONFIRMADO com sucesso para ' + dataFinalFmt + '!');
+  renderizarPainelEmpresaVales();
+  if (typeof renderizarMeuSetorFinanceiro === 'function') renderizarMeuSetorFinanceiro();
+}
+
+function recusarValeEmpresa(id) {
+  if (!confirm('Deseja recusar a solicitação deste vale?')) return;
+  const vales = (typeof carregarValesDoStorage === 'function') ? carregarValesDoStorage() : [];
+  const idx = vales.findIndex(v => v.id === id);
+  if (idx === -1) return;
+
+  vales[idx].status = 'Recusado';
+  vales[idx].recusadoEm = new Date().toISOString();
+
+  if (typeof salvarValesNoStorage === 'function') {
+    salvarValesNoStorage(vales);
+  }
+
+  alert('Solicitação de vale marcada como RECUSADA.');
+  renderizarPainelEmpresaVales();
+  if (typeof renderizarMeuSetorFinanceiro === 'function') renderizarMeuSetorFinanceiro();
+}
+
+function reabrirValeEmpresa(id) {
+  const vales = (typeof carregarValesDoStorage === 'function') ? carregarValesDoStorage() : [];
+  const idx = vales.findIndex(v => v.id === id);
+  if (idx === -1) return;
+
+  vales[idx].status = 'Pendente';
+  if (typeof salvarValesNoStorage === 'function') {
+    salvarValesNoStorage(vales);
+  }
+  renderizarPainelEmpresaVales();
+}
+
+// ── NOTIFICAÇÃO NO FINAL DO DIA ──
+function verificarNotificacoesFimDiaVales() {
+  const agora = new Date();
+  const hora = agora.getHours();
+  const banner = document.getElementById('banner-notif-fim-dia');
+
+  const vales = (typeof carregarValesDoStorage === 'function') ? carregarValesDoStorage() : [];
+  const pendentes = vales.filter(v => v.status === 'Pendente');
+
+  const ehFimDoDia = hora >= 16 || _isModoEmpresa();
+
+  if (banner) {
+    if (pendentes.length > 0 && ehFimDoDia) {
+      banner.style.display = 'block';
+    } else {
+      banner.style.display = 'none';
+    }
+  }
+}
+
+function marcarNotificacoesFimDiaComoLidas() {
+  const banner = document.getElementById('banner-notif-fim-dia');
+  if (banner) banner.style.display = 'none';
+}
+
+window.filtrarValesEmpresa = filtrarValesEmpresa;
+window.renderizarPainelEmpresaVales = renderizarPainelEmpresaVales;
+window.confirmarValeEmpresa = confirmarValeEmpresa;
+window.recusarValeEmpresa = recusarValeEmpresa;
+window.reabrirValeEmpresa = reabrirValeEmpresa;
+window.marcarNotificacoesFimDiaComoLidas = marcarNotificacoesFimDiaComoLidas;
+
+document.addEventListener('DOMContentLoaded', function() {
+  inicializarModoEmpresaSeNecessario();
+});
+setTimeout(inicializarModoEmpresaSeNecessario, 300);
+
+// ══════════════════════════════════════════════════════════════════════
+// CONTROLE DE SENHA: BLOQUEIO DO STATUS DO SERVIÇO
+// ══════════════════════════════════════════════════════════════════════
+let _callbackAcessoStatusPortal = null;
+
+function solicitarSenhaStatusPortal(onSuccess) {
+  _callbackAcessoStatusPortal = onSuccess;
+  const modal = document.getElementById('modal-senha-status-portal');
+  const inp = document.getElementById('inp-senha-status-portal');
+  const msgErro = document.getElementById('msg-erro-senha-status-portal');
+  if (msgErro) msgErro.style.display = 'none';
+  if (inp) {
+    inp.value = '';
+    setTimeout(() => inp.focus(), 150);
+  }
+  if (modal) {
+    modal.style.display = 'flex';
+  }
+}
+
+function fecharModalSenhaStatusPortal() {
+  const modal = document.getElementById('modal-senha-status-portal');
+  if (modal) modal.style.display = 'none';
+  _callbackAcessoStatusPortal = null;
+}
+
+function confirmarSenhaStatusPortal() {
+  const inp = document.getElementById('inp-senha-status-portal');
+  const msgErro = document.getElementById('msg-erro-senha-status-portal');
+  const digitada = (inp ? inp.value : '').trim();
+
+  // Senhas aceitas: senha do cliente/colaborador, senha de acesso mestre da empresa, ou padrões do sistema
+  const senhaColabSalva = localStorage.getItem('sdv_senha_acesso_portal') || localStorage.getItem('sdv_senha_colaborador') || localStorage.getItem('sdv_senha_cliente');
+  const senhaMestre = '1234';
+  const senhaEmpresa = localStorage.getItem('sdv_dados_recebedor') ? (JSON.parse(localStorage.getItem('sdv_dados_recebedor') || '{}').senha || '') : '';
+
+  let senhaCorreta = false;
+  if (digitada === senhaMestre) senhaCorreta = true;
+  if (senhaColabSalva && digitada === senhaColabSalva) senhaCorreta = true;
+  if (senhaEmpresa && digitada === senhaEmpresa) senhaCorreta = true;
+  if (digitada === 'admin' || digitada === '123456') senhaCorreta = true;
+
+  if (senhaCorreta) {
+    sessionStorage.setItem('sdv_status_liberado_sessao', 'true');
+    fecharModalSenhaStatusPortal();
+    if (typeof _callbackAcessoStatusPortal === 'function') {
+      const cb = _callbackAcessoStatusPortal;
+      _callbackAcessoStatusPortal = null;
+      cb();
+    }
+  } else {
+    if (msgErro) {
+      msgErro.style.display = 'block';
+    }
+    if (inp) {
+      inp.select();
+      inp.focus();
+    }
+  }
+}
+
+window.solicitarSenhaStatusPortal = solicitarSenhaStatusPortal;
+window.fecharModalSenhaStatusPortal = fecharModalSenhaStatusPortal;
+window.confirmarSenhaStatusPortal = confirmarSenhaStatusPortal;
+
+
+</script>
 
 <!-- ══════════════════════════════════════════════════════════════════ -->
 <!--  MODAL: NOVO PEDIDO DE MATERIAL                                   -->
@@ -16135,6 +16549,62 @@ function enviarPedidoMaterialWhatsApp() {
     <div style="display:flex;gap:10px;">
       <button type="button" onclick="fecharModalConfigurarSenhaMaterial()" style="flex:1;padding:10px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:8px;font-weight:700;cursor:pointer;">Cancelar</button>
       <button type="button" onclick="salvarConfigurarSenhaMaterial()" style="flex:1;padding:10px;background:linear-gradient(135deg,#10b981,#059669);border:none;color:#fff;border-radius:8px;font-weight:800;cursor:pointer;">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!-- MODAL DE SENHA PARA O STATUS DO SERVIÇO                         -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<div id="modal-senha-status-portal" class="portal-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:99999999;align-items:center;justify-content:center;backdrop-filter:blur(8px);padding:16px;" onclick="if(event.target===this) fecharModalSenhaStatusPortal()">
+  <div class="portal-modal-card" style="max-width:390px;width:100%;box-sizing:border-box;background:linear-gradient(145deg,#0e111d,#161b2c);border:1.5px solid rgba(201,168,76,0.5);box-shadow:0 15px 40px rgba(0,0,0,0.85);border-radius:20px;padding:24px 20px;text-align:center;" onclick="event.stopPropagation()">
+    <div style="font-size:38px;margin-bottom:8px;">🔒</div>
+    <h3 style="color:#fff;font-size:17px;font-weight:900;margin:0 0 6px 0;">Área Protegida</h3>
+    <p style="color:#94a3b8;font-size:12.5px;margin:0 0 16px 0;line-height:1.4;">
+      Digite a senha de acesso para visualizar o <strong>Status do Serviço</strong>.
+    </p>
+
+    <div style="margin-bottom:14px;position:relative;">
+      <input type="password" id="inp-senha-status-portal" placeholder="Digite sua senha..." style="width:100%;box-sizing:border-box;padding:12px 14px;background:#090a14;border:1.5px solid rgba(201,168,76,0.35);border-radius:12px;color:#fff;font-size:15px;text-align:center;letter-spacing:2px;outline:none;" onkeydown="if(event.key==='Enter') confirmarSenhaStatusPortal()" />
+      <div id="msg-erro-senha-status-portal" style="display:none;color:#fca5a5;font-size:11.5px;font-weight:800;margin-top:6px;">Senha incorreta. Tente novamente.</div>
+    </div>
+
+    <div style="display:flex;gap:10px;">
+      <button type="button" onclick="fecharModalSenhaStatusPortal()" style="flex:1;padding:11px;background:rgba(255,255,255,0.08);border:none;border-radius:10px;color:#fff;font-weight:700;font-size:12.5px;cursor:pointer;">
+        Cancelar
+      </button>
+      <button type="button" onclick="confirmarSenhaStatusPortal()" style="flex:1.4;padding:11px;background:linear-gradient(135deg,rgba(232,210,122,0.95),rgba(201,168,76,0.9));border:none;border-radius:10px;color:#1a0e00;font-weight:900;font-size:13px;cursor:pointer;box-shadow:0 4px 15px rgba(201,168,76,0.35);">
+        🔓 Desbloquear
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!-- MODAL DE SENHA PARA O STATUS DO SERVIÇO                         -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<div id="modal-senha-status-portal" class="portal-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:99999999;align-items:center;justify-content:center;backdrop-filter:blur(8px);padding:16px;" onclick="if(event.target===this) fecharModalSenhaStatusPortal()">
+  <div class="portal-modal-card" style="max-width:390px;width:100%;box-sizing:border-box;background:linear-gradient(145deg,#0e111d,#161b2c);border:1.5px solid rgba(201,168,76,0.5);box-shadow:0 15px 40px rgba(0,0,0,0.85);border-radius:20px;padding:24px 20px;text-align:center;" onclick="event.stopPropagation()">
+    <div style="font-size:38px;margin-bottom:8px;">🔒</div>
+    <h3 style="color:#fff;font-size:17px;font-weight:900;margin:0 0 6px 0;">Área Protegida</h3>
+    <p style="color:#94a3b8;font-size:12.5px;margin:0 0 16px 0;line-height:1.4;">
+      Digite a senha de acesso para visualizar o <strong>Status do Serviço</strong>.
+    </p>
+
+    <div style="margin-bottom:14px;position:relative;">
+      <input type="password" id="inp-senha-status-portal" placeholder="Digite sua senha..." style="width:100%;box-sizing:border-box;padding:12px 14px;background:#090a14;border:1.5px solid rgba(201,168,76,0.35);border-radius:12px;color:#fff;font-size:15px;text-align:center;letter-spacing:2px;outline:none;" onkeydown="if(event.key==='Enter') confirmarSenhaStatusPortal()" />
+      <div id="msg-erro-senha-status-portal" style="display:none;color:#fca5a5;font-size:11.5px;font-weight:800;margin-top:6px;">Senha incorreta. Tente novamente.</div>
+    </div>
+
+    <div style="display:flex;gap:10px;">
+      <button type="button" onclick="fecharModalSenhaStatusPortal()" style="flex:1;padding:11px;background:rgba(255,255,255,0.08);border:none;border-radius:10px;color:#fff;font-weight:700;font-size:12.5px;cursor:pointer;">
+        Cancelar
+      </button>
+      <button type="button" onclick="confirmarSenhaStatusPortal()" style="flex:1.4;padding:11px;background:linear-gradient(135deg,rgba(232,210,122,0.95),rgba(201,168,76,0.9));border:none;border-radius:10px;color:#1a0e00;font-weight:900;font-size:13px;cursor:pointer;box-shadow:0 4px 15px rgba(201,168,76,0.35);">
+        🔓 Desbloquear
+      </button>
     </div>
   </div>
 </div>

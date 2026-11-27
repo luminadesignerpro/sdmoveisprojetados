@@ -2027,6 +2027,7 @@
     <button id="tab-contratos" class="tab" data-tab="contratos" onclick="goTab('contratos')"><span>📄</span><span>Contratos</span></button>
     <button id="tab-usuarios" class="tab" data-tab="usuarios" onclick="goTab('usuarios')"><span>👥</span><span>Usuários</span></button>
     <button type="button" id="tab-portal-cliente" class="tab" onclick="abrirPortalCliente()" title="Acessar Portal do Cliente"><span>🌐</span><span>Portal Cliente</span></button>
+    <button type="button" id="tab-portal-empresa" class="tab" onclick="abrirPortalEmpresa()" title="Acessar Portal da Empresa"><span>🏢</span><span>Portal Empresa</span> <span class="badge-notif-empresa" id="badge-vales-empresa-count" style="display:none;background:#ef4444;color:#fff;font-size:9.5px;padding:1px 6px;border-radius:999px;font-weight:900;margin-left:4px;">0</span></button>
     <button type="button" id="tab-portal-funcionario" class="tab" onclick="abrirPortalFuncionario()" title="Acessar Portal da Equipe"><span>👷</span><span>Portal Equipe</span></button>
     <button type="button" id="tab-portal-ponto" class="tab" onclick="abrirPortalDoPonto()" title="Acessar Portal do Ponto"><span>🌐</span><span>Portal do Ponto</span></button>
     <button type="button" id="tab-cronograma" class="tab" data-tab="cronograma" onclick="goTab('cronograma')" title="Cronograma e Pedido de Material"><span>📅</span><span>Cronograma</span></button>
@@ -13284,6 +13285,37 @@ function abrirPortalCliente() {
   localStorage.setItem('sdv_licenca_ativa', empId);
   window.open('cliente.html?empresa=' + encodeURIComponent(empId) + '&nome=' + encodeURIComponent(empNome), '_blank');
 }
+
+function abrirPortalEmpresa() {
+  const baseOrigin = window.location.origin;
+  const basePath = window.location.pathname.replace(/\/index\.html$/i, '').replace(/\/$/, '');
+  const licAtivaLink = (typeof obterLicencaAtiva === 'function' ? obterLicencaAtiva() : { id: 'sdvidros', nome: 'SD Móveis Projetados' });
+  const url = `${baseOrigin}${basePath}/funcionario.html?portal=empresa&empresa=${encodeURIComponent(licAtivaLink.id)}&empNome=${encodeURIComponent(licAtivaLink.nome || 'SD Móveis Projetados')}&nome=Empresa%20(Administrador)&cargo=Administrador`;
+  abrirLinkPortalFuncionario(url);
+}
+
+function verificarNotificacaoValesEmpresa() {
+  try {
+    const raw = localStorage.getItem('sdv_pedidos_vale');
+    if (!raw) return;
+    const vales = JSON.parse(raw);
+    if (!Array.isArray(vales)) return;
+    const pendentes = vales.filter(v => v.status === 'Pendente');
+    const badge = document.getElementById('badge-vales-empresa-count');
+    if (badge) {
+      if (pendentes.length > 0) {
+        badge.textContent = pendentes.length;
+        badge.style.display = 'inline-block';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+  } catch(_) {}
+}
+
+// Atualiza badge de vales a cada 10 segundos
+setInterval(verificarNotificacaoValesEmpresa, 10000);
+setTimeout(verificarNotificacaoValesEmpresa, 1500);
 
 function abrirPortalFuncionario() {
   abrirPortalFuncionarioDireto();
@@ -32785,6 +32817,7 @@ const ABAS_PADRAO_INFO = {
   'tab-contratos': { icone: '📄', nome: 'Contratos' },
   'tab-usuarios': { icone: '👥', nome: 'Usuários' },
   'tab-portal-cliente': { icone: '🌐', nome: 'Portal Cliente' },
+  'tab-portal-empresa': { icone: '🏢', nome: 'Portal Empresa' },
   'tab-portal-funcionario': { icone: '👷', nome: 'Portal Equipe' },
   'tab-portal-ponto': { icone: '🌐', nome: 'Portal do Ponto' },
   'tab-cronograma': { icone: '📅', nome: 'Cronograma' },
