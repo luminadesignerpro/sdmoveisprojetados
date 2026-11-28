@@ -2591,8 +2591,8 @@
           <button type="button" class="client-action-item btn-client-action btn-bio-active" id="btn-header-biometria" onclick="gerenciarBiometria()" title="Configurar biometria neste aparelho">
             <span>👆</span> <span>Biometria Ativa ✓</span>
           </button>
-          <button type="button" class="client-action-item btn-client-action btn-sair-action" onclick="sairCliente()" title="Encerrar sessão" style="grid-column: span 2;">
-            <span>🚪</span> <span>Sair do Portal</span>
+          <button type="button" class="client-action-item btn-client-action" id="btn-portal-bater-ponto-acao" onclick="abrirModalRegistrarBatidaPonto()" title="Registrar Batida de Ponto" style="grid-column: span 2;background:linear-gradient(135deg,rgba(37,99,235,0.22),rgba(14,165,233,0.16));border-color:rgba(56,189,248,0.45);color:#bae6fd;">
+            <span>🕒</span> <span>Bater Ponto (Registrar Batida)</span>
           </button>
         </div>
 
@@ -16254,6 +16254,1102 @@ window.fecharModalSenhaStatusPortal = fecharModalSenhaStatusPortal;
 window.confirmarSenhaStatusPortal = confirmarSenhaStatusPortal;
 
 
+
+// ══ MODAL REGISTRAR BATIDA DE PONTO (PORTADO DO MENU PRINCIPAL) ══
+var _jornadaPontoAtiva = 'integral';
+
+function abrirModalRegistrarBatidaPonto() {
+  var modal = document.getElementById('modal-registrar-batida-ponto');
+  if (!modal) return;
+
+  // 1. Data atual no formato YYYY-MM-DD
+  var hoje = new Date();
+  var a = hoje.getFullYear();
+  var m = String(hoje.getMonth() + 1).padStart(2, '0');
+  var d = String(hoje.getDate()).padStart(2, '0');
+  var inputData = document.getElementById('rbp-data');
+  if (inputData) inputData.value = a + '-' + m + '-' + d;
+
+  // 2. Popular funcionários e clientes
+  popularFuncionariosModalPonto();
+  popularClientesModalPonto();
+
+  // 3. Status pagamento padrão
+  var selStatus = document.getElementById('rbp-status-pagto');
+  if (selStatus) selStatus.value = 'Pendente (A receber / Pagar)';
+
+  // 4. Almoço padrão
+  var chkAlmoco = document.getElementById('rbp-almoco-ativo');
+  if (chkAlmoco) chkAlmoco.checked = true;
+  alternarCamposAlmocoPonto(true);
+  var inpRest = document.getElementById('rbp-almoco-restaurante');
+  if (inpRest) inpRest.value = '';
+  var inpAlmValor = document.getElementById('rbp-almoco-valor');
+  if (inpAlmValor) inpAlmValor.value = '25,00';
+  var selAlmStatus = document.getElementById('rbp-almoco-status');
+  if (selAlmStatus) selAlmStatus.value = 'Pago';
+  var selAlmForma = document.getElementById('rbp-almoco-forma');
+  if (selAlmForma) selAlmForma.value = 'Pix';
+
+  // 5. Descrição
+  var txtDesc = document.getElementById('rbp-descricao');
+  if (txtDesc) txtDesc.value = '';
+
+  // 6. Jornada padrão: Dia Trabalhado e sincroniza campos conforme funcionário
+  selecionarJornadaPonto('integral');
+  var selFunc = document.getElementById('rbp-funcionario');
+  aoTrocarFuncionarioPonto(selFunc ? selFunc.value : '');
+
+  // Esconder mini forms
+  toggleMiniNovoFuncionarioPonto(false);
+  toggleMiniNovoClientePonto(false);
+
+  // Exibir modal
+  modal.style.display = 'flex';
+}
+
+function fecharModalRegistrarBatidaPonto() {
+  var modal = document.getElementById('modal-registrar-batida-ponto');
+  if (modal) modal.style.display = 'none';
+}
+
+function alternarCamposAlmocoPonto(ativo) {
+  var campos = document.getElementById('rbp-almoco-campos');
+  if (campos) campos.style.display = ativo ? 'flex' : 'none';
+}
+
+function getDadosConfigFuncionario(nome) {
+  if (!nome) return null;
+  try {
+    var configs = JSON.parse(localStorage.getItem('sdv_dados_funcionarios_config') || '{}');
+    return configs[nome.trim().toLowerCase()] || null;
+  } catch(_) { return null; }
+}
+
+function selecionarJornadaPonto(tipo) {
+  _jornadaPontoAtiva = tipo;
+  var cardInt = document.getElementById('rbp-card-integral');
+  var cardMeio = document.getElementById('rbp-card-meio');
+  var inpValor = document.getElementById('rbp-valor');
+  var lockValor = document.getElementById('rbp-valor-lock');
+  var selFunc = document.getElementById('rbp-funcionario');
+  var cfg = selFunc ? getDadosConfigFuncionario(selFunc.value) : null;
+
+  if (tipo === 'integral') {
+    if (cardInt) {
+      cardInt.style.border = '2px solid #3b82f6';
+      cardInt.style.background = 'rgba(37,99,235,0.25)';
+      if (cardInt.children[0]) cardInt.children[0].style.color = '#93c5fd';
+      if (cardInt.children[1]) cardInt.children[1].style.color = '#60a5fa';
+    }
+    if (cardMeio) {
+      cardMeio.style.border = '1.5px solid rgba(255,255,255,0.12)';
+      cardMeio.style.background = 'rgba(255,255,255,0.04)';
+      if (cardMeio.children[0]) cardMeio.children[0].style.color = '#cbd5e1';
+      if (cardMeio.children[1]) cardMeio.children[1].style.color = '#94a3b8';
+    }
+    if (inpValor) {
+      if (cfg && cfg.diaria) {
+        inpValor.value = cfg.diaria;
+        inpValor.readOnly = true;
+        inpValor.style.background = '#111322';
+        inpValor.style.cursor = 'not-allowed';
+        inpValor.style.borderColor = 'rgba(56,189,248,0.3)';
+        inpValor.style.color = '#38bdf8';
+        if (lockValor) lockValor.style.display = 'inline';
+      } else {
+        inpValor.value = '160,00';
+        inpValor.readOnly = false;
+        inpValor.style.background = '#181a2c';
+        inpValor.style.cursor = 'text';
+        inpValor.style.borderColor = 'rgba(255,255,255,0.12)';
+        inpValor.style.color = '#ffffff';
+        if (lockValor) lockValor.style.display = 'none';
+      }
+    }
+  } else {
+    if (cardInt) {
+      cardInt.style.border = '1.5px solid rgba(255,255,255,0.12)';
+      cardInt.style.background = 'rgba(255,255,255,0.04)';
+      if (cardInt.children[0]) cardInt.children[0].style.color = '#cbd5e1';
+      if (cardInt.children[1]) cardInt.children[1].style.color = '#94a3b8';
+    }
+    if (cardMeio) {
+      cardMeio.style.border = '2px solid #3b82f6';
+      cardMeio.style.background = 'rgba(37,99,235,0.25)';
+      if (cardMeio.children[0]) cardMeio.children[0].style.color = '#93c5fd';
+      if (cardMeio.children[1]) cardMeio.children[1].style.color = '#60a5fa';
+    }
+    if (inpValor) {
+      if (cfg && cfg.meiodia) {
+        inpValor.value = cfg.meiodia;
+        inpValor.readOnly = true;
+        inpValor.style.background = '#111322';
+        inpValor.style.cursor = 'not-allowed';
+        inpValor.style.borderColor = 'rgba(56,189,248,0.3)';
+        inpValor.style.color = '#38bdf8';
+        if (lockValor) lockValor.style.display = 'inline';
+      } else {
+        inpValor.value = '80,00';
+        inpValor.readOnly = false;
+        inpValor.style.background = '#181a2c';
+        inpValor.style.cursor = 'text';
+        inpValor.style.borderColor = 'rgba(255,255,255,0.12)';
+        inpValor.style.color = '#ffffff';
+        if (lockValor) lockValor.style.display = 'none';
+      }
+    }
+  }
+}
+
+function aoTrocarFuncionarioPonto(nome) {
+  var selFunc = document.getElementById('rbp-funcionario');
+  if ((!nome || typeof nome !== 'string') && selFunc) nome = selFunc.value.trim();
+
+  var cfg = nome ? getDadosConfigFuncionario(nome) : null;
+  var inpValor = document.getElementById('rbp-valor');
+  var lockValor = document.getElementById('rbp-valor-lock');
+  var inpAlmocoValor = document.getElementById('rbp-almoco-valor');
+  var lockAlmoco = document.getElementById('rbp-almoco-lock');
+  var boxCombustivel = document.getElementById('rbp-box-combustivel');
+  var inpCombValor = document.getElementById('rbp-combustivel-valor');
+
+  if (cfg) {
+    // 1. Atualizar e BLOQUEAR Valor do Ponto
+    if (inpValor) {
+      if (_jornadaPontoAtiva === 'meio_dia') {
+        inpValor.value = cfg.meiodia || '80,00';
+      } else {
+        inpValor.value = cfg.diaria || '160,00';
+      }
+      inpValor.readOnly = true;
+      inpValor.style.background = '#111322';
+      inpValor.style.cursor = 'not-allowed';
+      inpValor.style.borderColor = 'rgba(56,189,248,0.3)';
+      inpValor.style.color = '#38bdf8';
+      inpValor.title = 'Valor bloqueado conforme dados salvos de ' + (cfg.nome || nome);
+    }
+    if (lockValor) lockValor.style.display = 'inline';
+
+    // 2. Atualizar e BLOQUEAR Valor do Almoço
+    if (inpAlmocoValor) {
+      if (cfg.almoco) {
+        inpAlmocoValor.value = cfg.almoco;
+      }
+      inpAlmocoValor.readOnly = true;
+      inpAlmocoValor.style.background = '#111322';
+      inpAlmocoValor.style.cursor = 'not-allowed';
+      inpAlmocoValor.style.borderColor = 'rgba(56,189,248,0.3)';
+      inpAlmocoValor.style.color = '#38bdf8';
+      inpAlmocoValor.title = 'Valor bloqueado conforme dados salvos de ' + (cfg.nome || nome);
+    }
+    if (lockAlmoco) lockAlmoco.style.display = 'inline';
+
+    // 3. Combustível:
+    // Se o funcionário tem valor de combustível > 0, exibe o bloco de combustível bloqueado
+    // Se NÃO colocou valor de combustível (vazio, nulo ou 0), NÃO DEVE APARECER na segunda imagem
+    var combNum = 0;
+    if (cfg.combustivel) {
+      var cClean = String(cfg.combustivel).replace('R$', '').replace(/\s/g, '').replace('.', '').replace(',', '.');
+      combNum = parseFloat(cClean) || 0;
+    }
+
+    if (combNum > 0) {
+      if (boxCombustivel) boxCombustivel.style.display = 'flex';
+      if (inpCombValor) {
+        inpCombValor.value = cfg.combustivel;
+        inpCombValor.readOnly = true;
+        inpCombValor.style.background = '#111322';
+        inpCombValor.style.cursor = 'not-allowed';
+      }
+    } else {
+      if (boxCombustivel) boxCombustivel.style.display = 'none';
+      if (inpCombValor) inpCombValor.value = '';
+    }
+  } else {
+    // Sem configuração salva: campos liberados para preenchimento manual
+    if (inpValor) {
+      inpValor.readOnly = false;
+      inpValor.style.background = '#181a2c';
+      inpValor.style.cursor = 'text';
+      inpValor.style.borderColor = 'rgba(255,255,255,0.12)';
+      inpValor.style.color = '#ffffff';
+      inpValor.title = '';
+      if (_jornadaPontoAtiva === 'meio_dia') inpValor.value = '80,00';
+      else inpValor.value = '160,00';
+    }
+    if (lockValor) lockValor.style.display = 'none';
+
+    if (inpAlmocoValor) {
+      inpAlmocoValor.readOnly = false;
+      inpAlmocoValor.style.background = '#181a2c';
+      inpAlmocoValor.style.cursor = 'text';
+      inpAlmocoValor.style.borderColor = 'rgba(255,255,255,0.12)';
+      inpAlmocoValor.style.color = '#ffffff';
+      inpAlmocoValor.title = '';
+    }
+    if (lockAlmoco) lockAlmoco.style.display = 'none';
+
+    if (boxCombustivel) boxCombustivel.style.display = 'none';
+    if (inpCombValor) inpCombValor.value = '';
+  }
+}
+
+function configurarDadosFuncionarioPonto() {
+  var sel = document.getElementById('rbp-funcionario');
+  var nomeSel = sel ? sel.value.trim() : '';
+  if (!nomeSel) {
+    if (sel && sel.options && sel.options.length > 1) {
+      sel.selectedIndex = 1;
+      nomeSel = sel.value.trim();
+    } else {
+      if (typeof mostrarToast === 'function') mostrarToast('⚠️ Selecione ou adicione um funcionário primeiro.', 'aviso');
+      else alert('Selecione ou adicione um funcionário primeiro.');
+      return;
+    }
+  }
+  abrirModalConfigFuncionarioPonto(nomeSel);
+}
+
+function abrirModalConfigFuncionarioPonto(nome) {
+  var modal = document.getElementById('modal-config-func-ponto');
+  if (!modal) return;
+  modal.style.display = 'flex';
+
+  var inpNome = document.getElementById('cfg-func-nome');
+  var inpCargo = document.getElementById('cfg-func-cargo');
+  var inpDiaria = document.getElementById('cfg-func-diaria');
+  var inpMeio = document.getElementById('cfg-func-meiodia');
+  var inpAlm = document.getElementById('cfg-func-almoco');
+  var inpComb = document.getElementById('cfg-func-combustivel');
+  var inpTel = document.getElementById('cfg-func-tel');
+  var inpPix = document.getElementById('cfg-func-pix');
+  var inpCpf = document.getElementById('cfg-func-cpf');
+  var inpEnd = document.getElementById('cfg-func-endereco');
+  var subtitulo = document.getElementById('cfg-func-subtitulo');
+
+  if (inpNome) inpNome.value = nome || '';
+  if (subtitulo) subtitulo.textContent = nome ? ('Configurando dados de ' + nome) : 'Editar diária, almoço e dados cadastrais';
+
+  var cfg = getDadosConfigFuncionario(nome);
+  if (cfg) {
+    if (inpCargo) inpCargo.value = cfg.cargo || '';
+    if (inpDiaria) inpDiaria.value = cfg.diaria || '160,00';
+    if (inpMeio) inpMeio.value = cfg.meiodia || '80,00';
+    if (inpAlm) inpAlm.value = cfg.almoco || '25,00';
+    if (inpComb) inpComb.value = cfg.combustivel || '';
+    if (inpTel) inpTel.value = cfg.telefone || '';
+    if (inpPix) inpPix.value = cfg.pix || '';
+    if (inpCpf) inpCpf.value = cfg.cpf || '';
+    if (inpEnd) inpEnd.value = cfg.endereco || '';
+  } else {
+    if (inpCargo) inpCargo.value = '';
+    if (inpDiaria) inpDiaria.value = '160,00';
+    if (inpMeio) inpMeio.value = '80,00';
+    if (inpAlm) inpAlm.value = '25,00';
+    if (inpComb) inpComb.value = '';
+    if (inpTel) inpTel.value = '';
+    if (inpPix) inpPix.value = '';
+    if (inpCpf) inpCpf.value = '';
+    if (inpEnd) inpEnd.value = '';
+  }
+}
+
+function fecharModalConfigFuncionarioPonto(e) {
+  if (!e || e.target === document.getElementById('modal-config-func-ponto')) {
+    var modal = document.getElementById('modal-config-func-ponto');
+    if (modal) modal.style.display = 'none';
+  }
+}
+
+function salvarConfigFuncionarioPonto() {
+  var inpNome = document.getElementById('cfg-func-nome');
+  var nome = inpNome ? inpNome.value.trim() : '';
+  if (!nome) {
+    if (typeof mostrarToast === 'function') mostrarToast('⚠️ Informe o nome do funcionário.', 'aviso');
+    else alert('Informe o nome do funcionário.');
+    return;
+  }
+
+  var inpCargo = document.getElementById('cfg-func-cargo');
+  var inpDiaria = document.getElementById('cfg-func-diaria');
+  var inpMeio = document.getElementById('cfg-func-meiodia');
+  var inpAlm = document.getElementById('cfg-func-almoco');
+  var inpComb = document.getElementById('cfg-func-combustivel');
+  var inpTel = document.getElementById('cfg-func-tel');
+  var inpPix = document.getElementById('cfg-func-pix');
+  var inpCpf = document.getElementById('cfg-func-cpf');
+  var inpEnd = document.getElementById('cfg-func-endereco');
+
+  var dados = {
+    nome: nome,
+    cargo: inpCargo ? inpCargo.value.trim() : '',
+    diaria: inpDiaria ? inpDiaria.value.trim() : '160,00',
+    meiodia: inpMeio ? inpMeio.value.trim() : '80,00',
+    almoco: inpAlm ? inpAlm.value.trim() : '25,00',
+    combustivel: inpComb ? inpComb.value.trim() : '',
+    telefone: inpTel ? inpTel.value.trim() : '',
+    pix: inpPix ? inpPix.value.trim() : '',
+    cpf: inpCpf ? inpCpf.value.trim() : '',
+    endereco: inpEnd ? inpEnd.value.trim() : '',
+    atualizadoEm: new Date().toISOString()
+  };
+
+  try {
+    var configs = JSON.parse(localStorage.getItem('sdv_dados_funcionarios_config') || '{}');
+    configs[nome.toLowerCase()] = dados;
+    localStorage.setItem('sdv_dados_funcionarios_config', JSON.stringify(configs));
+  } catch(e) {
+    console.warn(e);
+  }
+
+  // Atualiza também se existir em sdv_funcionarios_custom
+  try {
+    var salvos = JSON.parse(localStorage.getItem('sdv_funcionarios_custom') || '[]');
+    if (!salvos.includes(nome)) {
+      salvos.push(nome);
+      localStorage.setItem('sdv_funcionarios_custom', JSON.stringify(salvos));
+    }
+  } catch(_) {}
+
+  // Atualiza o select de funcionários
+  popularFuncionariosModalPonto(nome);
+  aoTrocarFuncionarioPonto(nome);
+
+  fecharModalConfigFuncionarioPonto();
+  if (typeof mostrarToast === 'function') mostrarToast('✅ Dados de ' + nome + ' configurados com sucesso!', 'sucesso');
+  else alert('Dados de ' + nome + ' configurados com sucesso!');
+}
+
+// ── Funcionários ──
+function popularFuncionariosModalPonto(selecionarNome) {
+  var select = document.getElementById('rbp-funcionario');
+  if (!select) return;
+
+  var nomes = new Set();
+
+  if (typeof funcionariosLista !== 'undefined' && Array.isArray(funcionariosLista)) {
+    funcionariosLista.forEach(function(f) {
+      if (f && f.nome && f.nome.trim()) nomes.add(f.nome.trim());
+    });
+  }
+
+  // Funcionários customizados salvos localmente
+  try {
+    var salvos = JSON.parse(localStorage.getItem('sdv_funcionarios_custom') || '[]');
+    if (Array.isArray(salvos)) {
+      salvos.forEach(function(n) { if (n && n.trim()) nomes.add(n.trim()); });
+    }
+  } catch(_) {}
+
+  // Se vazio, adiciona padrão
+  if (nomes.size === 0) {
+    nomes.add('David');
+    nomes.add('João');
+    nomes.add('Marceneiro 1');
+  }
+
+  var arr = Array.from(nomes).sort();
+  select.innerHTML = '<option value="" style="background:#181a2c;color:#ffffff;">Selecione o Funcionário</option>' +
+    arr.map(function(n) {
+      var sel = (selecionarNome && selecionarNome === n) ? ' selected' : '';
+      return '<option value="' + n + '"' + sel + ' style="background:#181a2c;color:#ffffff;">' + n + '</option>';
+    }).join('');
+}
+
+function toggleMiniNovoFuncionarioPonto(forcar) {
+  var box = document.getElementById('rbp-box-novo-funcionario');
+  if (!box) return;
+  var display = typeof forcar === 'boolean' ? (forcar ? 'flex' : 'none') : (box.style.display === 'none' ? 'flex' : 'none');
+  box.style.display = display;
+  if (display === 'flex') {
+    var inp = document.getElementById('rbp-inp-novo-funcionario');
+    if (inp) { inp.value = ''; inp.focus(); }
+  }
+}
+
+function salvarMiniNovoFuncionarioPonto() {
+  var inp = document.getElementById('rbp-inp-novo-funcionario');
+  var nome = inp ? inp.value.trim() : '';
+  if (!nome) {
+    if (typeof mostrarToast === 'function') mostrarToast('⚠️ Digite o nome do funcionário!', 'aviso');
+    return;
+  }
+  // Salvar no localStorage de custom
+  try {
+    var salvos = JSON.parse(localStorage.getItem('sdv_funcionarios_custom') || '[]');
+    if (!salvos.includes(nome)) {
+      salvos.push(nome);
+      localStorage.setItem('sdv_funcionarios_custom', JSON.stringify(salvos));
+    }
+  } catch(_) {}
+
+  // Se existir funcionariosLista, adiciona lá também
+  if (typeof funcionariosLista !== 'undefined' && Array.isArray(funcionariosLista)) {
+    if (!funcionariosLista.some(function(f) { return f.nome === nome; })) {
+      funcionariosLista.push({ id: Date.now(), nome: nome, cargo: 'Colaborador' });
+    }
+  }
+
+  popularFuncionariosModalPonto(nome);
+  toggleMiniNovoFuncionarioPonto(false);
+  if (typeof mostrarToast === 'function') mostrarToast('✅ Funcionário "' + nome + '" adicionado!', 'sucesso');
+}
+
+// ── Clientes ──
+function popularClientesModalPonto(selecionarNome) {
+  var inp = document.getElementById('rbp-cliente');
+  if (!inp) return;
+
+  // Se for um input de texto, alimenta um datalist para sugestões
+  if (inp.tagName === 'INPUT') {
+    var dlId = 'rbp-cliente-datalist';
+    var dl = document.getElementById(dlId);
+    if (!dl) {
+      dl = document.createElement('datalist');
+      dl.id = dlId;
+      inp.setAttribute('list', dlId);
+      inp.parentNode.insertBefore(dl, inp.nextSibling);
+    }
+    var nomes = new Set();
+    if (typeof clientes !== 'undefined' && Array.isArray(clientes)) {
+      clientes.forEach(function(c) {
+        if (c && c.nome && c.nome.trim()) nomes.add(c.nome.trim());
+      });
+    }
+    try {
+      var clisPf = JSON.parse(localStorage.getItem('sdv_portfolio_clientes') || '[]');
+      if (Array.isArray(clisPf)) {
+        clisPf.forEach(function(c) {
+          if (c && c.nome && c.nome.trim()) nomes.add(c.nome.trim());
+        });
+      }
+    } catch(_) {}
+    var oNomeEl = document.getElementById('o-nome');
+    var nomeAtual = oNomeEl ? oNomeEl.value.trim() : '';
+    if (nomeAtual) nomes.add(nomeAtual);
+    dl.innerHTML = Array.from(nomes).sort().map(function(n) {
+      return '<option value="' + n + '">';
+    }).join('');
+    if (selecionarNome) inp.value = selecionarNome;
+    else if (nomeAtual && !inp.value) inp.value = nomeAtual;
+    return;
+  }
+
+  // Fallback para select (legado)
+  var select = inp;
+  var nomes = new Set();
+  if (typeof clientes !== 'undefined' && Array.isArray(clientes)) {
+    clientes.forEach(function(c) {
+      if (c && c.nome && c.nome.trim()) nomes.add(c.nome.trim());
+    });
+  }
+  try {
+    var clisPf2 = JSON.parse(localStorage.getItem('sdv_portfolio_clientes') || '[]');
+    if (Array.isArray(clisPf2)) {
+      clisPf2.forEach(function(c) {
+        if (c && c.nome && c.nome.trim()) nomes.add(c.nome.trim());
+      });
+    }
+  } catch(_) {}
+  var oNomeEl2 = document.getElementById('o-nome');
+  var nomeAtual2 = oNomeEl2 ? oNomeEl2.value.trim() : '';
+  if (nomeAtual2) nomes.add(nomeAtual2);
+  var arr = Array.from(nomes).sort();
+  select.innerHTML = '<option value="" style="background:#181a2c;color:#ffffff;">Selecione o Cliente</option>' +
+    arr.map(function(n) {
+      var sel = (selecionarNome && selecionarNome === n) || (!selecionarNome && nomeAtual2 && nomeAtual2 === n) ? ' selected' : '';
+      return '<option value="' + n + '"' + sel + ' style="background:#181a2c;color:#ffffff;">' + n + '</option>';
+    }).join('');
+}
+
+function toggleMiniNovoClientePonto(forcar) {
+  var box = document.getElementById('rbp-box-novo-cliente');
+  if (!box) return;
+  var display = typeof forcar === 'boolean' ? (forcar ? 'flex' : 'none') : (box.style.display === 'none' ? 'flex' : 'none');
+  box.style.display = display;
+  if (display === 'flex') {
+    var inp = document.getElementById('rbp-inp-novo-cliente');
+    if (inp) { inp.value = ''; inp.focus(); }
+  }
+}
+
+function salvarMiniNovoClientePonto() {
+  var inp = document.getElementById('rbp-inp-novo-cliente');
+  var nome = inp ? inp.value.trim() : '';
+  if (!nome) {
+    if (typeof mostrarToast === 'function') mostrarToast('⚠️ Digite o nome do cliente!', 'aviso');
+    return;
+  }
+  popularClientesModalPonto(nome);
+  toggleMiniNovoClientePonto(false);
+  if (typeof mostrarToast === 'function') mostrarToast('✅ Cliente "' + nome + '" adicionado!', 'sucesso');
+}
+
+// ── Salvar Batida de Ponto Completa ──
+function salvarBatidaPontoModal() {
+  var inputData = document.getElementById('rbp-data');
+  var dataVal = inputData ? inputData.value : '';
+  if (!dataVal) {
+    if (typeof mostrarToast === 'function') mostrarToast('⚠️ Por favor, selecione a data do trabalho!', 'aviso');
+    else alert('Por favor, selecione a data do trabalho!');
+    return;
+  }
+
+  var selFunc = document.getElementById('rbp-funcionario');
+  var funcVal = selFunc ? selFunc.value.trim() : '';
+  if (!funcVal) {
+    if (typeof mostrarToast === 'function') mostrarToast('⚠️ Por favor, selecione o funcionário!', 'aviso');
+    else alert('Por favor, selecione o funcionário!');
+    return;
+  }
+
+  var selCli = document.getElementById('rbp-cliente');
+  var clienteVal = selCli ? selCli.value.trim() : '';
+  if (!clienteVal) {
+    if (typeof mostrarToast === 'function') mostrarToast('⚠️ Por favor, selecione ou adicione o cliente!', 'aviso');
+    else alert('Por favor, selecione o cliente que trabalhou!');
+    return;
+  }
+
+  var inpValor = document.getElementById('rbp-valor');
+  var valorVal = inpValor ? inpValor.value.trim() : '160,00';
+
+  var selStatus = document.getElementById('rbp-status-pagto');
+  var statusVal = selStatus ? selStatus.value : 'Pendente (A receber / Pagar)';
+
+  // Almoço
+  var chkAlmoco = document.getElementById('rbp-almoco-ativo');
+  var temAlmoco = chkAlmoco ? chkAlmoco.checked : false;
+  var almRestaurante = '';
+  var almValor = '';
+  var almStatus = '';
+  var almForma = '';
+
+  if (temAlmoco) {
+    var inpRest = document.getElementById('rbp-almoco-restaurante');
+    almRestaurante = inpRest ? inpRest.value.trim() : '';
+    var inpAlmVal = document.getElementById('rbp-almoco-valor');
+    almValor = inpAlmVal ? inpAlmVal.value.trim() : '0,00';
+    var selAlmStat = document.getElementById('rbp-almoco-status');
+    almStatus = selAlmStat ? selAlmStat.value : 'Pago';
+    var selAlmForma = document.getElementById('rbp-almoco-forma');
+    almForma = selAlmForma ? selAlmForma.value : 'Pix';
+  }
+
+  // Combustível / Ajuda de Custo (apenas se exibido na tela)
+  var boxComb = document.getElementById('rbp-box-combustivel');
+  var temComb = boxComb && boxComb.style.display !== 'none';
+  var combValor = '';
+  var combStatus = '';
+  var combForma = '';
+  var combObs = '';
+
+  if (temComb) {
+    var inpCVal = document.getElementById('rbp-combustivel-valor');
+    combValor = inpCVal ? inpCVal.value.trim() : '';
+    var selCStat = document.getElementById('rbp-combustivel-status');
+    combStatus = selCStat ? selCStat.value : 'Pago';
+    var selCForma = document.getElementById('rbp-combustivel-forma');
+    combForma = selCForma ? selCForma.value : 'Pix';
+    var inpCObs = document.getElementById('rbp-combustivel-obs');
+    combObs = inpCObs ? inpCObs.value.trim() : '';
+  }
+
+  var txtDesc = document.getElementById('rbp-descricao');
+  var descVal = txtDesc ? txtDesc.value.trim() : '';
+
+  // Formatar data para exibição DD/MM/AAAA
+  var partes = dataVal.split('-');
+  var dataFormatada = partes.length === 3 ? (partes[2] + '/' + partes[1] + '/' + partes[0]) : dataVal;
+
+  var novoRegistro = {
+    id: 'ponto_' + Date.now(),
+    data: dataVal,
+    dataFormatada: dataFormatada,
+    funcionario: funcVal,
+    jornada: _jornadaPontoAtiva,
+    jornadaTexto: _jornadaPontoAtiva === 'integral' ? 'Dia Trabalhado (Integral)' : 'Meio Dia (Turno Parcial)',
+    cliente: clienteVal,
+    valor: valorVal,
+    statusPagamento: statusVal,
+    // Dados do Almoço
+    almoco: temAlmoco ? {
+      restaurante: almRestaurante || 'Restaurante',
+      valor: almValor || '0,00',
+      status: almStatus || 'Pago',
+      forma: almForma || 'Pix'
+    } : null,
+    // Dados do Combustível
+    combustivel: (temComb && combValor) ? {
+      valor: combValor,
+      status: combStatus || 'Pago',
+      forma: combForma || 'Pix',
+      obs: combObs || ''
+    } : null,
+    descricao: descVal,
+    criadoEm: new Date().toISOString()
+  };
+
+  try {
+    var registros = JSON.parse(localStorage.getItem('sdv_batidas_ponto') || '[]');
+    registros.unshift(novoRegistro);
+    localStorage.setItem('sdv_batidas_ponto', JSON.stringify(registros));
+  } catch(e) {
+    console.warn('Erro ao salvar ponto:', e);
+  }
+
+  fecharModalRegistrarBatidaPonto();
+  if (typeof renderizarMeuSetorFinanceiro === "function") { try { renderizarMeuSetorFinanceiro(); } catch(_) {} }
+
+  var msgSucesso = '✅ Ponto: ' + funcVal + ' · ' + clienteVal + ' · R$ ' + valorVal;
+  if (temAlmoco && almValor) {
+    msgSucesso += ' (Almoço: ' + (almRestaurante ? almRestaurante + ' ' : '') + 'R$ ' + almValor + ' - ' + almStatus + ')';
+  }
+  if (temComb && combValor) {
+    msgSucesso += ' (Combustível: R$ ' + combValor + ' - ' + combStatus + ')';
+  }
+
+  if (typeof mostrarToast === 'function') mostrarToast(msgSucesso, 'sucesso');
+  else if (typeof showToast === 'function') showToast(msgSucesso, 'success');
+  else alert(msgSucesso);
+}
+
+// ── PDF & WhatsApp: enviar dados do funcionário com CPF, SEM telefone e SEM valores ──
+function _sanitizarTextoPdf(str) {
+  return (str || '').toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+async function gerarPdfFuncionarioBlob(nome) {
+  if (typeof PDFLib === 'undefined') throw new Error('PDFLib não carregado.');
+  const { PDFDocument, StandardFonts, rgb } = PDFLib;
+  const pdfDoc = await PDFDocument.create();
+  const fontReg = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+  const PAGE_W = 595.28;
+  const PAGE_H = 841.89;
+  const MARGIN_X = 40;
+  const CONTENT_W = PAGE_W - (MARGIN_X * 2);
+
+  const DARK = rgb(0.08, 0.10, 0.15);
+  const GOLD = rgb(0.82, 0.65, 0.22);
+  const GRAY = rgb(0.45, 0.49, 0.56);
+  const BORDER = rgb(0.85, 0.88, 0.92);
+  const BOX_BG = rgb(0.97, 0.98, 0.99);
+  const WHITE = rgb(1, 1, 1);
+  const NAVY = rgb(0.12, 0.23, 0.54);
+
+  function clean(t) {
+    if (!t) return '';
+    return String(t)
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^\x20-\x7E]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  const page = pdfDoc.addPage([PAGE_W, PAGE_H]);
+  let y = PAGE_H - 45;
+
+  page.drawRectangle({
+    x: MARGIN_X,
+    y: y - 65,
+    width: CONTENT_W,
+    height: 65,
+    color: rgb(0.06, 0.08, 0.13)
+  });
+  page.drawRectangle({
+    x: MARGIN_X,
+    y: y - 65,
+    width: CONTENT_W,
+    height: 3,
+    color: GOLD
+  });
+
+  page.drawText(clean('SD MOVEIS PROJETADOS'), {
+    x: MARGIN_X + 16,
+    y: y - 24,
+    size: 15,
+    font: fontBold,
+    color: GOLD
+  });
+  page.drawText(clean('FICHA CADASTRAL DO COLABORADOR'), {
+    x: MARGIN_X + 16,
+    y: y - 44,
+    size: 11,
+    font: fontBold,
+    color: WHITE
+  });
+
+  const hoje = new Date().toLocaleDateString('pt-BR');
+  page.drawText(clean('Emissao: ' + hoje), {
+    x: MARGIN_X + CONTENT_W - 130,
+    y: y - 24,
+    size: 9.5,
+    font: fontReg,
+    color: rgb(0.8, 0.85, 0.95)
+  });
+  page.drawText(clean('DOC OFICIAL'), {
+    x: MARGIN_X + CONTENT_W - 130,
+    y: y - 44,
+    size: 9.5,
+    font: fontBold,
+    color: GOLD
+  });
+
+  y -= 95;
+
+  var cfg = getDadosConfigFuncionario(nome) || {};
+  var cargo = cfg.cargo || 'Nao informado';
+  var cpf = cfg.cpf || 'Nao informado';
+  var endereco = cfg.endereco || 'Nao informado';
+
+  const cardH = 195;
+  page.drawRectangle({
+    x: MARGIN_X,
+    y: y - cardH,
+    width: CONTENT_W,
+    height: cardH,
+    color: BOX_BG,
+    borderColor: BORDER,
+    borderWidth: 1.5
+  });
+
+  let fieldY = y - 26;
+
+  function drawField(label, val, isHighlight) {
+    page.drawText(clean(label), {
+      x: MARGIN_X + 20,
+      y: fieldY,
+      size: 9,
+      font: fontBold,
+      color: GRAY
+    });
+    fieldY -= 15;
+    page.drawText(clean(val), {
+      x: MARGIN_X + 20,
+      y: fieldY,
+      size: isHighlight ? 13 : 11.5,
+      font: fontBold,
+      color: isHighlight ? NAVY : DARK
+    });
+    fieldY -= 24;
+  }
+
+  drawField('NOME COMPLETO:', nome, true);
+  drawField('CARGO / FUNCAO:', cargo, false);
+  drawField('CPF:', cpf, false);
+  drawField('ENDERECO COMPLETO:', endereco, false);
+
+  y -= (cardH + 25);
+
+  page.drawText(clean('Documento cadastral gerado sem exibicao de valores financeiros e sem'), {
+    x: MARGIN_X + 10,
+    y: y,
+    size: 8.5,
+    font: fontReg,
+    color: GRAY
+  });
+  page.drawText(clean('contato telefonico pessoal para resguardo de privacidade. - SD Moveis Projetados'), {
+    x: MARGIN_X + 10,
+    y: y - 13,
+    size: 8.5,
+    font: fontReg,
+    color: GRAY
+  });
+
+  const pdfBytes = await pdfDoc.save();
+  return new Blob([pdfBytes], { type: 'application/pdf' });
+}
+
+async function gerarPdfTodosFuncionariosBlob() {
+  if (typeof PDFLib === 'undefined') throw new Error('PDFLib não carregado.');
+  const { PDFDocument, StandardFonts, rgb } = PDFLib;
+  const pdfDoc = await PDFDocument.create();
+  const fontReg = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+  const PAGE_W = 595.28;
+  const PAGE_H = 841.89;
+  const MARGIN_X = 30;
+  const CONTENT_W = PAGE_W - (MARGIN_X * 2);
+
+  const DARK = rgb(0.08, 0.10, 0.15);
+  const GOLD = rgb(0.82, 0.65, 0.22);
+  const GRAY = rgb(0.45, 0.49, 0.56);
+  const BORDER = rgb(0.85, 0.88, 0.92);
+  const ROW_ALT = rgb(0.96, 0.97, 0.99);
+  const HEADER_BG = rgb(0.08, 0.11, 0.18);
+  const WHITE = rgb(1, 1, 1);
+  const NAVY = rgb(0.12, 0.23, 0.54);
+
+  function clean(t) {
+    if (!t) return '';
+    return String(t)
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^\x20-\x7E]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  var configs = {};
+  try {
+    configs = JSON.parse(localStorage.getItem('sdv_dados_funcionarios_config') || '{}');
+  } catch(_) {}
+  var nomes = Object.keys(configs);
+
+  let page = pdfDoc.addPage([PAGE_W, PAGE_H]);
+  let y = PAGE_H - 40;
+
+  function drawHeaderBanner() {
+    page.drawRectangle({
+      x: MARGIN_X,
+      y: y - 55,
+      width: CONTENT_W,
+      height: 55,
+      color: HEADER_BG
+    });
+    page.drawRectangle({
+      x: MARGIN_X,
+      y: y - 55,
+      width: CONTENT_W,
+      height: 3,
+      color: GOLD
+    });
+    page.drawText(clean('SD MOVEIS PROJETADOS'), {
+      x: MARGIN_X + 14,
+      y: y - 22,
+      size: 14,
+      font: fontBold,
+      color: GOLD
+    });
+    page.drawText(clean('RELACAO GERAL DE COLABORADORES (' + nomes.length + ' CADASTRADOS)'), {
+      x: MARGIN_X + 14,
+      y: y - 40,
+      size: 10,
+      font: fontBold,
+      color: WHITE
+    });
+    const hoje = new Date().toLocaleDateString('pt-BR');
+    page.drawText(clean('Emissao: ' + hoje), {
+      x: MARGIN_X + CONTENT_W - 110,
+      y: y - 22,
+      size: 9,
+      font: fontReg,
+      color: rgb(0.8, 0.85, 0.95)
+    });
+    y -= 75;
+  }
+
+  drawHeaderBanner();
+
+  const cols = [
+    { label: '#', x: MARGIN_X, w: 25 },
+    { label: 'COLABORADOR', x: MARGIN_X + 25, w: 150 },
+    { label: 'CARGO', x: MARGIN_X + 175, w: 120 },
+    { label: 'CPF', x: MARGIN_X + 295, w: 100 },
+    { label: 'ENDERECO', x: MARGIN_X + 395, w: 140 }
+  ];
+
+  function drawTableHeader() {
+    page.drawRectangle({
+      x: MARGIN_X,
+      y: y - 22,
+      width: CONTENT_W,
+      height: 22,
+      color: rgb(0.12, 0.15, 0.24)
+    });
+    cols.forEach(c => {
+      page.drawText(clean(c.label), {
+        x: c.x + 4,
+        y: y - 15,
+        size: 8,
+        font: fontBold,
+        color: WHITE
+      });
+    });
+    y -= 22;
+  }
+
+  drawTableHeader();
+
+  nomes.forEach((k, idx) => {
+    if (y < 60) {
+      page = pdfDoc.addPage([PAGE_W, PAGE_H]);
+      y = PAGE_H - 40;
+      drawHeaderBanner();
+      drawTableHeader();
+    }
+
+    const c = configs[k] || {};
+    const n = c.nome || k;
+    const cargo = c.cargo || '-';
+    const cpf = c.cpf || '-';
+    const endereco = c.endereco || '-';
+
+    const rowH = 22;
+    if (idx % 2 === 1) {
+      page.drawRectangle({
+        x: MARGIN_X,
+        y: y - rowH,
+        width: CONTENT_W,
+        height: rowH,
+        color: ROW_ALT
+      });
+    }
+
+    page.drawLine({
+      start: { x: MARGIN_X, y: y - rowH },
+      end: { x: MARGIN_X + CONTENT_W, y: y - rowH },
+      thickness: 0.5,
+      color: BORDER
+    });
+
+    function clip(str, maxChars) {
+      const s = clean(str);
+      return s.length > maxChars ? s.substring(0, maxChars - 2) + '..' : s;
+    }
+
+    page.drawText(String(idx + 1), { x: cols[0].x + 4, y: y - 15, size: 8.5, font: fontBold, color: DARK });
+    page.drawText(clip(n, 28), { x: cols[1].x + 4, y: y - 15, size: 8.5, font: fontBold, color: DARK });
+    page.drawText(clip(cargo, 22), { x: cols[2].x + 4, y: y - 15, size: 8, font: fontReg, color: DARK });
+    page.drawText(clip(cpf, 18), { x: cols[3].x + 4, y: y - 15, size: 8, font: fontBold, color: NAVY });
+    page.drawText(clip(endereco, 28), { x: cols[4].x + 4, y: y - 15, size: 7.5, font: fontReg, color: GRAY });
+
+    y -= rowH;
+  });
+
+  y -= 20;
+  page.drawText(clean('Documento gerado sem valores financeiros e sem telefones pessoais. - SD Moveis Projetados'), {
+    x: MARGIN_X + 10,
+    y: y,
+    size: 8.5,
+    font: fontReg,
+    color: GRAY
+  });
+
+  const pdfBytes = await pdfDoc.save();
+  return new Blob([pdfBytes], { type: 'application/pdf' });
+}
+
+async function enviarFuncionarioPdf() {
+  var selFunc = document.getElementById('rbp-funcionario');
+  var nome = selFunc ? selFunc.value.trim() : '';
+  if (!nome) {
+    if (typeof mostrarToast === 'function') mostrarToast('⚠️ Selecione um funcionário primeiro!', 'aviso');
+    else alert('Selecione um funcionário primeiro!');
+    return;
+  }
+  if (typeof mostrarToast === 'function') mostrarToast('⏳ Gerando PDF de ' + nome + '...', 'info');
+
+  try {
+    var blob = await gerarPdfFuncionarioBlob(nome);
+    var nomeArquivo = 'Ficha_' + (nome.replace(/[^a-zA-Z0-9]/g, '_')) + '.pdf';
+    var file = new File([blob], nomeArquivo, { type: 'application/pdf' });
+
+    var compartilhou = false;
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: 'Ficha Cadastral - ' + nome,
+          text: 'Ficha Cadastral em PDF de ' + nome + ' (SD Móveis Projetados)'
+        });
+        compartilhou = true;
+      } catch(e) {
+        if (e.name !== 'AbortError') console.warn(e);
+        else compartilhou = true;
+      }
+    }
+
+    if (!compartilhou) {
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = nomeArquivo;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.open(url, '_blank');
+      setTimeout(function() { URL.revokeObjectURL(url); }, 5000);
+      if (typeof mostrarToast === 'function') mostrarToast('✅ PDF baixado com sucesso!', 'sucesso');
+    }
+  } catch(err) {
+    console.error('Erro ao gerar PDF do funcionário:', err);
+    if (typeof mostrarToast === 'function') mostrarToast('⚠️ ' + (err.message || 'Erro ao gerar PDF'), 'erro');
+    else alert('Erro ao gerar PDF: ' + err.message);
+  }
+}
+
+async function enviarTodosFuncionariosPdf() {
+  var configs = {};
+  try {
+    configs = JSON.parse(localStorage.getItem('sdv_dados_funcionarios_config') || '{}');
+  } catch(_) {}
+
+  var nomes = Object.keys(configs);
+  if (nomes.length === 0) {
+    if (typeof mostrarToast === 'function') mostrarToast('⚠️ Nenhum funcionário configurado ainda.', 'aviso');
+    else alert('Nenhum funcionário configurado ainda.');
+    return;
+  }
+  if (typeof mostrarToast === 'function') mostrarToast('⏳ Gerando PDF de todos os funcionários...', 'info');
+
+  try {
+    var blob = await gerarPdfTodosFuncionariosBlob();
+    var nomeArquivo = 'Relacao_Funcionarios_SD_Moveis.pdf';
+    var file = new File([blob], nomeArquivo, { type: 'application/pdf' });
+
+    var compartilhou = false;
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: 'Relação de Funcionários (PDF)',
+          text: 'Relação de Colaboradores em PDF (SD Móveis Projetados)'
+        });
+        compartilhou = true;
+      } catch(e) {
+        if (e.name !== 'AbortError') console.warn(e);
+        else compartilhou = true;
+      }
+    }
+
+    if (!compartilhou) {
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = nomeArquivo;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.open(url, '_blank');
+      setTimeout(function() { URL.revokeObjectURL(url); }, 5000);
+      if (typeof mostrarToast === 'function') mostrarToast('✅ PDF baixado com sucesso!', 'sucesso');
+    }
+  } catch(err) {
+    console.error('Erro ao gerar PDF de todos:', err);
+    if (typeof mostrarToast === 'function') mostrarToast('⚠️ ' + (err.message || 'Erro ao gerar PDF'), 'erro');
+    else alert('Erro ao gerar PDF: ' + err.message);
+  }
+}
+
+// ── WhatsApp: envia diretamente o PDF ──
+function enviarFuncionarioWhatsApp() {
+  enviarFuncionarioPdf();
+}
+
+function enviarTodosFuncionariosWhatsApp() {
+  enviarTodosFuncionariosPdf();
+}
+
+window.abrirModalRegistrarBatidaPonto = abrirModalRegistrarBatidaPonto;
+window.fecharModalRegistrarBatidaPonto = fecharModalRegistrarBatidaPonto;
+window.alternarCamposAlmocoPonto = alternarCamposAlmocoPonto;
+window.selecionarJornadaPonto = selecionarJornadaPonto;
+window.popularFuncionariosModalPonto = popularFuncionariosModalPonto;
+window.toggleMiniNovoFuncionarioPonto = toggleMiniNovoFuncionarioPonto;
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════ -->
@@ -16657,5 +17753,302 @@ window.confirmarSenhaStatusPortal = confirmarSenhaStatusPortal;
 </div>
 
 
+
+<div id="modal-registrar-batida-ponto" class="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:999999;align-items:center;justify-content:center;backdrop-filter:blur(8px);padding:14px;box-sizing:border-box;" onclick="if(event.target===this) fecharModalRegistrarBatidaPonto()">
+  <div class="modal-box" onclick="event.stopPropagation()" style="background:#0f1020;color:#ffffff;border:1.5px solid rgba(56,189,248,0.3);border-radius:20px;padding:24px 20px;max-width:460px;width:100%;max-height:92vh;overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:0 25px 60px rgba(0,0,0,0.95), 0 0 30px rgba(56,189,248,0.15);display:flex;flex-direction:column;gap:15px;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    
+    <!-- Cabeçalho com Relógio Azul e Botão Fechar -->
+    <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:10px;font-size:18px;font-weight:800;color:#ffffff;">
+        <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;border:2px solid #38bdf8;color:#38bdf8;font-size:15px;line-height:1;">🕒</span>
+        <span>Registrar Batida de Ponto</span>
+      </div>
+      <button type="button" onclick="fecharModalRegistrarBatidaPonto()" style="background:none;border:none;color:#94a3b8;font-size:20px;cursor:pointer;padding:4px 6px;line-height:1;transition:color 0.15s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#94a3b8'">✕</button>
+    </div>
+
+    <!-- Data do Trabalho * -->
+    <div style="display:flex;flex-direction:column;gap:5px;">
+      <label style="font-size:13px;font-weight:700;color:#cbd5e1;">Data do Trabalho *</label>
+      <input type="date" id="rbp-data" style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:12px;padding:11px 14px;font-size:14px;font-weight:600;color:#ffffff;outline:none;box-sizing:border-box;transition:border-color 0.2s;" onfocus="this.style.borderColor='#38bdf8'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'">
+    </div>
+
+    <!-- Nome do Funcionário * + Botão Adicionar Funcionário + Configurar -->
+    <div style="display:flex;flex-direction:column;gap:5px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+        <label style="font-size:13px;font-weight:700;color:#cbd5e1;">Nome do Funcionário *</label>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <button type="button" onclick="configurarDadosFuncionarioPonto()" style="background:none;border:none;color:#facc15;font-size:12px;font-weight:700;cursor:pointer;padding:0;display:inline-flex;align-items:center;gap:4px;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'" title="Configurar diárias, almoço, chave pix e dados deste funcionário">⚙️ Configurar Dados</button>
+          <button type="button" onclick="toggleMiniNovoFuncionarioPonto()" style="background:none;border:none;color:#38bdf8;font-size:12.5px;font-weight:700;cursor:pointer;padding:0;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">+ Novo Funcionário</button>
+        </div>
+      </div>
+      <select id="rbp-funcionario" onchange="aoTrocarFuncionarioPonto(this.value)" style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:12px;padding:11px 14px;font-size:14px;color:#ffffff;outline:none;box-sizing:border-box;cursor:pointer;font-weight:600;" onfocus="this.style.borderColor='#38bdf8'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'">
+        <option value="" style="background:#181a2c;color:#ffffff;">Selecione o Funcionário</option>
+      </select>
+      
+      <!-- Mini form rápido para adicionar funcionário -->
+      <div id="rbp-box-novo-funcionario" style="display:none;background:rgba(37,99,235,0.12);border:1.5px dashed #3b82f6;border-radius:10px;padding:10px;gap:8px;margin-top:2px;">
+        <div style="display:flex;gap:6px;">
+          <input type="text" id="rbp-inp-novo-funcionario" placeholder="Nome do novo funcionário..." style="flex:1;background:#181a2c;border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:8px 10px;font-size:12.5px;color:#ffffff;outline:none;">
+          <button type="button" onclick="salvarMiniNovoFuncionarioPonto()" style="background:#2563eb;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer;">Adicionar</button>
+          <button type="button" onclick="toggleMiniNovoFuncionarioPonto(false)" style="background:rgba(255,255,255,0.1);color:#cbd5e1;border:none;border-radius:8px;padding:8px 10px;font-size:12px;cursor:pointer;">✕</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Opção de Jornada / Ponto * -->
+    <div style="display:flex;flex-direction:column;gap:5px;">
+      <label style="font-size:13px;font-weight:700;color:#cbd5e1;">Opção de Jornada / Ponto *</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <!-- Dia Trabalhado -->
+        <div id="rbp-card-integral" onclick="selecionarJornadaPonto('integral')" style="padding:13px 10px;border:2px solid #3b82f6;background:rgba(37,99,235,0.25);border-radius:14px;cursor:pointer;display:flex;flex-direction:column;gap:3px;transition:all 0.15s;text-align:center;user-select:none;-webkit-tap-highlight-color:transparent;">
+          <div style="font-size:14px;font-weight:800;color:#93c5fd;pointer-events:none;">Dia Trabalhado</div>
+          <div style="font-size:11.5px;color:#60a5fa;font-weight:600;pointer-events:none;">Integral (Diária cheia)</div>
+        </div>
+        <!-- Meio Dia -->
+        <div id="rbp-card-meio" onclick="selecionarJornadaPonto('meio_dia')" style="padding:13px 10px;border:1.5px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);border-radius:14px;cursor:pointer;display:flex;flex-direction:column;gap:3px;transition:all 0.15s;text-align:center;user-select:none;-webkit-tap-highlight-color:transparent;">
+          <div style="font-size:14px;font-weight:800;color:#cbd5e1;pointer-events:none;">Meio Dia</div>
+          <div style="font-size:11.5px;color:#94a3b8;font-weight:500;pointer-events:none;">Turno Parcial (Manhã/Tarde)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cliente que Trabalhou * -->
+    <div style="display:flex;flex-direction:column;gap:5px;">
+      <label style="font-size:13px;font-weight:700;color:#cbd5e1;">Cliente que Trabalhou *</label>
+      <input type="text" id="rbp-cliente" placeholder="Digite o nome do cliente..." style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:12px;padding:11px 14px;font-size:14px;color:#ffffff;outline:none;box-sizing:border-box;font-weight:600;" onfocus="this.style.borderColor='#38bdf8'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'">
+    </div>
+
+    <!-- Valor do Ponto (R$) * e Status Pagamento -->
+    <div style="display:grid;grid-template-columns:1fr 1.2fr;gap:12px;">
+      <div style="display:flex;flex-direction:column;gap:5px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <label style="font-size:13px;font-weight:700;color:#cbd5e1;">Valor do Ponto (R$) *</label>
+          <span id="rbp-valor-lock" style="display:none;font-size:11px;color:#38bdf8;font-weight:700;">🔒 Bloqueado</span>
+        </div>
+        <input type="text" id="rbp-valor" value="160,00" style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:12px;padding:11px 14px;font-size:14px;font-weight:700;color:#ffffff;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#38bdf8'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px;">
+        <label style="font-size:13px;font-weight:700;color:#cbd5e1;">Status Pagamento</label>
+        <select id="rbp-status-pagto" style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:12px;padding:11px 10px;font-size:13px;font-weight:600;color:#ffffff;outline:none;box-sizing:border-box;cursor:pointer;" onfocus="this.style.borderColor='#38bdf8'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'">
+          <option value="Pendente (A receber / Pagar)" selected style="background:#181a2c;color:#ffffff;">Pendente (A receber / Pagar)</option>
+          <option value="Pago" style="background:#181a2c;color:#ffffff;">Pago</option>
+          <option value="Adiantamento" style="background:#181a2c;color:#ffffff;">Adiantamento</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- SEÇÃO: ALMOÇO / REFEIÇÃO (RESTAURANTE, VALOR, FORMA PAGAMENTO, PAGO OU PENDENTE) -->
+    <div style="background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.1);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-size:13px;font-weight:800;color:#ffffff;display:flex;align-items:center;gap:6px;">
+          <span>🍛</span> <span>Almoço / Refeição</span>
+        </div>
+        <label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#38bdf8;cursor:pointer;">
+          <input type="checkbox" id="rbp-almoco-ativo" onchange="alternarCamposAlmocoPonto(this.checked)" checked style="accent-color:#38bdf8;cursor:pointer;width:15px;height:15px;">
+          <span>Incluir Almoço</span>
+        </label>
+      </div>
+
+      <div id="rbp-almoco-campos" style="display:flex;flex-direction:column;gap:10px;">
+        <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:10px;">
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:11.5px;font-weight:700;color:#cbd5e1;">Nome do Restaurante</label>
+            <input type="text" id="rbp-almoco-restaurante" placeholder="Ex: Restaurante do Zé..." style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:9px 12px;font-size:13px;color:#ffffff;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#38bdf8'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <label style="font-size:11.5px;font-weight:700;color:#cbd5e1;">Valor do Almoço (R$)</label>
+              <span id="rbp-almoco-lock" style="display:none;font-size:10.5px;color:#38bdf8;font-weight:700;">🔒 Bloqueado</span>
+            </div>
+            <input type="text" id="rbp-almoco-valor" placeholder="25,00" value="25,00" style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:9px 12px;font-size:13px;font-weight:700;color:#ffffff;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#38bdf8'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'">
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:11.5px;font-weight:700;color:#cbd5e1;">Status do Almoço</label>
+            <select id="rbp-almoco-status" style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:9px 8px;font-size:12.5px;font-weight:700;color:#ffffff;outline:none;box-sizing:border-box;cursor:pointer;" onfocus="this.style.borderColor='#38bdf8'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'">
+              <option value="Pago" selected style="background:#181a2c;color:#ffffff;">Pago</option>
+              <option value="Pendente" style="background:#181a2c;color:#ffffff;">Pendente</option>
+            </select>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:11.5px;font-weight:700;color:#cbd5e1;">Forma de Pagamento</label>
+            <select id="rbp-almoco-forma" style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:9px 8px;font-size:12.5px;font-weight:600;color:#ffffff;outline:none;box-sizing:border-box;cursor:pointer;" onfocus="this.style.borderColor='#38bdf8'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'">
+              <option value="Pix" selected style="background:#181a2c;color:#ffffff;">Pix</option>
+              <option value="Dinheiro" style="background:#181a2c;color:#ffffff;">Dinheiro</option>
+              <option value="Cartão" style="background:#181a2c;color:#ffffff;">Cartão</option>
+              <option value="Pago pela Empresa" style="background:#181a2c;color:#ffffff;">Pago pela Empresa</option>
+              <option value="A Reembolsar" style="background:#181a2c;color:#ffffff;">A Reembolsar</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEÇÃO: COMBUSTÍVEL / AJUDA DE CUSTO (EXIBIDA SOMENTE SE CONFIGURADA PARA O FUNCIONÁRIO) -->
+    <div id="rbp-box-combustivel" style="display:none;background:rgba(255,255,255,0.04);border:1.5px solid rgba(56,189,248,0.25);border-radius:14px;padding:12px 14px;flex-direction:column;gap:10px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-size:13px;font-weight:800;color:#ffffff;display:flex;align-items:center;gap:6px;">
+          <span>⛽</span> <span>Combustível / Ajuda de Custo</span>
+        </div>
+        <span style="font-size:11px;color:#38bdf8;font-weight:700;">🔒 Valor configurado</span>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <label style="font-size:11.5px;font-weight:700;color:#cbd5e1;">Valor do Combustível (R$)</label>
+            <span style="font-size:10.5px;color:#38bdf8;font-weight:700;">🔒 Bloqueado</span>
+          </div>
+          <input type="text" id="rbp-combustivel-valor" readonly placeholder="0,00" style="width:100%;background:#111322;border:1.5px solid rgba(255,255,255,0.08);border-radius:10px;padding:9px 12px;font-size:13px;font-weight:700;color:#38bdf8;outline:none;box-sizing:border-box;cursor:not-allowed;" title="Valor de combustível fixado na configuração do funcionário">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <label style="font-size:11.5px;font-weight:700;color:#cbd5e1;">Status do Combustível</label>
+          <select id="rbp-combustivel-status" style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:9px 8px;font-size:12.5px;font-weight:700;color:#ffffff;outline:none;box-sizing:border-box;cursor:pointer;" onfocus="this.style.borderColor='#38bdf8'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'">
+            <option value="Pago" selected style="background:#181a2c;color:#ffffff;">Pago</option>
+            <option value="Pendente" style="background:#181a2c;color:#ffffff;">Pendente</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <label style="font-size:11.5px;font-weight:700;color:#cbd5e1;">Forma de Pagamento</label>
+          <select id="rbp-combustivel-forma" style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:9px 8px;font-size:12.5px;font-weight:600;color:#ffffff;outline:none;box-sizing:border-box;cursor:pointer;" onfocus="this.style.borderColor='#38bdf8'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'">
+            <option value="Pix" selected style="background:#181a2c;color:#ffffff;">Pix</option>
+            <option value="Dinheiro" style="background:#181a2c;color:#ffffff;">Dinheiro</option>
+            <option value="Cartão" style="background:#181a2c;color:#ffffff;">Cartão</option>
+            <option value="Pago pela Empresa" style="background:#181a2c;color:#ffffff;">Pago pela Empresa</option>
+          </select>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <label style="font-size:11.5px;font-weight:700;color:#cbd5e1;">Observação (Opcional)</label>
+          <input type="text" id="rbp-combustivel-obs" placeholder="Ex: Moto, Carro..." style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:9px 12px;font-size:12.5px;color:#ffffff;outline:none;box-sizing:border-box;">
+        </div>
+      </div>
+    </div>
+
+    <!-- Descrição / Tarefas Realizadas -->
+    <div style="display:flex;flex-direction:column;gap:5px;">
+      <label style="font-size:13px;font-weight:700;color:#cbd5e1;">Descrição / Tarefas Realizadas</label>
+      <textarea id="rbp-descricao" rows="2" placeholder="Ex: Reforma elétrica, limpeza pós-obra..." style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:12px;padding:11px 14px;font-size:13px;color:#ffffff;outline:none;box-sizing:border-box;resize:vertical;font-family:inherit;" onfocus="this.style.borderColor='#38bdf8'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'"></textarea>
+    </div>
+
+    <!-- Ações / Botões -->
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px;">
+      <!-- Botões: Enviar em PDF (Com CPF, Sem Telefone, Sem Valores) -->
+      <div style="background:rgba(234,179,8,0.08);border:1.5px solid rgba(234,179,8,0.3);border-radius:12px;padding:10px 14px;display:flex;flex-direction:column;gap:8px;">
+        <div style="font-size:11.5px;font-weight:700;color:#facc15;display:flex;align-items:center;justify-content:space-between;">
+          <span style="display:flex;align-items:center;gap:5px;">📄 <span>Enviar em PDF (Com CPF • Sem Telefone • Sem Valores)</span></span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <button type="button" onclick="enviarFuncionarioPdf()" style="background:linear-gradient(135deg,#eab308,#ca8a04);color:#000;font-size:12px;font-weight:900;padding:10px 8px;border-radius:10px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 3px 10px rgba(234,179,8,0.35);">
+            <span>📄</span> <span>Este Funcionário (PDF)</span>
+          </button>
+          <button type="button" onclick="enviarTodosFuncionariosPdf()" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#000;font-size:12px;font-weight:900;padding:10px 8px;border-radius:10px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 3px 10px rgba(245,158,11,0.35);">
+            <span>📑</span> <span>Todos Funcionários (PDF)</span>
+          </button>
+        </div>
+        <div style="display:flex;justify-content:center;gap:14px;margin-top:2px;">
+          <button type="button" onclick="enviarFuncionarioWhatsApp()" style="background:none;border:none;color:#25d366;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px;text-decoration:underline;">
+            <span>📲 WhatsApp (Este)</span>
+          </button>
+          <button type="button" onclick="enviarTodosFuncionariosWhatsApp()" style="background:none;border:none;color:#25d366;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px;text-decoration:underline;">
+            <span>📲 WhatsApp (Todos)</span>
+          </button>
+        </div>
+      </div>
+      <!-- Botões Cancelar / Salvar -->
+      <div style="display:flex;justify-content:flex-end;align-items:center;gap:12px;">
+        <button type="button" onclick="fecharModalRegistrarBatidaPonto()" style="background:transparent;border:none;color:#94a3b8;font-size:14px;font-weight:700;padding:10px 16px;cursor:pointer;border-radius:10px;transition:color 0.15s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#94a3b8'">Cancelar</button>
+        <button type="button" onclick="salvarBatidaPontoModal()" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#ffffff;font-size:14px;font-weight:800;padding:12px 26px;border-radius:12px;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(37,99,235,0.5);transition:all 0.15s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 18px rgba(37,99,235,0.6)'" onmouseout="this.style.transform='none';this.style.boxShadow='0 4px 14px rgba(37,99,235,0.5)'">Salvar Ponto</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+<div id="modal-config-func-ponto" class="modal-overlay" style="display:none; z-index:999999;" onclick="fecharModalConfigFuncionarioPonto(event)">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:480px; width:95vw; background:#0f1020; border:1.5px solid rgba(250,204,21,0.4); box-shadow:0 20px 60px rgba(0,0,0,0.95); border-radius:16px; padding:20px; overflow:hidden; display:flex; flex-direction:column; gap:14px;">
+    
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:12px;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:22px;">⚙️</span>
+        <div>
+          <div style="font-size:15px; font-weight:900; color:#fff;">Configurar Dados do Funcionário</div>
+          <div style="font-size:11px; color:#facc15;" id="cfg-func-subtitulo">Editar diária, almoço e dados cadastrais</div>
+        </div>
+      </div>
+      <button type="button" onclick="fecharModalConfigFuncionarioPonto()" style="background:rgba(255,255,255,0.08);border:none;color:#fff;font-size:15px;cursor:pointer;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;">✕</button>
+    </div>
+
+    <!-- Nome do Funcionário -->
+    <div style="display:flex; flex-direction:column; gap:4px;">
+      <label style="font-size:12px; font-weight:700; color:#cbd5e1;">Nome do Funcionário *</label>
+      <input type="text" id="cfg-func-nome" placeholder="Nome completo..." style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:9px 12px;font-size:13.5px;color:#fff;box-sizing:border-box;outline:none;" />
+    </div>
+
+    <!-- Cargo / Função -->
+    <div style="display:flex; flex-direction:column; gap:4px;">
+      <label style="font-size:12px; font-weight:700; color:#cbd5e1;">Cargo / Função</label>
+      <input type="text" id="cfg-func-cargo" placeholder="Ex: Marceneiro, Montador, Ajudante..." style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:9px 12px;font-size:13.5px;color:#fff;box-sizing:border-box;outline:none;" />
+    </div>
+
+    <!-- Linha Valores Diária Cheia e Meio Dia -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <label style="font-size:12px; font-weight:700; color:#cbd5e1;">Diária Cheia (R$)</label>
+        <input type="text" id="cfg-func-diaria" placeholder="160,00" style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:9px 12px;font-size:13.5px;color:#38bdf8;font-weight:800;box-sizing:border-box;outline:none;" />
+      </div>
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <label style="font-size:12px; font-weight:700; color:#cbd5e1;">Meio Dia (R$)</label>
+        <input type="text" id="cfg-func-meiodia" placeholder="80,00" style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:9px 12px;font-size:13.5px;color:#38bdf8;font-weight:800;box-sizing:border-box;outline:none;" />
+      </div>
+    </div>
+
+    <!-- Linha Almoço Padrão e Combustível -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <label style="font-size:12px; font-weight:700; color:#cbd5e1;">🍛 Almoço Padrão (R$)</label>
+        <input type="text" id="cfg-func-almoco" placeholder="25,00" style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:9px 12px;font-size:13.5px;color:#fff;box-sizing:border-box;outline:none;" />
+      </div>
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <label style="font-size:12px; font-weight:700; color:#cbd5e1;">⛽ Combustível (R$)</label>
+        <input type="text" id="cfg-func-combustivel" placeholder="0,00 (Opcional)" style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:9px 12px;font-size:13.5px;color:#38bdf8;font-weight:700;box-sizing:border-box;outline:none;" />
+      </div>
+    </div>
+
+    <!-- WhatsApp / Telefone -->
+    <div style="display:flex; flex-direction:column; gap:4px;">
+      <label style="font-size:12px; font-weight:700; color:#cbd5e1;">WhatsApp / Telefone</label>
+      <input type="text" id="cfg-func-tel" placeholder="(88) 99999-9999" style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:9px 12px;font-size:13.5px;color:#fff;box-sizing:border-box;outline:none;" />
+    </div>
+
+    <!-- CPF e Endereço -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <label style="font-size:12px; font-weight:700; color:#cbd5e1;">🪪 CPF</label>
+        <input type="text" id="cfg-func-cpf" placeholder="000.000.000-00" style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:9px 12px;font-size:13.5px;color:#fff;box-sizing:border-box;outline:none;" />
+      </div>
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <label style="font-size:12px; font-weight:700; color:#cbd5e1;">📍 Endereço</label>
+        <input type="text" id="cfg-func-endereco" placeholder="Rua, Nº, Bairro..." style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:9px 12px;font-size:13.5px;color:#fff;box-sizing:border-box;outline:none;" />
+      </div>
+    </div>
+
+    <!-- Chave PIX -->
+    <div style="display:flex; flex-direction:column; gap:4px;">
+      <label style="font-size:12px; font-weight:700; color:#cbd5e1;">Chave PIX / Dados de Pagamento</label>
+      <input type="text" id="cfg-func-pix" placeholder="CPF, Celular, E-mail ou Chave aleatória..." style="width:100%;background:#181a2c;border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:9px 12px;font-size:13.5px;color:#fff;box-sizing:border-box;outline:none;" />
+    </div>
+
+    <!-- Botões -->
+    <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:6px; border-top:1px solid rgba(255,255,255,0.08); padding-top:12px;">
+      <button type="button" onclick="fecharModalConfigFuncionarioPonto()" style="background:transparent;border:none;color:#94a3b8;font-size:13px;font-weight:700;cursor:pointer;padding:8px 14px;">Cancelar</button>
+      <button type="button" onclick="salvarConfigFuncionarioPonto()" style="background:linear-gradient(135deg,#eab308,#ca8a04);color:#000;font-size:13.5px;font-weight:900;padding:10px 22px;border-radius:10px;border:none;cursor:pointer;box-shadow:0 4px 12px rgba(234,179,8,0.35);">💾 Salvar Dados</button>
+    </div>
+
+  </div>
+</div>
 </body>
 </html>
