@@ -13299,6 +13299,38 @@ function renderizarMeuSetorFinanceiro() {
   var valorHora = Number(colab.valorHora || (salarioBase / 220));
   var cNome = ((colab && colab.nome) || (typeof clienteSessao !== 'undefined' && clienteSessao && clienteSessao.nome) || 'Samuel David').toLowerCase().trim();
 
+  // ── Buscar configuração salva do funcionário (diária, meiodia, cargo, pix) ──
+  var cfgFunc = null;
+  if (typeof getDadosConfigFuncionario === 'function') {
+    cfgFunc = getDadosConfigFuncionario(colab.nome) || getDadosConfigFuncionario(cNome);
+  }
+  if (!cfgFunc) {
+    try {
+      var configsSalvas = JSON.parse(localStorage.getItem('sdv_dados_funcionarios_config') || '{}');
+      cfgFunc = configsSalvas[cNome] || configsSalvas[(colab.nome || '').toLowerCase().trim()] || null;
+      if (!cfgFunc) {
+        for (var k in configsSalvas) {
+          if (k && (k.includes(cNome) || cNome.includes(k))) {
+            cfgFunc = configsSalvas[k];
+            break;
+          }
+        }
+      }
+    } catch(_) {}
+  }
+
+  if (cfgFunc) {
+    if (cfgFunc.cargo && elCargo) elCargo.textContent = cfgFunc.cargo + ' · SD Móveis Projetados';
+    if (cfgFunc.pix && elPix) elPix.textContent = cfgFunc.pix;
+  }
+
+  var diariaExibir = (cfgFunc && cfgFunc.diaria) ? String(cfgFunc.diaria).replace(/[^0-9,\.]/g, '').trim() : '160,00';
+  var meiodiaExibir = (cfgFunc && cfgFunc.meiodia) ? String(cfgFunc.meiodia).replace(/[^0-9,\.]/g, '').trim() : '';
+  if (!meiodiaExibir) {
+    var dNum = parseFloat(diariaExibir.replace(/\./g, '').replace(',', '.')) || 160;
+    meiodiaExibir = (dNum / 2).toFixed(2).replace('.', ',');
+  }
+
   // ── Carregar batidas de ponto registradas via Bater Ponto ──
   var batidasPonto = [];
   try {
@@ -13398,14 +13430,15 @@ function renderizarMeuSetorFinanceiro() {
       }
     }
     if (elHora) {
-      elHora.innerHTML = 'R$ 160 <span style="font-size:12px;color:#94a3b8;font-weight:400;">/ R$ 80</span>';
+      elHora.innerHTML = 'R$ ' + diariaExibir + ' <span style="font-size:12px;color:#94a3b8;font-weight:400;">/ R$ ' + meiodiaExibir + '</span>';
       if (elHora.previousElementSibling) {
         elHora.previousElementSibling.innerHTML = '<span>⏱️</span> <span>Diária / Meio Dia</span>';
       }
       if (elHora.nextElementSibling) {
-        elHora.nextElementSibling.textContent = 'Integral: R$ 160 | Meio: R$ 80';
+        elHora.nextElementSibling.textContent = 'Integral: R$ ' + diariaExibir + ' | Meio: R$ ' + meiodiaExibir;
       }
     }
+
     if (elHT) {
       elHT.textContent = `${countIntegrais + countMeioDia} jornada(s)`;
       if (elHT.previousElementSibling) {
@@ -13480,7 +13513,11 @@ function renderizarMeuSetorFinanceiro() {
     }
 
     if (elSalario) elSalario.textContent = 'R$ ' + salarioBase.toFixed(2).replace('.', ',');
-    if (elHora) elHora.textContent = 'R$ ' + valorHora.toFixed(2).replace('.', ',') + '/h';
+    if (elHora) {
+      elHora.innerHTML = 'R$ ' + diariaExibir + ' <span style="font-size:12px;color:#94a3b8;font-weight:400;">/ R$ ' + meiodiaExibir + '</span>';
+      if (elHora.previousElementSibling) elHora.previousElementSibling.innerHTML = '<span>⏱️</span> <span>Diária / Meio Dia</span>';
+      if (elHora.nextElementSibling) elHora.nextElementSibling.textContent = 'Integral: R$ ' + diariaExibir + ' | Meio: R$ ' + meiodiaExibir;
+    }
     if (elHT) elHT.textContent = strHorasTrab;
     if (elGanhoBruto) elGanhoBruto.textContent = 'Ganhos: R$ ' + valorGanhoHoras.toFixed(2).replace('.', ',');
     if (elHN) elHN.textContent = strHorasNeg;
@@ -16617,6 +16654,7 @@ function salvarConfigFuncionarioPonto() {
   aoTrocarFuncionarioPonto(nome);
 
   fecharModalConfigFuncionarioPonto();
+  if (typeof renderizarMeuSetorFinanceiro === 'function') { try { renderizarMeuSetorFinanceiro(); } catch(_) {} }
   if (typeof mostrarToast === 'function') mostrarToast('✅ Dados de ' + nome + ' configurados com sucesso!', 'sucesso');
   else alert('Dados de ' + nome + ' configurados com sucesso!');
 }
