@@ -8497,17 +8497,27 @@ function mudarAba(tab) {
         }
       } catch(_) {}
 
-      if (!arr || arr.length === 0) {
-        arr = [
-          { id: 100, nome: 'Samuel David', cargo: 'Instalador / Técnico Líder', whatsapp: '(85) 99760-2237', departamento: 'Operações', status: 'Presente', valorHora: 35.00 },
-          { id: 101, nome: 'Lucas Ferreira', cargo: 'Desenvolvedor Full Stack', whatsapp: '(11) 98765-4321', departamento: 'Tecnologia', status: 'Presente', valorHora: 32.50 },
-          { id: 102, nome: 'Rafael Alencar', cargo: 'Engenheiro de Infra & Cloud', whatsapp: '(11) 96543-2109', departamento: 'Operações', status: 'Presente', valorHora: 31.82 },
-          { id: 103, nome: 'Camila Rocha', cargo: 'Analista de Suporte Técnico', whatsapp: '(11) 95432-1098', departamento: 'Atendimento', status: 'Presente', valorHora: 21.11 },
-          { id: 104, nome: 'Juliana Costa', cargo: 'Especialista de Atendimento', whatsapp: '(85) 99123-4567', departamento: 'Vendas', status: 'Presente', valorHora: 26.00 }
-        ];
+      const nomesFicticios = ['lucas ferreira', 'rafael alencar', 'camila rocha', 'juliana costa'];
+      if (arr && arr.length > 0) {
+        const antes = arr.length;
+        arr = arr.filter(f => {
+          if (!f || !f.nome) return false;
+          const n = String(f.nome).trim().toLowerCase();
+          return !nomesFicticios.some(b => n.includes(b));
+        });
+        if (arr.length !== antes) {
+          try { localStorage.setItem('sdv_funcionarios', JSON.stringify(arr)); } catch(_) {}
+        }
       }
 
-      // Deduplica por Nome + Cargo e ID (remove repetições como Samuel David duplicado)
+      if (!arr || arr.length === 0) {
+        arr = [
+          { id: 100, nome: 'Samuel David', cargo: 'Instalador / Técnico Líder', whatsapp: '(85) 99760-2237', departamento: 'Operações', status: 'Presente', valorHora: 35.00 }
+        ];
+        try { localStorage.setItem('sdv_funcionarios', JSON.stringify(arr)); } catch(_) {}
+      }
+
+      // Deduplica por Nome + Cargo e ID
       const vistos = new Set();
       const dedup = [];
       arr.forEach(f => {
@@ -8520,7 +8530,6 @@ function mudarAba(tab) {
         }
       });
 
-      // Se havia duplicatas salvas no storage, corrige e regrava a versão limpa imediatamente
       if (dedup.length !== arr.length) {
         try { localStorage.setItem('sdv_funcionarios', JSON.stringify(dedup)); } catch(_) {}
       }
@@ -16680,11 +16689,22 @@ function popularFuncionariosModalPonto(selecionarNome) {
     }
   } catch(_) {}
 
-  // Se vazio, adiciona padrão
+  // Ler cadastrados de sdv_funcionarios
+  try {
+    var rawSF = localStorage.getItem('sdv_funcionarios');
+    if (rawSF) {
+      var arrSF = JSON.parse(rawSF);
+      if (Array.isArray(arrSF)) {
+        arrSF.forEach(function(f) {
+          if (f && f.nome && f.nome.trim()) nomes.add(f.nome.trim());
+        });
+      }
+    }
+  } catch(_) {}
+
+  // Se vazio, adiciona apenas o colaborador padrão
   if (nomes.size === 0) {
-    nomes.add('David');
-    nomes.add('João');
-    nomes.add('Marceneiro 1');
+    nomes.add('Samuel David');
   }
 
   var arr = Array.from(nomes).sort();

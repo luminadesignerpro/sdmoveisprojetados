@@ -1,5 +1,5 @@
-// Service Worker PWA – SD Móveis Projetados v9.5.74 (Aba SD Veículos, controle de frota, licenciamento, abastecimento, KM e foto do comprovante)
-const CACHE_NAME = 'sdmoveisprojetados-v9.5.74';
+// Service Worker PWA – SD Móveis Projetados v9.5.75 (Aba SD Veículos, controle de frota, licenciamento, abastecimento, KM e foto do comprovante)
+const CACHE_NAME = 'sdmoveisprojetados-v9.5.75';
 const ASSETS = [
   '/',
   '/index.html',

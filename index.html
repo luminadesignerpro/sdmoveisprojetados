@@ -10207,7 +10207,13 @@ function recarregarDadosEmpresaAtiva() {
   const jaInicializado = localStorage.getItem(empInitKey) === '1';
 
   if (rawEmployees !== null) {
-    funcionariosLista = Array.isArray(rawEmployees) ? rawEmployees : [];
+    const _nomesFict = ['lucas ferreira', 'rafael alencar', 'camila rocha', 'juliana costa'];
+    const _listaBruta = Array.isArray(rawEmployees) ? rawEmployees : [];
+    funcionariosLista = _listaBruta.filter(f => f && f.nome && !_nomesFict.some(b => String(f.nome).toLowerCase().includes(b)));
+    if (funcionariosLista.length !== _listaBruta.length) {
+      if (funcionariosLista.length === 0) funcionariosLista = JSON.parse(JSON.stringify(FUNCIONARIOS_PADRAO));
+      save(K.employees, funcionariosLista);
+    }
   } else if (!jaInicializado) {
     funcionariosLista = JSON.parse(JSON.stringify(FUNCIONARIOS_PADRAO));
     if (funcionariosLista.length) {
@@ -19994,54 +20000,6 @@ const FUNCIONARIOS_PADRAO = [
     jornada: '44h/sem',
     salario: 8000,
     valorHora: 35.00,
-    status: 'Presente'
-  },
-  {
-    id: 101,
-    nome: 'Lucas Ferreira',
-    email: 'lucas@sdsolucoes.com.br',
-    whatsapp: '(11) 98765-4321',
-    cargo: 'Desenvolvedor Full Stack',
-    departamento: 'Tecnologia',
-    jornada: '40h/sem',
-    salario: 6500,
-    valorHora: 32.50,
-    status: 'Presente'
-  },
-  {
-    id: 102,
-    nome: 'Rafael Alencar',
-    email: 'rafael@sdsolucoes.com.br',
-    whatsapp: '(11) 96543-2109',
-    cargo: 'Engenheiro de Infra & Cloud',
-    departamento: 'Operações',
-    jornada: '44h/sem',
-    salario: 7000,
-    valorHora: 31.82,
-    status: 'Em Almoço'
-  },
-  {
-    id: 103,
-    nome: 'Camila Rocha',
-    email: 'camila@sdsolucoes.com.br',
-    whatsapp: '(11) 95432-1098',
-    cargo: 'Analista de Suporte Técnico',
-    departamento: 'Atendimento',
-    jornada: '36h/sem',
-    salario: 3800,
-    valorHora: 21.11,
-    status: 'Folga'
-  },
-  {
-    id: 104,
-    nome: 'Juliana Costa',
-    email: 'juliana@sdsolucoes.com.br',
-    whatsapp: '(85) 99123-4567',
-    cargo: 'Especialista de Atendimento',
-    departamento: 'Vendas',
-    jornada: '44h/sem',
-    salario: 4500,
-    valorHora: 26.00,
     status: 'Presente'
   }
 ];
@@ -46755,11 +46713,9 @@ function popularFuncionariosModalPonto(selecionarNome) {
     }
   } catch(_) {}
 
-  // Se vazio, adiciona padrão
+  // Se vazio, adiciona apenas o colaborador padrão
   if (nomes.size === 0) {
-    nomes.add('David');
-    nomes.add('João');
-    nomes.add('Marceneiro 1');
+    nomes.add('Samuel David');
   }
 
   var arr = Array.from(nomes).sort();
